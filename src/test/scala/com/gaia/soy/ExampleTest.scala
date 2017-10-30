@@ -1,18 +1,58 @@
 package com.gaia.soy
 
-import com.gaia.soy.Soyo.{Ap2, Ap4}
+import cats.data.Validated.{Invalid, Valid}
 import com.gaia.soy.StringValidation.Max
+import com.gaia.soy.compiler.JsonCompiler._
 import org.scalatest.FunSuite
 
 class ExampleTest extends FunSuite {
 
 
-  test("groups") {
+  abstract class NoneJsonProducer extends JsonProducer {
+    override def produceBoole(key: Key): Either[WrongTypeError[String], Option[Boolean]] = Right(None)
+    override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = Right(None)
+    override def produceBigDecimal(key: Key): Either[WrongTypeError[String], Option[BigDecimal]] = Right(None)
+    override def produceInt(key: Key): Either[WrongTypeError[String], Option[Int]] = Right(None)
+  }
+
+//  test("sibling groups") {
+//    case class User(username: String, pass: String, message: Option[String], role: Option[String])
+//    case class Car(make: String, model: String, year: Option[String])
+//
+//    val rvp = new NoneJsonProducer {
+//      override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = key.name match {
+//        case "username" => Right(Some("Thisisusername"))
+//        case "password" => Right(Some("thisispassword"))
+//        case "message" => Right(None)
+//        case "role" => Right(Some("employee"))
+//      }
+//    }
+//
+//    Soyo.obj2(
+//      key("user").obj4(
+//        key("username").string.alphanum(),
+//        key("password").string(),
+//        key("message").string().optional(),
+//        key("role").string().valid("manager", "employee").optional(),
+//        User(_,_,_,_)
+//      ),
+//      key("car").obj4(
+//        key("make").string.alphanum(),
+//        key("model").string(),
+//        key("message").string().optional(),
+//        key("role").string().valid("manager", "employee").optional(),
+//        User(_,_,_,_)
+//      )
+//    )
+//
+//  }
+
+  test("group") {
 
     case class User(username: String, pass: String, message: Option[String], role: Option[String])
 
-    val rvp = new RawValueProducer {
-      override def produce[X](key: Key): Either[WrongTypeError[String], Option[String]] = key.name match {
+    val rvp = new NoneJsonProducer {
+      override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = key.name match {
         case "username" => Right(Some("Thisisusername"))
         case "password" => Right(Some("thisispassword"))
         case "message" => Right(None)
@@ -23,14 +63,20 @@ class ExampleTest extends FunSuite {
     /*
     { "username" : "travis", "password" : "blah", "role": "manager" }
      */
-    val userPass = Ap4(
+
+    val prog = Soyo.obj4(
       key("username").string.alphanum(),
       key("password").string(),
       key("message").string().optional(),
-      key("role").string().valid("manager", "employee").optional()
-    ).map(User.tupled).extract(rvp)
+      key("role").string().valid("manager", "employee").optional(),
+      User(_,_,_,_)
+    )
 
-    assert( userPass == Right( User("Thisisusername", "thisispassword", None, Some("employee"))) )
+    import cats.implicits._
+    val userPass = prog.foldMap[FromProducer](defaultCompiler).apply(rvp)
+
+
+    assert( userPass == Valid( User("Thisisusername", "thisispassword", None, Some("employee"))) )
 
 
   }
@@ -39,20 +85,20 @@ class ExampleTest extends FunSuite {
 
     val alpha = key("username").string.alphanum.optional
 
-    val validInput = new RawValueProducer {
-      override def produce[X](key: Key): Either[WrongTypeError[String], Option[String]] = {
+    val validInput = new StringProducer {
+      override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = {
         Right(Some("thisisalphanum"))
 //        Right(Coproduct[JSON]("thisisalphanum").select[String])
       }
     }
 
 
-    val invalidInput = new RawValueProducer {
-      override def produce[X](key: Key): Either[WrongTypeError[String], Option[String]] = Right(Some("Not(&*&Valid"))
+    val invalidInput = new StringProducer {
+      override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = Right(Some("Not(&*&Valid"))
     }
 
-    assert( alpha.extract(validInput) == Right(Some("thisisalphanum")))
-    assert( alpha.extract(invalidInput).isLeft)
+    assert( alpha.extract(validInput) == Valid(Some("thisisalphanum")))
+    assert( alpha.extract(invalidInput).isInvalid)
 
 
 
@@ -64,23 +110,23 @@ class ExampleTest extends FunSuite {
 
     val x = key("username").string.alphanum.min(3).max(7).optional()
 
-    val validInput = new RawValueProducer {
-      override def produce[X](key: Key): Either[WrongTypeError[String], Option[String]] = Right(Some("valid"))
+    val validInput = new StringProducer {
+      override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = Right(Some("valid"))
     }
 
-    val failsOne = new RawValueProducer {
-      override def produce[X](key: Key): Either[WrongTypeError[String], Option[String]] = Right(Some("thisistoolong"))
+    val failsOne = new StringProducer {
+      override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = Right(Some("thisistoolong"))
     }
 
-    val failsTwo = new RawValueProducer {
-      override def produce[X](key: Key): Either[WrongTypeError[String], Option[String]] = Right(Some("$3"))
+    val failsTwo = new StringProducer {
+      override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = Right(Some("$3"))
     }
 
-    assert( x.extract(validInput) == Right(Some("valid")))
+    assert( x.extract(validInput) == Valid(Some("valid")))
 
 
     x.extract(failsOne) match {
-      case Left(nel) => {
+      case Invalid(nel) => {
         assert( nel.size == 1)
         nel.head match {
           case ValidationError(k, exOp, i) => assert(exOp.isInstanceOf[Max])
@@ -91,7 +137,7 @@ class ExampleTest extends FunSuite {
     }
 
     x.extract(failsTwo) match {
-      case Left(nel) => {
+      case Invalid(nel) => {
         assert( nel.size == 2)
       }
       case x => fail("Expected Invalid, received:" + x)
