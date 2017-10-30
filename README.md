@@ -3,24 +3,27 @@
 The idea behind Soy is to create simple Joi like validation simple, but also make more complex
 validations possible.
 
-This is also based on Scodec and combinators.
+Also using Free Applicative to create an AST describing the validation.  The AST can then be passed to a compiler to produce the output or use the same AST to produce documentation.
+
 
 ## Getting Started
 
 This example is adapted from the [https://github.com/hapijs/joi JOI Proejct].
 
 ```$scala
-val json = parse(XXX)
-case class User(username: String, password: String, accessToken: Either[String, Int], birthyear: Int, email: String)
+    val rvp: JsonProducer = ???
 
-val schema = Soy.keys({
-    "username".soy.string().alphanum().min(3).max(30).required(),
-    "password".soy.string().regex(/^[a-zA-Z0-9]{3,30}$/),
-    "access_token".soy.either(Soy.string(), Soy.int()),
-    "birthyear".soy.number().integer().min(1900).max(2013),
-    "email".string().email()
-})
+    case class User(username: String, pass: String, message: Option[String], role: Option[String])
+    
+    val prog = Soyo.obj4(
+      key("username").string.alphanum(),
+      key("password").string(),
+      key("message").string().optional(),
+      key("role").string().valid("manager", "employee").optional(),
+      User(_,_,_,_)
+    )
 
-json.extract(schema).to(User) //returns Either[ValidationError,User]
+    import cats.implicits._
+    val user = prog.foldMap[FromProducer](defaultCompiler).apply(rvp)
 
 ```
