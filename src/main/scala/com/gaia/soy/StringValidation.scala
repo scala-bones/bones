@@ -7,7 +7,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.implicits._
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 import scala.util.matching.Regex
 
 object StringValidation {
@@ -63,7 +63,10 @@ object StringValidation {
   case class Guid() extends ValidationOp[String] {
     val isValid: String => Boolean = str => Try {
       UUID.fromString(str)
-    }.toEither.fold(_ => false, _ => true)
+    } match {
+      case Success(_) => true
+      case Failure(_) => false
+    }
 
     override def defaultError(t: String): String = s"${t} is not a GUID"
 
@@ -194,7 +197,7 @@ object StringValidation {
   final case class OptionalString(key: Key, validations: List[ValidationOp[String]]) extends FieldGroupOp[Validated[NonEmptyList[ExtractionError], Option[String]]]
     with StringExtraction[Option, OptionalString] {
 
-    def extract(input: StringProducer): Validated[ExtractionErrors, Option[String]] = {
+    def extract(input: JsonProducer): Validated[ExtractionErrors, Option[String]] = {
       input.produceString(key).toValidatedNel.andThen(oStr => oStr match {
         case Some(str) => {
           runAndMapValidations(key, str, validations).map(Some(_))
@@ -214,7 +217,7 @@ object StringValidation {
 
     def optional(): OptionalString = OptionalString(key, validations)
 
-    def extract(producer: StringProducer): Validated[NonEmptyList[ExtractionError], String] = {
+    def extract(producer: JsonProducer): Validated[NonEmptyList[ExtractionError], String] = {
       producer.produceString(key).toValidated.leftMap(NonEmptyList.one).andThen(res => res match {
         case Some(e) => Valid(e)
         case None => Invalid(NonEmptyList.one(ValidationError(key, RequiredOp(), res)))

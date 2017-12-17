@@ -2,6 +2,7 @@ package com.gaia
 
 import cats.data.{NonEmptyList, Validated}
 import cats.free.FreeApplicative
+import com.gaia.soy.Soyo.Obj
 import com.gaia.soy.StringValidation.RequiredString
 
 package object soy {
@@ -12,7 +13,7 @@ package object soy {
   }
   case class ValidationError[T](key: Key, failedExtraction: ExtractionOp[T], input: Option[T]) extends ExtractionError
   case class WrongTypeError[T](key: Key, expectedType: Class[T], providedType: Class[_]) extends ExtractionError
-//  case class ConversionError[T](key: Key, failedConversion: Conversion[_,_,_], input: Option[T]) extends ExtractionError
+  case class RequiredObjectError(key: Key) extends ExtractionError
 
   type ExtractionErrors = NonEmptyList[ExtractionError]
 
@@ -24,7 +25,6 @@ package object soy {
   trait ExtractionOp[T] {
     def description: String
   }
-
 
   case class RequiredOp[T]() extends ExtractionOp[T] {
     override def description: String = "required"
@@ -67,9 +67,8 @@ package object soy {
 //  }
 
   /** Starting point for obtaining a value is to define a key */
-  case class Key(name: String) { thisKey =>
-        def string() : RequiredString = RequiredString(thisKey, Nil)
-        def obj() = ???
+  sealed abstract class Key extends Obj { thisKey =>
+    def string() : RequiredString = RequiredString(thisKey, Nil)
     //    def int(): Extract[Int] = IntExtract(thisKey, IsInt())
     //    def BigDecimal(): Extract[Int] = ???
     //    def either[A,B](v1: ValidationOp[A], v2: ValidationOp[B]): Extract[Either[A,B]] = new Extract[Either[A,B]]{
@@ -82,9 +81,12 @@ package object soy {
     //    def date(): Extract[Date] = ???
   }
 
+  object RootKey extends Key
+  case class StringKey(name: String) extends Key
+
   /** FieldGroupOp is the base class defining the FreeAp for each field group defined.*/
-  abstract class FieldGroupOp[A] {
-    def extract(producer: StringProducer): A
+  trait FieldGroupOp[A] {
+    def extract(producer: JsonProducer): A
   }
 
   type FieldGroup[A] = FreeApplicative[FieldGroupOp, A]
@@ -92,9 +94,9 @@ package object soy {
 
 
   /** Turn a string key into an key type */
-  def key(key: String) = Key(key)
+  def key(key: String) = StringKey(key)
   implicit class StringToKey(str: String) {
-    def key(): Key = soy.key(str)
+    def key(): Key = StringKey(str)
   }
 
   trait StringProducer {
@@ -109,8 +111,11 @@ package object soy {
   trait BigDecimalProducer {
     def produceBigDecimal(key: Key): Either[WrongTypeError[String], Option[BigDecimal]]
   }
+  trait ObjectProducer {
+    def produceObject(key: Key): Either[WrongTypeError[String], Option[JsonProducer]]
+  }
 
-  abstract class JsonProducer extends StringProducer with IntProducer with BoolProducer with BigDecimalProducer
+  abstract class JsonProducer extends StringProducer with IntProducer with BoolProducer with BigDecimalProducer with ObjectProducer
 
 //  case class PureExtraction[F[_]:Applicative,U](u: F[U]) extends Extraction[F, U] {
 //    override type I = Nothing
