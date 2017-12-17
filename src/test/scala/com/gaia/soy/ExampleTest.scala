@@ -13,6 +13,7 @@ class ExampleTest extends FunSuite {
     override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = Right(None)
     override def produceBigDecimal(key: Key): Either[WrongTypeError[String], Option[BigDecimal]] = Right(None)
     override def produceInt(key: Key): Either[WrongTypeError[String], Option[Int]] = Right(None)
+    override def produceObject(key: Key): Either[WrongTypeError[String], Option[JsonProducer]] = Right(None)
   }
 
 //  test("sibling groups") {
@@ -49,34 +50,47 @@ class ExampleTest extends FunSuite {
 
   test("group") {
 
-    case class User(username: String, pass: String, message: Option[String], role: Option[String])
+    case class Location(countryIso: String, postalCode: Option[String])
+    case class User(username: String, pass: String, message: Option[String], location: Location)
 
     val rvp = new NoneJsonProducer {
-      override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = key.name match {
-        case "username" => Right(Some("Thisisusername"))
-        case "password" => Right(Some("thisispassword"))
-        case "message" => Right(None)
-        case "role" => Right(Some("employee"))
+      override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = key match {
+        case StringKey(name) => {
+          name match {
+            case "username" => Right(Some("Thisisusername"))
+            case "password" => Right(Some("thisispassword"))
+            case "message" => Right(None)
+            case "role" => Right(Some("employee"))
+            case "countryIso" => Right(Some("US"))
+            case "postalCode" => Right(Some("28791"))
+          }
+        }
+        case RootKey => ???
       }
+
+      override def produceObject(key: Key): Either[WrongTypeError[String], Option[JsonProducer]] = Right(Some(this))
     }
 
     /*
     { "username" : "travis", "password" : "blah", "role": "manager" }
      */
-
     val prog = Soyo.obj4(
       key("username").string.alphanum(),
       key("password").string(),
       key("message").string().optional(),
-      key("role").string().valid("manager", "employee").optional(),
-      User(_,_,_,_)
+      key("location").obj2(
+        key("countryIso").string(),
+        key("postalCode").string().optional(),
+        Location(_:String,_:Option[String])
+      ),
+      User(_:String,_:String,_:Option[String],_:Location)
     )
 
     import cats.implicits._
     val userPass = prog.foldMap[FromProducer](defaultCompiler).apply(rvp)
 
 
-    assert( userPass == Valid( User("Thisisusername", "thisispassword", None, Some("employee"))) )
+    assert( userPass == Valid( User("Thisisusername", "thisispassword", None, Location("US", Some("28791")))) )
 
 
   }
@@ -85,7 +99,7 @@ class ExampleTest extends FunSuite {
 
     val alpha = key("username").string.alphanum.optional
 
-    val validInput = new StringProducer {
+    val validInput = new NoneJsonProducer {
       override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = {
         Right(Some("thisisalphanum"))
 //        Right(Coproduct[JSON]("thisisalphanum").select[String])
@@ -93,7 +107,7 @@ class ExampleTest extends FunSuite {
     }
 
 
-    val invalidInput = new StringProducer {
+    val invalidInput = new NoneJsonProducer {
       override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = Right(Some("Not(&*&Valid"))
     }
 
@@ -110,15 +124,15 @@ class ExampleTest extends FunSuite {
 
     val x = key("username").string.alphanum.min(3).max(7).optional()
 
-    val validInput = new StringProducer {
+    val validInput = new NoneJsonProducer {
       override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = Right(Some("valid"))
     }
 
-    val failsOne = new StringProducer {
+    val failsOne = new NoneJsonProducer {
       override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = Right(Some("thisistoolong"))
     }
 
-    val failsTwo = new StringProducer {
+    val failsTwo = new NoneJsonProducer {
       override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = Right(Some("$3"))
     }
 
