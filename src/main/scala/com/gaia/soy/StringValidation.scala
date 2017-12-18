@@ -198,12 +198,12 @@ object StringValidation {
     with StringExtraction[Option, OptionalString] {
 
     def extract(input: JsonProducer): Validated[ExtractionErrors, Option[String]] = {
-      input.produceString(key).toValidatedNel.andThen(oStr => oStr match {
+      input.produceString(key).toValidatedNel.andThen {
         case Some(str) => {
           runAndMapValidations(key, str, validations).map(Some(_))
         }
         case None => Valid(None)
-      })
+      }
     }
 
 
@@ -218,10 +218,10 @@ object StringValidation {
     def optional(): OptionalString = OptionalString(key, validations)
 
     def extract(producer: JsonProducer): Validated[NonEmptyList[ExtractionError], String] = {
-      producer.produceString(key).toValidated.leftMap(NonEmptyList.one).andThen(res => res match {
+      producer.produceString(key).toValidated.leftMap(NonEmptyList.one).andThen {
         case Some(e) => Valid(e)
-        case None => Invalid(NonEmptyList.one(ValidationError(key, RequiredOp(), res)))
-      }).andThen(str =>
+        case None => Invalid(NonEmptyList.one(ValidationError(key, RequiredOp(), None)))
+      }.andThen(str =>
         runAndMapValidations(key, str, validations)
       )
     }

@@ -51,7 +51,7 @@ class ExampleTest extends FunSuite {
   test("group") {
 
     case class Location(countryIso: String, postalCode: Option[String])
-    case class User(username: String, pass: String, message: Option[String], location: Location)
+    case class User(username: String, pass: String, message: Option[String], location: Option[Location])
 
     val rvp = new NoneJsonProducer {
       override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = key match {
@@ -71,33 +71,38 @@ class ExampleTest extends FunSuite {
       override def produceObject(key: Key): Either[WrongTypeError[String], Option[JsonProducer]] = Right(Some(this))
     }
 
-    /*
-    { "username" : "travis", "password" : "blah", "role": "manager" }
-     */
-    val prog = Soyo.obj4(
-      key("username").string.alphanum(),
+    //Create the AST
+    val prog = Obj.obj4(
+      key("username").string().alphanum(),
       key("password").string(),
       key("message").string().optional(),
       key("location").obj2(
         key("countryIso").string(),
         key("postalCode").string().optional(),
         Location(_:String,_:Option[String])
-      ),
-      User(_:String,_:String,_:Option[String],_:Location)
-    )
+      ).optional(),
+      User(_:String,_:String,_:Option[String],_:Option[Location]) //Type annotations required for scala 2.11
+    ).lift
 
     import cats.implicits._
-    val userPass = prog.foldMap[FromProducer](defaultCompiler).apply(rvp)
+    //create the program that is responsible for converting JSON into a User.
+    val jsonToUserProgram = prog.foldMap[FromProducer](defaultCompiler)
 
+    //Here we run the program by giving
+    val user = jsonToUserProgram.apply(rvp)
 
-    assert( userPass == Valid( User("Thisisusername", "thisispassword", None, Location("US", Some("28791")))) )
+    assert( user == Valid( User("Thisisusername", "thisispassword", None, Some(Location("US", Some("28791"))))) )
+
+    val desc = prog.foldMap[Doc](docCompiler)
+
+    println(desc)
 
 
   }
 
   test("alphanum passes") {
 
-    val alpha = key("username").string.alphanum.optional
+    val alpha = key("username").string().alphanum().optional()
 
     val validInput = new NoneJsonProducer {
       override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = {
