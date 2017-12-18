@@ -1,8 +1,8 @@
 package com.gaia
 
+import cats.Applicative
 import cats.data.{NonEmptyList, Validated}
 import cats.free.FreeApplicative
-import com.gaia.soy.Soyo.Obj
 import com.gaia.soy.StringValidation.RequiredString
 
 package object soy {
@@ -36,7 +36,6 @@ package object soy {
     def defaultError(t: T): String
   }
 
-
   case class ValidValue[T](validValues: Vector[T]) extends ValidationOp[T] {
     override def isValid: (T) => Boolean = validValues.contains
     override def defaultError(t: T): String = s"Value ${t} must be one of ${validValues.mkString("('","','","')")}"
@@ -57,17 +56,9 @@ package object soy {
   case class Example[T](example: String) extends Metadata
   case class UnitOfMeasure[T](desc: String) extends Metadata
 
-  /** Represents an operation from one type to another */
-//  trait ConversionOp[I,O] extends ExtractionOp {
-//    def convert(iToO: I) : Either[ConversionError[I], O]
-//  }
-//  abstract class Conversion[F[_]:Applicative, I,O] extends Extraction[F,O] {
-//
-//
-//  }
-
   /** Starting point for obtaining a value is to define a key */
-  sealed abstract class Key extends Obj { thisKey =>
+  sealed abstract class Key extends ObjAlias { thisKey =>
+    def key = thisKey
     def string() : RequiredString = RequiredString(thisKey, Nil)
     //    def int(): Extract[Int] = IntExtract(thisKey, IsInt())
     //    def BigDecimal(): Extract[Int] = ???
@@ -87,6 +78,7 @@ package object soy {
   /** FieldGroupOp is the base class defining the FreeAp for each field group defined.*/
   trait FieldGroupOp[A] {
     def extract(producer: JsonProducer): A
+    def lift: FieldGroup[A] = FreeApplicative.lift(this)
   }
 
   type FieldGroup[A] = FreeApplicative[FieldGroupOp, A]
@@ -117,84 +109,6 @@ package object soy {
 
   abstract class JsonProducer extends StringProducer with IntProducer with BoolProducer with BigDecimalProducer with ObjectProducer
 
-//  case class PureExtraction[F[_]:Applicative,U](u: F[U]) extends Extraction[F, U] {
-//    override type I = Nothing
-//    override def extract(stringProducer: StringProducer): Either[Nothing, F[U]] = Right(u)
-//  }
-//
-//  case class MappedExtraction[F[_]:Applicative,T,U](priorExtraction: Extraction[F,T], f: T => U) extends Extraction[F,U] {
-//    override type I = priorExtraction.I
-//
-//    override def extract(stringProducer: RawValueProducer): Either[ExtractionErrors, F[U]] =
-//      priorExtraction.extract(stringProducer).right.map(ft => {
-//        Functor[F].map(ft)(f)
-//      })
-//
-//  }
-//
-////  case class FlatMappedExtraction[F[_]:Monad,T,U](priorExtraction: Extraction[F,T], f: T => Extraction[F,U]) extends Extraction[F,U] {
-////    override type I = priorExtraction.I
-////
-////    override def extract(stringProducer: RawValueProducer): Either[ExtractionErrors, U] = {
-////      priorExtraction.extract(stringProducer).right.flatMap( r1 => {
-////        Monad[F].flatMap(r1)(a => f(a).extract(stringProducer))
-////      })
-////    }
-////
-////  }
-//
-//  case class ApplyExtraction[F[_]:Applicative,T,U](priorExtraction: Extraction[F,T], f: Extraction[F,T => U]) extends Extraction[F,U] {
-//    override type I = priorExtraction.I
-//
-//    override def extract(stringProducer: RawValueProducer): Either[ExtractionErrors, F[U]] = {
-//      val vft: Either[ExtractionErrors,F[T]] = priorExtraction.extract(stringProducer)
-//      val vftu: Either[ExtractionErrors,F[T => U]] = f.extract(stringProducer)
-//
-//      (vft,vftu) match {
-//        case (Right(ft), Right(ftu)) => Right(Apply[F].ap(ftu)(ft))
-//        case (Left(e), Right(_)) => Left(e)
-//        case (Right(_), Left(e)) => Left(e)
-//        case (Left(e1), Left(e2)) => Left(e1 |+| e2)
-//      }
-//    }
-//  }
-//
-//  /**
-//    *
-//    * @tparam O Output Type
-//    */
-//  abstract class Extraction[F[_]:Applicative,O] { self =>
-//    //Input Type
-//    type I
-//    def extract(stringProducer: RawValueProducer) : Either[ExtractionErrors,F[O]]
-//
-////    def optional() = new Extraction[Option,O] {
-////      self.extract()
-////    }
-//
-//    def map[U](f: O => U): Extraction[F,U] = MappedExtraction(this, f)
-////    def flatMap[U](f: O => Extraction[F,U]): Extraction[F,U] = FlatMappedExtraction(this, f)
-//    def ap[U](ff: Extraction[F, O => U]): Extraction[F,U] = ApplyExtraction(this, ff)
-//  }
-//
-//  trait RequiredExtraction[F[_]:Applicative,O] extends Extraction[F,O] {
-//    def extractx(rawValueProducer: RawValueProducer) : Either[ExtractionErrors,O] = {
-//      val res = extract(rawValueProducer).map(fo => fo)
-//    }
-//  }
-//
-//  object OptionalExtraction {
-//    case class OptionalExtractionWithDefault[O](optionalExtraction: Extraction[Option,O], default: () => O) extends Extraction[Id,O] {
-//      override def extract(stringProducer: RawValueProducer): Either[ExtractionErrors, Id[O]] =
-//        optionalExtraction.extract(stringProducer).right.map(_.getOrElse(default()))
-//
-//      override type I = this.type
-//    }
-//
-//  }
-
-
-
   /**
     * This is to we can add syntactic sugar to any Extraction types.
     * @tparam NE The Extraction type when a new Validation Op is appended.
@@ -214,19 +128,5 @@ package object soy {
 
     def nullIsNone() = ???
   }
-
-//  object Extraction {
-//    case class OptionExtractionFunctor[E]() extends Functor[Extraction[Option,?]] with Monad[Extraction[Option,?]] with Apply[Extraction[Option,?]] {
-//      override def flatMap[A, B](fa: Extraction[Option, A])(f: (A) => Extraction[Option, B]): Extraction[Option, B] = ???
-//
-//      override def tailRecM[A, B](a: A)(f: (A) => Extraction[Option, Either[A, B]]): Extraction[Option, B] = ???
-//
-//      override def pure[A](x: A): Extraction[Option, A] = PureExtraction[Option,A](Some(x))
-//    }
-//
-//  }
-
-
-
 
 }
