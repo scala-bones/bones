@@ -1,9 +1,10 @@
 package com.gaia
 
-import cats.Applicative
 import cats.data.{NonEmptyList, Validated}
 import cats.free.FreeApplicative
+import com.gaia.soy.IntValidation.RequiredInt
 import com.gaia.soy.StringValidation.RequiredString
+import com.gaia.soy.validation.{CustomConversionFromString, DateValidation, UuidValidation}
 
 package object soy {
 
@@ -11,7 +12,16 @@ package object soy {
   trait ExtractionError {
     def key: Key
   }
-  case class ValidationError[T](key: Key, failedExtraction: ExtractionOp[T], input: Option[T]) extends ExtractionError
+
+  /**
+    * Used to indicate a validation error.
+    * @param key
+    * @param failurePoint The extraction op where the error failed.
+    * @param input The input, if available.
+    * @tparam T the target Type
+    * @tparam I the input Type (ie, the base type, for instance the base type of UUID would be String)
+    */
+  case class ValidationError[T,I](key: Key, failurePoint: ExtractionOp[T], input: Option[I]) extends ExtractionError
   case class WrongTypeError[T](key: Key, expectedType: Class[T], providedType: Class[_]) extends ExtractionError
   case class RequiredObjectError(key: Key) extends ExtractionError
 
@@ -58,9 +68,9 @@ package object soy {
 
   /** Starting point for obtaining a value is to define a key */
   sealed abstract class Key extends ObjAlias { thisKey =>
-    def key = thisKey
+    val key = thisKey
     def string() : RequiredString = RequiredString(thisKey, Nil)
-    //    def int(): Extract[Int] = IntExtract(thisKey, IsInt())
+    def int(): RequiredInt = RequiredInt(thisKey, Nil)
     //    def BigDecimal(): Extract[Int] = ???
     //    def either[A,B](v1: ValidationOp[A], v2: ValidationOp[B]): Extract[Either[A,B]] = new Extract[Either[A,B]]{
     //      override def validation = CanBeEither[A,B](v1, v2)
@@ -98,7 +108,7 @@ package object soy {
     def produceInt(key: Key): Either[WrongTypeError[String], Option[Int]]
   }
   trait BoolProducer {
-    def produceBoole(key: Key): Either[WrongTypeError[String], Option[Boolean]]
+    def produceBool(key: Key): Either[WrongTypeError[String], Option[Boolean]]
   }
   trait BigDecimalProducer {
     def produceBigDecimal(key: Key): Either[WrongTypeError[String], Option[BigDecimal]]
@@ -128,5 +138,9 @@ package object soy {
 
     def nullIsNone() = ???
   }
+
+
+  object conversions extends UuidValidation with CustomConversionFromString with DateValidation
+  object obj extends Obj
 
 }

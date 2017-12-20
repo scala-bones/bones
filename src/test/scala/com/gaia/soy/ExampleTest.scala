@@ -1,7 +1,10 @@
 package com.gaia.soy
 
+import java.util.{Date, UUID}
+
+import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
-import com.gaia.soy.StringValidation.Max
+import com.gaia.soy.StringValidation.{Max, RequiredString}
 import com.gaia.soy.compiler.JsonCompiler._
 import org.scalatest.FunSuite
 
@@ -9,7 +12,7 @@ class ExampleTest extends FunSuite {
 
 
   abstract class NoneJsonProducer extends JsonProducer {
-    override def produceBoole(key: Key): Either[WrongTypeError[String], Option[Boolean]] = Right(None)
+    override def produceBool(key: Key): Either[WrongTypeError[String], Option[Boolean]] = Right(None)
     override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = Right(None)
     override def produceBigDecimal(key: Key): Either[WrongTypeError[String], Option[BigDecimal]] = Right(None)
     override def produceInt(key: Key): Either[WrongTypeError[String], Option[Int]] = Right(None)
@@ -72,7 +75,7 @@ class ExampleTest extends FunSuite {
     }
 
     //Create the AST
-    val prog = Obj.obj4(
+    val prog = obj.obj4(
       key("username").string().alphanum(),
       key("password").string(),
       key("message").string().optional(),
@@ -161,7 +164,60 @@ class ExampleTest extends FunSuite {
       }
       case x => fail("Expected Invalid, received:" + x)
     }
+  }
 
+
+  test("passes bt cc") {
+
+    import conversions._
+    sealed abstract class CreditCardType(val abbrev : String)
+    object CreditCardTypes extends Enumeration {
+      case object Visa extends CreditCardType("Visa")
+      case object Mastercard extends CreditCardType("Mastercard")
+      case object Amex extends CreditCardType("Amex")
+      case object Discover extends CreditCardType("Discover")
+    }
+    implicit class RequiredStringToCreditCardType(requiredString: RequiredString) {
+      def asCreditCardType() : RequiredUuidExtraction = RequiredUuidExtraction(requiredString)
+    }
+    def toCreditCardType: String => Validated[String,CreditCardType] = input => {
+      input.toLowerCase match {
+        case "visa" => Valid(CreditCardTypes.Visa)
+        case "mastercard" => Valid(CreditCardTypes.Mastercard)
+        case "amex" => Valid(CreditCardTypes.Amex)
+        case "discover" => Valid(CreditCardTypes.Discover)
+        case x => Invalid(s"input: ${x} is not a valid credit card type")
+      }
+    }
+
+
+
+
+    case class BillingLocation(countryIso: String, zipCode: Option[String])
+    case class BtCc(firstFive: String, lastFour: String, uuid: UUID, token: UUID, ccType: CreditCardType,
+      expMonth: Int, expYear: Int, cardholder: String, currencyIso: String, deletedAt: Option[Date], lastModifiedRequest: UUID, billingLocation: Option[BillingLocation])
+    val isoList = List("US", "CA", "MX")
+
+    obj.obj12 (
+      key("firstFive").string().matchesRegex("[0-9]{5}".r),
+      key("lastFour").string().matchesRegex("[0-9]{4}".r),
+      key("uuid").string().asUuid(),
+      key("token").string().asUuid(),
+      key("ccType").string().custom("to CreditCardType", toCreditCardType),
+      key("expMonth").int().between(1,12),
+      key("expYear").int().between(1950,9999),
+      key("cardHolder").string(),
+      key("currencyIso").string().length(3),
+      key("deletedAt").string().optional().asIsoDateTime(),
+      key("lastModifiedRequest").string().asUuid(),
+      key("billingLocation").obj2(
+        key("countryIso").string().valid(isoList:_*),
+        key("zipCode").string().optional(),
+        BillingLocation(_: String, _:Option[String])
+      ).optional(),
+      BtCc(_: String, _: String, _: UUID, _: UUID, _:CreditCardType,_:Int, _:Int, _:String, _: String, _:Option[Date], _: UUID, _:Option[BillingLocation])
+
+    )
 
 
 
