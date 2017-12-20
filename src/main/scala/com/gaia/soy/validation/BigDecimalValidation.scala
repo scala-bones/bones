@@ -1,4 +1,6 @@
-package com.gaia.soy
+package com.gaia.soy.validation
+
+import com.gaia.soy.ValidationOp
 
 object BigDecimalValidation {
 

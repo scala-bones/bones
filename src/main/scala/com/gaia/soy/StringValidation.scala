@@ -6,6 +6,7 @@ import cats.{Apply, Id}
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.implicits._
+import com.gaia.soy.validation.ValidationUtil
 
 import scala.util.{Failure, Success, Try}
 import scala.util.matching.Regex
@@ -141,15 +142,6 @@ object StringValidation {
   case class Uri() //
 
 
-  private def runValidation(key: Key, input: String, stringValidation: ValidationOp[String]): Validated[ValidationError[String], String] = {
-    if (stringValidation.isValid(input)) {
-      Valid(input)
-    } else {
-      Invalid(ValidationError(key, stringValidation, Some(input)))
-    }
-  }
-
-
   /**
     * This is for the syntactic sugar of adding validation types.
     *
@@ -186,13 +178,11 @@ object StringValidation {
 
   }
 
-  private def runAndMapValidations(key: Key, str: String, validations: List[ValidationOp[String]]): ValidationResultNel[String] =
-    validations.map(runValidation(key, str, _))
-      .foldLeft[ValidatedNel[ValidationError[String], String]](Valid(str))((last, next) => {
-        val n: ValidatedNel[ValidationError[String], String] = next.leftMap(NonEmptyList.one)
-        Apply[ValidatedNel[ValidationError[String], ?]].map2(last, n)((a, b) => b)
-      })
-
+  /**
+    * FieldGroup Operation declares that a key is an optional string and passes the specified list of validation.
+    * @param key The key used to extract a value.
+    * @param validations List of validations that the String must pass.
+    */
 
   final case class OptionalString(key: Key, validations: List[ValidationOp[String]]) extends FieldGroupOp[Validated[NonEmptyList[ExtractionError], Option[String]]]
     with StringExtraction[Option, OptionalString] {
@@ -200,7 +190,7 @@ object StringValidation {
     def extract(input: JsonProducer): Validated[ExtractionErrors, Option[String]] = {
       input.produceString(key).toValidatedNel.andThen {
         case Some(str) => {
-          runAndMapValidations(key, str, validations).map(Some(_))
+          ValidationUtil.runAndMapValidations(key, str, validations).map(Some(_))
         }
         case None => Valid(None)
       }
@@ -212,6 +202,11 @@ object StringValidation {
     def append(sv: ValidationOp[String]): OptionalString = OptionalString(key, sv :: validations)
   }
 
+  /**
+    * FieldGroup Operation declares that a key is a required string and passes the specified list of validation.
+    * @param key The key used to extract a value.
+    * @param validations List of validations that the String must pass.
+    */
   final case class RequiredString(key: Key, validations: List[ValidationOp[String]]) extends FieldGroupOp[Validated[NonEmptyList[ExtractionError], String]]
     with StringExtraction[Id, RequiredString] {
 
@@ -222,7 +217,7 @@ object StringValidation {
         case Some(e) => Valid(e)
         case None => Invalid(NonEmptyList.one(ValidationError(key, RequiredOp(), None)))
       }.andThen(str =>
-        runAndMapValidations(key, str, validations)
+        ValidationUtil.runAndMapValidations(key, str, validations)
       )
     }
 
@@ -230,22 +225,6 @@ object StringValidation {
 
     override def appendMetadata(md: Metadata): RequiredString = ???
   }
-
-  /** ****** Conversion *************/
-
-  //  trait StringConversion[O] {
-  //    def conversionOp: ConversionOp[String,O]
-  //  }
-  //
-  //  case class ToBigDecimal() extends ConversionOp[String, BigDecimal] {
-  //    def convert(str: String) : Either[String, BigDecimal] =
-  //      Try { BigDecimal(str) }.toEither.left.map(_ => "Could not convert String to BigDecimal")
-  //  }
-  //
-  //  case class ToUuid() extends ConversionOp[String, UUID] {
-  //    override def convert(iToO: String): Either[String, UUID] =
-  //      Try { UUID.fromString(iToO) }.toEither.left.map(_ => "Could not convert String to UUID")
-  //  }
 
 }
 
