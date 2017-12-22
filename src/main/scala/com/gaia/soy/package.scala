@@ -105,16 +105,16 @@ package object soy {
     def produceString(key: Key): Either[WrongTypeError[String], Option[String]]
   }
   trait IntProducer {
-    def produceInt(key: Key): Either[WrongTypeError[String], Option[Int]]
+    def produceInt(key: Key): Either[WrongTypeError[Int], Option[Int]]
   }
   trait BoolProducer {
-    def produceBool(key: Key): Either[WrongTypeError[String], Option[Boolean]]
+    def produceBool(key: Key): Either[WrongTypeError[Boolean], Option[Boolean]]
   }
   trait BigDecimalProducer {
-    def produceBigDecimal(key: Key): Either[WrongTypeError[String], Option[BigDecimal]]
+    def produceBigDecimal(key: Key): Either[WrongTypeError[BigDecimal], Option[BigDecimal]]
   }
   trait ObjectProducer {
-    def produceObject(key: Key): Either[WrongTypeError[String], Option[JsonProducer]]
+    def produceObject(key: Key): Either[WrongTypeError[JsonProducer], Option[JsonProducer]]
   }
 
   abstract class JsonProducer extends StringProducer with IntProducer with BoolProducer with BigDecimalProducer with ObjectProducer

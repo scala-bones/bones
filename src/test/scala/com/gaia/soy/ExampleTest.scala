@@ -6,17 +6,18 @@ import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import com.gaia.soy.StringValidation.{Max, RequiredString}
 import com.gaia.soy.compiler.JsonCompiler._
+import com.gaia.soy.producer.LiftJson
 import org.scalatest.FunSuite
 
 class ExampleTest extends FunSuite {
 
 
   abstract class NoneJsonProducer extends JsonProducer {
-    override def produceBool(key: Key): Either[WrongTypeError[String], Option[Boolean]] = Right(None)
+    override def produceBool(key: Key): Either[WrongTypeError[Boolean], Option[Boolean]] = Right(None)
     override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = Right(None)
-    override def produceBigDecimal(key: Key): Either[WrongTypeError[String], Option[BigDecimal]] = Right(None)
-    override def produceInt(key: Key): Either[WrongTypeError[String], Option[Int]] = Right(None)
-    override def produceObject(key: Key): Either[WrongTypeError[String], Option[JsonProducer]] = Right(None)
+    override def produceBigDecimal(key: Key): Either[WrongTypeError[BigDecimal], Option[BigDecimal]] = Right(None)
+    override def produceInt(key: Key): Either[WrongTypeError[Int], Option[Int]] = Right(None)
+    override def produceObject(key: Key): Either[WrongTypeError[JsonProducer], Option[JsonProducer]] = Right(None)
   }
 
 //  test("sibling groups") {
@@ -71,7 +72,7 @@ class ExampleTest extends FunSuite {
         case RootKey => ???
       }
 
-      override def produceObject(key: Key): Either[WrongTypeError[String], Option[JsonProducer]] = Right(Some(this))
+      override def produceObject(key: Key): Either[WrongTypeError[JsonProducer], Option[JsonProducer]] = Right(Some(this))
     }
 
     //Create the AST
@@ -198,7 +199,9 @@ class ExampleTest extends FunSuite {
       expMonth: Int, expYear: Int, cardholder: String, currencyIso: String, deletedAt: Option[Date], lastModifiedRequest: UUID, billingLocation: Option[BillingLocation])
     val isoList = List("US", "CA", "MX")
 
-    obj.obj12 (
+
+
+    val prog = obj.obj12 (
       key("firstFive").string().matchesRegex("[0-9]{5}".r),
       key("lastFour").string().matchesRegex("[0-9]{4}".r),
       key("uuid").string().asUuid(),
@@ -216,8 +219,49 @@ class ExampleTest extends FunSuite {
         BillingLocation(_: String, _:Option[String])
       ).optional(),
       BtCc(_: String, _: String, _: UUID, _: UUID, _:CreditCardType,_:Int, _:Int, _:String, _: String, _:Option[Date], _: UUID, _:Option[BillingLocation])
+    ).lift
 
-    )
+
+    val cc =
+      """
+        |{
+        |  "firstFive" : "12345",
+        |  "lastFour" : "4321",
+        |  "uuid" : "df15f08c-e6bd-11e7-aeb8-6003089f08b4",
+        |  "token" : "e58e7dda-e6bd-11e7-b901-6003089f08b4",
+        |  "ccType" : "mastercard",
+        |  "expMonth" : 11,
+        |  "expYear" : 2022,
+        |  "cardHolder" : "Lennart Augustsson",
+        |  "currencyIso" : "USD",
+        |  "lastModifiedRequest" : "4545d9da-e6be-11e7-86fb-6003089f08b4",
+        |  "billingLocation" : {
+        |     "countryIso": "US",
+        |     "zipCode": "80031"
+        |  }
+        |}
+      """.stripMargin
+
+    val parsed = net.liftweb.json.parse(cc)
+    val jsonCompiler = LiftJson(parsed)
+
+    import cats.implicits._
+    //create the program that is responsible for converting JSON into a User.
+    val jsonToUserProgram = prog.foldMap[FromProducer](defaultCompiler)
+
+    //Here we run the program by giving
+    val btCc = jsonToUserProgram.apply(jsonCompiler)
+
+    assert( btCc == Valid(BtCc("12345", "4321", UUID.fromString("df15f08c-e6bd-11e7-aeb8-6003089f08b4"),
+      UUID.fromString("e58e7dda-e6bd-11e7-b901-6003089f08b4"), CreditCardTypes.Mastercard, 11, 2022,
+      "Lennart Augustsson", "USD" , None, UUID.fromString("4545d9da-e6be-11e7-86fb-6003089f08b4"),
+      Some(BillingLocation("US", Some("80031")))
+    )))
+
+//    val desc = prog.foldMap[Doc](docCompiler)
+//
+//    println(desc)
+
 
 
 

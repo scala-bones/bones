@@ -13,12 +13,13 @@ object JsonCompiler {
   val defaultCompiler = new cats.arrow.FunctionK[FieldGroupOp, FromProducer] {
     def apply[A](fgo: FieldGroupOp[A]): FromProducer[A] = jsonProducer =>
       fgo match {
-        case op: RequiredString => op.extract(jsonProducer)
-        case op: OptionalString  => op.extract(jsonProducer)
-        case op: ObjectFieldGroup[_,_] => op.extract(jsonProducer).asInstanceOf[A]
-        case op: OptionalObjectFieldGroup[_,_] => op.extract(jsonProducer).asInstanceOf[A]
-
-        case _ => ???
+        case op => op.extract(jsonProducer)
+//        case op: RequiredString => op.extract(jsonProducer)
+//        case op: OptionalString  => op.extract(jsonProducer)
+//        case op: ObjectFieldGroup[_,_] => op.extract(jsonProducer).asInstanceOf[A]
+//        case op: OptionalObjectFieldGroup[_,_] => op.extract(jsonProducer).asInstanceOf[A]
+//
+//        case _ => ???
       }
   }
 
