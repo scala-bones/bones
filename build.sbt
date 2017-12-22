@@ -9,8 +9,8 @@ lazy val root = (project in file(".")).
     )),
     name := "Soy",
     libraryDependencies ++= Seq(
-      shapeless,
       cats,
+      "net.liftweb" %% "lift-json" % "2.6.3",
       scalaTest % Test
     )
   )
