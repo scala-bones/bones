@@ -10,6 +10,7 @@ lazy val root = (project in file(".")).
     name := "Soy",
     libraryDependencies ++= Seq(
       cats,
+      "com.chuusai" %% "shapeless" % "2.3.3",
       "net.liftweb" %% "lift-json" % "2.6.3",
       scalaTest % Test
     )

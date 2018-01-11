@@ -95,7 +95,7 @@ package object soy {
 
   /** FieldGroupOp is the base class defining the FreeAp for each field group defined.*/
   trait FieldGroupOp[A] {
-    def extract(producer: JsonProducer): A
+//    def extract(producer: JsonProducer): A
     def lift: FieldGroup[A] = FreeApplicative.lift(this)
   }
 
