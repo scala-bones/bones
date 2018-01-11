@@ -22,12 +22,12 @@ trait UuidValidation {
 
   case class RequiredUuidExtraction(stringExtraction: RequiredString) extends FieldGroupOp[Validated[NonEmptyList[ExtractionError], UUID]] {
 
-    override def extract(jsonProducer: JsonProducer): Validated[ExtractionErrors, UUID] =
+    def extract(jsonProducer: JsonProducer): Validated[ExtractionErrors, UUID] =
       stringExtraction.extract(jsonProducer).andThen(convert(_,stringExtraction.key))
   }
 
   case class OptionalUuidExtraction(stringExtraction: OptionalString) extends FieldGroupOp[Validated[NonEmptyList[ExtractionError], Option[UUID]]] {
-    override def extract(producer: JsonProducer): Validated[NonEmptyList[ExtractionError], Option[UUID]] =
+    def extract(producer: JsonProducer): Validated[NonEmptyList[ExtractionError], Option[UUID]] =
       stringExtraction.extract(producer).andThen {
         case Some(uuidStr) => convert(uuidStr, stringExtraction.key).map(Some(_))
         case None => Valid(None)

@@ -26,12 +26,12 @@ trait DateValidation {
 
   case class RequiredDateExtraction(stringExtraction: RequiredString, dateFormat: Format) extends FieldGroupOp[Validated[NonEmptyList[ExtractionError], Date]] {
 
-    override def extract(jsonProducer: JsonProducer): Validated[ExtractionErrors, Date] =
+    def extract(jsonProducer: JsonProducer): Validated[ExtractionErrors, Date] =
       stringExtraction.extract(jsonProducer).andThen(convert(_, dateFormat, stringExtraction.key))
   }
 
   case class OptionalDateExtraction(stringExtraction: OptionalString, dateFormat: Format) extends FieldGroupOp[Validated[NonEmptyList[ExtractionError], Option[Date]]] {
-    override def extract(producer: JsonProducer): Validated[NonEmptyList[ExtractionError], Option[Date]] =
+    def extract(producer: JsonProducer): Validated[NonEmptyList[ExtractionError], Option[Date]] =
       stringExtraction.extract(producer).andThen {
         case Some(uuidStr) => convert(uuidStr, dateFormat, stringExtraction.key).map(Some(_))
         case None => Valid(None)

@@ -12,7 +12,7 @@ trait CustomConversionFromString {
 
   case class RequiredCustomExtraction[T](requiredString: RequiredString, description: String, f: String => Validated[String,T])
     extends FieldGroupOp[Validated[NonEmptyList[ExtractionError], T]] {
-    override def extract(producer: JsonProducer): Validated[NonEmptyList[ExtractionError], T] =
+    def extract(producer: JsonProducer): Validated[NonEmptyList[ExtractionError], T] =
       requiredString.extract(producer).andThen(res => f(res)
         .leftMap(err => NonEmptyList.one(ValidationError(requiredString.key, CustomExtractionOp(description), Some(res)))))
   }
@@ -20,7 +20,7 @@ trait CustomConversionFromString {
   case class OptionalCustomExtraction[T](optionalString: OptionalString, description: String, f: String => Validated[String,T])
     extends FieldGroupOp[Validated[NonEmptyList[ExtractionError], Option[T]]] {
 
-    override def extract(producer: JsonProducer): Validated[NonEmptyList[ExtractionError], Option[T]] =
+    def extract(producer: JsonProducer): Validated[NonEmptyList[ExtractionError], Option[T]] =
       optionalString.extract(producer).andThen {
         case Some(customStr) => {
           f(customStr).map(res => Some(res)).leftMap(err => NonEmptyList.one(ValidationError(optionalString.key, CustomExtractionOp(description), Some(customStr))))
