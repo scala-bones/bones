@@ -10,7 +10,7 @@ package object soy {
 
   /** Error Case */
   trait ExtractionError {
-    def key: Key
+    def keys: NonEmptyList[Key]
   }
 
   /**
@@ -21,9 +21,17 @@ package object soy {
     * @tparam T the target Type
     * @tparam I the input Type (ie, the base type, for instance the base type of UUID would be String)
     */
-  case class ValidationError[T,I](key: Key, failurePoint: ExtractionOp[T], input: Option[I]) extends ExtractionError
-  case class WrongTypeError[T](key: Key, expectedType: Class[T], providedType: Class[_]) extends ExtractionError
-  case class RequiredObjectError(key: Key) extends ExtractionError
+  case class ValidationError[T,I](key: Key, failurePoint: ExtractionOp[T], input: Option[I]) extends ExtractionError {
+    val keys = NonEmptyList.one(key)
+  }
+  case class WrongTypeError[T](key: Key, expectedType: Class[T], providedType: Class[_]) extends ExtractionError {
+    val keys = NonEmptyList.one(key)
+  }
+  case class RequiredObjectError(key: Key) extends ExtractionError {
+    val keys = NonEmptyList.one(key)
+  }
+  case class MultiKeyError[T](keys: NonEmptyList[Key], failurePoint: ExtractionOp[T]) extends ExtractionError
+
 
   type ExtractionErrors = NonEmptyList[ExtractionError]
 

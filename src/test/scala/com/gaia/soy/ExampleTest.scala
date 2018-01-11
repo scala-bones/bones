@@ -4,7 +4,7 @@ import java.util.{Date, UUID}
 
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
-import com.gaia.soy.StringValidation.{Max, RequiredString}
+import com.gaia.soy.StringValidation.{Max, OptionalString, RequiredString}
 import com.gaia.soy.compiler.JsonCompiler._
 import com.gaia.soy.producer.LiftJson
 import org.scalatest.FunSuite
@@ -201,6 +201,7 @@ class ExampleTest extends FunSuite {
 
 
 
+
     val prog = obj.obj12 (
       key("firstFive").string().matchesRegex("[0-9]{5}".r),
       key("lastFour").string().matchesRegex("[0-9]{4}".r),
@@ -219,7 +220,7 @@ class ExampleTest extends FunSuite {
         BillingLocation(_: String, _:Option[String])
       ).optional(),
       BtCc(_: String, _: String, _: UUID, _: UUID, _:CreditCardType,_:Int, _:Int, _:String, _: String, _:Option[Date], _: UUID, _:Option[BillingLocation])
-    ).lift
+    )
 
 
     val cc =
@@ -243,14 +244,15 @@ class ExampleTest extends FunSuite {
       """.stripMargin
 
     val parsed = net.liftweb.json.parse(cc)
-    val jsonCompiler = LiftJson(parsed)
+    val jsonProducer = LiftJson(parsed)
 
     import cats.implicits._
     //create the program that is responsible for converting JSON into a User.
-    val jsonToUserProgram = prog.foldMap[FromProducer](defaultCompiler)
+//    val jsonToUserProgram = prog.foldMap[FromProducer](defaultCompiler)
 
     //Here we run the program by giving
-    val btCc = jsonToUserProgram.apply(jsonCompiler)
+//    val btCc = jsonToUserProgram.apply(jsonProducer)
+    val btCc = prog.extract(jsonProducer)
 
     assert( btCc == Valid(BtCc("12345", "4321", UUID.fromString("df15f08c-e6bd-11e7-aeb8-6003089f08b4"),
       UUID.fromString("e58e7dda-e6bd-11e7-b901-6003089f08b4"), CreditCardTypes.Mastercard, 11, 2022,
