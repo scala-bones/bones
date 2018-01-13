@@ -12,7 +12,7 @@ package object bones {
 
   /** Bones is the base class defining the FreeAp for each field group defined.*/
   trait BonesOp[A] {
-    //    def extract(producer: JsonProducer): A
+    //lift any BonesOp into a FreeApplicative
     def lift: Bones[A] = FreeApplicative.lift(this)
   }
 
@@ -45,7 +45,7 @@ package object bones {
   }
 
 
-  object conversions extends UuidValidation with CustomConversionFromString with DateValidation with TransformSyntax
+  object everything extends UuidValidation with CustomConversionFromString with DateValidation with TransformSyntax
   object obj extends ToHList
 
 }
