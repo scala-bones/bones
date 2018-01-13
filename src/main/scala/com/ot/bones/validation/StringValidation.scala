@@ -1,15 +1,16 @@
-package com.gaia.soy
+package com.ot.bones.validation
 
 import java.util.UUID
 
-import cats.{Apply, Id}
+import cats.Id
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.implicits._
-import com.gaia.soy.validation.ValidationUtil
+import com.ot.bones.compiler.ExtractionCompiler.{ExtractionAppend, ExtractionError, ExtractionErrors, JsonProducer, RequiredOp, ValidationError, ValidationOp, ValidationResultNel}
+import com.ot.bones.{BonesOp, Key}
 
-import scala.util.{Failure, Success, Try}
 import scala.util.matching.Regex
+import scala.util.{Failure, Success, Try}
 
 object StringValidation {
 
@@ -184,7 +185,7 @@ object StringValidation {
     * @param validations List of validations that the String must pass.
     */
 
-  final case class OptionalString(key: Key, validations: List[ValidationOp[String]]) extends FieldGroupOp[Validated[NonEmptyList[ExtractionError], Option[String]]]
+  final case class OptionalString(key: Key, validations: List[ValidationOp[String]]) extends BonesOp[Option[String]]
     with StringExtraction[Option, OptionalString] {
 
     def extract(input: JsonProducer): Validated[ExtractionErrors, Option[String]] = {
@@ -197,8 +198,6 @@ object StringValidation {
     }
 
 
-    override def appendMetadata(md: Metadata): OptionalString = ???
-
     def append(sv: ValidationOp[String]): OptionalString = OptionalString(key, sv :: validations)
   }
 
@@ -207,12 +206,12 @@ object StringValidation {
     * @param key The key used to extract a value.
     * @param validations List of validations that the String must pass.
     */
-  final case class RequiredString(key: Key, validations: List[ValidationOp[String]]) extends FieldGroupOp[Validated[NonEmptyList[ExtractionError], String]]
+  final case class RequiredString(key: Key, validations: List[ValidationOp[String]]) extends BonesOp[String]
     with StringExtraction[Id, RequiredString] {
 
     def optional(): OptionalString = OptionalString(key, validations)
 
-    def extract(producer: JsonProducer): Validated[NonEmptyList[ExtractionError], String] = {
+    def extract(producer: JsonProducer): ValidationResultNel[String] = {
       producer.produceString(key).toValidated.leftMap(NonEmptyList.one).andThen {
         case Some(e) => Valid(e)
         case None => Invalid(NonEmptyList.one(ValidationError(key, RequiredOp(), None)))
@@ -223,7 +222,6 @@ object StringValidation {
 
     def append(sv: ValidationOp[String]): RequiredString = RequiredString(key, sv :: validations)
 
-    override def appendMetadata(md: Metadata): RequiredString = ???
   }
 
 }

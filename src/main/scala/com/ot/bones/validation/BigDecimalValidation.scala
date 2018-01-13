@@ -1,6 +1,6 @@
-package com.gaia.soy.validation
+package com.ot.bones.validation
 
-import com.gaia.soy.ValidationOp
+import com.ot.bones.compiler.ExtractionCompiler.ValidationOp
 
 object BigDecimalValidation {
 
