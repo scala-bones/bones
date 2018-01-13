@@ -1,33 +1,32 @@
 package com.gaia.soy
 
+import cats.arrow.FunctionK
+import com.gaia.soy.compiler.JsonCompiler.FromProducer
+import shapeless._
 
+/**
+  * This class was influenced by scode.Transform.
+  * */
+case class Transform[A:Manifest,B](op: FieldGroupOp[ValidationResultNel[B]], f: A => B, g: B => A) extends FieldGroupOp[ValidationResultNel[A]] {
 
+  val manifestA: Manifest[A] = manifest[A]
 
-object Transform {
+  def extract[T](functionK: FunctionK[FieldGroupOp, FromProducer]): FromProducer[ValidationResultNel[A]] = {
+    val tuples = functionK.apply(op)
+    (jsonProducer: JsonProducer) => {
+      tuples.apply(jsonProducer).map(res => g.apply(res))
+    }
+  }
 
-//  implicit class TransformSyntax[F[_], A](val self: F[A])(implicit t: Transform[F]) {
-//
-//    /**
-//      * Transforms using implicitly available evidence that such a transformation is possible.
-//      *
-//      * Typical transformations include converting:
-//      *  - an `F[L]` for some `L <: HList` to/from an `F[CC]` for some case class `CC`, where the types in the case class are
-//      *    aligned with the types in `L`
-//      *  - an `F[C]` for some `C <: Coproduct` to/from an `F[SC]` for some sealed class `SC`, where the component types in
-//      *    the coproduct are the leaf subtypes of the sealed class.
-//      * @group combinators
-//      */
-//    def as[B](implicit as: Transformer[A, B]): F[B] = as(self)
-//  }
 
 }
 
-abstract class Transform[F[_]] {
-  self =>
+object Transform {
 
-  /**
-    * Transforms supplied `F[A]` to an `F[B]` using two functions, `A => Attempt[B]` and `B => Attempt[A]`.
-    */
-  def xmap[A, B](fa: F[A], f: A => B, g: B => A): F[B]
+  def id[A:Manifest](op: FieldGroupOp[ValidationResultNel[A]]) : Transform[A,A] = Transform[A,A](op, identity, identity)
+
+  def fromGeneric[A:Manifest,B](op: FieldGroupOp[ValidationResultNel[B]], gen: Generic.Aux[A, B]): Transform[A, B] =
+    Transform(op, gen.to _, gen.from _)
+
 
 }
