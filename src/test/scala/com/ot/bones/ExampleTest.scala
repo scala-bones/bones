@@ -173,7 +173,9 @@ class ExampleTest extends FunSuite {
 
   test("passes bt cc") {
 
-    import conversions._
+    import com.ot.bones.everything._
+
+    /** Enumerated CreditCardType */
     sealed abstract class CreditCardType(val abbrev : String)
     object CreditCardTypes extends Enumeration {
       case object Visa extends CreditCardType("Visa")
@@ -181,9 +183,7 @@ class ExampleTest extends FunSuite {
       case object Amex extends CreditCardType("Amex")
       case object Discover extends CreditCardType("Discover")
     }
-    implicit class RequiredStringToCreditCardType(requiredString: RequiredString) {
-      def asCreditCardType() : RequiredUuidExtraction = RequiredUuidExtraction(requiredString)
-    }
+
     def toCreditCardType: String => Validated[String,CreditCardType] = input => {
       input.toLowerCase match {
         case "visa" => Valid(CreditCardTypes.Visa)
@@ -198,13 +198,13 @@ class ExampleTest extends FunSuite {
 
 
     case class BillingLocation(countryIso: String, zipCode: Option[String])
-    case class BtCc(firstFive: String, lastFour: String, uuid: UUID, token: UUID, ccType: CreditCardType,
+    case class CC(firstFive: String, lastFour: String, uuid: UUID, token: UUID, ccType: CreditCardType,
       expMonth: Int, expYear: Int, cardholder: String, currencyIso: String, deletedAt: Option[Date], lastModifiedRequest: UUID, billingLocation: Option[BillingLocation])
     val isoList = List("US", "CA", "MX")
 
 
 
-
+    // Here we are defining our expected input data.  This definition will drive the interpreters.
     val prog = obj.obj12 (
       key("firstFive").string().matchesRegex("[0-9]{5}".r),
       key("lastFour").string().matchesRegex("[0-9]{4}".r),
@@ -221,9 +221,15 @@ class ExampleTest extends FunSuite {
         key("countryIso").string().valid(isoList:_*),
         key("zipCode").string().optional()
       ).optional().transform[BillingLocation]
-    ).transform[BtCc]
+    ).transform[CC]
+    //final type is basically BonesOp[CC]
 
 
+    //create the program that is responsible for converting JSON into a CC.
+    val jsonToUserProgram = prog.lift.foldMap[FromProducer](DefaultExtractCompiler())
+
+
+    //Here is our input
     val cc =
       """
         |{
@@ -244,21 +250,29 @@ class ExampleTest extends FunSuite {
         |}
       """.stripMargin
 
+    //sorry, we still use lift in my projects.  I will soon create a Circe and Argonaut JsonProducer.
     val parsed = net.liftweb.json.parse(cc)
     val jsonProducer = LiftJson(parsed)
-    //create the program that is responsible for converting JSON into a User.
-    val jsonToUserProgram = prog.lift.foldMap[FromProducer](DefaultExtractCompiler())
 
-    //Here we run the program by giving
+    //Here we run the program by passing the json producer
     val btCc = jsonToUserProgram.apply(jsonProducer)
 
-    assert( btCc == Valid(BtCc("12345", "4321", UUID.fromString("df15f08c-e6bd-11e7-aeb8-6003089f08b4"),
+    //tada!  We have valid input.
+    assert( btCc == Valid(CC("12345", "4321", UUID.fromString("df15f08c-e6bd-11e7-aeb8-6003089f08b4"),
       UUID.fromString("e58e7dda-e6bd-11e7-b901-6003089f08b4"), CreditCardTypes.Mastercard, 11, 2022,
       "Lennart Augustsson", "USD" , None, UUID.fromString("4545d9da-e6be-11e7-86fb-6003089f08b4"),
       Some(BillingLocation("US", Some("80031")))
     )))
 
+    //And now, lets print some ugly doc
     val desc = prog.lift.foldMap[Doc](DocCompiler.docCompiler)
+
+    //Current output a mess, it will get better in time my friend, I hope you get the idea:
+    //(Doc(Required String with key firstFive))(Doc(Required String with key lastFour))(Doc(Converted to UUID)}))
+    // (Doc(Converted to UUID)}))(Doc(Custom Conversion: to CreditCardType))(Doc(Required Int with key expMonth))
+    // (Doc(Required Int with key expYear))(Doc(Required String with key cardHolder))(Doc(Required String with key currencyIso))
+    // (Doc(Required Date with format java.time.format.DateTimeFormatter$ClassicFormat@4aefae17)}))(Doc(Converted to UUID)}))
+    // (Doc(converted to Class BillingLocation$3))) mapped into class CC$3)
 
     println(desc)
 
