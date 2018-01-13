@@ -223,12 +223,16 @@ class ExampleTest extends FunSuite {
 //    )
 
 
+    import shapeless._
+
     case class Two(one: String, two: String, cardholder: String)
+    val twoGen = Generic[Two]
+
     val prog = obj.obj3 (
       key("firstFive").string().matchesRegex("[0-9]{5}".r),
       key("lastFour").string().matchesRegex("[0-9]{4}".r),
       key("cardHolder").string()
-    ).wrapInClass[Two]
+    ).transform[Two]
 
     val cc =
       """
@@ -255,13 +259,13 @@ class ExampleTest extends FunSuite {
 
     import cats.implicits._
     //create the program that is responsible for converting JSON into a User.
-    val jsonToUserProgram = prog.lift.foldMap[FromProducer](DefaultCompiler())
+    val jsonToUserProgram = prog.lift.foldMap[FromProducer](DefaultExtractCompiler())
 
     //Here we run the program by giving
     val btCc = jsonToUserProgram.apply(jsonProducer)
 //    val btCc = prog.extract(jsonProducer)
 
-    assert(btCc == Valid(("12345", "4321", "Lennart Augustsson")) )
+    assert(btCc == Valid(Two("12345", "4321", "Lennart Augustsson")) )
 
 //    assert( btCc == Valid(BtCc("12345", "4321", UUID.fromString("df15f08c-e6bd-11e7-aeb8-6003089f08b4"),
 //      UUID.fromString("e58e7dda-e6bd-11e7-b901-6003089f08b4"), CreditCardTypes.Mastercard, 11, 2022,
@@ -269,9 +273,9 @@ class ExampleTest extends FunSuite {
 //      Some(BillingLocation("US", Some("80031")))
 //    )))
 
-//    val desc = prog.foldMap[Doc](docCompiler)
-//
-//    println(desc)
+    val desc = prog.lift.foldMap[Doc](docCompiler)
+
+    println(desc)
 
 
 

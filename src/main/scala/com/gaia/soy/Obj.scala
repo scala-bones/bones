@@ -5,7 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
 import com.gaia.soy.compiler.JsonCompiler.FromProducer
-import shapeless.Generic
+import shapeless._
 
 /** Aliases for simplifying the creation of ObjectFieldGroup. */
 
@@ -98,9 +98,6 @@ trait ObjAlias {
 
 object Obj {
 
-  type FG[A] = FieldGroup[ValidationResultNel[A]]
-  type FGO[A] = FieldGroupOp[ValidationResultNel[A]]
-
   /** Used to create a generic extract method if we can extract values from the products. */
   abstract class ObjectFieldGroup[AA,ZZ] {
 
@@ -142,7 +139,7 @@ object Obj {
   case class Obj2[A,B](key: Key,
                          op1: FieldGroupOp[ValidationResultNel[A]],
                          op2: FieldGroupOp[ValidationResultNel[B]])
-    extends FieldGroupOp[ValidationResultNel[(A,B)]] {
+    extends FieldGroupOp[ValidationResultNel[A :: B :: HNil]] {
 
 //    def tupledF = f.tupled
 
@@ -158,7 +155,7 @@ object Obj {
   case class OptionalObj2[A,B](key: Key,
                                  op1: FieldGroupOp[ValidationResultNel[A]],
                                  op2: FieldGroupOp[ValidationResultNel[B]])
-    extends FieldGroupOp[ValidationResultNel[Option[(A,B)]]] {
+    extends FieldGroupOp[ValidationResultNel[Option[A :: B :: HNil]]] {
 
 //    def tupledF = f.tupled
 
@@ -173,16 +170,16 @@ object Obj {
                            op1: FieldGroupOp[ValidationResultNel[A]],
                            op2: FieldGroupOp[ValidationResultNel[B]],
                            op3: FieldGroupOp[ValidationResultNel[C]])
-      extends FieldGroupOp[ValidationResultNel[(A,B,C)]] {
+      extends FieldGroupOp[ValidationResultNel[A :: B :: C :: HNil]] {
 //    extends ObjectFieldGroup[(A,B,C),Z] with FieldGroupOp[ValidationResultNel[Z]] {
 
 //    def tupledF = f.tupled
 
-    def extract[T](f: FunctionK[FieldGroupOp, FromProducer]): FromProducer[ValidationResultNel[(A,B,C)]] = {
+    def extract[T](f: FunctionK[FieldGroupOp, FromProducer]): FromProducer[ValidationResultNel[A :: B :: C :: HNil]] = {
       val r1 = f.apply(op1)
       val r2 = f.apply(op2)
       val r3 = f.apply(op3)
-      (jsonProducer: JsonProducer) => (r1(jsonProducer), r2(jsonProducer), r3(jsonProducer)).mapN( (_,_,_))
+      (jsonProducer: JsonProducer) => (r1(jsonProducer), r2(jsonProducer), r3(jsonProducer)).mapN( _ :: _ :: _ :: HNil)
 
     }
 
@@ -191,22 +188,10 @@ object Obj {
 //    }
 
     def optional() = OptionalObj3(key, op1, op2, op3)
-    def wrapInClass[Z](implicit gen: Generic.Aux[Z,(A,B,C)]) : WrapInClass[A,B,C,Z] = WrapInClass[A,B,C,Z](this, gen)
-
-  }
-
-  case class WrapInClass[A,B,C,Z](obj3: Obj3[A,B,C], gen: Generic.Aux[Z,(A,B,C)]) {
 
     import shapeless._
-    import syntax.std.tuple._
-
-    def extract[T](f: FunctionK[FieldGroupOp, FromProducer]): FromProducer[ValidationResultNel[Z]] = {
-      val tuples = f.apply(obj3)
-      (jsonProducer: JsonProducer) => {
-        tuples(jsonProducer).map(gen.from)
-      }
-
-    }
+    def transform[Z:Manifest](implicit gen: Generic.Aux[Z, A :: B :: C :: HNil]) : Transform[Z, A :: B :: C :: HNil]
+      = Transform.fromGeneric(this, gen)
 
   }
 
