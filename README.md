@@ -4,12 +4,14 @@
 
 The idea behind Bones is to Generalize a full stack web application by describing the data using
 Generalized Abstract Data Types (GADT).  Using the Cats Free Applicative, we can create different
-interpretation (or programs if you wish) of the GADT.  This is similar to the idea of Scaffolding in Ruby on Rails.
+interpretation (or programs if you wish) of the GADT.
+
+The idea, conceptually anyway, is isomorphic to Scaffolding in Ruby on Rails. 
 
 Since using the GADT types directly can become unwieldy, Bones also has a declarative syntax interface.  That
 is we simplify the creation of the GADT by using a DSL.
 
-Currently, these are the interpreters/programs I envision in this project.
+These are the interpreters/programs this project will eventually contain.
 * Validation/Schema Compiler (Mostly Complete) - Attempt to extract the data definition from Json. 
 (Theoretically, we could use any data format -- protobuff, atom, csv file)
 * Documentation (Currently a very Rudimentary Implementation) - Should be able to document the data requirements and the data flow for the webapp.
@@ -139,5 +141,5 @@ See the [Example Test](src/test/scala/com/ot/bones/ExampleTest.scala)
 
 This API for this project is adapted from the [Joi Project](https://github.com/hapijs/joi JOI).
 John De Goes [Free Applicative Talk](https://www.youtube.com/watch?v=H28QqxO7Ihc)
-Kris Knuttycombe's [Xenomorph Library](https://github.com/nuttycom/xenomorph)
+Kris Knuttycombe's [Xenomorph Library](https://github.com/nuttycom/xenomorph) is very similar to this.
 
