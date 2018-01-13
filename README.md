@@ -1,13 +1,9 @@
 # Overview
 
 
-The idea behind Soy is to create a declarative syntax to define a data model.  Using the syntax will result
-in an AST based on the Cats Free Applicative.  If we define the data in an AST, we should be able to make various compilers to support our app.
-These compiler should then be reusable in the sense that we only need to generate new Soy definition
-and reuse the compilers.
-
-There are many serializer frameworks out there to convert a JSON object to a case class and vice versa.  However,
-I haven't seen any serializers where validation is first class, so validation must be done after the case class is created.
+The idea behind Bones is to create a declarative syntax to define a data model.  Using the syntax will result
+in a structure based on Generalized Abstract Data Types (GADT).  Using the Cats Free Applicative, we can produce 
+different interpretations, or compilers as Cats calls them, of the GADT.
 
 
 Currently, these are the compilers I believe are possible.
@@ -26,7 +22,7 @@ This API for this project is adapted from the [https://github.com/hapijs/joi JOI
 
 ## Getting Started
 
-See the [Example Test](src/test/scala/com/gaia/soy/ExampleTest.scala)
+See the [Example Test](src/test/scala/com/ot/bones/ExampleTest.scala)
 
 ```$scala
     //An facade pattern on top of any JSON libary.  

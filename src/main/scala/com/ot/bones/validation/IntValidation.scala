@@ -1,10 +1,11 @@
-package com.gaia.soy
+package com.ot.bones.validation
 
 import cats.Id
-import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
-import com.gaia.soy.validation.ValidationUtil
+import com.ot.bones.compiler.ExtractionCompiler.{ExtractionAppend, ExtractionError, ExtractionErrors, JsonProducer, RequiredOp, ValidationError, ValidationOp}
+import com.ot.bones.{BonesOp, Key}
 
 
 object IntValidation {
@@ -38,7 +39,7 @@ object IntValidation {
     * @param validations List of validations that the String must pass.
     */
 
-  final case class OptionalInt(key: Key, validations: List[ValidationOp[Int]]) extends FieldGroupOp[Validated[NonEmptyList[ExtractionError], Option[Int]]]
+  final case class OptionalInt(key: Key, validations: List[ValidationOp[Int]]) extends BonesOp[Option[Int]]
     with IntExtraction[Option, OptionalInt] {
 
     def extract(input: JsonProducer): Validated[ExtractionErrors, Option[Int]] = {
@@ -51,8 +52,6 @@ object IntValidation {
     }
 
 
-    override def appendMetadata(md: Metadata): OptionalInt = ???
-
     def append(sv: ValidationOp[Int]): OptionalInt = OptionalInt(key, sv :: validations)
   }
 
@@ -61,7 +60,7 @@ object IntValidation {
     * @param key The key used to extract a value.
     * @param validations List of validations that the String must pass.
     */
-  final case class RequiredInt(key: Key, validations: List[ValidationOp[Int]]) extends FieldGroupOp[Validated[NonEmptyList[ExtractionError], Int]]
+  final case class RequiredInt(key: Key, validations: List[ValidationOp[Int]]) extends BonesOp[Int]
     with IntExtraction[Id, RequiredInt] {
 
     def optional(): OptionalInt = OptionalInt(key, validations)
@@ -77,7 +76,6 @@ object IntValidation {
 
     def append(sv: ValidationOp[Int]): RequiredInt = RequiredInt(key, sv :: validations)
 
-    override def appendMetadata(md: Metadata): RequiredInt = ???
   }
 
 }

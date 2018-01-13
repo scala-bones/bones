@@ -1,18 +1,18 @@
-package com.gaia.soy.validation
+package com.ot.bones.validation
 
-import java.text.{DateFormat, Format}
+import java.text.Format
 import java.time.format.DateTimeFormatter
 import java.util.Date
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
-import com.gaia.soy.{ExtractionError, ExtractionErrors, ExtractionOp, FieldGroupOp, JsonProducer, Key, ValidationError}
+import com.ot.bones.compiler.ExtractionCompiler.{ExtractionError, ExtractionErrors, ExtractionOp, JsonProducer, ValidationError}
+import com.ot.bones.validation.StringValidation.{OptionalString, RequiredString}
+import com.ot.bones.{BonesOp, Key}
 
 import scala.reflect.macros.ParseException
 
-trait DateValidation {
-  import com.gaia.soy.StringValidation._
-
+object DateValidation {
   case class IsDate(format: Format) extends ExtractionOp[Date] {
     override def description: String = s"Is a Date with format ${format.toString}"
   }
@@ -24,19 +24,24 @@ trait DateValidation {
   }
 
 
-  case class RequiredDateExtraction(stringExtraction: RequiredString, dateFormat: Format) extends FieldGroupOp[Validated[NonEmptyList[ExtractionError], Date]] {
+  case class RequiredDateExtraction(stringExtraction: RequiredString, dateFormat: Format) extends BonesOp[Date] {
 
     def extract(jsonProducer: JsonProducer): Validated[ExtractionErrors, Date] =
       stringExtraction.extract(jsonProducer).andThen(convert(_, dateFormat, stringExtraction.key))
   }
 
-  case class OptionalDateExtraction(stringExtraction: OptionalString, dateFormat: Format) extends FieldGroupOp[Validated[NonEmptyList[ExtractionError], Option[Date]]] {
+  case class OptionalDateExtraction(stringExtraction: OptionalString, dateFormat: Format) extends BonesOp[Option[Date]] {
     def extract(producer: JsonProducer): Validated[NonEmptyList[ExtractionError], Option[Date]] =
       stringExtraction.extract(producer).andThen {
         case Some(uuidStr) => convert(uuidStr, dateFormat, stringExtraction.key).map(Some(_))
         case None => Valid(None)
       }
   }
+}
+
+trait DateValidation {
+  import StringValidation._
+  import DateValidation._
 
   trait DateDefinitions[T] {
     def asDate(format: Format): T

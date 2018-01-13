@@ -1,12 +1,15 @@
-package com.gaia.soy
+package com.ot.bones
 
 import java.util.{Date, UUID}
 
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
-import com.gaia.soy.StringValidation.{Max, OptionalString, RequiredString}
-import com.gaia.soy.compiler.JsonCompiler._
-import com.gaia.soy.producer.LiftJson
+import com.ot.bones.compiler.DocCompiler
+import com.ot.bones.compiler.DocCompiler.Doc
+import com.ot.bones.compiler.ExtractionCompiler.{DefaultExtractCompiler, FromProducer, JsonProducer, ValidationError, WrongTypeError}
+import com.ot.bones.producer.LiftJson
+import com.ot.bones.validation.StringValidation.{Max, RequiredString}
+import com.ot.bones.validation.UuidValidation.RequiredUuidExtraction
 import org.scalatest.FunSuite
 
 class ExampleTest extends FunSuite {
@@ -202,37 +205,24 @@ class ExampleTest extends FunSuite {
 
 
 
-//    val prog = obj.obj12 (
-//      key("firstFive").string().matchesRegex("[0-9]{5}".r),
-//      key("lastFour").string().matchesRegex("[0-9]{4}".r),
-//      key("uuid").string().asUuid(),
-//      key("token").string().asUuid(),
-//      key("ccType").string().custom("to CreditCardType", toCreditCardType),
-//      key("expMonth").int().between(1,12),
-//      key("expYear").int().between(1950,9999),
-//      key("cardHolder").string(),
-//      key("currencyIso").string().length(3),
-//      key("deletedAt").string().optional().asIsoDateTime(),
-//      key("lastModifiedRequest").string().asUuid(),
-//      key("billingLocation").obj2(
-//        key("countryIso").string().valid(isoList:_*),
-//        key("zipCode").string().optional(),
-//        BillingLocation(_: String, _:Option[String])
-//      ).optional(),
-//      BtCc(_: String, _: String, _: UUID, _: UUID, _:CreditCardType,_:Int, _:Int, _:String, _: String, _:Option[Date], _: UUID, _:Option[BillingLocation])
-//    )
-
-
-    import shapeless._
-
-    case class Two(one: String, two: String, cardholder: String)
-    val twoGen = Generic[Two]
-
-    val prog = obj.obj3 (
+    val prog = obj.obj12 (
       key("firstFive").string().matchesRegex("[0-9]{5}".r),
       key("lastFour").string().matchesRegex("[0-9]{4}".r),
-      key("cardHolder").string()
-    ).transform[Two]
+      key("uuid").string().asUuid(),
+      key("token").string().asUuid(),
+      key("ccType").string().custom("to CreditCardType", toCreditCardType),
+      key("expMonth").int().between(1,12),
+      key("expYear").int().between(1950,9999),
+      key("cardHolder").string(),
+      key("currencyIso").string().length(3),
+      key("deletedAt").string().optional().asIsoDateTime(),
+      key("lastModifiedRequest").string().asUuid(),
+      key("billingLocation").obj2(
+        key("countryIso").string().valid(isoList:_*),
+        key("zipCode").string().optional()
+      ).optional().transform[BillingLocation]
+    ).transform[BtCc]
+
 
     val cc =
       """
@@ -256,24 +246,19 @@ class ExampleTest extends FunSuite {
 
     val parsed = net.liftweb.json.parse(cc)
     val jsonProducer = LiftJson(parsed)
-
-    import cats.implicits._
     //create the program that is responsible for converting JSON into a User.
     val jsonToUserProgram = prog.lift.foldMap[FromProducer](DefaultExtractCompiler())
 
     //Here we run the program by giving
     val btCc = jsonToUserProgram.apply(jsonProducer)
-//    val btCc = prog.extract(jsonProducer)
 
-    assert(btCc == Valid(Two("12345", "4321", "Lennart Augustsson")) )
+    assert( btCc == Valid(BtCc("12345", "4321", UUID.fromString("df15f08c-e6bd-11e7-aeb8-6003089f08b4"),
+      UUID.fromString("e58e7dda-e6bd-11e7-b901-6003089f08b4"), CreditCardTypes.Mastercard, 11, 2022,
+      "Lennart Augustsson", "USD" , None, UUID.fromString("4545d9da-e6be-11e7-86fb-6003089f08b4"),
+      Some(BillingLocation("US", Some("80031")))
+    )))
 
-//    assert( btCc == Valid(BtCc("12345", "4321", UUID.fromString("df15f08c-e6bd-11e7-aeb8-6003089f08b4"),
-//      UUID.fromString("e58e7dda-e6bd-11e7-b901-6003089f08b4"), CreditCardTypes.Mastercard, 11, 2022,
-//      "Lennart Augustsson", "USD" , None, UUID.fromString("4545d9da-e6be-11e7-86fb-6003089f08b4"),
-//      Some(BillingLocation("US", Some("80031")))
-//    )))
-
-    val desc = prog.lift.foldMap[Doc](docCompiler)
+    val desc = prog.lift.foldMap[Doc](DocCompiler.docCompiler)
 
     println(desc)
 

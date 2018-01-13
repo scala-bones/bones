@@ -1,12 +1,21 @@
-package com.gaia
+package com.ot.bones.compiler
 
+import cats.Applicative
+import cats.data.Validated.Valid
 import cats.data.{NonEmptyList, Validated}
-import cats.free.FreeApplicative
-import com.gaia.soy.IntValidation.RequiredInt
-import com.gaia.soy.StringValidation.RequiredString
-import com.gaia.soy.validation.{CustomConversionFromString, DateValidation, UuidValidation}
+import cats.implicits._
+import com.ot.bones.transform.{OptionalTransform, Transform}
+import com.ot.bones.validation.CustomConversionFromString.RequiredCustomExtraction
+import com.ot.bones.validation.DateValidation.OptionalDateExtraction
+import com.ot.bones.validation.IntValidation.RequiredInt
+import com.ot.bones.validation.StringValidation.{OptionalString, RequiredString}
+import com.ot.bones.validation.ToHList._
+import com.ot.bones.validation.UuidValidation.RequiredUuidExtraction
+import com.ot.bones.{BonesOp, Key}
+import shapeless._
 
-package object soy {
+
+object ExtractionCompiler {
 
   /** Error Case */
   trait ExtractionError {
@@ -66,48 +75,6 @@ package object soy {
     override def description: String = s"not one of ${invalidValues.mkString("('","','","')")}"
   }
 
-  trait Metadata
-  case class Description[T](description: String) extends Metadata
-  case class Notes[T](notes: List[String]) extends Metadata
-  case class Meta[T](meta: String) extends Metadata
-  case class Tags[T](tags: List[String]) extends Metadata
-  case class Example[T](example: String) extends Metadata
-  case class UnitOfMeasure[T](desc: String) extends Metadata
-
-  /** Starting point for obtaining a value is to define a key */
-  sealed abstract class Key extends ObjAlias { thisKey =>
-    val key = thisKey
-    def string() : RequiredString = RequiredString(thisKey, Nil)
-    def int(): RequiredInt = RequiredInt(thisKey, Nil)
-    //    def BigDecimal(): Extract[Int] = ???
-    //    def either[A,B](v1: ValidationOp[A], v2: ValidationOp[B]): Extract[Either[A,B]] = new Extract[Either[A,B]]{
-    //      override def validation = CanBeEither[A,B](v1, v2)
-    //      override val key = thisKey
-    //    }
-    //    def array(): Extract[Vector[Int]] = ???
-    //    def boolean(): Extract[Boolean] = ???
-    //    def binary(): Extract[Boolean] = ???  //maybe this is a string().binary().
-    //    def date(): Extract[Date] = ???
-  }
-
-  object RootKey extends Key
-  case class StringKey(name: String) extends Key
-
-  /** FieldGroupOp is the base class defining the FreeAp for each field group defined.*/
-  trait FieldGroupOp[A] {
-//    def extract(producer: JsonProducer): A
-    def lift: FieldGroup[A] = FreeApplicative.lift(this)
-  }
-
-  type FieldGroup[A] = FreeApplicative[FieldGroupOp, A]
-
-
-
-  /** Turn a string key into an key type */
-  def key(key: String) = StringKey(key)
-  implicit class StringToKey(str: String) {
-    def key(): Key = StringKey(str)
-  }
 
   trait StringProducer {
     def produceString(key: Key): Either[WrongTypeError[String], Option[String]]
@@ -133,22 +100,52 @@ package object soy {
     */
   trait ExtractionAppend[O,F[_], NE] {
     def append(sv: ValidationOp[O]) : NE
-    def appendMetadata(md: Metadata) : NE
 
     def valid(o: O*): NE = append(ValidValue(o.toVector))
     def invalid(o: O*): NE = append(InvalidValue(o.toVector))
-    def description(description: String): NE = appendMetadata(Description(description))
-    def notes(notes: List[String]): NE = appendMetadata(Notes(notes))
-    def tags(tags: List[String]): NE = appendMetadata(Tags(tags))
-    def meta(meta: String): NE = appendMetadata(Meta(meta))
-    def example(example: String): NE = appendMetadata(Example(example))
-    def unitOfMeasure(unit: String): NE = appendMetadata(UnitOfMeasure(unit))
-
-    def nullIsNone() = ???
   }
 
 
-  object conversions extends UuidValidation with CustomConversionFromString with DateValidation
-  object obj extends Obj
+
+  // a function that takes a JsonProducer as input
+//  type FromProducer[A] = JsonProducer => A
+  type FromProducer[A] = JsonProducer => ValidationResultNel[A]
+  implicit def fromProducerApp = new Applicative[FromProducer] {
+    override def pure[A](x: A): FromProducer[A] = json => Valid(x)
+    override def ap[A, B](ff: FromProducer[A => B])(fa: FromProducer[A]): FromProducer[B] =
+      jsonProducer => {
+        val f = ff(jsonProducer)
+        val a = fa(jsonProducer)
+        (f,a).mapN( (fab, a) => fab.apply(a))
+      }
+  }
+
+  /** Compiler responsible for extracting data from JSON */
+  case class DefaultExtractCompiler() extends cats.arrow.FunctionK[BonesOp, FromProducer] {
+    def apply[A](fgo: BonesOp[A]): FromProducer[A] = jsonProducer =>
+      fgo match {
+        case key: Key => {
+          jsonProducer.produceObject(key).leftMap(NonEmptyList.one).toValidated
+        }
+        case op: ToHListBonesOp[a] => {
+          op.extract(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
+        }
+        case op: ToOptionalHListBonesOp[a] => {
+          op.extract(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
+        }
+        case op: RequiredString => op.extract(jsonProducer)
+        case op: OptionalString  => op.extract(jsonProducer)
+        case op: RequiredInt => op.extract(jsonProducer)
+        case op: OptionalDateExtraction => op.extract(jsonProducer)
+        case op: OptionalTransform[a,b] => op.extract(this)(jsonProducer)
+//        case op: ObjectFieldGroup[a,z] => op.extract(jsonProducer)
+        case op: Transform[A,a] => op.extract(this)(jsonProducer)
+        case op: RequiredUuidExtraction => op.extract(jsonProducer)
+        case op: RequiredCustomExtraction[a] => op.extract(jsonProducer)
+//
+//        case _ => ???
+      }
+  }
+
 
 }

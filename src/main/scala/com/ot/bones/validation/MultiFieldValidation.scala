@@ -1,8 +1,4 @@
-package com.gaia.soy
-
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import com.gaia.soy.StringValidation.{OptionalString, RequiredString}
-import cats.implicits._
+package com.ot.bones.validation
 
 trait MultiFieldValidation {
 

@@ -7,12 +7,12 @@ lazy val root = (project in file(".")).
       scalaVersion := "2.11.12", //TODO: cross compile 2.12.4
       version      := "0.1.0-SNAPSHOT"
     )),
-    name := "Soy",
+    name := "Bones",
     libraryDependencies ++= Seq(
-      cats,
+      "org.typelevel" %% "cats-free" % "1.0.1",
       "com.chuusai" %% "shapeless" % "2.3.3",
       "net.liftweb" %% "lift-json" % "2.6.3",
-      scalaTest % Test
+      "org.scalatest" %% "scalatest" % "3.0.4" % Test
     )
   )
 

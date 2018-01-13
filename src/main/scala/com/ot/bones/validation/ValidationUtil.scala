@@ -1,9 +1,10 @@
-package com.gaia.soy.validation
+package com.ot.bones.validation
 
 import cats.Apply
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
-import com.gaia.soy.{Key, ValidationError, ValidationOp, ValidationResultNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import com.ot.bones.Key
+import com.ot.bones.compiler.ExtractionCompiler.{ValidationError, ValidationOp, ValidationResultNel}
 
 object ValidationUtil {
 
