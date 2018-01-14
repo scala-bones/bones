@@ -1,23 +1,25 @@
 # Overview
 
 The idea behind Bones is to Generalize a full stack web application by describing the data using
-Generalized Abstract Data Types (GADT).  Using the Cats Free Applicative, we can create different
-interpretation (or programs if you wish) of the GADT.
+the concept of the Generalized Abstract Data Type (GADT) that also double as a Free Applicative.  
+Using the Cats Free Applicative, we can create different
+interpretation of the GADTs.  The interpreters can execute the program, produce documentation, or even
+produce client side JavaScript and HTML to connect to the webapp. 
 
-The idea, conceptually anyway, is isomorphic to Scaffolding in Ruby on Rails. 
+The idea, conceptually anyway, is similar to Scaffolding in Ruby on Rails. 
 
-Since using the GADT types directly can become unwieldy, Bones also has a declarative syntax interface.  That
-is we simplify the creation of the GADT by using a DSL.
+Since using the GADT types directly can become unwieldy, Bones also has a declarative syntax interface in order to 
+simplify the creation of the GADTs by using a DSL.
 
 These are the interpreters/programs this project will eventually contain.
 * Validation/Schema Compiler (Mostly Complete) - Attempt to extract the data definition from Json. 
 (Theoretically, we could use any data format -- protobuff, atom, csv file)
 * Documentation (Currently a very Rudimentary Implementation) - Should be able to document the data requirements and the data flow for the webapp.
-* Rest API (Not Implemented)- Should be able to create a REST endpoint
+* Rest API (Somewhat mocked, mostly not Implemented)- Should be able to create a REST endpoint
 * JavaScript/HTML (Not Implemented) - Should be able to generate a GUI for data entry.
-* DB Layer (Not Implemented) - Should be able to save valid data to a Database.
+* DB Layer (Somewhat mocked, not Implemented) - Should be able to save valid data to a Database.
 
-At the end of the day, if we create compilers for each the pipeline, we should be able to generate
+At the end of the day after creating generalized interpreters, we should be able to generate
 new services just by defining a new GADT (using the DSL of course).  Granted, there will be custom steps in most pipelines,
 so we will create sensible defaults that can be overwritten as well as clear extension points. 
 
