@@ -6,9 +6,8 @@ import java.util.Date
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
-import com.ot.bones.compiler.ExtractionCompiler.{ExtractionError, ExtractionErrors, ExtractionOp, JsonProducer, ValidationError}
+import com.ot.bones.interpreter.ExtractionInterpreter.{ExtractionError, ExtractionErrors, ExtractionOp, JsonProducer, ValidationError}
 import com.ot.bones.validation.StringValidation.{OptionalString, RequiredString}
-import com.ot.bones.{BonesOp, Key}
 
 import scala.reflect.macros.ParseException
 
@@ -24,13 +23,13 @@ object DateValidation {
   }
 
 
-  case class RequiredDateExtraction(stringExtraction: RequiredString, dateFormat: Format) extends BonesOp[Date] {
+  case class RequiredDateExtraction(stringExtraction: RequiredString, dateFormat: Format) extends DataDefinitionOp[Date] {
 
     def extract(jsonProducer: JsonProducer): Validated[ExtractionErrors, Date] =
       stringExtraction.extract(jsonProducer).andThen(convert(_, dateFormat, stringExtraction.key))
   }
 
-  case class OptionalDateExtraction(stringExtraction: OptionalString, dateFormat: Format) extends BonesOp[Option[Date]] {
+  case class OptionalDateExtraction(stringExtraction: OptionalString, dateFormat: Format) extends DataDefinitionOp[Option[Date]] {
     def extract(producer: JsonProducer): Validated[NonEmptyList[ExtractionError], Option[Date]] =
       stringExtraction.extract(producer).andThen {
         case Some(uuidStr) => convert(uuidStr, dateFormat, stringExtraction.key).map(Some(_))
@@ -40,8 +39,8 @@ object DateValidation {
 }
 
 trait DateValidation {
-  import StringValidation._
   import DateValidation._
+  import StringValidation._
 
   trait DateDefinitions[T] {
     def asDate(format: Format): T

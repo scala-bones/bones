@@ -1,8 +1,8 @@
 package com.ot.bones.producer
 
 import com.ot.bones
-import com.ot.bones.compiler.ExtractionCompiler.{JsonProducer, WrongTypeError}
-import com.ot.bones.{Key, RootKey, StringKey}
+import com.ot.bones.interpreter.ExtractionInterpreter.{JsonProducer, WrongTypeError}
+import com.ot.bones.validation.{Key, RootKey, StringKey}
 import net.liftweb.json.JsonAST._
 
 case class LiftJson(jValue: JValue) extends JsonProducer {
@@ -81,29 +81,29 @@ case class LiftJson(jValue: JValue) extends JsonProducer {
     }
   }
 
-  override def produceBigDecimal(key: bones.Key): Either[WrongTypeError[BigDecimal], Option[BigDecimal]] = key match {
+  override def produceBigDecimal(key: Key): Either[WrongTypeError[BigDecimal], Option[BigDecimal]] = key match {
     case RootKey => lookForBigDecimal(key, jValue)
     case StringKey(field) => lookForBigDecimal(key, jValue \ field)
   }
 
 
-  override def produceString(key: bones.Key): Either[WrongTypeError[String], Option[String]] = key match {
+  override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = key match {
     case RootKey => lookForString(key, jValue)
     case StringKey(field) => lookForString(key, jValue \ field)
   }
 
-  override def produceInt(key: bones.Key): Either[WrongTypeError[Int], Option[Int]] = key match {
+  override def produceInt(key: Key): Either[WrongTypeError[Int], Option[Int]] = key match {
     case RootKey => lookForInt(key, jValue)
     case StringKey(field) => lookForInt(key, jValue \ field)
   }
 
-  override def produceObject(key: bones.Key): Either[WrongTypeError[JsonProducer], Option[LiftJson]] = key match {
+  override def produceObject(key: Key): Either[WrongTypeError[JsonProducer], Option[LiftJson]] = key match {
     case RootKey => lookForObject(key, jValue)
     case StringKey(field) => lookForObject(key, jValue \ field)
   }
 
 
-  override def produceBool(key: bones.Key): Either[WrongTypeError[Boolean], Option[Boolean]] = key match {
+  override def produceBool(key: Key): Either[WrongTypeError[Boolean], Option[Boolean]] = key match {
     case RootKey => lookForBool(key, jValue)
     case StringKey(field) => lookForBool(key, jValue \ field)
   }

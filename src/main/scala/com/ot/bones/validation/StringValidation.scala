@@ -6,8 +6,7 @@ import cats.Id
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.implicits._
-import com.ot.bones.compiler.ExtractionCompiler.{ExtractionAppend, ExtractionError, ExtractionErrors, JsonProducer, RequiredOp, ValidationError, ValidationOp, ValidationResultNel}
-import com.ot.bones.{BonesOp, Key}
+import com.ot.bones.interpreter.ExtractionInterpreter.{ExtractionAppend, ExtractionErrors, JsonProducer, RequiredOp, ValidationError, ValidationOp, ValidationResultNel}
 
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
@@ -185,7 +184,7 @@ object StringValidation {
     * @param validations List of validations that the String must pass.
     */
 
-  final case class OptionalString(key: Key, validations: List[ValidationOp[String]]) extends BonesOp[Option[String]]
+  final case class OptionalString(key: Key, validations: List[ValidationOp[String]]) extends DataDefinitionOp[Option[String]]
     with StringExtraction[Option, OptionalString] {
 
     def extract(input: JsonProducer): Validated[ExtractionErrors, Option[String]] = {
@@ -206,7 +205,7 @@ object StringValidation {
     * @param key The key used to extract a value.
     * @param validations List of validations that the String must pass.
     */
-  final case class RequiredString(key: Key, validations: List[ValidationOp[String]]) extends BonesOp[String]
+  final case class RequiredString(key: Key, validations: List[ValidationOp[String]]) extends DataDefinitionOp[String]
     with StringExtraction[Id, RequiredString] {
 
     def optional(): OptionalString = OptionalString(key, validations)

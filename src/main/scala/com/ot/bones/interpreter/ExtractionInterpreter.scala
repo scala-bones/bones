@@ -1,4 +1,4 @@
-package com.ot.bones.compiler
+package com.ot.bones.interpreter
 
 import cats.Applicative
 import cats.data.Validated.Valid
@@ -8,14 +8,13 @@ import com.ot.bones.transform.{OptionalTransform, Transform}
 import com.ot.bones.validation.CustomConversionFromString.RequiredCustomExtraction
 import com.ot.bones.validation.DateValidation.OptionalDateExtraction
 import com.ot.bones.validation.IntValidation.RequiredInt
+import com.ot.bones.validation.{DataDefinitionOp, Key}
 import com.ot.bones.validation.StringValidation.{OptionalString, RequiredString}
-import com.ot.bones.validation.ToHList._
+import com.ot.bones.validation.ToHList.{ToHListDataDefinitionOp, ToOptionalHListDataDefinitionOp}
 import com.ot.bones.validation.UuidValidation.RequiredUuidExtraction
-import com.ot.bones.{BonesOp, Key}
-import shapeless._
 
 
-object ExtractionCompiler {
+object ExtractionInterpreter {
 
   /** Error Case */
   trait ExtractionError {
@@ -109,10 +108,10 @@ object ExtractionCompiler {
 
   // a function that takes a JsonProducer as input
 //  type FromProducer[A] = JsonProducer => A
-  type FromProducer[A] = JsonProducer => ValidationResultNel[A]
-  implicit def fromProducerApp = new Applicative[FromProducer] {
-    override def pure[A](x: A): FromProducer[A] = json => Valid(x)
-    override def ap[A, B](ff: FromProducer[A => B])(fa: FromProducer[A]): FromProducer[B] =
+  type ValidateFromProducer[A] = JsonProducer => ValidationResultNel[A]
+  implicit def fromProducerApp = new Applicative[ValidateFromProducer] {
+    override def pure[A](x: A): ValidateFromProducer[A] = json => Valid(x)
+    override def ap[A, B](ff: ValidateFromProducer[A => B])(fa: ValidateFromProducer[A]): ValidateFromProducer[B] =
       jsonProducer => {
         val f = ff(jsonProducer)
         val a = fa(jsonProducer)
@@ -121,16 +120,16 @@ object ExtractionCompiler {
   }
 
   /** Compiler responsible for extracting data from JSON */
-  case class DefaultExtractCompiler() extends cats.arrow.FunctionK[BonesOp, FromProducer] {
-    def apply[A](fgo: BonesOp[A]): FromProducer[A] = jsonProducer =>
+  case class DefaultExtractInterpreter() extends cats.arrow.FunctionK[DataDefinitionOp, ValidateFromProducer] {
+    def apply[A](fgo: DataDefinitionOp[A]): ValidateFromProducer[A] = jsonProducer =>
       fgo match {
         case key: Key => {
           jsonProducer.produceObject(key).leftMap(NonEmptyList.one).toValidated
         }
-        case op: ToHListBonesOp[a] => {
+        case op: ToHListDataDefinitionOp[a] => {
           op.extract(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
         }
-        case op: ToOptionalHListBonesOp[a] => {
+        case op: ToOptionalHListDataDefinitionOp[a] => {
           op.extract(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
         }
         case op: RequiredString => op.extract(jsonProducer)

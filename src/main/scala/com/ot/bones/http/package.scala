@@ -1,22 +1,33 @@
 package com.ot.bones
 
-import com.ot.bones.compiler.ExtractionCompiler.JsonProducer
+import cats.free.FreeApplicative
+import com.ot.bones.validation.DataDefinitionOp
 
 package object http {
 
-  trait HttpDaemon[A]
-
-
-  case class GetRequest[A](endpoint: String) extends HttpDaemon[A]
+  case class GetRequest[A](endpoint: String) extends ProgramModuleOp[Unit => A]
 
   /**
     *
-    * @param endpoint URL endpoint, example /users
-    * @param f Function that takes a Deserializer and returns an A
+    * @param endpointPath URL endpoint, example /users
     * @tparam A The concrete type returned, for instance 'case class User(x: String)'
-    * @tparam D The deserializer, can extract
     */
-  case class PostRequest[A,D](endpoint: String, f: (D => A)) extends HttpDaemon[A]
-  case class PostResponse[A](serialize: A => JsonProducer)
+  case class HttpPostEndpoint[A](endpointPath: String) extends ProgramModuleOp[() => A]
+
+  case class HttpResponse[T](dataDefinitionOp: DataDefinitionOp[T]) extends ProgramModuleOp[T => Unit]
+
+  case class HttpErrorResponse[T]() extends ProgramModuleOp[T => Unit]
+
+
+  trait HttpSyntax {
+
+    def httpPostEndpoint[A](endpointPath: String) = HttpPostEndpoint[A](endpointPath)
+
+    def httpResponse[T](dataDefinitionOp: DataDefinitionOp[T]): HttpResponse[T] = HttpResponse(dataDefinitionOp)
+
+    def httpErrorResponse[T](): HttpErrorResponse[T] = HttpErrorResponse()
+
+
+  }
 
 }

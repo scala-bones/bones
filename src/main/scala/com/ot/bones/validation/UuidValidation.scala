@@ -4,8 +4,7 @@ import java.util.UUID
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
-import com.ot.bones.{BonesOp, Key}
-import com.ot.bones.compiler.ExtractionCompiler.{ExtractionError, ExtractionErrors, ExtractionOp, JsonProducer, ValidationError, ValidationResultNel}
+import com.ot.bones.interpreter.ExtractionInterpreter.{ExtractionError, ExtractionErrors, ExtractionOp, JsonProducer, ValidationError, ValidationResultNel}
 import com.ot.bones.validation.StringValidation.{OptionalString, RequiredString}
 import com.ot.bones.validation.UuidValidation.{OptionalUuidExtraction, RequiredUuidExtraction}
 
@@ -23,13 +22,13 @@ object UuidValidation {
   }
 
 
-  case class RequiredUuidExtraction(stringExtraction: RequiredString) extends BonesOp[UUID] {
+  case class RequiredUuidExtraction(stringExtraction: RequiredString) extends DataDefinitionOp[UUID] {
 
     def extract(jsonProducer: JsonProducer): ValidationResultNel[UUID] =
       stringExtraction.extract(jsonProducer).andThen(convert(_,stringExtraction.key))
   }
 
-  case class OptionalUuidExtraction(stringExtraction: OptionalString) extends BonesOp[Option[UUID]] {
+  case class OptionalUuidExtraction(stringExtraction: OptionalString) extends DataDefinitionOp[Option[UUID]] {
     def extract(producer: JsonProducer): Validated[NonEmptyList[ExtractionError], Option[UUID]] =
       stringExtraction.extract(producer).andThen {
         case Some(uuidStr) => convert(uuidStr, stringExtraction.key).map(Some(_))

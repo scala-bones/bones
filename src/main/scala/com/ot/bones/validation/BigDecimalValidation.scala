@@ -1,6 +1,6 @@
 package com.ot.bones.validation
 
-import com.ot.bones.compiler.ExtractionCompiler.ValidationOp
+import com.ot.bones.interpreter.ExtractionInterpreter.ValidationOp
 
 object BigDecimalValidation {
 

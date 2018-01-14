@@ -1,16 +1,21 @@
-package com.ot.bones.compiler
+package com.ot.bones.interpreter
 
 import cats.Applicative
+import cats.effect.IO
+import com.ot.bones.ProgramModuleOp
+import com.ot.bones.db.Database.Save
+import com.ot.bones.http.{HttpErrorResponse, HttpPostEndpoint, HttpResponse}
 import com.ot.bones.transform.{OptionalTransform, Transform}
 import com.ot.bones.validation.CustomConversionFromString.RequiredCustomExtraction
 import com.ot.bones.validation.DateValidation.OptionalDateExtraction
 import com.ot.bones.validation.IntValidation.RequiredInt
-import com.ot.bones.validation.ToHList.{HList2, HList3, ToHListBonesOp, ToOptionalHListBonesOp}
 import com.ot.bones.validation.StringValidation.{OptionalString, RequiredString}
+import com.ot.bones.validation.ToHList.{ToHListDataDefinitionOp, ToOptionalHListDataDefinitionOp}
 import com.ot.bones.validation.UuidValidation.RequiredUuidExtraction
-import com.ot.bones.{BonesOp, Key, RootKey, StringKey}
+import com.ot.bones.validation.Validate.ValidateData
+import com.ot.bones.validation.{DataDefinitionOp, Key, RootKey, StringKey}
 
-object DocCompiler {
+object DocInterpreter {
 
   object Doc {
     implicit val docApp = new Applicative[Doc] {
@@ -23,22 +28,22 @@ object DocCompiler {
 
   case class Doc[A](str: String)
 
-  val docCompiler = new cats.arrow.FunctionK[BonesOp, Doc] {
+  val docInterpreter = new cats.arrow.FunctionK[DataDefinitionOp, Doc] {
     def keyDesc(key: Key) = key match {
       case StringKey(name) => s"with key ${name}"
       case RootKey => ""
     }
 
-    def apply[A](fgo: BonesOp[A]): Doc[A] =
+    def apply[A](fgo: DataDefinitionOp[A]): Doc[A] =
       fgo match {
         case key: Key => {
           Doc("")
         }
-        case op: ToHListBonesOp[a] => {
+        case op: ToHListDataDefinitionOp[a] => {
           val members = op.members
           Doc(s"object with ${members.length} members: " + members.map(apply(_)).mkString("(", ")(", ")"))
         }
-        case op: ToOptionalHListBonesOp[a] => {
+        case op: ToOptionalHListDataDefinitionOp[a] => {
           val members = op.members
           Doc(s"optional object with ${members.length} members: " + members.map(apply(_)).mkString("(", ")(", ")"))
         }
@@ -48,8 +53,8 @@ object DocCompiler {
         }
         case op: RequiredString => Doc(s"Required String ${keyDesc(op.key)}")
         case op: OptionalString  => Doc(s"Optional String ${keyDesc(op.key)}")
-        case op: ToHListBonesOp[_] => Doc(s"Required object ${keyDesc(op.key)}.")
-        case op: ToOptionalHListBonesOp[_] => Doc(s"Optional object ${keyDesc(op.key)} ")
+        case op: ToHListDataDefinitionOp[_] => Doc(s"Required object ${keyDesc(op.key)}.")
+        case op: ToOptionalHListDataDefinitionOp[_] => Doc(s"Optional object ${keyDesc(op.key)} ")
         case op: RequiredInt => Doc(s"Required Int ${keyDesc(op.key)}")
         case op: OptionalDateExtraction => Doc(s"Required Date with format ${op.dateFormat})}")
         case op: OptionalTransform[a,b] => Doc(s"converted to Class ${op.manifestA.runtimeClass.getSimpleName}")
@@ -60,5 +65,17 @@ object DocCompiler {
 
         case _ => ???
       }
+  }
+
+  val programModuleDocInterpreter = new cats.arrow.FunctionK[ProgramModuleOp, Doc] {
+
+    def apply[A](pmo: ProgramModuleOp[A]) : Doc[A] = pmo match {
+      case v: ValidateData[i,a] => Doc(s"Validate data using data definition: (${docInterpreter(v.dataDefinitionOp).str})")
+      case http: HttpPostEndpoint[a] => Doc(s"HttpPostEndpoint at ${http.endpointPath}")
+      case http: HttpResponse[a] => Doc(s"Response Success")
+      case http: HttpErrorResponse[a] => Doc(s"Respond Failure")
+      case save: Save[a] => Doc(s"Save to the Database")
+    }
+
   }
 }

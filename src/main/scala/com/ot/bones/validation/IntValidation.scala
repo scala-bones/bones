@@ -4,8 +4,7 @@ import cats.Id
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
-import com.ot.bones.compiler.ExtractionCompiler.{ExtractionAppend, ExtractionError, ExtractionErrors, JsonProducer, RequiredOp, ValidationError, ValidationOp}
-import com.ot.bones.{BonesOp, Key}
+import com.ot.bones.interpreter.ExtractionInterpreter.{ExtractionAppend, ExtractionError, ExtractionErrors, JsonProducer, RequiredOp, ValidationError, ValidationOp}
 
 
 object IntValidation {
@@ -39,7 +38,7 @@ object IntValidation {
     * @param validations List of validations that the String must pass.
     */
 
-  final case class OptionalInt(key: Key, validations: List[ValidationOp[Int]]) extends BonesOp[Option[Int]]
+  final case class OptionalInt(key: Key, validations: List[ValidationOp[Int]]) extends DataDefinitionOp[Option[Int]]
     with IntExtraction[Option, OptionalInt] {
 
     def extract(input: JsonProducer): Validated[ExtractionErrors, Option[Int]] = {
@@ -60,7 +59,7 @@ object IntValidation {
     * @param key The key used to extract a value.
     * @param validations List of validations that the String must pass.
     */
-  final case class RequiredInt(key: Key, validations: List[ValidationOp[Int]]) extends BonesOp[Int]
+  final case class RequiredInt(key: Key, validations: List[ValidationOp[Int]]) extends DataDefinitionOp[Int]
     with IntExtraction[Id, RequiredInt] {
 
     def optional(): OptionalInt = OptionalInt(key, validations)

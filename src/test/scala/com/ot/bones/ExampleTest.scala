@@ -4,177 +4,21 @@ import java.util.{Date, UUID}
 
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
-import com.ot.bones.compiler.DocCompiler
-import com.ot.bones.compiler.DocCompiler.Doc
-import com.ot.bones.compiler.ExtractionCompiler.{DefaultExtractCompiler, FromProducer, JsonProducer, ValidationError, WrongTypeError}
+import cats.effect.IO
+import com.ot.bones.interpreter.DocInterpreter.Doc
+import com.ot.bones.interpreter.ExtractionInterpreter.{DefaultExtractInterpreter, ExtractionError, JsonProducer, ValidateFromProducer}
+import com.ot.bones.interpreter.{DocInterpreter, EndOfWorldInterpreter, ExtractionInterpreter}
 import com.ot.bones.producer.LiftJson
-import com.ot.bones.validation.StringValidation.{Max, RequiredString}
-import com.ot.bones.validation.UuidValidation.RequiredUuidExtraction
 import org.scalatest.FunSuite
+
 
 class ExampleTest extends FunSuite {
 
 
-  abstract class NoneJsonProducer extends JsonProducer {
-    override def produceBool(key: Key): Either[WrongTypeError[Boolean], Option[Boolean]] = Right(None)
-    override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = Right(None)
-    override def produceBigDecimal(key: Key): Either[WrongTypeError[BigDecimal], Option[BigDecimal]] = Right(None)
-    override def produceInt(key: Key): Either[WrongTypeError[Int], Option[Int]] = Right(None)
-    override def produceObject(key: Key): Either[WrongTypeError[JsonProducer], Option[JsonProducer]] = Right(None)
-  }
-
-//  test("sibling groups") {
-//    case class User(username: String, pass: String, message: Option[String], role: Option[String])
-//    case class Car(make: String, model: String, year: Option[String])
-//
-//    val rvp = new NoneJsonProducer {
-//      override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = key.name match {
-//        case "username" => Right(Some("Thisisusername"))
-//        case "password" => Right(Some("thisispassword"))
-//        case "message" => Right(None)
-//        case "role" => Right(Some("employee"))
-//      }
-//    }
-//
-//    Soyo.obj2(
-//      key("user").obj4(
-//        key("username").string.alphanum(),
-//        key("password").string(),
-//        key("message").string().optional(),
-//        key("role").string().valid("manager", "employee").optional(),
-//        User(_,_,_,_)
-//      ),
-//      key("car").obj4(
-//        key("make").string.alphanum(),
-//        key("model").string(),
-//        key("message").string().optional(),
-//        key("role").string().valid("manager", "employee").optional(),
-//        User(_,_,_,_)
-//      )
-//    )
-//
-//  }
-
-  test("group") {
-
-//    case class Location(countryIso: String, postalCode: Option[String])
-//    case class User(username: String, pass: String, message: Option[String], location: Option[Location])
-//
-//    val rvp = new NoneJsonProducer {
-//      override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = key match {
-//        case StringKey(name) => {
-//          name match {
-//            case "username" => Right(Some("Thisisusername"))
-//            case "password" => Right(Some("thisispassword"))
-//            case "message" => Right(None)
-//            case "role" => Right(Some("employee"))
-//            case "countryIso" => Right(Some("US"))
-//            case "postalCode" => Right(Some("28791"))
-//          }
-//        }
-//        case RootKey => ???
-//      }
-//
-//      override def produceObject(key: Key): Either[WrongTypeError[JsonProducer], Option[JsonProducer]] = Right(Some(this))
-//    }
-//
-//    //Create the AST
-//    val prog = obj.obj4(
-//      key("username").string().alphanum(),
-//      key("password").string(),
-//      key("message").string().optional(),
-//      key("location").obj2(
-//        key("countryIso").string(),
-//        key("postalCode").string().optional(),
-//        Location(_:String,_:Option[String])
-//      ).optional(),
-//      User(_:String,_:String,_:Option[String],_:Option[Location]) //Type annotations required for scala 2.11
-//    ).lift
-//
-//    import cats.implicits._
-//    //create the program that is responsible for converting JSON into a User.
-//    val jsonToUserProgram = prog.foldMap[FromProducer](defaultCompiler)
-//
-//    //Here we run the program by giving
-//    val user = jsonToUserProgram.apply(rvp)
-//
-//    assert( user == Valid( User("Thisisusername", "thisispassword", None, Some(Location("US", Some("28791"))))) )
-//
-//    val desc = prog.foldMap[Doc](docCompiler)
-//
-//    println(desc)
+  test("end of world example") {
 
 
-  }
-
-  test("alphanum passes") {
-
-    val alpha = key("username").string().alphanum().optional()
-
-    val validInput = new NoneJsonProducer {
-      override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = {
-        Right(Some("thisisalphanum"))
-//        Right(Coproduct[JSON]("thisisalphanum").select[String])
-      }
-    }
-
-
-    val invalidInput = new NoneJsonProducer {
-      override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = Right(Some("Not(&*&Valid"))
-    }
-
-    assert( alpha.extract(validInput) == Valid(Some("thisisalphanum")))
-    assert( alpha.extract(invalidInput).isInvalid)
-
-
-
-
-  }
-
-  test("passes multiple tests") {
-    case class User(username: String, password: String, accessToken: Either[String, Int], birthyear: Int, email: String)
-
-    val x = key("username").string.alphanum.min(3).max(7).optional()
-
-    val validInput = new NoneJsonProducer {
-      override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = Right(Some("valid"))
-    }
-
-    val failsOne = new NoneJsonProducer {
-      override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = Right(Some("thisistoolong"))
-    }
-
-    val failsTwo = new NoneJsonProducer {
-      override def produceString(key: Key): Either[WrongTypeError[String], Option[String]] = Right(Some("$3"))
-    }
-
-    assert( x.extract(validInput) == Valid(Some("valid")))
-
-
-    x.extract(failsOne) match {
-      case Invalid(nel) => {
-        assert( nel.size == 1)
-        nel.head match {
-          case ValidationError(k, exOp, i) => assert(exOp.isInstanceOf[Max])
-          case x => fail("Expected ValidationError, received: " + x)
-        }
-      }
-      case x => fail("Expected Invalid, received:" + x)
-    }
-
-    x.extract(failsTwo) match {
-      case Invalid(nel) => {
-        assert( nel.size == 2)
-      }
-      case x => fail("Expected Invalid, received:" + x)
-    }
-  }
-
-
-  test("passes bt cc") {
-
-    import com.ot.bones.everything._
-
+    //Define some example data types.
     /** Enumerated CreditCardType */
     sealed abstract class CreditCardType(val abbrev : String)
     object CreditCardTypes extends Enumeration {
@@ -199,13 +43,18 @@ class ExampleTest extends FunSuite {
 
     case class BillingLocation(countryIso: String, zipCode: Option[String])
     case class CC(firstFive: String, lastFour: String, uuid: UUID, token: UUID, ccType: CreditCardType,
-      expMonth: Int, expYear: Int, cardholder: String, currencyIso: String, deletedAt: Option[Date], lastModifiedRequest: UUID, billingLocation: Option[BillingLocation])
+                  expMonth: Int, expYear: Int, cardholder: String, currencyIso: String, deletedAt: Option[Date], lastModifiedRequest: UUID, billingLocation: Option[BillingLocation])
     val isoList = List("US", "CA", "MX")
 
 
+    /****** Begin Real Example ******/
+
+    import cats.implicits._
+    import com.ot.bones.everything._
+
 
     // Here we are defining our expected input data.  This definition will drive the interpreters.
-    val prog = obj.obj12 (
+    val extractData = obj.obj12 (
       key("firstFive").string().matchesRegex("[0-9]{5}".r),
       key("lastFour").string().matchesRegex("[0-9]{4}".r),
       key("uuid").string().asUuid(),
@@ -222,11 +71,27 @@ class ExampleTest extends FunSuite {
         key("zipCode").string().optional()
       ).optional().transform[BillingLocation]
     ).transform[CC]
-    //final type is basically BonesOp[CC]
-
+    //final type is basically DataDefinitionOp[CC]
 
     //create the program that is responsible for converting JSON into a CC.
-    val jsonToUserProgram = prog.lift.foldMap[FromProducer](DefaultExtractCompiler())
+    val jsonToCCProgram = extractData.lift.foldMap[ValidateFromProducer](DefaultExtractInterpreter())
+
+    //create the program that is responsible for defining the behavior of a single post endpoint.
+    //Please note that httpPostEndpoint, save, httpResponse and httpError response are all MOCKed out with println statments.
+    val endOfWorldProgram = (httpPostEndpoint[JsonProducer]("/brainTreeCreditCard").lift, validate[JsonProducer, CC](extractData).lift , save(extractData).lift, httpResponse(extractData).lift, httpErrorResponse[ExtractionError]().lift)
+      .mapN( { case (extractJson, doValidation, saveData, respond, respondError) =>
+
+        doValidation(extractJson()) match {
+          case Valid(valid) => {
+            saveData(valid)
+            respond(valid)
+          }
+          case Invalid(error) => {
+            respondError(error.head)
+          }
+        }
+
+      })
 
 
     //Here is our input
@@ -254,19 +119,30 @@ class ExampleTest extends FunSuite {
     val parsed = net.liftweb.json.parse(cc)
     val jsonProducer = LiftJson(parsed)
 
-    //Here we run the program by passing the json producer
-    val btCc = jsonToUserProgram.apply(jsonProducer)
+    //here, we will test that just the validationt step is working
+    val btCc = jsonToCCProgram.apply(jsonProducer)
 
-    //tada!  We have valid input.
+    //tada!  We have can parse input from JsonProducer to CC using our dataDefinition.
     assert( btCc == Valid(CC("12345", "4321", UUID.fromString("df15f08c-e6bd-11e7-aeb8-6003089f08b4"),
       UUID.fromString("e58e7dda-e6bd-11e7-b901-6003089f08b4"), CreditCardTypes.Mastercard, 11, 2022,
       "Lennart Augustsson", "USD" , None, UUID.fromString("4545d9da-e6be-11e7-86fb-6003089f08b4"),
       Some(BillingLocation("US", Some("80031")))
     )))
 
-    //And now, lets print some ugly doc
-    val desc = prog.lift.foldMap[Doc](DocCompiler.docCompiler)
 
+    //Now back to our regular we pass the program to the interpreter, the result sill bio IO[Unit] in this case because we are simulating
+    val readyToRun = endOfWorldProgram.foldMap[IO](EndOfWorldInterpreter.DefaultEndOfTheWorldInterpreter(ExtractionInterpreter.DefaultExtractInterpreter(), jsonProducer))
+
+    //This is was will run the program
+    readyToRun.unsafeRunSync()
+    //Here is what is printed and is the expected output:
+    //Saving object to DB: CC(12345,4321,df15f08c-e6bd-11e7-aeb8-6003089f08b4,e58e7dda-e6bd-11e7-b901-6003089f08b4,Mastercard,11,2022,Lennart Augustsson,USD,None,4545d9da-e6be-11e7-86fb-6003089f08b4,Some(BillingLocation(US,Some(80031))))
+    //Responding with CC(12345,4321,df15f08c-e6bd-11e7-aeb8-6003089f08b4,e58e7dda-e6bd-11e7-b901-6003089f08b4,Mastercard,11,2022,Lennart Augustsson,USD,None,4545d9da-e6be-11e7-86fb-6003089f08b4,Some(BillingLocation(US,Some(80031))))
+
+    //And now, lets print some ugly doc for the validation
+    val desc = extractData.lift.foldMap[Doc](DocInterpreter.docInterpreter)
+
+    println(desc)
     //Current output a mess, it will get better in time my friend, I hope you get the idea:
     //(Doc(Required String with key firstFive))(Doc(Required String with key lastFour))(Doc(Converted to UUID)}))
     // (Doc(Converted to UUID)}))(Doc(Custom Conversion: to CreditCardType))(Doc(Required Int with key expMonth))
@@ -274,7 +150,13 @@ class ExampleTest extends FunSuite {
     // (Doc(Required Date with format java.time.format.DateTimeFormatter$ClassicFormat@4aefae17)}))(Doc(Converted to UUID)}))
     // (Doc(converted to Class BillingLocation$3))) mapped into class CC$3)
 
-    println(desc)
+
+    //lets see what happends when we document the world
+    val programDescription = endOfWorldProgram.foldMap[Doc](DocInterpreter.programModuleDocInterpreter)
+    println(programDescription)
+    //Doc(Doc(object with 12 members: (Doc(Required String with key firstFive))(Doc(Required String with key lastFour))(Doc(Converted to UUID)}))(Doc(Converted to UUID)}))(Doc(Custom Conversion: to CreditCardType))(Doc(Required Int with key expMonth))(Doc(Required Int with key expYear))(Doc(Required String with key cardHolder))(Doc(Required String with key currencyIso))(Doc(Required Date with format java.time.format.DateTimeFormatter$ClassicFormat@49e1e884)}))(Doc(Converted to UUID)}))(Doc(converted to Class BillingLocation))) mapped into class CC)
+    //Doc(  {    { HttpPostEndpoint at /brainTreeCreditCard } {    { Validate data using data definition: (Doc(object with 12 members: (Doc(Required String with key firstFive))(Doc(Required String with key lastFour))(Doc(Converted to UUID)}))(Doc(Converted to UUID)}))(Doc(Custom Conversion: to CreditCardType))(Doc(Required Int with key expMonth))(Doc(Required Int with key expYear))(Doc(Required String with key cardHolder))(Doc(Required String with key currencyIso))(Doc(Required Date with format java.time.format.DateTimeFormatter$ClassicFormat@49e1e884)}))(Doc(Converted to UUID)}))(Doc(converted to Class BillingLocation))) mapped into class CC) } {    { Save to the Database } {    { Response Success } { Respond Failure } } } } })
+
 
 
 

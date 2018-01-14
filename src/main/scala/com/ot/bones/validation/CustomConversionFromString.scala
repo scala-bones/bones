@@ -2,8 +2,7 @@ package com.ot.bones.validation
 
 import cats.data.Validated.Valid
 import cats.data.{NonEmptyList, Validated}
-import com.ot.bones.BonesOp
-import com.ot.bones.compiler.ExtractionCompiler.{ExtractionError, ExtractionOp, JsonProducer, ValidationError}
+import com.ot.bones.interpreter.ExtractionInterpreter.{ExtractionError, ExtractionOp, JsonProducer, ValidationError}
 import com.ot.bones.validation.StringValidation.{OptionalString, RequiredString}
 
 object CustomConversionFromString {
@@ -11,14 +10,14 @@ object CustomConversionFromString {
   case class CustomExtractionOp[T](description: String) extends ExtractionOp[T]
 
   case class RequiredCustomExtraction[T](requiredString: RequiredString, description: String, f: String => Validated[String,T])
-    extends BonesOp[T] {
+    extends DataDefinitionOp[T] {
     def extract(producer: JsonProducer): Validated[NonEmptyList[ExtractionError], T] =
       requiredString.extract(producer).andThen(res => f(res)
         .leftMap(err => NonEmptyList.one(ValidationError(requiredString.key, CustomExtractionOp(description), Some(res)))))
   }
 
   case class OptionalCustomExtraction[T](optionalString: OptionalString, description: String, f: String => Validated[String,T])
-    extends BonesOp[Option[T]] {
+    extends DataDefinitionOp[Option[T]] {
 
     def extract(producer: JsonProducer): Validated[NonEmptyList[ExtractionError], Option[T]] =
       optionalString.extract(producer).andThen {
