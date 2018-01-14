@@ -3,8 +3,7 @@ package com.ot.bones.validation
 import cats.Apply
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import com.ot.bones.Key
-import com.ot.bones.compiler.ExtractionCompiler.{ValidationError, ValidationOp, ValidationResultNel}
+import com.ot.bones.interpreter.ExtractionInterpreter.{ValidationError, ValidationOp, ValidationResultNel}
 
 object ValidationUtil {
 

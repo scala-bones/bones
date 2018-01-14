@@ -12,10 +12,13 @@ lazy val root = (project in file(".")).
       "org.typelevel" %% "cats-free" % "1.0.1",
       "com.chuusai" %% "shapeless" % "2.3.3",
       "net.liftweb" %% "lift-json" % "2.6.3",
+      "org.typelevel" %% "cats-effect" % "0.5",
       "org.scalatest" %% "scalatest" % "3.0.4" % Test
     )
   )
 
 resolvers += Resolver.sonatypeRepo("releases")
+
+testOptions in Test += Tests.Argument("-oF")
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
