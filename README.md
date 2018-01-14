@@ -1,7 +1,5 @@
 # Overview
 
-"Your bones got a little machine" - Black Fancis
-
 The idea behind Bones is to Generalize a full stack web application by describing the data using
 Generalized Abstract Data Types (GADT).  Using the Cats Free Applicative, we can create different
 interpretation (or programs if you wish) of the GADT.
@@ -177,6 +175,7 @@ See the [Example Test](src/test/scala/com/ot/bones/ExampleTest.scala)
 
 ## Credits
 
+* "Your bones got a little machine" - Black Francis
 * This API for this project is adapted from the [Joi Project](https://github.com/hapijs/joi JOI).
 * John De Goes [Free Applicative Talk](https://www.youtube.com/watch?v=H28QqxO7Ihc)
 * Kris Knuttycombe's [Xenomorph Library](https://github.com/nuttycom/xenomorph) is very similar to this.
