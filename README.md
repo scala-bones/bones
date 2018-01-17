@@ -5,6 +5,13 @@ the concept of the Generalized Abstract Data Type (GADT) that also double as a F
 Using the Cats Free Applicative, we can create different
 interpretation of the GADTs. 
 
+## Interpreters
+
+* Marshall from Json to case class (Complete)
+* Unmarshall case class to Json (Not Implemented)
+* Documentation Interpreter (maybe Swagger) (POC Test Documentation exists)
+* JavaScript/Html Generator (Not Implemented)
+
 Since using the GADT types directly can become unwieldy, Bones also has a declarative syntax interface in order to 
 simplify the creation of the GADTs by using a DSL.
 
