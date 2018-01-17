@@ -1,10 +1,6 @@
 package com.ot.bones.interpreter
 
 import cats.Applicative
-import cats.effect.IO
-import com.ot.bones.ProgramModuleOp
-import com.ot.bones.db.Database.Save
-import com.ot.bones.http.{HttpErrorResponse, HttpPostEndpoint, HttpResponse}
 import com.ot.bones.transform.{OptionalTransform, Transform}
 import com.ot.bones.validation.CustomConversionFromString.RequiredCustomExtraction
 import com.ot.bones.validation.DateValidation.OptionalDateExtraction
@@ -12,7 +8,6 @@ import com.ot.bones.validation.IntValidation.RequiredInt
 import com.ot.bones.validation.StringValidation.{OptionalString, RequiredString}
 import com.ot.bones.validation.ToHList.{ToHListDataDefinitionOp, ToOptionalHListDataDefinitionOp}
 import com.ot.bones.validation.UuidValidation.RequiredUuidExtraction
-import com.ot.bones.validation.Validate.ValidateData
 import com.ot.bones.validation.{DataDefinitionOp, Key, RootKey, StringKey}
 
 object DocInterpreter {
@@ -67,15 +62,5 @@ object DocInterpreter {
       }
   }
 
-  val programModuleDocInterpreter = new cats.arrow.FunctionK[ProgramModuleOp, Doc] {
 
-    def apply[A](pmo: ProgramModuleOp[A]) : Doc[A] = pmo match {
-      case v: ValidateData[i,a] => Doc(s"Validate data using data definition: (${docInterpreter(v.dataDefinitionOp).str})")
-      case http: HttpPostEndpoint[a] => Doc(s"HttpPostEndpoint at ${http.endpointPath}")
-      case http: HttpResponse[a] => Doc(s"Response Success")
-      case http: HttpErrorResponse[a] => Doc(s"Respond Failure")
-      case save: Save[a] => Doc(s"Save to the Database")
-    }
-
-  }
 }
