@@ -1,8 +1,6 @@
 package com.ot
 
 import cats.free.FreeApplicative
-import com.ot.bones.db.DatabaseSyntax
-import com.ot.bones.http.HttpSyntax
 import com.ot.bones.transform.TransformSyntax
 import com.ot.bones.validation.{CustomConversionFromString, UuidValidation, _}
 
@@ -17,7 +15,7 @@ package object bones {
   type ProgramModule[A] = FreeApplicative[ProgramModuleOp, A]
 
   object everything extends UuidValidation with CustomConversionFromString with DateValidation with TransformSyntax
-    with KeySyntax with DatabaseSyntax with HttpSyntax with ValidateSyntax
+    with KeySyntax
 
   object obj extends ToHList
 

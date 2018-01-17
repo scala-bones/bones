@@ -67,7 +67,7 @@ trait ToHList extends ObjAlias {
 
 object ToHList {
 
-  /** Used to create a generic extract method if we can extract values from the products. */
+  /** Used to create a generic extract method so we can extract values from the products. */
   abstract class ToHListDataDefinitionOp[L <: HList] extends DataDefinitionOp[L] {
 
     /** The key used to extract the value from the JsonProducer */
