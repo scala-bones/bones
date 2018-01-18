@@ -1,6 +1,5 @@
 package com.ot.bones.producer
 
-import com.ot.bones
 import com.ot.bones.interpreter.ExtractionInterpreter.{JsonProducer, WrongTypeError}
 import com.ot.bones.validation.{Key, RootKey, StringKey}
 import net.liftweb.json.JsonAST._
