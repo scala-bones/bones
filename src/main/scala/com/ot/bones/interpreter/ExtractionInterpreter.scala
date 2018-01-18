@@ -35,6 +35,9 @@ object ExtractionInterpreter {
   case class WrongTypeError[T](key: Key, expectedType: Class[T], providedType: Class[_]) extends ExtractionError {
     val keys = NonEmptyList.one(key)
   }
+  case class ConversionError[T](key: Key, input: T, toType: Class[T]) extends ExtractionError {
+    val keys = NonEmptyList.one(key)
+  }
   case class RequiredObjectError(key: Key) extends ExtractionError {
     val keys = NonEmptyList.one(key)
   }
@@ -94,13 +97,28 @@ object ExtractionInterpreter {
   abstract class JsonProducer extends StringProducer with IntProducer with BoolProducer with BigDecimalProducer with ObjectProducer
 
   /**
-    * This is to we can add syntactic sugar to any Extraction types.
+    * This is so we can add the most generic ValidationOp types generically to
+    * to any DataDefinitionOp
     * @tparam NE The Extraction type when a new Validation Op is appended.
     */
-  trait ExtractionAppend[O,F[_], NE] {
+  trait AppendGenericValidation[O,F[_], NE] {
     def append(sv: ValidationOp[O]) : NE
 
+    /**
+      *  Provide a list of O valid values and append
+      *  the 'valid' ValidationOp to the DataDefinitionOp, returning a new DataDefinitionOp.
+      *
+      * @param o The valid values.
+      * @return The Next Instance of a DataDefinitionOp
+      */
     def valid(o: O*): NE = append(ValidValue(o.toVector))
+
+    /** Provide a list of O invalid values and append the 'InvalidValue' ValidationOp to
+      * the DataDefinitionOp mixing in this trait with a new instance of the DataDefinitionOp.
+      *
+      * @param o
+      * @return
+      */
     def invalid(o: O*): NE = append(InvalidValue(o.toVector))
   }
 
