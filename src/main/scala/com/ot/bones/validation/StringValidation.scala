@@ -7,7 +7,7 @@ import cats.Id
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.implicits._
-import com.ot.bones.interpreter.ExtractionInterpreter.{AppendGenericValidation, ExtractionErrors, RequiredOp, StringProducer, ValidationError, ValidationOp, ValidationResultNel}
+import com.ot.bones.interpreter.ExtractionInterpreter.{AppendGenericValidation, ExtractionErrors, RequiredObjectError, StringProducer, ValidationOp, ValidationResultNel}
 
 import scala.annotation.tailrec
 import scala.util.matching.Regex
@@ -152,7 +152,7 @@ object StringValidation {
     override def description: String = "Base64"
   }
 
-  val hostnameRegex: Regex = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$".r
+  val hostnameRegex: Regex = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$".r
   case class Hostname() extends ValidationOp[String] {
     override def isValid: (String) => Boolean = hostnameRegex.findFirstMatchIn(_).isDefined
     override def defaultError(t: String): String = s"$t is not a hostname"
@@ -160,7 +160,7 @@ object StringValidation {
     override def description: String = "RFC1123 hostname"
   }
 
-  val ipv4Regex: Regex = "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$".r
+  val ipv4Regex: Regex = "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$".r
   case class Ipv4() extends ValidationOp[String] {
     override def isValid: String => Boolean = ipv4Regex.findFirstMatchIn(_).isDefined
 
@@ -248,11 +248,11 @@ object StringValidation {
     with StringExtraction[Option, OptionalString] {
 
     def extract(input: StringProducer): Validated[ExtractionErrors, Option[String]] = {
-      input.produceString(key).toValidatedNel.andThen {
+      input.produceString(key).toValidatedNel.andThen((s: Option[String]) => s match {
         case Some(str) =>
           ValidationUtil.runAndMapValidations(key, str, validations).map(Some(_))
         case None => Valid(None)
-      }
+      })
     }
 
 
@@ -270,9 +270,9 @@ object StringValidation {
     def optional(): OptionalString = OptionalString(key, validations)
 
     def extract(producer: StringProducer): ValidationResultNel[String] = {
-      producer.produceString(key).toValidated.leftMap(NonEmptyList.one).andThen {
+      producer.produceString(key).leftMap(NonEmptyList.one).andThen {
         case Some(e) => Valid(e)
-        case None => Invalid(NonEmptyList.one(ValidationError(key, RequiredOp(), None)))
+        case None => Invalid(NonEmptyList.one(RequiredObjectError(key)))
       }.andThen(str =>
         ValidationUtil.runAndMapValidations(key, str, validations)
       )

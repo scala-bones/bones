@@ -4,7 +4,7 @@ import cats.Id
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
-import com.ot.bones.interpreter.ExtractionInterpreter.{AppendGenericValidation, ExtractionError, ExtractionErrors, JsonProducer, RequiredOp, ValidationError, ValidationOp}
+import com.ot.bones.interpreter.ExtractionInterpreter.{AppendGenericValidation, ExtractionError, ExtractionErrors, JsonProducer, RequiredObjectError, ValidationOp}
 
 
 object IntValidation {
@@ -104,11 +104,11 @@ object IntValidation {
     with IntExtraction[Option, OptionalInt] {
 
     def extract(input: JsonProducer): Validated[ExtractionErrors, Option[Int]] = {
-      input.produceInt(key).toValidatedNel.andThen {
-        case Some(int) =>
-          ValidationUtil.runAndMapValidations(key, int, validations).map(Some(_))
-        case None => Valid(None)
-      }
+      input.produceInt(key).toValidatedNel.andThen((i: Option[Int]) => i match {
+          case Some(int) =>
+            ValidationUtil.runAndMapValidations(key, int, validations).map(Some(_))
+          case None => Valid(None)
+      })
     }
 
 
@@ -126,9 +126,9 @@ object IntValidation {
     def optional(): OptionalInt = OptionalInt(key, validations)
 
     def extract(producer: JsonProducer): Validated[NonEmptyList[ExtractionError], Int] = {
-      producer.produceInt(key).toValidated.leftMap(NonEmptyList.one).andThen {
+      producer.produceInt(key).leftMap(NonEmptyList.one).andThen {
         case Some(e) => Valid(e)
-        case None => Invalid(NonEmptyList.one(ValidationError(key, RequiredOp(), None)))
+        case None => Invalid(NonEmptyList.one(RequiredObjectError(key)))
       }.andThen(i =>
         ValidationUtil.runAndMapValidations(key, i, validations)
       )

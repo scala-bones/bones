@@ -59,7 +59,7 @@ object BigDecimalValidation {
 
     def extract(input: JsonProducer, functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): Validated[ExtractionErrors, Option[BigDecimal]] = {
       keyOrOptionalString match {
-        case Left(key) => input.produceString(key).leftMap(NonEmptyList.one(_)).toValidated andThen {
+        case Left(key) => input.produceString(key).leftMap(NonEmptyList.one(_)) andThen {
           case Some(str) => extractFromStringAndValidate(str, key).map(Some(_))
           case None => Valid(None)
         }
@@ -82,7 +82,7 @@ object BigDecimalValidation {
 
     def extract(input: JsonProducer, functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): Validated[ExtractionErrors, BigDecimal] = {
       keyOrRequiredString match {
-        case Left(key) => input.produceString(key).leftMap(NonEmptyList.one(_)).toValidated andThen {
+        case Left(key) => input.produceString(key).leftMap(NonEmptyList.one(_)) andThen {
           case Some(str) => extractFromStringAndValidate(str, key)
           case None => Invalid(NonEmptyList.one(RequiredObjectError(key)))
         }

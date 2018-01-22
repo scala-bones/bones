@@ -3,7 +3,7 @@ package com.ot.bones.interpreter
 import cats.Applicative
 import com.ot.bones.transform.{OptionalTransform, Transform}
 import com.ot.bones.validation.CustomConversionFromString.RequiredCustomExtraction
-import com.ot.bones.validation.DateValidation.OptionalDateExtraction
+import com.ot.bones.validation.DateValidation.{OptionalDate, RequiredDate}
 import com.ot.bones.validation.IntValidation.RequiredInt
 import com.ot.bones.validation.StringValidation.{OptionalString, RequiredString}
 import com.ot.bones.validation.ToHList.{ToHListDataDefinitionOp, ToOptionalHListDataDefinitionOp}
@@ -51,7 +51,8 @@ object DocInterpreter {
         case op: ToHListDataDefinitionOp[_] => Doc(s"Required object ${keyDesc(op.key)}.")
         case op: ToOptionalHListDataDefinitionOp[_] => Doc(s"Optional object ${keyDesc(op.key)} ")
         case op: RequiredInt => Doc(s"Required Int ${keyDesc(op.key)}")
-        case op: OptionalDateExtraction => Doc(s"Required Date with format ${op.dateFormat})}")
+        case op: RequiredDate => Doc(s"Required Date with format ${op.dateFormat})}")
+        case op: OptionalDate => Doc(s"Optional Date with format ${op.dateFormat})}")
         case op: OptionalTransform[a,b] => Doc(s"converted to Class ${op.manifestA.runtimeClass.getSimpleName}")
         case op: Transform[A,a] => Doc(s"converted to Class ${op.manifestA.runtimeClass.getSimpleName}")
         case op: RequiredUuidExtraction => Doc(s"Converted to UUID)}")
