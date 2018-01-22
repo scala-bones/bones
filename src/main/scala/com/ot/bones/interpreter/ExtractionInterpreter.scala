@@ -6,12 +6,12 @@ import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
 import com.ot.bones.transform.{OptionalTransform, Transform}
 import com.ot.bones.validation.CustomConversionFromString.RequiredCustomExtraction
-import com.ot.bones.validation.DateValidation.OptionalDateExtraction
+import com.ot.bones.validation.DateValidation.{OptionalDate, RequiredDate}
 import com.ot.bones.validation.IntValidation.RequiredInt
-import com.ot.bones.validation.{DataDefinitionOp, Key}
 import com.ot.bones.validation.StringValidation.{OptionalString, RequiredString}
 import com.ot.bones.validation.ToHList.{ToHListDataDefinitionOp, ToOptionalHListDataDefinitionOp}
 import com.ot.bones.validation.UuidValidation.RequiredUuidExtraction
+import com.ot.bones.validation.{DataDefinitionOp, Key}
 
 
 object ExtractionInterpreter {
@@ -35,7 +35,7 @@ object ExtractionInterpreter {
   case class WrongTypeError[T](key: Key, expectedType: Class[T], providedType: Class[_]) extends ExtractionError {
     val keys = NonEmptyList.one(key)
   }
-  case class ConversionError[T](key: Key, input: T, toType: Class[T]) extends ExtractionError {
+  case class ConversionError[I,T](key: Key, input: I, toType: Class[T]) extends ExtractionError {
     val keys = NonEmptyList.one(key)
   }
   case class RequiredObjectError(key: Key) extends ExtractionError {
@@ -53,10 +53,6 @@ object ExtractionInterpreter {
     */
   trait ExtractionOp[T] {
     def description: String
-  }
-
-  case class RequiredOp[T]() extends ExtractionOp[T] {
-    override def description: String = "required"
   }
 
   /** Represents a validation operation */
@@ -79,22 +75,25 @@ object ExtractionInterpreter {
 
 
   trait StringProducer {
-    def produceString(key: Key): Either[WrongTypeError[String], Option[String]]
+    def produceString(key: Key): Validated[WrongTypeError[String], Option[String]]
   }
   trait IntProducer {
-    def produceInt(key: Key): Either[WrongTypeError[Int], Option[Int]]
+    def produceInt(key: Key): Validated[WrongTypeError[Int], Option[Int]]
   }
   trait BoolProducer {
-    def produceBool(key: Key): Either[WrongTypeError[Boolean], Option[Boolean]]
+    def produceBool(key: Key): Validated[WrongTypeError[Boolean], Option[Boolean]]
   }
   trait BigDecimalProducer {
-    def produceBigDecimal(key: Key): Either[WrongTypeError[BigDecimal], Option[BigDecimal]]
+    def produceBigDecimal(key: Key): Validated[WrongTypeError[BigDecimal], Option[BigDecimal]]
   }
   trait ObjectProducer {
-    def produceObject(key: Key): Either[WrongTypeError[JsonProducer], Option[JsonProducer]]
+    def produceObject(key: Key): Validated[WrongTypeError[JsonProducer], Option[JsonProducer]]
+  }
+  trait ListProducer {
+    def produceList(key: Key): Validated[WrongTypeError[List[_]], Option[List[JsonProducer]]]
   }
 
-  abstract class JsonProducer extends StringProducer with IntProducer with BoolProducer with BigDecimalProducer with ObjectProducer
+  abstract class JsonProducer extends StringProducer with IntProducer with BoolProducer with BigDecimalProducer with ObjectProducer with ListProducer
 
   /**
     * This is so we can add the most generic ValidationOp types generically to
@@ -142,7 +141,7 @@ object ExtractionInterpreter {
     def apply[A](fgo: DataDefinitionOp[A]): ValidateFromProducer[A] = jsonProducer =>
       fgo match {
         case key: Key => {
-          jsonProducer.produceObject(key).leftMap(NonEmptyList.one).toValidated
+          jsonProducer.produceObject(key).leftMap(NonEmptyList.one)
         }
         case op: ToHListDataDefinitionOp[a] => {
           op.extract(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
@@ -153,7 +152,8 @@ object ExtractionInterpreter {
         case op: RequiredString => op.extract(jsonProducer)
         case op: OptionalString  => op.extract(jsonProducer)
         case op: RequiredInt => op.extract(jsonProducer)
-        case op: OptionalDateExtraction => op.extract(jsonProducer)
+        case op: OptionalDate => op.extract(jsonProducer)
+        case op: RequiredDate => op.extract(jsonProducer)
         case op: OptionalTransform[a,b] => op.extract(this)(jsonProducer)
 //        case op: ObjectFieldGroup[a,z] => op.extract(jsonProducer)
         case op: Transform[A,a] => op.extract(this)(jsonProducer)

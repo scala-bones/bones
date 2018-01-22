@@ -7,7 +7,7 @@ import cats.data.Validated.{Invalid, Valid}
 import com.ot.bones.everything.key
 import com.ot.bones.interpreter.DocInterpreter
 import com.ot.bones.interpreter.ExtractionInterpreter.{DefaultExtractInterpreter, JsonProducer, ValidateFromProducer, ValidationError, WrongTypeError}
-import com.ot.bones.producer.LiftJson
+import com.ot.bones.producer.LiftJsonProducer
 import com.ot.bones.validation.Key
 import com.ot.bones.validation.StringValidation.Max
 import org.scalatest.FunSuite
@@ -111,7 +111,7 @@ class ValidationTest extends FunSuite {
 
     //sorry, we still use lift in my projects.  I will soon create a Circe JsonProducer.
     val parsed = net.liftweb.json.parse(cc)
-    val jsonProducer = LiftJson(parsed)
+    val jsonProducer = LiftJsonProducer(parsed)
 
     //create the program that is responsible for converting JSON into a CC.
     val jsonToCCProgram = extractData.lift.foldMap[ValidateFromProducer](DefaultExtractInterpreter())

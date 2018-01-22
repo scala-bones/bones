@@ -6,8 +6,7 @@ import java.util.Date
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
-import com.ot.bones.interpreter.ExtractionInterpreter.{AppendGenericValidation, ExtractionError, ExtractionErrors, ExtractionOp, JsonProducer, ValidationError, ValidationOp}
-import com.ot.bones.validation.StringValidation.{OptionalString, RequiredString}
+import com.ot.bones.interpreter.ExtractionInterpreter.{AppendGenericValidation, ExtractionError, ExtractionErrors, ExtractionOp, JsonProducer, RequiredObjectError, ValidationError, ValidationOp}
 
 import scala.reflect.macros.ParseException
 
@@ -51,26 +50,32 @@ object DateValidation {
   }
 
 
-  case class RequiredDateExtraction(stringExtraction: RequiredString, dateFormat: Format, formatDescription: Option[String], validations: List[ValidationOp[Date]])
+  case class RequiredDate(key: Key, dateFormat: Format, formatDescription: Option[String], validations: List[ValidationOp[Date]])
     extends DataDefinitionOp[Date] {
 
     def extract(jsonProducer: JsonProducer): Validated[ExtractionErrors, Date] =
-      stringExtraction.extract(jsonProducer).andThen(convert(_, dateFormat, formatDescription, stringExtraction.key))
+      jsonProducer.produceString(key).leftMap(NonEmptyList.one)andThen {
+        case Some(str) => convert(str, dateFormat, formatDescription, key)
+        case None => Invalid(NonEmptyList.one(RequiredObjectError(key)))
+      }
+
+    def optional(): OptionalDate = OptionalDate(key, dateFormat, formatDescription, validations)
   }
 
-  case class OptionalDateExtraction(stringExtraction: OptionalString, dateFormat: Format, formatDescription: Option[String], validations: List[ValidationOp[Date]]) extends DataDefinitionOp[Option[Date]] {
+  case class OptionalDate(key: Key, dateFormat: Format, formatDescription: Option[String], validations: List[ValidationOp[Date]])
+    extends DataDefinitionOp[Option[Date]] {
+
     def extract(producer: JsonProducer): Validated[NonEmptyList[ExtractionError], Option[Date]] =
-      stringExtraction.extract(producer).andThen {
-        case Some(uuidStr) => convert(uuidStr, dateFormat, formatDescription, stringExtraction.key).map(Some(_))
+      producer.produceString(key).leftMap(NonEmptyList.one).andThen {
+        case Some(uuidStr) => convert(uuidStr, dateFormat, formatDescription, key).map(Some(_))
         case None => Valid(None)
       }
   }
+
 }
 
 /** Implicits in order to add data validation to a String */
 trait DateValidation {
-  import DateValidation._
-  import StringValidation._
 
   trait DateDefinitions[T] {
     /** Specify the format and the description.  If None, then we use the format.toString as a description.*/
@@ -86,11 +91,4 @@ trait DateValidation {
     def isoDate() = date(DateTimeFormatter.ISO_DATE.toFormat, Some("ISO date format with the offset if available, such as '2011-12-03' or '2011-12-03+01:00'"))
   }
 
-  implicit class OptionalStringToDate(optionalString: OptionalString) extends DateDefinitions[OptionalDateExtraction] {
-    def date(format: Format, formatDescription: Option[String] = None) : OptionalDateExtraction = OptionalDateExtraction(optionalString, format, formatDescription, List.empty)
-  }
-
-  implicit class RequiredStringToDate(requiredString: RequiredString) extends DateDefinitions[RequiredDateExtraction] {
-    def date(format: Format, formatDescription: Option[String] = None) : RequiredDateExtraction = RequiredDateExtraction(requiredString, format, formatDescription, List.empty)
-  }
 }
