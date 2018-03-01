@@ -1,15 +1,15 @@
 package com.ot.bones.transform
 
 import cats.arrow.FunctionK
-import com.ot.bones.interpreter.ExtractionInterpreter.{ValidateFromProducer, JsonProducer}
+import com.ot.bones.ToHList.{ToHListDataDefinitionOp, ToOptionalHListDataDefinitionOp}
+import com.ot.bones.interpreter.ExtractionInterpreter.{JsonProducer, ValidateFromProducer}
 import com.ot.bones.validation.DataDefinitionOp
-import com.ot.bones.validation.ToHList.{ToHListDataDefinitionOp, ToOptionalHListDataDefinitionOp}
 import shapeless._
 
 /**
   * This class was influenced by scode.Transform.
   * */
-case class Transform[A:Manifest,B](op: DataDefinitionOp[B], f: A => B, g: B => A) extends DataDefinitionOp[A] {
+case class Transform[A:Manifest,B](op: DataDefinitionOp[B], f: A => B, g: B => A) {
 
   val manifestA: Manifest[A] = manifest[A]
 
@@ -22,7 +22,7 @@ case class Transform[A:Manifest,B](op: DataDefinitionOp[B], f: A => B, g: B => A
 
 }
 
-case class OptionalTransform[A: Manifest, B](op: DataDefinitionOp[Option[B]], f: A => B, g: B => A) extends DataDefinitionOp[Option[A]] {
+case class OptionalTransform[A: Manifest, B](op: DataDefinitionOp[Option[B]], f: A => B, g: B => A) {
   val manifestA: Manifest[A] = manifest[A]
 
   def extract[T](functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): ValidateFromProducer[Option[A]] = {

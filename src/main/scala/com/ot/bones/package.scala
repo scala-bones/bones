@@ -1,14 +1,10 @@
 package com.ot
 
-import cats.free.FreeApplicative
-import com.ot.bones.transform.TransformSyntax
-import com.ot.bones.validation.{CustomConversionFromString, UuidValidation, _}
+import com.ot.bones.validation.{KeySyntax, ObjAlias}
 
 package object bones {
 
-  object everything extends UuidValidation with CustomConversionFromString with DateValidation with TransformSyntax
-    with KeySyntax
+  object everything extends KeySyntax with ObjAlias
 
-  object obj extends ToHList
 
 }
