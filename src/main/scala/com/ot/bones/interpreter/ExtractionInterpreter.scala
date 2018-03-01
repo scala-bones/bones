@@ -1,47 +1,53 @@
 package com.ot.bones.interpreter
 
 import cats.Applicative
+import cats.arrow.Compose
 import cats.data.Validated.Valid
 import cats.data.{NonEmptyList, Validated}
+import cats.free.FreeApplicative
 import cats.implicits._
+import com.ot.bones.BooleanDataDefinition.{OptionalBoolean, RequiredBoolean}
+import com.ot.bones.IntDataDefinition.{OptionalInt, RequiredInt}
+import com.ot.bones.StringDataDefinition.{OptionalString, RequiredString}
+import com.ot.bones.ToHList.{ToHListDataDefinitionOp, ToOptionalHListDataDefinitionOp}
+import com.ot.bones.convert.BigDecimalValidation.ConvertBigDecimal
+import com.ot.bones.convert.CustomConversionFromString.CustomConversion
+import com.ot.bones.convert.CustomConversionFromStringInstances
+import com.ot.bones.convert.string.StringConversionOp
+import com.ot.bones.interpreter.ExtractionInterpreter.ValidationResultNel
 import com.ot.bones.transform.{OptionalTransform, Transform}
-import com.ot.bones.validation.CustomConversionFromString.RequiredCustomExtraction
-import com.ot.bones.validation.DateValidation.{OptionalDate, RequiredDate}
-import com.ot.bones.validation.IntValidation.RequiredInt
-import com.ot.bones.validation.StringValidation.{OptionalString, RequiredString}
-import com.ot.bones.validation.ToHList.{ToHListDataDefinitionOp, ToOptionalHListDataDefinitionOp}
-import com.ot.bones.validation.UuidValidation.RequiredUuidExtraction
+import com.ot.bones.validation.ValidationDefinition.ValidationOp
 import com.ot.bones.validation.{DataDefinitionOp, Key}
+import net.liftweb.json.JsonAST._
+import shapeless.HList
 
 
 object ExtractionInterpreter {
 
   /** Error Case */
   trait ExtractionError {
-    def keys: NonEmptyList[Key]
+//    def keys: NonEmptyList[Key]
   }
 
   /**
     * Used to indicate a validation error.
-    * @param key
     * @param failurePoint The extraction op where the error failed.
     * @param input The input, if available.
-    * @tparam T the target Type
-    * @tparam I the input Type (ie, the base type, for instance the base type of UUID would be String)
+    * @tparam T Type that was validated.
     */
-  case class ValidationError[T,I](key: Key, failurePoint: ExtractionOp[T], input: Option[I]) extends ExtractionError {
-    val keys = NonEmptyList.one(key)
+  case class ValidationError[T](failurePoint: ValidationOp[T], input: T) extends ExtractionError {
+//    val keys = NonEmptyList.one(key)
   }
-  case class WrongTypeError[T](key: Key, expectedType: Class[T], providedType: Class[_]) extends ExtractionError {
-    val keys = NonEmptyList.one(key)
+  case class WrongTypeError[T](expectedType: Class[T], providedType: Class[_]) extends ExtractionError {
+//    val keys = NonEmptyList.one(key)
   }
-  case class ConversionError[I,T](key: Key, input: I, toType: Class[T]) extends ExtractionError {
-    val keys = NonEmptyList.one(key)
+  case class ConversionError[A,T](input: A, toType: Class[T]) extends ExtractionError {
+//    val keys = NonEmptyList.one(RootKey)
   }
-  case class RequiredObjectError(key: Key) extends ExtractionError {
-    val keys = NonEmptyList.one(key)
+  case class RequiredObjectError() extends ExtractionError {
+//    val keys = NonEmptyList.one(key)
   }
-  case class MultiKeyError[T](keys: NonEmptyList[Key], failurePoint: ExtractionOp[T]) extends ExtractionError
+//  case class MultiKeyError[T](keys: NonEmptyList[Key], failurePoint: ExtractionOp[T]) extends ExtractionError
 
 
   type ExtractionErrors = NonEmptyList[ExtractionError]
@@ -49,79 +55,45 @@ object ExtractionInterpreter {
   type ValidationResult[T] = Validated[ExtractionError,T]
   type ValidationResultNel[T] = Validated[NonEmptyList[ExtractionError], T]
 
-  /**Extracting consists of Validation and Conversion.
-    */
-  trait ExtractionOp[T] {
-    def description: String
-  }
 
-  /** Represents a validation operation */
-  trait ValidationOp[T] extends ExtractionOp[T] {
-    def isValid: T => Boolean
-    def defaultError(t: T): String
-  }
 
-  case class ValidValue[T](validValues: Vector[T]) extends ValidationOp[T] {
-    override def isValid: (T) => Boolean = validValues.contains
-    override def defaultError(t: T): String = s"Value ${t} must be one of ${validValues.mkString("('","','","')")}"
-    override def description: String = s"one of ${validValues.mkString("('","','","')")}"
-  }
 
-  case class InvalidValue[T](invalidValues: Vector[T]) extends ValidationOp[T] {
-    override def isValid: (T) => Boolean = str => {! invalidValues.contains(str)}
-    override def defaultError(t: T): String = s"Value ${t} must not be one of ${invalidValues.mkString("('","','","')")}"
-    override def description: String = s"not one of ${invalidValues.mkString("('","','","')")}"
-  }
 
 
   trait StringProducer {
-    def produceString(key: Key): Validated[WrongTypeError[String], Option[String]]
+    def produceString: Validated[WrongTypeError[String], Option[String]]
   }
   trait IntProducer {
-    def produceInt(key: Key): Validated[WrongTypeError[Int], Option[Int]]
+    def produceInt: Validated[WrongTypeError[Int], Option[Int]]
   }
   trait BoolProducer {
-    def produceBool(key: Key): Validated[WrongTypeError[Boolean], Option[Boolean]]
+    def produceBool: Validated[WrongTypeError[Boolean], Option[Boolean]]
   }
-  trait BigDecimalProducer {
-    def produceBigDecimal(key: Key): Validated[WrongTypeError[BigDecimal], Option[BigDecimal]]
+  trait DoubleProducer {
+    def produceDouble: Validated[WrongTypeError[Double], Option[Double]]
   }
   trait ObjectProducer {
-    def produceObject(key: Key): Validated[WrongTypeError[JsonProducer], Option[JsonProducer]]
+    def produceObject: Validated[WrongTypeError[JsonProducer], Option[JsonProducer]]
   }
   trait ListProducer {
-    def produceList(key: Key): Validated[WrongTypeError[List[_]], Option[List[JsonProducer]]]
+    def produceList: Validated[WrongTypeError[List[_]], Option[List[JsonProducer]]]
+  }
+  trait JsonKeyResolver {
+    def resolve(key: Key): JsonProducer
   }
 
-  abstract class JsonProducer extends StringProducer with IntProducer with BoolProducer with BigDecimalProducer with ObjectProducer with ListProducer
+  abstract class JsonProducer extends StringProducer with IntProducer with BoolProducer with DoubleProducer
+    with ObjectProducer with ListProducer with JsonKeyResolver
 
-  /**
-    * This is so we can add the most generic ValidationOp types generically to
-    * to any DataDefinitionOp
-    * @tparam NE The Extraction type when a new Validation Op is appended.
-    */
-  trait AppendGenericValidation[O,F[_], NE] {
-    def append(sv: ValidationOp[O]) : NE
+  abstract class JsonConsumer
 
-    /**
-      *  Provide a list of O valid values and append
-      *  the 'valid' ValidationOp to the DataDefinitionOp, returning a new DataDefinitionOp.
-      *
-      * @param o The valid values.
-      * @return The Next Instance of a DataDefinitionOp
-      */
-    def valid(o: O*): NE = append(ValidValue(o.toVector))
-
-    /** Provide a list of O invalid values and append the 'InvalidValue' ValidationOp to
-      * the DataDefinitionOp mixing in this trait with a new instance of the DataDefinitionOp.
-      *
-      * @param o
-      * @return
-      */
-    def invalid(o: O*): NE = append(InvalidValue(o.toVector))
+  type ConvertString[A] = String => Validated[NonEmptyList[ExtractionError], A]
+  object StringConverterInterpreter extends cats.arrow.FunctionK[StringConversionOp, ConvertString] {
+    override def apply[A](fa: StringConversionOp[A]): ConvertString[A] = str => fa match {
+      case cbd: ConvertBigDecimal => cbd.convertFromStringAndValidate(str).asInstanceOf[Validated[NonEmptyList[ExtractionError], A]]
+      case _ => ???
+    }
   }
-
-
 
   // a function that takes a JsonProducer as input
 //  type FromProducer[A] = JsonProducer => A
@@ -140,29 +112,105 @@ object ExtractionInterpreter {
   case class DefaultExtractInterpreter() extends cats.arrow.FunctionK[DataDefinitionOp, ValidateFromProducer] {
     def apply[A](fgo: DataDefinitionOp[A]): ValidateFromProducer[A] = jsonProducer =>
       fgo match {
-        case key: Key => {
-          jsonProducer.produceObject(key).leftMap(NonEmptyList.one)
-        }
         case op: ToHListDataDefinitionOp[a] => {
-          op.extract(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
+          op.extract(this).apply(jsonProducer).asInstanceOf[ValidationResultNel[A]]
         }
         case op: ToOptionalHListDataDefinitionOp[a] => {
-          op.extract(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
+          op.extractRoot(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
         }
-        case op: RequiredString => op.extract(jsonProducer)
-        case op: OptionalString  => op.extract(jsonProducer)
-        case op: RequiredInt => op.extract(jsonProducer)
-        case op: OptionalDate => op.extract(jsonProducer)
-        case op: RequiredDate => op.extract(jsonProducer)
-        case op: OptionalTransform[a,b] => op.extract(this)(jsonProducer)
+        case op: RequiredString => op.extract(jsonProducer).asInstanceOf[ValidationResultNel[A]]
+        case op: OptionalString  => op.extract(jsonProducer).asInstanceOf[ValidationResultNel[A]]
+        case op: RequiredInt => op.extract(jsonProducer).asInstanceOf[ValidationResultNel[A]]
+//        case op: OptionalTransform[a,b] => op.extract(this)(jsonProducer)
 //        case op: ObjectFieldGroup[a,z] => op.extract(jsonProducer)
-        case op: Transform[A,a] => op.extract(this)(jsonProducer)
-        case op: RequiredUuidExtraction => op.extract(jsonProducer)
-        case op: RequiredCustomExtraction[a] => op.extract(jsonProducer)
+//        case op: Transform[A,a] => op.extract(this)(jsonProducer)
 //
 //        case _ => ???
       }
   }
 
+}
+
+object DataDefinitionOpToJValue {
+
+  /** DataDefinitionOp is the base class defining the FreeAp for each data definition..*/
+  trait JValueDataDefinitionOp[J] {
+    //lift any JValueDataDefinition into a FreeApplicative
+    def lift: JValueDataDefinition[J] = FreeApplicative.lift(this)
+  }
+
+  type JValueDataDefinition[J] = FreeApplicative[JValueDataDefinitionOp, J]
+
+  case class JValueDataDefinitionWrap[A,J](dataDefinitionOp: DataDefinitionOp[A]) extends JValueDataDefinitionOp[J]
+
+  implicit class ToHListDataDefinitionOpToJValue[L <: HList](hListDataDefinitionOp: ToHListDataDefinitionOp[L]) {
+    def toJValue[JObject]: JValueDataDefinitionWrap[L,JObject] =
+      JValueDataDefinitionWrap[L, JObject](hListDataDefinitionOp)
+  }
+
+}
+
+object EncoderInterpreter {
+
+
+  trait AToJson[T]
+  case class AToJsonPure[A](a: A)
+  case class AToJsonAp[A,B](f: A => B)
+
+//  case class AToJsonEnconcer() extends cats.arrow.FunctionK[DataDefinitionOp, AToJson] {
+//    override def apply[A](fa: DataDefinitionOp[A]): AToJson[A] = fa match {
+//      case op: ToHListDataDefinitionOp[A] => {
+//        op.encodeMembers(this).apply(input)
+//      }
+//    }
+//  }
+
+  type ValidateAndEncode[A] = A => ValidationResultNel[JValue]
+
+  implicit def validateAndEncodeFreeAp = new  Applicative[ValidateAndEncode] {
+    def pure[A](x: A): ValidateAndEncode[A] = {
+      a => Valid(JNothing)
+    }
+
+    def ap[A, B](ff: ValidateAndEncode[A => B])(fa: ValidateAndEncode[A]): ValidateAndEncode[B] = {
+//      (b: B) => {
+//        def aToB: A => B = a => {
+//          (fa.apply(a), ff.apply(aToB)).mapN( (v1, v2) => v1 ++ v2)
+//        }
+//      }
+      ???
+    }
+  }
+
+
+  object DefaultEncoderInterpreter {
+
+  }
+
+  case class DefaultEncoderInterpreter() extends cats.arrow.FunctionK[DataDefinitionOp, ValidateAndEncode] {
+
+    def apply[A](fgo: DataDefinitionOp[A]): ValidateAndEncode[A] = (input: A) =>
+      fgo match {
+        case op: ToHListDataDefinitionOp[A] => {
+          op.encodeMembers(this).apply(input)
+        }
+        case ob: OptionalBoolean => input.asInstanceOf[Option[Boolean]] match {
+          case Some(b) => Valid(JBool(b))
+          case None => Valid(JNull)
+        }
+        case rb: RequiredBoolean => Valid(JBool(input.asInstanceOf[Boolean]))
+        case rs: RequiredString => Valid(JString(input.asInstanceOf[String]))
+        case os: OptionalString => input.asInstanceOf[Option[String]] match {
+          case Some(str) => Valid(JString(str))
+          case None => Valid(JNothing)
+        }
+        case ri: RequiredInt => Valid(JInt(input.asInstanceOf[Int]))
+        case oi: OptionalInt => input.asInstanceOf[Option[Int]] match {
+          case Some(i) => Valid(JInt(i))
+          case None => Valid(JNull)
+        }
+      }
+
+  }
 
 }
