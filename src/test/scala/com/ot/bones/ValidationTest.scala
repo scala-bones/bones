@@ -12,6 +12,8 @@ import com.ot.bones.producer.LiftJsonProducer
 import com.ot.bones.validation.Key
 import org.scalatest.FunSuite
 import cats.implicits._
+import com.ot.bones.convert.UuidConversionInstances
+import com.ot.bones.convert.UuidConversionInstances.UuidConversion
 import com.ot.bones.validation.ValidationDefinition.StringValidation.Max
 import com.ot.bones.validation.ValidationDefinition.{IntValidation => iv, StringValidation => sv}
 
@@ -31,7 +33,7 @@ class ValidationTest extends FunSuite {
 
     override def produceList: Validated[WrongTypeError[List[_]], Option[List[JsonProducer]]] = Valid(None)
 
-    override def resolve(key: Key): JsonProducer = this
+    override def child(key: Key): JsonProducer = this
   }
 
 
@@ -77,18 +79,18 @@ class ValidationTest extends FunSuite {
     import shapeless._
 
     // Here we are defining our expected input data.  This definition will drive the interpreters.
-    val extractData = obj9(
+    val extractData = obj11(
       key("firstFive").string(sv.length(5), sv.matchesRegex("[0-9]{5}".r)),
       key("lastFour").string(sv.length(4), sv.matchesRegex("[0-9]{4}".r)),
-      key("uuid").string(),
-      key("token").string(),
+      key("uuid").uuid(),
+      key("token").uuid(),
 //      key("ccType").string().custom("to CreditCardType", toCreditCardType),
       key("expMonth").int(iv.between(1, 12)),
       key("expYear").int(iv.between(1950, 9999)),
       key("cardHolder").string(),
       key("currencyIso").string(sv.length(3)),
-//      key("deletedAt").string().optional().isoDateTime(),
-//      key("lastModifiedRequest").string().asUuid(),
+      key("deletedAt").isoDateTime(),
+      key("lastModifiedRequest").uuid(),
       key("billingLocation").obj2(
         key("countryIso").string(sv.validValue(isoVector)),
         key("zipCode").string()
@@ -127,8 +129,8 @@ class ValidationTest extends FunSuite {
     //here, we will test that just the validation step is working
     val btCc = jsonToCCProgram.apply(jsonProducer)
 
-    assert(btCc == Valid(HList("12345", "4321", "df15f08c-e6bd-11e7-aeb8-6003089f08b4",
-      "e58e7dda-e6bd-11e7-b901-6003089f08b4", 11, 2022,
+    assert(btCc == Valid(HList("12345", "4321", UUID.fromString("df15f08c-e6bd-11e7-aeb8-6003089f08b4"),
+      UUID.fromString("e58e7dda-e6bd-11e7-b901-6003089f08b4"), 11, 2022,
       "Lennart Augustsson", "USD", HList("US", "80031")
     )))
 
@@ -181,8 +183,8 @@ class ValidationTest extends FunSuite {
       override def produceString: Validated[WrongTypeError[String], Option[String]] = Valid(Some("Not(&*&Valid"))
     }
 
-    assert( alpha._2.extract(validInput) == Valid(Some("thisisalphanum")))
-    assert( alpha._2.extract(invalidInput).isInvalid)
+    assert( alpha.op.extract(validInput) == Valid("thisisalphanum"))
+    assert( alpha.op.extract(invalidInput).isInvalid)
 
 
 
@@ -206,10 +208,10 @@ class ValidationTest extends FunSuite {
       override def produceString: Validated[WrongTypeError[String], Option[String]] = Valid(Some("$3"))
     }
 
-    assert( x._2.extract(validInput) == Valid(Some("valid")))
+    assert( x.op.extract(validInput) == Valid(Some("valid")))
 
 
-    x._2.extract(failsOne) match {
+    x.op.extract(failsOne) match {
       case Invalid(nel) => {
         assert( nel.size == 1)
         nel.head match {
@@ -220,7 +222,7 @@ class ValidationTest extends FunSuite {
       case x => fail("Expected Invalid, received:" + x)
     }
 
-    x._2.extract(failsTwo) match {
+    x.op.extract(failsTwo) match {
       case Invalid(nel) => {
         assert( nel.size == 2)
       }

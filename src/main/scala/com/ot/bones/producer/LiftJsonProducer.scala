@@ -109,5 +109,5 @@ case class LiftJsonProducer(jValue: JValue) extends JsonProducer {
   override def produceList: Validated[WrongTypeError[List[_]], Option[List[JsonProducer]]] =
     lookForArray(jValue)
 
-  override def resolve(key: Key): LiftJsonProducer = LiftJsonProducer( jValue \ key.name )
+  override def child(key: Key): LiftJsonProducer = LiftJsonProducer( jValue \ key.name )
 }
