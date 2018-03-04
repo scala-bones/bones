@@ -1,21 +1,16 @@
 package com.ot.bones.interpreter
 
 import cats.Applicative
-import cats.arrow.Compose
 import cats.data.Validated.Valid
 import cats.data.{NonEmptyList, Validated}
 import cats.free.FreeApplicative
 import cats.implicits._
 import com.ot.bones.BooleanDataDefinition.{OptionalBoolean, RequiredBoolean}
 import com.ot.bones.IntDataDefinition.{OptionalInt, RequiredInt}
-import com.ot.bones.StringDataDefinition.{OptionalString, RequiredString}
+import com.ot.bones.StringDataDefinition.{RequiredString}
 import com.ot.bones.ToHList.{ToHListDataDefinitionOp, ToOptionalHListDataDefinitionOp}
-import com.ot.bones.convert.BigDecimalValidation.ConvertBigDecimal
-import com.ot.bones.convert.CustomConversionFromString.CustomConversion
-import com.ot.bones.convert.CustomConversionFromStringInstances
-import com.ot.bones.convert.string.StringConversionOp
+import com.ot.bones.convert.UuidConversionInstances.UuidConversion
 import com.ot.bones.interpreter.ExtractionInterpreter.ValidationResultNel
-import com.ot.bones.transform.{OptionalTransform, Transform}
 import com.ot.bones.validation.ValidationDefinition.ValidationOp
 import com.ot.bones.validation.{DataDefinitionOp, Key}
 import net.liftweb.json.JsonAST._
@@ -79,21 +74,13 @@ object ExtractionInterpreter {
     def produceList: Validated[WrongTypeError[List[_]], Option[List[JsonProducer]]]
   }
   trait JsonKeyResolver {
-    def resolve(key: Key): JsonProducer
+    def child(key: Key): JsonProducer
   }
 
   abstract class JsonProducer extends StringProducer with IntProducer with BoolProducer with DoubleProducer
     with ObjectProducer with ListProducer with JsonKeyResolver
 
   abstract class JsonConsumer
-
-  type ConvertString[A] = String => Validated[NonEmptyList[ExtractionError], A]
-  object StringConverterInterpreter extends cats.arrow.FunctionK[StringConversionOp, ConvertString] {
-    override def apply[A](fa: StringConversionOp[A]): ConvertString[A] = str => fa match {
-      case cbd: ConvertBigDecimal => cbd.convertFromStringAndValidate(str).asInstanceOf[Validated[NonEmptyList[ExtractionError], A]]
-      case _ => ???
-    }
-  }
 
   // a function that takes a JsonProducer as input
 //  type FromProducer[A] = JsonProducer => A
@@ -119,8 +106,10 @@ object ExtractionInterpreter {
           op.extractRoot(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
         }
         case op: RequiredString => op.extract(jsonProducer).asInstanceOf[ValidationResultNel[A]]
-        case op: OptionalString  => op.extract(jsonProducer).asInstanceOf[ValidationResultNel[A]]
+//        case op: OptionalString  => op.extract(jsonProducer).asInstanceOf[ValidationResultNel[A]]
         case op: RequiredInt => op.extract(jsonProducer).asInstanceOf[ValidationResultNel[A]]
+        case op: RequiredBoolean => op.extract(jsonProducer).asInstanceOf[ValidationResultNel[A]]
+        case op: UuidConversion => op.extract(jsonProducer).asInstanceOf[ValidationResultNel[A]]
 //        case op: OptionalTransform[a,b] => op.extract(this)(jsonProducer)
 //        case op: ObjectFieldGroup[a,z] => op.extract(jsonProducer)
 //        case op: Transform[A,a] => op.extract(this)(jsonProducer)
@@ -200,15 +189,16 @@ object EncoderInterpreter {
         }
         case rb: RequiredBoolean => Valid(JBool(input.asInstanceOf[Boolean]))
         case rs: RequiredString => Valid(JString(input.asInstanceOf[String]))
-        case os: OptionalString => input.asInstanceOf[Option[String]] match {
-          case Some(str) => Valid(JString(str))
-          case None => Valid(JNothing)
-        }
+//        case os: OptionalString => input.asInstanceOf[Option[String]] match {
+//          case Some(str) => Valid(JString(str))
+//          case None => Valid(JNothing)
+//        }
         case ri: RequiredInt => Valid(JInt(input.asInstanceOf[Int]))
         case oi: OptionalInt => input.asInstanceOf[Option[Int]] match {
           case Some(i) => Valid(JInt(i))
           case None => Valid(JNull)
         }
+        case uu: UuidConversion => Valid(JString(input.toString))
       }
 
   }
