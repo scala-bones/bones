@@ -1,14 +1,5 @@
 package com.ot.bones.interpreter
 
-import cats.Applicative
-import com.ot.bones.IntDataDefinition.{OptionalInt, RequiredInt}
-import com.ot.bones.StringDataDefinition.{RequiredString}
-import com.ot.bones.ToHList.{ToHListDataDefinitionOp, ToOptionalHListDataDefinitionOp}
-import com.ot.bones.convert.DateConversionInstances.DateConversion
-import com.ot.bones.convert.UuidConversionInstances.UuidConversion
-import com.ot.bones.transform.{OptionalTransform, Transform}
-import com.ot.bones.validation._
-
 object DocInterpreter {
 //
 //  object Doc {

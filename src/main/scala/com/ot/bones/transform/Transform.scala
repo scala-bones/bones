@@ -1,7 +1,7 @@
 package com.ot.bones.transform
 
 import cats.arrow.FunctionK
-import com.ot.bones.ToHList.{ToHListDataDefinitionOp, ToOptionalHListDataDefinitionOp}
+import com.ot.bones.ToHList.ToHListDataDefinitionOp
 import com.ot.bones.interpreter.ExtractionInterpreter.{JsonProducer, ValidateFromProducer}
 import com.ot.bones.validation.DataDefinitionOp
 import shapeless._
@@ -53,9 +53,5 @@ trait TransformSyntax {
       = Transform.fromGeneric(op, gen)
   }
 
-  implicit class OptionalHListToTransform[L <: HList](op: ToOptionalHListDataDefinitionOp[L]) {
-    def transform[Z:Manifest](implicit gen: Generic.Aux[Z, L]) : OptionalTransform[Z, L]
-      = Transform.fromGenericOptional(op, gen)
-  }
 
 }

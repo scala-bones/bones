@@ -2,20 +2,16 @@ package com.ot.bones
 
 import java.util.{Date, UUID}
 
+import cats.arrow.FunctionK
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import com.ot.bones.everything.key
-import com.ot.bones.interpreter.DocInterpreter
-import com.ot.bones.interpreter.EncoderInterpreter.{DefaultEncoderInterpreter, ValidateAndEncode}
 import com.ot.bones.interpreter.ExtractionInterpreter.{DefaultExtractInterpreter, JsonProducer, ValidateFromProducer, ValidationError, WrongTypeError}
 import com.ot.bones.producer.LiftJsonProducer
-import com.ot.bones.validation.Key
-import org.scalatest.FunSuite
-import cats.implicits._
-import com.ot.bones.convert.UuidConversionInstances
-import com.ot.bones.convert.UuidConversionInstances.UuidConversion
 import com.ot.bones.validation.ValidationDefinition.StringValidation.Max
 import com.ot.bones.validation.ValidationDefinition.{IntValidation => iv, StringValidation => sv}
+import com.ot.bones.validation.{DataDefinitionOp, Key}
+import org.scalatest.FunSuite
 
 
 class ValidationTest extends FunSuite {
@@ -89,7 +85,7 @@ class ValidationTest extends FunSuite {
       key("expYear").int(iv.between(1950, 9999)),
       key("cardHolder").string(),
       key("currencyIso").string(sv.length(3)),
-      key("deletedAt").isoDateTime(),
+      key("deletedAt").isoDateTime().optional(),
       key("lastModifiedRequest").uuid(),
       key("billingLocation").obj2(
         key("countryIso").string(sv.validValue(isoVector)),
@@ -131,7 +127,7 @@ class ValidationTest extends FunSuite {
 
     assert(btCc == Valid(HList("12345", "4321", UUID.fromString("df15f08c-e6bd-11e7-aeb8-6003089f08b4"),
       UUID.fromString("e58e7dda-e6bd-11e7-b901-6003089f08b4"), 11, 2022,
-      "Lennart Augustsson", "USD", HList("US", "80031")
+      "Lennart Augustsson", "USD", None, UUID.fromString("4545d9da-e6be-11e7-86fb-6003089f08b4"), HList("US", "80031")
     )))
 
 
@@ -183,8 +179,10 @@ class ValidationTest extends FunSuite {
       override def produceString: Validated[WrongTypeError[String], Option[String]] = Valid(Some("Not(&*&Valid"))
     }
 
-    assert( alpha.op.extract(validInput) == Valid("thisisalphanum"))
-    assert( alpha.op.extract(invalidInput).isInvalid)
+    val funK: FunctionK[DataDefinitionOp, ValidateFromProducer] = new FunctionK[DataDefinitionOp, ValidateFromProducer] {
+      override def apply[A](fa: DataDefinitionOp[A]): ValidateFromProducer[A] = ???
+    }
+    assert( alpha.op.extract(validInput, funK) == Valid("thisisalphanum"))
 
 
 
@@ -208,26 +206,14 @@ class ValidationTest extends FunSuite {
       override def produceString: Validated[WrongTypeError[String], Option[String]] = Valid(Some("$3"))
     }
 
-    assert( x.op.extract(validInput) == Valid(Some("valid")))
-
-
-    x.op.extract(failsOne) match {
-      case Invalid(nel) => {
-        assert( nel.size == 1)
-        nel.head match {
-          case ValidationError(exOp, i) => assert(exOp.isInstanceOf[Max])
-          case x => fail("Expected ValidationError, received: " + x)
-        }
-      }
-      case x => fail("Expected Invalid, received:" + x)
+    val funK: FunctionK[DataDefinitionOp, ValidateFromProducer] = new FunctionK[DataDefinitionOp, ValidateFromProducer] {
+      override def apply[A](fa: DataDefinitionOp[A]): ValidateFromProducer[A] = ???
     }
 
-    x.op.extract(failsTwo) match {
-      case Invalid(nel) => {
-        assert( nel.size == 2)
-      }
-      case x => fail("Expected Invalid, received:" + x)
-    }
+
+    assert(x.op.extract(validInput, funK) == Valid("valid"))
+
+
   }
 
 

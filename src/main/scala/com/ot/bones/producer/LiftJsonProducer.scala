@@ -10,13 +10,13 @@ case class LiftJsonProducer(jValue: JValue) extends JsonProducer {
 
   private def lookForString(jValue: JValue): Validated[WrongTypeError[String], Option[String]] = {
     jValue match {
-      case JArray(_) => Invalid(WrongTypeError( classOf[String], classOf[Array[_]]))
-      case JBool(_) => Invalid(WrongTypeError( classOf[String], classOf[Boolean]))
-      case JDouble(_) => Invalid(WrongTypeError( classOf[String], classOf[Double]))
-      case JField(_,_) => Invalid(WrongTypeError( classOf[String], classOf[Object]))
-      case JInt(_) => Invalid(WrongTypeError( classOf[String], classOf[BigInt]))
+      case JArray(_) => Invalid(WrongTypeError( classOf[String], classOf[JArray]))
+      case JBool(_) => Invalid(WrongTypeError( classOf[String], classOf[JBool]))
+      case JDouble(_) => Invalid(WrongTypeError( classOf[String], classOf[JDouble]))
+      case JField(_,JString(s)) => Valid(Some(s))
+      case JInt(_) => Invalid(WrongTypeError( classOf[String], classOf[JInt]))
       case JNothing => Valid(None)
-      case JObject(_) => Invalid(WrongTypeError( classOf[String], classOf[Object]))
+      case JObject(_) => Invalid(WrongTypeError( classOf[String], classOf[JObject]))
       case JString(str) => Valid(Some(str))
       case JNull =>  Valid(None)
     }
@@ -24,14 +24,14 @@ case class LiftJsonProducer(jValue: JValue) extends JsonProducer {
 
   private def lookForDouble(jValue: JValue): Validated[WrongTypeError[Double], Option[Double]] = {
     jValue match {
-      case JArray(_) => Invalid(WrongTypeError( classOf[Double], classOf[Array[_]]))
-      case JBool(_) => Invalid(WrongTypeError( classOf[Double], classOf[Boolean]))
+      case JArray(_) => Invalid(WrongTypeError( classOf[Double], classOf[JArray]))
+      case JBool(_) => Invalid(WrongTypeError( classOf[Double], classOf[JBool]))
       case JDouble(d) => Valid(Some(d))
-      case JField(_,_) => Invalid(WrongTypeError( classOf[Double], classOf[Object]))
-      case JInt(_) => Invalid(WrongTypeError( classOf[Double], classOf[BigInt]))
+      case JField(_,_) => Invalid(WrongTypeError( classOf[Double], classOf[JField]))
+      case JInt(_) => Invalid(WrongTypeError( classOf[Double], classOf[JInt]))
       case JNothing => Valid(None)
-      case JObject(_) => Invalid(WrongTypeError( classOf[Double], classOf[Object]))
-      case JString(str) => Invalid(WrongTypeError( classOf[Double], classOf[Object]))
+      case JObject(_) => Invalid(WrongTypeError( classOf[Double], classOf[JObject]))
+      case JString(str) => Invalid(WrongTypeError( classOf[Double], classOf[JString]))
       case JNull =>  Valid(None)
     }
   }
@@ -52,14 +52,14 @@ case class LiftJsonProducer(jValue: JValue) extends JsonProducer {
 
   private def lookForObject(jValue: JValue): Validated[WrongTypeError[JsonProducer], Option[LiftJsonProducer]] = {
     jValue match {
-      case JArray(_) => Invalid(WrongTypeError( classOf[JsonProducer], classOf[Array[_]]))
-      case JBool(_) => Invalid(WrongTypeError( classOf[JsonProducer], classOf[Boolean]))
-      case JDouble(_) => Invalid(WrongTypeError( classOf[JsonProducer], classOf[Double]))
-      case JField(_,_) => Invalid(WrongTypeError( classOf[JsonProducer], classOf[Object]))
-      case JInt(_) => Invalid(WrongTypeError( classOf[JsonProducer], classOf[BigInt]))
+      case JArray(_) => Invalid(WrongTypeError( classOf[JsonProducer], classOf[JArray]))
+      case JBool(_) => Invalid(WrongTypeError( classOf[JsonProducer], classOf[JBool]))
+      case JDouble(_) => Invalid(WrongTypeError( classOf[JsonProducer], classOf[JDouble]))
+      case JField(_,_) => Invalid(WrongTypeError( classOf[JsonProducer], classOf[JField]))
+      case JInt(_) => Invalid(WrongTypeError( classOf[JsonProducer], classOf[JInt]))
       case JNothing => Valid(None)
       case JObject(obj) => Valid(Some(LiftJsonProducer(JObject(obj))))
-      case JString(_) => Invalid(WrongTypeError( classOf[JsonProducer], classOf[String]))
+      case JString(_) => Invalid(WrongTypeError( classOf[JsonProducer], classOf[JString]))
       case JNull =>  Valid(None)
     }
   }
