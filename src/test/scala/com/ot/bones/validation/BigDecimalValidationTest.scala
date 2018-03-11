@@ -1,6 +1,6 @@
 package com.ot.bones.validation
 
-import com.ot.bones.convert.BigDecimalValidation.{Max, Min}
+import com.ot.bones.BigDecimalValidation._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Prop._
 import org.scalatest.FunSuite
