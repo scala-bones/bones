@@ -12,7 +12,8 @@ lazy val root = (project in file(".")).
       "net.liftweb" %% "lift-json" % "2.6.3" % "optional", //Used for JsonExtract
       "org.typelevel" %% "cats-effect" % "0.5",
       "org.scalacheck" %% "scalacheck" % "1.13.4" % Test,
-      "org.scalatest" %% "scalatest" % "3.0.4" % Test
+      "org.scalatest" %% "scalatest" % "3.0.4" % Test,
+      "org.easymock" %% "easymock" % "3.5.1" % Test
     )
   )
 

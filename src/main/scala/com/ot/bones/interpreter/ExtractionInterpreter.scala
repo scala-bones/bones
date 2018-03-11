@@ -5,14 +5,14 @@ import cats.data.Validated.Valid
 import cats.data.{NonEmptyList, Validated}
 import cats.free.FreeApplicative
 import cats.implicits._
-import com.ot.bones.BooleanDataDefinition.{OptionalBoolean, RequiredBoolean}
-import com.ot.bones.IntDataDefinition.{OptionalInt, RequiredInt}
-import com.ot.bones.StringDataDefinition.{RequiredString}
-import com.ot.bones.ToHList.{ToHListDataDefinitionOp, ToOptionalHListDataDefinitionOp}
-import com.ot.bones.convert.UuidConversionInstances.UuidConversion
+import com.ot.bones.BooleanDataDefinition.BooleanData
+import com.ot.bones.IntDataDefinition.IntData
+import com.ot.bones.StringDataDefinition.StringData
+import com.ot.bones.ToHList.ToHListDataDefinitionOp
+import com.ot.bones.convert.UuidConversionInstances.UuidData
 import com.ot.bones.interpreter.ExtractionInterpreter.ValidationResultNel
 import com.ot.bones.validation.ValidationDefinition.ValidationOp
-import com.ot.bones.validation.{DataDefinitionOp, Key}
+import com.ot.bones.validation.{DataDefinitionOp, Key, OptionalDataDefinition}
 import net.liftweb.json.JsonAST._
 import shapeless.HList
 
@@ -99,17 +99,17 @@ object ExtractionInterpreter {
   case class DefaultExtractInterpreter() extends cats.arrow.FunctionK[DataDefinitionOp, ValidateFromProducer] {
     def apply[A](fgo: DataDefinitionOp[A]): ValidateFromProducer[A] = jsonProducer =>
       fgo match {
+        case op: OptionalDataDefinition[b] => op.extract(jsonProducer, this).asInstanceOf[ValidationResultNel[A]]
+
         case op: ToHListDataDefinitionOp[a] => {
-          op.extract(this).apply(jsonProducer).asInstanceOf[ValidationResultNel[A]]
+          op.extract(jsonProducer, this).asInstanceOf[ValidationResultNel[A]]
         }
-        case op: ToOptionalHListDataDefinitionOp[a] => {
-          op.extractRoot(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
-        }
-        case op: RequiredString => op.extract(jsonProducer).asInstanceOf[ValidationResultNel[A]]
+        case op: StringData => op.extract(jsonProducer, this).asInstanceOf[ValidationResultNel[A]]
 //        case op: OptionalString  => op.extract(jsonProducer).asInstanceOf[ValidationResultNel[A]]
-        case op: RequiredInt => op.extract(jsonProducer).asInstanceOf[ValidationResultNel[A]]
-        case op: RequiredBoolean => op.extract(jsonProducer).asInstanceOf[ValidationResultNel[A]]
-        case op: UuidConversion => op.extract(jsonProducer).asInstanceOf[ValidationResultNel[A]]
+        case op: IntData => op.extract(jsonProducer, this).asInstanceOf[ValidationResultNel[A]]
+        case op: BooleanData => op.extract(jsonProducer, this).asInstanceOf[ValidationResultNel[A]]
+        case op: UuidData => op.extract(jsonProducer, this).asInstanceOf[ValidationResultNel[A]]
+//        case op: UuidConversion => op.extract(jsonProducer).asInstanceOf[ValidationResultNel[A]]
 //        case op: OptionalTransform[a,b] => op.extract(this)(jsonProducer)
 //        case op: ObjectFieldGroup[a,z] => op.extract(jsonProducer)
 //        case op: Transform[A,a] => op.extract(this)(jsonProducer)
@@ -180,25 +180,27 @@ object EncoderInterpreter {
 
     def apply[A](fgo: DataDefinitionOp[A]): ValidateAndEncode[A] = (input: A) =>
       fgo match {
+        case op: OptionalDataDefinition[b] => {
+          input match {
+            case Some(x) => apply(op.dataDefinitionOp).apply(x)
+            case None => Valid(JNothing)
+          }
+        }
         case op: ToHListDataDefinitionOp[A] => {
           op.encodeMembers(this).apply(input)
         }
-        case ob: OptionalBoolean => input.asInstanceOf[Option[Boolean]] match {
+        case ob: BooleanData => input.asInstanceOf[Option[Boolean]] match {
           case Some(b) => Valid(JBool(b))
           case None => Valid(JNull)
         }
-        case rb: RequiredBoolean => Valid(JBool(input.asInstanceOf[Boolean]))
-        case rs: RequiredString => Valid(JString(input.asInstanceOf[String]))
+        case rb: BooleanData => Valid(JBool(input.asInstanceOf[Boolean]))
+        case rs: StringData => Valid(JString(input.asInstanceOf[String]))
 //        case os: OptionalString => input.asInstanceOf[Option[String]] match {
 //          case Some(str) => Valid(JString(str))
 //          case None => Valid(JNothing)
 //        }
-        case ri: RequiredInt => Valid(JInt(input.asInstanceOf[Int]))
-        case oi: OptionalInt => input.asInstanceOf[Option[Int]] match {
-          case Some(i) => Valid(JInt(i))
-          case None => Valid(JNull)
-        }
-        case uu: UuidConversion => Valid(JString(input.toString))
+        case ri: IntData => Valid(JInt(input.asInstanceOf[Int]))
+        case uu: UuidData => Valid(JString(input.toString))
       }
 
   }

@@ -4,7 +4,7 @@ import cats.Apply
 import cats.arrow.FunctionK
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import com.ot.bones.interpreter.ExtractionInterpreter.{ValidationError, ValidationResultNel}
+import com.ot.bones.interpreter.ExtractionInterpreter.{ExtractionError, ValidationError, ValidationResultNel}
 import cats.implicits._
 import com.ot.bones.validation.ValidationDefinition.ValidationOp
 
@@ -28,7 +28,9 @@ object ValidationUtil {
   /**
     * Responsible for running the list of validations.
     */
-  def runAndMapValidations[T](input: T, validations: List[ValidationOp[T]])(implicit A: Apply[ValidatedNel[ValidationError[T], ?]]): ValidationResultNel[T] =
+  def runAndMapValidations[T](input: T, validations: Seq[ValidationOp[T]])(implicit A: Apply[ValidatedNel[ValidationError[T], ?]]):
+    Validated[NonEmptyList[ValidationError[T]], T] =
+
     validations.map(ValidationUtil.runValidation(input, _))
       .foldLeft[ValidatedNel[ValidationError[T], T]](Valid(input))((last, next) => {
         val n: ValidatedNel[ValidationError[T], T] = next.leftMap(NonEmptyList.one)
