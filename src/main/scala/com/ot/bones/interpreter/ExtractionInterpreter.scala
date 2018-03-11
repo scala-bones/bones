@@ -1,15 +1,16 @@
 package com.ot.bones.interpreter
 
 import cats.Applicative
-import cats.data.Validated.Valid
+import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.free.FreeApplicative
 import cats.implicits._
 import com.ot.bones.BooleanDataDefinition.BooleanData
+import com.ot.bones.DateConversionInstances.DateData
 import com.ot.bones.IntDataDefinition.IntData
 import com.ot.bones.StringDataDefinition.StringData
 import com.ot.bones.ToHList.ToHListDataDefinitionOp
-import com.ot.bones.convert.UuidConversionInstances.UuidData
+import com.ot.bones.UuidConversionInstances.UuidData
 import com.ot.bones.interpreter.ExtractionInterpreter.ValidationResultNel
 import com.ot.bones.validation.ValidationDefinition.ValidationOp
 import com.ot.bones.validation.{DataDefinitionOp, Key, OptionalDataDefinition}
@@ -99,7 +100,17 @@ object ExtractionInterpreter {
   case class DefaultExtractInterpreter() extends cats.arrow.FunctionK[DataDefinitionOp, ValidateFromProducer] {
     def apply[A](fgo: DataDefinitionOp[A]): ValidateFromProducer[A] = jsonProducer =>
       fgo match {
-        case op: OptionalDataDefinition[b] => op.extract(jsonProducer, this).asInstanceOf[ValidationResultNel[A]]
+        case op: OptionalDataDefinition[b] => {
+          this(op.dataDefinitionOp)(jsonProducer) match {
+            case Valid(v) => Valid(Some(v)).asInstanceOf[ValidationResultNel[A]]
+            case Invalid(x) => {
+              x.filterNot(_.isInstanceOf[RequiredObjectError]).toNel match {
+                case Some(nel) => Invalid(nel)
+                case None => Valid(None).asInstanceOf[ValidationResultNel[A]]
+              }
+            }
+          }
+        }
 
         case op: ToHListDataDefinitionOp[a] => {
           op.extract(jsonProducer, this).asInstanceOf[ValidationResultNel[A]]
@@ -109,6 +120,7 @@ object ExtractionInterpreter {
         case op: IntData => op.extract(jsonProducer, this).asInstanceOf[ValidationResultNel[A]]
         case op: BooleanData => op.extract(jsonProducer, this).asInstanceOf[ValidationResultNel[A]]
         case op: UuidData => op.extract(jsonProducer, this).asInstanceOf[ValidationResultNel[A]]
+        case op: DateData => op.extract(jsonProducer, this).asInstanceOf[ValidationResultNel[A]]
 //        case op: UuidConversion => op.extract(jsonProducer).asInstanceOf[ValidationResultNel[A]]
 //        case op: OptionalTransform[a,b] => op.extract(this)(jsonProducer)
 //        case op: ObjectFieldGroup[a,z] => op.extract(jsonProducer)

@@ -1,16 +1,21 @@
 package com.ot.bones
 
+import java.text.{DateFormat, Format, ParseException, SimpleDateFormat}
+import java.util.{Date, UUID}
+
 import cats.arrow.FunctionK
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.free.FreeApplicative
 import cats.implicits._
 import com.ot.bones.interpreter.EncoderInterpreter.ValidateAndEncode
-import com.ot.bones.interpreter.ExtractionInterpreter.{BoolProducer, ExtractionError, ExtractionErrors, JsonProducer, RequiredObjectError, StringProducer, ValidateFromProducer, ValidationError, ValidationResultNel}
+import com.ot.bones.interpreter.ExtractionInterpreter.{BoolProducer, ConversionError, ExtractionError, ExtractionErrors, JsonProducer, RequiredObjectError, StringProducer, ValidateFromProducer, ValidationError, ValidationResultNel}
 import com.ot.bones.validation.ValidationDefinition.{ToOptionalValidation, ValidationOp}
 import com.ot.bones.validation._
 import net.liftweb.json.JsonAST.{JField, JObject, JValue}
 import shapeless.{::, HList, HNil}
+
+import scala.util.control.NonFatal
 
 package object validation {
 
@@ -22,27 +27,12 @@ package object validation {
   }
 
   /** DataDefinitionOp is the base class defining the FreeAp for each data definition.. */
-  trait DataDefinitionOp[A] {
-
+  sealed trait DataDefinitionOp[A] {
     //lift any DataDefinition into a FreeApplicative
     def lift: DataDefinition[A] = FreeApplicative.lift(this)
-
-    def extract(producer: JsonProducer, functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): ValidationResultNel[A]
   }
 
-  case class OptionalDataDefinition[B](dataDefinitionOp: DataDefinitionOp[B]) extends DataDefinitionOp[Option[B]] {
-    def extract(jsonProducer: JsonProducer, functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]) : ValidationResultNel[Option[B]] = {
-      dataDefinitionOp.extract(jsonProducer, functionK) match {
-        case Valid(v) => Valid(Some(v))
-        case Invalid(x) => {
-          x.filterNot(_.isInstanceOf[RequiredObjectError]).toNel match {
-            case Some(nel) => Invalid(nel)
-            case None => Valid(None)
-          }
-        }
-      }
-    }
-  }
+  case class OptionalDataDefinition[B](dataDefinitionOp: DataDefinitionOp[B]) extends DataDefinitionOp[Option[B]]
 
   trait ToOptionalData[A] extends DataDefinitionOp[A] {
     def toOption = OptionalDataDefinition(this)
@@ -62,7 +52,6 @@ object BooleanDataDefinition {
         case None => Invalid(NonEmptyList.one(RequiredObjectError()))
       }
     }
-
   }
 
 }
@@ -146,7 +135,7 @@ object ToHList {
   abstract class ToHListDataDefinitionOp[L <: HList] extends DataDefinitionOp[L] with ToOptionalData[L] {
 
     /** Get a list of untyped members */
-    def members: List[FieldDefinition[_, _]]
+    def members: List[FieldDefinition[_]]
 
     /** Extract the child or children.  AA should be a Tuple */
     def extractMembers(functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): ValidateFromProducer[L]
@@ -169,46 +158,10 @@ object ToHList {
 
   }
 
-  //  /** Used to create a generic extract method if we can extract optional values from the products. */
-  //  abstract class ToOptionalHListDataDefinitionOp[L <: HList] extends DataDefinitionOp[Option[L]] {
-  //
-  //    /** The key used to extract the value from the JsonProducer */
-  //    def members: List[FieldDefinition[_,_]]
-  //
-  //    /** Extract the child or children.  AA should be a Tuple */
-  //    def extractMembers(functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): ValidateFromProducer[L]
-  //
-  //    /** This will be used to implement the FieldGroupOp in the context of the children. */
-  //    def extract(key: Key, functionK: FunctionK[DataDefinitionOp, ValidateFromProducer])
-  //    : ValidateFromProducer[Option[L]] = {
-  //      (json: JsonProducer) =>
-  //      {
-  //        json.child(key).produceObject.leftMap(NonEmptyList.one).andThen {
-  //          case Some(producer) =>
-  //            extractMembers(functionK)(producer).map(Some(_))
-  //          case None => Valid(None)
-  //        }
-  //      }
-  //    }
-  //
-  //    def extractRoot(functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): ValidateFromProducer[Option[L]] = {
-  //      (json: JsonProducer) =>
-  //      {
-  //        json.produceObject.leftMap(NonEmptyList.one).andThen {
-  //          case Some(producer) =>
-  //            extractMembers(functionK)(producer).map(Some(_))
-  //          case None => Valid(None)
-  //        }
-  //      }
-  //
-  //    }
-  //  }
-
-
   /** Represents a required HList with two properties A and B */
   final case class HList2[A, B](
-                                 op1: FieldDefinition[A, DataDefinitionOp[A]],
-                                 op2: FieldDefinition[B, DataDefinitionOp[B]]
+                                 op1: FieldDefinition[A],
+                                 op2: FieldDefinition[B]
                                ) extends ToHListDataDefinitionOp[A :: B :: HNil] {
 
     def extractMembers(functionK: FunctionK[DataDefinitionOp, ValidateFromProducer])
@@ -230,15 +183,15 @@ object ToHList {
     }
 
 
-    def members: List[FieldDefinition[_, _]] = List(op1, op2)
+    def members: List[FieldDefinition[_]] = List(op1, op2)
   }
 
 
   /** Represents a required HList with three properties A,B,C */
   final case class HList3[A, B, C](
-                                    op1: FieldDefinition[A, DataDefinitionOp[A]],
-                                    op2: FieldDefinition[B, DataDefinitionOp[B]],
-                                    op3: FieldDefinition[C, DataDefinitionOp[C]]
+                                    op1: FieldDefinition[A],
+                                    op2: FieldDefinition[B],
+                                    op3: FieldDefinition[C]
                                   )
     extends ToHListDataDefinitionOp[A :: B :: C :: HNil] {
 
@@ -266,16 +219,16 @@ object ToHList {
       }
     }
 
-    def members: List[FieldDefinition[_, _]] = List(op1, op2, op3)
+    def members: List[FieldDefinition[_]] = List(op1, op2, op3)
 
   }
 
   /** Represents a required HList with four properties A,B,C,D */
   final case class HList4[A, B, C, D](
-                                       op1: FieldDefinition[A, DataDefinitionOp[A]],
-                                       op2: FieldDefinition[B, DataDefinitionOp[B]],
-                                       op3: FieldDefinition[C, DataDefinitionOp[C]],
-                                       op4: FieldDefinition[D, DataDefinitionOp[D]])
+                                       op1: FieldDefinition[A],
+                                       op2: FieldDefinition[B],
+                                       op3: FieldDefinition[C],
+                                       op4: FieldDefinition[D])
     extends ToHListDataDefinitionOp[A :: B :: C :: D :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
@@ -307,17 +260,17 @@ object ToHList {
     }
 
 
-    def members: List[FieldDefinition[_, _]] = List(op1, op2, op3, op4)
+    def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4)
   }
 
 
   /** Represents a required HList with four properties. */
   final case class HList5[A, B, C, D, E](
-                                          op1: FieldDefinition[A, DataDefinitionOp[A]],
-                                          op2: FieldDefinition[B, DataDefinitionOp[B]],
-                                          op3: FieldDefinition[C, DataDefinitionOp[C]],
-                                          op4: FieldDefinition[D, DataDefinitionOp[D]],
-                                          op5: FieldDefinition[E, DataDefinitionOp[E]])
+                                          op1: FieldDefinition[A],
+                                          op2: FieldDefinition[B],
+                                          op3: FieldDefinition[C],
+                                          op4: FieldDefinition[D],
+                                          op5: FieldDefinition[E])
     extends ToHListDataDefinitionOp[A :: B :: C :: D :: E :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
@@ -351,18 +304,18 @@ object ToHList {
       }
     }
 
-    def members: List[FieldDefinition[_, _]] = List(op1, op2, op3, op4, op4)
+    def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4, op4)
   }
 
 
   /** Represents a required HList with six properties. */
   final case class HList6[A, B, C, D, E, F](
-                                             op1: FieldDefinition[A, DataDefinitionOp[A]],
-                                             op2: FieldDefinition[B, DataDefinitionOp[B]],
-                                             op3: FieldDefinition[C, DataDefinitionOp[C]],
-                                             op4: FieldDefinition[D, DataDefinitionOp[D]],
-                                             op5: FieldDefinition[E, DataDefinitionOp[E]],
-                                             op6: FieldDefinition[F, DataDefinitionOp[F]])
+                                             op1: FieldDefinition[A],
+                                             op2: FieldDefinition[B],
+                                             op3: FieldDefinition[C],
+                                             op4: FieldDefinition[D],
+                                             op5: FieldDefinition[E],
+                                             op6: FieldDefinition[F])
     extends ToHListDataDefinitionOp[A :: B :: C :: D :: E :: F :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
@@ -400,20 +353,20 @@ object ToHList {
       }
     }
 
-    def members: List[FieldDefinition[_, _]] = List(op1, op2, op3, op4, op5, op6)
+    def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4, op5, op6)
 
   }
 
 
   /** Represents a required HList with six properties. */
   final case class HList7[A, B, C, D, E, F, G](
-                                                op1: FieldDefinition[A, DataDefinitionOp[A]],
-                                                op2: FieldDefinition[B, DataDefinitionOp[B]],
-                                                op3: FieldDefinition[C, DataDefinitionOp[C]],
-                                                op4: FieldDefinition[D, DataDefinitionOp[D]],
-                                                op5: FieldDefinition[E, DataDefinitionOp[E]],
-                                                op6: FieldDefinition[F, DataDefinitionOp[F]],
-                                                op7: FieldDefinition[G, DataDefinitionOp[G]])
+                                                op1: FieldDefinition[A],
+                                                op2: FieldDefinition[B],
+                                                op3: FieldDefinition[C],
+                                                op4: FieldDefinition[D],
+                                                op5: FieldDefinition[E],
+                                                op6: FieldDefinition[F],
+                                                op7: FieldDefinition[G])
     extends ToHListDataDefinitionOp[A :: B :: C :: D :: E :: F :: G :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
@@ -455,20 +408,20 @@ object ToHList {
       }
     }
 
-    def members: List[FieldDefinition[_, _]] = List(op1, op2, op3, op4, op5, op6, op7)
+    def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4, op5, op6, op7)
   }
 
 
   /** Represents a required HList with six properties. */
   final case class HList8[A, B, C, D, E, F, G, H](
-                                                   op1: FieldDefinition[A, DataDefinitionOp[A]],
-                                                   op2: FieldDefinition[B, DataDefinitionOp[B]],
-                                                   op3: FieldDefinition[C, DataDefinitionOp[C]],
-                                                   op4: FieldDefinition[D, DataDefinitionOp[D]],
-                                                   op5: FieldDefinition[E, DataDefinitionOp[E]],
-                                                   op6: FieldDefinition[F, DataDefinitionOp[F]],
-                                                   op7: FieldDefinition[G, DataDefinitionOp[G]],
-                                                   op8: FieldDefinition[H, DataDefinitionOp[H]])
+                                                   op1: FieldDefinition[A],
+                                                   op2: FieldDefinition[B],
+                                                   op3: FieldDefinition[C],
+                                                   op4: FieldDefinition[D],
+                                                   op5: FieldDefinition[E],
+                                                   op6: FieldDefinition[F],
+                                                   op7: FieldDefinition[G],
+                                                   op8: FieldDefinition[H])
     extends ToHListDataDefinitionOp[A :: B :: C :: D :: E :: F :: G :: H :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
@@ -517,21 +470,21 @@ object ToHList {
       }
     }
 
-    def members: List[FieldDefinition[_, _]] = List(op1, op2, op3, op4, op5, op6, op7, op8)
+    def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4, op5, op6, op7, op8)
 
   }
 
   /** Represents a required HList with six properties. */
   final case class HList9[A, B, C, D, E, F, G, H, I](
-                                                      op1: FieldDefinition[A, DataDefinitionOp[A]],
-                                                      op2: FieldDefinition[B, DataDefinitionOp[B]],
-                                                      op3: FieldDefinition[C, DataDefinitionOp[C]],
-                                                      op4: FieldDefinition[D, DataDefinitionOp[D]],
-                                                      op5: FieldDefinition[E, DataDefinitionOp[E]],
-                                                      op6: FieldDefinition[F, DataDefinitionOp[F]],
-                                                      op7: FieldDefinition[G, DataDefinitionOp[G]],
-                                                      op8: FieldDefinition[H, DataDefinitionOp[H]],
-                                                      op9: FieldDefinition[I, DataDefinitionOp[I]])
+                                                      op1: FieldDefinition[A],
+                                                      op2: FieldDefinition[B],
+                                                      op3: FieldDefinition[C],
+                                                      op4: FieldDefinition[D],
+                                                      op5: FieldDefinition[E],
+                                                      op6: FieldDefinition[F],
+                                                      op7: FieldDefinition[G],
+                                                      op8: FieldDefinition[H],
+                                                      op9: FieldDefinition[I])
     extends ToHListDataDefinitionOp[A :: B :: C :: D :: E :: F :: G :: H :: I :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
@@ -584,21 +537,21 @@ object ToHList {
       }
     }
 
-    def members: List[FieldDefinition[_, _]] = List(op1, op2, op3, op4, op5, op6, op7, op8, op9)
+    def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4, op5, op6, op7, op8, op9)
   }
 
   /** Represents a required HList with six properties. */
   final case class HList10[A, B, C, D, E, F, G, H, I, J](
-                                                          op1: FieldDefinition[A, DataDefinitionOp[A]],
-                                                          op2: FieldDefinition[B, DataDefinitionOp[B]],
-                                                          op3: FieldDefinition[C, DataDefinitionOp[C]],
-                                                          op4: FieldDefinition[D, DataDefinitionOp[D]],
-                                                          op5: FieldDefinition[E, DataDefinitionOp[E]],
-                                                          op6: FieldDefinition[F, DataDefinitionOp[F]],
-                                                          op7: FieldDefinition[G, DataDefinitionOp[G]],
-                                                          op8: FieldDefinition[H, DataDefinitionOp[H]],
-                                                          op9: FieldDefinition[I, DataDefinitionOp[I]],
-                                                          op10: FieldDefinition[J, DataDefinitionOp[J]])
+                                                          op1: FieldDefinition[A],
+                                                          op2: FieldDefinition[B],
+                                                          op3: FieldDefinition[C],
+                                                          op4: FieldDefinition[D],
+                                                          op5: FieldDefinition[E],
+                                                          op6: FieldDefinition[F],
+                                                          op7: FieldDefinition[G],
+                                                          op8: FieldDefinition[H],
+                                                          op9: FieldDefinition[I],
+                                                          op10: FieldDefinition[J])
     extends ToHListDataDefinitionOp[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
@@ -655,23 +608,23 @@ object ToHList {
       }
     }
 
-    def members: List[FieldDefinition[_, _]] = List(op1, op2, op3, op4, op5, op6, op7, op8, op9, op10)
+    def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4, op5, op6, op7, op8, op9, op10)
   }
 
 
   /** Represents a required HList with six properties. */
   final case class HList11[A, B, C, D, E, F, G, H, I, J, K](
-                                                             op1: FieldDefinition[A, DataDefinitionOp[A]],
-                                                             op2: FieldDefinition[B, DataDefinitionOp[B]],
-                                                             op3: FieldDefinition[C, DataDefinitionOp[C]],
-                                                             op4: FieldDefinition[D, DataDefinitionOp[D]],
-                                                             op5: FieldDefinition[E, DataDefinitionOp[E]],
-                                                             op6: FieldDefinition[F, DataDefinitionOp[F]],
-                                                             op7: FieldDefinition[G, DataDefinitionOp[G]],
-                                                             op8: FieldDefinition[H, DataDefinitionOp[H]],
-                                                             op9: FieldDefinition[I, DataDefinitionOp[I]],
-                                                             op10: FieldDefinition[J, DataDefinitionOp[J]],
-                                                             op11: FieldDefinition[K, DataDefinitionOp[K]])
+                                                             op1: FieldDefinition[A],
+                                                             op2: FieldDefinition[B],
+                                                             op3: FieldDefinition[C],
+                                                             op4: FieldDefinition[D],
+                                                             op5: FieldDefinition[E],
+                                                             op6: FieldDefinition[F],
+                                                             op7: FieldDefinition[G],
+                                                             op8: FieldDefinition[H],
+                                                             op9: FieldDefinition[I],
+                                                             op10: FieldDefinition[J],
+                                                             op11: FieldDefinition[K])
     extends ToHListDataDefinitionOp[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
@@ -732,24 +685,24 @@ object ToHList {
       }
     }
 
-    def members: List[FieldDefinition[_, _]] = List(op1, op2, op3, op4, op5, op6, op7, op8, op9, op10, op11)
+    def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4, op5, op6, op7, op8, op9, op10, op11)
   }
 
 
   /** Represents a required HList with six properties. */
   final case class HList12[A, B, C, D, E, F, G, H, I, J, K, L](
-                                                                op1: FieldDefinition[A, DataDefinitionOp[A]],
-                                                                op2: FieldDefinition[B, DataDefinitionOp[B]],
-                                                                op3: FieldDefinition[C, DataDefinitionOp[C]],
-                                                                op4: FieldDefinition[D, DataDefinitionOp[D]],
-                                                                op5: FieldDefinition[E, DataDefinitionOp[E]],
-                                                                op6: FieldDefinition[F, DataDefinitionOp[F]],
-                                                                op7: FieldDefinition[G, DataDefinitionOp[G]],
-                                                                op8: FieldDefinition[H, DataDefinitionOp[H]],
-                                                                op9: FieldDefinition[I, DataDefinitionOp[I]],
-                                                                op10: FieldDefinition[J, DataDefinitionOp[J]],
-                                                                op11: FieldDefinition[K, DataDefinitionOp[K]],
-                                                                op12: FieldDefinition[L, DataDefinitionOp[L]])
+                                                                op1: FieldDefinition[A],
+                                                                op2: FieldDefinition[B],
+                                                                op3: FieldDefinition[C],
+                                                                op4: FieldDefinition[D],
+                                                                op5: FieldDefinition[E],
+                                                                op6: FieldDefinition[F],
+                                                                op7: FieldDefinition[G],
+                                                                op8: FieldDefinition[H],
+                                                                op9: FieldDefinition[I],
+                                                                op10: FieldDefinition[J],
+                                                                op11: FieldDefinition[K],
+                                                                op12: FieldDefinition[L])
     extends ToHListDataDefinitionOp[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: L :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
@@ -814,9 +767,127 @@ object ToHList {
       }
     }
 
-    def members: List[FieldDefinition[_, _]] = List(op1, op2, op3, op4, op5, op6, op7, op8, op9, op10, op11, op12)
+    def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4, op5, op6, op7, op8, op9, op10, op11, op12)
   }
 
 }
+
+object BigDecimalValidation {
+
+  case class Max(max: BigDecimal) extends ValidationOp[BigDecimal] {
+    override def isValid: (BigDecimal) => Boolean = inputBd => max >= inputBd
+
+    override def defaultError(t: BigDecimal): String = s"$t is greater than the maximum $max"
+
+    override def description: String = s"maximum value of ${max.toString()}"
+  }
+
+  case class Min(min: BigDecimal) extends ValidationOp[BigDecimal] {
+    override def isValid: (BigDecimal) => Boolean = inputBd => min <= inputBd
+
+    override def defaultError(t: BigDecimal): String = s"$t is less than the minimum $min"
+
+    override def description: String = s"minimum value of ${min}"
+  }
+
+  final case class BigDecimalFromString() extends DataDefinitionOp[BigDecimal] {
+
+    def extract(stringProducer: JsonProducer, functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]) : Validated[ExtractionErrors, BigDecimal] = {
+      stringProducer.produceString.leftMap(NonEmptyList.one).andThen {
+        case Some(str) => convertFromString(str)
+        case None => Invalid(NonEmptyList.one(RequiredObjectError()))
+      }
+    }
+
+    def convertFromString(str: String) : Validated[ExtractionErrors, BigDecimal] = {
+      try {
+        Valid(BigDecimal(str))
+      } catch {
+        case ex: NumberFormatException => Invalid(NonEmptyList.one(ConversionError(str, classOf[BigDecimal])))
+      }
+    }
+  }
+
+}
+
+
+object DateConversionInstances {
+
+  case class IsDate(format: Format, formatDescription: Option[String]) {
+    def description: String = formatDescription.getOrElse(s"Is a Date with format ${format.toString}")
+  }
+
+  case class Min(minDate: Date, format: SimpleDateFormat) extends ValidationOp[Date] {
+    override def isValid: Date => Boolean = _.after(minDate)
+
+    override def defaultError(t: Date): String = s"specified date ${format.format(t)} must be after ${format.format(minDate)}"
+
+    override def description: String = s"after ${format.format(minDate)}"
+  }
+
+  case class Max(maxDate: Date, format: SimpleDateFormat) extends ValidationOp[Date] {
+    override def isValid: Date => Boolean = _.before(maxDate)
+
+    override def defaultError(t: Date): String = s"specified date ${format.format(t)} must be before ${format.format(maxDate)}"
+
+    override def description: String = s"before ${format.format(maxDate)}"
+  }
+
+
+  case class DateConversion(dateFormat: SimpleDateFormat, formatDescription: Option[String], validations: List[ValidationOp[Date]]) {
+
+    /** Add the validation enforcing that the supplied value must be greater than min */
+    def min(min: Date): DateConversion = DateConversion(dateFormat, formatDescription, Min(min, dateFormat) :: validations)
+    /** Add the validation enforcing that the supplied value must be less than max */
+    def max(max: Date): DateConversion = DateConversion(dateFormat, formatDescription, Max(max, dateFormat) :: validations)
+
+    def convert(str: String): Validated[ExtractionErrors, Date] =  try {
+      Valid(dateFormat.parseObject(str).asInstanceOf[Date])
+    } catch {
+      case _: ParseException => Invalid(NonEmptyList.one(ConversionError(str, classOf[Date])))
+    }
+
+  }
+
+  case class DateData(dateFormat: DateFormat, formatDescription: Option[String]) extends DataDefinitionOp[Date] with ToOptionalData[Date] {
+
+    def extract(stringProducer: JsonProducer, functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): Validated[ExtractionErrors, Date] = {
+      stringProducer.produceString.leftMap(NonEmptyList.one).andThen {
+        case Some(str) => try {
+          Valid(dateFormat.parseObject(str).asInstanceOf[Date])
+        } catch {
+          case NonFatal(ex) => Invalid(NonEmptyList.one(ConversionError(str, classOf[Date])))
+        }
+        case None => Invalid(NonEmptyList.one(RequiredObjectError()))
+      }
+    }
+  }
+
+}
+
+
+object UuidConversionInstances {
+
+  def convert(uuidString: String): Validated[ExtractionErrors, UUID] = try {
+    Valid(UUID.fromString(uuidString))
+  } catch {
+    case _: IllegalArgumentException => Invalid(NonEmptyList.one(ConversionError(uuidString, classOf[UUID])))
+  }
+
+
+  final case class UuidData() extends DataDefinitionOp[UUID] with ToOptionalData[UUID] {
+
+    def extract(stringProducer: JsonProducer, functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]) : Validated[ExtractionErrors, UUID] = {
+      stringProducer.produceString.leftMap(NonEmptyList.one).andThen {
+        case None => Invalid(NonEmptyList.one(RequiredObjectError()))
+        case Some(str) => convert(str)
+      }
+    }
+
+  }
+
+}
+
+
 
 
