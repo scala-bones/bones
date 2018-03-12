@@ -1,10 +1,8 @@
 package com.ot.bones.interpreter
 
 import cats.Applicative
-import com.ot.bones.IntDataDefinition.IntData
-import com.ot.bones.StringDataDefinition.StringData
-import com.ot.bones.ToHList.ToHListDataDefinitionOp
-import com.ot.bones.validation.{DataDefinitionOp, OptionalDataDefinition}
+import com.ot.bones.data.Algebra.{DataDefinitionOp, IntData, OptionalDataDefinition, StringData}
+import com.ot.bones.data.ToHList.ToHListDataDefinitionOp
 
 object DocInterpreter {
 

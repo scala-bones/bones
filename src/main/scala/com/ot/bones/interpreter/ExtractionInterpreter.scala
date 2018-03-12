@@ -1,21 +1,21 @@
 package com.ot.bones.interpreter
 
+import java.util.{Date, UUID}
+
 import cats.Applicative
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.free.FreeApplicative
 import cats.implicits._
-import com.ot.bones.BooleanDataDefinition.BooleanData
-import com.ot.bones.DateConversionInstances.DateData
-import com.ot.bones.IntDataDefinition.IntData
-import com.ot.bones.StringDataDefinition.StringData
-import com.ot.bones.ToHList.ToHListDataDefinitionOp
-import com.ot.bones.UuidConversionInstances.UuidData
+import com.ot.bones.data.Algebra._
+import com.ot.bones.data.Key
+import com.ot.bones.data.ToHList.ToHListDataDefinitionOp
 import com.ot.bones.interpreter.ExtractionInterpreter.ValidationResultNel
 import com.ot.bones.validation.ValidationDefinition.ValidationOp
-import com.ot.bones.validation.{DataDefinitionOp, Key, OptionalDataDefinition}
 import net.liftweb.json.JsonAST._
 import shapeless.HList
+
+import scala.util.control.NonFatal
 
 
 object ExtractionInterpreter {
@@ -115,38 +115,78 @@ object ExtractionInterpreter {
         case op: ToHListDataDefinitionOp[a] => {
           op.extract(jsonProducer, this).asInstanceOf[ValidationResultNel[A]]
         }
-        case op: StringData => op.extract(jsonProducer, this).asInstanceOf[ValidationResultNel[A]]
-//        case op: OptionalString  => op.extract(jsonProducer).asInstanceOf[ValidationResultNel[A]]
-        case op: IntData => op.extract(jsonProducer, this).asInstanceOf[ValidationResultNel[A]]
-        case op: BooleanData => op.extract(jsonProducer, this).asInstanceOf[ValidationResultNel[A]]
-        case op: UuidData => op.extract(jsonProducer, this).asInstanceOf[ValidationResultNel[A]]
-        case op: DateData => op.extract(jsonProducer, this).asInstanceOf[ValidationResultNel[A]]
-//        case op: UuidConversion => op.extract(jsonProducer).asInstanceOf[ValidationResultNel[A]]
-//        case op: OptionalTransform[a,b] => op.extract(this)(jsonProducer)
-//        case op: ObjectFieldGroup[a,z] => op.extract(jsonProducer)
-//        case op: Transform[A,a] => op.extract(this)(jsonProducer)
-//
-//        case _ => ???
+        case op: StringData => {
+          jsonProducer.produceString.leftMap(NonEmptyList.one).andThen {
+            case Some(e) => Valid(e).asInstanceOf[ValidationResultNel[A]]
+            case None => Invalid(NonEmptyList.one(RequiredObjectError()))
+          }
+
+        }
+        case op: IntData => {
+          jsonProducer.produceInt.leftMap(NonEmptyList.one).andThen {
+            case Some(e) => Valid(e).asInstanceOf[ValidationResultNel[A]]
+            case None => Invalid(NonEmptyList.one(RequiredObjectError()))
+          }
+        }
+        case op: BooleanData => {
+          jsonProducer.produceBool.leftMap(NonEmptyList.one) andThen {
+            case Some(x) => Valid(x).asInstanceOf[ValidationResultNel[A]]
+            case None => Invalid(NonEmptyList.one(RequiredObjectError()))
+          }
+        }
+        case op: UuidData => {
+          def convert(uuidString: String): Validated[ExtractionErrors, UUID] = try {
+            Valid(UUID.fromString(uuidString))
+          } catch {
+            case _: IllegalArgumentException => Invalid(NonEmptyList.one(ConversionError(uuidString, classOf[UUID])))
+          }
+
+          jsonProducer.produceString.leftMap(NonEmptyList.one).andThen {
+            case None => Invalid(NonEmptyList.one(RequiredObjectError()))
+            case Some(str) => convert(str).asInstanceOf[ValidationResultNel[A]]
+          }
+
+        }
+        case DateData(dateFormat, _) => {
+          jsonProducer.produceString.leftMap(NonEmptyList.one).andThen {
+            case Some(str) => try {
+              Valid(dateFormat.parseObject(str).asInstanceOf[Date]).asInstanceOf[ValidationResultNel[A]]
+            } catch {
+              case NonFatal(ex) => Invalid(NonEmptyList.one(ConversionError(str, classOf[Date])))
+            }
+            case None => Invalid(NonEmptyList.one(RequiredObjectError()))
+          }
+
+        }
+        case EitherData(a,b) => {
+          ???
+//          apply(a)(jsonProducer).map(Left(_))
+//            .orElse(apply(b)(jsonProducer).map(Right(_)))
+        }
+        case ListData(definition) => {
+          jsonProducer.produceList.leftMap(NonEmptyList.one).andThen {
+            case Some(list) =>
+              list.map(producer => {
+                apply(definition)(producer)
+              }).sequence.asInstanceOf[ValidationResultNel[A]]
+            case None => Invalid(NonEmptyList.one(RequiredObjectError()))
+          }
+        }
+        case BigDecimalFromString() => {
+          def convertFromString(str: String) : Validated[ExtractionErrors, BigDecimal] = {
+            try {
+              Valid(BigDecimal(str))
+            } catch {
+              case ex: NumberFormatException => Invalid(NonEmptyList.one(ConversionError(str, classOf[BigDecimal])))
+            }
+          }
+
+          jsonProducer.produceString.leftMap(NonEmptyList.one).andThen {
+            case Some(str) => convertFromString(str).asInstanceOf[ValidationResultNel[A]]
+            case None => Invalid(NonEmptyList.one(RequiredObjectError()))
+          }
+        }
       }
-  }
-
-}
-
-object DataDefinitionOpToJValue {
-
-  /** DataDefinitionOp is the base class defining the FreeAp for each data definition..*/
-  trait JValueDataDefinitionOp[J] {
-    //lift any JValueDataDefinition into a FreeApplicative
-    def lift: JValueDataDefinition[J] = FreeApplicative.lift(this)
-  }
-
-  type JValueDataDefinition[J] = FreeApplicative[JValueDataDefinitionOp, J]
-
-  case class JValueDataDefinitionWrap[A,J](dataDefinitionOp: DataDefinitionOp[A]) extends JValueDataDefinitionOp[J]
-
-  implicit class ToHListDataDefinitionOpToJValue[L <: HList](hListDataDefinitionOp: ToHListDataDefinitionOp[L]) {
-    def toJValue[JObject]: JValueDataDefinitionWrap[L,JObject] =
-      JValueDataDefinitionWrap[L, JObject](hListDataDefinitionOp)
   }
 
 }
@@ -158,7 +198,7 @@ object EncoderInterpreter {
   case class AToJsonPure[A](a: A)
   case class AToJsonAp[A,B](f: A => B)
 
-//  case class AToJsonEnconcer() extends cats.arrow.FunctionK[DataDefinitionOp, AToJson] {
+//  case class AToJsonEncoder() extends cats.arrow.FunctionK[DataDefinitionOp, AToJson] {
 //    override def apply[A](fa: DataDefinitionOp[A]): AToJson[A] = fa match {
 //      case op: ToHListDataDefinitionOp[A] => {
 //        op.encodeMembers(this).apply(input)
@@ -166,14 +206,14 @@ object EncoderInterpreter {
 //    }
 //  }
 
-  type ValidateAndEncode[A] = A => ValidationResultNel[JValue]
+  type Encode[A] = A => JValue
 
-  implicit def validateAndEncodeFreeAp = new  Applicative[ValidateAndEncode] {
-    def pure[A](x: A): ValidateAndEncode[A] = {
-      a => Valid(JNothing)
+  implicit def validateAndEncodeFreeAp = new  Applicative[Encode] {
+    def pure[A](x: A): Encode[A] = {
+      a => JNothing
     }
 
-    def ap[A, B](ff: ValidateAndEncode[A => B])(fa: ValidateAndEncode[A]): ValidateAndEncode[B] = {
+    def ap[A, B](ff: Encode[A => B])(fa: Encode[A]): Encode[B] = {
 //      (b: B) => {
 //        def aToB: A => B = a => {
 //          (fa.apply(a), ff.apply(aToB)).mapN( (v1, v2) => v1 ++ v2)
@@ -184,37 +224,37 @@ object EncoderInterpreter {
   }
 
 
-  object DefaultEncoderInterpreter {
+  case class DefaultEncoderInterpreter() extends cats.arrow.FunctionK[DataDefinitionOp, Encode] {
 
-  }
-
-  case class DefaultEncoderInterpreter() extends cats.arrow.FunctionK[DataDefinitionOp, ValidateAndEncode] {
-
-    def apply[A](fgo: DataDefinitionOp[A]): ValidateAndEncode[A] = (input: A) =>
+    def apply[A](fgo: DataDefinitionOp[A]): Encode[A] = (input: A) =>
       fgo match {
         case op: OptionalDataDefinition[b] => {
           input match {
             case Some(x) => apply(op.dataDefinitionOp).apply(x)
-            case None => Valid(JNothing)
+            case None => JNothing
           }
         }
         case op: ToHListDataDefinitionOp[A] => {
           op.encodeMembers(this).apply(input)
         }
-        case ob: BooleanData => input.asInstanceOf[Option[Boolean]] match {
-          case Some(b) => Valid(JBool(b))
-          case None => Valid(JNull)
+        case ob: BooleanData => JBool(input.asInstanceOf[Boolean])
+        case rs: StringData => JString(input.asInstanceOf[String])
+        case ri: IntData => JInt(input.asInstanceOf[Int])
+        case uu: UuidData => JString(input.toString)
+        case DateData(format, _) => JString(format.format(input.asInstanceOf[Date]))
+        case bd: BigDecimalFromString => JString(input.toString)
+        case dd: DoubleData => JDouble(input.asInstanceOf[Double])
+        case ListData(definition) => {
+          val f = apply(definition)
+          JArray(input.asInstanceOf[List[_]].map(i => f(i)))
         }
-        case rb: BooleanData => Valid(JBool(input.asInstanceOf[Boolean]))
-        case rs: StringData => Valid(JString(input.asInstanceOf[String]))
-//        case os: OptionalString => input.asInstanceOf[Option[String]] match {
-//          case Some(str) => Valid(JString(str))
-//          case None => Valid(JNothing)
-//        }
-        case ri: IntData => Valid(JInt(input.asInstanceOf[Int]))
-        case uu: UuidData => Valid(JString(input.toString))
+        case EitherData(aDefinition,bDefinition) => {
+          input match {
+            case Left(aInput) => apply(aDefinition)(aInput)
+            case Right(bInput) => apply(bDefinition)(bInput)
+          }
+        }
       }
-
   }
 
 }
