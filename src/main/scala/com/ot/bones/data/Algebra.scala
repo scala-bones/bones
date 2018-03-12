@@ -4,12 +4,12 @@ import java.text.{DateFormat, Format, SimpleDateFormat}
 import java.util.{Date, UUID}
 
 import cats.arrow.FunctionK
-import cats.data.Validated.Invalid
+import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.free.FreeApplicative
 import cats.implicits._
 import com.ot.bones.interpreter.EncoderInterpreter.Encode
-import com.ot.bones.interpreter.ExtractionInterpreter.{ExtractionErrors, JsonProducer, RequiredObjectError, ValidateFromProducer}
+import com.ot.bones.interpreter.ExtractionInterpreter.{ConversionError, ExtractionErrors, JsonProducer, RequiredObjectError, ValidateFromProducer}
 import com.ot.bones.validation.ValidationDefinition.ValidationOp
 import net.liftweb.json.JsonAST.{JField, JObject, JValue}
 import shapeless.{::, HList, HNil}
@@ -42,6 +42,7 @@ object Algebra {
   final case class BigDecimalFromString() extends DataDefinitionOp[BigDecimal]
   final case class DateData(dateFormat: DateFormat, formatDescription: Option[String]) extends DataDefinitionOp[Date] with ToOptionalData[Date]
   final case class UuidData() extends DataDefinitionOp[UUID] with ToOptionalData[UUID]
+  final case class ConversionData[A,B](from: DataDefinitionOp[A], fab: A => Validated[ConversionError[A,B], B], fba: B => A, description: String) extends DataDefinitionOp[B] with ToOptionalData[B]
 
 }
 
@@ -625,18 +626,18 @@ object ToHList {
       val r11 = f(op11.op)
       val r12 = f(op12.op)
       (jsonProducer: JsonProducer) => {
-        (r1(jsonProducer),
-          r2(jsonProducer),
-          r3(jsonProducer),
-          r4(jsonProducer),
-          r5(jsonProducer),
-          r6(jsonProducer),
-          r7(jsonProducer),
-          r8(jsonProducer),
-          r9(jsonProducer),
-          r10(jsonProducer),
-          r11(jsonProducer),
-          r12(jsonProducer)).mapN(_ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: HNil)
+        (r1(jsonProducer.child(op1.key)),
+          r2(jsonProducer.child(op2.key)),
+          r3(jsonProducer.child(op3.key)),
+          r4(jsonProducer.child(op4.key)),
+          r5(jsonProducer.child(op5.key)),
+          r6(jsonProducer.child(op6.key)),
+          r7(jsonProducer.child(op7.key)),
+          r8(jsonProducer.child(op8.key)),
+          r9(jsonProducer.child(op9.key)),
+          r10(jsonProducer.child(op10.key)),
+          r11(jsonProducer.child(op11.key)),
+          r12(jsonProducer.child(op12.key))).mapN(_ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: HNil)
       }
     }
 

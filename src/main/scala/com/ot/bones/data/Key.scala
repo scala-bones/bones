@@ -3,8 +3,10 @@ package com.ot.bones.data
 import java.text.{DateFormat, SimpleDateFormat}
 import java.util.{Date, UUID}
 
+import cats.data.Validated
 import com.ot.bones.data.Algebra._
 import com.ot.bones.data.ToHList._
+import com.ot.bones.interpreter.ExtractionInterpreter.ConversionError
 import com.ot.bones.validation.ValidationDefinition.{ToOptionalValidation, ValidationOp}
 import shapeless.{::, HNil}
 
@@ -34,22 +36,36 @@ case class OptionalFieldDefinition[A](key: Key, op: DataDefinitionOp[A], validat
   extends FieldDefinition[A]
 
 /** Indicates that the field is required */
-case class RequiredFieldDefinition[A](key: Key, op: DataDefinitionOp[A]  with ToOptionalData[A], validations: List[ValidationOp[A] with ToOptionalValidation[A]])
+case class RequiredFieldDefinition[A](key: Key,
+                                      op: DataDefinitionOp[A]  with ToOptionalData[A],
+                                      validations: List[ValidationOp[A] with ToOptionalValidation[A]])
   extends FieldDefinition[A] {
   def optional(): OptionalFieldDefinition[Option[A]] = {
     val optionalValidations = validations.map(_.toOption)
     OptionalFieldDefinition(key, op.toOption, optionalValidations)
   }
+
+  def convert[B](fab: A => Validated[ConversionError[A,B], B], fba: B => A, description: String, validations: List[ValidationOp[B]]) = {
+    val cd = ConversionData(op, fab, fba, description)
+    ConversionFieldDefinition(this, cd, validations)
+  }
+
+}
+
+case class ConversionFieldDefinition[A,B](convertFrom: RequiredFieldDefinition[A], op: ConversionData[A,B], validations: List[ValidationOp[B]])
+  extends FieldDefinition[B] {
+  /** String key, aka field name */
+  override val key: Key = convertFrom.key
 }
 
 /** Starting point for obtaining a value is to define a key */
 case class Key(name: String) { thisKey =>
   val key: Key = thisKey
-  def string() : FieldDefinition[String] = RequiredFieldDefinition(this, StringData(), List.empty)
-  def string(f: ValidationOp[String] with ToOptionalValidation[String] *): FieldDefinition[String] = RequiredFieldDefinition(this, StringData(), f.toList)
+  def string() : RequiredFieldDefinition[String] = RequiredFieldDefinition(this, StringData(), List.empty)
+  def string(f: ValidationOp[String] with ToOptionalValidation[String] *): RequiredFieldDefinition[String] = RequiredFieldDefinition(this, StringData(), f.toList)
   /** Use this if you expect the int to come in as a JSON number, otherwise use string().int() */
-  def int(): FieldDefinition[Int] = RequiredFieldDefinition[Int](this, IntData(), List.empty)
-  def int(f: ValidationOp[Int] with ToOptionalValidation[Int] *): FieldDefinition[Int] = RequiredFieldDefinition[Int](this, IntData(), f.toList)
+  def int(): RequiredFieldDefinition[Int] = RequiredFieldDefinition[Int](this, IntData(), List.empty)
+  def int(f: ValidationOp[Int] with ToOptionalValidation[Int] *): RequiredFieldDefinition[Int] = RequiredFieldDefinition[Int](this, IntData(), f.toList)
   /** Use this if you expect the bigDecimal to come in as a JSON number, otherwise use string().bigDecimal */
   //    def either[A,B](v1: ValidationOp[A], v2: ValidationOp[B]): Extract[Either[A,B]] = new Extract[Either[A,B]]{
   //      override def validation = CanBeEither[A,B](v1, v2)
@@ -57,12 +73,12 @@ case class Key(name: String) { thisKey =>
   //    }
   //def vector(): Extract[Vector[Int]] = ???
   def list[T](dataDefinitionOp: DataDefinitionOp[T]): RequiredFieldDefinition[List[T]] = RequiredFieldDefinition(this, ListData(dataDefinitionOp), List.empty)
-  def boolean(): FieldDefinition[Boolean] = RequiredFieldDefinition[Boolean](this, BooleanData(), List.empty)
-  def boolean(f: ValidationOp[Boolean] with ToOptionalValidation[Boolean] *): FieldDefinition[Boolean] =
+  def boolean(): RequiredFieldDefinition[Boolean] = RequiredFieldDefinition[Boolean](this, BooleanData(), List.empty)
+  def boolean(f: ValidationOp[Boolean] with ToOptionalValidation[Boolean] *): RequiredFieldDefinition[Boolean] =
     RequiredFieldDefinition[Boolean](this, BooleanData(), f.toList)
   def uuid(): RequiredFieldDefinition[UUID] = RequiredFieldDefinition(this, UuidData(), List.empty)
   /** Date, BYOFormat */
-  def date(dateFormat: DateFormat, formatDescription: Option[String] = None): FieldDefinition[Date] =
+  def date(dateFormat: DateFormat, formatDescription: Option[String] = None): RequiredFieldDefinition[Date] =
     RequiredFieldDefinition(key, DateData(dateFormat, formatDescription), List.empty)
 
   /** Expecting a string that is in the format of an iso date time */

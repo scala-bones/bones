@@ -8,7 +8,7 @@ import cats.data.Validated.{Invalid, Valid}
 import com.ot.bones.data.Algebra.DataDefinitionOp
 import com.ot.bones.data.Key
 import com.ot.bones.everything.key
-import com.ot.bones.interpreter.ExtractionInterpreter.{DefaultExtractInterpreter, JsonProducer, ValidateFromProducer, WrongTypeError}
+import com.ot.bones.interpreter.ExtractionInterpreter.{ConversionError, DefaultExtractInterpreter, JsonProducer, ValidateFromProducer, WrongTypeError}
 import com.ot.bones.producer.LiftJsonProducer
 import com.ot.bones.validation.ValidationDefinition.{IntValidation => iv, StringValidation => sv}
 import org.scalatest.FunSuite
@@ -51,13 +51,13 @@ class ValidationTest extends FunSuite {
 
     }
 
-    def toCreditCardType: String => Validated[String, CreditCardType] = input => {
+    def toCreditCardType: String => Validated[ConversionError[String, CreditCardType], CreditCardType] = input => {
       input.toLowerCase match {
         case "visa" => Valid(CreditCardTypes.Visa)
         case "mastercard" => Valid(CreditCardTypes.Mastercard)
         case "amex" => Valid(CreditCardTypes.Amex)
         case "discover" => Valid(CreditCardTypes.Discover)
-        case x => Invalid(s"input: ${x} is not a valid credit card type")
+        case x => Invalid(ConversionError(x, classOf[CreditCardType]))
       }
     }
     case class BillingLocation(countryIso: String, zipCode: Option[String])
@@ -75,12 +75,12 @@ class ValidationTest extends FunSuite {
     import shapeless._
 
     // Here we are defining our expected input data.  This definition will drive the interpreters.
-    val extractData = obj11(
+    val extractData = obj12(
       key("firstFive").string(sv.length(5), sv.matchesRegex("[0-9]{5}".r)),
       key("lastFour").string(sv.length(4), sv.matchesRegex("[0-9]{4}".r)),
       key("uuid").uuid(),
       key("token").uuid(),
-//      key("ccType").string().custom("to CreditCardType", toCreditCardType),
+      key("ccType").string().convert(toCreditCardType, (cct: CreditCardType) => cct.abbrev, "CreditCardType", List.empty),
       key("expMonth").int(iv.between(1, 12)),
       key("expYear").int(iv.between(1950, 9999)),
       key("cardHolder").string(),
@@ -126,7 +126,7 @@ class ValidationTest extends FunSuite {
     val btCc = jsonToCCProgram.apply(jsonProducer)
 
     assert(btCc == Valid(HList("12345", "4321", UUID.fromString("df15f08c-e6bd-11e7-aeb8-6003089f08b4"),
-      UUID.fromString("e58e7dda-e6bd-11e7-b901-6003089f08b4"), 11, 2022,
+      UUID.fromString("e58e7dda-e6bd-11e7-b901-6003089f08b4"), CreditCardTypes.Mastercard, 11, 2022,
       "Lennart Augustsson", "USD", None, UUID.fromString("4545d9da-e6be-11e7-86fb-6003089f08b4"), HList("US", "80031")
     )))
 

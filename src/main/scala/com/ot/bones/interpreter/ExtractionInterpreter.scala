@@ -186,6 +186,10 @@ object ExtractionInterpreter {
             case None => Invalid(NonEmptyList.one(RequiredObjectError()))
           }
         }
+        case ConversionData(from, fab, _, _) => {
+          val baseValue = apply(from).apply(jsonProducer)
+          baseValue.andThen(a => fab(a).leftMap(NonEmptyList.one))
+        }
       }
   }
 
@@ -246,13 +250,18 @@ object EncoderInterpreter {
         case dd: DoubleData => JDouble(input.asInstanceOf[Double])
         case ListData(definition) => {
           val f = apply(definition)
-          JArray(input.asInstanceOf[List[_]].map(i => f(i)))
+          JArray(input.asInstanceOf[List[A]].map(i => f(i)))
         }
         case EitherData(aDefinition,bDefinition) => {
           input match {
             case Left(aInput) => apply(aDefinition)(aInput)
             case Right(bInput) => apply(bDefinition)(bInput)
           }
+        }
+        case ConversionData(from, _, fba, _) => {
+          val encoder = apply(from)
+          val outputValue = fba(input)
+          encoder.apply(outputValue)
         }
       }
   }
