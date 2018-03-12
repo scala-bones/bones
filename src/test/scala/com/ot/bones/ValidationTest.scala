@@ -5,12 +5,12 @@ import java.util.{Date, UUID}
 import cats.arrow.FunctionK
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
+import com.ot.bones.data.Algebra.DataDefinitionOp
+import com.ot.bones.data.Key
 import com.ot.bones.everything.key
-import com.ot.bones.interpreter.ExtractionInterpreter.{DefaultExtractInterpreter, JsonProducer, ValidateFromProducer, ValidationError, WrongTypeError}
+import com.ot.bones.interpreter.ExtractionInterpreter.{DefaultExtractInterpreter, JsonProducer, ValidateFromProducer, WrongTypeError}
 import com.ot.bones.producer.LiftJsonProducer
-import com.ot.bones.validation.ValidationDefinition.StringValidation.Max
 import com.ot.bones.validation.ValidationDefinition.{IntValidation => iv, StringValidation => sv}
-import com.ot.bones.validation.{DataDefinitionOp, Key}
 import org.scalatest.FunSuite
 
 
@@ -140,12 +140,10 @@ class ValidationTest extends FunSuite {
 
     //convert back to json
     import com.ot.bones.interpreter.EncoderInterpreter._
-    val ccToJson = extractData.lift.foldMap[ValidateAndEncode](DefaultEncoderInterpreter())
+    val ccToJson = extractData.lift.foldMap[Encode](DefaultEncoderInterpreter())
     import net.liftweb.json._
-    ccToJson.apply(btCc.toOption.get) match {
-      case Valid(json) => println(s"JSON: ${pretty(render(json))}")
-      case Invalid(err) => fail("expected value, was $err")
-    }
+    val output = ccToJson.apply(btCc.toOption.get)
+    println(s"JSON: ${pretty(render(output))}")
 
 
     //some documentation

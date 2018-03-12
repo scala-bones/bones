@@ -4,8 +4,8 @@ import cats.Apply
 import cats.arrow.FunctionK
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import com.ot.bones.interpreter.ExtractionInterpreter.{ExtractionError, ValidationError, ValidationResultNel}
 import cats.implicits._
+import com.ot.bones.interpreter.ExtractionInterpreter.ValidationError
 import com.ot.bones.validation.ValidationDefinition.ValidationOp
 
 import scala.annotation.tailrec

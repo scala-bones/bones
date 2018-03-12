@@ -345,4 +345,24 @@ object ValidationDefinition {
     def less(value: Int): RequiredValidationOp[Int] = Less(value)
   }
 
+  object BigDecimalValidation {
+
+    case class Max(max: BigDecimal) extends ValidationOp[BigDecimal] {
+      override def isValid: (BigDecimal) => Boolean = inputBd => max >= inputBd
+
+      override def defaultError(t: BigDecimal): String = s"$t is greater than the maximum $max"
+
+      override def description: String = s"maximum value of ${max.toString()}"
+    }
+
+    case class Min(min: BigDecimal) extends ValidationOp[BigDecimal] {
+      override def isValid: (BigDecimal) => Boolean = inputBd => min <= inputBd
+
+      override def defaultError(t: BigDecimal): String = s"$t is less than the minimum $min"
+
+      override def description: String = s"minimum value of ${min}"
+    }
+
+  }
+
 }
