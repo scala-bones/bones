@@ -3,79 +3,111 @@
 The idea behind Bones is to create a clone of Joi validation (originally written in JavaScript) using 
 the concept of the Generalized Abstract Data Type (GADT) that also double as a Free Applicative.  
 Using the Cats Free Applicative, we can create different
-interpretation of the GADTs. 
+interpretation of the GADTs.
+
+##
+
+```libraryDependencies += "com.github.oletraveler" %% "bones" % "0.1.0"```
 
 ## Interpreters
 
 * Marshall from Json to case class (Complete)
-* Unmarshall case class to Json (Not Implemented)
-* Documentation Interpreter (maybe Swagger) (POC Test Documentation exists)
+* Unmarshall case class to Json (Complete)
+* Documentation Interpreter (maybe Swagger or Json API) (POC Complete)
 * JavaScript/Html Generator (Not Implemented)
+* DB Schema Generator (Not Implemented)
 
 Since using the GADT types directly can become unwieldy, Bones also has a declarative syntax interface in order to 
 simplify the creation of the GADTs by using a DSL.
 
 ## Getting Started
 
-See the [Example Test](src/test/scala/com/ot/bones/ValidationTest.scala)
+Here is an example data definition.
 
 ```$scala
+    val extractData = obj12(
+      key("firstFive").string(sv.length(5), sv.matchesRegex("[0-9]{5}".r)),
+      key("lastFour").string(sv.length(4), sv.matchesRegex("[0-9]{4}".r)),
+      key("uuid").uuid(),
+      key("token").uuid(),
+      key("ccType").string().convert(CreditCardTypes.toCreditCardType, (cct: CreditCardType) => cct.abbrev, "CreditCardType", List.empty),
+      key("expMonth").int(iv.between(1, 12)),
+      key("expYear").int(iv.between(1950, 9999)),
+      key("cardHolder").string(),
+      key("currencyIso").enumeration(Currency),
+      key("deletedAt").isoDateTime().optional(),
+      key("lastModifiedRequest").uuid(),
+      key("billingLocation").obj2(
+        key("countryIso").string(sv.validValue(isoVector)),
+        key("zipCode").string().optional()
+      ).transform[BillingLocation].optional()
+    ).transform[CC]
+``` 
+
+And here we can see the full context in the [Example Test](src/test/scala/com/ot/bones/ValidationTest.scala)
+
+```$scala
+
+
     //Define some example data types.
-    /** Enumerated CreditCardType */
+    /** CreditCardType */
     sealed abstract class CreditCardType(val abbrev: String)
 
-    object CreditCardTypes extends Enumeration {
-
+    object CreditCardTypes {
       case object Visa extends CreditCardType("Visa")
-
       case object Mastercard extends CreditCardType("Mastercard")
-
       case object Amex extends CreditCardType("Amex")
-
       case object Discover extends CreditCardType("Discover")
 
-    }
-
-    def toCreditCardType: String => Validated[String, CreditCardType] = input => {
-      input.toLowerCase match {
-        case "visa" => Valid(CreditCardTypes.Visa)
-        case "mastercard" => Valid(CreditCardTypes.Mastercard)
-        case "amex" => Valid(CreditCardTypes.Amex)
-        case "discover" => Valid(CreditCardTypes.Discover)
-        case x => Invalid(s"input: ${x} is not a valid credit card type")
+      def toCreditCardType: String => Validated[ConversionError[String, CreditCardType], CreditCardType] = input => {
+        input.toLowerCase match {
+          case "visa" => Valid(CreditCardTypes.Visa)
+          case "mastercard" => Valid(CreditCardTypes.Mastercard)
+          case "amex" => Valid(CreditCardTypes.Amex)
+          case "discover" => Valid(CreditCardTypes.Discover)
+          case x => Invalid(ConversionError(x, classOf[CreditCardType]))
+        }
       }
     }
+
+
     case class BillingLocation(countryIso: String, zipCode: Option[String])
 
+    object Currency extends Enumeration {
+      val USD = Value("USD")
+      val CAD = Value("CAD")
+      val GBP = Value("GBP")
+    }
+
     case class CC(firstFive: String, lastFour: String, uuid: UUID, token: UUID, ccType: CreditCardType,
-                  expMonth: Int, expYear: Int, cardholder: String, currencyIso: String, deletedAt: Option[Date],
+                  expMonth: Int, expYear: Int, cardholder: String, currency: Currency.Value, deletedAt: Option[Date],
                   lastModifiedRequest: UUID, billingLocation: Option[BillingLocation])
 
-    val isoList = List("US", "CA", "MX")
+    val isoVector = Vector("US", "CA", "MX")
+
 
 
     /** **** Begin Real Example ******/
 
-    import com.ot.bones.everything._
-
+    import com.ot.bones.syntax._
 
     // Here we are defining our expected input data.  This definition will drive the interpreters.
-    val extractData = obj.obj12(
-      key("firstFive").string().matchesRegex("[0-9]{5}".r),
-      key("lastFour").string().matchesRegex("[0-9]{4}".r),
-      key("uuid").string().asUuid(),
-      key("token").string().asUuid(),
-      key("ccType").string().custom("to CreditCardType", toCreditCardType),
-      key("expMonth").int().between(1, 12),
-      key("expYear").int().between(1950, 9999),
+    val extractData = obj12(
+      key("firstFive").string(sv.length(5), sv.matchesRegex("[0-9]{5}".r)),
+      key("lastFour").string(sv.length(4), sv.matchesRegex("[0-9]{4}".r)),
+      key("uuid").uuid(),
+      key("token").uuid(),
+      key("ccType").string().convert(CreditCardTypes.toCreditCardType, (cct: CreditCardType) => cct.abbrev, "CreditCardType", List.empty),
+      key("expMonth").int(iv.between(1, 12)),
+      key("expYear").int(iv.between(1950, 9999)),
       key("cardHolder").string(),
-      key("currencyIso").string().length(3),
-      key("deletedAt").string().optional().asIsoDateTime(),
-      key("lastModifiedRequest").string().asUuid(),
+      key("currencyIso").enumeration(Currency),
+      key("deletedAt").isoDateTime().optional(),
+      key("lastModifiedRequest").uuid(),
       key("billingLocation").obj2(
-        key("countryIso").string().valid(isoList: _*),
+        key("countryIso").string(sv.validValue(isoVector)),
         key("zipCode").string().optional()
-      ).optional().transform[BillingLocation]
+      ).transform[BillingLocation].optional()
     ).transform[CC]
     //final type is basically DataDefinitionOp[CC]
 
@@ -102,7 +134,7 @@ See the [Example Test](src/test/scala/com/ot/bones/ValidationTest.scala)
 
     //sorry, we still use lift in my projects.  I will soon create a Circe JsonProducer.
     val parsed = net.liftweb.json.parse(cc)
-    val jsonProducer = LiftJson(parsed)
+    val jsonProducer = LiftJsonProducer(parsed)
 
     //create the program that is responsible for converting JSON into a CC.
     val jsonToCCProgram = extractData.lift.foldMap[ValidateFromProducer](DefaultExtractInterpreter())
@@ -113,19 +145,24 @@ See the [Example Test](src/test/scala/com/ot/bones/ValidationTest.scala)
     //tada!  We have can parse input from JsonProducer to CC using our dataDefinition.
     assert(btCc == Valid(CC("12345", "4321", UUID.fromString("df15f08c-e6bd-11e7-aeb8-6003089f08b4"),
       UUID.fromString("e58e7dda-e6bd-11e7-b901-6003089f08b4"), CreditCardTypes.Mastercard, 11, 2022,
-      "Lennart Augustsson", "USD", None, UUID.fromString("4545d9da-e6be-11e7-86fb-6003089f08b4"),
+      "Lennart Augustsson", Currency.USD, None, UUID.fromString("4545d9da-e6be-11e7-86fb-6003089f08b4"),
       Some(BillingLocation("US", Some("80031")))
     )))
 
+    //convert back to json
+    import com.ot.bones.interpreter.EncoderInterpreter._
+    val ccToJson = extractData.lift.foldMap[Encode](DefaultEncoderInterpreter())
+    import net.liftweb.json._
+    val output = ccToJson.apply(btCc.toOption.get)
+    val printed = compact(render(output))
+    assert(printed === """{"firstFive":"12345","lastFour":"4321","uuid":"df15f08c-e6bd-11e7-aeb8-6003089f08b4","token":"e58e7dda-e6bd-11e7-b901-6003089f08b4","ccType":"Mastercard","expMonth":11,"expYear":2022,"cardHolder":"Lennart Augustsson","currencyIso":"USD","lastModifiedRequest":"4545d9da-e6be-11e7-86fb-6003089f08b4","billingLocation":{"countryIso":"US","zipCode":"80031"}}""")
 
-    //some documentation
-    val doc = extractData.lift.foldMap(DocInterpreter.docInterpreter)
-    println(doc.str)
-    //Doc(object with 12 members: (Doc(Required String with key firstFive))(Doc(Required String with key lastFour))
-    //  (Doc(Converted to UUID)}))(Doc(Converted to UUID)}))(Doc(Custom Conversion: to CreditCardType))
-    //  (Doc(Required Int with key expMonth))(Doc(Required Int with key expYear))(Doc(Required String with key cardHolder))
-    // (Doc(Required String with key currencyIso))(Doc(Required Date with format java.time.format.DateTimeFormatter$ClassicFormat@30190c55)}))
-    // (Doc(Converted to UUID)}))(Doc(converted to Class BillingLocation$3))) mapped into class CC$3
+
+    //Doc interpreter, simple POC showing we can make documentation out of this.
+    val docOut = extractData.lift.foldMap[Doc](DocInterpreter)
+    assert(docOut.str === """Transform to a CC$3 from object with 12 members: [firstFive: String,lastFour: String,uuid: String representing a UUID,token: String representing a UUID,ccType: Convert to a CreditCardType from String,expMonth: Int,expYear: Int,cardHolder: String,currencyIso: String with one of the following values: [CAD,GBP,USD],deletedAt: Optional: Date with format ISO date-time format with the offset and zone if available, such as '2011-12-03T10:15:30', '2011-12-03T10:15:30+01:00' or '2011-12-03T10:15:30+01:00[Europe/Paris]',lastModifiedRequest: String representing a UUID,billingLocation: Optional: Convert to a Transform to type BillingLocation$3 from object with 2 members: [countryIso: String,zipCode: Optional: String]]""")
+
+  }
 ```
 
 
