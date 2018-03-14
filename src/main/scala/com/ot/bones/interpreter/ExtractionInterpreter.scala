@@ -5,15 +5,12 @@ import java.util.{Date, UUID}
 import cats.Applicative
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
-import cats.free.FreeApplicative
 import cats.implicits._
 import com.ot.bones.data.Algebra._
 import com.ot.bones.data.Key
 import com.ot.bones.data.ToHList.ToHListDataDefinitionOp
-import com.ot.bones.interpreter.ExtractionInterpreter.ValidationResultNel
 import com.ot.bones.validation.ValidationDefinition.ValidationOp
 import net.liftweb.json.JsonAST._
-import shapeless.HList
 
 import scala.util.control.NonFatal
 
@@ -21,9 +18,7 @@ import scala.util.control.NonFatal
 object ExtractionInterpreter {
 
   /** Error Case */
-  trait ExtractionError {
-//    def keys: NonEmptyList[Key]
-  }
+  sealed trait ExtractionError
 
   /**
     * Used to indicate a validation error.
@@ -31,18 +26,10 @@ object ExtractionInterpreter {
     * @param input The input, if available.
     * @tparam T Type that was validated.
     */
-  case class ValidationError[T](failurePoint: ValidationOp[T], input: T) extends ExtractionError {
-//    val keys = NonEmptyList.one(key)
-  }
-  case class WrongTypeError[T](expectedType: Class[T], providedType: Class[_]) extends ExtractionError {
-//    val keys = NonEmptyList.one(key)
-  }
-  case class ConversionError[A,T](input: A, toType: Class[T]) extends ExtractionError {
-//    val keys = NonEmptyList.one(RootKey)
-  }
-  case class RequiredObjectError() extends ExtractionError {
-//    val keys = NonEmptyList.one(key)
-  }
+  case class ValidationError[T](failurePoint: ValidationOp[T], input: T) extends ExtractionError
+  case class WrongTypeError[T](expectedType: Class[T], providedType: Class[_]) extends ExtractionError
+  case class ConversionError[A,T](input: A, toType: Class[T]) extends ExtractionError
+  case class RequiredObjectError() extends ExtractionError
 //  case class MultiKeyError[T](keys: NonEmptyList[Key], failurePoint: ExtractionOp[T]) extends ExtractionError
 
 
@@ -78,13 +65,15 @@ object ExtractionInterpreter {
     def child(key: Key): JsonProducer
   }
 
+  /** Simple little interface around a Json library.
+    * I believe it may be best to actually write an extractor
+    * to and from your preferred library instead of extending JsonProducer, however this is here how I first implemented this,
+    * so I'll keep this around for now.
+    **/
   abstract class JsonProducer extends StringProducer with IntProducer with BoolProducer with DoubleProducer
     with ObjectProducer with ListProducer with JsonKeyResolver
 
-  abstract class JsonConsumer
 
-  // a function that takes a JsonProducer as input
-//  type FromProducer[A] = JsonProducer => A
   type ValidateFromProducer[A] = JsonProducer => ValidationResultNel[A]
   implicit def fromProducerApp = new Applicative[ValidateFromProducer] {
     override def pure[A](x: A): ValidateFromProducer[A] = json => Valid(x)
@@ -159,9 +148,12 @@ object ExtractionInterpreter {
 
         }
         case EitherData(a,b) => {
-          ???
-//          apply(a)(jsonProducer).map(Left(_))
-//            .orElse(apply(b)(jsonProducer).map(Right(_)))
+          (apply(a)(jsonProducer).map(Left(_)) match {
+            case Valid(bueno) => Valid(bueno)
+            case Invalid(_) => {
+              apply(b)(jsonProducer)
+            }
+          }).asInstanceOf[ValidationResultNel[A]]
         }
         case ListData(definition) => {
           jsonProducer.produceList.leftMap(NonEmptyList.one).andThen {
@@ -190,6 +182,20 @@ object ExtractionInterpreter {
           val baseValue = apply(from).apply(jsonProducer)
           baseValue.andThen(a => fab(a).leftMap(NonEmptyList.one))
         }
+        case EnumeratedStringData(enumeration) => {
+          jsonProducer.produceString.leftMap(NonEmptyList.one).andThen {
+            case Some(str) => try {
+              Valid(enumeration.withName(str).asInstanceOf[A])
+            } catch {
+              case ex: NoSuchElementException => Invalid(NonEmptyList.one(ConversionError(str, enumeration.getClass)))
+            }
+            case None => Invalid(NonEmptyList.one(RequiredObjectError()))
+          }
+        }
+        case Transform(op, _, fba) => {
+          val fromProducer = this.apply(op)
+          fromProducer.apply(jsonProducer).map(res => fba.apply(res))
+        }
       }
   }
 
@@ -198,32 +204,18 @@ object ExtractionInterpreter {
 object EncoderInterpreter {
 
 
-  trait AToJson[T]
-  case class AToJsonPure[A](a: A)
-  case class AToJsonAp[A,B](f: A => B)
-
-//  case class AToJsonEncoder() extends cats.arrow.FunctionK[DataDefinitionOp, AToJson] {
-//    override def apply[A](fa: DataDefinitionOp[A]): AToJson[A] = fa match {
-//      case op: ToHListDataDefinitionOp[A] => {
-//        op.encodeMembers(this).apply(input)
-//      }
-//    }
-//  }
-
   type Encode[A] = A => JValue
 
+  /** FunctionK requires the G[_] type parameter to be an Applicative.  I'm not sure why because this is never called here.
+    * Should probably figure out why since I'm sure I'm breaking some golden rule here.
+    **/
   implicit def validateAndEncodeFreeAp = new  Applicative[Encode] {
     def pure[A](x: A): Encode[A] = {
       a => JNothing
     }
 
     def ap[A, B](ff: Encode[A => B])(fa: Encode[A]): Encode[B] = {
-//      (b: B) => {
-//        def aToB: A => B = a => {
-//          (fa.apply(a), ff.apply(aToB)).mapN( (v1, v2) => v1 ++ v2)
-//        }
-//      }
-      ???
+      ??? // exactly, ???
     }
   }
 
@@ -252,7 +244,7 @@ object EncoderInterpreter {
           val f = apply(definition)
           JArray(input.asInstanceOf[List[A]].map(i => f(i)))
         }
-        case EitherData(aDefinition,bDefinition) => {
+        case EitherData(aDefinition, bDefinition) => {
           input match {
             case Left(aInput) => apply(aDefinition)(aInput)
             case Right(bInput) => apply(bDefinition)(bInput)
@@ -262,6 +254,11 @@ object EncoderInterpreter {
           val encoder = apply(from)
           val outputValue = fba(input)
           encoder.apply(outputValue)
+        }
+        case EnumeratedStringData(enumeration) => JString(input.toString)
+        case Transform(op, fab, _) => {
+          val b = fab(input)
+          apply(op).apply(b)
         }
       }
   }

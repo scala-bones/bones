@@ -13,7 +13,7 @@ lazy val root = (project in file(".")).
       "org.typelevel" %% "cats-effect" % "0.5",
       "org.scalacheck" %% "scalacheck" % "1.13.4" % Test,
       "org.scalatest" %% "scalatest" % "3.0.4" % Test,
-      "org.easymock" %% "easymock" % "3.5.1" % Test
+      "org.easymock" % "easymock" % "3.5.1" % Test
     )
   )
 
