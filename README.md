@@ -1,9 +1,9 @@
 # Overview
 
-The idea behind Bones is to create a clone of Joi validation (originally written in JavaScript) using 
-the concept of the Generalized Abstract Data Type (GADT) that also double as a Free Applicative.  
-Using the Cats Free Applicative, we can create different
-interpretation of the GADTs.
+The idea behind Bones is to create a clone of Joi validation (written in JavaScript) by building up an 
+Abstract Syntax Tree (AST) and then running the tree through different interpreters which will
+generate programs to Encode, Decode JSON as well as creating documentation and essentually anything 
+that depends on the Schema.
 
 ##
 
@@ -170,7 +170,7 @@ And here we can see the full context in the [Example Test](src/test/scala/com/ot
 ## Credits
 
 * "Your bones got a little machine" - Black Francis
-* This API for this project is adapted from the [Joi Project](https://github.com/hapijs/joi JOI).
+* The API for this project is adapted from the [Joi Project](https://github.com/hapijs/joi) .
 * John De Goes [Free Applicative Talk](https://www.youtube.com/watch?v=H28QqxO7Ihc)
 * Kris Knuttycombe's [Xenomorph Library](https://github.com/nuttycom/xenomorph) is similar to this.
 * Scodec is an amazing library.  I learned a lot from that library.
