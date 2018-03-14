@@ -5,7 +5,7 @@ import com.ot.bones.data.Sugar.ToHList
 
 package object bones {
 
-  object everything extends KeySyntax with ToHList
+  object syntax extends KeySyntax with ToHList
 
 
 

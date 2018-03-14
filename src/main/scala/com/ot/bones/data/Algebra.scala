@@ -4,7 +4,7 @@ import java.text.{DateFormat, Format, SimpleDateFormat}
 import java.util.{Date, UUID}
 
 import cats.arrow.FunctionK
-import cats.data.Validated.{Invalid, Valid}
+import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, Validated}
 import cats.free.FreeApplicative
 import cats.implicits._
@@ -12,7 +12,7 @@ import com.ot.bones.interpreter.EncoderInterpreter.Encode
 import com.ot.bones.interpreter.ExtractionInterpreter.{ConversionError, ExtractionErrors, JsonProducer, RequiredObjectError, ValidateFromProducer}
 import com.ot.bones.validation.ValidationDefinition.ValidationOp
 import net.liftweb.json.JsonAST.{JField, JObject, JValue}
-import shapeless.{::, HList, HNil}
+import shapeless.{::, Generic, HList, HNil}
 
 object Algebra {
 
@@ -20,6 +20,11 @@ object Algebra {
   sealed trait DataDefinitionOp[A] {
     //lift any DataDefinition into a FreeApplicative
     def lift: DataDefinition[A] = FreeApplicative.lift(this)
+
+    def transform[Z:Manifest](implicit gen: Generic.Aux[Z, A]) = {
+      Transform(this, gen.to _, gen.from _)
+    }
+
   }
   type DataDefinition[A] = FreeApplicative[DataDefinitionOp, A]
 
@@ -31,18 +36,21 @@ object Algebra {
     def toOption = OptionalDataDefinition(this)
   }
 
-
   final case class BooleanData() extends DataDefinitionOp[Boolean] with ToOptionalData[Boolean]
   final case class DoubleData() extends DataDefinitionOp[Double] with ToOptionalData[Double]
   final case class EitherData[A, B](definitionA: DataDefinitionOp[A], definitionB: DataDefinitionOp[B])
     extends DataDefinitionOp[Either[A, B]] with ToOptionalData[Either[A, B]]
   final case class IntData() extends DataDefinitionOp[Int] with ToOptionalData[Int]
-  final case class ListData[T](tDefinition: DataDefinitionOp[T]) extends DataDefinitionOp[List[T]] with ToOptionalData[List[T]]
+  final case class ListData[T, L <: List[T]](tDefinition: DataDefinitionOp[T]) extends DataDefinitionOp[L] with ToOptionalData[L]
   final case class StringData() extends DataDefinitionOp[String] with ToOptionalData[String]
-  final case class BigDecimalFromString() extends DataDefinitionOp[BigDecimal]
-  final case class DateData(dateFormat: DateFormat, formatDescription: Option[String]) extends DataDefinitionOp[Date] with ToOptionalData[Date]
+  final case class BigDecimalFromString() extends DataDefinitionOp[BigDecimal] with ToOptionalData[BigDecimal]
+  final case class DateData(dateFormat: DateFormat, formatDescription: String) extends DataDefinitionOp[Date] with ToOptionalData[Date]
   final case class UuidData() extends DataDefinitionOp[UUID] with ToOptionalData[UUID]
   final case class ConversionData[A,B](from: DataDefinitionOp[A], fab: A => Validated[ConversionError[A,B], B], fba: B => A, description: String) extends DataDefinitionOp[B] with ToOptionalData[B]
+  final case class EnumeratedStringData[A](enumeration: Enumeration) extends DataDefinitionOp[A] with ToOptionalData[A]
+  final case class Transform[A:Manifest,B](op: DataDefinitionOp[B], f: A => B, g: B => A) extends DataDefinitionOp[A] with ToOptionalData[A] {
+    val manifestOfA: Manifest[A] = manifest[A]
+  }
 
 }
 
@@ -675,51 +683,3 @@ object ToHList {
   }
 
 }
-
-
-
-object DateConversionInstances {
-
-  case class IsDate(format: Format, formatDescription: Option[String]) {
-    def description: String = formatDescription.getOrElse(s"Is a Date with format ${format.toString}")
-  }
-
-  case class Min(minDate: Date, format: SimpleDateFormat) extends ValidationOp[Date] {
-    override def isValid: Date => Boolean = _.after(minDate)
-
-    override def defaultError(t: Date): String = s"specified date ${format.format(t)} must be after ${format.format(minDate)}"
-
-    override def description: String = s"after ${format.format(minDate)}"
-  }
-
-  case class Max(maxDate: Date, format: SimpleDateFormat) extends ValidationOp[Date] {
-    override def isValid: Date => Boolean = _.before(maxDate)
-
-    override def defaultError(t: Date): String = s"specified date ${format.format(t)} must be before ${format.format(maxDate)}"
-
-    override def description: String = s"before ${format.format(maxDate)}"
-  }
-
-
-//  case class DateConversion(dateFormat: SimpleDateFormat, formatDescription: Option[String], validations: List[ValidationOp[Date]]) {
-//
-//    /** Add the validation enforcing that the supplied value must be greater than min */
-//    def min(min: Date): DateConversion = DateConversion(dateFormat, formatDescription, Min(min, dateFormat) :: validations)
-//    /** Add the validation enforcing that the supplied value must be less than max */
-//    def max(max: Date): DateConversion = DateConversion(dateFormat, formatDescription, Max(max, dateFormat) :: validations)
-//
-//    def convert(str: String): Validated[ExtractionErrors, Date] =  try {
-//      Valid(dateFormat.parseObject(str).asInstanceOf[Date])
-//    } catch {
-//      case _: ParseException => Invalid(NonEmptyList.one(ConversionError(str, classOf[Date])))
-//    }
-//
-//  }
-
-
-
-}
-
-
-
-

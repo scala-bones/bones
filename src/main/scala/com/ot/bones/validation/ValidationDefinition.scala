@@ -1,7 +1,8 @@
 package com.ot.bones.validation
 
 import java.net.URI
-import java.util.UUID
+import java.text.{Format, SimpleDateFormat}
+import java.util.{Date, UUID}
 
 import cats.free.FreeApplicative
 import cats.implicits._
@@ -45,13 +46,13 @@ object ValidationDefinition {
 
   case class ValidValue[T](validValues: Vector[T]) extends ValidationOp[T] with ToOptionalValidation[T] {
     override def isValid: (T) => Boolean = validValues.contains
-    override def defaultError(t: T): String = s"Value ${t} must be one of ${validValues.mkString("('","','","')")}"
+    override def defaultError(t: T): String = s"Value $t must be one of ${validValues.mkString("('","','","')")}"
     override def description: String = s"one of ${validValues.mkString("('","','","')")}"
   }
 
   case class InvalidValue[T](invalidValues: Vector[T]) extends ValidationOp[T] with ToOptionalValidation[T]{
     override def isValid: (T) => Boolean = str => {! invalidValues.contains(str)}
-    override def defaultError(t: T): String = s"Value ${t} must not be one of ${invalidValues.mkString("('","','","')")}"
+    override def defaultError(t: T): String = s"Value $t must not be one of ${invalidValues.mkString("('","','","')")}"
     override def description: String = s"not one of ${invalidValues.mkString("('","','","')")}"
   }
 
@@ -61,6 +62,19 @@ object ValidationDefinition {
   }
 
   private val alphanumRegx = "^[a-zA-Z0-9]*$".r
+
+  object ListValidation {
+
+    case class PassesAll[A, L <: List[A]](validations: List[ValidationOp[A]]) extends RequiredValidationOp[L] {
+      val isValid: List[A] => Boolean = _.forall(a => validations.forall(v => v.isValid(a)))
+
+
+      override def defaultError(t: L): String = s"a value in the list is invalid: ${t.mkString("[",",","]")}"
+
+      override def description: String = "all values are valid"
+    }
+
+  }
 
   object StringValidation extends BaseValidationOp[String] {
 
@@ -360,8 +374,33 @@ object ValidationDefinition {
 
       override def defaultError(t: BigDecimal): String = s"$t is less than the minimum $min"
 
-      override def description: String = s"minimum value of ${min}"
+      override def description: String = s"minimum value of $min"
     }
+
+  }
+
+  object DateValidationInstances {
+
+    case class IsDate(format: Format, formatDescription: Option[String]) {
+      def description: String = formatDescription.getOrElse(s"Is a Date with format ${format.toString}")
+    }
+
+    case class Min(minDate: Date, format: SimpleDateFormat) extends ValidationOp[Date] {
+      override def isValid: Date => Boolean = _.after(minDate)
+
+      override def defaultError(t: Date): String = s"specified date ${format.format(t)} must be after ${format.format(minDate)}"
+
+      override def description: String = s"after ${format.format(minDate)}"
+    }
+
+    case class Max(maxDate: Date, format: SimpleDateFormat) extends ValidationOp[Date] {
+      override def isValid: Date => Boolean = _.before(maxDate)
+
+      override def defaultError(t: Date): String = s"specified date ${format.format(t)} must be before ${format.format(maxDate)}"
+
+      override def description: String = s"before ${format.format(maxDate)}"
+    }
+
 
   }
 
