@@ -1,9 +1,9 @@
 lazy val root = (project in file(".")).
   settings(
     inThisBuild(List(
-      organization := "com.ot",
+      organization := "com.github.oletraveler",
       scalaVersion := "2.11.12", //TODO: cross compile 2.12.4
-      version      := "0.1.0-SNAPSHOT"
+      version      := "0.1.0"
     )),
     name := "Bones",
     libraryDependencies ++= Seq(
@@ -22,3 +22,14 @@ resolvers += Resolver.sonatypeRepo("releases")
 testOptions in Test += Tests.Argument("-oF")
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
+
+publishTo := {
+  val nexus = "https://oss.sonatype.org/"
+  if (isSnapshot.value)
+    Some("snapshots" at nexus + "content/repositories/snapshots") 
+  else
+    Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+}
+
+publishMavenStyle := true
+
