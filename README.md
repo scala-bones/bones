@@ -7,7 +7,12 @@ that depends on the Schema.
 
 ##
 
+(Not available yet)
+
 ```libraryDependencies += "com.github.oletraveler" %% "bones" % "0.1.0"```
+
+This is available at the Sonatype Snapshot repo: https://oss.sonatype.org/content/groups/
+```libaryDependencies += "com.github.oletraveler" %% "bones" % "0.1.0-SNAPSHOT"```
 
 ## Interpreters
 
