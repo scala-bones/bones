@@ -8,8 +8,9 @@ import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, Validated}
 import cats.free.FreeApplicative
 import cats.implicits._
+import com.ot.bones.data.ToHList.ToHListDataDefinitionOp
 import com.ot.bones.interpreter.EncoderInterpreter.Encode
-import com.ot.bones.interpreter.ExtractionInterpreter.{ConversionError, ExtractionErrors, JsonProducer, RequiredObjectError, ValidateFromProducer}
+import com.ot.bones.interpreter.ExtractionInterpreter.{ConversionError, ExtractionErrors, JsonProducer, RequiredObjectError, ValidateFromProducer, ValidationError}
 import com.ot.bones.validation.ValidationDefinition.ValidationOp
 import net.liftweb.json.JsonAST.{JField, JObject, JValue}
 import shapeless.{::, Generic, HList, HNil}
@@ -37,20 +38,32 @@ object Algebra {
   }
 
   final case class BooleanData() extends DataDefinitionOp[Boolean] with ToOptionalData[Boolean]
+
   final case class DoubleData() extends DataDefinitionOp[Double] with ToOptionalData[Double]
   final case class EitherData[A, B](definitionA: DataDefinitionOp[A], definitionB: DataDefinitionOp[B])
     extends DataDefinitionOp[Either[A, B]] with ToOptionalData[Either[A, B]]
   final case class IntData() extends DataDefinitionOp[Int] with ToOptionalData[Int]
-  final case class ListData[T, L <: List[T]](tDefinition: DataDefinitionOp[T]) extends DataDefinitionOp[L] with ToOptionalData[L]
+  final case class ListData[T, L <: List[T]](tDefinition: DataDefinitionOp[T])
+    extends DataDefinitionOp[L] with ToOptionalData[L]
   final case class StringData() extends DataDefinitionOp[String] with ToOptionalData[String]
   final case class BigDecimalFromString() extends DataDefinitionOp[BigDecimal] with ToOptionalData[BigDecimal]
-  final case class DateData(dateFormat: DateFormat, formatDescription: String) extends DataDefinitionOp[Date] with ToOptionalData[Date]
+  final case class DateData(dateFormat: DateFormat, formatDescription: String)
+    extends DataDefinitionOp[Date] with ToOptionalData[Date]
   final case class UuidData() extends DataDefinitionOp[UUID] with ToOptionalData[UUID]
-  final case class ConversionData[A,B](from: DataDefinitionOp[A], fab: A => Validated[ConversionError[A,B], B], fba: B => A, description: String) extends DataDefinitionOp[B] with ToOptionalData[B]
+
+  final case class ConversionData[A,B](
+    from: DataDefinitionOp[A],
+    fab: A => Validated[ConversionError[A,B], B],
+    fba: B => A, description: String
+  ) extends DataDefinitionOp[B] with ToOptionalData[B]
+
   final case class EnumeratedStringData[A](enumeration: Enumeration) extends DataDefinitionOp[A] with ToOptionalData[A]
   final case class Transform[A:Manifest,B](op: DataDefinitionOp[B], f: A => B, g: B => A) extends DataDefinitionOp[A] with ToOptionalData[A] {
     val manifestOfA: Manifest[A] = manifest[A]
   }
+  final case class Check[L <: HList](obj: ToHListDataDefinitionOp[L], check: L => Validated[ValidationError[L], L])
+    extends DataDefinitionOp[L] with ToOptionalData[L]
+
 
 }
 
