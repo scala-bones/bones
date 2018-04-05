@@ -2,12 +2,15 @@ package com.ot.bones
 
 import java.util.{Date, UUID}
 
+import cats.Id
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
+import com.ot.bones.data.Algebra.{DataDefinitionOp, StringData}
 import com.ot.bones.data.Key
 import com.ot.bones.interpreter.DocInterpreter.{Doc, DocInterpreter}
 import com.ot.bones.interpreter.ExtractionInterpreter.{ConversionError, DefaultExtractInterpreter, JsonProducer, ValidateFromProducer, WrongTypeError}
 import com.ot.bones.producer.LiftJsonProducer
+import com.ot.bones.rest.Algebra.Processor
 import com.ot.bones.validation.ValidationDefinition.{IntValidation => iv, StringValidation => sv}
 import org.scalatest.FunSuite
 
@@ -76,7 +79,7 @@ class ValidationTest extends FunSuite {
     import com.ot.bones.syntax._
 
     // Here we are defining our expected input data.  This definition will drive the interpreters.
-    val extractData = obj12(
+    val creditCardSchema = obj12(
       key("firstFive").string(sv.length(5), sv.matchesRegex("[0-9]{5}".r)),
       key("lastFour").string(sv.length(4), sv.matchesRegex("[0-9]{4}".r)),
       key("uuid").uuid(),
@@ -93,6 +96,7 @@ class ValidationTest extends FunSuite {
         key("zipCode").string().optional()
       ).transform[BillingLocation].optional()
     ).transform[CC]
+
     //final type is basically DataDefinitionOp[CC]
 
     //Here is our input
@@ -121,7 +125,7 @@ class ValidationTest extends FunSuite {
     val jsonProducer = LiftJsonProducer(parsed)
 
     //create the program that is responsible for converting JSON into a CC.
-    val jsonToCCProgram = extractData.lift.foldMap[ValidateFromProducer](DefaultExtractInterpreter())
+    val jsonToCCProgram = creditCardSchema.lift.foldMap[ValidateFromProducer](DefaultExtractInterpreter())
 
     //here, we will test that just the validation step is working
     val btCc = jsonToCCProgram.apply(jsonProducer)
@@ -135,7 +139,7 @@ class ValidationTest extends FunSuite {
 
     //convert back to json
     import com.ot.bones.interpreter.EncoderInterpreter._
-    val ccToJson = extractData.lift.foldMap[Encode](DefaultEncoderInterpreter())
+    val ccToJson = creditCardSchema.lift.foldMap[Encode](DefaultEncoderInterpreter())
     import net.liftweb.json._
     val output = ccToJson.apply(btCc.toOption.get)
     val printed = compact(render(output))
@@ -143,8 +147,33 @@ class ValidationTest extends FunSuite {
 
 
     //Doc interpreter, simple POC showing we can make documentation out of this.
-    val docOut = extractData.lift.foldMap[Doc](DocInterpreter)
+    val docOut = creditCardSchema.lift.foldMap[Doc](DocInterpreter)
     assert(docOut.str === """Transform to a CC$3 from object with 12 members: [firstFive: String,lastFour: String,uuid: String representing a UUID,token: String representing a UUID,ccType: Convert to a CreditCardType from String,expMonth: Int,expYear: Int,cardHolder: String,currencyIso: String with one of the following values: [CAD,GBP,USD],deletedAt: Optional: Date with format ISO date-time format with the offset and zone if available, such as '2011-12-03T10:15:30', '2011-12-03T10:15:30+01:00' or '2011-12-03T10:15:30+01:00[Europe/Paris]',lastModifiedRequest: String representing a UUID,billingLocation: Optional: Convert to a Transform to type BillingLocation$3 from object with 2 members: [countryIso: String,zipCode: Optional: String]]""")
+
+
+
+
+    import com.ot.bones.rest.Sugar._
+
+    object postToProcessor extends Processor[CC, String, CC] {}
+
+
+
+
+//    {
+//      "statusCode": 400,
+//      "error": "Bad Request",
+//      "message": "invalid query"
+//    }
+
+    val errorDef: DataDefinitionOp[String] = StringData()
+
+    //Rest test
+    endPoint("/creditCard")
+        .post(creditCardSchema, postToProcessor, creditCardSchema, errorDef)
+        .get(creditCardSchema)
+//        .put("/:uuid", creditCardSchema, postToProcessor, successShape, errorShape)
+//        .delete("/:uuid", doDelete, successShape, errorShape)
 
   }
 
