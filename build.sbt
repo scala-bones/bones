@@ -3,7 +3,7 @@ lazy val root = (project in file(".")).
     inThisBuild(List(
       organization := "com.github.oletraveler",
       scalaVersion := "2.11.12", //TODO: cross compile 2.12.4
-      version      := "0.1.0"
+      version      := "0.2.0-SNAPSHOT"
     )),
     name := "Bones",
     libraryDependencies ++= Seq(
@@ -11,6 +11,8 @@ lazy val root = (project in file(".")).
       "com.chuusai" %% "shapeless" % "2.3.3",
       "net.liftweb" %% "lift-json" % "2.6.3" % "optional", //Used for JsonExtract
       "org.typelevel" %% "cats-effect" % "0.5",
+      "net.databinder" %% "unfiltered-filter" % "0.8.4",
+      "javax.servlet" % "servlet-api" % "2.5",
       "org.scalacheck" %% "scalacheck" % "1.13.4" % Test,
       "org.scalatest" %% "scalatest" % "3.0.4" % Test,
       "org.easymock" % "easymock" % "3.5.1" % Test

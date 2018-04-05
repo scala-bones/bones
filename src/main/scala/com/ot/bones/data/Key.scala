@@ -71,7 +71,6 @@ case class ConversionFieldDefinition[A,B](convertFrom: RequiredFieldDefinition[A
 }
 
 
-
 /** Starting point for obtaining a value is to define a key */
 case class Key(name: String) { thisKey =>
   val key: Key = thisKey
