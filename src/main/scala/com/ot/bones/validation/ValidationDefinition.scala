@@ -58,8 +58,10 @@ object ValidationDefinition {
   }
 
   trait BaseValidationOp[T] {
-    def validValue(validValues: Vector[T]) = ValidValue(validValues)
-    def invalidValue(invalidValues: Vector[T]) = InvalidValue(invalidValues)
+    def validVector(validValues: Vector[T]) = ValidValue(validValues)
+    def valid(t: T*) = validVector(t.toVector)
+    def invalidVector(invalidValues: Vector[T]) = InvalidValue(invalidValues)
+    def invalid(t: T*) = invalidVector(t.toVector)
   }
 
   private val alphanumRegx = "^[a-zA-Z0-9]*$".r

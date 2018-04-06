@@ -10,7 +10,7 @@ import cats.free.FreeApplicative
 import cats.implicits._
 import com.ot.bones.data.ToHList.ToHListDataDefinitionOp
 import com.ot.bones.interpreter.EncoderInterpreter.Encode
-import com.ot.bones.interpreter.ExtractionInterpreter.{ConversionError, ExtractionErrors, JsonProducer, RequiredObjectError, ValidateFromProducer, ValidationError}
+import com.ot.bones.interpreter.ExtractionInterpreter.{CanNotConvert, ExtractionErrors, JsonProducer, RequiredObjectError, ValidateFromProducer, ValidationError}
 import com.ot.bones.validation.ValidationDefinition.ValidationOp
 import net.liftweb.json.JsonAST.{JField, JObject, JValue}
 import shapeless.{::, Generic, HList, HNil}
@@ -52,9 +52,9 @@ object Algebra {
   final case class UuidData() extends DataDefinitionOp[UUID] with ToOptionalData[UUID]
 
   final case class ConversionData[A,B](
-    from: DataDefinitionOp[A],
-    fab: A => Validated[ConversionError[A,B], B],
-    fba: B => A, description: String
+                                        from: DataDefinitionOp[A],
+                                        fab: A => Validated[CanNotConvert[A,B], B],
+                                        fba: B => A, description: String
   ) extends DataDefinitionOp[B] with ToOptionalData[B]
 
   final case class EnumeratedStringData[A](enumeration: Enumeration) extends DataDefinitionOp[A] with ToOptionalData[A]

@@ -7,7 +7,7 @@ import cats.data.Validated
 import cats.data.Validated.Valid
 import com.ot.bones.data.Algebra._
 import com.ot.bones.data.ToHList._
-import com.ot.bones.interpreter.ExtractionInterpreter.ConversionError
+import com.ot.bones.interpreter.ExtractionInterpreter.CanNotConvert
 import com.ot.bones.validation.ValidationDefinition.ListValidation.PassesAll
 import com.ot.bones.validation.ValidationDefinition.{ToOptionalValidation, ValidationOp}
 import shapeless.{::, Generic, HNil}
@@ -47,7 +47,7 @@ case class RequiredFieldDefinition[A](key: Key,
     OptionalFieldDefinition(key, op.toOption, optionalValidations)
   }
 
-  def convert[B](fab: A => Validated[ConversionError[A,B], B], fba: B => A, description: String, validations: List[ValidationOp[B] with ToOptionalValidation[B]]): ConversionFieldDefinition[A,B] = {
+  def convert[B](fab: A => Validated[CanNotConvert[A,B], B], fba: B => A, description: String, validations: List[ValidationOp[B] with ToOptionalValidation[B]]): ConversionFieldDefinition[A,B] = {
     val cd = ConversionData[A,B](op, fab, fba, description)
     ConversionFieldDefinition[A,B](this, cd, validations)
   }

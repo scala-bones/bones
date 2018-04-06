@@ -28,7 +28,7 @@ object ExtractionInterpreter {
     */
   case class ValidationError[T](failurePoint: ValidationOp[T], input: T) extends ExtractionError
   case class WrongTypeError[T](expectedType: Class[T], providedType: Class[_]) extends ExtractionError
-  case class ConversionError[A,T](input: A, toType: Class[T]) extends ExtractionError
+  case class CanNotConvert[A,T](input: A, toType: Class[T]) extends ExtractionError
   case class RequiredObjectError() extends ExtractionError
 //  case class MultiKeyError[T](keys: NonEmptyList[Key], failurePoint: ExtractionOp[T]) extends ExtractionError
 
@@ -127,7 +127,7 @@ object ExtractionInterpreter {
           def convert(uuidString: String): Validated[ExtractionErrors, UUID] = try {
             Valid(UUID.fromString(uuidString))
           } catch {
-            case _: IllegalArgumentException => Invalid(NonEmptyList.one(ConversionError(uuidString, classOf[UUID])))
+            case _: IllegalArgumentException => Invalid(NonEmptyList.one(CanNotConvert(uuidString, classOf[UUID])))
           }
 
           jsonProducer.produceString.leftMap(NonEmptyList.one).andThen {
@@ -141,7 +141,7 @@ object ExtractionInterpreter {
             case Some(str) => try {
               Valid(dateFormat.parseObject(str).asInstanceOf[Date]).asInstanceOf[ValidationResultNel[A]]
             } catch {
-              case NonFatal(ex) => Invalid(NonEmptyList.one(ConversionError(str, classOf[Date])))
+              case NonFatal(ex) => Invalid(NonEmptyList.one(CanNotConvert(str, classOf[Date])))
             }
             case None => Invalid(NonEmptyList.one(RequiredObjectError()))
           }
@@ -169,7 +169,7 @@ object ExtractionInterpreter {
             try {
               Valid(BigDecimal(str))
             } catch {
-              case ex: NumberFormatException => Invalid(NonEmptyList.one(ConversionError(str, classOf[BigDecimal])))
+              case ex: NumberFormatException => Invalid(NonEmptyList.one(CanNotConvert(str, classOf[BigDecimal])))
             }
           }
 
@@ -187,7 +187,7 @@ object ExtractionInterpreter {
             case Some(str) => try {
               Valid(enumeration.withName(str).asInstanceOf[A])
             } catch {
-              case ex: NoSuchElementException => Invalid(NonEmptyList.one(ConversionError(str, enumeration.getClass)))
+              case ex: NoSuchElementException => Invalid(NonEmptyList.one(CanNotConvert(str, enumeration.getClass)))
             }
             case None => Invalid(NonEmptyList.one(RequiredObjectError()))
           }
