@@ -8,7 +8,7 @@ import cats.data.Validated.{Invalid, Valid}
 import com.ot.bones.data.Algebra.{DataDefinitionOp, StringData}
 import com.ot.bones.data.Key
 import com.ot.bones.interpreter.DocInterpreter.{Doc, DocInterpreter}
-import com.ot.bones.interpreter.ExtractionInterpreter.{ConversionError, DefaultExtractInterpreter, JsonProducer, ValidateFromProducer, WrongTypeError}
+import com.ot.bones.interpreter.ExtractionInterpreter.{CanNotConvert, DefaultExtractInterpreter, JsonProducer, ValidateFromProducer, WrongTypeError}
 import com.ot.bones.producer.LiftJsonProducer
 import com.ot.bones.rest.Algebra.Processor
 import com.ot.bones.validation.ValidationDefinition.{IntValidation => iv, StringValidation => sv}
@@ -46,13 +46,13 @@ class ValidationTest extends FunSuite {
       case object Amex extends CreditCardType("Amex")
       case object Discover extends CreditCardType("Discover")
 
-      def toCreditCardType: String => Validated[ConversionError[String, CreditCardType], CreditCardType] = input => {
+      def toCreditCardType: String => Validated[CanNotConvert[String, CreditCardType], CreditCardType] = input => {
         input.toLowerCase match {
           case "visa" => Valid(CreditCardTypes.Visa)
           case "mastercard" => Valid(CreditCardTypes.Mastercard)
           case "amex" => Valid(CreditCardTypes.Amex)
           case "discover" => Valid(CreditCardTypes.Discover)
-          case x => Invalid(ConversionError(x, classOf[CreditCardType]))
+          case x => Invalid(CanNotConvert(x, classOf[CreditCardType]))
         }
       }
     }
@@ -92,7 +92,7 @@ class ValidationTest extends FunSuite {
       key("deletedAt").isoDateTime().optional(),
       key("lastModifiedRequest").uuid(),
       key("billingLocation").obj2(
-        key("countryIso").string(sv.validValue(isoVector)),
+        key("countryIso").string(sv.validVector(isoVector)),
         key("zipCode").string().optional()
       ).transform[BillingLocation].optional()
     ).transform[CC]
