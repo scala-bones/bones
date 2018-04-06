@@ -25,6 +25,8 @@ testOptions in Test += Tests.Argument("-oF")
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
 
+credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
+
 publishTo := {
   val nexus = "https://oss.sonatype.org/"
   if (isSnapshot.value)
