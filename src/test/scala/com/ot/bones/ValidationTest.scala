@@ -1,6 +1,7 @@
 package com.ot.bones
 
-import java.util.{Date, UUID}
+import java.time.LocalDateTime
+import java.util.{Calendar, Date, UUID}
 
 import cats.Id
 import cats.data.Validated
@@ -8,11 +9,13 @@ import cats.data.Validated.{Invalid, Valid}
 import com.ot.bones.data.Algebra.{DataDefinitionOp, StringData}
 import com.ot.bones.data.Key
 import com.ot.bones.interpreter.DocInterpreter.{Doc, DocInterpreter}
-import com.ot.bones.interpreter.ExtractionInterpreter.{CanNotConvert, DefaultExtractInterpreter, JsonProducer, ValidateFromProducer, WrongTypeError}
+import com.ot.bones.interpreter.ExtractionInterpreter.{CanNotConvert, DefaultExtractInterpreter, JsonProducer, ValidateFromProducer, ValidationError, WrongTypeError}
 import com.ot.bones.producer.LiftJsonProducer
 import com.ot.bones.rest.Algebra.Processor
-import com.ot.bones.validation.ValidationDefinition.{IntValidation => iv, StringValidation => sv}
+import com.ot.bones.validation.ValidationDefinition.{ValidationOp, IntValidation => iv, StringValidation => sv}
 import org.scalatest.FunSuite
+import shapeless.HNil
+import sun.util.calendar.JulianCalendar
 
 
 class ValidationTest extends FunSuite {
@@ -33,6 +36,21 @@ class ValidationTest extends FunSuite {
     override def child(key: Key): JsonProducer = this
   }
 
+  test("append obj") {
+    import com.ot.bones.syntax._
+
+    val o1 = obj2(
+      key("key1").string(),
+      key("key2").string()
+    )
+
+    val o2 = obj2(
+      key("key3").string(),
+      key("key4").string()
+    )
+
+//    val o3 = o1 append o2
+  }
 
   test("validation example") {
 
@@ -78,15 +96,37 @@ class ValidationTest extends FunSuite {
 
     import com.ot.bones.syntax._
 
+    import shapeless.::
+
+    object HasNotExpired extends ValidationOp[Int :: Int :: HNil] {
+      override def isValid: Int :: Int :: HNil => Boolean = input => {
+        val now = LocalDateTime.now()
+        val expMonth = input.head
+        val expYear = input.tail.head
+        if (now.getYear > expYear) true
+        else if (now.getYear == expYear && now.getMonthValue >= expMonth) true
+        else false
+
+      }
+
+      override def defaultError(t: ::[Int, ::[Int, HNil]]): String = "Expired Card"
+
+      override def description: String = "Credit Card Expiration Date must be in the future"
+    }
+
+    val ccExp = obj2(
+      key("expMonth").int(iv.between(1,12)),
+      key("expYear").int(iv.between(1950, 9999))
+    ).validate(HasNotExpired)
+
     // Here we are defining our expected input data.  This definition will drive the interpreters.
-    val creditCardSchema = obj12(
+    val obj = obj5(
       key("firstFive").string(sv.length(5), sv.matchesRegex("[0-9]{5}".r)),
       key("lastFour").string(sv.length(4), sv.matchesRegex("[0-9]{4}".r)),
       key("uuid").uuid(),
       key("token").uuid(),
-      key("ccType").string().convert(CreditCardTypes.toCreditCardType, (cct: CreditCardType) => cct.abbrev, "CreditCardType", List.empty),
-      key("expMonth").int(iv.between(1, 12)),
-      key("expYear").int(iv.between(1950, 9999)),
+      key("ccType").string().convert(CreditCardTypes.toCreditCardType, (cct: CreditCardType) => cct.abbrev, "CreditCardType", List.empty)
+    ) :: ccExp :: obj5(
       key("cardHolder").string(),
       key("currencyIso").enumeration(Currency),
       key("deletedAt").isoDateTime().optional(),
@@ -95,7 +135,11 @@ class ValidationTest extends FunSuite {
         key("countryIso").string(sv.validVector(isoVector)),
         key("zipCode").string().optional()
       ).transform[BillingLocation].optional()
-    ).transform[CC]
+    )
+
+    val creditCardSchema = obj.transform[CC]
+
+    val x = 1 :: 2 :: Nil
 
     //final type is basically DataDefinitionOp[CC]
 

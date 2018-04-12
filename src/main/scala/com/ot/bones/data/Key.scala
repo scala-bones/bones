@@ -123,53 +123,53 @@ case class Key(name: String) { thisKey =>
     RequiredFieldDefinition(key, EnumeratedStringData(e), v.toList)
 
   def obj2[A, B](op1: FieldDefinition[A], op2: FieldDefinition[B]): RequiredFieldDefinition[A :: B :: HNil] =
-    RequiredFieldDefinition[A :: B :: HNil](this, HList2(op1, op2), List.empty)
+    RequiredFieldDefinition[A :: B :: HNil](this, HList2(op1, op2, List.empty), List.empty)
 
   def obj3[A, B, C](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C]): RequiredFieldDefinition[A :: B :: C :: HNil] =
-    RequiredFieldDefinition[A :: B :: C :: HNil](this, HList3(op1, op2, op3), List.empty)
+    RequiredFieldDefinition[A :: B :: C :: HNil](this, HList3(op1, op2, op3, List.empty), List.empty)
 
   def obj4[A, B, C, D](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D]):
     RequiredFieldDefinition[A :: B :: C :: D :: HNil] =
-    RequiredFieldDefinition[A :: B :: C :: D :: HNil](this, HList4(op1, op2, op3, op4), List.empty)
+    RequiredFieldDefinition[A :: B :: C :: D :: HNil](this, HList4(op1, op2, op3, op4, List.empty), List.empty)
 
   def obj5[A, B, C, D, E](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D],
                           op5: FieldDefinition[E]):
   RequiredFieldDefinition[A :: B :: C :: D :: E :: HNil] =
-    RequiredFieldDefinition[A :: B :: C :: D :: E :: HNil](this, HList5(op1, op2, op3, op4, op5), List.empty)
+    RequiredFieldDefinition[A :: B :: C :: D :: E :: HNil](this, HList5(op1, op2, op3, op4, op5, List.empty), List.empty)
 
   def obj6[A, B, C, D, E, F](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D],
                              op5: FieldDefinition[E], op6: FieldDefinition[F]):
   RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: HNil] =
-    RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: HNil](this, HList6(op1, op2, op3, op4, op5, op6), List.empty)
+    RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: HNil](this, HList6(op1, op2, op3, op4, op5, op6, List.empty), List.empty)
 
   def obj7[A, B, C, D, E, F, G](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D],
                                 op5: FieldDefinition[E], op6: FieldDefinition[F], op7: FieldDefinition[G]):
   RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: HNil] =
-    RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: HNil](this, HList7(op1, op2, op3, op4, op5, op6, op7), List.empty)
+    RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: HNil](this, HList7(op1, op2, op3, op4, op5, op6, op7, List.empty), List.empty)
 
   def obj8[A, B, C, D, E, F, G, H](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D],
                                 op5: FieldDefinition[E], op6: FieldDefinition[F], op7: FieldDefinition[G], op8: FieldDefinition[H]):
   RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: HNil] =
-    RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: HNil](this, HList8(op1, op2, op3, op4, op5, op6, op7, op8), List.empty)
+    RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: HNil](this, HList8(op1, op2, op3, op4, op5, op6, op7, op8, List.empty), List.empty)
 
   def obj9[A, B, C, D, E, F, G, H, I](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D],
                                       op5: FieldDefinition[E], op6: FieldDefinition[F], op7: FieldDefinition[G], op8: FieldDefinition[H],
                                       op9: FieldDefinition[I]):
   RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: HNil] =
-    RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: HNil](this, HList9(op1, op2, op3, op4, op5, op6, op7, op8, op9), List.empty)
+    RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: HNil](this, HList9(op1, op2, op3, op4, op5, op6, op7, op8, op9, List.empty), List.empty)
 
   def obj10[A, B, C, D, E, F, G, H, I, J](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D],
                                         op5: FieldDefinition[E], op6: FieldDefinition[F], op7: FieldDefinition[G], op8: FieldDefinition[H],
                                         op9: FieldDefinition[I], op10: FieldDefinition[J]):
   RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: HNil] =
-    RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: HNil](this, HList10(op1, op2, op3, op4, op5, op6, op7, op8, op9, op10), List.empty)
+    RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: HNil](this, HList10(op1, op2, op3, op4, op5, op6, op7, op8, op9, op10, List.empty), List.empty)
 
   def obj11[A, B, C, D, E, F, G, H, I, J, K](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D],
                                              op5: FieldDefinition[E], op6: FieldDefinition[F], op7: FieldDefinition[G], op8: FieldDefinition[H],
                                              op9: FieldDefinition[I], op10: FieldDefinition[J], op11: FieldDefinition[K]):
   RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: HNil] =
     RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: HNil](
-      this, HList11(op1, op2, op3, op4, op5, op6, op7, op8, op9, op10, op11), List.empty)
+      this, HList11(op1, op2, op3, op4, op5, op6, op7, op8, op9, op10, op11, List.empty), List.empty)
 
 
   def obj12[A, B, C, D, E, F, G, H, I, J, K, L](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D],
@@ -177,7 +177,7 @@ case class Key(name: String) { thisKey =>
                                              op9: FieldDefinition[I], op10: FieldDefinition[J], op11: FieldDefinition[K], op12: FieldDefinition[L]):
   RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: L :: HNil] =
     RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: L :: HNil](
-      this, HList12(op1, op2, op3, op4, op5, op6, op7, op8, op9, op10, op11, op12), List.empty
+      this, HList12(op1, op2, op3, op4, op5, op6, op7, op8, op9, op10, op11, op12, List.empty), List.empty
     )
 
 }
@@ -188,46 +188,46 @@ object Sugar {
   trait ToHList {
 
     def obj2[A, AA, B, BB](op1: FieldDefinition[A],
-                           op2: FieldDefinition[B]) = HList2(op1, op2)
+                           op2: FieldDefinition[B]) = HList2(op1, op2, List.empty)
 
     def obj3[A, B, C](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C]) =
-      HList3(op1, op2, op3)
+      HList3(op1, op2, op3, List.empty)
 
     def obj4[A, B, C, D](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D]) =
-      HList4(op1, op2, op3, op4)
+      HList4(op1, op2, op3, op4, List.empty)
 
     def obj5[A, B, C, D, E](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D], op5: FieldDefinition[E]) =
-      HList5(op1, op2, op3, op4, op5)
+      HList5(op1, op2, op3, op4, op5, List.empty)
 
     def obj6[A, B, C, D, E, F](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D], op5: FieldDefinition[E],
                                op6: FieldDefinition[F]) =
-      HList6(op1, op2, op3, op4, op5, op6)
+      HList6(op1, op2, op3, op4, op5, op6, List.empty)
 
     def obj7[A, B, C, D, E, F, G](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D], op5: FieldDefinition[E],
                                   op6: FieldDefinition[F], op7: FieldDefinition[G]) =
-      HList7(op1, op2, op3, op4, op5, op6, op7)
+      HList7(op1, op2, op3, op4, op5, op6, op7, List.empty)
 
     def obj8[A, B, C, D, E, F, G, H](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D], op5: FieldDefinition[E],
                                      op6: FieldDefinition[F], op7: FieldDefinition[G], op8: FieldDefinition[H]) =
-      HList8(op1, op2, op3, op4, op5, op6, op7, op8)
+      HList8(op1, op2, op3, op4, op5, op6, op7, op8, List.empty)
 
     def obj9[A, B, C, D, E, F, G, H, I](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D], op5: FieldDefinition[E],
                                         op6: FieldDefinition[F], op7: FieldDefinition[G], op8: FieldDefinition[H], op9: FieldDefinition[I]) =
-      HList9(op1, op2, op3, op4, op5, op6, op7, op8, op9)
+      HList9(op1, op2, op3, op4, op5, op6, op7, op8, op9, List.empty)
 
     def obj10[A, B, C, D, E, F, G, H, I, J](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D], op5: FieldDefinition[E],
                                             op6: FieldDefinition[F], op7: FieldDefinition[G], op8: FieldDefinition[H], op9: FieldDefinition[I], op10: FieldDefinition[J]) =
-      HList10(op1, op2, op3, op4, op5, op6, op7, op8, op9, op10)
+      HList10(op1, op2, op3, op4, op5, op6, op7, op8, op9, op10, List.empty)
 
     def obj11[A, B, C, D, E, F, G, H, I, J, K](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D], op5: FieldDefinition[E],
                                                op6: FieldDefinition[F], op7: FieldDefinition[G], op8: FieldDefinition[H], op9: FieldDefinition[I], op10: FieldDefinition[J],
                                                op11: FieldDefinition[K]) =
-      HList11(op1, op2, op3, op4, op5, op6, op7, op8, op9, op10, op11)
+      HList11(op1, op2, op3, op4, op5, op6, op7, op8, op9, op10, op11, List.empty)
 
     def obj12[A, B, C, D, E, F, G, H, I, J, K, L](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D], op5: FieldDefinition[E],
                                                   op6: FieldDefinition[F], op7: FieldDefinition[G], op8: FieldDefinition[H], op9: FieldDefinition[I], op10: FieldDefinition[J],
                                                   op11: FieldDefinition[K], op12: FieldDefinition[L]) =
-      HList12(op1, op2, op3, op4, op5, op6, op7, op8, op9, op10, op11, op12)
+      HList12(op1, op2, op3, op4, op5, op6, op7, op8, op9, op10, op11, op12, List.empty)
 
 
 
