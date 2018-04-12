@@ -2,7 +2,7 @@ package com.ot.bones.interpreter
 
 import cats.Applicative
 import com.ot.bones.data.Algebra._
-import com.ot.bones.data.ToHList.ToHListDataDefinitionOp
+import com.ot.bones.data.ToHList.{BaseHListDef, HListAppend2, HListAppend3}
 
 object DocInterpreter {
 
@@ -20,11 +20,13 @@ object DocInterpreter {
   object DocInterpreter extends cats.arrow.FunctionK[DataDefinitionOp, Doc] {
     def apply[A](fgo: DataDefinitionOp[A]): Doc[A] =
       fgo match {
+        case HListAppend2(h1, h2, _, _) => Doc(apply(h1).str + " " + apply(h2).str)
+        case HListAppend3(h1, h2, _, _) => Doc(apply(h1).str + " " + apply(h2).str)
         case OptionalDataDefinition(dataDefinitionOp) => {
           val desc = apply(dataDefinitionOp)
           Doc(s"Optional: ${desc.str}")
         }
-        case op: ToHListDataDefinitionOp[a] => {
+        case op: BaseHListDef[a] => {
           val members = op.members
           Doc(s"object with ${members.length} members: " + members.map(fd => s"${fd.key.name}: ${apply(fd.op).str}").mkString("[", ",", "]"))
         }
