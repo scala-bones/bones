@@ -8,12 +8,14 @@ import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, Validated}
 import cats.free.FreeApplicative
 import cats.implicits._
-import com.ot.bones.data.ToHList.ToHListDataDefinitionOp
+import com.ot.bones.data.ToHList.BaseHListDef
 import com.ot.bones.interpreter.EncoderInterpreter.Encode
 import com.ot.bones.interpreter.ExtractionInterpreter.{CanNotConvert, ExtractionErrors, JsonProducer, RequiredObjectError, ValidateFromProducer, ValidationError}
 import com.ot.bones.validation.ValidationDefinition.ValidationOp
 import net.liftweb.json.JsonAST.{JField, JObject, JValue}
-import shapeless.{::, Generic, HList, HNil}
+import shapeless.{::, Generic, HList, HNil, Nat}
+import HList._
+import shapeless.ops.hlist.Prepend
 
 object Algebra {
 
@@ -61,7 +63,7 @@ object Algebra {
   final case class Transform[A:Manifest,B](op: DataDefinitionOp[B], f: A => B, g: B => A) extends DataDefinitionOp[A] with ToOptionalData[A] {
     val manifestOfA: Manifest[A] = manifest[A]
   }
-  final case class Check[L <: HList](obj: ToHListDataDefinitionOp[L], check: L => Validated[ValidationError[L], L])
+  final case class Check[L <: HList](obj: BaseHListDef[L], check: L => Validated[ValidationError[L], L])
     extends DataDefinitionOp[L] with ToOptionalData[L]
 
 
@@ -72,12 +74,12 @@ object ToHList {
   import Algebra._
 
   /** Used to create a generic extract method so we can extract values from the products. */
-  abstract class ToHListDataDefinitionOp[L <: HList] extends DataDefinitionOp[L] with ToOptionalData[L] {
+  sealed abstract class BaseHListDef[L <: HList] extends DataDefinitionOp[L] with ToOptionalData[L] {
 
     /** Get a list of untyped members */
     def members: List[FieldDefinition[_]]
 
-    /** Extract the child or children.  AA should be a Tuple */
+    /** Extract the child or children. */
     def extractMembers(functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): ValidateFromProducer[L]
 
     def encodeMembers(value: FunctionK[DataDefinitionOp, Encode]): Encode[L]
@@ -96,13 +98,16 @@ object ToHList {
       }
     }
 
+    def validations: List[ValidationOp[L]]
+
   }
 
   /** Represents a required HList with two properties A and B */
   final case class HList2[A, B](
                                  op1: FieldDefinition[A],
-                                 op2: FieldDefinition[B]
-                               ) extends ToHListDataDefinitionOp[A :: B :: HNil] {
+                                 op2: FieldDefinition[B],
+                                 validations: List[ValidationOp[A :: B :: HNil]]
+                               ) extends BaseHListDef[A :: B :: HNil] {
 
     def extractMembers(functionK: FunctionK[DataDefinitionOp, ValidateFromProducer])
     : ValidateFromProducer[A :: B :: HNil] = {
@@ -122,6 +127,10 @@ object ToHList {
 
 
     def members: List[FieldDefinition[_]] = List(op1, op2)
+
+    def validate(validationOp: ValidationOp[A :: B :: HNil]*) : HList2[A,B] =
+      this.copy(validations  =  validationOp.toList)
+
   }
 
 
@@ -129,9 +138,10 @@ object ToHList {
   final case class HList3[A, B, C](
                                     op1: FieldDefinition[A],
                                     op2: FieldDefinition[B],
-                                    op3: FieldDefinition[C]
+                                    op3: FieldDefinition[C],
+                                    validations: List[ValidationOp[A :: B :: C :: HNil]]
                                   )
-    extends ToHListDataDefinitionOp[A :: B :: C :: HNil] {
+    extends BaseHListDef[A :: B :: C :: HNil] {
 
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
@@ -166,8 +176,9 @@ object ToHList {
                                        op1: FieldDefinition[A],
                                        op2: FieldDefinition[B],
                                        op3: FieldDefinition[C],
-                                       op4: FieldDefinition[D])
-    extends ToHListDataDefinitionOp[A :: B :: C :: D :: HNil] {
+                                       op4: FieldDefinition[D],
+                                       validations: List[ValidationOp[A :: B :: C :: D :: HNil]])
+    extends BaseHListDef[A :: B :: C :: D :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
     : ValidateFromProducer[A :: B :: C :: D :: HNil] = {
@@ -206,8 +217,9 @@ object ToHList {
                                           op2: FieldDefinition[B],
                                           op3: FieldDefinition[C],
                                           op4: FieldDefinition[D],
-                                          op5: FieldDefinition[E])
-    extends ToHListDataDefinitionOp[A :: B :: C :: D :: E :: HNil] {
+                                          op5: FieldDefinition[E],
+                                          validations: List[ValidationOp[A :: B :: C :: D :: E :: HNil]])
+    extends BaseHListDef[A :: B :: C :: D :: E :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
     : ValidateFromProducer[A :: B :: C :: D :: E :: HNil] = {
@@ -217,11 +229,11 @@ object ToHList {
       val r4 = f(op4.op)
       val r5 = f(op5.op)
       (jsonProducer: JsonProducer) => {
-        (r1(jsonProducer),
-          r2(jsonProducer),
-          r3(jsonProducer),
-          r4(jsonProducer),
-          r5(jsonProducer)).mapN(_ :: _ :: _ :: _ :: _ :: HNil)
+        (r1(jsonProducer.child(op1.key)),
+          r2(jsonProducer.child(op2.key)),
+          r3(jsonProducer.child(op3.key)),
+          r4(jsonProducer.child(op4.key)),
+          r5(jsonProducer.child(op5.key))).mapN(_ :: _ :: _ :: _ :: _ :: HNil)
       }
     }
 
@@ -240,6 +252,16 @@ object ToHList {
     }
 
     def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4, op4)
+//    val merge = (i1: A2 :: B2 :: C2 :: E2 :: F2 :: HNil, out: OUT) => i1 ::: out
+//    val split = (in: p.Out) => in.asInstanceOf[A2 :: B2 :: C2 :: E2 :: F2 :: OUT].split(Nat._5)
+//    HListAppend3(obj, this, merge, split)
+
+    def ::[A2,B2](other: HList2[A2,B2])(implicit p: Prepend[A2 :: B2 :: HNil, A :: B :: C :: D :: E :: HNil]) = {
+      val merge = (i1 : A2 :: B2 :: HNil, i2: A :: B :: C :: D :: E :: HNil) => i1 ::: i2
+      val split = (in: p.Out) => in.asInstanceOf[A2 :: B2 :: A :: B :: C :: D :: E :: HNil].split(Nat._2)
+      HListAppend2(other, this, merge, split)
+    }
+
   }
 
 
@@ -250,8 +272,9 @@ object ToHList {
                                              op3: FieldDefinition[C],
                                              op4: FieldDefinition[D],
                                              op5: FieldDefinition[E],
-                                             op6: FieldDefinition[F])
-    extends ToHListDataDefinitionOp[A :: B :: C :: D :: E :: F :: HNil] {
+                                             op6: FieldDefinition[F],
+                                             validations: List[ValidationOp[A :: B :: C :: D :: E :: F :: HNil]])
+    extends BaseHListDef[A :: B :: C :: D :: E :: F :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
     : ValidateFromProducer[A :: B :: C :: D :: E :: F :: HNil] = {
@@ -262,12 +285,12 @@ object ToHList {
       val r5 = f(op5.op)
       val r6 = f(op6.op)
       (jsonProducer: JsonProducer) => {
-        (r1(jsonProducer),
-          r2(jsonProducer),
-          r3(jsonProducer),
-          r4(jsonProducer),
-          r5(jsonProducer),
-          r6(jsonProducer)).mapN(_ :: _ :: _ :: _ :: _ :: _ :: HNil)
+        (r1(jsonProducer.child(op1.key)),
+          r2(jsonProducer.child(op2.key)),
+          r3(jsonProducer.child(op3.key)),
+          r4(jsonProducer.child(op4.key)),
+          r5(jsonProducer.child(op5.key)),
+          r6(jsonProducer.child(op6.key))).mapN(_ :: _ :: _ :: _ :: _ :: _ :: HNil)
       }
     }
 
@@ -301,8 +324,9 @@ object ToHList {
                                                 op4: FieldDefinition[D],
                                                 op5: FieldDefinition[E],
                                                 op6: FieldDefinition[F],
-                                                op7: FieldDefinition[G])
-    extends ToHListDataDefinitionOp[A :: B :: C :: D :: E :: F :: G :: HNil] {
+                                                op7: FieldDefinition[G],
+                                                validations: List[ValidationOp[A :: B :: C :: D :: E :: F :: G :: HNil]])
+    extends BaseHListDef[A :: B :: C :: D :: E :: F :: G :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
     : ValidateFromProducer[A :: B :: C :: D :: E :: F :: G :: HNil] = {
@@ -314,13 +338,13 @@ object ToHList {
       val r6 = f(op6.op)
       val r7 = f(op7.op)
       (jsonProducer: JsonProducer) => {
-        (r1(jsonProducer),
-          r2(jsonProducer),
-          r3(jsonProducer),
-          r4(jsonProducer),
-          r5(jsonProducer),
-          r6(jsonProducer),
-          r7(jsonProducer)).mapN(_ :: _ :: _ :: _ :: _ :: _ :: _ :: HNil)
+        (r1(jsonProducer.child(op1.key)),
+          r2(jsonProducer.child(op2.key)),
+          r3(jsonProducer.child(op3.key)),
+          r4(jsonProducer.child(op4.key)),
+          r5(jsonProducer.child(op5.key)),
+          r6(jsonProducer.child(op6.key)),
+          r7(jsonProducer.child(op7.key))).mapN(_ :: _ :: _ :: _ :: _ :: _ :: _ :: HNil)
       }
     }
 
@@ -344,6 +368,19 @@ object ToHList {
     }
 
     def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4, op5, op6, op7)
+
+    def ::[A2,B2,C2,D2,E2](other: HList5[A2,B2,C2,D2,E2]) = {
+      type OUT = A2 :: B2 :: C2 :: D2 :: E2 :: A :: B :: C :: D :: E :: F :: G :: HNil
+      val f = (i1: A2 :: B2 :: C2 :: D2 :: E2 :: HNil, i2: A :: B :: C :: D :: E :: F :: G :: HNil) => {
+        i1.head :: i1.tail.head :: i1.tail.tail.head :: i1.tail.tail.tail.head :: i1.tail.tail.tail.tail.head ::
+          i2.head :: i2.tail.head :: i2.tail.tail.head :: i2.tail.tail.tail.head :: i2.tail.tail.tail.tail.head ::
+          i2.tail.tail.tail.tail.tail.head :: i2.tail.tail.tail.tail.tail.tail.head :: HNil
+      }
+      val split = (out: OUT) => out.split(5)
+      HListAppend2(other, this, f, split)
+    }
+
+
   }
 
 
@@ -356,8 +393,9 @@ object ToHList {
                                                    op5: FieldDefinition[E],
                                                    op6: FieldDefinition[F],
                                                    op7: FieldDefinition[G],
-                                                   op8: FieldDefinition[H])
-    extends ToHListDataDefinitionOp[A :: B :: C :: D :: E :: F :: G :: H :: HNil] {
+                                                   op8: FieldDefinition[H],
+                                                   validations: List[ValidationOp[A :: B :: C :: D :: E :: F :: G :: H :: HNil]])
+    extends BaseHListDef[A :: B :: C :: D :: E :: F :: G :: H :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
     : ValidateFromProducer[A :: B :: C :: D :: E :: F :: G :: H :: HNil] = {
@@ -417,8 +455,9 @@ object ToHList {
                                                       op6: FieldDefinition[F],
                                                       op7: FieldDefinition[G],
                                                       op8: FieldDefinition[H],
-                                                      op9: FieldDefinition[I])
-    extends ToHListDataDefinitionOp[A :: B :: C :: D :: E :: F :: G :: H :: I :: HNil] {
+                                                      op9: FieldDefinition[I],
+                                                      validations: List[ValidationOp[A :: B :: C :: D :: E :: F :: G :: H :: I :: HNil]])
+    extends BaseHListDef[A :: B :: C :: D :: E :: F :: G :: H :: I :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
     : ValidateFromProducer[A :: B :: C :: D :: E :: F :: G :: H :: I :: HNil] = {
@@ -482,8 +521,9 @@ object ToHList {
                                                           op7: FieldDefinition[G],
                                                           op8: FieldDefinition[H],
                                                           op9: FieldDefinition[I],
-                                                          op10: FieldDefinition[J])
-    extends ToHListDataDefinitionOp[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: HNil] {
+                                                          op10: FieldDefinition[J],
+                                                          validations: List[ValidationOp[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: HNil]])
+    extends BaseHListDef[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
     : ValidateFromProducer[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: HNil] = {
@@ -553,8 +593,9 @@ object ToHList {
                                                              op8: FieldDefinition[H],
                                                              op9: FieldDefinition[I],
                                                              op10: FieldDefinition[J],
-                                                             op11: FieldDefinition[K])
-    extends ToHListDataDefinitionOp[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: HNil] {
+                                                             op11: FieldDefinition[K],
+                                                             validations: List[ValidationOp[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: HNil]])
+    extends BaseHListDef[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
     : ValidateFromProducer[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: HNil] = {
@@ -629,8 +670,9 @@ object ToHList {
                                                                 op9: FieldDefinition[I],
                                                                 op10: FieldDefinition[J],
                                                                 op11: FieldDefinition[K],
-                                                                op12: FieldDefinition[L])
-    extends ToHListDataDefinitionOp[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: L :: HNil] {
+                                                                op12: FieldDefinition[L],
+                                                                validations: List[ValidationOp[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: L :: HNil]])
+    extends BaseHListDef[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: L :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
     : ValidateFromProducer[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: L :: HNil] = {
@@ -693,6 +735,74 @@ object ToHList {
     }
 
     def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4, op5, op6, op7, op8, op9, op10, op11, op12)
+  }
+
+
+  case class HListAppend2[L1 <: HList, L2 <: HList, OUT <: HList](
+    h1: BaseHListDef[L1],
+    h2: BaseHListDef[L2],
+    f: (L1, L2) => OUT,
+    f2: OUT => (L1, L2)
+  )
+    extends DataDefinitionOp[OUT] {
+
+    /** Extract the child or children.*/
+    def extractMembers(functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): ValidateFromProducer[OUT] = {
+      val m1 = functionK.apply(h1)
+      val m2 = functionK.apply(h2)
+      (json: JsonProducer) => {
+        (m1(json), m2(json)).mapN( (l1, l2) => f.apply(l1,l2) )
+      }
+    }
+
+    def encodeMembers(functionK: FunctionK[DataDefinitionOp, Encode]): Encode[OUT] = {
+      (out: OUT) => {
+        val (l1, l2) = f2(out)
+        val m1 = functionK.apply(h1).apply(l1)
+        val m2 = functionK.apply(h2).apply(l2)
+        JObject(m1.asInstanceOf[JObject].obj ::: m2.asInstanceOf[JObject].obj)
+      }
+    }
+
+
+//      input => {
+//      val res1 = functionK(h1)(input.head)
+//      val res2 = functionK(op2.op)(input.tail.head)
+//      JObject(List(JField(op1.key.name, res1), JField(op2.key.name, res2)))
+//    }
+
+//    def encodeMembers(value: FunctionK[DataDefinitionOp, Encode]): Encode[OUT] = ???
+
+    def ::[A2, B2, C2, E2, F2](obj: HList5[A2, B2, C2, E2, F2])(implicit p: Prepend[A2 :: B2 :: C2 :: E2 :: F2 :: HNil, OUT]) = {
+      val merge = (i1: A2 :: B2 :: C2 :: E2 :: F2 :: HNil, out: OUT) => i1 ::: out
+      val split = (in: p.Out) => in.asInstanceOf[A2 :: B2 :: C2 :: E2 :: F2 :: OUT].split(Nat._5)
+      HListAppend3(obj, this, merge, split)
+    }
+  }
+
+  case class HListAppend3[L1 <: HList, L2 <: HList, L3 <: HList, OUT2 <: HList, OUT3 <: HList](
+                                                                                                h1: BaseHListDef[L1],
+                                                                                                hListAppend2: HListAppend2[L2, L3, OUT2],
+                                                                                                f: (L1, OUT2) => OUT3,
+                                                                                                f2: OUT3 => (L1, OUT2))
+    extends DataDefinitionOp[OUT3] {
+
+    def extractMembers(functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): ValidateFromProducer[OUT3] = {
+      val m1 = functionK.apply(h1)
+      val m2 = functionK.apply(hListAppend2)
+      (json: JsonProducer) => {
+        (m1(json), m2(json)).mapN( (l1, l2) => f.apply(l1, l2))
+      }
+    }
+
+    def encodeMembers(functionK: FunctionK[DataDefinitionOp, Encode]): Encode[OUT3] = {
+      (out: OUT3) => {
+        val (l1, l2) = f2(out)
+        val m1 = functionK.apply(h1).apply(l1)
+        val m2 = functionK.apply(hListAppend2).apply(l2)
+        JObject(m1.asInstanceOf[JObject].obj ::: m2.asInstanceOf[JObject].obj)
+      }
+    }
   }
 
 }
