@@ -103,7 +103,7 @@ class ValidationTest extends FunSuite {
         val now = LocalDateTime.now()
         val expMonth = input.head
         val expYear = input.tail.head
-        if (now.getYear > expYear) true
+        if (now.getYear < expYear) true
         else if (now.getYear == expYear && now.getMonthValue >= expMonth) true
         else false
 
