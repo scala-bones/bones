@@ -1,11 +1,11 @@
 package com.ot.bones.validation
 
-import cats.Apply
 import cats.arrow.FunctionK
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
-import com.ot.bones.interpreter.ExtractionInterpreter.ValidationError
+import com.ot.bones.data.FieldDefinition
+import com.ot.bones.interpreter.ExtractionInterpreter.{JsonProducer, ValidateFromProducer, ValidationError, ValidationResultNel}
 import com.ot.bones.validation.ValidationDefinition.ValidationOp
 
 import scala.annotation.tailrec
@@ -17,6 +17,15 @@ object ValidationUtil {
     override def apply[A](fa: ValidationOp[A]): ValidationResult[A] = a => runValidation(a, fa)
   }
 
+  /** Produce and validate -- produce the value from the specified key, then run through the validations of the FieldDef */
+  def pv[X](jsonProducer: JsonProducer, fieldDefinition: FieldDefinition[X], fromProducer: ValidateFromProducer[X]) : ValidationResultNel[X] = {
+    fromProducer(jsonProducer.child(fieldDefinition.key)).andThen { input =>
+      ValidationUtil.validate(input, fieldDefinition.validations)
+    }
+  }
+
+
+
   def runValidation[T](input: T, validation: ValidationOp[T]): Validated[ValidationError[T], T] = {
     if (validation.isValid(input)) {
       Valid(input)
@@ -25,17 +34,17 @@ object ValidationUtil {
     }
   }
 
-  /**
-    * Responsible for running the list of validations.
-    */
-  def runAndMapValidations[T](input: T, validations: Seq[ValidationOp[T]])(implicit A: Apply[ValidatedNel[ValidationError[T], ?]]):
-    Validated[NonEmptyList[ValidationError[T]], T] =
+  /** Validate the input with the specified validations.  If any failed then Invalid, else Valid */
+  def validate[L](input: L, validations: List[ValidationOp[L]]): Validated[NonEmptyList[ValidationError[L]], L] = {
+    validations.flatMap(validation => {
+      if (validation.isValid(input)) None
+      else Some(ValidationError(validation, input))
+    }) match {
+      case head :: tail => Invalid(NonEmptyList(head, tail))
+      case _ => Valid(input)
+    }
+  }
 
-    validations.map(ValidationUtil.runValidation(input, _))
-      .foldLeft[ValidatedNel[ValidationError[T], T]](Valid(input))((last, next) => {
-        val n: ValidatedNel[ValidationError[T], T] = next.leftMap(NonEmptyList.one)
-        A.map2(last, n)((a, b) => b)
-      })
 
   def digitToInt(x:Char): Int = x.toInt - '0'.toInt
 

@@ -4,17 +4,18 @@ import java.text.{DateFormat, Format, SimpleDateFormat}
 import java.util.{Date, UUID}
 
 import cats.arrow.FunctionK
-import cats.data.Validated.Invalid
+import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.free.FreeApplicative
 import cats.implicits._
 import com.ot.bones.data.ToHList.BaseHListDef
 import com.ot.bones.interpreter.EncoderInterpreter.Encode
-import com.ot.bones.interpreter.ExtractionInterpreter.{CanNotConvert, ExtractionErrors, JsonProducer, RequiredObjectError, ValidateFromProducer, ValidationError}
+import com.ot.bones.interpreter.ExtractionInterpreter.{CanNotConvert, ExtractionErrors, JsonProducer, RequiredObjectError, ValidateFromProducer, ValidationError, ValidationResultNel}
 import com.ot.bones.validation.ValidationDefinition.ValidationOp
 import net.liftweb.json.JsonAST.{JField, JObject, JValue}
 import shapeless.{::, Generic, HList, HNil, Nat}
 import HList._
+import com.ot.bones.validation.{ValidationUtil => vu}
 import shapeless.ops.hlist.Prepend
 
 object Algebra {
@@ -89,6 +90,8 @@ object ToHList {
       jsonProducer.produceObject.leftMap(NonEmptyList.one).andThen {
         case Some(producer) => extractMembers(functionK)(producer)
         case None => Invalid(NonEmptyList.one(RequiredObjectError()))
+      }.andThen { l =>
+        vu.validate(l, validations)
       }
     }
 
@@ -99,6 +102,7 @@ object ToHList {
     }
 
     def validations: List[ValidationOp[L]]
+
 
   }
 
@@ -111,10 +115,10 @@ object ToHList {
 
     def extractMembers(functionK: FunctionK[DataDefinitionOp, ValidateFromProducer])
     : ValidateFromProducer[A :: B :: HNil] = {
-      val res1 = functionK(op1.op)
-      val res2 = functionK(op2.op)
+      val r1 = functionK(op1.op)
+      val r2 = functionK(op2.op)
       (jsonProducer: JsonProducer) => {
-        (res1(jsonProducer.child(op1.key)), res2(jsonProducer.child(op2.key)))
+        (vu.pv(jsonProducer, op1, r1), vu.pv(jsonProducer, op2, r2))
           .mapN(_ :: _ :: HNil)
       }
     }
@@ -150,7 +154,7 @@ object ToHList {
       val r2 = f(op2.op)
       val r3 = f(op3.op)
       (jsonProducer: JsonProducer) => {
-        (r1(jsonProducer.child(op1.key)), r2(jsonProducer.child(op2.key)), r3(jsonProducer.child(op3.key)))
+        (vu.pv(jsonProducer, op1, r1), vu.pv(jsonProducer, op2, r2), vu.pv(jsonProducer, op3, r3))
           .mapN(_ :: _ :: _ :: HNil)
       }
 
@@ -187,10 +191,8 @@ object ToHList {
       val r3 = f(op3.op)
       val r4 = f(op4.op)
       (jsonProducer: JsonProducer) => {
-        (r1(jsonProducer.child(op1.key)),
-          r2(jsonProducer.child(op2.key)),
-          r3(jsonProducer.child(op3.key)),
-          r4(jsonProducer.child(op4.key))).mapN(_ :: _ :: _ :: _ :: HNil)
+        (vu.pv(jsonProducer, op1, r1), vu.pv(jsonProducer, op2, r2), vu.pv(jsonProducer, op3, r3),
+         vu.pv(jsonProducer, op4, r4)).mapN(_ :: _ :: _ :: _ :: HNil)
       }
     }
 
@@ -229,11 +231,8 @@ object ToHList {
       val r4 = f(op4.op)
       val r5 = f(op5.op)
       (jsonProducer: JsonProducer) => {
-        (r1(jsonProducer.child(op1.key)),
-          r2(jsonProducer.child(op2.key)),
-          r3(jsonProducer.child(op3.key)),
-          r4(jsonProducer.child(op4.key)),
-          r5(jsonProducer.child(op5.key))).mapN(_ :: _ :: _ :: _ :: _ :: HNil)
+        (vu.pv(jsonProducer, op1, r1), vu.pv(jsonProducer, op2, r2), vu.pv(jsonProducer, op3, r3),
+          vu.pv(jsonProducer, op4, r4), vu.pv(jsonProducer, op5, r5)).mapN(_ :: _ :: _ :: _ :: _ :: HNil)
       }
     }
 
@@ -252,13 +251,10 @@ object ToHList {
     }
 
     def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4, op4)
-//    val merge = (i1: A2 :: B2 :: C2 :: E2 :: F2 :: HNil, out: OUT) => i1 ::: out
-//    val split = (in: p.Out) => in.asInstanceOf[A2 :: B2 :: C2 :: E2 :: F2 :: OUT].split(Nat._5)
-//    HListAppend3(obj, this, merge, split)
 
-    def ::[A2,B2](other: HList2[A2,B2])(implicit p: Prepend[A2 :: B2 :: HNil, A :: B :: C :: D :: E :: HNil]) = {
+    def ::[A2,B2](other: HList2[A2,B2]) = {
       val merge = (i1 : A2 :: B2 :: HNil, i2: A :: B :: C :: D :: E :: HNil) => i1 ::: i2
-      val split = (in: p.Out) => in.asInstanceOf[A2 :: B2 :: A :: B :: C :: D :: E :: HNil].split(Nat._2)
+      val split = (in: A2 :: B2 :: A :: B :: C :: D :: E :: HNil) => in.split(Nat._2)
       HListAppend2(other, this, merge, split)
     }
 
@@ -285,12 +281,9 @@ object ToHList {
       val r5 = f(op5.op)
       val r6 = f(op6.op)
       (jsonProducer: JsonProducer) => {
-        (r1(jsonProducer.child(op1.key)),
-          r2(jsonProducer.child(op2.key)),
-          r3(jsonProducer.child(op3.key)),
-          r4(jsonProducer.child(op4.key)),
-          r5(jsonProducer.child(op5.key)),
-          r6(jsonProducer.child(op6.key))).mapN(_ :: _ :: _ :: _ :: _ :: _ :: HNil)
+        (vu.pv(jsonProducer, op1, r1), vu.pv(jsonProducer, op2, r2), vu.pv(jsonProducer, op3, r3),
+          vu.pv(jsonProducer, op4, r4), vu.pv(jsonProducer, op5, r5), vu.pv(jsonProducer, op6, r6)
+        ).mapN(_ :: _ :: _ :: _ :: _ :: _ :: HNil)
       }
     }
 
@@ -338,13 +331,10 @@ object ToHList {
       val r6 = f(op6.op)
       val r7 = f(op7.op)
       (jsonProducer: JsonProducer) => {
-        (r1(jsonProducer.child(op1.key)),
-          r2(jsonProducer.child(op2.key)),
-          r3(jsonProducer.child(op3.key)),
-          r4(jsonProducer.child(op4.key)),
-          r5(jsonProducer.child(op5.key)),
-          r6(jsonProducer.child(op6.key)),
-          r7(jsonProducer.child(op7.key))).mapN(_ :: _ :: _ :: _ :: _ :: _ :: _ :: HNil)
+        (vu.pv(jsonProducer, op1, r1), vu.pv(jsonProducer, op2, r2), vu.pv(jsonProducer, op3, r3),
+          vu.pv(jsonProducer, op4, r4), vu.pv(jsonProducer, op5, r5), vu.pv(jsonProducer, op6, r6),
+          vu.pv(jsonProducer, op7, r7)
+        ).mapN(_ :: _ :: _ :: _ :: _ :: _ :: _ :: HNil)
       }
     }
 
@@ -408,14 +398,10 @@ object ToHList {
       val r7 = f(op7.op)
       val r8 = f(op8.op)
       (jsonProducer: JsonProducer) => {
-        (r1(jsonProducer),
-          r2(jsonProducer),
-          r3(jsonProducer),
-          r4(jsonProducer),
-          r5(jsonProducer),
-          r6(jsonProducer),
-          r7(jsonProducer),
-          r8(jsonProducer)).mapN(_ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: HNil)
+        (vu.pv(jsonProducer, op1, r1), vu.pv(jsonProducer, op2, r2), vu.pv(jsonProducer, op3, r3),
+          vu.pv(jsonProducer, op4, r4), vu.pv(jsonProducer, op5, r5), vu.pv(jsonProducer, op6, r6),
+          vu.pv(jsonProducer, op7, r7), vu.pv(jsonProducer, op8, r8)
+        ).mapN(_ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: HNil)
       }
     }
 
@@ -471,15 +457,10 @@ object ToHList {
       val r8 = f(op8.op)
       val r9 = f(op9.op)
       (jsonProducer: JsonProducer) => {
-        (r1(jsonProducer.child(op1.key)),
-          r2(jsonProducer.child(op2.key)),
-          r3(jsonProducer.child(op3.key)),
-          r4(jsonProducer.child(op4.key)),
-          r5(jsonProducer.child(op5.key)),
-          r6(jsonProducer.child(op6.key)),
-          r7(jsonProducer.child(op7.key)),
-          r8(jsonProducer.child(op8.key)),
-          r9(jsonProducer.child(op9.key))).mapN(_ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: HNil)
+        (vu.pv(jsonProducer, op1, r1), vu.pv(jsonProducer, op2, r2), vu.pv(jsonProducer, op3, r3),
+          vu.pv(jsonProducer, op4, r4), vu.pv(jsonProducer, op5, r5), vu.pv(jsonProducer, op6, r6),
+          vu.pv(jsonProducer, op7, r7), vu.pv(jsonProducer, op8, r8), vu.pv(jsonProducer, op9, r9)
+        ).mapN(_ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: HNil)
       }
     }
 
@@ -538,16 +519,11 @@ object ToHList {
       val r9 = f(op9.op)
       val r10 = f(op10.op)
       (jsonProducer: JsonProducer) => {
-        (r1(jsonProducer.child(op1.key)),
-          r2(jsonProducer.child(op2.key)),
-          r3(jsonProducer.child(op3.key)),
-          r4(jsonProducer.child(op4.key)),
-          r5(jsonProducer.child(op5.key)),
-          r6(jsonProducer.child(op6.key)),
-          r7(jsonProducer.child(op7.key)),
-          r8(jsonProducer.child(op8.key)),
-          r9(jsonProducer.child(op9.key)),
-          r10(jsonProducer.child(op10.key))).mapN(_ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: HNil)
+        (vu.pv(jsonProducer, op1, r1), vu.pv(jsonProducer, op2, r2), vu.pv(jsonProducer, op3, r3),
+          vu.pv(jsonProducer, op4, r4), vu.pv(jsonProducer, op5, r5), vu.pv(jsonProducer, op6, r6),
+          vu.pv(jsonProducer, op7, r7), vu.pv(jsonProducer, op8, r8), vu.pv(jsonProducer, op9, r9),
+          vu.pv(jsonProducer, op10, r10)
+        ).mapN(_ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: HNil)
       }
     }
 
@@ -611,17 +587,11 @@ object ToHList {
       val r10 = f(op10.op)
       val r11 = f(op11.op)
       (jsonProducer: JsonProducer) => {
-        (r1(jsonProducer.child(op1.key)),
-          r2(jsonProducer.child(op2.key)),
-          r3(jsonProducer.child(op3.key)),
-          r4(jsonProducer.child(op4.key)),
-          r5(jsonProducer.child(op5.key)),
-          r6(jsonProducer.child(op6.key)),
-          r7(jsonProducer.child(op7.key)),
-          r8(jsonProducer.child(op8.key)),
-          r9(jsonProducer.child(op9.key)),
-          r10(jsonProducer.child(op10.key)),
-          r11(jsonProducer.child(op11.key))).mapN(_ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: HNil)
+        (vu.pv(jsonProducer, op1, r1), vu.pv(jsonProducer, op2, r2), vu.pv(jsonProducer, op3, r3),
+          vu.pv(jsonProducer, op4, r4), vu.pv(jsonProducer, op5, r5), vu.pv(jsonProducer, op6, r6),
+          vu.pv(jsonProducer, op7, r7), vu.pv(jsonProducer, op8, r8), vu.pv(jsonProducer, op9, r9),
+          vu.pv(jsonProducer, op10, r10), vu.pv(jsonProducer, op11, r11)
+        ).mapN(_ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: HNil)
       }
     }
 
@@ -689,18 +659,11 @@ object ToHList {
       val r11 = f(op11.op)
       val r12 = f(op12.op)
       (jsonProducer: JsonProducer) => {
-        (r1(jsonProducer.child(op1.key)),
-          r2(jsonProducer.child(op2.key)),
-          r3(jsonProducer.child(op3.key)),
-          r4(jsonProducer.child(op4.key)),
-          r5(jsonProducer.child(op5.key)),
-          r6(jsonProducer.child(op6.key)),
-          r7(jsonProducer.child(op7.key)),
-          r8(jsonProducer.child(op8.key)),
-          r9(jsonProducer.child(op9.key)),
-          r10(jsonProducer.child(op10.key)),
-          r11(jsonProducer.child(op11.key)),
-          r12(jsonProducer.child(op12.key))).mapN(_ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: HNil)
+        (vu.pv(jsonProducer, op1, r1), vu.pv(jsonProducer, op2, r2), vu.pv(jsonProducer, op3, r3),
+          vu.pv(jsonProducer, op4, r4), vu.pv(jsonProducer, op5, r5), vu.pv(jsonProducer, op6, r6),
+          vu.pv(jsonProducer, op7, r7), vu.pv(jsonProducer, op8, r8), vu.pv(jsonProducer, op9, r9),
+          vu.pv(jsonProducer, op10, r10), vu.pv(jsonProducer, op11, r11), vu.pv(jsonProducer, op12, r12)
+        ).mapN(_ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: _ :: HNil)
       }
     }
 
@@ -764,14 +727,6 @@ object ToHList {
       }
     }
 
-
-//      input => {
-//      val res1 = functionK(h1)(input.head)
-//      val res2 = functionK(op2.op)(input.tail.head)
-//      JObject(List(JField(op1.key.name, res1), JField(op2.key.name, res2)))
-//    }
-
-//    def encodeMembers(value: FunctionK[DataDefinitionOp, Encode]): Encode[OUT] = ???
 
     def ::[A2, B2, C2, E2, F2](obj: HList5[A2, B2, C2, E2, F2])(implicit p: Prepend[A2 :: B2 :: C2 :: E2 :: F2 :: HNil, OUT]) = {
       val merge = (i1: A2 :: B2 :: C2 :: E2 :: F2 :: HNil, out: OUT) => i1 ::: out
