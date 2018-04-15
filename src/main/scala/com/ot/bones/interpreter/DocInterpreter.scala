@@ -2,7 +2,7 @@ package com.ot.bones.interpreter
 
 import cats.Applicative
 import com.ot.bones.data.Algebra._
-import com.ot.bones.data.ToHList.{BaseHListDef, HListAppend2, HListAppend3}
+import com.ot.bones.data.HListAlgebra.{BaseHListDef, HListAppend2, HListAppend3}
 
 object DocInterpreter {
 
@@ -26,7 +26,7 @@ object DocInterpreter {
           val desc = apply(dataDefinitionOp)
           Doc(s"Optional: ${desc.str}")
         }
-        case op: BaseHListDef[a] => {
+        case op: BaseHListDef[a,_] => {
           val members = op.members
           Doc(s"object with ${members.length} members: " + members.map(fd => s"${fd.key.name}: ${apply(fd.op).str}").mkString("[", ",", "]"))
         }

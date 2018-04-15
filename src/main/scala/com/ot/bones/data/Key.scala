@@ -6,7 +6,7 @@ import java.util.{Date, UUID}
 import cats.data.Validated
 import cats.data.Validated.Valid
 import com.ot.bones.data.Algebra._
-import com.ot.bones.data.ToHList._
+import com.ot.bones.data.HListAlgebra._
 import com.ot.bones.interpreter.ExtractionInterpreter.CanNotConvert
 import com.ot.bones.validation.ValidationDefinition.ListValidation.PassesAll
 import com.ot.bones.validation.ValidationDefinition.{ToOptionalValidation, ValidationOp}
@@ -21,7 +21,7 @@ trait KeySyntax {
 }
 
 /**
-  * Base type for a field definition.
+  * A field definition is essentially a key value pair and a list of validations to be applied to the value.
   * @tparam A The type this field definition is describing.
   */
 trait FieldDefinition[A] {
@@ -74,27 +74,49 @@ case class ConversionFieldDefinition[A,B](convertFrom: RequiredFieldDefinition[A
 /** Starting point for obtaining a value is to define a key */
 case class Key(name: String) { thisKey =>
   val key: Key = thisKey
-//  def string() : RequiredFieldDefinition[String] = RequiredFieldDefinition(this, StringData(), List.empty)
+
+  /** Indicates that the data tied to this key is a String type that must pass the specified validations */
   def string(f: ValidationOp[String] with ToOptionalValidation[String] *): RequiredFieldDefinition[String] = RequiredFieldDefinition(this, StringData(), f.toList)
-  /** Use this if you expect the int to come in as a JSON number, otherwise use string().int() */
-//  def int(): RequiredFieldDefinition[Int] = RequiredFieldDefinition[Int](this, IntData(), List.empty)
+
+  /** Indicates that the data tied to this key is an Int type that must pass the specified validations */
   def int(f: ValidationOp[Int] with ToOptionalValidation[Int] *): RequiredFieldDefinition[Int] = RequiredFieldDefinition[Int](this, IntData(), f.toList)
 
-//  def double(): RequiredFieldDefinition[Double] = RequiredFieldDefinition[Double](this, DoubleData(), List.empty)
+  /** Indicates that the data tied to this key is an Double type that must pass the specified validations.
+    * In the JSON world, this would be a number which is converted to a Double.
+    **/
   def double(f: ValidationOp[Double] with ToOptionalValidation[Double] *): RequiredFieldDefinition[Double] =
     RequiredFieldDefinition[Double](this, DoubleData(), List.empty)
 
-
+  /**
+    * Indicates that the data tied to this key is a list (JSON Array) type.  All values are type
+    * T and all values must pass the list of validations.
+    *
+    * @param dataDefinitionOp - One of the supported DataDefinitionOp types.
+    * @param v List of validations each element of the list must pass to be valid.
+    * @tparam T The type of each element.  Can be an EitherFieldDefinition if more than one type is expected in the list.
+    * @tparam L The List[T] type.
+    * @return
+    */
   def list[T, L <: List[T]](dataDefinitionOp: DataDefinitionOp[T], v: ValidationOp[T] with ToOptionalValidation[T]*): RequiredFieldDefinition[L] =
     RequiredFieldDefinition[L](this, ListData(dataDefinitionOp), List(PassesAll[T,L](v.toList)))
+
+
+  /** Indicates that the data tied to this key is an boolean type that must pass the specified validations. */
   def boolean(f: ValidationOp[Boolean] with ToOptionalValidation[Boolean] *): RequiredFieldDefinition[Boolean] =
     RequiredFieldDefinition[Boolean](this, BooleanData(), f.toList)
+
+  /** Indicates that the data tied to this key is a UUID type that must pass the specified validations. */
   def uuid(v: ValidationOp[UUID] with ToOptionalValidation[UUID] *): RequiredFieldDefinition[UUID] = RequiredFieldDefinition[UUID](this, UuidData(), v.toList)
-  /** Date, BYOFormat */
+
+  /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
   def date(dateFormat: DateFormat, formatDescription: String, v: ValidationOp[Date] with ToOptionalValidation[Date]*): RequiredFieldDefinition[Date] =
     RequiredFieldDefinition(key, DateData(dateFormat, formatDescription), v.toList)
+
+  /** Indicates that the data tied to this key is a BigDecimal that must pass the specified validations. */
   def bigDecimal(v: ValidationOp[BigDecimal] with ToOptionalValidation[BigDecimal]*): RequiredFieldDefinition[BigDecimal] =
     RequiredFieldDefinition[BigDecimal](key, BigDecimalFromString(), v.toList)
+
+  /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
   def either[A,B](definitionA: DataDefinitionOp[A], definitionB: DataDefinitionOp[B]) : RequiredFieldDefinition[Either[A,B]] =
     RequiredFieldDefinition[Either[A,B]](key, EitherData(definitionA, definitionB), List.empty)
 
@@ -183,8 +205,7 @@ case class Key(name: String) { thisKey =>
 }
 
 object Sugar {
-  /** Aliases for simplifying the creation of ObjectFieldGroup. */
-  /** Convenient ways to declare Object specification */
+  /** Aliases for creating HList types. */
   trait ToHList {
 
     def obj2[A, AA, B, BB](op1: FieldDefinition[A],
