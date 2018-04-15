@@ -8,7 +8,7 @@ import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
 import com.ot.bones.data.Algebra._
 import com.ot.bones.data.Key
-import com.ot.bones.data.ToHList.{BaseHListDef, HListAppend2, HListAppend3}
+import com.ot.bones.data.HListAlgebra.{BaseHListDef, HListAppend2, HListAppend3}
 import com.ot.bones.interpreter.ExtractionInterpreter.ValidationResultNel
 import com.ot.bones.validation.ValidationDefinition.ValidationOp
 import net.liftweb.json.JsonAST._
@@ -91,8 +91,8 @@ object ExtractionInterpreter {
     def apply[A](fgo: DataDefinitionOp[A]): ValidateFromProducer[A] = jsonProducer =>
       fgo match {
 
-        case op: HListAppend3[l1, l2, l3, o2, o3] => op.extractMembers(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
-        case op: HListAppend2[l1, l2, out] => op.extractMembers(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
+        case op: HListAppend3[l1, n1, l2, n2, l3, n3, o2, no2, o3, no3] => op.extractMembers(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
+        case op: HListAppend2[l1, n1, l2, n2, out, nout] => op.extractMembers(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
 
         case op: OptionalDataDefinition[b] => {
           this(op.dataDefinitionOp)(jsonProducer) match {
@@ -106,7 +106,7 @@ object ExtractionInterpreter {
           }
         }
 
-        case op: BaseHListDef[a] => {
+        case op: BaseHListDef[a,n] => {
           op.extract(jsonProducer, this).asInstanceOf[ValidationResultNel[A]]
         }
         case op: StringData => {
@@ -235,7 +235,7 @@ object EncoderInterpreter {
             case None => JNothing
           }
         }
-        case op: BaseHListDef[A] => {
+        case op: BaseHListDef[A,n] => {
           op.encodeMembers(this).apply(input)
         }
         case ob: BooleanData => JBool(input.asInstanceOf[Boolean])
@@ -265,8 +265,8 @@ object EncoderInterpreter {
           val b = fab(input)
           apply(op).apply(b)
         }
-        case op: HListAppend3[l1, l2, l3, o2, o3] => op.encodeMembers(this).apply(input.asInstanceOf[o3])
-        case op: HListAppend2[l1, l2, out] => op.encodeMembers(this).apply(input.asInstanceOf[out])
+        case op: HListAppend3[l1, n1, l2, n2, l3, n3, o2, no2, o3, no3] => op.encodeMembers(this).apply(input.asInstanceOf[o3])
+        case op: HListAppend2[l1, n1, l2, n2, out, nout] => op.encodeMembers(this).apply(input.asInstanceOf[out])
 
       }
   }
