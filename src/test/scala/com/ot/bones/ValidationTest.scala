@@ -14,7 +14,8 @@ import com.ot.bones.producer.LiftJsonProducer
 import com.ot.bones.rest.Algebra.Processor
 import com.ot.bones.validation.ValidationDefinition.{ValidationOp, IntValidation => iv, StringValidation => sv}
 import org.scalatest.FunSuite
-import shapeless.HNil
+import shapeless.ops.hlist.Prepend
+import shapeless.{HNil, Nat}
 import sun.util.calendar.JulianCalendar
 
 
@@ -50,6 +51,46 @@ class ValidationTest extends FunSuite {
     )
 
 //    val o3 = o1 append o2
+  }
+
+  test ("issue") {
+    import shapeless._
+    case class HWrap[L <: HList](hList: L)
+
+    val h1 = HWrap(1 :: 2 :: HNil)
+//    val h2 = HWrap("One" :: "Two" :: HNil) {
+//      def ::[L2 <: HList] (other: HWrap[L2])
+//    }
+//
+//    case class AppendWrap[L1 <: HList, L2 <: HList](h1: HWrap[L1], h2: HWrap[L2], p: Prepend[L1, L2]) {
+//      def append() : HWrap[p.Out] = HWrap(p.apply(h1.hList, h2.hList))
+//
+//    }
+
+
+
+
+  }
+
+  test ("append generalization") {
+    import com.ot.bones.syntax._
+    import shapeless.ops.hlist._
+
+    val s2 = obj2(
+      key("val1").string(),
+      key("val2").string()
+    )
+    val i2 = obj2(
+      key("int1").int(),
+      key("int2").int()
+    )
+
+    val result = s2 :!!: i2
+
+//    val s = implicitly[Split[result.p.Out, Nat._2]]
+//
+//    result.closePrepend(s)
+
   }
 
   test("validation example") {
@@ -192,7 +233,7 @@ class ValidationTest extends FunSuite {
 
     //Doc interpreter, simple POC showing we can make documentation out of this.
     val docOut = creditCardSchema.lift.foldMap[Doc](DocInterpreter)
-    assert(docOut.str === """Transform to a CC$3 from object with 12 members: [firstFive: String,lastFour: String,uuid: String representing a UUID,token: String representing a UUID,ccType: Convert to a CreditCardType from String,expMonth: Int,expYear: Int,cardHolder: String,currencyIso: String with one of the following values: [CAD,GBP,USD],deletedAt: Optional: Date with format ISO date-time format with the offset and zone if available, such as '2011-12-03T10:15:30', '2011-12-03T10:15:30+01:00' or '2011-12-03T10:15:30+01:00[Europe/Paris]',lastModifiedRequest: String representing a UUID,billingLocation: Optional: Convert to a Transform to type BillingLocation$3 from object with 2 members: [countryIso: String,zipCode: Optional: String]]""")
+    assert(docOut.str === """Transform to a CC$3 from object with 5 members: [firstFive: String,lastFour: String,uuid: String representing a UUID,token: String representing a UUID,token: String representing a UUID] object with 2 members: [expMonth: Int,expYear: Int] object with 5 members: [cardHolder: String,currencyIso: String with one of the following values: [CAD,GBP,USD],deletedAt: Optional: Date with format ISO date-time format with the offset and zone if available, such as '2011-12-03T10:15:30', '2011-12-03T10:15:30+01:00' or '2011-12-03T10:15:30+01:00[Europe/Paris]',lastModifiedRequest: String representing a UUID,lastModifiedRequest: String representing a UUID]""")
 
 
 
