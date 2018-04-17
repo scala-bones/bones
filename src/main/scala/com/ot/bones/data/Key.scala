@@ -144,6 +144,9 @@ case class Key(name: String) { thisKey =>
   def enumeration(e: Enumeration)(v: ValidationOp[e.Value] with ToOptionalValidation[e.Value]*): RequiredFieldDefinition[e.Value] =
     RequiredFieldDefinition(key, EnumeratedStringData(e), v.toList)
 
+  def obj1[A](op1: FieldDefinition[A]): RequiredFieldDefinition[A :: HNil] =
+    RequiredFieldDefinition[A :: HNil](this, HList1(op1, List.empty), List.empty)
+
   def obj2[A, B](op1: FieldDefinition[A], op2: FieldDefinition[B]): RequiredFieldDefinition[A :: B :: HNil] =
     RequiredFieldDefinition[A :: B :: HNil](this, HList2(op1, op2, List.empty), List.empty)
 
@@ -207,6 +210,8 @@ case class Key(name: String) { thisKey =>
 object Sugar {
   /** Aliases for creating HList types. */
   trait ToHList {
+
+    def obj1[A, AA](op1: FieldDefinition[A]) = HList1(op1, List.empty)
 
     def obj2[A, AA, B, BB](op1: FieldDefinition[A],
                            op2: FieldDefinition[B]) = HList2(op1, op2, List.empty)

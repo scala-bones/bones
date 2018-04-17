@@ -8,7 +8,7 @@ import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
 import com.ot.bones.data.Algebra._
 import com.ot.bones.data.Key
-import com.ot.bones.data.HListAlgebra.{BaseHListDef, HListAppend2, HListAppend3}
+import com.ot.bones.data.HListAlgebra._
 import com.ot.bones.interpreter.ExtractionInterpreter.ValidationResultNel
 import com.ot.bones.validation.ValidationDefinition.ValidationOp
 import net.liftweb.json.JsonAST._
@@ -91,7 +91,12 @@ object ExtractionInterpreter {
     def apply[A](fgo: DataDefinitionOp[A]): ValidateFromProducer[A] = jsonProducer =>
       fgo match {
 
-        case op: HListAppend3[l1, n1, l2, n2, l3, n3, o2, no2, o3, no3] => op.extractMembers(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
+        case op: HListAppend5[l1, n1, l2, n2, l3, n3, l4, n4, out2, l5, n5, no2, o3, no3, out4, nout4, out5, _] =>
+          op.extractMembers(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
+        case op: HListAppend4[l1, n1, l2, n2, l3, n3, o2, no2, o3, no3, _, _, _, _] =>
+          op.extractMembers(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
+        case op: HListAppend3[l1, n1, l2, n2, l3, n3, o2, no2, o3, no3] =>
+          op.extractMembers(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
         case op: HListAppend2[l1, n1, l2, n2, out, nout] => op.extractMembers(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
 
         case op: OptionalDataDefinition[b] => {
