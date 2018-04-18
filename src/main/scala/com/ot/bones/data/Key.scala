@@ -47,13 +47,13 @@ case class RequiredFieldDefinition[A](key: Key,
     OptionalFieldDefinition(key, op.toOption, optionalValidations)
   }
 
-  def convert[B](fab: A => Validated[CanNotConvert[A,B], B], fba: B => A, description: String, validations: List[ValidationOp[B] with ToOptionalValidation[B]]): ConversionFieldDefinition[A,B] = {
+  def convert[B](fab: A => Either[CanNotConvert[A,B], B], fba: B => A, description: String, validations: List[ValidationOp[B] with ToOptionalValidation[B]]): ConversionFieldDefinition[A,B] = {
     val cd = ConversionData[A,B](op, fab, fba, description)
     ConversionFieldDefinition[A,B](this, cd, validations)
   }
 
   def transform[Z:Manifest]()(implicit gen: Generic.Aux[Z, A]): ConversionFieldDefinition[A,Z] = {
-    val newOp = ConversionData(op, (a: A) => Valid(gen.from(a)), gen.to, s"Transform to type ${manifest[Z].runtimeClass.getSimpleName}")
+    val newOp = ConversionData(op, (a: A) => Right(gen.from(a)), gen.to, s"Transform to type ${manifest[Z].runtimeClass.getSimpleName}")
     ConversionFieldDefinition(this, newOp, List.empty)
   }
 

@@ -190,7 +190,7 @@ object ExtractionInterpreter {
         }
         case ConversionData(from, fab, _, _) => {
           val baseValue = apply(from).apply(jsonProducer)
-          baseValue.andThen(a => fab(a).leftMap(NonEmptyList.one))
+          baseValue.andThen(a => fab(a).toValidated.leftMap(NonEmptyList.one))
         }
         case EnumeratedStringData(enumeration) => {
           jsonProducer.produceString.leftMap(NonEmptyList.one).andThen {
