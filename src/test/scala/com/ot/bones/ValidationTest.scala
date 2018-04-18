@@ -87,9 +87,9 @@ class ValidationTest extends FunSuite {
 
     val result = s2 :!!: i2
 
-//    val s = implicitly[Split[result.p.Out, Nat._2]]
-//
-//    result.closePrepend(s)
+    val s = implicitly[Split[result.p.Out, Nat._2]]
+
+    result.closePrepend(s)
 
   }
 
@@ -105,13 +105,13 @@ class ValidationTest extends FunSuite {
       case object Amex extends CreditCardType("Amex")
       case object Discover extends CreditCardType("Discover")
 
-      def toCreditCardType: String => Validated[CanNotConvert[String, CreditCardType], CreditCardType] = input => {
+      def toCreditCardType: String => Either[CanNotConvert[String, CreditCardType], CreditCardType] = input => {
         input.toLowerCase match {
-          case "visa" => Valid(CreditCardTypes.Visa)
-          case "mastercard" => Valid(CreditCardTypes.Mastercard)
-          case "amex" => Valid(CreditCardTypes.Amex)
-          case "discover" => Valid(CreditCardTypes.Discover)
-          case x => Invalid(CanNotConvert(x, classOf[CreditCardType]))
+          case "visa" => Right(CreditCardTypes.Visa)
+          case "mastercard" => Right(CreditCardTypes.Mastercard)
+          case "amex" => Right(CreditCardTypes.Amex)
+          case "discover" => Right(CreditCardTypes.Discover)
+          case x => Left(CanNotConvert(x, classOf[CreditCardType]))
         }
       }
     }

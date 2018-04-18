@@ -280,6 +280,9 @@ object ValidationDefinition {
 
     /** String must be a Uri */
     def uri(): RequiredValidationOp[String] = Uri()
+
+    /** String must be a valid credit card */
+    def creditCard(): RequiredValidationOp[String] = CreditCard()
   }
 
 
