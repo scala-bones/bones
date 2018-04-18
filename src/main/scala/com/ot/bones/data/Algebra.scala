@@ -57,7 +57,7 @@ object Algebra {
 
   final case class ConversionData[A,B](
                                         from: DataDefinitionOp[A],
-                                        fab: A => Validated[CanNotConvert[A,B], B],
+                                        fab: A => Either[CanNotConvert[A,B], B],
                                         fba: B => A, description: String
   ) extends DataDefinitionOp[B] with ToOptionalData[B]
 
@@ -873,6 +873,7 @@ object HListAlgebra {
 
   // Append Algebra, can append multiple HList types together.
 
+  /** Instead of combining multiple HList types into a single HList is so that we can maintain validation info about each group of HLists. */
   case class HListAppend2[L1 <: HList, N1 <: Nat, L2 <: HList, N2 <: Nat, OUT <: HList, NOUT <: Nat](
     h1: BaseHListDef[L1, N1],
     h2: BaseHListDef[L2, N2],
@@ -964,10 +965,36 @@ object HListAlgebra {
         JObject(m1.asInstanceOf[JObject].obj ::: m2.asInstanceOf[JObject].obj)
       }
     }
+
+    def ::[A2, B2](obj: HList2[A2, B2])(
+      implicit p: Prepend[A2 :: B2 :: HNil, OUT3],
+      sum: Sum[Nat._2, NOUT3]) = {
+      val merge = (i: (A2 :: B2 :: HNil) :: OUT3 :: HNil) => i.head ::: i.tail.head
+      val split = (in: p.Out) => in.asInstanceOf[A2 :: B2 :: OUT3].splitP(Nat._2)
+      HListAppend4[A2 :: B2 :: HNil, Nat._2, L1, N1, L2, N2, L3, N3, OUT2, NOUT2, OUT3, NOUT3, p.Out, sum.Out](obj, this, merge, split)
+    }
+
+    def ::[A2, B2, C2](obj: HList3[A2, B2, C2])(
+      implicit p: Prepend[A2 :: B2 :: C2 :: HNil, OUT3],
+      sum: Sum[Nat._3, NOUT3]) = {
+      val merge = (i: (A2 :: B2 :: C2 :: HNil) :: OUT3 :: HNil) => i.head ::: i.tail.head
+      val split = (in: p.Out) => in.asInstanceOf[A2 :: B2 :: C2 :: OUT3].splitP(Nat._3)
+      HListAppend4[A2 :: B2 :: C2 :: HNil, Nat._3, L1, N1, L2, N2, L3, N3, OUT2, NOUT2, OUT3, NOUT3, p.Out, sum.Out](obj, this, merge, split)
+    }
+
+    def ::[A2, B2, C2, D2](obj: HList4[A2, B2, C2, D2])(
+      implicit p: Prepend[A2 :: B2 :: C2 :: D2 :: HNil, OUT3],
+      sum: Sum[Nat._4, NOUT3]) = {
+      val merge = (i: (A2 :: B2 :: C2 :: D2 :: HNil) :: OUT3 :: HNil) => i.head ::: i.tail.head
+      val split = (in: p.Out) => in.asInstanceOf[A2 :: B2 :: C2 :: D2 :: OUT3].splitP(Nat._4)
+      HListAppend4[A2 :: B2 :: C2 :: D2 :: HNil, Nat._4, L1, N1, L2, N2, L3, N3, OUT2, NOUT2, OUT3, NOUT3, p.Out, sum.Out](obj, this, merge, split)
+    }
+
+
   }
 
   case class HListAppend4[L1 <: HList, N1 <:Nat, L2 <: HList, N2 <: Nat, L3 <: HList, N3 <: Nat, L4 <: HList, N4 <: Nat,
-    OUT2 <: HList, NOUT2 <: Nat, OUT3 <: HList, NOUT3 <: Nat, OUT4 <: HList, NOUT4]
+    OUT2 <: HList, NOUT2 <: Nat, OUT3 <: HList, NOUT3 <: Nat, OUT4 <: HList, NOUT4 <: Nat]
   (
     h1: BaseHListDef[L1, N1],
     hListAppend3: HListAppend3[L2, N2, L3, N3, L4, N4, OUT2, NOUT2, OUT3, NOUT3],
@@ -991,10 +1018,45 @@ object HListAlgebra {
         JObject(m1.asInstanceOf[JObject].obj ::: m2.asInstanceOf[JObject].obj)
       }
     }
+
+    def ::[A2](obj: HList1[A2])(
+      implicit p: Prepend[A2 :: HNil, OUT4],
+      sum: Sum[Nat._1, NOUT4]) = {
+      val merge = (i: (A2 :: HNil) :: OUT4 :: HNil) => i.head ::: i.tail.head
+      val split = (in: p.Out) => in.asInstanceOf[A2 :: OUT4].splitP(Nat._1)
+      HListAppend5[A2 :: HNil, Nat._1, L1, N1, L2, N2, L3, N3,  L4, N4, OUT2, NOUT2, OUT3, NOUT3, OUT4, NOUT4, p.Out, sum.Out](obj, this, merge, split)
+    }
+
+    def ::[A2, B2](obj: HList2[A2, B2])(
+      implicit p: Prepend[A2 :: B2 :: HNil, OUT4],
+      sum: Sum[Nat._2, NOUT4]) = {
+      val merge = (i: (A2 :: B2 :: HNil) :: OUT4 :: HNil) => i.head ::: i.tail.head
+      val split = (in: p.Out) => in.asInstanceOf[A2 :: B2 :: OUT4].splitP(Nat._2)
+      HListAppend5[A2 :: B2 :: HNil, Nat._2, L1, N1, L2, N2, L3, N3,  L4, N4, OUT2, NOUT2, OUT3, NOUT3, OUT4, NOUT4, p.Out, sum.Out](obj, this, merge, split)
+    }
+
+    def ::[A2, B2, C2](obj: HList3[A2, B2, C2])(
+      implicit p: Prepend[A2 :: B2 :: C2 :: HNil, OUT4],
+      sum: Sum[Nat._3, NOUT4]) = {
+      val merge = (i: (A2 :: B2 :: C2 :: HNil) :: OUT4 :: HNil) => i.head ::: i.tail.head
+      val split = (in: p.Out) => in.asInstanceOf[A2 :: B2 :: C2 :: OUT4].splitP(Nat._3)
+      HListAppend5[A2 :: B2 :: C2 :: HNil, Nat._3, L1, N1, L2, N2, L3, N3,  L4, N4, OUT2, NOUT2, OUT3, NOUT3, OUT4, NOUT4, p.Out, sum.Out](obj, this, merge, split)
+    }
+
+    def ::[A2, B2, C2, D2](obj: HList4[A2, B2, C2, D2])(
+      implicit p: Prepend[A2 :: B2 :: C2 :: D2 :: HNil, OUT4],
+      sum: Sum[Nat._3, NOUT4]) = {
+      val merge = (i: (A2 :: B2 :: C2 :: D2 :: HNil) :: OUT4 :: HNil) => i.head ::: i.tail.head
+      val split = (in: p.Out) => in.asInstanceOf[A2 :: B2 :: C2 :: D2 :: OUT4].splitP(Nat._4)
+      HListAppend5[A2 :: B2 :: C2 :: D2 :: HNil, Nat._4, L1, N1, L2, N2, L3, N3,  L4, N4, OUT2, NOUT2, OUT3, NOUT3, OUT4, NOUT4, p.Out, sum.Out](obj, this, merge, split)
+    }
+
+
+
   }
 
-  case class HListAppend5[L1 <: HList, N1 <:Nat, L2 <: HList, N2 <: Nat, L3 <: HList, N3 <: Nat, L4 <: HList, N4 <: Nat,
-  OUT2 <: HList, L5 <: HList, N5 <: Nat, NOUT2 <: Nat, OUT3 <: HList, NOUT3 <: Nat, OUT4 <: HList, NOUT4, OUT5 <: HList, NOUT5 <: HList]
+  case class HListAppend5[L1 <: HList, N1 <:Nat, L2 <: HList, N2 <: Nat, L3 <: HList, N3 <: Nat, L4 <: HList, N4 <: Nat, L5 <: HList, N5 <: Nat,
+  OUT2 <: HList, NOUT2 <: Nat, OUT3 <: HList, NOUT3 <: Nat, OUT4 <: HList, NOUT4 <: Nat, OUT5 <: HList, NOUT5 <: Nat]
   (
     h1: BaseHListDef[L1, N1],
     hListAppend4: HListAppend4[L2, N2, L3, N3, L4, N4, L5, N5, OUT2, NOUT2, OUT3, NOUT3, OUT4, NOUT4],
