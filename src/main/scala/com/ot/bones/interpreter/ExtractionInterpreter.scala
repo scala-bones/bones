@@ -92,14 +92,6 @@ object ExtractionInterpreter {
     def apply[A](fgo: DataDefinitionOp[A]): ValidateFromProducer[A] = jsonProducer =>
       fgo match {
 
-        case op: HListAppend5[_,_,_,_,_,_,_,_,_] =>
-          op.extractMembers(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
-        case op: HListAppend4[_,_,_,_,_,_,_] =>
-          op.extractMembers(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
-        case op: HListAppend3[_,_,_,_,_] =>
-          op.extractMembers(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
-        case op: HListAppend2[_,_,_] => op.extractMembers(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
-
         case op: OptionalDataDefinition[b] => {
           this(op.dataDefinitionOp)(jsonProducer) match {
             case Valid(v) => Valid(Some(v)).asInstanceOf[ValidationResultNel[A]]
@@ -271,8 +263,6 @@ object EncoderInterpreter {
           val b = fab(input)
           apply(op).apply(b)
         }
-        case op: HListAppend3[_,_,_,_,o3] => op.encodeMembers(this).apply(input.asInstanceOf[o3])
-        case op: HListAppend2[_,_,out] => op.encodeMembers(this).apply(input.asInstanceOf[out])
 
       }
   }
