@@ -26,7 +26,7 @@ object DocInterpreter {
           val desc = apply(dataDefinitionOp)
           Doc(s"Optional: ${desc.str}")
         }
-        case op: BaseHListDef[a,_] => {
+        case op: BaseHListDef[a] => {
           val members = op.members
           Doc(s"object with ${members.length} members: " + members.map(fd => s"${fd.key.name}: ${apply(fd.op).str}").mkString("[", ",", "]"))
         }

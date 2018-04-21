@@ -5,7 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
 import com.ot.bones.data.FieldDefinition
-import com.ot.bones.interpreter.ExtractionInterpreter.{JsonProducer, ValidateFromProducer, ValidationError, ValidationResultNel}
+import com.ot.bones.interpreter.ExtractionInterpreter.{FieldError, JsonProducer, ValidateFromProducer, ValidationError, ValidationResultNel}
 import com.ot.bones.validation.ValidationDefinition.ValidationOp
 
 import scala.annotation.tailrec
@@ -21,7 +21,7 @@ object ValidationUtil {
   def pv[X](jsonProducer: JsonProducer, fieldDefinition: FieldDefinition[X], fromProducer: ValidateFromProducer[X]) : ValidationResultNel[X] = {
     fromProducer(jsonProducer.child(fieldDefinition.key)).andThen { input =>
       ValidationUtil.validate(input, fieldDefinition.validations)
-    }
+    }.leftMap(errors => NonEmptyList.one(FieldError(fieldDefinition.key, errors)))
   }
 
 

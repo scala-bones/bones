@@ -10,13 +10,13 @@ import cats.free.FreeApplicative
 import cats.implicits._
 import com.ot.bones.data.HListAlgebra.BaseHListDef
 import com.ot.bones.interpreter.EncoderInterpreter.Encode
-import com.ot.bones.interpreter.ExtractionInterpreter.{CanNotConvert, ExtractionErrors, JsonProducer, RequiredObjectError, ValidateFromProducer, ValidationError, ValidationResultNel}
+import com.ot.bones.interpreter.ExtractionInterpreter.{CanNotConvert, ExtractionErrors, JsonProducer, RequiredData, ValidateFromProducer, ValidationError, ValidationResultNel}
 import com.ot.bones.validation.ValidationDefinition.ValidationOp
 import net.liftweb.json.JsonAST.{JField, JObject, JValue}
 import shapeless.{::, Generic, HList, HNil, Nat}
 import HList._
 import com.ot.bones.validation.{ValidationUtil => vu}
-import shapeless.ops.hlist.{Prepend, Split}
+import shapeless.ops.hlist.{Prepend, Split, Length}
 import shapeless.ops.nat.Sum
 
 object Algebra {
@@ -65,7 +65,7 @@ object Algebra {
   final case class Transform[A:Manifest,B](op: DataDefinitionOp[B], f: A => B, g: B => A) extends DataDefinitionOp[A] with ToOptionalData[A] {
     val manifestOfA: Manifest[A] = manifest[A]
   }
-  final case class Check[L <: HList, N <: Nat](obj: BaseHListDef[L,N], check: L => Validated[ValidationError[L], L])
+  final case class Check[L <: HList, N <: Nat](obj: BaseHListDef[L], check: L => Validated[ValidationError[L], L])
     extends DataDefinitionOp[L] with ToOptionalData[L]
 
 
@@ -77,7 +77,7 @@ object HListAlgebra {
   import Algebra._
 
   /** Used to create a generic extract method so we can extract values from the products. */
-  sealed abstract class BaseHListDef[L <: HList, N <: Nat] extends DataDefinitionOp[L] with ToOptionalData[L] { thisBase =>
+  sealed abstract class BaseHListDef[L <: HList] extends DataDefinitionOp[L] with ToOptionalData[L] { thisBase =>
 
     /** Get a list of untyped members */
     def members: List[FieldDefinition[_]]
@@ -91,7 +91,7 @@ object HListAlgebra {
     def extract(jsonProducer: JsonProducer, functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): Validated[ExtractionErrors, L] = {
       jsonProducer.produceObject.leftMap(NonEmptyList.one).andThen {
         case Some(producer) => extractMembers(functionK)(producer)
-        case None => Invalid(NonEmptyList.one(RequiredObjectError()))
+        case None => Invalid(NonEmptyList.one(RequiredData(this)))
       }.andThen { l =>
         vu.validate(l, validations)
       }
@@ -105,48 +105,18 @@ object HListAlgebra {
 
     def validations: List[ValidationOp[L]]
 
-    /**
-      *
-      * @param obj
-      * @param p
-      * @tparam LP HList being prepended
-      * @tparam NP Out Nat which is sum LP and L
-      */
-    case class Delayed2Prepend[LP <: HList, NP <: Nat, L <: HList, N <: Nat](
-      obj: BaseHListDef[LP, NP],
-      base: BaseHListDef[L,N],
-      p: Prepend[LP, L],
-      sum: Sum[NP, N]
-    ) {
+    def ::[LP <: HList, OUT <: HList, N <: Nat](obj: BaseHListDef[LP])(
+      implicit p: Prepend.Aux[LP, L, OUT], lpLength: Length.Aux[LP, N], s: Split.Aux[OUT, N, LP, L]) = {
+      val merge = (in : LP :: L :: HNil) => p(in.head, in.tail.head)
+      val split = (in: OUT) => in.splitP[lpLength.Out]
 
-      def :!!:[LP3 <: HList, NP3<: Nat](obj3: BaseHListDef[LP3, NP3])(
-        implicit s: Split[p.Out, NP], sum3 : Sum[NP3, sum.Out], p3: Prepend[LP3, p.Out]
-      ) = {
-        val prepend = closePrepend(s)
-        prepend.delayedPrepend(obj3)(p3, sum3)
-      }
-
-      def closePrepend(implicit s: Split[p.Out, NP]) = {
-        val merge = (in : LP :: L :: HNil) => p(in.head, in.tail.head)
-        val split = (in: p.Out) => in.splitP[NP].asInstanceOf[LP :: L :: HNil]
-        HListAppend2[LP, NP, L, N, p.Out, sum.Out](obj, base, merge, split)
-      }
-
-      def apply(implicit s: Split[p.Out, NP]) = closePrepend(s)
-
+      HListAppend2[LP, L, OUT](obj, thisBase, merge, split)
     }
-
-
-    /** Can't quite get this working.  This is a non-working prepend method which will hopefully
-      * take the place of the current def :: in each of the subclasses. */
-    def :!!:[LP <: HList, NP <: Nat](obj: BaseHListDef[LP, NP])(
-      implicit p: Prepend[LP, L], sum: Sum[NP, N]) =
-      Delayed2Prepend[LP, NP, L, N](obj, thisBase, p, sum)
 
   }
 
   final case class HList1[A](op1: FieldDefinition[A], validations: List[ValidationOp[A :: HNil]])
-    extends BaseHListDef[A :: HNil, Nat._1] {
+    extends BaseHListDef[A :: HNil] {
 
     def extractMembers(functionK: FunctionK[DataDefinitionOp, ValidateFromProducer])
     : ValidateFromProducer[A :: HNil] = {
@@ -167,28 +137,29 @@ object HListAlgebra {
     def validate(validationOp: ValidationOp[A :: HNil]*): HList1[A] =
       this.copy(validations = validationOp.toList)
 
+    val hLength = Length[A :: HNil]
     def ::[A2](other: HList1[A2]) = {
       val merge = (i: (A2 :: HNil) :: (A :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: A :: HNil) => in.splitP(Nat._1)
-      HListAppend2[A2 :: HNil, Nat._1, A :: HNil, Nat._1, A2 :: A :: HNil, Nat._2](other, this, merge, split)
+      val split = (in: A2 :: A :: HNil) => in.splitP(other.hLength())
+      HListAppend2[A2 :: HNil, A :: HNil, A2 :: A :: HNil](other, this, merge, split)
     }
 
     def ::[A2, B2](other: HList2[A2, B2]) = {
       val merge = (i: (A2 :: B2 :: HNil) :: (A :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: A :: HNil) => in.splitP(Nat._2)
-      HListAppend2[A2 :: B2 :: HNil, Nat._2, A :: HNil, Nat._1, A2 :: B2 :: A :: HNil, Nat._3](other, this, merge, split)
+      val split = (in: A2 :: B2 :: A :: HNil) => in.splitP(other.hLength())
+      HListAppend2[A2 :: B2 :: HNil, A :: HNil, A2 :: B2 :: A :: HNil](other, this, merge, split)
     }
 
     def ::[A2, B2, C2](other: HList3[A2, B2, C2]) = {
       val merge = (i: (A2 :: B2 :: C2 :: HNil) :: (A :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: C2 :: A :: HNil) => in.splitP(Nat._3)
-      HListAppend2[A2 :: B2 :: C2 :: HNil, Nat._3, A :: HNil, Nat._1, A2 :: B2 :: C2 :: A :: HNil, Nat._4](other, this, merge, split)
+      val split = (in: A2 :: B2 :: C2 :: A :: HNil) => in.splitP(other.hLength())
+      HListAppend2[A2 :: B2 :: C2 :: HNil, A :: HNil, A2 :: B2 :: C2 :: A :: HNil](other, this, merge, split)
     }
 
     def ::[A2, B2, C2, D2](other: HList4[A2, B2, C2, D2]) = {
       val merge = (i: (A2 :: B2 :: C2 :: D2 :: HNil) :: (A :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: C2 :: D2 :: A :: HNil) => in.splitP(Nat._4)
-      HListAppend2[A2 :: B2 :: C2 :: D2 :: HNil, Nat._4, A :: HNil, Nat._1, A2 :: B2 :: C2 :: D2 :: A :: HNil, Nat._5](other, this, merge, split)
+      val split = (in: A2 :: B2 :: C2 :: D2 :: A :: HNil) => in.splitP(other.hLength())
+      HListAppend2[A2 :: B2 :: C2 :: D2 :: HNil, A :: HNil, A2 :: B2 :: C2 :: D2 :: A :: HNil](other, this, merge, split)
     }
 
 
@@ -200,7 +171,7 @@ object HListAlgebra {
                                  op1: FieldDefinition[A],
                                  op2: FieldDefinition[B],
                                  validations: List[ValidationOp[A :: B :: HNil]]
-                               ) extends BaseHListDef[A :: B :: HNil, Nat._2] {
+                               ) extends BaseHListDef[A :: B :: HNil] {
 
 
     def extractMembers(functionK: FunctionK[DataDefinitionOp, ValidateFromProducer])
@@ -225,28 +196,29 @@ object HListAlgebra {
     def validate(validationOp: ValidationOp[A :: B :: HNil]*): HList2[A, B] =
       this.copy(validations = validationOp.toList)
 
+    val hLength = Length[A :: B :: HNil]
     def ::[A2](other: HList1[A2]) = {
       val merge = (i: (A2 :: HNil) :: (A :: B :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: A :: B :: HNil) => in.splitP(Nat._1)
-      HListAppend2[A2 :: HNil, Nat._1, A :: B :: HNil, Nat._2, A2 :: A :: B :: HNil, Nat._3](other, this, merge, split)
+      val split = (in: A2 :: A :: B :: HNil) => in.splitP(other.hLength())
+      HListAppend2[A2 :: HNil, A :: B :: HNil, A2 :: A :: B :: HNil](other, this, merge, split)
     }
 
     def ::[A2, B2](other: HList2[A2, B2]) = {
       val merge = (i: (A2 :: B2 :: HNil) :: (A :: B :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: A :: B :: HNil) => in.splitP(Nat._2)
-      HListAppend2[A2 :: B2 :: HNil, Nat._2, A :: B :: HNil, Nat._2, A2 :: B2 :: A :: B :: HNil, Nat._4](other, this, merge, split)
+      val split = (in: A2 :: B2 :: A :: B :: HNil) => in.splitP(other.hLength())
+      HListAppend2[A2 :: B2 :: HNil, A :: B :: HNil, A2 :: B2 :: A :: B :: HNil](other, this, merge, split)
     }
 
     def ::[A2, B2, C2](other: HList3[A2, B2, C2]) = {
       val merge = (i: (A2 :: B2 :: C2 :: HNil) :: (A :: B :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: C2 :: A :: B :: HNil) => in.splitP(Nat._3)
-      HListAppend2[A2 :: B2 :: C2 :: HNil, Nat._3, A :: B :: HNil, Nat._2, A2 :: B2 :: C2 :: A :: B :: HNil, Nat._5](other, this, merge, split)
+      val split = (in: A2 :: B2 :: C2 :: A :: B :: HNil) => in.splitP(other.hLength())
+      HListAppend2[A2 :: B2 :: C2 :: HNil, A :: B :: HNil, A2 :: B2 :: C2 :: A :: B :: HNil](other, this, merge, split)
     }
 
     def ::[A2, B2, C2, D2](other: HList4[A2, B2, C2, D2]) = {
       val merge = (i: (A2 :: B2 :: C2 :: D2 :: HNil) :: (A :: B :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: C2 :: D2 :: A :: B :: HNil) => in.splitP(Nat._4)
-      HListAppend2[A2 :: B2 :: C2 :: D2 :: HNil, Nat._4, A :: B :: HNil, Nat._2, A2 :: B2 :: C2 :: D2 :: A :: B :: HNil, Nat._6](other, this, merge, split)
+      val split = (in: A2 :: B2 :: C2 :: D2 :: A :: B :: HNil) => in.splitP(other.hLength())
+      HListAppend2[A2 :: B2 :: C2 :: D2 :: HNil, A :: B :: HNil, A2 :: B2 :: C2 :: D2 :: A :: B :: HNil](other, this, merge, split)
     }
 
 
@@ -260,7 +232,7 @@ object HListAlgebra {
                                     op3: FieldDefinition[C],
                                     validations: List[ValidationOp[A :: B :: C :: HNil]]
                                   )
-    extends BaseHListDef[A :: B :: C :: HNil, Nat._3] {
+    extends BaseHListDef[A :: B :: C :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
     : ValidateFromProducer[A :: B :: C :: HNil] = {
@@ -286,29 +258,30 @@ object HListAlgebra {
     }
 
     def members: List[FieldDefinition[_]] = List(op1, op2, op3)
+    val hLength = Length[A :: B :: C :: HNil]
 
     def ::[A2](other: HList1[A2]) = {
       val merge = (i: (A2 :: HNil) :: (A :: B :: C :: HNil) :: HNil) => i.head ::: i.tail.head
       val split = (in: A2 :: A :: B :: C :: HNil) => in.splitP(Nat._1)
-      HListAppend2[A2 :: HNil, Nat._1, A :: B :: C :: HNil, Nat._3, A2 :: A :: B :: C :: HNil, Nat._4](other, this, merge, split)
+      HListAppend2[A2 :: HNil, A :: B :: C :: HNil, A2 :: A :: B :: C :: HNil](other, this, merge, split)
     }
 
     def ::[A2, B2](other: HList2[A2, B2]) = {
       val merge = (i: (A2 :: B2 :: HNil) :: (A :: B :: C :: HNil) :: HNil) => i.head ::: i.tail.head
       val split = (in: A2 :: B2 :: A :: B :: C :: HNil) => in.splitP(Nat._2)
-      HListAppend2[A2 :: B2 :: HNil, Nat._2, A :: B :: C :: HNil, Nat._3, A2 :: B2 :: A :: B :: C :: HNil, Nat._5](other, this, merge, split)
+      HListAppend2[A2 :: B2 :: HNil, A :: B :: C :: HNil, A2 :: B2 :: A :: B :: C :: HNil](other, this, merge, split)
     }
 
     def ::[A2, B2, C2](other: HList3[A2, B2, C2]) = {
       val merge = (i: (A2 :: B2 :: C2 :: HNil) :: (A :: B :: C :: HNil) :: HNil) => i.head ::: i.tail.head
       val split = (in: A2 :: B2 :: C2 :: A :: B :: C :: HNil) => in.splitP(Nat._3)
-      HListAppend2[A2 :: B2 :: C2 :: HNil, Nat._3, A :: B :: C :: HNil, Nat._3, A2 :: B2 :: C2 :: A :: B :: C :: HNil, Nat._6](other, this, merge, split)
+      HListAppend2[A2 :: B2 :: C2 :: HNil, A :: B :: C :: HNil, A2 :: B2 :: C2 :: A :: B :: C :: HNil](other, this, merge, split)
     }
 
     def ::[A2, B2, C2, D2](other: HList4[A2, B2, C2, D2]) = {
       val merge = (i: (A2 :: B2 :: C2 :: D2 :: HNil) :: (A :: B :: C :: HNil) :: HNil) => i.head ::: i.tail.head
       val split = (in: A2 :: B2 :: C2 :: D2 :: A :: B :: C :: HNil) => in.splitP(Nat._4)
-      HListAppend2[A2 :: B2 :: C2 :: D2 :: HNil, Nat._4, A :: B :: C :: HNil, Nat._3, A2 :: B2 :: C2 :: D2 :: A :: B :: C :: HNil, Nat._7](other, this, merge, split)
+      HListAppend2[A2 :: B2 :: C2 :: D2 :: HNil, A :: B :: C :: HNil, A2 :: B2 :: C2 :: D2 :: A :: B :: C :: HNil](other, this, merge, split)
     }
 
 
@@ -322,7 +295,7 @@ object HListAlgebra {
                                        op3: FieldDefinition[C],
                                        op4: FieldDefinition[D],
                                        validations: List[ValidationOp[A :: B :: C :: D :: HNil]])
-    extends BaseHListDef[A :: B :: C :: D :: HNil, Nat._4] {
+    extends BaseHListDef[A :: B :: C :: D :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
     : ValidateFromProducer[A :: B :: C :: D :: HNil] = {
@@ -349,29 +322,31 @@ object HListAlgebra {
     }
 
     def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4)
+    val hLength = Length[A :: B :: C :: D :: HNil]
+
 
     def ::[A2](other: HList1[A2]) = {
       val merge = (i: (A2 :: HNil) :: (A :: B :: C :: D :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: A :: B :: C :: D :: HNil) => in.splitP(Nat._1)
-      HListAppend2[A2 :: HNil, Nat._1, A :: B :: C :: D :: HNil, Nat._4, A2 :: A :: B :: C :: D :: HNil, Nat._5](other, this, merge, split)
+      val split = (in: A2 :: A :: B :: C :: D :: HNil) => in.splitP(other.hLength())
+      HListAppend2[A2 :: HNil, A :: B :: C :: D :: HNil, A2 :: A :: B :: C :: D :: HNil](other, this, merge, split)
     }
 
     def ::[A2, B2](other: HList2[A2, B2]) = {
       val merge = (i: (A2 :: B2 :: HNil) :: (A :: B :: C :: D :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: A :: B :: C :: D :: HNil) => in.splitP(Nat._2)
-      HListAppend2[A2 :: B2 :: HNil, Nat._2, A :: B :: C :: D :: HNil, Nat._4, A2 :: B2 :: A :: B :: C :: D :: HNil, Nat._6](other, this, merge, split)
+      val split = (in: A2 :: B2 :: A :: B :: C :: D :: HNil) => in.splitP(other.hLength())
+      HListAppend2[A2 :: B2 :: HNil, A :: B :: C :: D :: HNil, A2 :: B2 :: A :: B :: C :: D :: HNil](other, this, merge, split)
     }
 
     def ::[A2, B2, C2](other: HList3[A2, B2, C2]) = {
       val merge = (i: (A2 :: B2 :: C2 :: HNil) :: (A :: B :: C :: D :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: C2 :: A :: B :: C :: D :: HNil) => in.splitP(Nat._3)
-      HListAppend2[A2 :: B2 :: C2 :: HNil, Nat._3, A :: B :: C :: D :: HNil, Nat._4, A2 :: B2 :: C2 :: A :: B :: C :: D :: HNil, Nat._7](other, this, merge, split)
+      val split = (in: A2 :: B2 :: C2 :: A :: B :: C :: D :: HNil) => in.splitP(other.hLength())
+      HListAppend2[A2 :: B2 :: C2 :: HNil, A :: B :: C :: D :: HNil, A2 :: B2 :: C2 :: A :: B :: C :: D :: HNil](other, this, merge, split)
     }
 
     def ::[A2, B2, C2, D2](other: HList4[A2, B2, C2, D2]) = {
       val merge = (i: (A2 :: B2 :: C2 :: D2 :: HNil) :: (A :: B :: C :: D :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: C2 :: D2 :: A :: B :: C :: D :: HNil) => in.splitP(Nat._4)
-      HListAppend2[A2 :: B2 :: C2 :: D2 :: HNil, Nat._4, A :: B :: C :: D :: HNil, Nat._4, A2 :: B2 :: C2 :: D2 :: A :: B :: C :: D :: HNil, Nat._8](other, this, merge, split)
+      val split = (in: A2 :: B2 :: C2 :: D2 :: A :: B :: C :: D :: HNil) => in.splitP(other.hLength())
+      HListAppend2[A2 :: B2 :: C2 :: D2 :: HNil, A :: B :: C :: D :: HNil, A2 :: B2 :: C2 :: D2 :: A :: B :: C :: D :: HNil](other, this, merge, split)
     }
   }
 
@@ -384,7 +359,7 @@ object HListAlgebra {
                                           op4: FieldDefinition[D],
                                           op5: FieldDefinition[E],
                                           validations: List[ValidationOp[A :: B :: C :: D :: E :: HNil]])
-    extends BaseHListDef[A :: B :: C :: D :: E :: HNil, Nat._5] {
+    extends BaseHListDef[A :: B :: C :: D :: E :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
     : ValidateFromProducer[A :: B :: C :: D :: E :: HNil] = {
@@ -414,11 +389,13 @@ object HListAlgebra {
     }
 
     def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4, op4)
+    val hLength = Length[A :: B :: C :: D :: E :: HNil]
+
 
     def ::[A2, B2](other: HList2[A2, B2]) = {
       val merge = (i: (A2 :: B2 :: HNil) :: (A :: B :: C :: D :: E :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: A :: B :: C :: D :: E :: HNil) => in.splitP(Nat._2)
-      HListAppend2[A2 :: B2 :: HNil, Nat._2, A :: B :: C :: D :: E :: HNil, Nat._5, A2 :: B2 :: A :: B :: C :: D :: E :: HNil, Nat._7](other, this, merge, split)
+      val split = (in: A2 :: B2 :: A :: B :: C :: D :: E :: HNil) => in.splitP(other.hLength())
+      HListAppend2[A2 :: B2 :: HNil, A :: B :: C :: D :: E :: HNil, A2 :: B2 :: A :: B :: C :: D :: E :: HNil](other, this, merge, split)
     }
 
   }
@@ -433,7 +410,7 @@ object HListAlgebra {
                                              op5: FieldDefinition[E],
                                              op6: FieldDefinition[F],
                                              validations: List[ValidationOp[A :: B :: C :: D :: E :: F :: HNil]])
-    extends BaseHListDef[A :: B :: C :: D :: E :: F :: HNil, Nat._6] {
+    extends BaseHListDef[A :: B :: C :: D :: E :: F :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
     : ValidateFromProducer[A :: B :: C :: D :: E :: F :: HNil] = {
@@ -468,12 +445,14 @@ object HListAlgebra {
     }
 
     def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4, op5, op6)
+    val hLength = Length[A :: B :: C :: D :: E :: F :: HNil]
 
-    def ::[A2, B2, C2](other: HList3[A2, B2, C2]) = {
-      val merge = (i: (A2 :: B2 :: C2 :: HNil) :: (A :: B :: C :: D :: E :: F :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: C2 :: A :: B :: C :: D :: E :: F :: HNil) => in.splitP(Nat._3)
-      HListAppend2[A2 :: B2 :: C2 :: HNil, Nat._3, A :: B :: C :: D :: E :: F :: HNil, Nat._6, A2 :: B2 :: C2 :: A :: B :: C :: D :: E :: F :: HNil, Nat._9](other, this, merge, split)
-    }
+
+//    def ::[A2, B2, C2](other: HList3[A2, B2, C2]) = {
+//      val merge = (i: (A2 :: B2 :: C2 :: HNil) :: (A :: B :: C :: D :: E :: F :: HNil) :: HNil) => i.head ::: i.tail.head
+//      val split = (in: A2 :: B2 :: C2 :: A :: B :: C :: D :: E :: F :: HNil) => in.splitP(Nat._3)
+//      HListAppend2[A2 :: B2 :: C2 :: HNil, A :: B :: C :: D :: E :: F :: HNil, A2 :: B2 :: C2 :: A :: B :: C :: D :: E :: F :: HNil, Nat._9](other, this, merge, split)
+//    }
 
 
   }
@@ -489,7 +468,7 @@ object HListAlgebra {
                                                 op6: FieldDefinition[F],
                                                 op7: FieldDefinition[G],
                                                 validations: List[ValidationOp[A :: B :: C :: D :: E :: F :: G :: HNil]])
-    extends BaseHListDef[A :: B :: C :: D :: E :: F :: G :: HNil, Nat._7] {
+    extends BaseHListDef[A :: B :: C :: D :: E :: F :: G :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
     : ValidateFromProducer[A :: B :: C :: D :: E :: F :: G :: HNil] = {
@@ -528,6 +507,8 @@ object HListAlgebra {
     }
 
     def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4, op5, op6, op7)
+    val hLength = Length[A :: B :: C :: D :: E :: F :: G :: HNil]
+
 
     def ::[A2, B2, C2, D2, E2](other: HList5[A2, B2, C2, D2, E2]) = {
       type IN1 = A2 :: B2 :: C2 :: D2 :: E2 :: HNil
@@ -535,8 +516,8 @@ object HListAlgebra {
       val f = (i : IN1 :: (A :: B :: C :: D :: E :: F :: G :: HNil) :: HNil) => {
         i.head ::: i.tail.head
       }
-      val split = (out: OUT) => out.splitP(5)
-      HListAppend2[IN1, Nat._5, A :: B :: C :: D :: E :: F :: G :: HNil, Nat._7, OUT, Nat._12](other, this, f, split)
+      val split = (out: OUT) => out.splitP(other.hLength())
+      HListAppend2[IN1, A :: B :: C :: D :: E :: F :: G :: HNil, OUT](other, this, f, split)
     }
 
 
@@ -554,7 +535,7 @@ object HListAlgebra {
                                                    op7: FieldDefinition[G],
                                                    op8: FieldDefinition[H],
                                                    validations: List[ValidationOp[A :: B :: C :: D :: E :: F :: G :: H :: HNil]])
-    extends BaseHListDef[A :: B :: C :: D :: E :: F :: G :: H :: HNil, Nat._8] {
+    extends BaseHListDef[A :: B :: C :: D :: E :: F :: G :: H :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
     : ValidateFromProducer[A :: B :: C :: D :: E :: F :: G :: H :: HNil] = {
@@ -597,6 +578,8 @@ object HListAlgebra {
     }
 
     def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4, op5, op6, op7, op8)
+    val hLength = Length[A :: B :: C :: D :: E :: F :: G :: H :: HNil]
+
 
   }
 
@@ -612,7 +595,7 @@ object HListAlgebra {
                                                       op8: FieldDefinition[H],
                                                       op9: FieldDefinition[I],
                                                       validations: List[ValidationOp[A :: B :: C :: D :: E :: F :: G :: H :: I :: HNil]])
-    extends BaseHListDef[A :: B :: C :: D :: E :: F :: G :: H :: I :: HNil, Nat._9] {
+    extends BaseHListDef[A :: B :: C :: D :: E :: F :: G :: H :: I :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
     : ValidateFromProducer[A :: B :: C :: D :: E :: F :: G :: H :: I :: HNil] = {
@@ -658,6 +641,8 @@ object HListAlgebra {
     }
 
     def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4, op5, op6, op7, op8, op9)
+    val hLength = Length[A :: B :: C :: D :: E :: F :: G :: H :: I :: HNil]
+
   }
 
   /** Represents a required HList with six properties. */
@@ -673,7 +658,7 @@ object HListAlgebra {
                                                           op9: FieldDefinition[I],
                                                           op10: FieldDefinition[J],
                                                           validations: List[ValidationOp[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: HNil]])
-    extends BaseHListDef[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: HNil, Nat._10] {
+    extends BaseHListDef[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
     : ValidateFromProducer[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: HNil] = {
@@ -723,6 +708,8 @@ object HListAlgebra {
     }
 
     def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4, op5, op6, op7, op8, op9, op10)
+    val hLength = Length[A :: B :: C :: D :: E :: F :: G :: H :: I :: J  :: HNil]
+
   }
 
 
@@ -740,7 +727,7 @@ object HListAlgebra {
                                                              op10: FieldDefinition[J],
                                                              op11: FieldDefinition[K],
                                                              validations: List[ValidationOp[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: HNil]])
-    extends BaseHListDef[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: HNil, Nat._11] {
+    extends BaseHListDef[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
     : ValidateFromProducer[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: HNil] = {
@@ -793,6 +780,8 @@ object HListAlgebra {
     }
 
     def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4, op5, op6, op7, op8, op9, op10, op11)
+    val hLength = Length[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: HNil]
+
   }
 
 
@@ -811,7 +800,7 @@ object HListAlgebra {
                                                                 op11: FieldDefinition[K],
                                                                 op12: FieldDefinition[L],
                                                                 validations: List[ValidationOp[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: L :: HNil]])
-    extends BaseHListDef[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: L :: HNil, Nat._12] {
+    extends BaseHListDef[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: L :: HNil] {
 
     def extractMembers(f: FunctionK[DataDefinitionOp, ValidateFromProducer])
     : ValidateFromProducer[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: L :: HNil] = {
@@ -867,6 +856,8 @@ object HListAlgebra {
     }
 
     def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4, op5, op6, op7, op8, op9, op10, op11, op12)
+    val hLength = Length[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: L :: HNil]
+
   }
 
 
@@ -874,13 +865,12 @@ object HListAlgebra {
   // Append Algebra, can append multiple HList types together.
 
   /** Instead of combining multiple HList types into a single HList is so that we can maintain validation info about each group of HLists. */
-  case class HListAppend2[L1 <: HList, N1 <: Nat, L2 <: HList, N2 <: Nat, OUT <: HList, NOUT <: Nat](
-    h1: BaseHListDef[L1, N1],
-    h2: BaseHListDef[L2, N2],
+  case class HListAppend2[L1 <: HList, L2 <: HList, OUT <: HList](
+    h1: BaseHListDef[L1],
+    h2: BaseHListDef[L2],
     f: L1 :: L2 :: HNil => OUT,
     f2: OUT => L1 :: L2 :: HNil
-  )
-    extends DataDefinitionOp[OUT] { thisAppend =>
+  ) extends DataDefinitionOp[OUT] { thisAppend =>
 
     /** Extract the child or children.*/
     def extractMembers(functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): ValidateFromProducer[OUT] = {
@@ -900,51 +890,22 @@ object HListAlgebra {
       }
     }
 
-    case class Delayed3Prepend[LP <: HList, OUT3 <: HList, NP <: Nat](obj: BaseHListDef[LP, NP], p: Prepend[LP, OUT]) {
+    def ::[LP <: HList, OUT3 <: HList, N <: Nat](obj: BaseHListDef[LP])(
+      implicit p: Prepend.Aux[LP, OUT, OUT3],
+      lpLength: Length.Aux[LP, N],
+      s: Split.Aux[OUT3, N, LP, OUT]) = {
+      val merge = (in : LP :: OUT :: HNil) => p(in.head, in.tail.head)
+      val split = (in: OUT3) => in.splitP[lpLength.Out]
 
-      def apply(implicit s: Split[p.Out, NP], sum : Sum[NP, NOUT]) = {
-        val merge = (in : LP :: OUT :: HNil) => in.tail.head.:::(in.head)(p)
-        val split = (in: p.Out) => in.splitP[NP].asInstanceOf[LP :: OUT :: HNil]
-        HListAppend3[LP, NP, L1, N1, L2, N2, OUT, NOUT, p.Out, sum.Out](obj, thisAppend, merge, split)
-      }
-    }
-
-
-    /** This is part of an attempt to generalize :: */
-    def delayedPrepend[LP <: HList, NP <: Nat](obj: BaseHListDef[LP, NP])(
-      implicit p: Prepend[LP, OUT], s: Sum[NP, NOUT]) =
-      Delayed3Prepend[LP, OUT, NP](obj, p)
-
-
-    def ::[A2, B2](obj: HList2[A2, B2])(
-      implicit p: Prepend[A2 :: B2 :: HNil, OUT],
-      sum: Sum[Nat._2, NOUT]) = {
-      val merge = (i: (A2 :: B2 :: HNil) :: OUT :: HNil) => i.head ::: i.tail.head
-      val split = (in: p.Out) => in.asInstanceOf[A2 :: B2 :: OUT].splitP(Nat._2)
-      HListAppend3[A2 :: B2 :: HNil, Nat._2, L1, N1, L2, N2, OUT, NOUT, p.Out, sum.Out](obj, this, merge, split)
-    }
-
-    def ::[A2, B2, C2](obj: HList3[A2, B2, C2])(
-      implicit p: Prepend[A2 :: B2 :: C2 :: HNil, OUT],
-      sum: Sum[Nat._3, NOUT]) = {
-      val merge = (i: (A2 :: B2 :: C2 :: HNil) :: OUT :: HNil) => i.head ::: i.tail.head
-      val split = (in: p.Out) => in.asInstanceOf[A2 :: B2 :: C2 :: OUT].splitP(Nat._3)
-      HListAppend3[A2 :: B2 :: C2 :: HNil, Nat._3, L1, N1, L2, N2, OUT, NOUT, p.Out, sum.Out](obj, this, merge, split)
-    }
-
-    def ::[A2, B2, C2, E2, F2](obj: HList5[A2, B2, C2, E2, F2])(
-      implicit p: Prepend[A2 :: B2 :: C2 :: E2 :: F2 :: HNil, OUT],
-      sum: Sum[Nat._5, NOUT]) = {
-      val merge = (i: (A2 :: B2 :: C2 :: E2 :: F2 :: HNil) :: OUT :: HNil) => i.head ::: i.tail.head
-      val split = (in: p.Out) => in.asInstanceOf[A2 :: B2 :: C2 :: E2 :: F2 :: OUT].splitP(Nat._5)
-      HListAppend3[A2 :: B2 :: C2 :: E2 :: F2 :: HNil, Nat._5, L1, N1, L2, N2, OUT, NOUT, p.Out, sum.Out](obj, this, merge, split)
+      HListAppend3[LP, L1, L2, OUT, OUT3](obj, this, merge, split)
     }
   }
 
-  case class HListAppend3[L1 <: HList, N1 <:Nat, L2 <: HList, N2 <: Nat, L3 <: HList, N3 <: Nat, OUT2 <: HList, NOUT2 <: Nat, OUT3 <: HList, NOUT3 <: Nat]
+
+  case class HListAppend3[L1 <: HList, L2 <: HList, L3 <: HList, OUT2 <: HList, OUT3 <: HList]
   (
-    h1: BaseHListDef[L1, N1],
-    hListAppend2: HListAppend2[L2, N2, L3, N3, OUT2, NOUT2],
+    h1: BaseHListDef[L1],
+    hListAppend2: HListAppend2[L2, L3, OUT2],
     f: L1 :: OUT2 :: HNil => OUT3,
     f2: OUT3 => L1 :: OUT2 :: HNil)
     extends DataDefinitionOp[OUT3] {
@@ -966,38 +927,22 @@ object HListAlgebra {
       }
     }
 
-    def ::[A2, B2](obj: HList2[A2, B2])(
-      implicit p: Prepend[A2 :: B2 :: HNil, OUT3],
-      sum: Sum[Nat._2, NOUT3]) = {
-      val merge = (i: (A2 :: B2 :: HNil) :: OUT3 :: HNil) => i.head ::: i.tail.head
-      val split = (in: p.Out) => in.asInstanceOf[A2 :: B2 :: OUT3].splitP(Nat._2)
-      HListAppend4[A2 :: B2 :: HNil, Nat._2, L1, N1, L2, N2, L3, N3, OUT2, NOUT2, OUT3, NOUT3, p.Out, sum.Out](obj, this, merge, split)
+    def ::[LP <: HList, OUT4 <: HList, N <: Nat](obj: BaseHListDef[LP])(
+      implicit p: Prepend.Aux[LP, OUT3, OUT4],
+      lpLength: Length.Aux[LP,N],
+      s: Split.Aux[OUT4, N, LP, OUT3]
+    ) = {
+      val merge = (in : LP :: OUT3 :: HNil) => in.tail.head.:::(in.head)(p)
+      val split = (in: OUT4) => in.splitP[lpLength.Out]
+      HListAppend4[LP, L1, L2, L3, OUT2, OUT3, OUT4](obj, this, merge, split)
     }
-
-    def ::[A2, B2, C2](obj: HList3[A2, B2, C2])(
-      implicit p: Prepend[A2 :: B2 :: C2 :: HNil, OUT3],
-      sum: Sum[Nat._3, NOUT3]) = {
-      val merge = (i: (A2 :: B2 :: C2 :: HNil) :: OUT3 :: HNil) => i.head ::: i.tail.head
-      val split = (in: p.Out) => in.asInstanceOf[A2 :: B2 :: C2 :: OUT3].splitP(Nat._3)
-      HListAppend4[A2 :: B2 :: C2 :: HNil, Nat._3, L1, N1, L2, N2, L3, N3, OUT2, NOUT2, OUT3, NOUT3, p.Out, sum.Out](obj, this, merge, split)
-    }
-
-    def ::[A2, B2, C2, D2](obj: HList4[A2, B2, C2, D2])(
-      implicit p: Prepend[A2 :: B2 :: C2 :: D2 :: HNil, OUT3],
-      sum: Sum[Nat._4, NOUT3]) = {
-      val merge = (i: (A2 :: B2 :: C2 :: D2 :: HNil) :: OUT3 :: HNil) => i.head ::: i.tail.head
-      val split = (in: p.Out) => in.asInstanceOf[A2 :: B2 :: C2 :: D2 :: OUT3].splitP(Nat._4)
-      HListAppend4[A2 :: B2 :: C2 :: D2 :: HNil, Nat._4, L1, N1, L2, N2, L3, N3, OUT2, NOUT2, OUT3, NOUT3, p.Out, sum.Out](obj, this, merge, split)
-    }
-
-
   }
 
-  case class HListAppend4[L1 <: HList, N1 <:Nat, L2 <: HList, N2 <: Nat, L3 <: HList, N3 <: Nat, L4 <: HList, N4 <: Nat,
-    OUT2 <: HList, NOUT2 <: Nat, OUT3 <: HList, NOUT3 <: Nat, OUT4 <: HList, NOUT4 <: Nat]
+
+  case class HListAppend4[L1 <: HList, L2 <: HList, L3 <: HList, L4 <: HList, OUT2 <: HList, OUT3 <: HList, OUT4 <: HList]
   (
-    h1: BaseHListDef[L1, N1],
-    hListAppend3: HListAppend3[L2, N2, L3, N3, L4, N4, OUT2, NOUT2, OUT3, NOUT3],
+    h1: BaseHListDef[L1],
+    hListAppend3: HListAppend3[L2, L3, L4, OUT2, OUT3],
     f: L1 :: OUT3 :: HNil => OUT4,
     f2: OUT4 => L1 :: OUT3 :: HNil)
     extends DataDefinitionOp[OUT4] {
@@ -1019,47 +964,22 @@ object HListAlgebra {
       }
     }
 
-    def ::[A2](obj: HList1[A2])(
-      implicit p: Prepend[A2 :: HNil, OUT4],
-      sum: Sum[Nat._1, NOUT4]) = {
-      val merge = (i: (A2 :: HNil) :: OUT4 :: HNil) => i.head ::: i.tail.head
-      val split = (in: p.Out) => in.asInstanceOf[A2 :: OUT4].splitP(Nat._1)
-      HListAppend5[A2 :: HNil, Nat._1, L1, N1, L2, N2, L3, N3,  L4, N4, OUT2, NOUT2, OUT3, NOUT3, OUT4, NOUT4, p.Out, sum.Out](obj, this, merge, split)
+    def ::[LP <: HList, OUT5 <: HList, N <: Nat](obj: BaseHListDef[LP])(
+      implicit p: Prepend.Aux[LP, OUT4, OUT5],
+      lpLength: Length.Aux[LP,N],
+      s: Split.Aux[OUT5, N, LP, OUT4]
+    ) = {
+      val merge = (in : LP :: OUT4 :: HNil) => in.tail.head.:::(in.head)(p)
+      val split = (in: OUT5) => in.splitP[lpLength.Out]
+      HListAppend5[LP, L1, L2, L3, L4, OUT2, OUT3, OUT4, OUT5](obj, this, merge, split)
     }
-
-    def ::[A2, B2](obj: HList2[A2, B2])(
-      implicit p: Prepend[A2 :: B2 :: HNil, OUT4],
-      sum: Sum[Nat._2, NOUT4]) = {
-      val merge = (i: (A2 :: B2 :: HNil) :: OUT4 :: HNil) => i.head ::: i.tail.head
-      val split = (in: p.Out) => in.asInstanceOf[A2 :: B2 :: OUT4].splitP(Nat._2)
-      HListAppend5[A2 :: B2 :: HNil, Nat._2, L1, N1, L2, N2, L3, N3,  L4, N4, OUT2, NOUT2, OUT3, NOUT3, OUT4, NOUT4, p.Out, sum.Out](obj, this, merge, split)
-    }
-
-    def ::[A2, B2, C2](obj: HList3[A2, B2, C2])(
-      implicit p: Prepend[A2 :: B2 :: C2 :: HNil, OUT4],
-      sum: Sum[Nat._3, NOUT4]) = {
-      val merge = (i: (A2 :: B2 :: C2 :: HNil) :: OUT4 :: HNil) => i.head ::: i.tail.head
-      val split = (in: p.Out) => in.asInstanceOf[A2 :: B2 :: C2 :: OUT4].splitP(Nat._3)
-      HListAppend5[A2 :: B2 :: C2 :: HNil, Nat._3, L1, N1, L2, N2, L3, N3,  L4, N4, OUT2, NOUT2, OUT3, NOUT3, OUT4, NOUT4, p.Out, sum.Out](obj, this, merge, split)
-    }
-
-    def ::[A2, B2, C2, D2](obj: HList4[A2, B2, C2, D2])(
-      implicit p: Prepend[A2 :: B2 :: C2 :: D2 :: HNil, OUT4],
-      sum: Sum[Nat._3, NOUT4]) = {
-      val merge = (i: (A2 :: B2 :: C2 :: D2 :: HNil) :: OUT4 :: HNil) => i.head ::: i.tail.head
-      val split = (in: p.Out) => in.asInstanceOf[A2 :: B2 :: C2 :: D2 :: OUT4].splitP(Nat._4)
-      HListAppend5[A2 :: B2 :: C2 :: D2 :: HNil, Nat._4, L1, N1, L2, N2, L3, N3,  L4, N4, OUT2, NOUT2, OUT3, NOUT3, OUT4, NOUT4, p.Out, sum.Out](obj, this, merge, split)
-    }
-
-
 
   }
 
-  case class HListAppend5[L1 <: HList, N1 <:Nat, L2 <: HList, N2 <: Nat, L3 <: HList, N3 <: Nat, L4 <: HList, N4 <: Nat, L5 <: HList, N5 <: Nat,
-  OUT2 <: HList, NOUT2 <: Nat, OUT3 <: HList, NOUT3 <: Nat, OUT4 <: HList, NOUT4 <: Nat, OUT5 <: HList, NOUT5 <: Nat]
+  case class HListAppend5[L1 <: HList, L2 <: HList, L3 <: HList, L4 <: HList, L5 <: HList, OUT2 <: HList, OUT3 <: HList, OUT4 <: HList, OUT5 <: HList]
   (
-    h1: BaseHListDef[L1, N1],
-    hListAppend4: HListAppend4[L2, N2, L3, N3, L4, N4, L5, N5, OUT2, NOUT2, OUT3, NOUT3, OUT4, NOUT4],
+    h1: BaseHListDef[L1],
+    hListAppend4: HListAppend4[L2, L3, L4, L5, OUT2, OUT3, OUT4],
     f: L1 :: OUT4 :: HNil => OUT5,
     f2: OUT5 => L1 :: OUT4 :: HNil)
     extends DataDefinitionOp[OUT5] {

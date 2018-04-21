@@ -1,22 +1,20 @@
 package com.ot.bones
 
 import java.time.LocalDateTime
-import java.util.{Calendar, Date, UUID}
+import java.util.{Date, UUID}
 
-import cats.Id
 import cats.data.Validated
-import cats.data.Validated.{Invalid, Valid}
+import cats.data.Validated.Valid
 import com.ot.bones.data.Algebra.{DataDefinitionOp, StringData}
 import com.ot.bones.data.Key
 import com.ot.bones.interpreter.DocInterpreter.{Doc, DocInterpreter}
-import com.ot.bones.interpreter.ExtractionInterpreter.{CanNotConvert, DefaultExtractInterpreter, JsonProducer, ValidateFromProducer, ValidationError, WrongTypeError}
+import com.ot.bones.interpreter.ExtractionInterpreter.{CanNotConvert, DefaultExtractInterpreter, JsonProducer, ValidateFromProducer, WrongTypeError}
 import com.ot.bones.producer.LiftJsonProducer
 import com.ot.bones.rest.Algebra.Processor
 import com.ot.bones.validation.ValidationDefinition.{ValidationOp, IntValidation => iv, StringValidation => sv}
 import org.scalatest.FunSuite
-import shapeless.ops.hlist.Prepend
-import shapeless.{HNil, Nat}
-import sun.util.calendar.JulianCalendar
+import shapeless.HNil
+
 
 
 class ValidationTest extends FunSuite {
@@ -54,18 +52,24 @@ class ValidationTest extends FunSuite {
   }
 
   test ("issue") {
-    import shapeless._
-    case class HWrap[L <: HList](hList: L)
-
-    val h1 = HWrap(1 :: 2 :: HNil)
-//    val h2 = HWrap("One" :: "Two" :: HNil) {
-//      def ::[L2 <: HList] (other: HWrap[L2])
-//    }
+//    import shapeless._
 //
-//    case class AppendWrap[L1 <: HList, L2 <: HList](h1: HWrap[L1], h2: HWrap[L2], p: Prepend[L1, L2]) {
-//      def append() : HWrap[p.Out] = HWrap(p.apply(h1.hList, h2.hList))
+//    case class Wrap[L <: HList](wrapped: L)
 //
-//    }
+//    val x = Wrap("x" :: "y" :: HNil)
+//    val y = Wrap(1 :: 2 :: HNil)
+//
+//    case class Append[L1, L2](w1: Wrap[L1], w2: Wrap[L2], prepend: Prepend[L1, L2], length: Length[L1])
+//
+//    def append[L1, L2](w1: Wrap[L1], w2: Wrap[L2])(implicit prepend: Prepend[L1, L2], length: Length[L1]) = Append(w1, w2, prepend, length)
+//
+//    val xAppendY = append(x,y)
+//
+//    val merged = xAppendY.prepend(xAppendY.w1.wrapped, xAppendY.w2.wrapped)
+//
+//    val split = Split[xAppendY.prepend.Out, xAppendY.hLength.Out]
+//
+//    split.apply(merged)
 
 
 
@@ -74,7 +78,6 @@ class ValidationTest extends FunSuite {
 
   test ("append generalization") {
     import com.ot.bones.syntax._
-    import shapeless.ops.hlist._
 
     val s2 = obj2(
       key("val1").string(),
@@ -84,12 +87,29 @@ class ValidationTest extends FunSuite {
       key("int1").int(),
       key("int2").int()
     )
+    val merged = s2 :: i2
 
-    val result = s2 :!!: i2
+//    val s = implicitly[Split[result.p.Out, result.lpLength.Out]]
+//    val s = Split[String :: String :: Int :: Int, Nat._2]
 
-    val s = implicitly[Split[result.p.Out, Nat._2]]
+    case class Out(s1: String, s2: String, i1: Int, i2: Int)
 
-    result.closePrepend(s)
+    val input =
+      """
+        |{
+        |  "val1" : "one",
+        |  "val2" : "two",
+        |  "int1" : 1,
+        |  "int2" : 2
+        |}
+      """.stripMargin
+    val parsed = net.liftweb.json.parse(input)
+    val jsonProducer = LiftJsonProducer(parsed)
+
+//    val extResult = merged.apply(jsonProducer)
+//
+//    assert(extResult.toOption.get === Out("one", "two", 1, 2))
+
 
   }
 
@@ -136,7 +156,6 @@ class ValidationTest extends FunSuite {
     /** **** Begin Real Example ******/
 
     import com.ot.bones.syntax._
-
     import shapeless.::
 
     object HasNotExpired extends ValidationOp[Int :: Int :: HNil] {

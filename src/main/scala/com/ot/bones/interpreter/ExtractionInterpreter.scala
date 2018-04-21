@@ -30,7 +30,8 @@ object ExtractionInterpreter {
   case class ValidationError[T](failurePoint: ValidationOp[T], input: T) extends ExtractionError
   case class WrongTypeError[T](expectedType: Class[T], providedType: Class[_]) extends ExtractionError
   case class CanNotConvert[A,T](input: A, toType: Class[T]) extends ExtractionError
-  case class RequiredObjectError() extends ExtractionError
+  case class RequiredData[A](dataDefinitionOp: DataDefinitionOp[A]) extends ExtractionError
+  case class FieldError[A](key: Key, errors: NonEmptyList[ExtractionError]) extends ExtractionError
 //  case class MultiKeyError[T](keys: NonEmptyList[Key], failurePoint: ExtractionOp[T]) extends ExtractionError
 
 
@@ -91,19 +92,19 @@ object ExtractionInterpreter {
     def apply[A](fgo: DataDefinitionOp[A]): ValidateFromProducer[A] = jsonProducer =>
       fgo match {
 
-        case op: HListAppend5[l1, n1, l2, n2, l3, n3, l4, n4, out2, l5, n5, no2, o3, no3, out4, nout4, out5, _] =>
+        case op: HListAppend5[_,_,_,_,_,_,_,_,_] =>
           op.extractMembers(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
-        case op: HListAppend4[l1, n1, l2, n2, l3, n3, o2, no2, o3, no3, _, _, _, _] =>
+        case op: HListAppend4[_,_,_,_,_,_,_] =>
           op.extractMembers(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
-        case op: HListAppend3[l1, n1, l2, n2, l3, n3, o2, no2, o3, no3] =>
+        case op: HListAppend3[_,_,_,_,_] =>
           op.extractMembers(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
-        case op: HListAppend2[l1, n1, l2, n2, out, nout] => op.extractMembers(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
+        case op: HListAppend2[_,_,_] => op.extractMembers(this)(jsonProducer).asInstanceOf[ValidationResultNel[A]]
 
         case op: OptionalDataDefinition[b] => {
           this(op.dataDefinitionOp)(jsonProducer) match {
             case Valid(v) => Valid(Some(v)).asInstanceOf[ValidationResultNel[A]]
             case Invalid(x) => {
-              x.filterNot(_.isInstanceOf[RequiredObjectError]).toNel match {
+              x.filterNot(_.isInstanceOf[RequiredData[b]]).toNel match {
                 case Some(nel) => Invalid(nel)
                 case None => Valid(None).asInstanceOf[ValidationResultNel[A]]
               }
@@ -111,26 +112,26 @@ object ExtractionInterpreter {
           }
         }
 
-        case op: BaseHListDef[a,n] => {
+        case op: BaseHListDef[a] => {
           op.extract(jsonProducer, this).asInstanceOf[ValidationResultNel[A]]
         }
         case op: StringData => {
           jsonProducer.produceString.leftMap(NonEmptyList.one).andThen {
             case Some(e) => Valid(e).asInstanceOf[ValidationResultNel[A]]
-            case None => Invalid(NonEmptyList.one(RequiredObjectError()))
+            case None => Invalid(NonEmptyList.one(RequiredData(op)))
           }
 
         }
         case op: IntData => {
           jsonProducer.produceInt.leftMap(NonEmptyList.one).andThen {
             case Some(e) => Valid(e).asInstanceOf[ValidationResultNel[A]]
-            case None => Invalid(NonEmptyList.one(RequiredObjectError()))
+            case None => Invalid(NonEmptyList.one(RequiredData(op)))
           }
         }
         case op: BooleanData => {
           jsonProducer.produceBool.leftMap(NonEmptyList.one) andThen {
             case Some(x) => Valid(x).asInstanceOf[ValidationResultNel[A]]
-            case None => Invalid(NonEmptyList.one(RequiredObjectError()))
+            case None => Invalid(NonEmptyList.one(RequiredData(op)))
           }
         }
         case op: UuidData => {
@@ -141,19 +142,19 @@ object ExtractionInterpreter {
           }
 
           jsonProducer.produceString.leftMap(NonEmptyList.one).andThen {
-            case None => Invalid(NonEmptyList.one(RequiredObjectError()))
+            case None => Invalid(NonEmptyList.one(RequiredData(op)))
             case Some(str) => convert(str).asInstanceOf[ValidationResultNel[A]]
           }
 
         }
-        case DateData(dateFormat, _) => {
+        case op @ DateData(dateFormat, _) => {
           jsonProducer.produceString.leftMap(NonEmptyList.one).andThen {
             case Some(str) => try {
               Valid(dateFormat.parseObject(str).asInstanceOf[Date]).asInstanceOf[ValidationResultNel[A]]
             } catch {
               case NonFatal(ex) => Invalid(NonEmptyList.one(CanNotConvert(str, classOf[Date])))
             }
-            case None => Invalid(NonEmptyList.one(RequiredObjectError()))
+            case None => Invalid(NonEmptyList.one(RequiredData(op)))
           }
 
         }
@@ -165,16 +166,16 @@ object ExtractionInterpreter {
             }
           }).asInstanceOf[ValidationResultNel[A]]
         }
-        case ListData(definition) => {
+        case op @ ListData(definition) => {
           jsonProducer.produceList.leftMap(NonEmptyList.one).andThen {
             case Some(list) =>
               list.map(producer => {
                 apply(definition)(producer)
               }).sequence.asInstanceOf[ValidationResultNel[A]]
-            case None => Invalid(NonEmptyList.one(RequiredObjectError()))
+            case None => Invalid(NonEmptyList.one(RequiredData(op)))
           }
         }
-        case BigDecimalFromString() => {
+        case op: BigDecimalFromString => {
           def convertFromString(str: String) : Validated[ExtractionErrors, BigDecimal] = {
             try {
               Valid(BigDecimal(str))
@@ -185,21 +186,21 @@ object ExtractionInterpreter {
 
           jsonProducer.produceString.leftMap(NonEmptyList.one).andThen {
             case Some(str) => convertFromString(str).asInstanceOf[ValidationResultNel[A]]
-            case None => Invalid(NonEmptyList.one(RequiredObjectError()))
+            case None => Invalid(NonEmptyList.one(RequiredData(op)))
           }
         }
         case ConversionData(from, fab, _, _) => {
           val baseValue = apply(from).apply(jsonProducer)
           baseValue.andThen(a => fab(a).toValidated.leftMap(NonEmptyList.one))
         }
-        case EnumeratedStringData(enumeration) => {
+        case op @ EnumeratedStringData(enumeration) => {
           jsonProducer.produceString.leftMap(NonEmptyList.one).andThen {
             case Some(str) => try {
               Valid(enumeration.withName(str).asInstanceOf[A])
             } catch {
               case ex: NoSuchElementException => Invalid(NonEmptyList.one(CanNotConvert(str, enumeration.getClass)))
             }
-            case None => Invalid(NonEmptyList.one(RequiredObjectError()))
+            case None => Invalid(NonEmptyList.one(RequiredData(op)))
           }
         }
         case Transform(op, _, fba) => {
@@ -240,7 +241,7 @@ object EncoderInterpreter {
             case None => JNothing
           }
         }
-        case op: BaseHListDef[A,n] => {
+        case op: BaseHListDef[A] => {
           op.encodeMembers(this).apply(input)
         }
         case ob: BooleanData => JBool(input.asInstanceOf[Boolean])
@@ -270,8 +271,8 @@ object EncoderInterpreter {
           val b = fab(input)
           apply(op).apply(b)
         }
-        case op: HListAppend3[l1, n1, l2, n2, l3, n3, o2, no2, o3, no3] => op.encodeMembers(this).apply(input.asInstanceOf[o3])
-        case op: HListAppend2[l1, n1, l2, n2, out, nout] => op.encodeMembers(this).apply(input.asInstanceOf[out])
+        case op: HListAppend3[_,_,_,_,o3] => op.encodeMembers(this).apply(input.asInstanceOf[o3])
+        case op: HListAppend2[_,_,out] => op.encodeMembers(this).apply(input.asInstanceOf[out])
 
       }
   }
