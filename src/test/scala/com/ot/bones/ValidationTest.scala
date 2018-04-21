@@ -252,7 +252,7 @@ class ValidationTest extends FunSuite {
 
     //Doc interpreter, simple POC showing we can make documentation out of this.
     val docOut = creditCardSchema.lift.foldMap[Doc](DocInterpreter)
-    assert(docOut.str === """Transform to a CC$3 from object with 5 members: [firstFive: String,lastFour: String,uuid: String representing a UUID,token: String representing a UUID,token: String representing a UUID] object with 2 members: [expMonth: Int,expYear: Int] object with 5 members: [cardHolder: String,currencyIso: String with one of the following values: [CAD,GBP,USD],deletedAt: Optional: Date with format ISO date-time format with the offset and zone if available, such as '2011-12-03T10:15:30', '2011-12-03T10:15:30+01:00' or '2011-12-03T10:15:30+01:00[Europe/Paris]',lastModifiedRequest: String representing a UUID,lastModifiedRequest: String representing a UUID]""")
+    assert(docOut.str === """Transform to a CC$3 from object with 12 members: [firstFive: String,lastFour: String,uuid: String representing a UUID,token: String representing a UUID,token: String representing a UUID,expMonth: Int,expYear: Int,cardHolder: String,currencyIso: String with one of the following values: [CAD,GBP,USD],deletedAt: Optional: Date with format ISO date-time format with the offset and zone if available, such as '2011-12-03T10:15:30', '2011-12-03T10:15:30+01:00' or '2011-12-03T10:15:30+01:00[Europe/Paris]',lastModifiedRequest: String representing a UUID,lastModifiedRequest: String representing a UUID]""")
 
 
 

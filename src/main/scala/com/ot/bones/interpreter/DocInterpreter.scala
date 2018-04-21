@@ -2,7 +2,7 @@ package com.ot.bones.interpreter
 
 import cats.Applicative
 import com.ot.bones.data.Algebra._
-import com.ot.bones.data.HListAlgebra.{BaseHListDef, HListAppend2, HListAppend3}
+import com.ot.bones.data.HListAlgebra.BaseHListDef
 
 object DocInterpreter {
 
@@ -20,8 +20,6 @@ object DocInterpreter {
   object DocInterpreter extends cats.arrow.FunctionK[DataDefinitionOp, Doc] {
     def apply[A](fgo: DataDefinitionOp[A]): Doc[A] =
       fgo match {
-        case HListAppend2(h1, h2, _, _) => Doc(apply(h1).str + " " + apply(h2).str)
-        case HListAppend3(h1, h2, _, _) => Doc(apply(h1).str + " " + apply(h2).str)
         case OptionalDataDefinition(dataDefinitionOp) => {
           val desc = apply(dataDefinitionOp)
           Doc(s"Optional: ${desc.str}")
