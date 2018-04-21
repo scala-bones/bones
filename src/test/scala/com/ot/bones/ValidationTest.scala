@@ -113,6 +113,37 @@ class ValidationTest extends FunSuite {
 
   }
 
+  test("text max prepend") {
+//    import com.ot.bones.syntax._
+//
+//    val x = key("test").string().optional().asMember
+//
+//    val y = x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x ::
+//      x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x :: x
+//    val cc =
+//      """
+//        |{
+//        |  "test" : "12345",
+//        |  "lastFour" : "4321",
+//        |  "uuid" : "df15f08c-e6bd-11e7-aeb8-6003089f08b4",
+//        |  "token" : "e58e7dda-e6bd-11e7-b901-6003089f08b4",
+//        |  "ccType" : "mastercard"
+//        |}
+//      """.stripMargin
+//
+//    //sorry, we still use lift in my projects.  I will soon create a Circe JsonProducer.
+//    val parsed = net.liftweb.json.parse(cc)
+//    val jsonProducer = LiftJsonProducer(parsed)
+//
+//    //create the program that is responsible for converting JSON into a CC.
+//    val jsonToCCProgram = y.lift.foldMap[ValidateFromProducer](DefaultExtractInterpreter())
+//
+//    //here, we will test that just the validation step is working
+//    val btCc = jsonToCCProgram.apply(jsonProducer)
+//    btCc.isValid
+
+  }
+
   test("validation example") {
 
     //Define some example data types.
@@ -199,8 +230,6 @@ class ValidationTest extends FunSuite {
 
     val creditCardSchema = obj.transform[CC]
 
-    val x = 1 :: 2 :: Nil
-
     //final type is basically DataDefinitionOp[CC]
 
     //Here is our input
@@ -252,7 +281,8 @@ class ValidationTest extends FunSuite {
 
     //Doc interpreter, simple POC showing we can make documentation out of this.
     val docOut = creditCardSchema.lift.foldMap[Doc](DocInterpreter)
-    assert(docOut.str === """Transform to a CC$3 from object with 12 members: [firstFive: String,lastFour: String,uuid: String representing a UUID,token: String representing a UUID,token: String representing a UUID,expMonth: Int,expYear: Int,cardHolder: String,currencyIso: String with one of the following values: [CAD,GBP,USD],deletedAt: Optional: Date with format ISO date-time format with the offset and zone if available, such as '2011-12-03T10:15:30', '2011-12-03T10:15:30+01:00' or '2011-12-03T10:15:30+01:00[Europe/Paris]',lastModifiedRequest: String representing a UUID,lastModifiedRequest: String representing a UUID]""")
+    println(docOut.str)
+    assert(docOut.str === """Transform to a CC$3 from object with 12 members: [firstFive: String,lastFour: String,uuid: String representing a UUID,token: String representing a UUID,ccType: Convert to a CreditCardType from String,expMonth: Int,expYear: Int,cardHolder: String,currencyIso: String with one of the following values: [CAD,GBP,USD],deletedAt: Optional: Date with format ISO date-time format with the offset and zone if available, such as '2011-12-03T10:15:30', '2011-12-03T10:15:30+01:00' or '2011-12-03T10:15:30+01:00[Europe/Paris]',lastModifiedRequest: String representing a UUID,billingLocation: Optional: Convert to a Transform to type BillingLocation$3 from object with 2 members: [countryIso: String,zipCode: Optional: String]]""")
 
 
 
