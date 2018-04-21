@@ -15,8 +15,9 @@ import com.ot.bones.validation.ValidationDefinition.ValidationOp
 import net.liftweb.json.JsonAST.{JField, JObject, JValue}
 import shapeless.{::, Generic, HList, HNil, Nat}
 import HList._
+import com.ot.bones.data.HListAlgebra.HListAppendN.HListPrependN
 import com.ot.bones.validation.{ValidationUtil => vu}
-import shapeless.ops.hlist.{Prepend, Split, Length}
+import shapeless.ops.hlist.{Length, Prepend, Split}
 import shapeless.ops.nat.Sum
 
 object Algebra {
@@ -105,12 +106,22 @@ object HListAlgebra {
 
     def validations: List[ValidationOp[L]]
 
-    def ::[LP <: HList, OUT <: HList, N <: Nat](obj: BaseHListDef[LP])(
-      implicit p: Prepend.Aux[LP, L, OUT], lpLength: Length.Aux[LP, N], s: Split.Aux[OUT, N, LP, L]) = {
-      val merge = (in : LP :: L :: HNil) => p(in.head, in.tail.head)
-      val split = (in: OUT) => in.splitP[lpLength.Out]
-
-      HListAppend2[LP, L, OUT](obj, thisBase, merge, split)
+    def ::[OUT <: HList, P <: HList, N <: Nat](hHead: BaseHListDef[P])(
+      implicit p: Prepend.Aux[P,L,OUT],
+      lpLength: Length.Aux[P,N],
+      s: Split.Aux[OUT,N,P,L]
+    ) = {
+      val psPrepend = (in : P :: L :: HNil) => p(in.head, in.tail.head)
+      val hSplit = (in: OUT) => in.splitP[lpLength.Out]
+      new HListPrependN[OUT] {
+        type Prefix = P
+        type Suffix = L
+        override val prepend = psPrepend
+        override val split = hSplit
+        override val prefix: BaseHListDef[P] = hHead
+        override val suffix: BaseHListDef[L] = thisBase
+        override val validations = List.empty[ValidationOp[OUT]]
+      }
     }
 
   }
@@ -138,31 +149,6 @@ object HListAlgebra {
       this.copy(validations = validationOp.toList)
 
     val hLength = Length[A :: HNil]
-    def ::[A2](other: HList1[A2]) = {
-      val merge = (i: (A2 :: HNil) :: (A :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: A :: HNil) => in.splitP(other.hLength())
-      HListAppend2[A2 :: HNil, A :: HNil, A2 :: A :: HNil](other, this, merge, split)
-    }
-
-    def ::[A2, B2](other: HList2[A2, B2]) = {
-      val merge = (i: (A2 :: B2 :: HNil) :: (A :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: A :: HNil) => in.splitP(other.hLength())
-      HListAppend2[A2 :: B2 :: HNil, A :: HNil, A2 :: B2 :: A :: HNil](other, this, merge, split)
-    }
-
-    def ::[A2, B2, C2](other: HList3[A2, B2, C2]) = {
-      val merge = (i: (A2 :: B2 :: C2 :: HNil) :: (A :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: C2 :: A :: HNil) => in.splitP(other.hLength())
-      HListAppend2[A2 :: B2 :: C2 :: HNil, A :: HNil, A2 :: B2 :: C2 :: A :: HNil](other, this, merge, split)
-    }
-
-    def ::[A2, B2, C2, D2](other: HList4[A2, B2, C2, D2]) = {
-      val merge = (i: (A2 :: B2 :: C2 :: D2 :: HNil) :: (A :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: C2 :: D2 :: A :: HNil) => in.splitP(other.hLength())
-      HListAppend2[A2 :: B2 :: C2 :: D2 :: HNil, A :: HNil, A2 :: B2 :: C2 :: D2 :: A :: HNil](other, this, merge, split)
-    }
-
-
 
   }
 
@@ -197,30 +183,6 @@ object HListAlgebra {
       this.copy(validations = validationOp.toList)
 
     val hLength = Length[A :: B :: HNil]
-    def ::[A2](other: HList1[A2]) = {
-      val merge = (i: (A2 :: HNil) :: (A :: B :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: A :: B :: HNil) => in.splitP(other.hLength())
-      HListAppend2[A2 :: HNil, A :: B :: HNil, A2 :: A :: B :: HNil](other, this, merge, split)
-    }
-
-    def ::[A2, B2](other: HList2[A2, B2]) = {
-      val merge = (i: (A2 :: B2 :: HNil) :: (A :: B :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: A :: B :: HNil) => in.splitP(other.hLength())
-      HListAppend2[A2 :: B2 :: HNil, A :: B :: HNil, A2 :: B2 :: A :: B :: HNil](other, this, merge, split)
-    }
-
-    def ::[A2, B2, C2](other: HList3[A2, B2, C2]) = {
-      val merge = (i: (A2 :: B2 :: C2 :: HNil) :: (A :: B :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: C2 :: A :: B :: HNil) => in.splitP(other.hLength())
-      HListAppend2[A2 :: B2 :: C2 :: HNil, A :: B :: HNil, A2 :: B2 :: C2 :: A :: B :: HNil](other, this, merge, split)
-    }
-
-    def ::[A2, B2, C2, D2](other: HList4[A2, B2, C2, D2]) = {
-      val merge = (i: (A2 :: B2 :: C2 :: D2 :: HNil) :: (A :: B :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: C2 :: D2 :: A :: B :: HNil) => in.splitP(other.hLength())
-      HListAppend2[A2 :: B2 :: C2 :: D2 :: HNil, A :: B :: HNil, A2 :: B2 :: C2 :: D2 :: A :: B :: HNil](other, this, merge, split)
-    }
-
 
   }
 
@@ -260,32 +222,6 @@ object HListAlgebra {
     def members: List[FieldDefinition[_]] = List(op1, op2, op3)
     val hLength = Length[A :: B :: C :: HNil]
 
-    def ::[A2](other: HList1[A2]) = {
-      val merge = (i: (A2 :: HNil) :: (A :: B :: C :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: A :: B :: C :: HNil) => in.splitP(Nat._1)
-      HListAppend2[A2 :: HNil, A :: B :: C :: HNil, A2 :: A :: B :: C :: HNil](other, this, merge, split)
-    }
-
-    def ::[A2, B2](other: HList2[A2, B2]) = {
-      val merge = (i: (A2 :: B2 :: HNil) :: (A :: B :: C :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: A :: B :: C :: HNil) => in.splitP(Nat._2)
-      HListAppend2[A2 :: B2 :: HNil, A :: B :: C :: HNil, A2 :: B2 :: A :: B :: C :: HNil](other, this, merge, split)
-    }
-
-    def ::[A2, B2, C2](other: HList3[A2, B2, C2]) = {
-      val merge = (i: (A2 :: B2 :: C2 :: HNil) :: (A :: B :: C :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: C2 :: A :: B :: C :: HNil) => in.splitP(Nat._3)
-      HListAppend2[A2 :: B2 :: C2 :: HNil, A :: B :: C :: HNil, A2 :: B2 :: C2 :: A :: B :: C :: HNil](other, this, merge, split)
-    }
-
-    def ::[A2, B2, C2, D2](other: HList4[A2, B2, C2, D2]) = {
-      val merge = (i: (A2 :: B2 :: C2 :: D2 :: HNil) :: (A :: B :: C :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: C2 :: D2 :: A :: B :: C :: HNil) => in.splitP(Nat._4)
-      HListAppend2[A2 :: B2 :: C2 :: D2 :: HNil, A :: B :: C :: HNil, A2 :: B2 :: C2 :: D2 :: A :: B :: C :: HNil](other, this, merge, split)
-    }
-
-
-
   }
 
   /** Represents a required HList with four properties A,B,C,D */
@@ -324,30 +260,6 @@ object HListAlgebra {
     def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4)
     val hLength = Length[A :: B :: C :: D :: HNil]
 
-
-    def ::[A2](other: HList1[A2]) = {
-      val merge = (i: (A2 :: HNil) :: (A :: B :: C :: D :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: A :: B :: C :: D :: HNil) => in.splitP(other.hLength())
-      HListAppend2[A2 :: HNil, A :: B :: C :: D :: HNil, A2 :: A :: B :: C :: D :: HNil](other, this, merge, split)
-    }
-
-    def ::[A2, B2](other: HList2[A2, B2]) = {
-      val merge = (i: (A2 :: B2 :: HNil) :: (A :: B :: C :: D :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: A :: B :: C :: D :: HNil) => in.splitP(other.hLength())
-      HListAppend2[A2 :: B2 :: HNil, A :: B :: C :: D :: HNil, A2 :: B2 :: A :: B :: C :: D :: HNil](other, this, merge, split)
-    }
-
-    def ::[A2, B2, C2](other: HList3[A2, B2, C2]) = {
-      val merge = (i: (A2 :: B2 :: C2 :: HNil) :: (A :: B :: C :: D :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: C2 :: A :: B :: C :: D :: HNil) => in.splitP(other.hLength())
-      HListAppend2[A2 :: B2 :: C2 :: HNil, A :: B :: C :: D :: HNil, A2 :: B2 :: C2 :: A :: B :: C :: D :: HNil](other, this, merge, split)
-    }
-
-    def ::[A2, B2, C2, D2](other: HList4[A2, B2, C2, D2]) = {
-      val merge = (i: (A2 :: B2 :: C2 :: D2 :: HNil) :: (A :: B :: C :: D :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: C2 :: D2 :: A :: B :: C :: D :: HNil) => in.splitP(other.hLength())
-      HListAppend2[A2 :: B2 :: C2 :: D2 :: HNil, A :: B :: C :: D :: HNil, A2 :: B2 :: C2 :: D2 :: A :: B :: C :: D :: HNil](other, this, merge, split)
-    }
   }
 
 
@@ -391,12 +303,6 @@ object HListAlgebra {
     def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4, op4)
     val hLength = Length[A :: B :: C :: D :: E :: HNil]
 
-
-    def ::[A2, B2](other: HList2[A2, B2]) = {
-      val merge = (i: (A2 :: B2 :: HNil) :: (A :: B :: C :: D :: E :: HNil) :: HNil) => i.head ::: i.tail.head
-      val split = (in: A2 :: B2 :: A :: B :: C :: D :: E :: HNil) => in.splitP(other.hLength())
-      HListAppend2[A2 :: B2 :: HNil, A :: B :: C :: D :: E :: HNil, A2 :: B2 :: A :: B :: C :: D :: E :: HNil](other, this, merge, split)
-    }
 
   }
 
@@ -446,13 +352,6 @@ object HListAlgebra {
 
     def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4, op5, op6)
     val hLength = Length[A :: B :: C :: D :: E :: F :: HNil]
-
-
-//    def ::[A2, B2, C2](other: HList3[A2, B2, C2]) = {
-//      val merge = (i: (A2 :: B2 :: C2 :: HNil) :: (A :: B :: C :: D :: E :: F :: HNil) :: HNil) => i.head ::: i.tail.head
-//      val split = (in: A2 :: B2 :: C2 :: A :: B :: C :: D :: E :: F :: HNil) => in.splitP(Nat._3)
-//      HListAppend2[A2 :: B2 :: C2 :: HNil, A :: B :: C :: D :: E :: F :: HNil, A2 :: B2 :: C2 :: A :: B :: C :: D :: E :: F :: HNil, Nat._9](other, this, merge, split)
-//    }
 
 
   }
@@ -508,17 +407,6 @@ object HListAlgebra {
 
     def members: List[FieldDefinition[_]] = List(op1, op2, op3, op4, op5, op6, op7)
     val hLength = Length[A :: B :: C :: D :: E :: F :: G :: HNil]
-
-
-    def ::[A2, B2, C2, D2, E2](other: HList5[A2, B2, C2, D2, E2]) = {
-      type IN1 = A2 :: B2 :: C2 :: D2 :: E2 :: HNil
-      type OUT = A2 :: B2 :: C2 :: D2 :: E2 :: A :: B :: C :: D :: E :: F :: G :: HNil
-      val f = (i : IN1 :: (A :: B :: C :: D :: E :: F :: G :: HNil) :: HNil) => {
-        i.head ::: i.tail.head
-      }
-      val split = (out: OUT) => out.splitP(other.hLength())
-      HListAppend2[IN1, A :: B :: C :: D :: E :: F :: G :: HNil, OUT](other, this, f, split)
-    }
 
 
   }
@@ -862,144 +750,42 @@ object HListAlgebra {
 
 
 
-  // Append Algebra, can append multiple HList types together.
+  object HListAppendN {
 
-  /** Instead of combining multiple HList types into a single HList is so that we can maintain validation info about each group of HLists. */
-  case class HListAppend2[L1 <: HList, L2 <: HList, OUT <: HList](
-    h1: BaseHListDef[L1],
-    h2: BaseHListDef[L2],
-    f: L1 :: L2 :: HNil => OUT,
-    f2: OUT => L1 :: L2 :: HNil
-  ) extends DataDefinitionOp[OUT] { thisAppend =>
+    trait HListPrependN[OUTN <: HList] extends BaseHListDef[OUTN] {
+      type Prefix <: HList
+      type Suffix <: HList
+      type Out = Prefix :: Suffix :: HNil
+      val prepend: Prefix :: Suffix :: HNil => OUTN
+      val split : OUTN => Prefix :: Suffix :: HNil
 
-    /** Extract the child or children.*/
-    def extractMembers(functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): ValidateFromProducer[OUT] = {
-      val m1 = functionK.apply(h1)
-      val m2 = functionK.apply(h2)
-      (json: JsonProducer) => {
-        (m1(json), m2(json)).mapN( (l1, l2) => f.apply(l1 :: l2 :: HNil) )
+      val prefix: BaseHListDef[Prefix]
+      val suffix: BaseHListDef[Suffix]
+      val validations: List[ValidationOp[OUTN]]
+
+      /** Extract the child or children.*/
+      override def extractMembers(functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): ValidateFromProducer[OUTN] = {
+        val m1 = functionK.apply(prefix)
+        val m2 = functionK.apply(suffix)
+        (json: JsonProducer) => {
+          (m1(json), m2(json)).mapN( (l1, l2) => prepend.apply(l1 :: l2 :: HNil) )
+        }
       }
-    }
 
-    def encodeMembers(functionK: FunctionK[DataDefinitionOp, Encode]): Encode[OUT] = {
-      (out: OUT) => {
-        val l = f2(out)
-        val m1 = functionK.apply(h1).apply(l.head)
-        val m2 = functionK.apply(h2).apply(l.tail.head)
-        JObject(m1.asInstanceOf[JObject].obj ::: m2.asInstanceOf[JObject].obj)
+      def encodeMembers(functionK: FunctionK[DataDefinitionOp, Encode]): Encode[OUTN] = {
+        (out: OUTN) => {
+          val l = split(out)
+          val m1 = functionK.apply(prefix).apply(l.head)
+          val m2 = functionK.apply(suffix).apply(l.tail.head)
+          JObject(m1.asInstanceOf[JObject].obj ::: m2.asInstanceOf[JObject].obj)
+        }
       }
-    }
 
-    def ::[LP <: HList, OUT3 <: HList, N <: Nat](obj: BaseHListDef[LP])(
-      implicit p: Prepend.Aux[LP, OUT, OUT3],
-      lpLength: Length.Aux[LP, N],
-      s: Split.Aux[OUT3, N, LP, OUT]) = {
-      val merge = (in : LP :: OUT :: HNil) => p(in.head, in.tail.head)
-      val split = (in: OUT3) => in.splitP[lpLength.Out]
+      /** Get a list of untyped members */
+      override def members: List[FieldDefinition[_]] = prefix.members ::: suffix.members
 
-      HListAppend3[LP, L1, L2, OUT, OUT3](obj, this, merge, split)
     }
   }
 
-
-  case class HListAppend3[L1 <: HList, L2 <: HList, L3 <: HList, OUT2 <: HList, OUT3 <: HList]
-  (
-    h1: BaseHListDef[L1],
-    hListAppend2: HListAppend2[L2, L3, OUT2],
-    f: L1 :: OUT2 :: HNil => OUT3,
-    f2: OUT3 => L1 :: OUT2 :: HNil)
-    extends DataDefinitionOp[OUT3] {
-
-    def extractMembers(functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): ValidateFromProducer[OUT3] = {
-      val m1 = functionK.apply(h1)
-      val m2 = functionK.apply(hListAppend2)
-      (json: JsonProducer) => {
-        (m1(json), m2(json)).mapN( (l1, l2) => f.apply(l1 :: l2 :: HNil))
-      }
-    }
-
-    def encodeMembers(functionK: FunctionK[DataDefinitionOp, Encode]): Encode[OUT3] = {
-      (out: OUT3) => {
-        val l = f2(out)
-        val m1 = functionK.apply(h1).apply(l.head)
-        val m2 = functionK.apply(hListAppend2).apply(l.tail.head)
-        JObject(m1.asInstanceOf[JObject].obj ::: m2.asInstanceOf[JObject].obj)
-      }
-    }
-
-    def ::[LP <: HList, OUT4 <: HList, N <: Nat](obj: BaseHListDef[LP])(
-      implicit p: Prepend.Aux[LP, OUT3, OUT4],
-      lpLength: Length.Aux[LP,N],
-      s: Split.Aux[OUT4, N, LP, OUT3]
-    ) = {
-      val merge = (in : LP :: OUT3 :: HNil) => in.tail.head.:::(in.head)(p)
-      val split = (in: OUT4) => in.splitP[lpLength.Out]
-      HListAppend4[LP, L1, L2, L3, OUT2, OUT3, OUT4](obj, this, merge, split)
-    }
-  }
-
-
-  case class HListAppend4[L1 <: HList, L2 <: HList, L3 <: HList, L4 <: HList, OUT2 <: HList, OUT3 <: HList, OUT4 <: HList]
-  (
-    h1: BaseHListDef[L1],
-    hListAppend3: HListAppend3[L2, L3, L4, OUT2, OUT3],
-    f: L1 :: OUT3 :: HNil => OUT4,
-    f2: OUT4 => L1 :: OUT3 :: HNil)
-    extends DataDefinitionOp[OUT4] {
-
-    def extractMembers(functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): ValidateFromProducer[OUT4] = {
-      val m1 = functionK.apply(h1)
-      val m2 = functionK.apply(hListAppend3)
-      (json: JsonProducer) => {
-        (m1(json), m2(json)).mapN( (l1, l2) => f.apply(l1 :: l2 :: HNil))
-      }
-    }
-
-    def encodeMembers(functionK: FunctionK[DataDefinitionOp, Encode]): Encode[OUT4] = {
-      (out: OUT4) => {
-        val l = f2(out)
-        val m1 = functionK.apply(h1).apply(l.head)
-        val m2 = functionK.apply(hListAppend3).apply(l.tail.head)
-        JObject(m1.asInstanceOf[JObject].obj ::: m2.asInstanceOf[JObject].obj)
-      }
-    }
-
-    def ::[LP <: HList, OUT5 <: HList, N <: Nat](obj: BaseHListDef[LP])(
-      implicit p: Prepend.Aux[LP, OUT4, OUT5],
-      lpLength: Length.Aux[LP,N],
-      s: Split.Aux[OUT5, N, LP, OUT4]
-    ) = {
-      val merge = (in : LP :: OUT4 :: HNil) => in.tail.head.:::(in.head)(p)
-      val split = (in: OUT5) => in.splitP[lpLength.Out]
-      HListAppend5[LP, L1, L2, L3, L4, OUT2, OUT3, OUT4, OUT5](obj, this, merge, split)
-    }
-
-  }
-
-  case class HListAppend5[L1 <: HList, L2 <: HList, L3 <: HList, L4 <: HList, L5 <: HList, OUT2 <: HList, OUT3 <: HList, OUT4 <: HList, OUT5 <: HList]
-  (
-    h1: BaseHListDef[L1],
-    hListAppend4: HListAppend4[L2, L3, L4, L5, OUT2, OUT3, OUT4],
-    f: L1 :: OUT4 :: HNil => OUT5,
-    f2: OUT5 => L1 :: OUT4 :: HNil)
-    extends DataDefinitionOp[OUT5] {
-
-    def extractMembers(functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): ValidateFromProducer[OUT5] = {
-      val m1 = functionK.apply(h1)
-      val m2 = functionK.apply(hListAppend4)
-      (json: JsonProducer) => {
-        (m1(json), m2(json)).mapN( (l1, l2) => f.apply(l1 :: l2 :: HNil))
-      }
-    }
-
-    def encodeMembers(functionK: FunctionK[DataDefinitionOp, Encode]): Encode[OUT5] = {
-      (out: OUT5) => {
-        val l = f2(out)
-        val m1 = functionK.apply(h1).apply(l.head)
-        val m2 = functionK.apply(hListAppend4).apply(l.tail.head)
-        JObject(m1.asInstanceOf[JObject].obj ::: m2.asInstanceOf[JObject].obj)
-      }
-    }
-  }
 
 }
