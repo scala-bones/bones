@@ -1,4 +1,4 @@
-package com.ot.bones.validation
+package com.bones.validation
 
 import java.net.URI
 import java.text.{Format, SimpleDateFormat}
@@ -6,7 +6,7 @@ import java.util.{Date, UUID}
 
 import cats.free.FreeApplicative
 import cats.implicits._
-import com.ot.bones.interpreter.ExtractionInterpreter.ValidationResultNel
+import com.bones.interpreter.ExtractionInterpreter.ValidationResultNel
 
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}

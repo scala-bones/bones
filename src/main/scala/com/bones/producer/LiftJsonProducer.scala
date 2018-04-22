@@ -1,9 +1,9 @@
-package com.ot.bones.producer
+package com.bones.producer
 
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
-import com.ot.bones.data.Key
-import com.ot.bones.interpreter.ExtractionInterpreter.{JsonProducer, WrongTypeError}
+import com.bones.data.Key
+import com.bones.interpreter.ExtractionInterpreter.{JsonProducer, WrongTypeError}
 import net.liftweb.json.JsonAST._
 
 case class LiftJsonProducer(jValue: JValue) extends JsonProducer {

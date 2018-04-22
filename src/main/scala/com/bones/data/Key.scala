@@ -1,13 +1,14 @@
-package com.ot.bones.data
+package com.bones.data
 
 import java.text.{DateFormat, SimpleDateFormat}
 import java.util.{Date, UUID}
 
-import com.ot.bones.data.Algebra._
-import com.ot.bones.data.HListAlgebra._
-import com.ot.bones.interpreter.ExtractionInterpreter.CanNotConvert
-import com.ot.bones.validation.ValidationDefinition.ListValidation.PassesAll
-import com.ot.bones.validation.ValidationDefinition.{ToOptionalValidation, ValidationOp}
+import com.bones.data.Algebra._
+import com.bones.data.HListAlgebra._
+import com.bones.interpreter.ExtractionInterpreter.CanNotConvert
+import com.bones.validation.ValidationDefinition.ListValidation.PassesAll
+import com.bones.validation.ValidationDefinition.{ToOptionalValidation, ValidationOp}
+import com.bones.validation.ValidationDefinition.{ToOptionalValidation, ValidationOp}
 import shapeless.{::, Generic, HList, HNil}
 
 trait KeySyntax {
