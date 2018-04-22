@@ -1,12 +1,12 @@
-package com.ot.bones.validation
+package com.bones.validation
 
 import cats.arrow.FunctionK
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
-import com.ot.bones.data.FieldDefinition
-import com.ot.bones.interpreter.ExtractionInterpreter.{FieldError, JsonProducer, ValidateFromProducer, ValidationError, ValidationResultNel}
-import com.ot.bones.validation.ValidationDefinition.ValidationOp
+import com.bones.data.FieldDefinition
+import com.bones.interpreter.ExtractionInterpreter.{FieldError, JsonProducer, ValidateFromProducer, ValidationError, ValidationResultNel}
+import com.bones.validation.ValidationDefinition.ValidationOp
 
 import scala.annotation.tailrec
 

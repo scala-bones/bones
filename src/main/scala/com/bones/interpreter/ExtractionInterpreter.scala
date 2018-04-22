@@ -1,4 +1,4 @@
-package com.ot.bones.interpreter
+package com.bones.interpreter
 
 import java.util.{Date, UUID}
 
@@ -6,11 +6,10 @@ import cats.Applicative
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
-import com.ot.bones.data.Algebra._
-import com.ot.bones.data.Key
-import com.ot.bones.data.HListAlgebra._
-import com.ot.bones.interpreter.ExtractionInterpreter.ValidationResultNel
-import com.ot.bones.validation.ValidationDefinition.ValidationOp
+import com.bones.data.Algebra._
+import com.bones.data.Key
+import com.bones.data.HListAlgebra._
+import com.bones.validation.ValidationDefinition.ValidationOp
 import net.liftweb.json.JsonAST._
 
 import scala.util.control.NonFatal

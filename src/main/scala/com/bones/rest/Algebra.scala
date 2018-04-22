@@ -1,6 +1,6 @@
-package com.ot.bones.rest
+package com.bones.rest
 
-import com.ot.bones.data.Algebra.DataDefinitionOp
+import com.bones.data.Algebra.DataDefinitionOp
 
 object Algebra {
 
