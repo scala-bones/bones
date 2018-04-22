@@ -8,11 +8,12 @@ import com.ot.bones.data.HListAlgebra._
 import com.ot.bones.interpreter.ExtractionInterpreter.CanNotConvert
 import com.ot.bones.validation.ValidationDefinition.ListValidation.PassesAll
 import com.ot.bones.validation.ValidationDefinition.{ToOptionalValidation, ValidationOp}
-import shapeless.{::, Generic, HNil}
+import shapeless.{::, Generic, HList, HNil}
 
 trait KeySyntax {
-  /** Turn a string key into an key type */
   def key(key: String) = Key(key)
+
+  /** Implicit to turn a string a key. */
   implicit class StringToKey(str: String) {
     def key(): Key = Key(str)
   }
