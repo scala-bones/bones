@@ -1,17 +1,17 @@
-package com.ot.bones
+package com.bones
 
 import java.time.LocalDateTime
 import java.util.{Date, UUID}
 
 import cats.data.Validated
 import cats.data.Validated.Valid
-import com.ot.bones.data.Algebra.{DataDefinitionOp, StringData}
-import com.ot.bones.data.Key
-import com.ot.bones.interpreter.DocInterpreter.{Doc, DocInterpreter}
-import com.ot.bones.interpreter.ExtractionInterpreter.{CanNotConvert, DefaultExtractInterpreter, JsonProducer, ValidateFromProducer, WrongTypeError}
-import com.ot.bones.producer.LiftJsonProducer
-import com.ot.bones.rest.Algebra.Processor
-import com.ot.bones.validation.ValidationDefinition.{ValidationOp, IntValidation => iv, StringValidation => sv}
+import com.bones.data.Algebra.{DataDefinitionOp, StringData}
+import com.bones.data.Key
+import com.bones.interpreter.DocInterpreter.{Doc, DocInterpreter}
+import com.bones.interpreter.ExtractionInterpreter.{CanNotConvert, DefaultExtractInterpreter, JsonProducer, ValidateFromProducer, WrongTypeError}
+import com.bones.producer.LiftJsonProducer
+import com.bones.rest.Algebra.Processor
+import com.bones.validation.ValidationDefinition.{ValidationOp, IntValidation => iv, StringValidation => sv}
 import org.scalatest.FunSuite
 import shapeless.HNil
 
@@ -36,7 +36,8 @@ class ValidationTest extends FunSuite {
   }
 
   test("append obj") {
-    import com.ot.bones.syntax._
+
+    import com.bones.syntax._
 
     val o1 = obj2(
       key("key1").string(),
@@ -77,7 +78,9 @@ class ValidationTest extends FunSuite {
   }
 
   test ("append generalization") {
-    import com.ot.bones.syntax._
+
+    import com.bones.syntax._
+
 
     val s2 = obj2(
       key("val1").string(),
@@ -114,7 +117,7 @@ class ValidationTest extends FunSuite {
   }
 
   test("text max prepend") {
-//    import com.ot.bones.syntax._
+//    import com.bones.syntax._
 //
 //    val x = key("test").string().optional().asMember
 //
@@ -186,7 +189,6 @@ class ValidationTest extends FunSuite {
 
     /** **** Begin Real Example ******/
 
-    import com.ot.bones.syntax._
     import shapeless.::
 
     object HasNotExpired extends ValidationOp[Int :: Int :: HNil] {
@@ -204,6 +206,7 @@ class ValidationTest extends FunSuite {
 
       override def description: String = "Credit Card Expiration Date must be in the future"
     }
+    import com.bones.syntax._
 
     val ccExp = obj2(
       key("expMonth").int(iv.between(1,12)),
@@ -271,7 +274,7 @@ class ValidationTest extends FunSuite {
     )))
 
     //convert back to json
-    import com.ot.bones.interpreter.EncoderInterpreter._
+    import com.bones.interpreter.EncoderInterpreter._
     val ccToJson = creditCardSchema.lift.foldMap[Encode](DefaultEncoderInterpreter())
     import net.liftweb.json._
     val output = ccToJson.apply(btCc.toOption.get)
@@ -287,7 +290,7 @@ class ValidationTest extends FunSuite {
 
 
 
-    import com.ot.bones.rest.Sugar._
+    import com.bones.rest.Sugar._
 
     object postToProcessor extends Processor[CC, String, CC] {}
 

@@ -1,4 +1,4 @@
-package com.ot.bones.data
+package com.bones.data
 
 import java.text.DateFormat
 import java.util.{Date, UUID}
@@ -8,12 +8,12 @@ import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, Validated}
 import cats.free.FreeApplicative
 import cats.implicits._
-import com.ot.bones.data.HListAlgebra.BaseHListDef
-import com.ot.bones.data.HListAlgebra.HListAppendN.HListPrependN
-import com.ot.bones.interpreter.EncoderInterpreter.Encode
-import com.ot.bones.interpreter.ExtractionInterpreter.{CanNotConvert, ExtractionErrors, JsonProducer, RequiredData, ValidateFromProducer, ValidationError}
-import com.ot.bones.validation.ValidationDefinition.ValidationOp
-import com.ot.bones.validation.{ValidationUtil => vu}
+import com.bones.data.HListAlgebra.BaseHListDef
+import com.bones.data.HListAlgebra.HListAppendN.HListPrependN
+import com.bones.interpreter.EncoderInterpreter.Encode
+import com.bones.interpreter.ExtractionInterpreter.{CanNotConvert, ExtractionErrors, JsonProducer, RequiredData, ValidateFromProducer, ValidationError}
+import com.bones.validation.ValidationDefinition.ValidationOp
+import com.bones.validation.{ValidationUtil => vu}
 import net.liftweb.json.JsonAST.{JField, JObject, JValue}
 import shapeless.HList._
 import shapeless.ops.hlist.{Length, Prepend, Split}
@@ -105,7 +105,7 @@ object HListAlgebra {
 
     def validations: List[ValidationOp[L]]
 
-    def :*:[OUT <: HList, P <: HList, N <: Nat](hHead: BaseHListDef[P])(
+    def ::[OUT <: HList, P <: HList, N <: Nat](hHead: BaseHListDef[P])(
       implicit p: Prepend.Aux[P,L,OUT],
       lpLength: Length.Aux[P,N],
       s: Split.Aux[OUT,N,P,L]

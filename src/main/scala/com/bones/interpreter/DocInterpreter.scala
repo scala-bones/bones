@@ -1,8 +1,8 @@
-package com.ot.bones.interpreter
+package com.bones.interpreter
 
 import cats.Applicative
-import com.ot.bones.data.Algebra._
-import com.ot.bones.data.HListAlgebra.BaseHListDef
+import com.bones.data.Algebra._
+import com.bones.data.HListAlgebra.BaseHListDef
 
 object DocInterpreter {
 
