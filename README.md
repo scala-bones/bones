@@ -5,14 +5,13 @@ Abstract Syntax Tree (AST) and then running the tree through different interpret
 generate programs to Encode, Decode JSON as well as creating documentation and essentually anything 
 that depends on the Schema.
 
-##
+## Download
 
-(Not available yet)
+### Stable
+```libraryDependencies += "com.github.oletraveler" %% "bones" % "0.2.0"```
 
-```libraryDependencies += "com.github.oletraveler" %% "bones" % "0.1.0"```
-
-This is available at the Sonatype Snapshot repo: https://oss.sonatype.org/content/groups/
-```libaryDependencies += "com.github.oletraveler" %% "bones" % "0.1.0-SNAPSHOT"```
+### Snapshot
+```libaryDependencies += "com.github.oletraveler" %% "bones" % "0.3.0-SNAPSHOT"```
 
 ## Interpreters
 
