@@ -9,9 +9,9 @@ import cats.data.{NonEmptyList, Validated}
 import cats.free.FreeApplicative
 import cats.implicits._
 import com.bones.data.HListAlgebra.BaseHListDef
-import com.bones.data.HListAlgebra.HListAppendN.HListPrependN
 import com.bones.interpreter.EncoderInterpreter.Encode
-import com.bones.interpreter.ExtractionInterpreter.{CanNotConvert, ExtractionErrors, JsonProducer, RequiredData, ValidateFromProducer, ValidationError}
+import com.bones.interpreter.ExtractionInterpreter.{CanNotConvert, ExtractionErrors, RequiredData, ValidateFromProducer, ValidationError}
+import com.bones.json.JsonExtract
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.{ValidationUtil => vu}
 import net.liftweb.json.JsonAST.{JField, JObject, JValue}
@@ -88,8 +88,8 @@ object HListAlgebra {
     def encodeMembers(value: FunctionK[DataDefinitionOp, Encode]): Encode[L]
 
     /** This will be used to implement the FieldGroupOp in the context of the children. */
-    def extract(jsonProducer: JsonProducer, functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): Validated[ExtractionErrors, L] = {
-      jsonProducer.produceObject.leftMap(NonEmptyList.one).andThen {
+    def extract(jsonProducer: JsonExtract, functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): Validated[ExtractionErrors, L] = {
+      jsonProducer.extractObject.leftMap(NonEmptyList.one).andThen {
         case Some(producer) => extractMembers(functionK)(producer)
         case None => Invalid(NonEmptyList.one(RequiredData(this)))
       }.andThen { l =>
@@ -112,15 +112,7 @@ object HListAlgebra {
     ) = {
       val psPrepend = (in : P :: L :: HNil) => p(in.head, in.tail.head)
       val hSplit = (in: OUT) => in.splitP[lpLength.Out]
-      new HListPrependN[OUT] {
-        type Prefix = P
-        type Suffix = L
-        override val prepend = psPrepend
-        override val split = hSplit
-        override val prefix: BaseHListDef[P] = hHead
-        override val suffix: BaseHListDef[L] = thisBase
-        override val validations = List.empty[ValidationOp[OUT]]
-      }
+      HListPrependN[OUT, P, L](psPrepend, hSplit, hHead, thisBase, List.empty)
     }
 
   }
@@ -136,7 +128,7 @@ object HListAlgebra {
     def extractMembers(functionK: FunctionK[DataDefinitionOp, ValidateFromProducer])
     : ValidateFromProducer[A :: HNil] = {
       val r1 = functionK(op1.op)
-      (jsonProducer: JsonProducer) => {
+      (jsonProducer: JsonExtract) => {
         vu.pv(jsonProducer, op1, r1).map(_ :: HNil)
       }
     }
@@ -157,49 +149,38 @@ object HListAlgebra {
   }
 
 
-  object HListAppendN {
+  case class HListPrependN[OUTN <: HList, Prefix <: HList, Suffix <: HList](
+    prepend: Prefix :: Suffix :: HNil => OUTN,
+    split : OUTN => Prefix :: Suffix :: HNil,
+    prefix: BaseHListDef[Prefix],
+    suffix: BaseHListDef[Suffix],
+    validations: List[ValidationOp[OUTN]]) extends BaseHListDef[OUTN] {
+    outer =>
+    type Out = Prefix :: Suffix :: HNil
 
-    trait HListPrependN[OUTN <: HList] extends BaseHListDef[OUTN] { outer =>
-      type Prefix <: HList
-      type Suffix <: HList
-      type Out = Prefix :: Suffix :: HNil
-      val prepend: Prefix :: Suffix :: HNil => OUTN
-      val split : OUTN => Prefix :: Suffix :: HNil
-
-      val prefix: BaseHListDef[Prefix]
-      val suffix: BaseHListDef[Suffix]
-      val validations: List[ValidationOp[OUTN]]
-
-      /** Extract the child or children.*/
-      override def extractMembers(functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): ValidateFromProducer[OUTN] = {
-        val m1 = functionK.apply(prefix)
-        val m2 = functionK.apply(suffix)
-        (json: JsonProducer) => {
-          (m1(json), m2(json)).mapN( (l1, l2) => prepend.apply(l1 :: l2 :: HNil) )
-        }
-      }
-
-      def encodeMembers(functionK: FunctionK[DataDefinitionOp, Encode]): Encode[OUTN] = {
-        (out: OUTN) => {
-          val l = split(out)
-          val m1 = functionK.apply(prefix).apply(l.head)
-          val m2 = functionK.apply(suffix).apply(l.tail.head)
-          JObject(m1.asInstanceOf[JObject].obj ::: m2.asInstanceOf[JObject].obj)
-        }
-      }
-
-      /** Get a list of untyped members */
-      override def members: List[FieldDefinition[_]] = prefix.members ::: suffix.members
-
-      def validate(validationOp: ValidationOp[OUTN]*): HListPrependN[OUTN] = new HListPrependN[OUTN] {
-        override type Prefix = outer.Prefix
-        override type Suffix = outer.Suffix
-        override val prepend = outer.prepend
-        override val split = outer.split
-        override val prefix = outer.prefix
-        override val suffix = outer.suffix
-        override val validations: List[ValidationOp[OUTN]] = validationOp.toList ::: outer.validations
+    /** Extract the child or children.*/
+    override def extractMembers(functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): ValidateFromProducer[OUTN] = {
+      val m1 = functionK.apply(prefix)
+      val m2 = functionK.apply(suffix)
+      (json: JsonExtract) => {
+        (m1(json), m2(json)).mapN( (l1, l2) => prepend.apply(l1 :: l2 :: HNil) )
       }
     }
+
+    def encodeMembers(functionK: FunctionK[DataDefinitionOp, Encode]): Encode[OUTN] = {
+      (out: OUTN) => {
+        val l = split(out)
+        val m1 = functionK.apply(prefix).apply(l.head)
+        val m2 = functionK.apply(suffix).apply(l.tail.head)
+        JObject(m1.asInstanceOf[JObject].obj ::: m2.asInstanceOf[JObject].obj)
+      }
+    }
+
+    /** Get a list of untyped members */
+    override def members: List[FieldDefinition[_]] = prefix.members ::: suffix.members
+
+    def validate(validationOp: ValidationOp[OUTN]*): HListPrependN[OUTN, Prefix, Suffix] =
+      this.copy(validations = validationOp.toList ::: this.validations)
+
   }
 }

@@ -8,8 +8,7 @@ import com.bones.data.HListAlgebra._
 import com.bones.interpreter.ExtractionInterpreter.CanNotConvert
 import com.bones.validation.ValidationDefinition.ListValidation.PassesAll
 import com.bones.validation.ValidationDefinition.{ToOptionalValidation, ValidationOp}
-import com.bones.validation.ValidationDefinition.{ToOptionalValidation, ValidationOp}
-import shapeless.{::, Generic, HList, HNil}
+import shapeless.{::, Generic, HNil}
 
 trait KeySyntax {
   def key(key: String) = Key(key)

@@ -8,8 +8,9 @@ import cats.data.Validated.Valid
 import com.bones.data.Algebra.{DataDefinitionOp, StringData}
 import com.bones.data.Key
 import com.bones.interpreter.DocInterpreter.{Doc, DocInterpreter}
-import com.bones.interpreter.ExtractionInterpreter.{CanNotConvert, DefaultExtractInterpreter, JsonProducer, ValidateFromProducer, WrongTypeError}
-import com.bones.producer.LiftJsonProducer
+import com.bones.interpreter.ExtractionInterpreter.{CanNotConvert, DefaultExtractInterpreter, ValidateFromProducer, WrongTypeError}
+import com.bones.json.JsonExtract
+import com.bones.producer.LiftJsonExtract
 import com.bones.rest.Algebra.Processor
 import com.bones.validation.ValidationDefinition.{ValidationOp, IntValidation => iv, StringValidation => sv}
 import org.scalatest.FunSuite
@@ -19,20 +20,20 @@ import shapeless.HNil
 
 class ValidationTest extends FunSuite {
 
-  abstract class NoneJsonProducer extends JsonProducer {
-    override def produceBool: Validated[WrongTypeError[Boolean], Option[Boolean]] = Valid(None)
+  abstract class NoneJsonExtract extends JsonExtract {
+    override def extractBool: Validated[WrongTypeError[Boolean], Option[Boolean]] = Valid(None)
 
-    override def produceString: Validated[WrongTypeError[String], Option[String]] = Valid(None)
+    override def extractString: Validated[WrongTypeError[String], Option[String]] = Valid(None)
 
-    override def produceDouble: Validated[WrongTypeError[Double], Option[Double]] = Valid(None)
+    override def extractDouble: Validated[WrongTypeError[Double], Option[Double]] = Valid(None)
 
-    override def produceInt: Validated[WrongTypeError[Int], Option[Int]] = Valid(None)
+    override def extractInt: Validated[WrongTypeError[Int], Option[Int]] = Valid(None)
 
-    override def produceObject: Validated[WrongTypeError[JsonProducer], Option[JsonProducer]] = Valid(None)
+    override def extractObject: Validated[WrongTypeError[JsonExtract], Option[JsonExtract]] = Valid(None)
 
-    override def produceList: Validated[WrongTypeError[List[_]], Option[List[JsonProducer]]] = Valid(None)
+    override def extractList: Validated[WrongTypeError[List[_]], Option[List[JsonExtract]]] = Valid(None)
 
-    override def child(key: Key): JsonProducer = this
+    override def child(key: Key): JsonExtract = this
   }
 
   test("append obj") {
@@ -107,7 +108,7 @@ class ValidationTest extends FunSuite {
         |}
       """.stripMargin
     val parsed = net.liftweb.json.parse(input)
-    val jsonProducer = LiftJsonProducer(parsed)
+    val jsonProducer = LiftJsonExtract(parsed)
 
 //    val extResult = merged.apply(jsonProducer)
 //
@@ -134,9 +135,9 @@ class ValidationTest extends FunSuite {
 //        |}
 //      """.stripMargin
 //
-//    //sorry, we still use lift in my projects.  I will soon create a Circe JsonProducer.
+//    //sorry, we still use lift in my projects.  I will soon create a Circe JsonExtract.
 //    val parsed = net.liftweb.json.parse(cc)
-//    val jsonProducer = LiftJsonProducer(parsed)
+//    val jsonProducer = LiftJsonExtract(parsed)
 //
 //    //create the program that is responsible for converting JSON into a CC.
 //    val jsonToCCProgram = y.lift.foldMap[ValidateFromProducer](DefaultExtractInterpreter())
@@ -256,9 +257,9 @@ class ValidationTest extends FunSuite {
         |}
       """.stripMargin
 
-    //sorry, we still use lift in my projects.  I will soon create a Circe JsonProducer.
+    //sorry, we still use lift in my projects.  I will soon create a Circe JsonExtract.
     val parsed = net.liftweb.json.parse(cc)
-    val jsonProducer = LiftJsonProducer(parsed)
+    val jsonProducer = LiftJsonExtract(parsed)
 
     //create the program that is responsible for converting JSON into a CC.
     val jsonToCCProgram = creditCardSchema.lift.foldMap[ValidateFromProducer](DefaultExtractInterpreter())
@@ -266,7 +267,7 @@ class ValidationTest extends FunSuite {
     //here, we will test that just the validation step is working
     val btCc = jsonToCCProgram.apply(jsonProducer)
 
-    //tada!  We have can parse input from JsonProducer to CC using our dataDefinition.
+    //tada!  We have can parse input from JsonExtract to CC using our dataDefinition.
     assert(btCc == Valid(CC("12345", "4321", UUID.fromString("df15f08c-e6bd-11e7-aeb8-6003089f08b4"),
       UUID.fromString("e58e7dda-e6bd-11e7-b901-6003089f08b4"), CreditCardTypes.Mastercard, 11, 2022,
       "Lennart Augustsson", Currency.USD, None, UUID.fromString("4545d9da-e6be-11e7-86fb-6003089f08b4"),
