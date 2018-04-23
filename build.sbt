@@ -3,7 +3,7 @@ lazy val root = (project in file(".")).
     inThisBuild(List(
       organization := "com.github.oletraveler",
       scalaVersion := "2.11.12", //TODO: cross compile 2.11.12 and 2.12.4
-      version      := "0.2.0-SNAPSHOT"
+      version      := "0.2.0"
     )),
     name := "Bones",
     libraryDependencies ++= Seq(
