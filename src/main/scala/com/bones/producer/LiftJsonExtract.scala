@@ -3,10 +3,11 @@ package com.bones.producer
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import com.bones.data.Key
-import com.bones.interpreter.ExtractionInterpreter.{JsonProducer, WrongTypeError}
+import com.bones.interpreter.ExtractionInterpreter.WrongTypeError
+import com.bones.json.JsonExtract
 import net.liftweb.json.JsonAST._
 
-case class LiftJsonProducer(jValue: JValue) extends JsonProducer {
+case class LiftJsonExtract(jValue: JValue) extends JsonExtract {
 
   private def lookForString(jValue: JValue): Validated[WrongTypeError[String], Option[String]] = {
     jValue match {
@@ -50,16 +51,16 @@ case class LiftJsonProducer(jValue: JValue) extends JsonProducer {
     }
   }
 
-  private def lookForObject(jValue: JValue): Validated[WrongTypeError[JsonProducer], Option[LiftJsonProducer]] = {
+  private def lookForObject(jValue: JValue): Validated[WrongTypeError[JsonExtract], Option[LiftJsonExtract]] = {
     jValue match {
-      case JArray(_) => Invalid(WrongTypeError( classOf[JsonProducer], classOf[JArray]))
-      case JBool(_) => Invalid(WrongTypeError( classOf[JsonProducer], classOf[JBool]))
-      case JDouble(_) => Invalid(WrongTypeError( classOf[JsonProducer], classOf[JDouble]))
-//      case JField(_,_) => Invalid(WrongTypeError( classOf[JsonProducer], classOf[JField]))
-      case JInt(_) => Invalid(WrongTypeError( classOf[JsonProducer], classOf[JInt]))
+      case JArray(_) => Invalid(WrongTypeError( classOf[JsonExtract], classOf[JArray]))
+      case JBool(_) => Invalid(WrongTypeError( classOf[JsonExtract], classOf[JBool]))
+      case JDouble(_) => Invalid(WrongTypeError( classOf[JsonExtract], classOf[JDouble]))
+//      case JField(_,_) => Invalid(WrongTypeError( classOf[JsonExtract], classOf[JField]))
+      case JInt(_) => Invalid(WrongTypeError( classOf[JsonExtract], classOf[JInt]))
       case JNothing => Valid(None)
-      case JObject(obj) => Valid(Some(LiftJsonProducer(JObject(obj))))
-      case JString(_) => Invalid(WrongTypeError( classOf[JsonProducer], classOf[JString]))
+      case JObject(obj) => Valid(Some(LiftJsonExtract(JObject(obj))))
+      case JString(_) => Invalid(WrongTypeError( classOf[JsonExtract], classOf[JString]))
       case JNull =>  Valid(None)
     }
   }
@@ -78,9 +79,9 @@ case class LiftJsonProducer(jValue: JValue) extends JsonProducer {
     }
   }
 
-  private def lookForArray(jValue: JValue): Validated[WrongTypeError[List[_]], Option[List[LiftJsonProducer]]] = {
+  private def lookForArray(jValue: JValue): Validated[WrongTypeError[List[_]], Option[List[LiftJsonExtract]]] = {
     jValue match {
-      case a: JArray => Valid(Some(a.arr.map(child => LiftJsonProducer(child))))
+      case a: JArray => Valid(Some(a.arr.map(child => LiftJsonExtract(child))))
       case JNothing => Valid(None)
       case JNull => Valid(None)
       case JDouble(_) => Invalid(WrongTypeError( classOf[List[_]], classOf[Double]))
@@ -92,22 +93,22 @@ case class LiftJsonProducer(jValue: JValue) extends JsonProducer {
     }
   }
 
-  override def produceDouble: Validated[WrongTypeError[Double], Option[Double]] =
+  override def extractDouble: Validated[WrongTypeError[Double], Option[Double]] =
     lookForDouble(jValue)
 
 
-  override def produceString: Validated[WrongTypeError[String], Option[String]] =
+  override def extractString: Validated[WrongTypeError[String], Option[String]] =
     lookForString(jValue)
 
-  override def produceInt: Validated[WrongTypeError[Int], Option[Int]] = lookForInt(jValue)
+  override def extractInt: Validated[WrongTypeError[Int], Option[Int]] = lookForInt(jValue)
 
-  override def produceObject: Validated[WrongTypeError[JsonProducer], Option[LiftJsonProducer]] =
+  override def extractObject: Validated[WrongTypeError[JsonExtract], Option[LiftJsonExtract]] =
     lookForObject(jValue)
 
-  override def produceBool: Validated[WrongTypeError[Boolean], Option[Boolean]] = lookForBool(jValue)
+  override def extractBool: Validated[WrongTypeError[Boolean], Option[Boolean]] = lookForBool(jValue)
 
-  override def produceList: Validated[WrongTypeError[List[_]], Option[List[JsonProducer]]] =
+  override def extractList: Validated[WrongTypeError[List[_]], Option[List[JsonExtract]]] =
     lookForArray(jValue)
 
-  override def child(key: Key): LiftJsonProducer = LiftJsonProducer( jValue \ key.name )
+  override def child(key: Key): LiftJsonExtract = LiftJsonExtract( jValue \ key.name )
 }

@@ -9,6 +9,7 @@ import cats.implicits._
 import com.bones.data.Algebra._
 import com.bones.data.Key
 import com.bones.data.HListAlgebra._
+import com.bones.json.JsonExtract
 import com.bones.validation.ValidationDefinition.ValidationOp
 import net.liftweb.json.JsonAST._
 
@@ -31,7 +32,6 @@ object ExtractionInterpreter {
   case class CanNotConvert[A,T](input: A, toType: Class[T]) extends ExtractionError
   case class RequiredData[A](dataDefinitionOp: DataDefinitionOp[A]) extends ExtractionError
   case class FieldError[A](key: Key, errors: NonEmptyList[ExtractionError]) extends ExtractionError
-//  case class MultiKeyError[T](keys: NonEmptyList[Key], failurePoint: ExtractionOp[T]) extends ExtractionError
 
 
   type ExtractionErrors = NonEmptyList[ExtractionError]
@@ -39,43 +39,7 @@ object ExtractionInterpreter {
   type ValidationResult[T] = Validated[ExtractionError,T]
   type ValidationResultNel[T] = Validated[NonEmptyList[ExtractionError], T]
 
-
-
-
-
-
-  trait StringProducer {
-    def produceString: Validated[WrongTypeError[String], Option[String]]
-  }
-  trait IntProducer {
-    def produceInt: Validated[WrongTypeError[Int], Option[Int]]
-  }
-  trait BoolProducer {
-    def produceBool: Validated[WrongTypeError[Boolean], Option[Boolean]]
-  }
-  trait DoubleProducer {
-    def produceDouble: Validated[WrongTypeError[Double], Option[Double]]
-  }
-  trait ObjectProducer {
-    def produceObject: Validated[WrongTypeError[JsonProducer], Option[JsonProducer]]
-  }
-  trait ListProducer {
-    def produceList: Validated[WrongTypeError[List[_]], Option[List[JsonProducer]]]
-  }
-  trait JsonKeyResolver {
-    def child(key: Key): JsonProducer
-  }
-
-  /** Simple little interface around a Json library.
-    * I believe it may be best to actually write an extractor
-    * to and from your preferred library instead of extending JsonProducer, however this is here how I first implemented this,
-    * so I'll keep this around for now.
-    **/
-  abstract class JsonProducer extends StringProducer with IntProducer with BoolProducer with DoubleProducer
-    with ObjectProducer with ListProducer with JsonKeyResolver
-
-
-  type ValidateFromProducer[A] = JsonProducer => ValidationResultNel[A]
+  type ValidateFromProducer[A] = JsonExtract => ValidationResultNel[A]
   implicit def fromProducerApp = new Applicative[ValidateFromProducer] {
     override def pure[A](x: A): ValidateFromProducer[A] = json => Valid(x)
     override def ap[A, B](ff: ValidateFromProducer[A => B])(fa: ValidateFromProducer[A]): ValidateFromProducer[B] =
@@ -107,20 +71,20 @@ object ExtractionInterpreter {
           op.extract(jsonProducer, this).asInstanceOf[ValidationResultNel[A]]
         }
         case op: StringData => {
-          jsonProducer.produceString.leftMap(NonEmptyList.one).andThen {
+          jsonProducer.extractString.leftMap(NonEmptyList.one).andThen {
             case Some(e) => Valid(e).asInstanceOf[ValidationResultNel[A]]
             case None => Invalid(NonEmptyList.one(RequiredData(op)))
           }
 
         }
         case op: IntData => {
-          jsonProducer.produceInt.leftMap(NonEmptyList.one).andThen {
+          jsonProducer.extractInt.leftMap(NonEmptyList.one).andThen {
             case Some(e) => Valid(e).asInstanceOf[ValidationResultNel[A]]
             case None => Invalid(NonEmptyList.one(RequiredData(op)))
           }
         }
         case op: BooleanData => {
-          jsonProducer.produceBool.leftMap(NonEmptyList.one) andThen {
+          jsonProducer.extractBool.leftMap(NonEmptyList.one) andThen {
             case Some(x) => Valid(x).asInstanceOf[ValidationResultNel[A]]
             case None => Invalid(NonEmptyList.one(RequiredData(op)))
           }
@@ -132,14 +96,14 @@ object ExtractionInterpreter {
             case _: IllegalArgumentException => Invalid(NonEmptyList.one(CanNotConvert(uuidString, classOf[UUID])))
           }
 
-          jsonProducer.produceString.leftMap(NonEmptyList.one).andThen {
+          jsonProducer.extractString.leftMap(NonEmptyList.one).andThen {
             case None => Invalid(NonEmptyList.one(RequiredData(op)))
             case Some(str) => convert(str).asInstanceOf[ValidationResultNel[A]]
           }
 
         }
         case op @ DateData(dateFormat, _) => {
-          jsonProducer.produceString.leftMap(NonEmptyList.one).andThen {
+          jsonProducer.extractString.leftMap(NonEmptyList.one).andThen {
             case Some(str) => try {
               Valid(dateFormat.parseObject(str).asInstanceOf[Date]).asInstanceOf[ValidationResultNel[A]]
             } catch {
@@ -158,7 +122,7 @@ object ExtractionInterpreter {
           }).asInstanceOf[ValidationResultNel[A]]
         }
         case op @ ListData(definition) => {
-          jsonProducer.produceList.leftMap(NonEmptyList.one).andThen {
+          jsonProducer.extractList.leftMap(NonEmptyList.one).andThen {
             case Some(list) =>
               list.map(producer => {
                 apply(definition)(producer)
@@ -175,7 +139,7 @@ object ExtractionInterpreter {
             }
           }
 
-          jsonProducer.produceString.leftMap(NonEmptyList.one).andThen {
+          jsonProducer.extractString.leftMap(NonEmptyList.one).andThen {
             case Some(str) => convertFromString(str).asInstanceOf[ValidationResultNel[A]]
             case None => Invalid(NonEmptyList.one(RequiredData(op)))
           }
@@ -185,7 +149,7 @@ object ExtractionInterpreter {
           baseValue.andThen(a => fab(a).toValidated.leftMap(NonEmptyList.one))
         }
         case op @ EnumeratedStringData(enumeration) => {
-          jsonProducer.produceString.leftMap(NonEmptyList.one).andThen {
+          jsonProducer.extractString.leftMap(NonEmptyList.one).andThen {
             case Some(str) => try {
               Valid(enumeration.withName(str).asInstanceOf[A])
             } catch {
