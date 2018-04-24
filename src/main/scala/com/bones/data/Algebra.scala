@@ -82,14 +82,6 @@ object HListAlgebra {
     /** Get a list of untyped members */
     def members: List[FieldDefinition[_]]
 
-    def encodeMembers(value: FunctionK[DataDefinitionOp, Encode]): Encode[L]
-
-    def encode(functionK: FunctionK[DataDefinitionOp, Encode]): L => JValue = {
-      (l: L) => {
-        encodeMembers(functionK).apply(l)
-      }
-    }
-
     def validations: List[ValidationOp[L]]
 
     def ::[OUT <: HList, P <: HList, N <: Nat](hHead: BaseHListDef[P])(
