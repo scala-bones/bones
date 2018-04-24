@@ -229,8 +229,10 @@ object EncoderInterpreter {
             val m2 = this.apply(op.suffix).apply(l.tail.head)
             JObject(m1.asInstanceOf[JObject].obj ::: m2.asInstanceOf[JObject].obj)
         }
-        case op: BaseHListDef[A] => {
-          op.encodeMembers(this).apply(input)
+        case op: HMember[a] => {
+          import shapeless.::
+          val res1 = this(op.op1.op)(input.asInstanceOf[a :: HNil].head)
+          JObject(List(JField(op.op1.key.name, res1)))
         }
         case ob: BooleanData => JBool(input.asInstanceOf[Boolean])
         case rs: StringData => JString(input.asInstanceOf[String])
