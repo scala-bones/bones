@@ -7,11 +7,13 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
 import com.bones.data.Algebra._
-import com.bones.data.Key
 import com.bones.data.HListAlgebra._
+import com.bones.data.Key
 import com.bones.json.JsonExtract
 import com.bones.validation.ValidationDefinition.ValidationOp
+import com.bones.validation.{ValidationUtil => vu}
 import net.liftweb.json.JsonAST._
+import shapeless.HNil
 
 import scala.util.control.NonFatal
 
@@ -66,10 +68,35 @@ object ExtractionInterpreter {
             }
           }
         }
+        case op: HListPrependN[A,p,s] => {
 
-        case op: BaseHListDef[a] => {
-          op.extract(jsonProducer, this).asInstanceOf[ValidationResultNel[A]]
+          jsonProducer.extractObject.leftMap(NonEmptyList.one).andThen {
+            case Some(producer) => {
+              val m1 = this.apply(op.prefix)
+              val m2 = this.apply(op.suffix)
+              (m1(producer), m2(producer))
+                .mapN( (l1, l2) => op.prepend.apply(l1 :: l2 :: HNil) )
+                .asInstanceOf[ValidationResultNel[A]]
+            }
+            case None => Invalid(NonEmptyList.one(RequiredData(op)))
+          }.andThen { l =>
+            vu.validate[A](l, op.validations).asInstanceOf[ValidationResultNel[A]]
+          }
         }
+        case op: HMember[a] => {
+          jsonProducer.extractObject.leftMap(NonEmptyList.one).andThen {
+            case Some(producer) =>  {
+              val r1 = this(op.op1.op)
+              vu.pv(producer, op.op1, r1).map(_ :: HNil)
+                .asInstanceOf[ValidationResultNel[A]]
+
+            }
+            case None => Invalid(NonEmptyList.one(RequiredData(op)))
+          }.andThen { l =>
+            vu.validate[A](l, op.validations).asInstanceOf[ValidationResultNel[A]]
+          }
+        }
+
         case op: StringData => {
           jsonProducer.extractString.leftMap(NonEmptyList.one).andThen {
             case Some(e) => Valid(e).asInstanceOf[ValidationResultNel[A]]
@@ -195,6 +222,12 @@ object EncoderInterpreter {
             case Some(x) => apply(op.dataDefinitionOp).apply(x)
             case None => JNothing
           }
+        }
+        case op: HListPrependN[A,p,s] => {
+            val l = op.split(input)
+            val m1 = this.apply(op.prefix).apply(l.head)
+            val m2 = this.apply(op.suffix).apply(l.tail.head)
+            JObject(m1.asInstanceOf[JObject].obj ::: m2.asInstanceOf[JObject].obj)
         }
         case op: BaseHListDef[A] => {
           op.encodeMembers(this).apply(input)

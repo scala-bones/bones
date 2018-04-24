@@ -82,20 +82,7 @@ object HListAlgebra {
     /** Get a list of untyped members */
     def members: List[FieldDefinition[_]]
 
-    /** Extract the child or children. */
-    def extractMembers(functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): ValidateFromProducer[L]
-
     def encodeMembers(value: FunctionK[DataDefinitionOp, Encode]): Encode[L]
-
-    /** This will be used to implement the FieldGroupOp in the context of the children. */
-    def extract(jsonProducer: JsonExtract, functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): Validated[ExtractionErrors, L] = {
-      jsonProducer.extractObject.leftMap(NonEmptyList.one).andThen {
-        case Some(producer) => extractMembers(functionK)(producer)
-        case None => Invalid(NonEmptyList.one(RequiredData(this)))
-      }.andThen { l =>
-        vu.validate(l, validations)
-      }
-    }
 
     def encode(functionK: FunctionK[DataDefinitionOp, Encode]): L => JValue = {
       (l: L) => {
@@ -125,14 +112,6 @@ object HListAlgebra {
   final case class HMember[A](op1: FieldDefinition[A], validations: List[ValidationOp[A :: HNil]])
     extends BaseHListDef[A :: HNil] {
 
-    def extractMembers(functionK: FunctionK[DataDefinitionOp, ValidateFromProducer])
-    : ValidateFromProducer[A :: HNil] = {
-      val r1 = functionK(op1.op)
-      (jsonProducer: JsonExtract) => {
-        vu.pv(jsonProducer, op1, r1).map(_ :: HNil)
-      }
-    }
-
     def encodeMembers(functionK: FunctionK[DataDefinitionOp, Encode]): Encode[A :: HNil] = input => {
       val res1 = functionK(op1.op)(input.head)
       JObject(List(JField(op1.key.name, res1)))
@@ -157,24 +136,6 @@ object HListAlgebra {
     validations: List[ValidationOp[OUTN]]) extends BaseHListDef[OUTN] {
     outer =>
     type Out = Prefix :: Suffix :: HNil
-
-    /** Extract the child or children.*/
-    override def extractMembers(functionK: FunctionK[DataDefinitionOp, ValidateFromProducer]): ValidateFromProducer[OUTN] = {
-      val m1 = functionK.apply(prefix)
-      val m2 = functionK.apply(suffix)
-      (json: JsonExtract) => {
-        (m1(json), m2(json)).mapN( (l1, l2) => prepend.apply(l1 :: l2 :: HNil) )
-      }
-    }
-
-    def encodeMembers(functionK: FunctionK[DataDefinitionOp, Encode]): Encode[OUTN] = {
-      (out: OUTN) => {
-        val l = split(out)
-        val m1 = functionK.apply(prefix).apply(l.head)
-        val m2 = functionK.apply(suffix).apply(l.tail.head)
-        JObject(m1.asInstanceOf[JObject].obj ::: m2.asInstanceOf[JObject].obj)
-      }
-    }
 
     /** Get a list of untyped members */
     override def members: List[FieldDefinition[_]] = prefix.members ::: suffix.members
