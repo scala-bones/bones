@@ -3,7 +3,7 @@ lazy val root = (project in file(".")).
     inThisBuild(List(
       organization := "com.github.oletraveler",
       scalaVersion := "2.11.12", //TODO: cross compile 2.11.12 and 2.12.4
-      version      := "0.2.0"
+      version      := "0.3.0-SNAPSHOT"
     )),
     name := "Bones",
     libraryDependencies ++= Seq(
@@ -14,13 +14,23 @@ lazy val root = (project in file(".")).
       "org.scalatest" %% "scalatest" % "3.0.4" % Test,
       "org.easymock" % "easymock" % "3.5.1" % Test
     ),
-    organization := "com.github.oletraveler",
-    organizationName := "OleTraveler",
-    organizationHomepage := Some(url("https://github.com/oletraveler")),
     homepage := Some(url("https://github.com/oletraveler/bones")),
     startYear := Some(2018),
     description := "DSL for Data Description using ASTs and iterpreters",
-    licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT"))
+    licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
+    pomExtra := {
+      <scm>
+        <url>git://github.com/oletraveler/bones.git</url>
+        <connection>scm:git://github.com/oletraveler/bones.git</connection>
+      </scm>
+      <developers>
+        <developer>
+          <id>oletraveler</id>
+          <name>Travis Stevens</name>
+          <url>https://github.com/oletraveler</url>
+        </developer>
+      </developers>
+    }
   )
 
 resolvers += Resolver.sonatypeRepo("releases")
