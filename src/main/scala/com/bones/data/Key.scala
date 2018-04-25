@@ -256,6 +256,16 @@ object Sugar {
                                                   op11: FieldDefinition[K], op12: FieldDefinition[L]) =
       HMember(op1, List.empty) :: obj11(op2,op3, op4, op5, op6, op7, op8, op9, op10, op11, op12)
 
+    def obj13[A, B, C, D, E, F, G, H, I, J, K, L, M](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D], op5: FieldDefinition[E],
+                                                  op6: FieldDefinition[F], op7: FieldDefinition[G], op8: FieldDefinition[H], op9: FieldDefinition[I], op10: FieldDefinition[J],
+                                                  op11: FieldDefinition[K], op12: FieldDefinition[L], op13: FieldDefinition[M]) =
+      HMember(op1, List.empty) :: obj12(op2,op3, op4, op5, op6, op7, op8, op9, op10, op11, op12, op13)
+
+    def obj14[A, B, C, D, E, F, G, H, I, J, K, L,M, N](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D], op5: FieldDefinition[E],
+                                                    op6: FieldDefinition[F], op7: FieldDefinition[G], op8: FieldDefinition[H], op9: FieldDefinition[I], op10: FieldDefinition[J],
+                                                    op11: FieldDefinition[K], op12: FieldDefinition[L], op13: FieldDefinition[M],
+                                                    op14: FieldDefinition[N]) =
+      HMember(op1, List.empty) :: obj13(op2,op3, op4, op5, op6, op7, op8, op9, op10, op11, op12, op13, op14)
 
 
   }
