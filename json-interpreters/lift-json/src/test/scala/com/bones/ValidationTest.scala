@@ -7,8 +7,7 @@ import cats.data.Validated.Valid
 import com.bones.data.Algebra.{DataDefinitionOp, StringData}
 import com.bones.data.Error.CanNotConvert
 import com.bones.interpreter.DocInterpreter.{Doc, DocInterpreter}
-import com.bones.interpreter.ExtractionInterpreter.{DefaultExtractInterpreter, ValidateFromProducer}
-import com.bones.producer.LiftJsonExtract
+import com.bones.interpreter.{EncodeToJValueInterpreter, ValidatedFromJObjectInterpreter}
 import com.bones.rest.Algebra.Processor
 import com.bones.validation.ValidationDefinition.{ValidationOp, IntValidation => iv, StringValidation => sv}
 import org.scalatest.FunSuite
@@ -90,7 +89,6 @@ class ValidationTest extends FunSuite {
         |}
       """.stripMargin
     val parsed = net.liftweb.json.parse(input)
-    val jsonProducer = LiftJsonExtract(parsed)
 
 //    val extResult = merged.apply(jsonProducer)
 //
@@ -122,7 +120,7 @@ class ValidationTest extends FunSuite {
 //    val jsonProducer = LiftJsonExtract(parsed)
 //
 //    //create the program that is responsible for converting JSON into a CC.
-//    val jsonToCCProgram = y.lift.foldMap[ValidateFromProducer](DefaultExtractInterpreter())
+//    val jsonToCCProgram = y.lift.foldMap[ValidateFromProducer](ValidatedFromJObjectInterpreter())
 //
 //    //here, we will test that just the validation step is working
 //    val btCc = jsonToCCProgram.apply(jsonProducer)
@@ -241,13 +239,13 @@ class ValidationTest extends FunSuite {
 
     //sorry, we still use lift in my projects.  I will soon create a Circe JsonExtract.
     val parsed = net.liftweb.json.parse(cc)
-    val jsonProducer = LiftJsonExtract(parsed)
 
     //create the program that is responsible for converting JSON into a CC.
-    val jsonToCCProgram = creditCardSchema.lift.foldMap[ValidateFromProducer](DefaultExtractInterpreter())
+//    val jsonToCCProgram = creditCardSchema.lift.foldMap[ValidatedFromJObject](ValidatedFromJObjectInterpreter())
+    val jsonToCCProgram = ValidatedFromJObjectInterpreter().apply(creditCardSchema)
 
     //here, we will test that just the validation step is working
-    val btCc = jsonToCCProgram.apply(jsonProducer)
+    val btCc = jsonToCCProgram.apply(parsed)
 
     //tada!  We have can parse input from JsonExtract to CC using our dataDefinition.
     assert(btCc == Valid(CC("12345", "4321", UUID.fromString("df15f08c-e6bd-11e7-aeb8-6003089f08b4"),
@@ -257,10 +255,9 @@ class ValidationTest extends FunSuite {
     )))
 
     //convert back to json
-    import com.bones.interpreter.EncoderInterpreter._
-    val ccToJson = creditCardSchema.lift.foldMap[Encode](DefaultEncoderInterpreter())
+    val ccToJson = EncodeToJValueInterpreter()
     import net.liftweb.json._
-    val output = ccToJson.apply(btCc.toOption.get)
+    val output = ccToJson.apply(creditCardSchema).apply(btCc.toOption.get)
     val printed = compact(render(output))
     assert(printed === """{"firstFive":"12345","lastFour":"4321","uuid":"df15f08c-e6bd-11e7-aeb8-6003089f08b4","token":"e58e7dda-e6bd-11e7-b901-6003089f08b4","ccType":"Mastercard","expMonth":11,"expYear":2022,"cardHolder":"Lennart Augustsson","currencyIso":"USD","lastModifiedRequest":"4545d9da-e6be-11e7-86fb-6003089f08b4","billingLocation":{"countryIso":"US","zipCode":"80031"}}""")
 
