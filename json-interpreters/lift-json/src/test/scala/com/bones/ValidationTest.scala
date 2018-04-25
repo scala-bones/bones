@@ -3,13 +3,11 @@ package com.bones
 import java.time.LocalDateTime
 import java.util.{Date, UUID}
 
-import cats.data.Validated
 import cats.data.Validated.Valid
 import com.bones.data.Algebra.{DataDefinitionOp, StringData}
-import com.bones.data.Key
+import com.bones.data.Error.CanNotConvert
 import com.bones.interpreter.DocInterpreter.{Doc, DocInterpreter}
-import com.bones.interpreter.ExtractionInterpreter.{CanNotConvert, DefaultExtractInterpreter, ValidateFromProducer, WrongTypeError}
-import com.bones.json.JsonExtract
+import com.bones.interpreter.ExtractionInterpreter.{DefaultExtractInterpreter, ValidateFromProducer}
 import com.bones.producer.LiftJsonExtract
 import com.bones.rest.Algebra.Processor
 import com.bones.validation.ValidationDefinition.{ValidationOp, IntValidation => iv, StringValidation => sv}
@@ -19,22 +17,6 @@ import shapeless.HNil
 
 
 class ValidationTest extends FunSuite {
-
-  abstract class NoneJsonExtract extends JsonExtract {
-    override def extractBool: Validated[WrongTypeError[Boolean], Option[Boolean]] = Valid(None)
-
-    override def extractString: Validated[WrongTypeError[String], Option[String]] = Valid(None)
-
-    override def extractDouble: Validated[WrongTypeError[Double], Option[Double]] = Valid(None)
-
-    override def extractInt: Validated[WrongTypeError[Int], Option[Int]] = Valid(None)
-
-    override def extractObject: Validated[WrongTypeError[JsonExtract], Option[JsonExtract]] = Valid(None)
-
-    override def extractList: Validated[WrongTypeError[List[_]], Option[List[JsonExtract]]] = Valid(None)
-
-    override def child(key: Key): JsonExtract = this
-  }
 
   test("append obj") {
 
