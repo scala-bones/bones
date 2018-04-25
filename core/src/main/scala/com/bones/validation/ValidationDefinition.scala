@@ -4,9 +4,10 @@ import java.net.URI
 import java.text.{Format, SimpleDateFormat}
 import java.util.{Date, UUID}
 
+import cats.data.{NonEmptyList, Validated}
 import cats.free.FreeApplicative
 import cats.implicits._
-import com.bones.interpreter.ExtractionInterpreter.ValidationResultNel
+import com.bones.data.Error.ExtractionError
 
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
@@ -236,7 +237,7 @@ object ValidationDefinition {
       override def description: String = "URI"
     }
 
-    type ValidateString[A] = String => ValidationResultNel[A]
+    type ValidateString[T] = String => Validated[NonEmptyList[ExtractionError], T]
 
 
     /** Length of string must be equal to theLength param */
