@@ -4,8 +4,8 @@ import java.text.{DateFormat, SimpleDateFormat}
 import java.util.{Date, UUID}
 
 import com.bones.data.Algebra._
+import com.bones.data.Error.CanNotConvert
 import com.bones.data.HListAlgebra._
-import com.bones.interpreter.ExtractionInterpreter.CanNotConvert
 import com.bones.validation.ValidationDefinition.ListValidation.PassesAll
 import com.bones.validation.ValidationDefinition.{ToOptionalValidation, ValidationOp}
 import shapeless.{::, Generic, HNil}

@@ -3,18 +3,11 @@ package com.bones.data
 import java.text.DateFormat
 import java.util.{Date, UUID}
 
-import cats.arrow.FunctionK
-import cats.data.Validated.Invalid
-import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated
 import cats.free.FreeApplicative
-import cats.implicits._
+import com.bones.data.Error.{CanNotConvert, ValidationError}
 import com.bones.data.HListAlgebra.BaseHListDef
-import com.bones.interpreter.EncoderInterpreter.Encode
-import com.bones.interpreter.ExtractionInterpreter.{CanNotConvert, ExtractionErrors, RequiredData, ValidateFromProducer, ValidationError}
-import com.bones.json.JsonExtract
 import com.bones.validation.ValidationDefinition.ValidationOp
-import com.bones.validation.{ValidationUtil => vu}
-import net.liftweb.json.JsonAST.{JField, JObject, JValue}
 import shapeless.HList._
 import shapeless.ops.hlist.{Length, Prepend, Split}
 import shapeless.{::, Generic, HList, HNil, Nat}
@@ -103,12 +96,6 @@ object HListAlgebra {
 
   final case class HMember[A](op1: FieldDefinition[A], validations: List[ValidationOp[A :: HNil]])
     extends BaseHListDef[A :: HNil] {
-
-    def encodeMembers(functionK: FunctionK[DataDefinitionOp, Encode]): Encode[A :: HNil] = input => {
-      val res1 = functionK(op1.op)(input.head)
-      JObject(List(JField(op1.key.name, res1)))
-    }
-
 
     def members: List[FieldDefinition[_]] = List(op1)
 

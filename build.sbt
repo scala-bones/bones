@@ -1,7 +1,7 @@
 lazy val commonSettings = Seq(
   organization := "com.github.oletraveler",
   scalaVersion := "2.11.12", //TODO: cross compile 2.11.12 and 2.12.4
-  version      := "0.3.0-SNAPSHOT"
+  version      := "0.3.0-SNAPSHOT",
   homepage := Some(url("https://github.com/oletraveler/bones")),
   startYear := Some(2018),
   licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
@@ -22,20 +22,21 @@ lazy val commonSettings = Seq(
 lazy val restUnfiltered = (project in file("rest-interpreters/unfiltered"))
   .settings(
     commonSettings,
-    name := "Bones Rest Unfiltered"
+    name := "Bones Rest Unfiltered",
     libraryDependencies ++= Seq(
       "net.databinder" %% "unfiltered-filter" % "0.8.4",
       "javax.servlet" % "servlet-api" % "2.5"
     )
-  )
+  ).dependsOn(core)
 lazy val jsonLift = (project in file("json-interpreters/lift-json"))
   .settings(
     commonSettings,
     name := "Bones Json Lift",
-    library Dependencies ++= Seq (
+    libraryDependencies ++= Seq (
       "net.liftweb" %% "lift-json" % "2.6.3"
     )
   )
+  .dependsOn(core)
 lazy val core = (project in file("core"))
   .settings(
     commonSettings,
@@ -47,12 +48,7 @@ lazy val core = (project in file("core"))
       "org.scalatest" %% "scalatest" % "3.0.4" % Test,
       "org.easymock" % "easymock" % "3.5.1" % Test
     ),
-    description := "DSL for Data Description using ASTs and iterpreters",
-    
-  )
-
-lazy val root = (project in file(".")).
-  settings(
+    description := "DSL for Data Description using ASTs and iterpreters"
   )
 
 resolvers += Resolver.sonatypeRepo("releases")
