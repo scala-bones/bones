@@ -33,14 +33,15 @@ object DocInterpreter {
 
         case DoubleData() => Doc(s"Double")
         case BooleanData() => Doc(s"Boolean")
-        case ConversionData(op, _, _, desc) => Doc(s"Convert to a $desc from ${apply(op).str}")
-        case t: Transform[a,b] => Doc(s"Transform to a ${t.manifestOfA.runtimeClass.getSimpleName} from ${apply(t.op).str}")
+        case ConversionData(op, _, _, desc) => Doc(s"Convert to  $desc from ${apply(op).str}")
+        case t: Transform[a,b] => Doc(s"Transform to  ${t.manifestOfA.runtimeClass.getSimpleName} from ${apply(t.op).str}")
         case EitherData(d1, d2) => {
           Doc(s"Either ${apply(d1).str} or ${apply(d2).str}")
         }
-        case BigDecimalFromString() => Doc("String representing a BigDecimal")
-        case UuidData() => Doc("String representing a UUID")
-        case EnumeratedStringData(enum) => Doc(s"String with one of the following values: ${enum.values.map(_.toString).mkString("[",",","]")}")
+        case BigDecimalFromString() => Doc("String representing  BigDecimal")
+        case UuidData() => Doc("String representing  UUID")
+        case EnumerationStringData(enum) => Doc(s"String with one of the following values: ${enum.values.map(_.toString).mkString("[",",","]")}")
+        case EnumStringData(enum) => Doc(s"String with one of the following values: ${enum.map(_.toString).mkString("[",",","]")}")
         case DateData(_, desc) => Doc(s"Date with format $desc")
         case ListData(op) => Doc(s"Array of type ${apply(op).str}")
       }
