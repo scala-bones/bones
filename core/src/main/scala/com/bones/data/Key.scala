@@ -8,12 +8,12 @@ import com.bones.data.Error.CanNotConvert
 import com.bones.data.HListAlgebra._
 import com.bones.validation.ValidationDefinition.ListValidation.PassesAll
 import com.bones.validation.ValidationDefinition.{ToOptionalValidation, ValidationOp}
-import shapeless.{::, Generic, HNil}
+import shapeless.{::, Generic, HList, HNil}
 
 trait KeySyntax {
   def key(key: String) = Key(key)
 
-  /** Implicit to turn a string a key. */
+  /** Implicit to turn as string into a key. */
   implicit class StringToKey(str: String) {
     def key(): Key = Key(str)
   }
@@ -140,10 +140,19 @@ case class Key(name: String) { thisKey =>
   )
 
   def enumeration(e: Enumeration): RequiredFieldDefinition[e.Value] =
-    RequiredFieldDefinition(key, EnumeratedStringData(e), List.empty)
+    RequiredFieldDefinition(key, EnumerationStringData(e), List.empty)
 
   def enumeration(e: Enumeration)(v: ValidationOp[e.Value] with ToOptionalValidation[e.Value]*): RequiredFieldDefinition[e.Value] =
-    RequiredFieldDefinition(key, EnumeratedStringData(e), v.toList)
+    RequiredFieldDefinition(key, EnumerationStringData(e), v.toList)
+
+
+  def enum[A <: Enum[A]: Manifest](enums: List[A], v: ValidationOp[A] with ToOptionalValidation[A]*) : RequiredFieldDefinition[A] =
+    RequiredFieldDefinition[A](key, EnumStringData[A](enums), v.toList)
+  def enum[A <: Enum[A]: Manifest](enums: List[A]) : RequiredFieldDefinition[A] =
+    RequiredFieldDefinition[A](key, EnumStringData[A](enums), List.empty)
+
+  def obj[A <: HList](obj:BaseHListDef[A]) : RequiredFieldDefinition[A] =
+    RequiredFieldDefinition[A](this, obj, List.empty)
 
   def obj1[A](op1: FieldDefinition[A]): RequiredFieldDefinition[A :: HNil] =
     RequiredFieldDefinition[A :: HNil](this, HMember(op1, List.empty), List.empty)

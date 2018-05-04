@@ -205,15 +205,23 @@ case class ValidatedFromJObjectInterpreter() {
         val baseValue = apply(from).apply(jValue)
         baseValue.andThen(a => fab(a).toValidated.leftMap(NonEmptyList.one))
       }
-      case op@EnumeratedStringData(enumeration) => {
+      case EnumerationStringData(enumeration) => {
         jValue match {
-          case JNull | JNothing => Invalid(NonEmptyList.one(RequiredData(op)))
+          case JNull | JNothing => Invalid(NonEmptyList.one(RequiredData(fgo)))
           case JString(str) => try {
             Valid(enumeration.withName(str).asInstanceOf[A])
           } catch {
             case ex: NoSuchElementException => Invalid(NonEmptyList.one(CanNotConvert(str, enumeration.getClass)))
           }
           case x => Invalid(NonEmptyList.one(invalidValue(jValue, classOf[BigDecimal])))
+        }
+      }
+      case op: EnumStringData[a] => {
+        jValue match {
+          case JNull | JNothing => Invalid(NonEmptyList.one(RequiredData(fgo)))
+          case JString(str) =>
+            op.enums.find(_.toString === str).map(_.asInstanceOf[A]).toRight(NonEmptyList.one(CanNotConvert(str, op.enums.getClass)))
+              .toValidated
         }
       }
       case Transform(op, _, fba) => {

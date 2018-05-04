@@ -160,8 +160,10 @@ class ValidationTest extends FunSuite {
       val GBP = Value("GBP")
     }
 
+
+
     case class CC(firstFive: String, lastFour: String, uuid: UUID, token: UUID, ccType: CreditCardType,
-                  expMonth: Int, expYear: Int, cardholder: String, currency: Currency.Value, deletedAt: Option[Date],
+                  expMonth: Int, expYear: Int, cardholder: String, jce: JavaCurrencyEnum, currency: Currency.Value, deletedAt: Option[Date],
                   lastModifiedRequest: UUID, billingLocation: Option[BillingLocation])
 
     val isoVector = Vector("US", "CA", "MX")
@@ -201,8 +203,9 @@ class ValidationTest extends FunSuite {
       key("uuid").uuid(),
       key("token").uuid(),
       key("ccType").string().convert(CreditCardTypes.toCreditCardType, (cct: CreditCardType) => cct.abbrev, "CreditCardType", List.empty)
-    ) :: ccExp :: obj5(
+    ) :: ccExp :: obj6(
       key("cardHolder").string(),
+      key("currencyEnum").enum(JavaCurrencyEnum.values.toList),
       key("currencyIso").enumeration(Currency),
       key("deletedAt").isoDateTime().optional(),
       key("lastModifiedRequest").uuid(),
@@ -228,6 +231,7 @@ class ValidationTest extends FunSuite {
         |  "expMonth" : 11,
         |  "expYear" : 2022,
         |  "cardHolder" : "Lennart Augustsson",
+        |  "currencyEnum" : "GBP",
         |  "currencyIso" : "USD",
         |  "lastModifiedRequest" : "4545d9da-e6be-11e7-86fb-6003089f08b4",
         |  "billingLocation" : {
@@ -250,7 +254,7 @@ class ValidationTest extends FunSuite {
     //tada!  We have can parse input from JsonExtract to CC using our dataDefinition.
     assert(btCc == Valid(CC("12345", "4321", UUID.fromString("df15f08c-e6bd-11e7-aeb8-6003089f08b4"),
       UUID.fromString("e58e7dda-e6bd-11e7-b901-6003089f08b4"), CreditCardTypes.Mastercard, 11, 2022,
-      "Lennart Augustsson", Currency.USD, None, UUID.fromString("4545d9da-e6be-11e7-86fb-6003089f08b4"),
+      "Lennart Augustsson", JavaCurrencyEnum.GBP, Currency.USD, None, UUID.fromString("4545d9da-e6be-11e7-86fb-6003089f08b4"),
       Some(BillingLocation("US", Some("80031")))
     )))
 
@@ -259,13 +263,13 @@ class ValidationTest extends FunSuite {
     import net.liftweb.json._
     val output = ccToJson.apply(creditCardSchema).apply(btCc.toOption.get)
     val printed = compact(render(output))
-    assert(printed === """{"firstFive":"12345","lastFour":"4321","uuid":"df15f08c-e6bd-11e7-aeb8-6003089f08b4","token":"e58e7dda-e6bd-11e7-b901-6003089f08b4","ccType":"Mastercard","expMonth":11,"expYear":2022,"cardHolder":"Lennart Augustsson","currencyIso":"USD","lastModifiedRequest":"4545d9da-e6be-11e7-86fb-6003089f08b4","billingLocation":{"countryIso":"US","zipCode":"80031"}}""")
+    assert(printed === """{"firstFive":"12345","lastFour":"4321","uuid":"df15f08c-e6bd-11e7-aeb8-6003089f08b4","token":"e58e7dda-e6bd-11e7-b901-6003089f08b4","ccType":"Mastercard","expMonth":11,"expYear":2022,"cardHolder":"Lennart Augustsson","currencyEnum":"GBP","currencyIso":"USD","lastModifiedRequest":"4545d9da-e6be-11e7-86fb-6003089f08b4","billingLocation":{"countryIso":"US","zipCode":"80031"}}""")
 
 
     //Doc interpreter, simple POC showing we can make documentation out of this.
     val docOut = creditCardSchema.lift.foldMap[Doc](DocInterpreter)
-    println(docOut.str)
-    assert(docOut.str === """Transform to a CC$3 from object with 12 members: [firstFive: String,lastFour: String,uuid: String representing a UUID,token: String representing a UUID,ccType: Convert to a CreditCardType from String,expMonth: Int,expYear: Int,cardHolder: String,currencyIso: String with one of the following values: [CAD,GBP,USD],deletedAt: Optional: Date with format ISO date-time format with the offset and zone if available, such as '2011-12-03T10:15:30', '2011-12-03T10:15:30+01:00' or '2011-12-03T10:15:30+01:00[Europe/Paris]',lastModifiedRequest: String representing a UUID,billingLocation: Optional: Convert to a Transform to type BillingLocation$3 from object with 2 members: [countryIso: String,zipCode: Optional: String]]""")
+//    println(docOut.str)
+    assert(docOut.str === """Transform to  CC$3 from object with 13 members: [firstFive: String,lastFour: String,uuid: String representing  UUID,token: String representing  UUID,ccType: Convert to  CreditCardType from String,expMonth: Int,expYear: Int,cardHolder: String,currencyEnum: String with one of the following values: [USD,CAD,GBP],currencyIso: String with one of the following values: [CAD,GBP,USD],deletedAt: Optional: Date with format ISO date-time format with the offset and zone if available, such as '2011-12-03T10:15:30', '2011-12-03T10:15:30+01:00' or '2011-12-03T10:15:30+01:00[Europe/Paris]',lastModifiedRequest: String representing  UUID,billingLocation: Optional: Convert to  Transform to type BillingLocation$3 from object with 2 members: [countryIso: String,zipCode: Optional: String]]""")
 
 
 
