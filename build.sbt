@@ -1,7 +1,7 @@
 lazy val commonSettings = Seq(
   organization := "com.github.oletraveler",
   scalaVersion := "2.11.12", //TODO: cross compile 2.11.12 and 2.12.4
-  version      := "0.3.0-SNAPSHOT",
+  version      := "0.3.0",
   homepage := Some(url("https://github.com/oletraveler/bones")),
   startYear := Some(2018),
   licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),

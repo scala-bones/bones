@@ -7,7 +7,7 @@ import cats.data.Validated
 import cats.free.FreeApplicative
 import com.bones.data.Error.{CanNotConvert, ValidationError}
 import com.bones.data.HListAlgebra.BaseHListDef
-import com.bones.validation.ValidationDefinition.ValidationOp
+import com.bones.validation.ValidationDefinition.{ToOptionalValidation, ValidationOp}
 import shapeless.HList._
 import shapeless.ops.hlist.{Length, Prepend, Split}
 import shapeless.{::, Generic, HList, HNil, Nat}
@@ -21,6 +21,10 @@ object Algebra {
 
     def transform[Z:Manifest](implicit gen: Generic.Aux[Z, A]) = {
       Transform(this, gen.to _, gen.from _)
+    }
+
+    def convert[B](fab: A => Either[CanNotConvert[A,B], B], fba: B => A, description: String, validations: List[ValidationOp[B] with ToOptionalValidation[B]]): Algebra.ConversionData[A,B] = {
+      ConversionData[A,B](this, fab, fba, description)
     }
 
   }
@@ -54,7 +58,10 @@ object Algebra {
                                         fba: B => A, description: String
   ) extends DataDefinitionOp[B] with ToOptionalData[B]
 
-  final case class EnumeratedStringData[A](enumeration: Enumeration) extends DataDefinitionOp[A] with ToOptionalData[A]
+  final case class EnumerationStringData[A](enumeration: Enumeration) extends DataDefinitionOp[A] with ToOptionalData[A]
+  final case class EnumStringData[A <: Enum[A]:Manifest](enums: List[A]) extends DataDefinitionOp[A] with ToOptionalData[A] {
+    val manifestOfA: Manifest[A] = manifest[A]
+  }
   final case class Transform[A:Manifest,B](op: DataDefinitionOp[B], f: A => B, g: B => A) extends DataDefinitionOp[A] with ToOptionalData[A] {
     val manifestOfA: Manifest[A] = manifest[A]
   }
@@ -88,11 +95,6 @@ object HListAlgebra {
     }
 
   }
-
-  def hMember[A](op1: FieldDefinition[A], validation: ValidationOp[A :: HNil]*) : HMember[A] = {
-    HMember(op1, validation.toList)
-  }
-
 
   final case class HMember[A](op1: FieldDefinition[A], validations: List[ValidationOp[A :: HNil]])
     extends BaseHListDef[A :: HNil] {

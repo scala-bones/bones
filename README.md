@@ -7,11 +7,21 @@ that depends on the Schema.
 
 ## Download
 
-### Stable
-```libraryDependencies += "com.github.oletraveler" %% "bones" % "0.2.0"```
+### Stableish
+Core.
+```libraryDependencies += "com.github.oletraveler" %% "bones" % "0.3.0"```
+
+Interpreters (no need to include core if you include this)
+#### Lift Json Interpreter (currently the only interpreter)
+```libaryDependencies += "com.github.oletraveler" %% "bones-rest-unfiltered" % "0.4.0"```
 
 ### Snapshot
-```libaryDependencies += "com.github.oletraveler" %% "bones" % "0.3.0-SNAPSHOT"```
+```libaryDependencies += "com.github.oletraveler" %% "bones" % "0.4.0-SNAPSHOT"```
+
+Interpreters (no need to include core if you include this)
+#### Lift Json Interpreter (currently the only interpreter)
+```libaryDependencies += "com.github.oletraveler" %% "bones-rest-unfiltered" % "0.4.0-SNAPSHOT"```
+
 
 ## Interpreters
 
