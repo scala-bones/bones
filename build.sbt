@@ -17,7 +17,18 @@ lazy val commonSettings = Seq(
         <url>https://github.com/oletraveler</url>
       </developer>
     </developers>
-  }
+  },
+  resolvers += Resolver.sonatypeRepo("releases"),
+  credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
+  publishTo := {
+    val nexus = "https://oss.sonatype.org/"
+    if (isSnapshot.value)
+      Some("snapshots" at nexus + "content/repositories/snapshots") 
+    else
+      Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+  },
+  publishMavenStyle := true
+
 
 )
 lazy val restUnfiltered = (project in file("rest-interpreters/unfiltered"))
@@ -58,22 +69,8 @@ lazy val core = (project in file("core"))
     description := "DSL for Data Description using ASTs and iterpreters"
   )
 
-resolvers += Resolver.sonatypeRepo("releases")
-
-testOptions in Test += Tests.Argument("-oF")
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
 
-credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
-
-publishTo := {
-  val nexus = "https://oss.sonatype.org/"
-  if (isSnapshot.value)
-    Some("snapshots" at nexus + "content/repositories/snapshots") 
-  else
-    Some("releases"  at nexus + "service/local/staging/deploy/maven2")
-}
-
-publishMavenStyle := true
-
+testOptions in Test += Tests.Argument("-oF")
 
