@@ -1,7 +1,7 @@
 package com.bones.data
 
-import java.text.DateFormat
-import java.util.{Date, UUID}
+import java.time.ZonedDateTime
+import java.util.UUID
 
 import cats.data.Validated
 import cats.free.FreeApplicative
@@ -48,8 +48,12 @@ object Algebra {
     extends DataDefinitionOp[L] with ToOptionalData[L]
   final case class StringData() extends DataDefinitionOp[String] with ToOptionalData[String]
   final case class BigDecimalFromString() extends DataDefinitionOp[BigDecimal] with ToOptionalData[BigDecimal]
-  final case class DateData(dateFormat: DateFormat, formatDescription: String)
-    extends DataDefinitionOp[Date] with ToOptionalData[Date]
+
+  import java.time.LocalDate
+  import java.time.format.DateTimeFormatter
+
+  final case class DateData(dateFormat: DateTimeFormatter, formatDescription: String)
+    extends DataDefinitionOp[ZonedDateTime] with ToOptionalData[ZonedDateTime]
   final case class UuidData() extends DataDefinitionOp[UUID] with ToOptionalData[UUID]
 
   final case class ConversionData[A,B](

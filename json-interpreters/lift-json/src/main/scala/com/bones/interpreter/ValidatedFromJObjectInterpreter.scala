@@ -1,5 +1,6 @@
 package com.bones.interpreter
 
+import java.time.{LocalDate, ZonedDateTime}
 import java.util.{Date, UUID}
 
 import cats.Applicative
@@ -14,7 +15,6 @@ import net.liftweb.json.JsonAST._
 import shapeless.HNil
 
 import scala.util.control.NonFatal
-
 import com.bones.validation.{ValidationUtil => vu}
 
 object ValidatedFromJObjectInterpreter {
@@ -150,8 +150,8 @@ case class ValidatedFromJObjectInterpreter() {
         }
       }
       case op@DateData(dateFormat, _) => {
-        def convert(input: String): Validated[NonEmptyList[ExtractionError], Date] = try {
-          Valid(dateFormat.parseObject(input).asInstanceOf[Date])
+        def convert(input: String): Validated[NonEmptyList[ExtractionError], ZonedDateTime] = try {
+          Valid(ZonedDateTime.parse(input, dateFormat))
         } catch {
           case NonFatal(ex) => Invalid(NonEmptyList.one(CanNotConvert(input, classOf[Date])))
         }
