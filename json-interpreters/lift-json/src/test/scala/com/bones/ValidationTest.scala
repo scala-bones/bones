@@ -1,6 +1,6 @@
 package com.bones
 
-import java.time.LocalDateTime
+import java.time.{LocalDate, LocalDateTime, ZonedDateTime}
 import java.util.{Date, UUID}
 
 import cats.data.Validated.Valid
@@ -163,7 +163,7 @@ class ValidationTest extends FunSuite {
 
 
     case class CC(firstFive: String, lastFour: String, uuid: UUID, token: UUID, ccType: CreditCardType,
-                  expMonth: Int, expYear: Int, cardholder: String, jce: JavaCurrencyEnum, currency: Currency.Value, deletedAt: Option[Date],
+                  expMonth: Int, expYear: Int, cardholder: String, jce: JavaCurrencyEnum, currency: Currency.Value, deletedAt: Option[ZonedDateTime],
                   lastModifiedRequest: UUID, billingLocation: Option[BillingLocation])
 
     val isoVector = Vector("US", "CA", "MX")

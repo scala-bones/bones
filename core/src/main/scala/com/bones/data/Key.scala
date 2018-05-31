@@ -1,7 +1,8 @@
 package com.bones.data
 
-import java.text.{DateFormat, SimpleDateFormat}
-import java.util.{Date, UUID}
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.util.UUID
 
 import com.bones.data.Algebra._
 import com.bones.data.Error.CanNotConvert
@@ -110,7 +111,7 @@ case class Key(name: String) { thisKey =>
   def uuid(v: ValidationOp[UUID] with ToOptionalValidation[UUID] *): RequiredFieldDefinition[UUID] = RequiredFieldDefinition[UUID](this, UuidData(), v.toList)
 
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
-  def date(dateFormat: DateFormat, formatDescription: String, v: ValidationOp[Date] with ToOptionalValidation[Date]*): RequiredFieldDefinition[Date] =
+  def date(dateFormat: DateTimeFormatter, formatDescription: String, v: ValidationOp[ZonedDateTime] with ToOptionalValidation[ZonedDateTime]*): RequiredFieldDefinition[ZonedDateTime] =
     RequiredFieldDefinition(key, DateData(dateFormat, formatDescription), v.toList)
 
   /** Indicates that the data tied to this key is a BigDecimal that must pass the specified validations. */
@@ -122,10 +123,10 @@ case class Key(name: String) { thisKey =>
     RequiredFieldDefinition[Either[A,B]](key, EitherData(definitionA, definitionB), List.empty)
 
   /** Expecting a string that is in the format of an iso date time */
-  def isoDateTime(v: ValidationOp[Date] with ToOptionalValidation[Date]*): RequiredFieldDefinition[Date] =
+  def isoDateTime(v: ValidationOp[ZonedDateTime] with ToOptionalValidation[ZonedDateTime]*): RequiredFieldDefinition[ZonedDateTime] =
     RequiredFieldDefinition(key,
       DateData(
-        new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'"),
+        DateTimeFormatter.ISO_DATE_TIME,
         "ISO date-time format with the offset and zone if available, such as '2011-12-03T10:15:30', '2011-12-03T10:15:30+01:00' or '2011-12-03T10:15:30+01:00[Europe/Paris]'"
       ),
       v.toList
@@ -133,9 +134,9 @@ case class Key(name: String) { thisKey =>
 
 
   /** Expecting a string that is in the format of an iso date */
-  def isoDate(v: ValidationOp[Date] with ToOptionalValidation[Date]*): RequiredFieldDefinition[Date] = RequiredFieldDefinition(key, isoDateData, v.toList)
+  def isoDate(v: ValidationOp[ZonedDateTime] with ToOptionalValidation[ZonedDateTime]*): RequiredFieldDefinition[ZonedDateTime] = RequiredFieldDefinition(key, isoDateData, v.toList)
   private val isoDateData = DateData(
-    new SimpleDateFormat("yyyy-MM-dd"),
+    DateTimeFormatter.ISO_LOCAL_DATE,
     "ISO date format with the offset if available, such as '2011-12-03' or '2011-12-03+01:00'"
   )
 
