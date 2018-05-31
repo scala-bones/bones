@@ -1,5 +1,6 @@
 package com.bones.interpreter
 
+import java.time.{LocalDate, ZonedDateTime}
 import java.util.Date
 
 import com.bones.data.Algebra._
@@ -39,7 +40,7 @@ case class EncodeToJValueInterpreter() {
       case rs: StringData => JString(input.asInstanceOf[String])
       case ri: IntData => JInt(input.asInstanceOf[Int])
       case uu: UuidData => JString(input.toString)
-      case DateData(format, _) => JString(format.format(input.asInstanceOf[Date]))
+      case DateData(format, _) => JString(format.format(input.asInstanceOf[ZonedDateTime]))
       case bd: BigDecimalFromString => JString(input.toString)
       case dd: DoubleData => JDouble(input.asInstanceOf[Double])
       case ListData(definition) => {
