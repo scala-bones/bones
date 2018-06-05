@@ -13,14 +13,14 @@ Core.
 
 Interpreters (no need to include core if you include this)
 #### Lift Json Interpreter (currently the only interpreter)
-```libaryDependencies += "com.github.oletraveler" %% "bones-rest-unfiltered" % "0.3.0"```
+```libraryDependencies += "com.github.oletraveler" %% "bones-rest-unfiltered" % "0.4.0"```
 
 ### Snapshot
-```libaryDependencies += "com.github.oletraveler" %% "bones" % "0.4.0-SNAPSHOT"```
+```libraryDependencies += "com.github.oletraveler" %% "bones" % "0.5.0-SNAPSHOT"```
 
 Interpreters (no need to include core if you include this)
 #### Lift Json Interpreter (currently the only interpreter)
-```libaryDependencies += "com.github.oletraveler" %% "bones-rest-unfiltered" % "0.4.0-SNAPSHOT"```
+```libraryDependencies += "com.github.oletraveler" %% "bones-rest-unfiltered" % "0.5.0-SNAPSHOT"```
 
 
 ## Interpreters
