@@ -1,7 +1,7 @@
 lazy val commonSettings = Seq(
   organization := "com.github.oletraveler",
   scalaVersion := "2.11.12", //TODO: cross compile 2.11.12 and 2.12.4
-  version      := "0.4.0-SNAPSHOT",
+  version      := "0.4.0",
   homepage := Some(url("https://github.com/oletraveler/bones")),
   startYear := Some(2018),
   licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
@@ -28,9 +28,18 @@ lazy val commonSettings = Seq(
       Some("releases"  at nexus + "service/local/staging/deploy/maven2")
   },
   publishMavenStyle := true
-
-
 )
+lazy val jsonOas3 = (project in file("json-interpreters/lift-json-oas3"))
+  .settings(
+    commonSettings,
+    name := "DataDefinition to OAS3 Interpreter",
+    libraryDependencies ++= Seq(
+      "net.liftweb" %% "lift-json" % "2.6.3",
+      "org.scalacheck" %% "scalacheck" % "1.13.4" % Test,
+      "org.scalatest" %% "scalatest" % "3.0.4" % Test,
+      "org.easymock" % "easymock" % "3.5.1" % Test
+    )
+  ).dependsOn(core)
 lazy val restUnfiltered = (project in file("rest-interpreters/unfiltered"))
   .settings(
     commonSettings,
