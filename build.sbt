@@ -34,7 +34,7 @@ lazy val jsonOas3 = (project in file("json-interpreters/lift-json-oas3"))
     commonSettings,
     name := "DataDefinition to OAS3 Interpreter",
     libraryDependencies ++= Seq(
-      "net.liftweb" %% "lift-json" % "2.6.3",
+      "io.argonaut" %% "argonaut" % "6.2",
       "org.scalacheck" %% "scalacheck" % "1.13.4" % Test,
       "org.scalatest" %% "scalatest" % "3.0.4" % Test,
       "org.easymock" % "easymock" % "3.5.1" % Test
@@ -77,6 +77,16 @@ lazy val core = (project in file("core"))
     ),
     description := "DSL for Data Description using ASTs and iterpreters"
   )
+lazy val examples = (project in file("examples"))
+    .settings(
+      commonSettings,
+      name := "Bones Examples",
+      libraryDependencies ++= Seq(
+        "org.scalacheck" %% "scalacheck" % "1.13.4" % Test,
+        "org.scalatest" %% "scalatest" % "3.0.4" % Test,
+        "org.easymock" % "easymock" % "3.5.1" % Test
+      )
+    ).dependsOn(jsonLift, restUnfiltered, jsonOas3)
 
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
