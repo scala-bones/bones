@@ -60,7 +60,6 @@ case class ValidatedFromJObjectInterpreter() {
             val m1 = this.apply(op.prefix)
             val m2 = this.apply(op.suffix)
 
-            //              ({type L[A] = Either[Int, A]})#L
             Applicative[({type AL[AA] = Validated[NonEmptyList[ExtractionError], AA]})#AL]
               .map2(
                 m1(obj),
