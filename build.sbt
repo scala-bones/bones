@@ -46,12 +46,12 @@ lazy val restUnfiltered = (project in file("rest-interpreters/unfiltered"))
     name := "Bones Rest Unfiltered",
     libraryDependencies ++= Seq(
       "net.databinder" %% "unfiltered-filter" % "0.8.4",
-      "javax.servlet" % "servlet-api" % "2.5",
+//      "javax.servlet" % "servlet-api" % "2.5",
       "org.scalacheck" %% "scalacheck" % "1.13.4" % Test,
       "org.scalatest" %% "scalatest" % "3.0.4" % Test,
       "org.easymock" % "easymock" % "3.5.1" % Test
     )
-  ).dependsOn(core)
+  ).dependsOn(core, jsonLift)
 lazy val jsonLift = (project in file("json-interpreters/lift-json"))
   .settings(
     commonSettings,
@@ -82,6 +82,7 @@ lazy val examples = (project in file("examples"))
       commonSettings,
       name := "Bones Examples",
       libraryDependencies ++= Seq(
+        "net.databinder" %% "unfiltered-jetty" % "0.8.4",
         "org.scalacheck" %% "scalacheck" % "1.13.4" % Test,
         "org.scalatest" %% "scalatest" % "3.0.4" % Test,
         "org.easymock" % "easymock" % "3.5.1" % Test
