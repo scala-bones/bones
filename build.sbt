@@ -45,8 +45,8 @@ lazy val restUnfiltered = (project in file("rest-interpreters/unfiltered"))
     commonSettings,
     name := "Bones Rest Unfiltered",
     libraryDependencies ++= Seq(
+      "javax.servlet" % "javax.servlet-api" % "3.0.1",
       "net.databinder" %% "unfiltered-filter" % "0.8.4",
-//      "javax.servlet" % "servlet-api" % "2.5",
       "org.scalacheck" %% "scalacheck" % "1.13.4" % Test,
       "org.scalatest" %% "scalatest" % "3.0.4" % Test,
       "org.easymock" % "easymock" % "3.5.1" % Test
