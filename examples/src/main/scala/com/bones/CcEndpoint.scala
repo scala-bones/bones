@@ -27,8 +27,11 @@ object CcEndpoint extends App {
   val unfilteredDb = new UnfilteredRestInterpreter.Db {
     override def loadById[A: Manifest](uuid: UUID): Option[A] = db.get(uuid).asInstanceOf[Option[A]]
 
-    override def save[A: Manifest, E, R](uuid: UUID, a: A): Either[E, R] =
-      db.put(uuid,a.asInstanceOf[CC]).asInstanceOf[Option[R]].toRight("CC Not Found".asInstanceOf[E])
+    override def save[A: Manifest, E, R](uuid: UUID, a: A): Either[E, R] = {
+      db.put(uuid, a.asInstanceOf[CC])
+      Right(a.asInstanceOf[R])
+    }
+
   }
   val x = UnfilteredRestInterpreter(unfilteredDb)
 
