@@ -2,13 +2,17 @@ package com.bones
 
 import java.util.UUID
 
+import cats.effect.IO
 import com.bones.data.Algebra.{DataDefinitionOp, StringData}
-import com.bones.rest.Sugar.endPoint
-import com.bones.rest.unfiltered.UnfilteredRestInterpreter
-import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
+import com.bones.rest.Algebra.{Create, Read}
+import com.bones.rest.unfiltered.DirectToDoobie
+import com.bones.rest.unfiltered.DirectToDoobie.DoobieInfo
+import doobie.{Transactor, Update0}
+import doobie.util.transactor.Transactor.Aux
 import unfiltered.filter.Planify
-import unfiltered.kit.Routes
-import unfiltered.request.GET
+import doobie._
+import doobie.implicits._
+
 
 import scala.collection.mutable
 
@@ -20,39 +24,41 @@ object CcEndpoint extends App {
 
   val db = new mutable.HashMap[UUID,CC]()
 
-
-  val save: CC => Either[String,CC] = cc => db.put(cc.uuid, cc).toRight(s"CC with uuid ${cc.uuid} already exists")
-  val get: UUID => Option[CC] = uuid => db.get(uuid)
-
-  val unfilteredDb = new UnfilteredRestInterpreter.Db {
-    override def loadById[A: Manifest](uuid: UUID): Option[A] = db.get(uuid).asInstanceOf[Option[A]]
-
-    override def save[A: Manifest, E, R](uuid: UUID, a: A): Either[E, R] = {
-      db.put(uuid, a.asInstanceOf[CC])
-      Right(a.asInstanceOf[R])
-    }
-
+  val s2 = new Create[CC, String, CC] with Read[CC] {
+    override def schemaForCreate: DataDefinitionOp[CC] = creditCardSchema
+    override def successSchemaForCreate: DataDefinitionOp[CC] = creditCardSchema
+    override def errorSchemaForCreate: DataDefinitionOp[String] = errorDef
+    override def successSchemaForRead: DataDefinitionOp[CC] = creditCardSchema
   }
-  val x = UnfilteredRestInterpreter(unfilteredDb)
 
+  val doobieCc = new DoobieInfo[CC] {
+    override def transactor: Aux[IO, Unit] = ???
 
-  //Rest test
-  val service =
-    endPoint[CC]("/creditCard")
-      .post[CC,String](creditCardSchema, creditCardSchema, errorDef)
-      .get[CC](creditCardSchema)
-  //        .put("/:uuid", creditCardSchema, postToProcessor, successShape, errorShape)
-  //        .delete("/:uuid", doDelete, successShape, errorShape)
+    override def get(id: Long): doobie.ConnectionIO[CC] = ???
 
+    override def insert(a: CC): doobie.ConnectionIO[Int] = ???
+  }
 
-  val paths = x.apply(service)
+  val xa = Transactor.fromDriverManager[IO](
+    "org.postgresql.Driver", "jdbc:postgresql:world", "postgres", ""
+  )
+
+  val y = xa.yolo
+  import y._
+
+  def insert1(name: String, age: Option[Short]): Update0 =
+    sql"insert into person (name, age) values ($name, $age)".update
+
+  insert1("Alice", Some(12)).run.transact(xa).unsafeRunSync
+
+  insert1("Bob", None).quick.unsafeRunSync
+
 
   import unfiltered.jetty
-  import unfiltered.filter
 
-  val plan = UnfilteredRestInterpreter.toPlan(paths)
-
-  jetty.Http(5678).filter(new Planify(plan)).run
+//  val plan = DirectToDoobie.toPlan(paths)
+//
+//  jetty.Http(5678).filter(new Planify(plan)).run
 
 
 

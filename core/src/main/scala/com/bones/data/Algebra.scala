@@ -6,7 +6,7 @@ import java.util.UUID
 import cats.data.Validated
 import cats.free.FreeApplicative
 import com.bones.data.Error.{CanNotConvert, ValidationError}
-import com.bones.data.HListAlgebra.BaseHListDef
+import com.bones.data.HListAlgebra.{BaseHListDef, HListPrependN, HMember}
 import com.bones.validation.ValidationDefinition.{ToOptionalValidation, ValidationOp}
 import shapeless.HList._
 import shapeless.ops.hlist.{Length, Prepend, Split}
@@ -14,10 +14,10 @@ import shapeless.{::, Generic, HList, HNil, Nat}
 
 object Algebra {
 
-  /** DataDefinitionOp is the base class defining the FreeAp for each data definition.. */
+  /** DataDefinitionOp is the base class defining the FreeAp for each data definition. */
   sealed trait DataDefinitionOp[A] {
     //lift any DataDefinition into a FreeApplicative
-    def lift: DataDefinition[A] = FreeApplicative.lift(this)
+    def lift: DataDefinition[A] = ???
 
     def transform[Z:Manifest](implicit gen: Generic.Aux[Z, A]) = {
       Transform(this, gen.to _, gen.from _)
@@ -28,6 +28,7 @@ object Algebra {
     }
 
   }
+
   type DataDefinition[A] = FreeApplicative[DataDefinitionOp, A]
 
   /** Wraps a data definition to mark the field optional */
@@ -66,9 +67,23 @@ object Algebra {
   final case class EnumStringData[A <: Enum[A]:Manifest](enums: List[A]) extends DataDefinitionOp[A] with ToOptionalData[A] {
     val manifestOfA: Manifest[A] = manifest[A]
   }
-  final case class Transform[A:Manifest,B](op: DataDefinitionOp[B], f: A => B, g: B => A) extends DataDefinitionOp[A] with ToOptionalData[A] {
+  final case class Transform[A:Manifest,B](op: DataDefinitionOp[B], f: A => B, g: B => A) extends DataDefinitionOp[A] with ToOptionalData[A] { thisBase =>
     val manifestOfA: Manifest[A] = manifest[A]
+
+    def ::[C](op: HMember[C])
+
+    def ::[OUT <: HList, P, N <: Nat](hHead: HMember[P])(
+      implicit p: Prepend.Aux[P::HNil,A::HNil,OUT],
+      lpLength: Length.Aux[P::HNil,N],
+      s: Split.Aux[OUT,N,P::HNil,A::HNil]
+    ) = {
+      val psPrepend = (in : (P::HNil) :: (A::HNil) :: HNil) => p(in.head, in.tail.head)
+      val hSplit = (in: OUT) => in.splitP[lpLength.Out]
+      HListPrependN[OUT, P::HNil, A::HNil](psPrepend, hSplit, hHead, thisBase, List.empty)
+    }
+
   }
+
   final case class Check[L <: HList, N <: Nat](obj: BaseHListDef[L], check: L => Validated[ValidationError[L], L])
     extends DataDefinitionOp[L] with ToOptionalData[L]
 
@@ -82,6 +97,7 @@ object HListAlgebra {
 
   /** Used to create a generic extract method so we can extract values from the products. */
   sealed abstract class BaseHListDef[L <: HList] extends DataDefinitionOp[L] with ToOptionalData[L] { thisBase =>
+
 
     /** Get a list of untyped members */
     def members: List[FieldDefinition[_]]
@@ -121,6 +137,9 @@ object HListAlgebra {
     validations: List[ValidationOp[OUTN]]) extends BaseHListDef[OUTN] {
     outer =>
     type Out = Prefix :: Suffix :: HNil
+
+
+//    override def lift: DataDefinition[OUTN] = FreeApplicative.ap(this)(FreeApplicative.lift(split))
 
     /** Get a list of untyped members */
     override def members: List[FieldDefinition[_]] = prefix.members ::: suffix.members

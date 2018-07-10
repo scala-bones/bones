@@ -30,6 +30,11 @@ case class EncodeToJValueInterpreter() {
           val m2 = this.apply(op.suffix).apply(l.tail.head)
           JObject(m1.asInstanceOf[JObject].obj ::: m2.asInstanceOf[JObject].obj)
       }
+      case p: PrependDataDefinition[a,b] => (input: A) => {
+        val a = apply(p.a).apply(input.asInstanceOf[a])
+        val b = apply(p.b).apply(input.asInstanceOf[b])
+        JObject(a.asInstanceOf[JObject].obj ::: b.asInstanceOf[JObject].obj)
+      }
       case op: HMember[a] => (input: A) => {
         import shapeless.::
         val res1 = this(op.op1.op)(input.asInstanceOf[a :: HNil].head)

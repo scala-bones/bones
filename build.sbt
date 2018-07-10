@@ -40,6 +40,7 @@ lazy val jsonOas3 = (project in file("json-interpreters/lift-json-oas3"))
       "org.easymock" % "easymock" % "3.5.1" % Test
     )
   ).dependsOn(core)
+lazy val doobieVersion = "0.5.3"
 lazy val restUnfiltered = (project in file("rest-interpreters/unfiltered"))
   .settings(
     commonSettings,
@@ -47,6 +48,8 @@ lazy val restUnfiltered = (project in file("rest-interpreters/unfiltered"))
     libraryDependencies ++= Seq(
       "javax.servlet" % "javax.servlet-api" % "3.0.1",
       "net.databinder" %% "unfiltered-filter" % "0.8.4",
+      "org.tpolecat" %% "doobie-core" % doobieVersion,
+      "org.tpolecat" %% "doobie-postgres" % doobieVersion,
       "org.scalacheck" %% "scalacheck" % "1.13.4" % Test,
       "org.scalatest" %% "scalatest" % "3.0.4" % Test,
       "org.easymock" % "easymock" % "3.5.1" % Test
