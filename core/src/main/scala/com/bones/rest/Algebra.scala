@@ -4,37 +4,33 @@ import com.bones.data.Algebra.DataDefinitionOp
 
 object Algebra {
 
-  case class EndPoint[A:Manifest](url: String, actions: List[RestOp[A]]) {
+  sealed trait CrudOp[+A]
 
-    def post[I:Manifest, E](
-        inputSchema: DataDefinitionOp[I],
-        successSchema: DataDefinitionOp[A],
-        errorSchema: DataDefinitionOp[E]
-    ): EndPoint[A] =
-      EndPoint[A](url, Create[I,E,A](inputSchema, successSchema, errorSchema) :: actions)
-
-    def get[A: Manifest](successSchema: DataDefinitionOp[A]) = EndPoint(url, Read(successSchema) :: actions)
-
-    def put[A, E[F[_]]] = ???
+  trait Create[I, E, O] extends CrudOp[O] {
+    def schemaForCreate: DataDefinitionOp[I]
+    def successSchemaForCreate: DataDefinitionOp[O]
+    def errorSchemaForCreate: DataDefinitionOp[E]
   }
 
-  trait RestOp[+A]
+  trait CreateInterpreter[A] {
+    def interpretCreate[I,E,O](create: Create[I,E,O]): A
+  }
 
-  case class Create[I:Manifest, E, R](
-      schema: DataDefinitionOp[I],
-      successSchema: DataDefinitionOp[R],
-      errorSchema: DataDefinitionOp[E]
-  ) extends RestOp[R]
+  trait Read[O] {
+    def successSchemaForRead: DataDefinitionOp[O]
+  }
 
-  case class Read[A:Manifest](successSchema: DataDefinitionOp[A]) extends RestOp[A]
+  trait ReadInterpreter[A] {
+    def interpretRead[O](reader: Read[O]): A
+  }
 
   case class Update[I,E,R](schema: DataDefinitionOp[I],
                            //                      processor: Processor[A, F, B, E],
                            successSchema: DataDefinitionOp[R],
-                           failureSchema: DataDefinitionOp[E]) extends RestOp[R]
+                           failureSchema: DataDefinitionOp[E]) extends CrudOp[R]
 
   case class Delete[I,E,R](processDelete: I => Either[E,R],
-                           successSchema: DataDefinitionOp[R]) extends RestOp[R]
+                           successSchema: DataDefinitionOp[R]) extends CrudOp[R]
 
   case class Load[T:Manifest,E]()
 
@@ -46,6 +42,12 @@ object Sugar {
 
   import Algebra._
 
-  def endPoint[A:Manifest](url: String): EndPoint[A] = EndPoint[A](url, List.empty)
-
+//  def create[I, E, O](
+//                             inputSchema: DataDefinitionOp[I],
+//                             successSchema: DataDefinitionOp[O],
+//                             errorSchema: DataDefinitionOp[E]
+//                           ): Create[I,E,O] =
+//    Create[I,E,O](inputSchema, successSchema, errorSchema)
+//
+//  def read[A](successSchema: DataDefinitionOp[A]) = Read(successSchema)
 }
