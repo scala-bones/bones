@@ -80,6 +80,26 @@ case class ValidatedFromJObjectInterpreter() {
           case x => Invalid(NonEmptyList.one(WrongTypeError(classOf[JObject], x.getClass)))
         }
       }
+      case op: PrependDataDefinition[a,b] => jValue => {
+        jValue match {
+          case JNull | JNothing => Invalid(NonEmptyList.one(RequiredData(op)))
+          case obj: JObject => {
+            val a = this.apply(op.a)
+            val b = this.apply(op.b)
+            Applicative[({type AL[AA] = Validated[NonEmptyList[ExtractionError], AA]})#AL]
+              .map2(
+                a(obj),
+                b(obj)
+              )((l1, l2) => {
+                l1 :: l2 :: HNil
+//                op.prepend.apply(input)
+              })
+//              .andThen { l =>
+//                vu.validate[A](l, op.validations).asInstanceOf[Validated[NonEmptyList[ExtractionError], A]]
+//              }
+          }
+        }
+      }
       case op: HMember[a] => {
         case JNull | JNothing => Invalid(NonEmptyList.one(RequiredData(op)))
         case JObject(fields) => {
