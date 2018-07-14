@@ -10,7 +10,7 @@ import com.bones.data.HListAlgebra.{HListPrependN, HMember}
 import com.bones.validation.ValidationDefinition.{InvalidValue, OptionalValidation, ValidValue, ValidationOp}
 
 
-object ToOasInterpreter {
+object ValidationOasInterpreter {
 
 
 
@@ -80,7 +80,7 @@ case class ValidationToPropertyInterpreter() {
   }
 }
 
-case class ToOasInterpreter(validationInterpreter: ValidationToPropertyInterpreter) {
+case class ValidationOasInterpreter(validationInterpreter: ValidationToPropertyInterpreter) {
   def apply[A](fgo: DataDefinitionOp[A]): JsonObject = fgo match {
     case op: OptionalDataDefinition[b] => {
       //need to remove "required" field
@@ -119,8 +119,10 @@ case class ToOasInterpreter(validationInterpreter: ValidationToPropertyInterpret
     }
     case EnumerationStringData(enumeration) => JsonObject.single("type", jString("string")) :+ ("required" -> jBool(true))
     case EnumStringData(enum) => JsonObject.single("type", jString("string")) :+ ("required", jBool(true))
-    case Transform(op, fab, _) => {
-      ("type" -> jString("object")) +: JsonObject.single("properties", jObject(apply(op)))
+    case transform: Transform[_,_] => {
+      JsonObject.single(transform.manifestOfA.runtimeClass.getSimpleName,
+        jObject(("type" -> jString("object")) +: JsonObject.single("properties", jObject(apply(transform.op))))
+      )
     }
     case Check(obj, check) => JsonObject.single("check", jString("needs impl"))
     case x => JsonObject.single(x.toString, jString("needs impl"))
