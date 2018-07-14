@@ -9,7 +9,7 @@ import com.bones.data.Algebra.{DataDefinitionOp, StringData}
 import com.bones.data.Error.CanNotConvert
 import com.bones.interpreter.DocInterpreter.{Doc, DocInterpreter}
 import com.bones.interpreter.{EncodeToJValueInterpreter, ValidatedFromJObjectInterpreter}
-import com.bones.oas3.{ToOasInterpreter, ValidationToPropertyInterpreter}
+import com.bones.oas3.{ValidationOasInterpreter, ValidationToPropertyInterpreter}
 import org.scalatest.FunSuite
 import shapeless.HNil
 
@@ -166,7 +166,7 @@ class ValidationTest extends FunSuite {
 //    assert(docOut.str === """Transform to  CC$3 from object with 13 members: [firstFive: String,lastFour: String,uuid: String representing  UUID,token: String representing  UUID,ccType: Convert to  CreditCardType from String,expMonth: Int,expYear: Int,cardHolder: String,currencyEnum: String with one of the following values: [USD,CAD,GBP],currencyIso: String with one of the following values: [CAD,GBP,USD],deletedAt: Optional: Date with format ISO date-time format with the offset and zone if available, such as '2011-12-03T10:15:30', '2011-12-03T10:15:30+01:00' or '2011-12-03T10:15:30+01:00[Europe/Paris]',lastModifiedRequest: String representing  UUID,billingLocation: Optional: Convert to  Transform to type BillingLocation$3 from object with 2 members: [countryIso: String,zipCode: Optional: String]]""")
 
 
-    val doc = ToOasInterpreter(ValidationToPropertyInterpreter())
+    val doc = ValidationOasInterpreter(ValidationToPropertyInterpreter())
     val docResult = doc.apply(creditCardSchema)
 
     println(Json.jObject(docResult).spaces2)
