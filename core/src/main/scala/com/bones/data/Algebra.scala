@@ -14,7 +14,7 @@ import shapeless.{::, Generic, HList, HNil, Nat}
 
 object Algebra {
 
-  /** DataDefinitionOp is the base class defining the FreeAp for each data definition. */
+  /** DataDefinitionOp is the base trait for any data definition. */
   sealed trait DataDefinitionOp[A] {
     //lift any DataDefinition into a FreeApplicative
     def lift: DataDefinition[A] = ???
@@ -22,29 +22,6 @@ object Algebra {
     def ::[B](dataDefinitionOp: DataDefinitionOp[B]): HListPrependN[B::A::HNil, B::HNil, A::HNil] = {
       HDataDefinition[B](dataDefinitionOp) :: HDataDefinition[A](this)
     }
-
-
-
-//    def toHListPrependN[OUTOUT <: HList, PP <: HList, NN <: Nat](
-//      implicit p: Prepend.Aux[A::HNil,HNil,A::HNil],
-//      lpLength: Length.Aux[A,Nat._1],
-//      s: Split.Aux[A::HNil,Nat._1,A::HNil,HNil]
-//    ) = {
-//      val psPrepend = (in : (A :: HNil) :: HNil) => p(in.head, in.tail.head)
-//      val hSplit = (in: A::HNil) => in.splitP[lpLength.Out]
-//      HListPrependN[A::HNil, A::HNil, HNil](psPrepend, hSplit, hHead, thisBase, List.empty)
-//    }
-
-
-//    def toHlist1[OUT <: HList, P <: HList, N <: Nat](
-//      implicit p: Prepend.Aux[P,L,OUT],
-//      lpLength: Length.Aux[P,N],
-//      s: Split.Aux[OUT,N,P,L]
-//    ) = {
-//      val psPrepend = (in : P :: L :: HNil) => p(in.head, in.tail.head)
-//      val hSplit = (in: OUT) => in.splitP[lpLength.Out]
-//      HListPrependN[OUT, P, L](psPrepend, hSplit, hHead, thisBase, List.empty)
-//    }
 
     def transform[Z:Manifest](implicit gen: Generic.Aux[Z, A]) = {
       Transform(this, gen.to _, gen.from _)
@@ -96,19 +73,6 @@ object Algebra {
   }
   final case class Transform[A:Manifest,B](op: DataDefinitionOp[B], f: A => B, g: B => A) extends DataDefinitionOp[A] with ToOptionalData[A] { thisBase =>
     val manifestOfA: Manifest[A] = manifest[A]
-
-//    def ::[C](op: HMember[C])
-//
-//    def ::[OUT <: HList, P, N <: Nat](hHead: HMember[P])(
-//      implicit p: Prepend.Aux[P::HNil,A::HNil,OUT],
-//      lpLength: Length.Aux[P::HNil,N],
-//      s: Split.Aux[OUT,N,P::HNil,A::HNil]
-//    ) = {
-//      val psPrepend = (in : (P::HNil) :: (A::HNil) :: HNil) => p(in.head, in.tail.head)
-//`      val hSplit = (in: OUT) => in.splitP[lpLength.Out]
-//      HListPrependN[OUT, P::HNil, A::HNil](psPrepend, hSplit, hHead, thisBase, List.empty)
-//    }
-
   }
 
   final case class Check[L <: HList, N <: Nat](obj: BaseHListDef[L], check: L => Validated[ValidationError[L], L])
@@ -154,6 +118,7 @@ object HListAlgebra {
 
   }
 
+  /** Allows us to wrap any DataDefinitionOp into a BaseHListDef so we can easily append the op. */
   final case class HDataDefinition[A](op: DataDefinitionOp[A]) extends BaseHListDef[A::HNil] {
     /** Get a list of untyped members */
     override def members: List[FieldDefinition[_]] = List.empty
@@ -173,7 +138,7 @@ object HListAlgebra {
 
   }
 
-
+  /** Represents prepending any BaseHListDef together. */
   case class HListPrependN[OUTN <: HList, Prefix <: HList, Suffix <: HList](
     prepend: Prefix :: Suffix :: HNil => OUTN,
     split : OUTN => Prefix :: Suffix :: HNil,
@@ -182,9 +147,6 @@ object HListAlgebra {
     validations: List[ValidationOp[OUTN]]) extends BaseHListDef[OUTN] {
     outer =>
     type Out = Prefix :: Suffix :: HNil
-
-
-//    override def lift: DataDefinition[OUTN] = FreeApplicative.ap(this)(FreeApplicative.lift(split))
 
     /** Get a list of untyped members */
     override def members: List[FieldDefinition[_]] = prefix.members ::: suffix.members

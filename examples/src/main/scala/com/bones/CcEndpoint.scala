@@ -24,13 +24,6 @@ object CcEndpoint extends App {
 
   val db = new mutable.HashMap[UUID,CC]()
 
-  val s2 = new Create[CC, String, CC] with Read[CC] {
-    override def schemaForCreate: DataDefinitionOp[CC] = creditCardSchema
-    override def successSchemaForCreate: DataDefinitionOp[CC] = creditCardSchema
-    override def errorSchemaForCreate: DataDefinitionOp[String] = errorDef
-    override def successSchemaForRead: DataDefinitionOp[CC] = creditCardSchema
-  }
-
   val doobieCc = new DoobieInfo[CC] {
     override def transactor: Aux[IO, Unit] = ???
 
