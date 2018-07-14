@@ -96,5 +96,7 @@ lazy val examples = (project in file("examples"))
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
 
+//enablePlugins(TutPlugin)
+
 testOptions in Test += Tests.Argument("-oF")
 
