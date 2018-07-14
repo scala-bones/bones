@@ -3,6 +3,7 @@ package com.bones
 import cats.effect.IO
 import com.bones.data.Algebra.{DataDefinitionOp, StringData}
 import com.bones.oas3.CrudOasInterpreter
+import com.bones.rest.Algebra.CrudOp
 import com.bones.rest.Sugar._
 import com.bones.rest.unfiltered.DirectToDoobie.{DoobieInfo, EndPoint}
 import com.bones.rest.unfiltered.{DirectToDoobie, DoobiePostgresSchema, UnfilteredUtil}
@@ -17,9 +18,7 @@ import unfiltered.jetty
 
 
 object Interpreter {
-  def doInterpretation[A,B](schema: DataDefinitionOp[A], doobieInfo: DoobieInfo[A] with EndPoint, errorDef: DataDefinitionOp[B]): Unit = {
-
-    val serviceDescription = List(create(schema, schema, errorDef), read(schema))
+  def doInterpretation[A,B](serviceDescription: List[CrudOp[A]], doobieInfo: DoobieInfo[A] with EndPoint, errorDef: DataDefinitionOp[B]): Unit = {
 
     val restToDoobieInterpreter = DirectToDoobie("/person")
 
@@ -47,13 +46,14 @@ object PersonEndpoint extends App {
 
   case class Person(name: String, age: Int)
 
-
   val personSchema = obj2(
-    key("name").string(sv.alphanum()),
+    key("name").string(sv.matchesRegex("^[a-zA-Z ]*$".r)),
     key("age").int(iv.min(0))
   ).transform[Person]
 
   val errorDef: DataDefinitionOp[String] = StringData()
+
+  val serviceDescription = List(create(personSchema, personSchema, errorDef), read(personSchema))
 
   val doobieInfo = new DoobieInfo[Person] with EndPoint {
     override def transactor: Aux[IO, Unit] = Transactor.fromDriverManager[IO](
@@ -71,7 +71,7 @@ object PersonEndpoint extends App {
 
     override def url: String = "/person"
   }
-  Interpreter.doInterpretation(personSchema, doobieInfo, errorDef)
+  Interpreter.doInterpretation(serviceDescription, doobieInfo, errorDef)
 
   //Above is the description.
   //below interpreters the description into runnable code.
