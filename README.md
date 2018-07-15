@@ -1,15 +1,141 @@
-# Overview
+# Bones
 
-The idea behind Bones is to create a clone of Joi validation (written in JavaScript) by building up an 
-Abstract Syntax Tree (AST) and then running the tree through different interpreters which will
-generate programs to Encode, Decode JSON as well as creating documentation and essentually anything 
-that depends on the Schema.
+** Please note that the Bones project is currently a work in progress.  Limitations where noted (and many where not noted) **
+
+## DSL 
+Bones defines a Domain Specific Language (DSL) for describing CRUD applications with validation.
+
+Using the DSL will result in creating a Generalized Algebraic Data Type (GADT) data structure.
+The GADT structure describes the data, validation and available Create/Read/Update/Delete (CRUD) actions.
+
+ 
+As an example, we will describe a CRUD application that creates and reads a Person.
+
+```$scala
+
+case class Person(name: String, age: Int)
+
+val personSchema = obj2(
+  key("name").string(sv.matchesRegex("^[a-zA-Z ]*$".r)),
+  key("age").int(iv.min(0))
+).transform[Person]
+
+val errorDef: DataDefinitionOp[String] = StringData()
+
+val serviceDescription = List(create(personSchema, personSchema, errorDef), read(personSchema))
+
+```
+
+
+## Interpreters
+
+The power in creating a GADT structure, is that we can provide different interpretations of the defined Schema.
+Once the basic description of the service is created, many different programs can interpret not only the data structure 
+in different contexts, but also define implied behavior.  If implied behavior is similar between systems, then the exact
+same interpreter can be used across services and the only change would be the schema and service description as described above.
+
+I other words, if services perform similar behavior, 
+such as write to Kafka, S3, a DB or an external services, the boilerplate code can be reduced by using GADTs.
+This project is to provide a common vocabulary, and reasonable API, specifically for CRUD services.
+
+The following 3 interpreters work together to produce an actual REST web service, it's swagger documentation 
+and the postgres schema to support the REST web service.  
+
+
+### REST / JSON / Doobie DB Interpreter
+
+** __Note:__ only GET and POST are currently supported **
+
+The __Direct to Doobie__ interpreter will spin up a Jetty container with an application which will listen
+for GET (based on the _read()_ definition) and POST (based on the _create()_ definition).  
+By convention, the resulting interpreted application will expect a JSON object which will then be validated based on the schema.
+If validation is successful, we will issue an insert statement for the POST and a select statement for the GET request.
+By convention, the insert will use the DB specific auto-generated id and therefor it is implied that the 
+resulting JSON will also include an id property.
+
+To enable the Direct to Doobie service, we need to define queries specific to our case class
+as well as configure the name of the endpoint.
+
+```$scala
+
+//the next bit of code are the Queries needed to select and insert data using Doobie.
+//(Currently unsure of how to auto generate these queries, but it should be possible)  
+val doobieInfo = new DoobieInfo[Person] with EndPoint {
+    override def transactor: Aux[IO, Unit] = Transactor.fromDriverManager[IO](
+      "org.postgresql.Driver", "jdbc:postgresql:bones", "postgres", ""
+    )
+    
+    override def get(id: Long): doobie.ConnectionIO[Person] =
+      sql"select name, age from person where id = $id".query[Person].unique
+    
+    override def insert(a: Person): doobie.ConnectionIO[Int] = {
+      val name = a.name
+      val age = a.age
+      sql"insert into person (name, age) values ($name, $age)".update.run
+    }
+
+        
+    override def url: String = "/person"
+}
+```
+
+Finally, given that we have a schema and the DoobieInfo for the case class, we 
+can start the service.  For this interpreter we are using the Unfiltered library.
+
+```$scala
+//this will create the URL Paths, 
+//in this case the GET and POST will be available at https://localhost:5678/person will be available.
+val restToDoobieInterpreter = DirectToDoobie("/person")
+
+val serviceDefinitions = restToDoobieInterpreter(serviceDescription)(doobieInfo)
+
+//To start the daemon, we can pass the endpoint serviceDefinitions to Jetty.
+jetty.Http(5678).filter(new Planify(plan)).run
+```
+
+
+### Swagger Interpreter
+
+** __Note:__ -- Work in progress. Currently incomplete. ** 
+
+The __swagger__ interpreter will generate a JSON document describing the REST data structure in Swagger format.
+This can be used in conjunction with a REST Interpreter to produce documentation describing the REST endpoint.
+Note that we can reuse the same person schema DataDefinition that we pass to the REST interpreter.  Therefor any changes
+to the data schema will be reflected in the Swagger doc automatically.
+
+```$scala
+   // swaggerDoc now contains an OAS compliant string describing the REST endpoint.  Note that we are reusing 
+   // the same serviceDescription as the REST interpreter.
+   val swaggerDoc = CrudOasInterpreter().apply(serviceDescription).apply("/person", "/people").spaces2
+```
+
+### Postgres Schema Generator
+
+** __Note:__ -- Work In Progress. Results may vary.  Please double check that the output is appropriate.**  
+
+The __postgres schema generator__ interpreter will create a string which can be used to create the table in postgres which
+corresponds to how the database schema needs to exists in order to support the _REST / JSON / Doobie DB Interpreter_.
+
+This generator currently implies creating an `id` column that is auto incremented by the database.
+```$scala
+//the results will be something along the lines of `create table person (id serial, name text, age int8)`
+val psqlSchema = DoobiePostgresSchema("person").apply(serviceDescription)
+```
+
+This runnable example can be seen in the 
+[Person Endpoint](https://github.com/OleTraveler/bones/blob/master/examples/src/main/scala/com/bones/PersonEndpoint.scala).
+
+
+
 
 ## Download
 
+Version 0.4.0 has JSON validation, but lacks the full CRUD definitions.
+Version 0.5.0-SNAPSHOT includes validation, CRUD and a partial REST Interpreter.
+
+
 ### Stableish
-Core.
-```libraryDependencies += "com.github.oletraveler" %% "bones" % "0.3.0"```
+```libraryDependencies += "com.github.oletraveler" %% "bones" % "0.4.0"```
 
 Interpreters (no need to include core if you include this)
 #### Lift Json Interpreter (currently the only interpreter)
@@ -23,164 +149,6 @@ Interpreters (no need to include core if you include this)
 ```libraryDependencies += "com.github.oletraveler" %% "bones-rest-unfiltered" % "0.5.0-SNAPSHOT"```
 
 
-## Interpreters
-
-* Marshall from Json to case class (Complete)
-* Unmarshall case class to Json (Complete)
-* Documentation Interpreter (maybe Swagger or Json API) (POC Complete)
-* JavaScript/Html Generator (Not Implemented)
-* DB Schema Generator (Not Implemented)
-
-Since using the GADT types directly can become unwieldy, Bones also has a declarative syntax interface in order to 
-simplify the creation of the GADTs by using a DSL.
-
-## Getting Started
-
-Here is an example data definition.
-
-```$scala
-    val extractData = obj12(
-      key("firstFive").string(sv.length(5), sv.matchesRegex("[0-9]{5}".r)),
-      key("lastFour").string(sv.length(4), sv.matchesRegex("[0-9]{4}".r)),
-      key("uuid").uuid(),
-      key("token").uuid(),
-      key("ccType").string().convert(CreditCardTypes.toCreditCardType, (cct: CreditCardType) => cct.abbrev, "CreditCardType", List.empty),
-      key("expMonth").int(iv.between(1, 12)),
-      key("expYear").int(iv.between(1950, 9999)),
-      key("cardHolder").string(),
-      key("currencyIso").enumeration(Currency),
-      key("deletedAt").isoDateTime().optional(),
-      key("lastModifiedRequest").uuid(),
-      key("billingLocation").obj2(
-        key("countryIso").string(sv.validValue(isoVector)),
-        key("zipCode").string().optional()
-      ).transform[BillingLocation].optional()
-    ).transform[CC]
-``` 
-
-And here we can see the full context in the [Example Test](src/test/scala/com/ot/bones/ValidationTest.scala)
-
-```$scala
-
-
-    //Define some example data types.
-    /** CreditCardType */
-    sealed abstract class CreditCardType(val abbrev: String)
-
-    object CreditCardTypes {
-      case object Visa extends CreditCardType("Visa")
-      case object Mastercard extends CreditCardType("Mastercard")
-      case object Amex extends CreditCardType("Amex")
-      case object Discover extends CreditCardType("Discover")
-
-      def toCreditCardType: String => Validated[ConversionError[String, CreditCardType], CreditCardType] = input => {
-        input.toLowerCase match {
-          case "visa" => Valid(CreditCardTypes.Visa)
-          case "mastercard" => Valid(CreditCardTypes.Mastercard)
-          case "amex" => Valid(CreditCardTypes.Amex)
-          case "discover" => Valid(CreditCardTypes.Discover)
-          case x => Invalid(ConversionError(x, classOf[CreditCardType]))
-        }
-      }
-    }
-
-
-    case class BillingLocation(countryIso: String, zipCode: Option[String])
-
-    object Currency extends Enumeration {
-      val USD = Value("USD")
-      val CAD = Value("CAD")
-      val GBP = Value("GBP")
-    }
-
-    case class CC(firstFive: String, lastFour: String, uuid: UUID, token: UUID, ccType: CreditCardType,
-                  expMonth: Int, expYear: Int, cardholder: String, currency: Currency.Value, deletedAt: Option[Date],
-                  lastModifiedRequest: UUID, billingLocation: Option[BillingLocation])
-
-    val isoVector = Vector("US", "CA", "MX")
-
-
-
-    /** **** Begin Real Example ******/
-
-    import com.ot.bones.syntax._
-
-    // Here we are defining our expected input data.  This definition will drive the interpreters.
-    val extractData = obj12(
-      key("firstFive").string(sv.length(5), sv.matchesRegex("[0-9]{5}".r)),
-      key("lastFour").string(sv.length(4), sv.matchesRegex("[0-9]{4}".r)),
-      key("uuid").uuid(),
-      key("token").uuid(),
-      key("ccType").string().convert(CreditCardTypes.toCreditCardType, (cct: CreditCardType) => cct.abbrev, "CreditCardType", List.empty),
-      key("expMonth").int(iv.between(1, 12)),
-      key("expYear").int(iv.between(1950, 9999)),
-      key("cardHolder").string(),
-      key("currencyIso").enumeration(Currency),
-      key("deletedAt").isoDateTime().optional(),
-      key("lastModifiedRequest").uuid(),
-      key("billingLocation").obj2(
-        key("countryIso").string(sv.validValue(isoVector)),
-        key("zipCode").string().optional()
-      ).transform[BillingLocation].optional()
-    ).transform[CC]
-    //final type is basically DataDefinitionOp[CC]
-
-    //Here is our input
-    val cc =
-      """
-        |{
-        |  "firstFive" : "12345",
-        |  "lastFour" : "4321",
-        |  "uuid" : "df15f08c-e6bd-11e7-aeb8-6003089f08b4",
-        |  "token" : "e58e7dda-e6bd-11e7-b901-6003089f08b4",
-        |  "ccType" : "mastercard",
-        |  "expMonth" : 11,
-        |  "expYear" : 2022,
-        |  "cardHolder" : "Lennart Augustsson",
-        |  "currencyIso" : "USD",
-        |  "lastModifiedRequest" : "4545d9da-e6be-11e7-86fb-6003089f08b4",
-        |  "billingLocation" : {
-        |     "countryIso": "US",
-        |     "zipCode": "80031"
-        |  }
-        |}
-      """.stripMargin
-
-    //sorry, we still use lift in my projects.  I will soon create a Circe JsonProducer.
-    val parsed = net.liftweb.json.parse(cc)
-    val jsonProducer = LiftJsonProducer(parsed)
-
-    //create the program that is responsible for converting JSON into a CC.
-    val jsonToCCProgram = extractData.lift.foldMap[ValidateFromProducer](DefaultExtractInterpreter())
-
-    //here, we will test that just the validation step is working
-    val btCc = jsonToCCProgram.apply(jsonProducer)
-
-    //tada!  We have can parse input from JsonProducer to CC using our dataDefinition.
-    assert(btCc == Valid(CC("12345", "4321", UUID.fromString("df15f08c-e6bd-11e7-aeb8-6003089f08b4"),
-      UUID.fromString("e58e7dda-e6bd-11e7-b901-6003089f08b4"), CreditCardTypes.Mastercard, 11, 2022,
-      "Lennart Augustsson", Currency.USD, None, UUID.fromString("4545d9da-e6be-11e7-86fb-6003089f08b4"),
-      Some(BillingLocation("US", Some("80031")))
-    )))
-
-    //convert back to json
-    import com.ot.bones.interpreter.EncoderInterpreter._
-    val ccToJson = extractData.lift.foldMap[Encode](DefaultEncoderInterpreter())
-    import net.liftweb.json._
-    val output = ccToJson.apply(btCc.toOption.get)
-    val printed = compact(render(output))
-    assert(printed === """{"firstFive":"12345","lastFour":"4321","uuid":"df15f08c-e6bd-11e7-aeb8-6003089f08b4","token":"e58e7dda-e6bd-11e7-b901-6003089f08b4","ccType":"Mastercard","expMonth":11,"expYear":2022,"cardHolder":"Lennart Augustsson","currencyIso":"USD","lastModifiedRequest":"4545d9da-e6be-11e7-86fb-6003089f08b4","billingLocation":{"countryIso":"US","zipCode":"80031"}}""")
-
-
-    //Doc interpreter, simple POC showing we can make documentation out of this.
-    val docOut = extractData.lift.foldMap[Doc](DocInterpreter)
-    assert(docOut.str === """Transform to a CC$3 from object with 12 members: [firstFive: String,lastFour: String,uuid: String representing a UUID,token: String representing a UUID,ccType: Convert to a CreditCardType from String,expMonth: Int,expYear: Int,cardHolder: String,currencyIso: String with one of the following values: [CAD,GBP,USD],deletedAt: Optional: Date with format ISO date-time format with the offset and zone if available, such as '2011-12-03T10:15:30', '2011-12-03T10:15:30+01:00' or '2011-12-03T10:15:30+01:00[Europe/Paris]',lastModifiedRequest: String representing a UUID,billingLocation: Optional: Convert to a Transform to type BillingLocation$3 from object with 2 members: [countryIso: String,zipCode: Optional: String]]""")
-
-  }
-```
-
-
-
 ## Credits
 
 * "Your bones got a little machine" - Black Francis
@@ -188,4 +156,3 @@ And here we can see the full context in the [Example Test](src/test/scala/com/ot
 * John De Goes [Free Applicative Talk](https://www.youtube.com/watch?v=H28QqxO7Ihc)
 * Kris Knuttycombe's [Xenomorph Library](https://github.com/nuttycom/xenomorph) is similar to this.
 * Scodec is an amazing library.  I learned a lot from that library.
-
