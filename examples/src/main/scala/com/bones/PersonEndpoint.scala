@@ -53,7 +53,12 @@ object PersonEndpoint extends App {
 
   val errorDef: DataDefinitionOp[String] = StringData()
 
-  val serviceDescription = List(create(personSchema, personSchema, errorDef), read(personSchema))
+  val serviceDescription =
+    create(personSchema, personSchema, errorDef) ::
+      read(personSchema) ::
+      Nil
+
+
 
   val doobieInfo = new DoobieInfo[Person] with EndPoint {
     override def transactor: Aux[IO, Unit] = Transactor.fromDriverManager[IO](

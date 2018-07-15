@@ -22,7 +22,10 @@ val personSchema = obj2(
 
 val errorDef: DataDefinitionOp[String] = StringData()
 
-val serviceDescription = List(create(personSchema, personSchema, errorDef), read(personSchema))
+val serviceDescription =
+    create(personSchema, personSchema, errorDef) ::
+      read(personSchema) ::
+      Nil
 
 ```
 
