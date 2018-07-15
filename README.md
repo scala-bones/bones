@@ -59,7 +59,7 @@ as well as configure the name of the endpoint.
 ```$scala
 
 //the next bit of code are the Queries needed to select and insert data using Doobie.
-//(Currently unsure of how to auto generate these queries, but it should be possible)  
+//(Doobie has an ORM example in a later library which we can use to get rid of the hard-coded queries.)  
 val doobieInfo = new DoobieInfo[Person] with EndPoint {
     override def transactor: Aux[IO, Unit] = Transactor.fromDriverManager[IO](
       "org.postgresql.Driver", "jdbc:postgresql:bones", "postgres", ""
@@ -88,6 +88,10 @@ can start the service.  For this interpreter we are using the Unfiltered library
 val restToDoobieInterpreter = DirectToDoobie("/person")
 
 val serviceDefinitions = restToDoobieInterpreter(serviceDescription)(doobieInfo)
+
+//We can combine multiple servletDefinitions into a single plan.  Meaning
+//we can add additional endpoints besides "/person".
+val plan = UnfilteredUtil.toPlan(servletDefinitions)
 
 //To start the daemon, we can pass the endpoint serviceDefinitions to Jetty.
 jetty.Http(5678).filter(new Planify(plan)).run
@@ -156,3 +160,11 @@ Interpreters (no need to include core if you include this)
 * John De Goes [Free Applicative Talk](https://www.youtube.com/watch?v=H28QqxO7Ihc)
 * Kris Knuttycombe's [Xenomorph Library](https://github.com/nuttycom/xenomorph) is similar to this.
 * Scodec is an amazing library.  I learned a lot from that library.
+
+
+
+
+
+
+
+  
