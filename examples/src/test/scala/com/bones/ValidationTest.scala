@@ -7,7 +7,6 @@ import argonaut.{Json, JsonObject, Parse}
 import cats.data.Validated.Valid
 import com.bones.data.Algebra.{DataDefinitionOp, StringData}
 import com.bones.data.Error.CanNotConvert
-import com.bones.interpreter.DocInterpreter.{Doc, DocInterpreter}
 import com.bones.interpreter.{EncodeToJValueInterpreter, ValidatedFromJObjectInterpreter}
 import com.bones.oas3.{ValidationOasInterpreter, ValidationToPropertyInterpreter}
 import org.scalatest.FunSuite
@@ -157,13 +156,6 @@ class ValidationTest extends FunSuite {
     val output = ccToJson.apply(creditCardSchema).apply(btCc.toOption.get)
     val printed = compact(render(output))
     assert(printed === """{"firstFive":"12345","lastFour":"4321","uuid":"df15f08c-e6bd-11e7-aeb8-6003089f08b4","token":"e58e7dda-e6bd-11e7-b901-6003089f08b4","ccType":"Mastercard","expMonth":11,"expYear":2022,"cardHolder":"Lennart Augustsson","currencyEnum":"GBP","currencyIso":"USD","lastModifiedRequest":"4545d9da-e6be-11e7-86fb-6003089f08b4","billingLocation":{"countryIso":"US","zipCode":"80031"}}""")
-
-
-    //Doc interpreter, simple POC showing we can make documentation out of this.
-//    val docOut = creditCardSchema.lift.foldMap[Doc](DocInterpreter)
-    val docOut = DocInterpreter.apply(creditCardSchema)
-//    println(docOut.str)
-//    assert(docOut.str === """Transform to  CC$3 from object with 13 members: [firstFive: String,lastFour: String,uuid: String representing  UUID,token: String representing  UUID,ccType: Convert to  CreditCardType from String,expMonth: Int,expYear: Int,cardHolder: String,currencyEnum: String with one of the following values: [USD,CAD,GBP],currencyIso: String with one of the following values: [CAD,GBP,USD],deletedAt: Optional: Date with format ISO date-time format with the offset and zone if available, such as '2011-12-03T10:15:30', '2011-12-03T10:15:30+01:00' or '2011-12-03T10:15:30+01:00[Europe/Paris]',lastModifiedRequest: String representing  UUID,billingLocation: Optional: Convert to  Transform to type BillingLocation$3 from object with 2 members: [countryIso: String,zipCode: Optional: String]]""")
 
 
     val doc = ValidationOasInterpreter(ValidationToPropertyInterpreter())
