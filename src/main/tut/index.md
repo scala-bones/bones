@@ -2,6 +2,16 @@
 
 ** Please note that the Bones project is currently a work in progress.  Limitations where noted (and many where not noted) **
 
+## Purpose
+
+The purpose of this library is to remove as much boilerplate as possible out of a CRUD application.  
+Some REST services can be written in as little as 5 expressions.  
+ * Define the case class (this may actually be optional)
+ * Define the schema and how it feeds to the case class 
+ * define the error schema 
+ * define the allowable actions (CRUD)
+ * pass the above 4 items to an interpreter.
+
 ## DSL 
 Bones defines a Domain Specific Language (DSL) for describing CRUD applications with validation.
 
@@ -12,6 +22,9 @@ The GADT structure describes the data, validation and available Create/Read/Upda
 As an example, we will describe a CRUD application that creates and reads a Person.
 
 ```$scala
+
+import com.bones.syntax._
+import com.bones.validation.ValidationDefinition.{IntValidation => iv, StringValidation => sv}
 
 case class Person(name: String, age: Int)
 
