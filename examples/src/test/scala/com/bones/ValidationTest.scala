@@ -164,7 +164,7 @@ class ValidationTest extends FunSuite {
     println(Json.jObject(docResult).spaces2)
 
 
-    import com.bones.rest.Sugar._
+    import com.bones.crud.Algebra._
 
 
 
