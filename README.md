@@ -5,12 +5,16 @@
 ## Purpose
 
 The purpose of this library is to remove as much boilerplate as possible out of a CRUD application.  
-Some REST services can be written in as little as 5 expressions.  
+Some REST services (including Swagger doc) can be written in as little as 5 expressions.  
  * Define the case class (this may actually be optional)
- * Define the schema and how it feeds to the case class 
- * define the error schema 
- * define the allowable actions (CRUD)
- * pass the above 4 items to an interpreter.
+ * Define the input and output schema 
+ * Define the error schema 
+ * Define the allowable actions (CRUD)
+ * Pass the above 4 items to an interpreter.
+ 
+The idea is to break the application into 
+ 
+ 
 
 ## DSL 
 Bones defines a Domain Specific Language (DSL) for describing CRUD applications with validation.

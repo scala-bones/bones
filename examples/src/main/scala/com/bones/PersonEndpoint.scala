@@ -3,8 +3,7 @@ package com.bones
 import cats.effect.IO
 import com.bones.data.Algebra.{DataDefinitionOp, StringData}
 import com.bones.oas3.CrudOasInterpreter
-import com.bones.rest.Algebra.CrudOp
-import com.bones.rest.Sugar._
+import com.bones.crud.Algebra._
 import com.bones.rest.unfiltered.DirectToDoobie.{DoobieInfo, EndPoint}
 import com.bones.rest.unfiltered.{DirectToDoobie, DoobiePostgresSchema, UnfilteredUtil}
 import com.bones.syntax._
@@ -18,15 +17,15 @@ import unfiltered.jetty
 
 
 object Interpreter {
-  def doInterpretation[A,B](serviceDescription: List[CrudOp[A]], doobieInfo: DoobieInfo[A] with EndPoint, errorDef: DataDefinitionOp[B]): Unit = {
+  def doInterpretation[A:Manifest,B](serviceDescription: List[CrudOp[A]], doobieInfo: DoobieInfo[A] with EndPoint, errorDef: DataDefinitionOp[B]): Unit = {
 
-    val restToDoobieInterpreter = DirectToDoobie("/person")
+    val restToDoobieInterpreter = DirectToDoobie(doobieInfo.urlPath)
 
     val servletDefinitions = restToDoobieInterpreter.apply(serviceDescription).apply(doobieInfo)
 
     val plan = UnfilteredUtil.toPlan(servletDefinitions)
 
-    val oas = CrudOasInterpreter().apply(serviceDescription).apply("/person", "/people").spaces2
+    val oas = CrudOasInterpreter().apply(serviceDescription).apply(doobieInfo.urlPath).spaces2
 
     println(oas)
 
@@ -37,7 +36,7 @@ object Interpreter {
 
     println(DoobiePostgresSchema("person").apply(serviceDescription))
 
-    jetty.Http(5678).filter(new Planify(plan)).run
+//    jetty.Http(5678).filter(new Planify(plan)).run
 
   }
 
@@ -54,9 +53,9 @@ object PersonEndpoint extends App {
   val errorDef: DataDefinitionOp[String] = StringData()
 
   val serviceDescription =
-    create(personSchema, personSchema, errorDef) ::
-      read(personSchema) ::
-      Nil
+    create(personSchema, errorDef, personSchema) ::
+    read(personSchema) ::
+    Nil
 
 
 
@@ -74,7 +73,7 @@ object PersonEndpoint extends App {
       sql"insert into person (name, age) values ($name, $age)".update.run
     }
 
-    override def url: String = "/person"
+    override def urlPath: String = "/people"
   }
   Interpreter.doInterpretation(serviceDescription, doobieInfo, errorDef)
 

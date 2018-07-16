@@ -1,51 +1,64 @@
 package com.bones.oas3
 
 import argonaut.Json
-import com.bones.rest.Algebra.{Create, CrudOp, Read}
+import com.bones.crud.Algebra.{Create, CrudOp, Read}
 import com.bones.validation.ValidationDefinition.ValidationOp
 import argonaut.Argonaut._
 import argonaut._
+import com.bones.data.Algebra.DataDefinitionOp
 
-
-object CrudOasInterpreter {
-  type URL = String
-  type PluralURL = String
-}
 case class CrudOasInterpreter() {
 
   val validationOasInterpreter = ValidationOasInterpreter(ValidationToPropertyInterpreter())
 
   import CrudOasInterpreter._
 
-  def apply[A](ops: List[CrudOp[A]]): (URL, PluralURL) => Json = (url: URL, plural: PluralURL) => {
+  def apply[A:Manifest](ops: List[CrudOp[A]]): String => Json = (urlPath: String) => {
+
+    val (definitions, paths) = toJson(ops).apply(urlPath)
+
+    val combinedDefinitions = definitions.values.map(_.objectOrEmpty)
+      .fold(JsonObject.empty)( (a,b) => JsonObject.fromTraversableOnce(a.toMap ++ b.toMap))
 
     Json(
       "swagger" := "2.0",
-      "paths" := jObjectAssocList(toJson(ops).apply(url, plural))
+      "paths" := jObjectAssocList(paths),
+      "definitions" := Json.jObject(combinedDefinitions)
     )
+
   }
 
-  def toJson[A](ops: List[CrudOp[A]]): (URL, PluralURL) => List[(JsonField, Json)] = (url: URL, plural: PluralURL) => {
-    ops map {
+
+  case class ToJsonResult(definitions: Map[Class[_], Json], paths: List[(JsonField, Json)])
+
+  def toJson[A:Manifest](ops: List[CrudOp[A]]): String => (Map[String, Json], List[(JsonField, Json)]) = (urlPath: String) => {
+
+    val definitionAndPaths = ops map {
       case op: Read[o] => {
-          url + "/{id}" :=
+        val runtimeClass = manifest[A].runtimeClass
+        val definitions = Map(runtimeClass.getSimpleName -> jObject(validationOasInterpreter.apply(op.successSchemaForRead)))
+
+        val path =  urlPath + "/{id}" :=
             Json("get" :=
               Json(
-                "description" := "Returns a X by id",
+                "description" := "Returns a X given the id",
                 "parameters" := Json.array(
                   Json(
-                    "name" := "userId",
+                    "name" := "id",
                     "in" := "path",
                     "required" := "true",
-                    "schema" := jObject(validationOasInterpreter.apply(op.successSchemaForRead))
+                    "schema" :=
+                      Json("$ref" := s"#/definitions/${runtimeClass.getCanonicalName}")
                   )
                 )
               )
             )
 
+        (definitions, path)
+
       }
       case op: Create[i,e,o] => {
-        plural :=
+        val path = urlPath :=
           Json("post" :=
             Json("description" := "Creates a X",
               "requestBody" :=
@@ -59,7 +72,12 @@ case class CrudOasInterpreter() {
                 )
             )
           )
+        (Map.empty, path)
       }
     }
+
+    //combine the definitions to avoid duplicates.
+    val definitions = definitionAndPaths.flatMap(_._1.toList).toMap
+    (definitions, definitionAndPaths.map(_._2))
   }
 }
