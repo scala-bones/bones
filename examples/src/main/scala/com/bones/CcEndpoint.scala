@@ -4,8 +4,6 @@ import java.util.UUID
 
 import cats.effect.IO
 import com.bones.data.Algebra.{DataDefinitionOp, StringData}
-import com.bones.rest.Algebra.{Create, Read}
-import com.bones.rest.unfiltered.DirectToDoobie
 import com.bones.rest.unfiltered.DirectToDoobie.DoobieInfo
 import doobie.{Transactor, Update0}
 import doobie.util.transactor.Transactor.Aux

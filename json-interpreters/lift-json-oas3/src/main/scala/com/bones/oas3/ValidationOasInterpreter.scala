@@ -1,7 +1,8 @@
 package com.bones.oas3
 
-import java.time.ZonedDateTime
+import java.time.{LocalDateTime, ZonedDateTime}
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 
 import argonaut.Argonaut._
 import argonaut._
@@ -96,13 +97,13 @@ case class ValidationOasInterpreter(validationInterpreter: ValidationToPropertyI
         op.validations.flatMap(x => validationInterpreter.apply(x))))
       )
     }
-    case ob: BooleanData => JsonObject.single("type", jString("boolean")) :+ ("required", jBool(true))
-    case rs: StringData => JsonObject.single("type", jString("string")) :+ ("required", jBool(true))
-    case ri: IntData => JsonObject.single("type", jString("int")) :+ ("required", jBool(true))
-    case uu: UuidData => JsonObject.single("type", jString("string")) :+ ("required", jBool(true))
-    case DateData(format, _) => JsonObject.single("type", jString("date")) :+ ("required", jBool(true))
-    case bd: BigDecimalFromString => JsonObject.single("type", jString("double")) :+ ("required", jBool(true))
-    case dd: DoubleData => JsonObject.single("type", jString("double")) :+ ("required", jBool(true))
+    case ob: BooleanData => JsonObject.single("type", jString("boolean")) :+ ("required", jBool(true)) :+ ("example", jBool(true))
+    case rs: StringData => JsonObject.single("type", jString("string")) :+ ("required", jBool(true)) :+ ("example", jString("123"))
+    case ri: IntData => JsonObject.single("type", jString("integer")) :+ ("required", jBool(true)) :+ ("example", jNumber(123))
+    case uu: UuidData => JsonObject.single("type", jString("string")) :+ ("required", jBool(true)) :+ ("example", jString(UUID.randomUUID().toString))
+    case DateData(format, _) => JsonObject.single("type", jString("date")) :+ ("required", jBool(true)) :+ ("example", jString(format.format(new LocalDateTime)))
+    case bd: BigDecimalFromString => JsonObject.single("type", jString("double")) :+ ("required", jBool(true)) :+ ("example", jString("3.14"))
+    case dd: DoubleData => JsonObject.single("type", jString("double")) :+ ("required", jBool(true)) :+ ("example", jNumber(3.14))
     case ListData(definition) => {
       val items = apply(definition)
       ("type", jString("array")) +: ("items", jObject(items)) +: JsonObject.empty
