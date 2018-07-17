@@ -1,17 +1,14 @@
 package com.bones.oas3
 
-import argonaut.Json
-import com.bones.crud.Algebra.{Create, CrudOp, Read}
-import com.bones.validation.ValidationDefinition.ValidationOp
 import argonaut.Argonaut._
-import argonaut._
-import com.bones.data.Algebra.DataDefinitionOp
+import argonaut.{Json, _}
+import com.bones.crud.Algebra.{Create, CrudOp, Read}
+
+
 
 case class CrudOasInterpreter() {
 
   val validationOasInterpreter = ValidationOasInterpreter(ValidationToPropertyInterpreter())
-
-  import CrudOasInterpreter._
 
   def apply[A:Manifest](ops: List[CrudOp[A]]): String => Json = (urlPath: String) => {
 
@@ -22,6 +19,9 @@ case class CrudOasInterpreter() {
 
     Json(
       "swagger" := "2.0",
+      "info" := Json(
+        "title" := ""
+      ),
       "paths" := jObjectAssocList(paths),
       "definitions" := Json.jObject(combinedDefinitions)
     )
@@ -33,22 +33,32 @@ case class CrudOasInterpreter() {
 
   def toJson[A:Manifest](ops: List[CrudOp[A]]): String => (Map[String, Json], List[(JsonField, Json)]) = (urlPath: String) => {
 
+    val runtimeClass = manifest[A].runtimeClass
     val definitionAndPaths = ops map {
       case op: Read[o] => {
-        val runtimeClass = manifest[A].runtimeClass
         val definitions = Map(runtimeClass.getSimpleName -> jObject(validationOasInterpreter.apply(op.successSchemaForRead)))
 
         val path =  urlPath + "/{id}" :=
             Json("get" :=
               Json(
-                "description" := "Returns a X given the id",
-                "parameters" := Json.array(
-                  Json(
+                "description" := s"Returns the ${runtimeClass.getSimpleName} of the given id",
+                "parameters" := List(
+                  (
                     "name" := "id",
                     "in" := "path",
-                    "required" := "true",
+                    "required" := true
+                  )
+                ),
+                "produces" := Json.array(
+                  jString("application/json")
+                ),
+                "responses" := Json(
+                  "200" := Json(
+                    "description" := s"The ${runtimeClass.getSimpleName} of the given id",
                     "schema" :=
-                      Json("$ref" := s"#/definitions/${runtimeClass.getCanonicalName}")
+                      Json(
+                        "$ref" := s"#/definitions/${runtimeClass.getSimpleName}"
+                      )
                   )
                 )
               )
@@ -60,16 +70,28 @@ case class CrudOasInterpreter() {
       case op: Create[i,e,o] => {
         val path = urlPath :=
           Json("post" :=
-            Json("description" := "Creates a X",
-              "requestBody" :=
+            Json(
+              "summary" := s"Creates a new ${runtimeClass.getSimpleName}",
+              "consumes" := List("application/json"),
+              "parameters" := List(
                 Json(
-                  "required" := true,
-                  "content" :=
-                    Json(
-                      "application/json" :=
-                      Json("schema" := jObject(validationOasInterpreter.apply(op.successSchemaForCreate)))
+                  "in" := "body",
+                  "name" := s"${runtimeClass.getSimpleName}",
+                  "schema" := Json(
+                    "$ref" := s"#/definitions/${runtimeClass.getSimpleName}"
                     )
                 )
+              ),
+              "produces" := List("application/json"),
+              "responses" := (
+                "200" := (
+                  "description" := s"The ${runtimeClass.getSimpleName} of the given id",
+                  "schema" :=
+                    (
+                      "$ref" := s"#/definitions/${runtimeClass.getSimpleName}"
+                    )
+                )
+              )
             )
           )
         (Map.empty, path)
