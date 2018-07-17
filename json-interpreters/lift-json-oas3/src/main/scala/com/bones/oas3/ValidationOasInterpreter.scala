@@ -98,10 +98,10 @@ case class ValidationOasInterpreter(validationInterpreter: ValidationToPropertyI
       )
     }
     case ob: BooleanData => JsonObject.single("type", jString("boolean")) :+ ("required", jBool(true)) :+ ("example", jBool(true))
-    case rs: StringData => JsonObject.single("type", jString("string")) :+ ("required", jBool(true)) :+ ("example", jString("123"))
+    case rs: StringData => JsonObject.single("type", jString("string")) :+ ("required", jBool(true)) :+ ("example", jString("XYZ"))
     case ri: IntData => JsonObject.single("type", jString("integer")) :+ ("required", jBool(true)) :+ ("example", jNumber(123))
     case uu: UuidData => JsonObject.single("type", jString("string")) :+ ("required", jBool(true)) :+ ("example", jString(UUID.randomUUID().toString))
-    case DateData(format, _) => JsonObject.single("type", jString("date")) :+ ("required", jBool(true)) :+ ("example", jString(format.format(new LocalDateTime)))
+    case DateData(format, _) => JsonObject.single("type", jString("date")) :+ ("required", jBool(true)) //:+ ("example", jString(format.format(new LocalDateTime)))
     case bd: BigDecimalFromString => JsonObject.single("type", jString("double")) :+ ("required", jBool(true)) :+ ("example", jString("3.14"))
     case dd: DoubleData => JsonObject.single("type", jString("double")) :+ ("required", jBool(true)) :+ ("example", jNumber(3.14))
     case ListData(definition) => {
@@ -116,13 +116,19 @@ case class ValidationOasInterpreter(validationInterpreter: ValidationToPropertyI
     }
     case ConversionData(from, _, fba, _) => {
       val fromOp = apply(from)
-      ("type" -> jString("object")) +: JsonObject.single("properties", jObject(fromOp))
+      Json(
+        "type" := "object",
+        "properties" := jObject(fromOp)
+      ).objectOrEmpty
     }
     case EnumerationStringData(enumeration) => JsonObject.single("type", jString("string")) :+ ("required" -> jBool(true))
     case EnumStringData(enum) => JsonObject.single("type", jString("string")) :+ ("required", jBool(true))
     case transform: Transform[_,_] => {
       JsonObject.single(transform.manifestOfA.runtimeClass.getSimpleName,
-        jObject(("type" -> jString("object")) +: JsonObject.single("properties", jObject(apply(transform.op))))
+        Json(
+          "type" := "object",
+          "properties" := jObject(apply(transform.op))
+        )
       )
     }
     case Check(obj, check) => JsonObject.single("check", jString("needs impl"))
