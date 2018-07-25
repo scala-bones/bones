@@ -24,7 +24,7 @@ object ValidationOasInterpreter {
 case class ValidationToPropertyInterpreter() {
 
   import com.bones.validation.ValidationDefinition.{BigDecimalValidation => bdv, IntValidation => iv, StringValidation => sv}
-  val dateTimeFormatter = DateTimeFormatter.ISO_DATE_TIME
+  val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_DATE_TIME
 
   private def toJson(a: Any): Option[Json] = a match {
     case str:String => Some(jString(str))
@@ -37,19 +37,16 @@ case class ValidationToPropertyInterpreter() {
 
   def apply[A](op: ValidationOp[A]): List[(Json.JsonField, Json)] = {
     op match {
-      case OptionalValidation(required) => {
-        apply(required)
-      }
-      case ValidValue(values) => {
+      case OptionalValidation(required) => apply(required)
+      case ValidValue(values) =>
         List("enum" -> jArray(values.flatMap(toJson).toList))
-      }
       case InvalidValue(values) => List("not" -> Json.obj("enum" -> jArray(values.flatMap(toJson).toList)))
       case sv.IsAlphanum() => List("matches" -> jString("^[:alnum:]+$"))
       case sv.MinLength(min) => List("minLength" -> jNumber(min))
       case sv.MaxLength(max) => List("maxLength" -> jNumber(max))
       case sv.MatchesRegex(r) => List("pattern" -> jString(r.toString))
       case sv.Length(l) => List("minLength" -> jNumber(l), "maxLength" -> jNumber(l))
-      case sv.Custom(r,err,description) => List.empty
+      case sv.Custom(_,_,_) => List.empty
       case sv.Guid() =>
         List("minLength" -> jNumber(36),
              "maxLength" -> jNumber(36),
@@ -83,55 +80,97 @@ case class ValidationToPropertyInterpreter() {
 
 case class ValidationOasInterpreter(validationInterpreter: ValidationToPropertyInterpreter) {
   def apply[A](fgo: DataDefinitionOp[A]): JsonObject = fgo match {
-    case op: OptionalDataDefinition[b] => {
-      //need to remove "required" field
-      apply(op.dataDefinitionOp) :+ ("required", jBool(false)) :+ ("nullable", jBool(true))
-    }
-    case op: HListPrependN[A, p, s] => {
+    case op: OptionalDataDefinition[b] =>
+      val data = apply(op.dataDefinitionOp)
+      (data - "required") :+ ("required", jBool(false)) :+ ("nullable", jBool(true))
+    case op: HListPrependN[A, p, s] =>
       JsonObject.fromTraversableOnce(apply(op.prefix).toMap.toList ::: apply(op.suffix).toMap.toList)
-    }
-    case op: HMember[a] => {
+    case op: HMember[a] =>
       val child = apply(op.op1.op)
       JsonObject.single(op.op1.key.name,
         jObject(JsonObject.fromTraversableOnce(child.toMap.toList :::
         op.validations.flatMap(x => validationInterpreter.apply(x))))
       )
-    }
-    case ob: BooleanData => JsonObject.single("type", jString("boolean")) :+ ("required", jBool(true)) :+ ("example", jBool(true))
-    case rs: StringData => JsonObject.single("type", jString("string")) :+ ("required", jBool(true)) :+ ("example", jString("XYZ"))
-    case ri: IntData => JsonObject.single("type", jString("integer")) :+ ("required", jBool(true)) :+ ("example", jNumber(123))
-    case uu: UuidData => JsonObject.single("type", jString("string")) :+ ("required", jBool(true)) :+ ("example", jString(UUID.randomUUID().toString))
-    case DateData(format, _) => JsonObject.single("type", jString("date")) :+ ("required", jBool(true)) //:+ ("example", jString(format.format(new LocalDateTime)))
-    case bd: BigDecimalFromString => JsonObject.single("type", jString("double")) :+ ("required", jBool(true)) :+ ("example", jString("3.14"))
-    case dd: DoubleData => JsonObject.single("type", jString("double")) :+ ("required", jBool(true)) :+ ("example", jNumber(3.14))
-    case ListData(definition) => {
+    case _: BooleanData =>
+      Json(
+        "type" := "boolean",
+        "required" := true,
+        "example" := true
+      ).objectOrEmpty
+    case _: StringData =>
+      Json(
+        "type" := "string",
+        "required" := true,
+        "example" := "XYZ"
+        ).objectOrEmpty
+    case _: IntData =>
+      Json(
+        "type" := "integer",
+        "required" := true,
+        "example" :=  123
+      ).objectOrEmpty
+    case _: UuidData =>
+      Json(
+        "type" := "string",
+        "required" := true,
+        "example" := UUID.randomUUID().toString
+      ).objectOrEmpty
+    case DateData(format, _) =>
+      Json(
+        "type" := "date",
+        "required" := true,
+        "example" := format.format(LocalDateTime.now())
+      ).objectOrEmpty
+    case _: BigDecimalFromString =>
+      Json(
+        "type" := "double",
+        "required" := true,
+        "example" := "3.14"
+      ).objectOrEmpty
+    case _: DoubleData =>
+      Json(
+        "type" := "double",
+        "required" := true,
+        "example" := 3.14
+      ).objectOrEmpty
+    case ListData(definition) =>
       val items = apply(definition)
-      ("type", jString("array")) +: ("items", jObject(items)) +: JsonObject.empty
-    }
-    case EitherData(aDefinition, bDefinition) => {
+      Json(
+        "type" := "array",
+        "items" := jObject(items)
+      ).objectOrEmpty
+    case EitherData(aDefinition, bDefinition) =>
       val schemaA = apply(aDefinition)
       val schemaB = apply(bDefinition)
 
-      JsonObject.single("oneOf", Json("schema" -> jObject(schemaA)))
-    }
-    case ConversionData(from, _, fba, _) => {
+      Json(
+        "oneOf" :=
+          ("schema" := jObject(schemaA))
+      ).objectOrEmpty
+    case ConversionData(from, _, fba, _) =>
       val fromOp = apply(from)
       Json(
         "type" := "object",
         "properties" := jObject(fromOp)
       ).objectOrEmpty
-    }
-    case EnumerationStringData(enumeration) => JsonObject.single("type", jString("string")) :+ ("required" -> jBool(true))
-    case EnumStringData(enum) => JsonObject.single("type", jString("string")) :+ ("required", jBool(true))
-    case transform: Transform[_,_] => {
+    case EnumerationStringData(enumeration) =>
+      Json(
+        "type" := "string",
+        "required" := true
+      ).objectOrEmpty
+    case EnumStringData(enum) =>
+      Json(
+        "type" := "string",
+        "required" := true
+      ).objectOrEmpty
+    case transform: Transform[_,_] =>
       JsonObject.single(transform.manifestOfA.runtimeClass.getSimpleName,
         Json(
           "type" := "object",
           "properties" := jObject(apply(transform.op))
         )
       )
-    }
-    case Check(obj, check) => JsonObject.single("check", jString("needs impl"))
-    case x => JsonObject.single(x.toString, jString("needs impl"))
+    case Check(obj, check) => Json("check" :=  "needs impl").objectOrEmpty
+    case x => Json(x.toString := "needs impl").objectOrEmpty
   }
 }

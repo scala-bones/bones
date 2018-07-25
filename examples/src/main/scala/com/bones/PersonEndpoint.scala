@@ -4,7 +4,8 @@ import cats.effect.IO
 import com.bones.data.Algebra.{DataDefinitionOp, StringData}
 import com.bones.oas3.CrudOasInterpreter
 import com.bones.crud.Algebra._
-import com.bones.rest.unfiltered.DirectToDoobie.{DoobieInfo, EndPoint}
+import com.bones.rest.unfiltered.DirectToDoobie.{DoobieInfo, EndPoint, TransactorF}
+import com.bones.rest.unfiltered.Orm.Dao
 import com.bones.rest.unfiltered.{DirectToDoobie, DoobiePostgresSchema, UnfilteredUtil}
 import com.bones.syntax._
 import com.bones.validation.ValidationDefinition.{IntValidation => iv, StringValidation => sv}
@@ -17,26 +18,29 @@ import unfiltered.jetty
 
 
 object Interpreter {
-  def doInterpretation[A:Manifest,B](serviceDescription: List[CrudOp[A]], doobieInfo: DoobieInfo[A] with EndPoint, errorDef: DataDefinitionOp[B]): Unit = {
 
-    val restToDoobieInterpreter = DirectToDoobie(doobieInfo.urlPath)
+  def doInterpretation[A:Manifest,B](serviceDescription: List[CrudOp[A]], doobieInfo: Dao[A,Int], transactor: TransactorF, endpoint: String, errorDef: DataDefinitionOp[B]): Unit = {
 
-    val servletDefinitions = restToDoobieInterpreter.apply(serviceDescription).apply(doobieInfo)
+    val restToDoobieInterpreter = DirectToDoobie(endpoint)
+
+    val servletDefinitions = restToDoobieInterpreter.apply(serviceDescription).apply(doobieInfo).apply(transactor)
+
+    println("servlet defs: " + servletDefinitions)
 
     val plan = UnfilteredUtil.toPlan(servletDefinitions)
 
-    val oas = CrudOasInterpreter().apply(serviceDescription).apply(doobieInfo.urlPath).spaces2
+    val oas = CrudOasInterpreter().apply(serviceDescription).apply(endpoint).spaces2
 
-    println(oas)
+//    println(oas)
 
     new Swagger20Parser().parse(oas)
     val swagger = new SwaggerParser().parse(oas)
     val swaggerPretty = io.swagger.util.Json.pretty(swagger)
-    println(swaggerPretty)
+//    println(swaggerPretty)
 
-    println(DoobiePostgresSchema("person").apply(serviceDescription))
+//    println(DoobiePostgresSchema("person").apply(serviceDescription))
 
-//    jetty.Http(5678).filter(new Planify(plan)).run
+    jetty.Http(5678).filter(new Planify(plan)).run
 
   }
 
@@ -44,6 +48,11 @@ object Interpreter {
 object PersonEndpoint extends App {
 
   case class Person(name: String, age: Int)
+
+  object Person {
+    implicit val dao: Dao[Person, Int] =
+      Dao.derive[Person, Int]("person", "id")
+  }
 
   val personSchema = obj2(
     key("name").string(sv.matchesRegex("^[a-zA-Z ]*$".r)),
@@ -57,25 +66,11 @@ object PersonEndpoint extends App {
     read(personSchema) ::
     Nil
 
+  val transactor: Aux[IO, Unit] = Transactor.fromDriverManager[IO](
+    "org.postgresql.Driver", "jdbc:postgresql:bones", "postgres", ""
+  )
 
-
-  val doobieInfo = new DoobieInfo[Person] with EndPoint {
-    override def transactor: Aux[IO, Unit] = Transactor.fromDriverManager[IO](
-      "org.postgresql.Driver", "jdbc:postgresql:bones", "postgres", ""
-    )
-
-    override def get(id: Long): doobie.ConnectionIO[Person] =
-      sql"select name, age from person where id = $id".query[Person].unique
-
-    override def insert(a: Person): doobie.ConnectionIO[Int] = {
-      val name = a.name
-      val age = a.age
-      sql"insert into person (name, age) values ($name, $age)".update.run
-    }
-
-    override def urlPath: String = "/people"
-  }
-  Interpreter.doInterpretation(serviceDescription, doobieInfo, errorDef)
+  Interpreter.doInterpretation(serviceDescription, Person.dao, () => transactor, "/person", errorDef)
 
   //Above is the description.
   //below interpreters the description into runnable code.
