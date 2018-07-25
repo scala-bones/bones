@@ -87,6 +87,7 @@ lazy val examples = (project in file("examples"))
       libraryDependencies ++= Seq(
         "net.databinder" %% "unfiltered-jetty" % "0.8.4",
         "io.swagger" % "swagger-parser" % "1.0.36",
+        "org.slf4j" % "slf4j-simple" % "1.6.3",
         "org.scalacheck" %% "scalacheck" % "1.13.4" % Test,
         "org.scalatest" %% "scalatest" % "3.0.4" % Test,
         "org.easymock" % "easymock" % "3.5.1" % Test

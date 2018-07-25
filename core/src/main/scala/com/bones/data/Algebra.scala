@@ -54,7 +54,6 @@ object Algebra {
   final case class StringData() extends DataDefinitionOp[String] with ToOptionalData[String]
   final case class BigDecimalFromString() extends DataDefinitionOp[BigDecimal] with ToOptionalData[BigDecimal]
 
-  import java.time.LocalDate
   import java.time.format.DateTimeFormatter
 
   final case class DateData(dateFormat: DateTimeFormatter, formatDescription: String)
@@ -118,7 +117,7 @@ object HListAlgebra {
 
   }
 
-  /** Allows us to wrap any DataDefinitionOp into a BaseHListDef so we can easily append the op. */
+  /** Allows us to wrap any DataDefinitionOp into a BaseHListDef so we can append the op to a BaseHList */
   final case class HDataDefinition[A](op: DataDefinitionOp[A]) extends BaseHListDef[A::HNil] {
     /** Get a list of untyped members */
     override def members: List[FieldDefinition[_]] = List.empty
@@ -138,7 +137,10 @@ object HListAlgebra {
 
   }
 
-  /** Represents prepending any BaseHListDef together. */
+  /** Represents prepending any BaseHListDef together.
+    * We can combine two HLists.  Each HList will maintain it's own validations.
+    *
+    * */
   case class HListPrependN[OUTN <: HList, Prefix <: HList, Suffix <: HList](
     prepend: Prefix :: Suffix :: HNil => OUTN,
     split : OUTN => Prefix :: Suffix :: HNil,
