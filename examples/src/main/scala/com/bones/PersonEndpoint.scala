@@ -40,7 +40,7 @@ object Interpreter {
 
 //    println(DoobiePostgresSchema("person").apply(serviceDescription))
 
-    jetty.Http(5678).filter(new Planify(plan)).run
+    unfiltered.jetty.Server.http(5678).plan(new Planify(plan)).run
 
   }
 

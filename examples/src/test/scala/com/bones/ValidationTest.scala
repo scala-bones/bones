@@ -154,7 +154,7 @@ class ValidationTest extends FunSuite {
     val ccToJson = EncodeToJValueInterpreter()
     import net.liftweb.json._
     val output = ccToJson.apply(creditCardSchema).apply(btCc.toOption.get)
-    val printed = compact(render(output))
+    val printed = compactRender(output)
     assert(printed === """{"firstFive":"12345","lastFour":"4321","uuid":"df15f08c-e6bd-11e7-aeb8-6003089f08b4","token":"e58e7dda-e6bd-11e7-b901-6003089f08b4","ccType":"Mastercard","expMonth":11,"expYear":2022,"cardHolder":"Lennart Augustsson","currencyEnum":"GBP","currencyIso":"USD","lastModifiedRequest":"4545d9da-e6be-11e7-86fb-6003089f08b4","billingLocation":{"countryIso":"US","zipCode":"80031"}}""")
 
 
