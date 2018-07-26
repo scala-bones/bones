@@ -1,6 +1,6 @@
 lazy val commonSettings = Seq(
   organization := "com.github.oletraveler",
-  scalaVersion := "2.11.12", //TODO: cross compile 2.11.12 and 2.12.4
+  scalaVersion := "2.12.4", //TODO: cross compile 2.11.12 and 2.12.4
   version      := "0.5.0-SNAPSHOT",
   homepage := Some(url("https://github.com/oletraveler/bones")),
   startYear := Some(2018),
@@ -34,10 +34,10 @@ lazy val jsonOas3 = (project in file("json-interpreters/lift-json-oas3"))
     commonSettings,
     name := "DataDefinition to OAS3 Interpreter",
     libraryDependencies ++= Seq(
-      "io.argonaut" %% "argonaut" % "6.2",
-      "org.scalacheck" %% "scalacheck" % "1.13.4" % Test,
-      "org.scalatest" %% "scalatest" % "3.0.4" % Test,
-      "org.easymock" % "easymock" % "3.5.1" % Test
+      "io.argonaut" %% "argonaut" % "6.2.2",
+      "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+//      "org.easymock" % "easymock" % "3.5.1" % Test
     )
   ).dependsOn(core)
 lazy val doobieVersion = "0.5.3"
@@ -47,12 +47,12 @@ lazy val restUnfiltered = (project in file("rest-interpreters/unfiltered"))
     name := "Bones Rest Unfiltered",
     libraryDependencies ++= Seq(
       "javax.servlet" % "javax.servlet-api" % "3.0.1",
-      "net.databinder" %% "unfiltered-filter" % "0.8.4",
+      "ws.unfiltered" %% "unfiltered-filter" % "0.9.1",
       "org.tpolecat" %% "doobie-core" % doobieVersion,
       "org.tpolecat" %% "doobie-postgres" % doobieVersion,
-      "org.scalacheck" %% "scalacheck" % "1.13.4" % Test,
-      "org.scalatest" %% "scalatest" % "3.0.4" % Test,
-      "org.easymock" % "easymock" % "3.5.1" % Test
+      "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+//      "org.easymock" % "easymock" % "3.5.1" % Test
     )
   ).dependsOn(core, jsonLift)
 lazy val jsonLift = (project in file("json-interpreters/lift-json"))
@@ -60,10 +60,10 @@ lazy val jsonLift = (project in file("json-interpreters/lift-json"))
     commonSettings,
     name := "Bones Json Lift",
     libraryDependencies ++= Seq (
-      "net.liftweb" %% "lift-json" % "2.6.3",
-      "org.scalacheck" %% "scalacheck" % "1.13.4" % Test,
-      "org.scalatest" %% "scalatest" % "3.0.4" % Test,
-      "org.easymock" % "easymock" % "3.5.1" % Test
+      "net.liftweb" %% "lift-json" % "3.3.0",
+      "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+//      "org.easymock" % "easymock" % "3.5.1" % Test
     )
   )
   .dependsOn(core)
@@ -72,11 +72,11 @@ lazy val core = (project in file("core"))
     commonSettings,
     name := "Bones",
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-free" % "1.0.1",
+      "org.typelevel" %% "cats-free" % "1.2.0",
       "com.chuusai" %% "shapeless" % "2.3.3",
-      "org.scalacheck" %% "scalacheck" % "1.13.4" % Test,
-      "org.scalatest" %% "scalatest" % "3.0.4" % Test,
-      "org.easymock" % "easymock" % "3.5.1" % Test
+      "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+//      "org.easymock" % "easymock" % "3.5.1" % Test
     ),
     description := "DSL for Data Description using ASTs and iterpreters"
   )
@@ -85,17 +85,17 @@ lazy val examples = (project in file("examples"))
       commonSettings,
       name := "Bones Examples",
       libraryDependencies ++= Seq(
-        "net.databinder" %% "unfiltered-jetty" % "0.8.4",
+        "ws.unfiltered" %% "unfiltered-jetty" % "0.9.1",
         "io.swagger" % "swagger-parser" % "1.0.36",
         "org.slf4j" % "slf4j-simple" % "1.6.3",
-        "org.scalacheck" %% "scalacheck" % "1.13.4" % Test,
-        "org.scalatest" %% "scalatest" % "3.0.4" % Test,
-        "org.easymock" % "easymock" % "3.5.1" % Test
+        "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
+        "org.scalatest" %% "scalatest" % "3.0.5" % Test
+//        "org.easymock" % "easymock" % "3.5.1" % Test
       )
     ).dependsOn(jsonLift, restUnfiltered, jsonOas3)
 
 
-addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
+addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.7")
 
 //enablePlugins(TutPlugin)
 

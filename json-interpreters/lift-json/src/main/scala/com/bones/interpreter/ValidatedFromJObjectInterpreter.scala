@@ -34,7 +34,6 @@ case class ValidatedFromJObjectInterpreter() {
       case JNothing | JNull => classOf[Nothing]
       case JArray(_) => classOf[Array[_]]
       case JDouble(_) => classOf[Double]
-      case JField(_, f) => classOf[Nothing]
       case JString(_) => classOf[String]
     }
     WrongTypeError(expected, invalid)
@@ -44,14 +43,15 @@ case class ValidatedFromJObjectInterpreter() {
     fgo match {
 
       case op: OptionalDataDefinition[b] => jValue =>
-        this(op.dataDefinitionOp)(jValue) match {
-          case Valid(v) => Valid(Some(v)).asInstanceOf[Validated[NonEmptyList[ExtractionError], A]]
+        val result = apply(op.dataDefinitionOp)(jValue) match {
+          case Valid(v) => Valid(Some(v))
           case Invalid(x) =>
             x.filterNot(_.isInstanceOf[RequiredData[b]]).toNel match {
               case Some(nel) => Invalid(nel)
-              case None => Valid(None).asInstanceOf[Validated[NonEmptyList[ExtractionError], A]]
+              case None => Valid(None)
             }
         }
+        result
 
       case op: HListPrependN[A, p, s] => jValue => {
         jValue match {
@@ -80,60 +80,76 @@ case class ValidatedFromJObjectInterpreter() {
           case x => Invalid(NonEmptyList.one(WrongTypeError(classOf[JObject], x.getClass)))
         }
       }
-      case op: HMember[a] => {
-        case JNull | JNothing => Invalid(NonEmptyList.one(RequiredData(op)))
-        case JObject(fields) => {
-          val r1 = this (op.op1.op)
-          val optional = op.op1 match {
-            case OptionalFieldDefinition(_, _, _) => true
-            case RequiredFieldDefinition(_, _, _) => false
-            case ConversionFieldDefinition(_, _, _) => false
-          }
-          val result = fields.find(_.name == op.op1.key.name)
-            .headOption
-            .map(_.value) match {
-            case Some(field) => {
-              r1.apply(field).andThen(ex => {
-                vu.validate[a](ex, op.op1.validations)
-              })
+      case op: HMember[a] => jValue => {
+        val result = jValue match {
+          case JNull | JNothing => Invalid(NonEmptyList.one(RequiredData(op)))
+          case JObject(fields) => {
+            val r1 = this (op.op1.op)
+            val optional = op.op1 match {
+              case OptionalFieldDefinition(_, _, _) => true
+              case RequiredFieldDefinition(_, _, _) => false
+              case ConversionFieldDefinition(_, _, _) => false
             }
-            case None => {
-              if (optional) Valid(None)
-              else Invalid(NonEmptyList.one(RequiredData(op)))
+            val result = fields.find(_.name == op.op1.key.name)
+              .headOption
+              .map(_.value) match {
+              case Some(field) => {
+                r1.apply(field).andThen(ex => {
+                  vu.validate[a](ex, op.op1.validations)
+                })
+              }
+              case None => {
+                if (optional) Valid(None)
+                else Invalid(NonEmptyList.one(RequiredData(op)))
+              }
             }
+            result.map(_ :: HNil)
           }
-          result.map(_ :: HNil)
-            .asInstanceOf[Validated[NonEmptyList[ExtractionError], A]]
         }
+        import shapeless.::
+        result.asInstanceOf[Validated[cats.data.NonEmptyList[ExtractionError],a :: shapeless.HNil]]
       }
 
-      case op: HDataDefinition[a] => {
-        case JNull | JNothing => Invalid(NonEmptyList.one(RequiredData(op)))
-        case JObject(fields) => {
-          this(op.op).asInstanceOf[Validated[NonEmptyList[ExtractionError], A]]
+      case op: HDataDefinition[a] => jValue => {
+        val result = jValue match {
+          case JNull | JNothing => Invalid(NonEmptyList.one(RequiredData(op)))
+          case JObject(fields) => {
+            import shapeless.::
+            apply(op.op).asInstanceOf[Validated[NonEmptyList[ExtractionError], a :: HNil]]
+          }
         }
+        result
       }
 
-      case op: StringData => {
-        case JNull | JNothing => Invalid(NonEmptyList.one(RequiredData(op)))
-        case JString(str) => {
-          Valid(str).asInstanceOf[Validated[NonEmptyList[ExtractionError], A]]
+      case op: StringData => jValue => {
+        val result = jValue match {
+          case JNull | JNothing => Invalid(NonEmptyList.one(RequiredData(op)))
+          case JString(str) => {
+            Valid(str)
+          }
+          case x => Invalid(NonEmptyList.one(invalidValue(x, classOf[String])))
         }
-        case x => Invalid(NonEmptyList.one(invalidValue(x, classOf[String])))
+        result
       }
-      case op: IntData => {
-        case JNull | JNothing => Invalid(NonEmptyList.one(RequiredData(op)))
-        case JInt(i) => {
-          Valid(i.intValue()).asInstanceOf[Validated[NonEmptyList[ExtractionError], A]]
+      case op: IntData => jValue => {
+        val result = jValue match {
+          case JNull | JNothing => Invalid(NonEmptyList.one(RequiredData(op)))
+          case JInt(i) => {
+            Valid(i.intValue())
+          }
+          case x => Invalid(NonEmptyList.one(invalidValue(x, classOf[Int])))
         }
-        case x => Invalid(NonEmptyList.one(invalidValue(x, classOf[Int])))
+        result
       }
-      case op: BooleanData => {
-        case JNull | JNothing => Invalid(NonEmptyList.one(RequiredData(op)))
-        case JBool(b) => {
-          Valid(b).asInstanceOf[Validated[NonEmptyList[ExtractionError], A]]
+      case op: BooleanData => jValue => {
+        val result = jValue match {
+          case JNull | JNothing => Invalid(NonEmptyList.one(RequiredData(op)))
+          case JBool(b) => {
+            Valid(b).asInstanceOf[Validated[NonEmptyList[ExtractionError], Boolean]]
+          }
+          case x => Invalid(NonEmptyList.one(invalidValue(x, classOf[Boolean])))
         }
-        case x => Invalid(NonEmptyList.one(invalidValue(x, classOf[Boolean])))
+        result
       }
       case op: UuidData => {
         def convert(uuidString: String): Validated[NonEmptyList[ExtractionError], UUID] = try {
@@ -162,13 +178,14 @@ case class ValidatedFromJObjectInterpreter() {
           case x => Invalid(NonEmptyList.one(invalidValue(x, classOf[String])))
         }
       }
-      case EitherData(a, b) => jValue => {
-        (apply(a)(jValue).map(Left(_)) match {
+      case ed: EitherData[a,b] => jValue => {
+        val result = (apply(ed.definitionA)(jValue).map(Left(_)) match {
           case Valid(bueno) => Valid(bueno)
           case Invalid(_) => {
-            apply(b)(jValue)
+            apply(ed.definitionB)(jValue)
           }
-        }).asInstanceOf[Validated[NonEmptyList[ExtractionError], A]]
+        })
+        result.asInstanceOf[Validated[NonEmptyList[ExtractionError], Either[a,b]]]
       }
       case op@ListData(definition) => {
         case JNull | JNothing => Invalid(NonEmptyList.one(RequiredData(op)))
