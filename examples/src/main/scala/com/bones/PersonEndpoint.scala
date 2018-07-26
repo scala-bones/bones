@@ -64,16 +64,22 @@ object PersonEndpoint extends App {
   val serviceDescription =
     create(personSchema, errorDef, personSchema) ::
     read(personSchema) ::
+    update(personSchema, errorDef, personSchema) ::
+    delete(personSchema) ::
     Nil
+
+  //Above is the description.
+  //below interpreters the description into runnable code.
+
 
   val transactor: Aux[IO, Unit] = Transactor.fromDriverManager[IO](
     "org.postgresql.Driver", "jdbc:postgresql:bones", "postgres", ""
   )
 
+
+
   Interpreter.doInterpretation(serviceDescription, Person.dao, () => transactor, "/person", errorDef)
 
-  //Above is the description.
-  //below interpreters the description into runnable code.
 
 
 }

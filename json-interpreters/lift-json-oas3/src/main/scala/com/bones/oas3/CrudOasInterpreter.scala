@@ -2,7 +2,7 @@ package com.bones.oas3
 
 import argonaut.Argonaut._
 import argonaut.{Json, _}
-import com.bones.crud.Algebra.{Create, CrudOp, Read}
+import com.bones.crud.Algebra._
 
 
 
@@ -94,6 +94,16 @@ case class CrudOasInterpreter() {
               )
             )
           )
+        (Map.empty, path)
+      }
+      case op: Update[i,e,o] => {
+        val path = urlPath :=
+          (Json("put" := true))
+        (Map.empty, path)
+      }
+      case op: Delete[o] => {
+        val path = urlPath :=
+          (Json("put" := true))
         (Map.empty, path)
       }
     }
