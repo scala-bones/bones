@@ -29,6 +29,20 @@ lazy val commonSettings = Seq(
   },
   publishMavenStyle := true
 )
+lazy val core = (project in file("core"))
+  .settings(
+    commonSettings,
+    name := "Bones",
+    libraryDependencies ++= Seq(
+      "org.typelevel" %% "cats-core" % "1.2.0",
+      "org.typelevel" %% "cats-free" % "1.2.0",
+      "com.chuusai" %% "shapeless" % "2.3.3",
+      "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+      //      "org.easymock" % "easymock" % "3.5.1" % Test
+    ),
+    description := "DSL for Data Description using ASTs and interpreters"
+  )
 lazy val jsonOas3 = (project in file("json-interpreters/lift-json-oas3"))
   .settings(
     commonSettings,
@@ -67,32 +81,20 @@ lazy val jsonLift = (project in file("json-interpreters/lift-json"))
     )
   )
   .dependsOn(core)
-lazy val core = (project in file("core"))
-  .settings(
-    commonSettings,
-    name := "Bones",
-    libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-free" % "1.2.0",
-      "com.chuusai" %% "shapeless" % "2.3.3",
-      "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
-      "org.scalatest" %% "scalatest" % "3.0.5" % Test
-//      "org.easymock" % "easymock" % "3.5.1" % Test
-    ),
-    description := "DSL for Data Description using ASTs and iterpreters"
-  )
 lazy val examples = (project in file("examples"))
     .settings(
       commonSettings,
       name := "Bones Examples",
       libraryDependencies ++= Seq(
         "ws.unfiltered" %% "unfiltered-jetty" % "0.9.1",
+        "org.tpolecat" %% "doobie-hikari" % doobieVersion,
         "io.swagger" % "swagger-parser" % "1.0.36",
         "org.slf4j" % "slf4j-simple" % "1.6.3",
         "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
         "org.scalatest" %% "scalatest" % "3.0.5" % Test
 //        "org.easymock" % "easymock" % "3.5.1" % Test
       )
-    ).dependsOn(jsonLift, restUnfiltered, jsonOas3)
+    ).dependsOn(core, jsonLift, restUnfiltered, jsonOas3)
 
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.7")
