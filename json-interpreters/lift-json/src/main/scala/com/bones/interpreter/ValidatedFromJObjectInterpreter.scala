@@ -12,7 +12,7 @@ import com.bones.data.Error.{CanNotConvert, ExtractionError, RequiredData, Wrong
 import com.bones.data.HListAlgebra.{HDataDefinition, HListPrependN, HMember}
 import com.bones.data.{ConversionFieldDefinition, OptionalFieldDefinition, RequiredFieldDefinition}
 import net.liftweb.json.JsonAST._
-import shapeless.HNil
+import shapeless.{::, HNil}
 
 import scala.util.control.NonFatal
 import com.bones.validation.{ValidationUtil => vu}
@@ -91,7 +91,6 @@ case class ValidatedFromJObjectInterpreter() {
               case ConversionFieldDefinition(_, _, _) => false
             }
             val result = fields.find(_.name == op.op1.key.name)
-              .headOption
               .map(_.value) match {
               case Some(field) => {
                 r1.apply(field).andThen(ex => {
@@ -106,7 +105,6 @@ case class ValidatedFromJObjectInterpreter() {
             result.map(_ :: HNil)
           }
         }
-        import shapeless.::
         result.asInstanceOf[Validated[cats.data.NonEmptyList[ExtractionError],a :: shapeless.HNil]]
       }
 
@@ -182,7 +180,7 @@ case class ValidatedFromJObjectInterpreter() {
         val result = (apply(ed.definitionA)(jValue).map(Left(_)) match {
           case Valid(bueno) => Valid(bueno)
           case Invalid(_) => {
-            apply(ed.definitionB)(jValue)
+            apply(ed.definitionB)(jValue).map(Right(_))
           }
         })
         result.asInstanceOf[Validated[NonEmptyList[ExtractionError], Either[a,b]]]
