@@ -110,7 +110,7 @@ case class Key(name: String) { thisKey =>
   /** Indicates that the data tied to this key is a UUID type that must pass the specified validations. */
   def uuid(v: ValidationOp[UUID] with ToOptionalValidation[UUID] *): RequiredFieldDefinition[UUID] = RequiredFieldDefinition[UUID](this, UuidData(), v.toList)
 
-  /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
+  /** Indicates that the data tied to this key is a Date type with the especified format that must pass the specified validations. */
   def date(dateFormat: DateTimeFormatter, formatDescription: String, v: ValidationOp[ZonedDateTime] with ToOptionalValidation[ZonedDateTime]*): RequiredFieldDefinition[ZonedDateTime] =
     RequiredFieldDefinition(key, DateData(dateFormat, formatDescription), v.toList)
 
@@ -221,6 +221,10 @@ case class Key(name: String) { thisKey =>
 object Sugar {
   /** Aliases for creating HList types. */
   trait ToHList {
+
+    def stringData: StringData = StringData()
+
+    def either[A,B](op1: DataDefinitionOp[A], op2: DataDefinitionOp[B]) : EitherData[A,B] = EitherData[A,B](op1, op2)
 
     def obj1[A, AA](op1: FieldDefinition[A]) = HMember(op1, List.empty)
 
