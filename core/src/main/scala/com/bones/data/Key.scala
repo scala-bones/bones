@@ -24,11 +24,11 @@ trait KeySyntax {
   * A field definition is essentially a key value pair and a list of validations to be applied to the value.
   * @tparam A The type this field definition is describing.
   */
-trait FieldDefinition[A] {
+trait KeyValueDefinition[A] {
   /** String key, aka field name */
   val key: Key
   /** One of the Data Definitions describing the data of this field. */
-  val op: DataDefinitionOp[A]
+  val op: ValueDefinitionOp[A]
   /** List of validations this field should adhere to*/
   val validations: List[ValidationOp[A]]
 
@@ -36,14 +36,14 @@ trait FieldDefinition[A] {
 }
 
 /** Indicates that the field is Optional */
-case class OptionalFieldDefinition[A](key: Key, op: DataDefinitionOp[A], validations: List[ValidationOp[A]])
-  extends FieldDefinition[A]
+case class OptionalFieldDefinition[A](key: Key, op: ValueDefinitionOp[A], validations: List[ValidationOp[A]])
+  extends KeyValueDefinition[A]
 
 /** Indicates that the field is required */
 case class RequiredFieldDefinition[A](key: Key,
                                       op: DataDefinitionOp[A]  with ToOptionalData[A],
                                       validations: List[ValidationOp[A] with ToOptionalValidation[A]])
-  extends FieldDefinition[A] {
+  extends KeyValueDefinition[A] {
   def optional(): OptionalFieldDefinition[Option[A]] = {
     val optionalValidations = validations.map(_.toOption)
     OptionalFieldDefinition(key, op.toOption, optionalValidations)
@@ -62,7 +62,7 @@ case class RequiredFieldDefinition[A](key: Key,
 }
 
 case class ConversionFieldDefinition[A,B](convertFrom: RequiredFieldDefinition[A], op: ConversionData[A,B], validations: List[ValidationOp[B] with ToOptionalValidation[B]])
-  extends FieldDefinition[B] {
+  extends KeyValueDefinition[B] {
   /** String key, aka field name */
   override val key: Key = convertFrom.key
 
@@ -75,7 +75,6 @@ case class ConversionFieldDefinition[A,B](convertFrom: RequiredFieldDefinition[A
 
 /** Starting point for obtaining a value is to define a key */
 case class Key(name: String) { thisKey =>
-  val key: Key = thisKey
 
   /** Indicates that the data tied to this key is a String type that must pass the specified validations */
   def string(f: ValidationOp[String] with ToOptionalValidation[String] *): RequiredFieldDefinition[String] = RequiredFieldDefinition(this, StringData(), f.toList)
@@ -93,7 +92,7 @@ case class Key(name: String) { thisKey =>
     * Indicates that the data tied to this key is a list (JSON Array) type.  All values are type
     * T and all values must pass the list of validations.
     *
-    * @param dataDefinitionOp - One of the supported DataDefinitionOp types.
+    * @param dataDefinitionOp - One of the supported ValueDefinitionOp types.
     * @param v List of validations each element of the list must pass to be valid.
     * @tparam T The type of each element.  Can be an EitherFieldDefinition if more than one type is expected in the list.
     * @tparam L The List[T] type.
@@ -155,62 +154,62 @@ case class Key(name: String) { thisKey =>
   def obj[A <: HList](obj:BaseHListDef[A]) : RequiredFieldDefinition[A] =
     RequiredFieldDefinition[A](this, obj, List.empty)
 
-  def obj1[A](op1: FieldDefinition[A]): RequiredFieldDefinition[A :: HNil] =
+  def obj1[A](op1: KeyValueDefinition[A]): RequiredFieldDefinition[A :: HNil] =
     RequiredFieldDefinition[A :: HNil](this, HMember(op1, List.empty), List.empty)
 
-  def obj2[A, B](op1: FieldDefinition[A], op2: FieldDefinition[B]): RequiredFieldDefinition[A :: B :: HNil] =
+  def obj2[A, B](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B]): RequiredFieldDefinition[A :: B :: HNil] =
     RequiredFieldDefinition[A :: B :: HNil](this, op1.asMember :: op2.asMember , List.empty)
 
-  def obj3[A, B, C](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C]): RequiredFieldDefinition[A :: B :: C :: HNil] =
+  def obj3[A, B, C](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C]): RequiredFieldDefinition[A :: B :: C :: HNil] =
     RequiredFieldDefinition[A :: B :: C :: HNil](this, op1.asMember :: op2.asMember :: op3.asMember, List.empty)
 
-  def obj4[A, B, C, D](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D]):
+  def obj4[A, B, C, D](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D]):
     RequiredFieldDefinition[A :: B :: C :: D :: HNil] =
     RequiredFieldDefinition[A :: B :: C :: D :: HNil](this, op1.asMember :: op2.asMember :: op3.asMember :: op4.asMember, List.empty)
 
-  def obj5[A, B, C, D, E](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D],
-                          op5: FieldDefinition[E]):
+  def obj5[A, B, C, D, E](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D],
+                          op5: KeyValueDefinition[E]):
   RequiredFieldDefinition[A :: B :: C :: D :: E :: HNil] =
     RequiredFieldDefinition[A :: B :: C :: D :: E :: HNil](this,  op1.asMember :: op2.asMember :: op3.asMember :: op4.asMember :: op5.asMember, List.empty)
 
-  def obj6[A, B, C, D, E, F](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D],
-                             op5: FieldDefinition[E], op6: FieldDefinition[F]):
+  def obj6[A, B, C, D, E, F](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D],
+                             op5: KeyValueDefinition[E], op6: KeyValueDefinition[F]):
   RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: HNil] =
     RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: HNil](this, op1.asMember :: op2.asMember :: op3.asMember :: op4.asMember :: op5.asMember :: op6.asMember, List.empty)
 
-  def obj7[A, B, C, D, E, F, G](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D],
-                                op5: FieldDefinition[E], op6: FieldDefinition[F], op7: FieldDefinition[G]):
+  def obj7[A, B, C, D, E, F, G](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D],
+                                op5: KeyValueDefinition[E], op6: KeyValueDefinition[F], op7: KeyValueDefinition[G]):
   RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: HNil] =
     RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: HNil](this, op1.asMember :: op2.asMember :: op3.asMember :: op4.asMember :: op5.asMember :: op6.asMember :: op7.asMember, List.empty)
 
-  def obj8[A, B, C, D, E, F, G, H](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D],
-                                op5: FieldDefinition[E], op6: FieldDefinition[F], op7: FieldDefinition[G], op8: FieldDefinition[H]):
+  def obj8[A, B, C, D, E, F, G, H](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D],
+                                   op5: KeyValueDefinition[E], op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H]):
   RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: HNil] =
     RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: HNil](this, op1.asMember :: op2.asMember :: op3.asMember :: op4.asMember :: op5.asMember :: op6.asMember :: op7.asMember :: op8.asMember, List.empty)
 
-  def obj9[A, B, C, D, E, F, G, H, I](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D],
-                                      op5: FieldDefinition[E], op6: FieldDefinition[F], op7: FieldDefinition[G], op8: FieldDefinition[H],
-                                      op9: FieldDefinition[I]):
+  def obj9[A, B, C, D, E, F, G, H, I](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D],
+                                      op5: KeyValueDefinition[E], op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H],
+                                      op9: KeyValueDefinition[I]):
   RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: HNil] =
     RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: HNil](this, op1.asMember :: op2.asMember :: op3.asMember :: op4.asMember :: op5.asMember :: op6.asMember :: op7.asMember :: op8.asMember :: op9.asMember, List.empty)
 
-  def obj10[A, B, C, D, E, F, G, H, I, J](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D],
-                                        op5: FieldDefinition[E], op6: FieldDefinition[F], op7: FieldDefinition[G], op8: FieldDefinition[H],
-                                        op9: FieldDefinition[I], op10: FieldDefinition[J]):
+  def obj10[A, B, C, D, E, F, G, H, I, J](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D],
+                                          op5: KeyValueDefinition[E], op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H],
+                                          op9: KeyValueDefinition[I], op10: KeyValueDefinition[J]):
   RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: HNil] =
     RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: HNil](this,  op1.asMember :: op2.asMember :: op3.asMember :: op4.asMember :: op5.asMember :: op6.asMember :: op7.asMember :: op8.asMember :: op9.asMember :: op10.asMember, List.empty)
 
-  def obj11[A, B, C, D, E, F, G, H, I, J, K](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D],
-                                             op5: FieldDefinition[E], op6: FieldDefinition[F], op7: FieldDefinition[G], op8: FieldDefinition[H],
-                                             op9: FieldDefinition[I], op10: FieldDefinition[J], op11: FieldDefinition[K]):
+  def obj11[A, B, C, D, E, F, G, H, I, J, K](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D],
+                                             op5: KeyValueDefinition[E], op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H],
+                                             op9: KeyValueDefinition[I], op10: KeyValueDefinition[J], op11: KeyValueDefinition[K]):
   RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: HNil] =
     RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: HNil](
       this, op1.asMember :: op2.asMember :: op3.asMember :: op4.asMember :: op5.asMember :: op6.asMember :: op7.asMember :: op8.asMember :: op9.asMember :: op10.asMember :: op11.asMember, List.empty)
 
 
-  def obj12[A, B, C, D, E, F, G, H, I, J, K, L](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D],
-                                             op5: FieldDefinition[E], op6: FieldDefinition[F], op7: FieldDefinition[G], op8: FieldDefinition[H],
-                                             op9: FieldDefinition[I], op10: FieldDefinition[J], op11: FieldDefinition[K], op12: FieldDefinition[L]):
+  def obj12[A, B, C, D, E, F, G, H, I, J, K, L](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D],
+                                                op5: KeyValueDefinition[E], op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H],
+                                                op9: KeyValueDefinition[I], op10: KeyValueDefinition[J], op11: KeyValueDefinition[K], op12: KeyValueDefinition[L]):
   RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: L :: HNil] =
     RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: L :: HNil](
       this, op1.asMember :: op2.asMember :: op3.asMember :: op4.asMember :: op5.asMember :: op6.asMember :: op7.asMember :: op8.asMember :: op9.asMember :: op10.asMember :: op11.asMember :: op12.asMember, List.empty
@@ -226,59 +225,59 @@ object Sugar {
 
     def either[A,B](op1: DataDefinitionOp[A], op2: DataDefinitionOp[B]) : EitherData[A,B] = EitherData[A,B](op1, op2)
 
-    def obj1[A, AA](op1: FieldDefinition[A]) = HMember(op1, List.empty)
+    def obj1[A, AA](op1: KeyValueDefinition[A]) = HMember(op1, List.empty)
 
-    def obj2[A, AA, B, BB](op1: FieldDefinition[A],
-                           op2: FieldDefinition[B]) = HMember(op1, List.empty) :: obj1(op2)
+    def obj2[A, AA, B, BB](op1: KeyValueDefinition[A],
+                           op2: KeyValueDefinition[B]) = HMember(op1, List.empty) :: obj1(op2)
 
-    def obj3[A, B, C](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C]) =
+    def obj3[A, B, C](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C]) =
       HMember(op1, List.empty) :: obj2(op2,op3)
 
-    def obj4[A, B, C, D](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D]) =
+    def obj4[A, B, C, D](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D]) =
       HMember(op1, List.empty) :: obj3(op2,op3, op4)
 
-    def obj5[A, B, C, D, E](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D], op5: FieldDefinition[E]) =
+    def obj5[A, B, C, D, E](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D], op5: KeyValueDefinition[E]) =
       HMember(op1, List.empty) :: obj4(op2,op3, op4, op5)
 
-    def obj6[A, B, C, D, E, F](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D], op5: FieldDefinition[E],
-                               op6: FieldDefinition[F]) =
+    def obj6[A, B, C, D, E, F](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D], op5: KeyValueDefinition[E],
+                               op6: KeyValueDefinition[F]) =
       HMember(op1, List.empty) :: obj5(op2,op3, op4, op5, op6)
 
-    def obj7[A, B, C, D, E, F, G](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D], op5: FieldDefinition[E],
-                                  op6: FieldDefinition[F], op7: FieldDefinition[G]) =
+    def obj7[A, B, C, D, E, F, G](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D], op5: KeyValueDefinition[E],
+                                  op6: KeyValueDefinition[F], op7: KeyValueDefinition[G]) =
       HMember(op1, List.empty) :: obj6(op2,op3, op4, op5, op6, op7)
 
-    def obj8[A, B, C, D, E, F, G, H](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D], op5: FieldDefinition[E],
-                                     op6: FieldDefinition[F], op7: FieldDefinition[G], op8: FieldDefinition[H]) =
+    def obj8[A, B, C, D, E, F, G, H](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D], op5: KeyValueDefinition[E],
+                                     op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H]) =
       HMember(op1, List.empty) :: obj7(op2,op3, op4, op5, op6, op7, op8)
 
-    def obj9[A, B, C, D, E, F, G, H, I](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D], op5: FieldDefinition[E],
-                                        op6: FieldDefinition[F], op7: FieldDefinition[G], op8: FieldDefinition[H], op9: FieldDefinition[I]) =
+    def obj9[A, B, C, D, E, F, G, H, I](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D], op5: KeyValueDefinition[E],
+                                        op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H], op9: KeyValueDefinition[I]) =
       HMember(op1, List.empty) :: obj8(op2,op3, op4, op5, op6, op7, op8, op9)
 
-    def obj10[A, B, C, D, E, F, G, H, I, J](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D], op5: FieldDefinition[E],
-                                            op6: FieldDefinition[F], op7: FieldDefinition[G], op8: FieldDefinition[H], op9: FieldDefinition[I], op10: FieldDefinition[J]) =
+    def obj10[A, B, C, D, E, F, G, H, I, J](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D], op5: KeyValueDefinition[E],
+                                            op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H], op9: KeyValueDefinition[I], op10: KeyValueDefinition[J]) =
       HMember(op1, List.empty) :: obj9(op2,op3, op4, op5, op6, op7, op8, op9, op10)
 
-    def obj11[A, B, C, D, E, F, G, H, I, J, K](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D], op5: FieldDefinition[E],
-                                               op6: FieldDefinition[F], op7: FieldDefinition[G], op8: FieldDefinition[H], op9: FieldDefinition[I], op10: FieldDefinition[J],
-                                               op11: FieldDefinition[K]) =
+    def obj11[A, B, C, D, E, F, G, H, I, J, K](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D], op5: KeyValueDefinition[E],
+                                               op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H], op9: KeyValueDefinition[I], op10: KeyValueDefinition[J],
+                                               op11: KeyValueDefinition[K]) =
       HMember(op1, List.empty) :: obj10(op2,op3, op4, op5, op6, op7, op8, op9, op10, op11)
 
-    def obj12[A, B, C, D, E, F, G, H, I, J, K, L](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D], op5: FieldDefinition[E],
-                                                  op6: FieldDefinition[F], op7: FieldDefinition[G], op8: FieldDefinition[H], op9: FieldDefinition[I], op10: FieldDefinition[J],
-                                                  op11: FieldDefinition[K], op12: FieldDefinition[L]) =
+    def obj12[A, B, C, D, E, F, G, H, I, J, K, L](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D], op5: KeyValueDefinition[E],
+                                                  op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H], op9: KeyValueDefinition[I], op10: KeyValueDefinition[J],
+                                                  op11: KeyValueDefinition[K], op12: KeyValueDefinition[L]) =
       HMember(op1, List.empty) :: obj11(op2,op3, op4, op5, op6, op7, op8, op9, op10, op11, op12)
 
-    def obj13[A, B, C, D, E, F, G, H, I, J, K, L, M](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D], op5: FieldDefinition[E],
-                                                  op6: FieldDefinition[F], op7: FieldDefinition[G], op8: FieldDefinition[H], op9: FieldDefinition[I], op10: FieldDefinition[J],
-                                                  op11: FieldDefinition[K], op12: FieldDefinition[L], op13: FieldDefinition[M]) =
+    def obj13[A, B, C, D, E, F, G, H, I, J, K, L, M](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D], op5: KeyValueDefinition[E],
+                                                     op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H], op9: KeyValueDefinition[I], op10: KeyValueDefinition[J],
+                                                     op11: KeyValueDefinition[K], op12: KeyValueDefinition[L], op13: KeyValueDefinition[M]) =
       HMember(op1, List.empty) :: obj12(op2,op3, op4, op5, op6, op7, op8, op9, op10, op11, op12, op13)
 
-    def obj14[A, B, C, D, E, F, G, H, I, J, K, L,M, N](op1: FieldDefinition[A], op2: FieldDefinition[B], op3: FieldDefinition[C], op4: FieldDefinition[D], op5: FieldDefinition[E],
-                                                    op6: FieldDefinition[F], op7: FieldDefinition[G], op8: FieldDefinition[H], op9: FieldDefinition[I], op10: FieldDefinition[J],
-                                                    op11: FieldDefinition[K], op12: FieldDefinition[L], op13: FieldDefinition[M],
-                                                    op14: FieldDefinition[N]) =
+    def obj14[A, B, C, D, E, F, G, H, I, J, K, L,M, N](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D], op5: KeyValueDefinition[E],
+                                                       op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H], op9: KeyValueDefinition[I], op10: KeyValueDefinition[J],
+                                                       op11: KeyValueDefinition[K], op12: KeyValueDefinition[L], op13: KeyValueDefinition[M],
+                                                       op14: KeyValueDefinition[N]) =
       HMember(op1, List.empty) :: obj13(op2,op3, op4, op5, op6, op7, op8, op9, op10, op11, op12, op13, op14)
 
 
