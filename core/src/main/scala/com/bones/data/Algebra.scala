@@ -14,14 +14,15 @@ import shapeless.{::, Generic, HList, HNil, Nat}
 
 object Algebra {
 
-  /** DataDefinitionOp is the base trait for any data definition. */
-  sealed trait DataDefinitionOp[A] {
+  /** ValueDefinitionOp is the base trait to describe a piece of data which may be
+    * a single value or an HList. */
+  sealed trait ValueDefinitionOp[A] {
     //lift any DataDefinition into a FreeApplicative
     def lift: DataDefinition[A] = ???
 
-    def ::[B](dataDefinitionOp: DataDefinitionOp[B]): HListPrependN[B::A::HNil, B::HNil, A::HNil] = {
-      HDataDefinition[B](dataDefinitionOp) :: HDataDefinition[A](this)
-    }
+//    def ::[B](dataDefinitionOp: ValueDefinitionOp[B]): HListPrependN[B::A::HNil, B::HNil, A::HNil] = {
+//      HDataDefinition[B](dataDefinitionOp) :: HDataDefinition[A](this)
+//    }
 
     def transform[Z:Manifest](implicit gen: Generic.Aux[Z, A]) = {
       Transform(this, gen.to _, gen.from _)
@@ -33,49 +34,93 @@ object Algebra {
 
   }
 
-  type DataDefinition[A] = FreeApplicative[DataDefinitionOp, A]
+  type DataDefinition[A] = FreeApplicative[ValueDefinitionOp, A]
 
   /** Wraps a data definition to mark the field optional */
-  case class OptionalDataDefinition[B](dataDefinitionOp: DataDefinitionOp[B]) extends DataDefinitionOp[Option[B]]
+  case class OptionalDataDefinition[B](dataDefinitionOp: ValueDefinitionOp[B]) extends ValueDefinitionOp[Option[B]]
 
   /** Syntactic sugar to wrap the data definition in an Optional type.
     * Also a sort of marker interface, if this is mixed in, the field is optional. */
-  trait ToOptionalData[A] extends DataDefinitionOp[A] {
+  trait ToOptionalData[A] extends ValueDefinitionOp[A] {
     def toOption = OptionalDataDefinition(this)
   }
 
-  final case class BooleanData() extends DataDefinitionOp[Boolean] with ToOptionalData[Boolean]
-  final case class DoubleData() extends DataDefinitionOp[Double] with ToOptionalData[Double]
-  final case class EitherData[A, B](definitionA: DataDefinitionOp[A], definitionB: DataDefinitionOp[B])
-    extends DataDefinitionOp[Either[A, B]] with ToOptionalData[Either[A, B]]
-  final case class IntData() extends DataDefinitionOp[Int] with ToOptionalData[Int]
-  final case class ListData[T, L <: List[T]](tDefinition: DataDefinitionOp[T])
-    extends DataDefinitionOp[L] with ToOptionalData[L]
-  final case class StringData() extends DataDefinitionOp[String] with ToOptionalData[String]
-  final case class BigDecimalFromString() extends DataDefinitionOp[BigDecimal] with ToOptionalData[BigDecimal]
+  final case class BooleanData() extends ValueDefinitionOp[Boolean] with ToOptionalData[Boolean]
+  final case class DoubleData() extends ValueDefinitionOp[Double] with ToOptionalData[Double]
+  final case class EitherData[A, B](definitionA: ValueDefinitionOp[A], definitionB: ValueDefinitionOp[B])
+    extends ValueDefinitionOp[Either[A, B]] with ToOptionalData[Either[A, B]]
+  final case class IntData() extends ValueDefinitionOp[Int] with ToOptionalData[Int]
+  final case class ListData[T, L <: List[T]](tDefinition: ValueDefinitionOp[T])
+    extends ValueDefinitionOp[L] with ToOptionalData[L]
+  final case class StringData() extends ValueDefinitionOp[String] with ToOptionalData[String]
+  final case class BigDecimalFromString() extends ValueDefinitionOp[BigDecimal] with ToOptionalData[BigDecimal]
 
   import java.time.format.DateTimeFormatter
 
   final case class DateData(dateFormat: DateTimeFormatter, formatDescription: String)
-    extends DataDefinitionOp[ZonedDateTime] with ToOptionalData[ZonedDateTime]
-  final case class UuidData() extends DataDefinitionOp[UUID] with ToOptionalData[UUID]
+    extends ValueDefinitionOp[ZonedDateTime] with ToOptionalData[ZonedDateTime]
+  final case class UuidData() extends ValueDefinitionOp[UUID] with ToOptionalData[UUID]
 
   final case class ConversionData[A,B](
-                                        from: DataDefinitionOp[A],
+                                        from: ValueDefinitionOp[A],
                                         fab: A => Either[CanNotConvert[A,B], B],
                                         fba: B => A, description: String
-  ) extends DataDefinitionOp[B] with ToOptionalData[B]
+  ) extends ValueDefinitionOp[B] with ToOptionalData[B]
 
-  final case class EnumerationStringData[A](enumeration: Enumeration) extends DataDefinitionOp[A] with ToOptionalData[A]
-  final case class EnumStringData[A <: Enum[A]:Manifest](enums: List[A]) extends DataDefinitionOp[A] with ToOptionalData[A] {
+  final case class EnumerationStringData[A](enumeration: Enumeration) extends ValueDefinitionOp[A] with ToOptionalData[A]
+  final case class EnumStringData[A <: Enum[A]:Manifest](enums: List[A]) extends ValueDefinitionOp[A] with ToOptionalData[A] {
     val manifestOfA: Manifest[A] = manifest[A]
   }
-  final case class Transform[A:Manifest,B](op: DataDefinitionOp[B], f: A => B, g: B => A) extends DataDefinitionOp[A] with ToOptionalData[A] { thisBase =>
+  final case class Transform[A:Manifest,B](op: ValueDefinitionOp[B], f: A => B, g: B => A) extends ValueDefinitionOp[A] with ToOptionalData[A] { thisBase =>
     val manifestOfA: Manifest[A] = manifest[A]
   }
 
   final case class Check[L <: HList, N <: Nat](obj: BaseHListDef[L], check: L => Validated[ValidationError[L], L])
-    extends DataDefinitionOp[L] with ToOptionalData[L]
+    extends ValueDefinitionOp[L] with ToOptionalData[L]
+
+
+}
+
+object KvpAlgebra {
+  import Algebra._
+
+  sealed trait KvpGroup[L <: HList] extends ValueDefinitionOp[L] with ToOptionalData[L] { self =>
+    def ::[H](h: KeyValueDefinition[H], validations: List[ValidationOp[H]]): KvpGroup[H :: L] =
+      KvpSingleHead(h,validations,self)
+
+    /**
+      *
+      * @param kvp
+      * @tparam OUT New HList which combines L (from this) and P (from others)
+      * @tparam P
+      */
+    def :::[OUT <: HList, P <: HList](kvp: KvpGroup[P]): KvpGroup[OUT] =
+      KvpListHead(kvp, ???, ???, List.empty, self)
+  }
+
+  final case class KvpNil() extends KvpGroup[HNil] {
+
+    override def :::[OUT <: HList, P <: HList](kvp: KvpGroup[P]): KvpGroup[P] = ???
+  }
+
+  final case class KvpSingleHead[H, T <: HList](
+    fieldDefinition: KeyValueDefinition[H],
+    validation: List[ValidationOp[H]],
+    tail: KvpGroup[T]
+  ) extends KvpGroup[H :: T] {
+
+  }
+
+  /** This is a group of KvpGroup that are grouped and the validations match the entire group.  */
+  final case class KvpListHead[OUT <: HList, H <: HList, HL<: Nat, T <: HList](
+                                                                                head: KvpGroup[H],
+                                                                                prepend: H :: T :: HNil => OUT, // analogous to prepend : Prepend[H, T],
+                                                                                split : OUT => H :: T :: HNil, // analogous: Split.Aux[prepend.OUT,HL,H,T] with lpLength: Length.Aux[H,HL],
+                                                                                validation: List[ValidationOp[H]],
+                                                                                tail: KvpGroup[T]
+  ) extends KvpGroup[OUT] {
+
+  }
 
 
 }
@@ -86,7 +131,7 @@ object HListAlgebra {
   import Algebra._
 
   /** Used to create a generic extract method so we can extract values from the products. */
-  sealed abstract class BaseHListDef[L <: HList] extends DataDefinitionOp[L] with ToOptionalData[L] { thisBase =>
+  sealed abstract class BaseHListDef[L <: HList] extends ValueDefinitionOp[L] with ToOptionalData[L] { thisBase =>
 
 
     /** Get a list of untyped members */
@@ -94,7 +139,7 @@ object HListAlgebra {
 
     def validations: List[ValidationOp[L]]
 
-    def ::[A](op: DataDefinitionOp[A])(
+    def ::[A](op: ValueDefinitionOp[A])(
       implicit p: Prepend.Aux[A::HNil,L,A :: L],
       lpLength: Length.Aux[A::HNil,Nat._1],
       s: Split.Aux[A :: L,Nat._1,A::HNil,L]
@@ -117,8 +162,8 @@ object HListAlgebra {
 
   }
 
-  /** Allows us to wrap any DataDefinitionOp into a BaseHListDef so we can append the op to a BaseHList */
-  final case class HDataDefinition[A](op: DataDefinitionOp[A]) extends BaseHListDef[A::HNil] {
+  /** Allows us to wrap any ValueDefinitionOp into a BaseHListDef so we can append the op to a BaseHList */
+  final case class HDataDefinition[A](op: ValueDefinitionOp[A]) extends BaseHListDef[A::HNil] {
     /** Get a list of untyped members */
     override def members: List[FieldDefinition[_]] = List.empty
 

@@ -99,7 +99,7 @@ object Schemas {
   val creditCardSchema = obj.transform[CC]
 //  val creditCardWithUuid = obj(key("uuid").uuid()) :: creditCardSchema
 
-  //final type is basically DataDefinitionOp[CC]
+  //final type is basically ValueDefinitionOp[CC]
 
   //Here is our input
   val cc =
