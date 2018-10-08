@@ -123,13 +123,13 @@ class ValidationTest extends FunSuite {
 //    //create the program that is responsible for converting JSON into a CC.
 //    val jsonToCCProgram = y.lift.foldMap[ValidateFromProducer](ValidatedFromJObjectInterpreter())
 //
-//    //here, we will test that just the validation step is working
+//    //here, we will test that just the validations step is working
 //    val btCc = jsonToCCProgram.apply(jsonProducer)
 //    btCc.isValid
 
   }
 
-  test("validation example") {
+  test("validations example") {
 
     import Schemas._
 
@@ -140,7 +140,7 @@ class ValidationTest extends FunSuite {
 //    val jsonToCCProgram = creditCardSchema.lift.foldMap[ValidatedFromJObject](ValidatedFromJObjectInterpreter())
     val jsonToCCProgram = ValidatedFromJObjectInterpreter().apply(creditCardSchema)
 
-    //here, we will test that just the validation step is working
+    //here, we will test that just the validations step is working
     val btCc = jsonToCCProgram.apply(parsed)
 
     //tada!  We have can parse input from JsonExtract to CC using our dataDefinition.

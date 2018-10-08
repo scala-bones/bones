@@ -1,24 +1,19 @@
 package com.bones.oas3
 
-import java.time.{LocalDateTime, ZonedDateTime}
 import java.time.format.DateTimeFormatter
+import java.time.{LocalDateTime, ZonedDateTime}
 import java.util.UUID
 
 import argonaut.Argonaut._
 import argonaut._
-import com.bones.data.Algebra._
-import com.bones.data.HListAlgebra.{HListPrependN, HMember}
+import com.bones.data.Value._
 import com.bones.validation.ValidationDefinition.{InvalidValue, OptionalValidation, ValidValue, ValidationOp}
 
 
 object ValidationOasInterpreter {
-
-
-
   case class OasObject(title: String)
   case class OasField()
   case class OasValidationProperty(propertyName: String, properyValue: Json)
-
 }
 
 case class ValidationToPropertyInterpreter() {
@@ -79,18 +74,21 @@ case class ValidationToPropertyInterpreter() {
 }
 
 case class ValidationOasInterpreter(validationInterpreter: ValidationToPropertyInterpreter) {
-  def apply[A](fgo: DataDefinitionOp[A]): JsonObject = fgo match {
-    case op: OptionalDataDefinition[b] =>
-      val data = apply(op.dataDefinitionOp)
+  def apply[A](fgo: ValueDefinitionOp[A]): JsonObject = fgo match {
+    case op: OptionalValueDefinition[b] =>
+      val data = apply(op.valueDefinitionOp)
       (data - "required") :+ ("required", jBool(false)) :+ ("nullable", jBool(true))
-    case op: HListPrependN[A, p, s] =>
-      JsonObject.fromTraversableOnce(apply(op.prefix).toMap.toList ::: apply(op.suffix).toMap.toList)
-    case op: HMember[a] =>
-      val child = apply(op.op1.op)
-      JsonObject.single(op.op1.key.name,
-        jObject(JsonObject.fromTraversableOnce(child.toMap.toList :::
-        op.validations.flatMap(x => validationInterpreter.apply(x))))
-      )
+    case KvpNil => JsonObject.empty
+    case op: KvpGroupHead[A,al, h, hl, t, tl] => {
+      JsonObject.fromTraversableOnce(apply(op.head).toMap.toList ::: apply(op.tail).toMap.toList)
+    }
+    case op: KvpSingleValueHead[h,t,tl,o,ol] => {
+      val child = apply(op.fieldDefinition.op)
+      JsonObject.single(
+        op.fieldDefinition.key.name,
+        jObject(JsonObject.fromTraversableOnce(child.toMap.toList ::: op.validations.flatMap(x => validationInterpreter.apply(x))
+      )))
+    }
     case _: BooleanData =>
       Json(
         "type" := "boolean",

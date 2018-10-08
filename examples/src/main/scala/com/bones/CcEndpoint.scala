@@ -3,14 +3,11 @@ package com.bones
 import java.util.UUID
 
 import cats.effect.IO
-import com.bones.data.Algebra.{DataDefinitionOp, StringData}
+import com.bones.data.Value.{StringData, ValueDefinitionOp}
 import com.bones.rest.unfiltered.DirectToDoobie.DoobieInfo
-import doobie.{Transactor, Update0}
-import doobie.util.transactor.Transactor.Aux
-import unfiltered.filter.Planify
-import doobie._
 import doobie.implicits._
-
+import doobie.util.transactor.Transactor.Aux
+import doobie.{Transactor, Update0}
 
 import scala.collection.mutable
 
@@ -18,7 +15,7 @@ object CcEndpoint extends App {
 
   import Schemas._
 
-  val errorDef: DataDefinitionOp[String] = StringData()
+  val errorDef: ValueDefinitionOp[String] = StringData()
 
   val db = new mutable.HashMap[UUID,CC]()
 
@@ -43,9 +40,6 @@ object CcEndpoint extends App {
   insert1("Alice", Some(12)).run.transact(xa).unsafeRunSync
 
   insert1("Bob", None).quick.unsafeRunSync
-
-
-  import unfiltered.jetty
 
 //  val plan = DirectToDoobie.toPlan(paths)
 //

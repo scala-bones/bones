@@ -1,25 +1,22 @@
 package com.bones
 
 import cats.effect.IO
-import com.bones.data.Algebra.{DataDefinitionOp, StringData}
-import com.bones.oas3.CrudOasInterpreter
 import com.bones.crud.Algebra._
-import com.bones.rest.unfiltered.DirectToDoobie.{DoobieInfo, EndPoint, TransactorF}
+import com.bones.data.Value.{KvpNil, StringData, ValueDefinitionOp}
+import com.bones.oas3.CrudOasInterpreter
 import com.bones.rest.unfiltered.Orm.Dao
-import com.bones.rest.unfiltered.{DirectToDoobie, DoobiePostgresSchema, UnfilteredUtil}
+import com.bones.rest.unfiltered.UnfilteredUtil
 import com.bones.syntax._
 import com.bones.validation.ValidationDefinition.{IntValidation => iv, StringValidation => sv}
 import doobie.Transactor
-import doobie.implicits._
 import doobie.util.transactor.Transactor.Aux
 import io.swagger.parser.{Swagger20Parser, SwaggerParser}
 import unfiltered.filter.Planify
-import unfiltered.jetty
 
 
 object Interpreter {
 
-  def doInterpretation[A:Manifest,B](serviceDescription: List[CrudOp[A]], doobieInfo: Dao[A,Int], transactor: TransactorF, endpoint: String, errorDef: DataDefinitionOp[B]): Unit = {
+  def doInterpretation[A:Manifest,B](serviceDescription: List[CrudOp[A]], doobieInfo: Dao[A], transactor: TransactorF, endpoint: String, errorDef: ValueDefinitionOp[B]): Unit = {
 
     val restToDoobieInterpreter = DirectToDoobie(endpoint)
 
@@ -50,16 +47,17 @@ object PersonEndpoint extends App {
   case class Person(name: String, age: Int)
 
   object Person {
-    implicit val dao: Dao[Person, Int] =
+    implicit val dao: Dao.Aux[Person, Int] =
       Dao.derive[Person, Int]("person", "id")
   }
 
-  val personSchema = obj2(
-    key("name").string(sv.matchesRegex("^[a-zA-Z ]*$".r)),
-    key("age").int(iv.min(0))
+  val personSchema = (
+    key("name").string(sv.matchesRegex("^[a-zA-Z ]*$".r)) ::
+    key("age").int(iv.min(0)) ::
+    KvpNil
   ).transform[Person]
 
-  val errorDef: DataDefinitionOp[String] = StringData()
+  val errorDef: ValueDefinitionOp[String] = StringData()
 
   val serviceDescription =
     create(personSchema, errorDef, personSchema) ::
