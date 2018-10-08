@@ -1,16 +1,15 @@
 package com.bones.interpreter
 
-import com.bones.data.Algebra._
-import com.bones.data.HListAlgebra.{HDataDefinition, HListPrependN, HMember}
+import com.bones.data.Value._
 
 object SqlInterpreter {
 
-  def apply[A](fgo: DataDefinitionOp[A]): String =
+  def apply[A](fgo: ValueDefinitionOp[A]): String =
     fgo match {
-      case op: OptionalDataDefinition[a] => apply(op.dataDefinitionOp) + " ! is not null"
-      case op: HListPrependN[A,p,s] => s"${apply(op.prefix)}, ${apply(op.suffix)}"
-      case op: HMember[a] => s"${op.op1.key.name} ${apply(op.op1.op)}"
-      case op: HDataDefinition[a] => apply(op.op)
+      case op: OptionalValueDefinition[a] => apply(op.valueDefinitionOp) + " ! is not null"
+      case KvpNil => ""
+      case op: KvpGroupHead[A, al, h, hl, t, tl] => s"${apply(op.head)}, ${apply(op.tail)}"
+      case op: KvpSingleValueHead[h, t, tl, A, al] => s"${op.fieldDefinition.key} ${apply(op.fieldDefinition.op)}"
       case ob: BooleanData => "boolean"
       case rs: StringData => "text"
       case ri: IntData => "int8"

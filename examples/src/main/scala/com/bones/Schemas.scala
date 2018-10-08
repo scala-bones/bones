@@ -4,6 +4,7 @@ import java.time.{LocalDateTime, ZonedDateTime}
 import java.util.UUID
 
 import com.bones.data.Error.CanNotConvert
+import com.bones.data.Value.KvpNil
 import com.bones.validation.ValidationDefinition.ValidationOp
 import shapeless.HNil
 import com.bones.validation.ValidationDefinition.{ValidationOp, IntValidation => iv, StringValidation => sv}
@@ -72,28 +73,33 @@ object Schemas {
   }
   import com.bones.syntax._
 
-  val ccExp = obj2(
-    key("expMonth").int(iv.between(1,12)),
-    key("expYear").int(iv.between(1950, 9999))
+  val ccExp = (
+    key("expMonth").int(iv.between(1,12)) ::
+    key("expYear").int(iv.between(1950, 9999)) ::
+    KvpNil
   ).validate(HasNotExpired)
 
   // Here we are defining our expected input data.  This definition will drive the interpreters.
-  val obj = obj5(
-    key("firstFive").string(sv.length(5), sv.matchesRegex("[0-9]{5}".r)),
-    key("lastFour").string(sv.length(4), sv.matchesRegex("[0-9]{4}".r)),
-    key("uuid").uuid(),
-    key("token").uuid(),
-    key("ccType").string().convert(CreditCardTypes.toCreditCardType, (cct: CreditCardType) => cct.abbrev, "CreditCardType", List.empty)
-  ) :: ccExp :: obj6(
-    key("cardHolder").string(),
-    key("currencyEnum").enum(JavaCurrencyEnum.values.toList),
-    key("currencyIso").enumeration(Currency),
-    key("deletedAt").isoDateTime().optional(),
-    key("lastModifiedRequest").uuid(),
-    key("billingLocation").obj2(
-      key("countryIso").string(sv.validVector(isoVector)),
-      key("zipCode").string().optional()
-    ).transform[BillingLocation].optional()
+  val obj = (
+    key("firstFive").string(sv.length(5), sv.matchesRegex("[0-9]{5}".r)) ::
+    key("lastFour").string(sv.length(4), sv.matchesRegex("[0-9]{4}".r)) ::
+    key("uuid").uuid() ::
+    key("token").uuid() ::
+    key("ccType").string().convert(CreditCardTypes.toCreditCardType, (cct: CreditCardType) => cct.abbrev, "CreditCardType", List.empty) ::
+    KvpNil
+  ) ::: ccExp ::: (
+    key("cardHolder").string() ::
+    key("currencyEnum").enum(JavaCurrencyEnum.values.toList) ::
+    key("currencyIso").enumeration(Currency) ::
+    key("deletedAt").isoDateTime().optional() ::
+    key("lastModifiedRequest").uuid() ::
+    key("billingLocation").obj(
+      key("countryIso").string(sv.validVector(isoVector)) ::
+      key("zipCode").string().optional() ::
+      KvpNil
+    ).transform[BillingLocation].optional() ::
+    KvpNil
+
   )
 
   val creditCardSchema = obj.transform[CC]

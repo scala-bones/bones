@@ -4,12 +4,11 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
-import com.bones.data.Algebra._
 import com.bones.data.Error.CanNotConvert
-import com.bones.data.HListAlgebra._
+import com.bones.data.Value._
 import com.bones.validation.ValidationDefinition.ListValidation.PassesAll
 import com.bones.validation.ValidationDefinition.{ToOptionalValidation, ValidationOp}
-import shapeless.{::, Generic, HList, HNil}
+import shapeless.{Generic, HList, HNil, Nat}
 
 trait KeySyntax {
   def key(key: String) = Key(key)
@@ -32,7 +31,8 @@ trait KeyValueDefinition[A] {
   /** List of validations this field should adhere to*/
   val validations: List[ValidationOp[A]]
 
-  val asMember: HMember[A] = HMember(this, List.empty)
+  import shapeless.::
+  val asKvp: KvpGroup[A :: HNil, Nat._1] = this :: KvpNil
 }
 
 /** Indicates that the field is Optional */
@@ -41,7 +41,7 @@ case class OptionalFieldDefinition[A](key: Key, op: ValueDefinitionOp[A], valida
 
 /** Indicates that the field is required */
 case class RequiredFieldDefinition[A](key: Key,
-                                      op: DataDefinitionOp[A]  with ToOptionalData[A],
+                                      op: ValueDefinitionOp[A]  with ToOptionalData[A],
                                       validations: List[ValidationOp[A] with ToOptionalValidation[A]])
   extends KeyValueDefinition[A] {
   def optional(): OptionalFieldDefinition[Option[A]] = {
@@ -98,7 +98,7 @@ case class Key(name: String) { thisKey =>
     * @tparam L The List[T] type.
     * @return
     */
-  def list[T, L <: List[T]](dataDefinitionOp: DataDefinitionOp[T], v: ValidationOp[T] with ToOptionalValidation[T]*): RequiredFieldDefinition[L] =
+  def list[T, L <: List[T]](dataDefinitionOp: ValueDefinitionOp[T], v: ValidationOp[T] with ToOptionalValidation[T]*): RequiredFieldDefinition[L] =
     RequiredFieldDefinition[L](this, ListData(dataDefinitionOp), List(PassesAll[T,L](v.toList)))
 
 
@@ -111,19 +111,19 @@ case class Key(name: String) { thisKey =>
 
   /** Indicates that the data tied to this key is a Date type with the especified format that must pass the specified validations. */
   def date(dateFormat: DateTimeFormatter, formatDescription: String, v: ValidationOp[ZonedDateTime] with ToOptionalValidation[ZonedDateTime]*): RequiredFieldDefinition[ZonedDateTime] =
-    RequiredFieldDefinition(key, DateData(dateFormat, formatDescription), v.toList)
+    RequiredFieldDefinition(thisKey, DateData(dateFormat, formatDescription), v.toList)
 
   /** Indicates that the data tied to this key is a BigDecimal that must pass the specified validations. */
   def bigDecimal(v: ValidationOp[BigDecimal] with ToOptionalValidation[BigDecimal]*): RequiredFieldDefinition[BigDecimal] =
-    RequiredFieldDefinition[BigDecimal](key, BigDecimalFromString(), v.toList)
+    RequiredFieldDefinition[BigDecimal](thisKey, BigDecimalFromString(), v.toList)
 
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
-  def either[A,B](definitionA: DataDefinitionOp[A], definitionB: DataDefinitionOp[B]) : RequiredFieldDefinition[Either[A,B]] =
-    RequiredFieldDefinition[Either[A,B]](key, EitherData(definitionA, definitionB), List.empty)
+  def either[A,B](definitionA: ValueDefinitionOp[A], definitionB: ValueDefinitionOp[B]) : RequiredFieldDefinition[Either[A,B]] =
+    RequiredFieldDefinition[Either[A,B]](thisKey, EitherData(definitionA, definitionB), List.empty)
 
   /** Expecting a string that is in the format of an iso date time */
   def isoDateTime(v: ValidationOp[ZonedDateTime] with ToOptionalValidation[ZonedDateTime]*): RequiredFieldDefinition[ZonedDateTime] =
-    RequiredFieldDefinition(key,
+    RequiredFieldDefinition(thisKey,
       DateData(
         DateTimeFormatter.ISO_DATE_TIME,
         "ISO date-time format with the offset and zone if available, such as '2011-12-03T10:15:30', '2011-12-03T10:15:30+01:00' or '2011-12-03T10:15:30+01:00[Europe/Paris]'"
@@ -133,87 +133,27 @@ case class Key(name: String) { thisKey =>
 
 
   /** Expecting a string that is in the format of an iso date */
-  def isoDate(v: ValidationOp[ZonedDateTime] with ToOptionalValidation[ZonedDateTime]*): RequiredFieldDefinition[ZonedDateTime] = RequiredFieldDefinition(key, isoDateData, v.toList)
+  def isoDate(v: ValidationOp[ZonedDateTime] with ToOptionalValidation[ZonedDateTime]*): RequiredFieldDefinition[ZonedDateTime] = RequiredFieldDefinition(thisKey, isoDateData, v.toList)
   private val isoDateData = DateData(
     DateTimeFormatter.ISO_LOCAL_DATE,
     "ISO date format with the offset if available, such as '2011-12-03' or '2011-12-03+01:00'"
   )
 
   def enumeration(e: Enumeration): RequiredFieldDefinition[e.Value] =
-    RequiredFieldDefinition(key, EnumerationStringData(e), List.empty)
+    RequiredFieldDefinition(thisKey, EnumerationStringData(e), List.empty)
 
   def enumeration(e: Enumeration)(v: ValidationOp[e.Value] with ToOptionalValidation[e.Value]*): RequiredFieldDefinition[e.Value] =
-    RequiredFieldDefinition(key, EnumerationStringData(e), v.toList)
+    RequiredFieldDefinition(thisKey, EnumerationStringData(e), v.toList)
 
 
   def enum[A <: Enum[A]: Manifest](enums: List[A], v: ValidationOp[A] with ToOptionalValidation[A]*) : RequiredFieldDefinition[A] =
-    RequiredFieldDefinition[A](key, EnumStringData[A](enums), v.toList)
+    RequiredFieldDefinition[A](thisKey, EnumStringData[A](enums), v.toList)
   def enum[A <: Enum[A]: Manifest](enums: List[A]) : RequiredFieldDefinition[A] =
-    RequiredFieldDefinition[A](key, EnumStringData[A](enums), List.empty)
+    RequiredFieldDefinition[A](thisKey, EnumStringData[A](enums), List.empty)
 
-  def obj[A <: HList](obj:BaseHListDef[A]) : RequiredFieldDefinition[A] =
-    RequiredFieldDefinition[A](this, obj, List.empty)
+  def obj[A <: HList,AL <: Nat](child: KvpGroup[A, AL]): RequiredFieldDefinition[A] =
+    RequiredFieldDefinition[A](thisKey, child, List.empty)
 
-  def obj1[A](op1: KeyValueDefinition[A]): RequiredFieldDefinition[A :: HNil] =
-    RequiredFieldDefinition[A :: HNil](this, HMember(op1, List.empty), List.empty)
-
-  def obj2[A, B](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B]): RequiredFieldDefinition[A :: B :: HNil] =
-    RequiredFieldDefinition[A :: B :: HNil](this, op1.asMember :: op2.asMember , List.empty)
-
-  def obj3[A, B, C](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C]): RequiredFieldDefinition[A :: B :: C :: HNil] =
-    RequiredFieldDefinition[A :: B :: C :: HNil](this, op1.asMember :: op2.asMember :: op3.asMember, List.empty)
-
-  def obj4[A, B, C, D](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D]):
-    RequiredFieldDefinition[A :: B :: C :: D :: HNil] =
-    RequiredFieldDefinition[A :: B :: C :: D :: HNil](this, op1.asMember :: op2.asMember :: op3.asMember :: op4.asMember, List.empty)
-
-  def obj5[A, B, C, D, E](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D],
-                          op5: KeyValueDefinition[E]):
-  RequiredFieldDefinition[A :: B :: C :: D :: E :: HNil] =
-    RequiredFieldDefinition[A :: B :: C :: D :: E :: HNil](this,  op1.asMember :: op2.asMember :: op3.asMember :: op4.asMember :: op5.asMember, List.empty)
-
-  def obj6[A, B, C, D, E, F](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D],
-                             op5: KeyValueDefinition[E], op6: KeyValueDefinition[F]):
-  RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: HNil] =
-    RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: HNil](this, op1.asMember :: op2.asMember :: op3.asMember :: op4.asMember :: op5.asMember :: op6.asMember, List.empty)
-
-  def obj7[A, B, C, D, E, F, G](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D],
-                                op5: KeyValueDefinition[E], op6: KeyValueDefinition[F], op7: KeyValueDefinition[G]):
-  RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: HNil] =
-    RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: HNil](this, op1.asMember :: op2.asMember :: op3.asMember :: op4.asMember :: op5.asMember :: op6.asMember :: op7.asMember, List.empty)
-
-  def obj8[A, B, C, D, E, F, G, H](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D],
-                                   op5: KeyValueDefinition[E], op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H]):
-  RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: HNil] =
-    RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: HNil](this, op1.asMember :: op2.asMember :: op3.asMember :: op4.asMember :: op5.asMember :: op6.asMember :: op7.asMember :: op8.asMember, List.empty)
-
-  def obj9[A, B, C, D, E, F, G, H, I](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D],
-                                      op5: KeyValueDefinition[E], op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H],
-                                      op9: KeyValueDefinition[I]):
-  RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: HNil] =
-    RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: HNil](this, op1.asMember :: op2.asMember :: op3.asMember :: op4.asMember :: op5.asMember :: op6.asMember :: op7.asMember :: op8.asMember :: op9.asMember, List.empty)
-
-  def obj10[A, B, C, D, E, F, G, H, I, J](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D],
-                                          op5: KeyValueDefinition[E], op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H],
-                                          op9: KeyValueDefinition[I], op10: KeyValueDefinition[J]):
-  RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: HNil] =
-    RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: HNil](this,  op1.asMember :: op2.asMember :: op3.asMember :: op4.asMember :: op5.asMember :: op6.asMember :: op7.asMember :: op8.asMember :: op9.asMember :: op10.asMember, List.empty)
-
-  def obj11[A, B, C, D, E, F, G, H, I, J, K](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D],
-                                             op5: KeyValueDefinition[E], op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H],
-                                             op9: KeyValueDefinition[I], op10: KeyValueDefinition[J], op11: KeyValueDefinition[K]):
-  RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: HNil] =
-    RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: HNil](
-      this, op1.asMember :: op2.asMember :: op3.asMember :: op4.asMember :: op5.asMember :: op6.asMember :: op7.asMember :: op8.asMember :: op9.asMember :: op10.asMember :: op11.asMember, List.empty)
-
-
-  def obj12[A, B, C, D, E, F, G, H, I, J, K, L](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D],
-                                                op5: KeyValueDefinition[E], op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H],
-                                                op9: KeyValueDefinition[I], op10: KeyValueDefinition[J], op11: KeyValueDefinition[K], op12: KeyValueDefinition[L]):
-  RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: L :: HNil] =
-    RequiredFieldDefinition[A :: B :: C :: D :: E :: F :: G :: H :: I :: J :: K :: L :: HNil](
-      this, op1.asMember :: op2.asMember :: op3.asMember :: op4.asMember :: op5.asMember :: op6.asMember :: op7.asMember :: op8.asMember :: op9.asMember :: op10.asMember :: op11.asMember :: op12.asMember, List.empty
-    )
 
 }
 
@@ -223,65 +163,9 @@ object Sugar {
 
     def stringData: StringData = StringData()
 
-    def either[A,B](op1: DataDefinitionOp[A], op2: DataDefinitionOp[B]) : EitherData[A,B] = EitherData[A,B](op1, op2)
-
-    def obj1[A, AA](op1: KeyValueDefinition[A]) = HMember(op1, List.empty)
-
-    def obj2[A, AA, B, BB](op1: KeyValueDefinition[A],
-                           op2: KeyValueDefinition[B]) = HMember(op1, List.empty) :: obj1(op2)
-
-    def obj3[A, B, C](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C]) =
-      HMember(op1, List.empty) :: obj2(op2,op3)
-
-    def obj4[A, B, C, D](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D]) =
-      HMember(op1, List.empty) :: obj3(op2,op3, op4)
-
-    def obj5[A, B, C, D, E](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D], op5: KeyValueDefinition[E]) =
-      HMember(op1, List.empty) :: obj4(op2,op3, op4, op5)
-
-    def obj6[A, B, C, D, E, F](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D], op5: KeyValueDefinition[E],
-                               op6: KeyValueDefinition[F]) =
-      HMember(op1, List.empty) :: obj5(op2,op3, op4, op5, op6)
-
-    def obj7[A, B, C, D, E, F, G](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D], op5: KeyValueDefinition[E],
-                                  op6: KeyValueDefinition[F], op7: KeyValueDefinition[G]) =
-      HMember(op1, List.empty) :: obj6(op2,op3, op4, op5, op6, op7)
-
-    def obj8[A, B, C, D, E, F, G, H](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D], op5: KeyValueDefinition[E],
-                                     op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H]) =
-      HMember(op1, List.empty) :: obj7(op2,op3, op4, op5, op6, op7, op8)
-
-    def obj9[A, B, C, D, E, F, G, H, I](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D], op5: KeyValueDefinition[E],
-                                        op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H], op9: KeyValueDefinition[I]) =
-      HMember(op1, List.empty) :: obj8(op2,op3, op4, op5, op6, op7, op8, op9)
-
-    def obj10[A, B, C, D, E, F, G, H, I, J](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D], op5: KeyValueDefinition[E],
-                                            op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H], op9: KeyValueDefinition[I], op10: KeyValueDefinition[J]) =
-      HMember(op1, List.empty) :: obj9(op2,op3, op4, op5, op6, op7, op8, op9, op10)
-
-    def obj11[A, B, C, D, E, F, G, H, I, J, K](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D], op5: KeyValueDefinition[E],
-                                               op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H], op9: KeyValueDefinition[I], op10: KeyValueDefinition[J],
-                                               op11: KeyValueDefinition[K]) =
-      HMember(op1, List.empty) :: obj10(op2,op3, op4, op5, op6, op7, op8, op9, op10, op11)
-
-    def obj12[A, B, C, D, E, F, G, H, I, J, K, L](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D], op5: KeyValueDefinition[E],
-                                                  op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H], op9: KeyValueDefinition[I], op10: KeyValueDefinition[J],
-                                                  op11: KeyValueDefinition[K], op12: KeyValueDefinition[L]) =
-      HMember(op1, List.empty) :: obj11(op2,op3, op4, op5, op6, op7, op8, op9, op10, op11, op12)
-
-    def obj13[A, B, C, D, E, F, G, H, I, J, K, L, M](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D], op5: KeyValueDefinition[E],
-                                                     op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H], op9: KeyValueDefinition[I], op10: KeyValueDefinition[J],
-                                                     op11: KeyValueDefinition[K], op12: KeyValueDefinition[L], op13: KeyValueDefinition[M]) =
-      HMember(op1, List.empty) :: obj12(op2,op3, op4, op5, op6, op7, op8, op9, op10, op11, op12, op13)
-
-    def obj14[A, B, C, D, E, F, G, H, I, J, K, L,M, N](op1: KeyValueDefinition[A], op2: KeyValueDefinition[B], op3: KeyValueDefinition[C], op4: KeyValueDefinition[D], op5: KeyValueDefinition[E],
-                                                       op6: KeyValueDefinition[F], op7: KeyValueDefinition[G], op8: KeyValueDefinition[H], op9: KeyValueDefinition[I], op10: KeyValueDefinition[J],
-                                                       op11: KeyValueDefinition[K], op12: KeyValueDefinition[L], op13: KeyValueDefinition[M],
-                                                       op14: KeyValueDefinition[N]) =
-      HMember(op1, List.empty) :: obj13(op2,op3, op4, op5, op6, op7, op8, op9, op10, op11, op12, op13, op14)
-
-
+    def either[A, B](op1: ValueDefinitionOp[A], op2: ValueDefinitionOp[B]): EitherData[A, B] = EitherData[A, B](op1, op2)
   }
+
 }
 
 
