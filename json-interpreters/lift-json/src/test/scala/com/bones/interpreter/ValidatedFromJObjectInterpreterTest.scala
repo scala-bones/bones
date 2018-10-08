@@ -1,7 +1,7 @@
 package com.bones.interpreter
 
 import cats.data.Validated.{Invalid, Valid}
-import com.bones.data.Algebra.{IntData, StringData}
+import com.bones.data.Value.{IntData, KvpNil, StringData}
 import org.scalatest.{FunSuite, MustMatchers}
 import org.scalatest.prop.Checkers
 import com.bones.syntax._
@@ -13,27 +13,27 @@ class ValidatedFromJObjectInterpreterTest extends FunSuite with Checkers {
   val interpreter = new ValidatedFromJObjectInterpreter()
 
   test("json to string") {
-    val str = obj1(key("test").string())
+    val str = key("test").string() :: KvpNil
     val validated = interpreter.apply(str)
 
     val input = JObject(JField("test", JString("Hello World")))
     val output = validated.apply(input)
 
     output match {
-      case Valid(str :: HNil) => assert( str === "Hello World" )
+      case Valid(str) => assert( str.head === "Hello World" )
       case Invalid(x) => fail(s"expected valid, received $x")
     }
   }
 
   test ("either") {
-    val eitherDesc = obj1(key("test").either(StringData(), IntData()))
+    val eitherDesc = key("test").either(StringData(), IntData()) :: KvpNil
     val prog = interpreter(eitherDesc)
 
     val validInput = JObject(JField("test", JString("Hello String")))
 
     val output = prog.apply(validInput)
     output.toEither match {
-      case Right(Left(x) :: HNil) => assert(x === "Hello String")
+      case Right(r) => assert(r.head.left.toOption === Some("Hello String"))
       case x => fail("expected valid, right")
     }
 

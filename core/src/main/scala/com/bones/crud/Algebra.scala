@@ -1,6 +1,7 @@
 package com.bones.crud
 
-import com.bones.data.Algebra.DataDefinitionOp
+import com.bones.data.Value.ValueDefinitionOp
+
 
 /**
   * Defines the algebra for the CRUD actions.
@@ -22,9 +23,9 @@ object Algebra {
     * @return a GADT describing create
     */
   def create[I, E, O](
-     inputSchema: DataDefinitionOp[I],
-     errorSchema: DataDefinitionOp[E],
-     successSchema: DataDefinitionOp[O]
+     inputSchema: ValueDefinitionOp[I],
+     errorSchema: ValueDefinitionOp[E],
+     successSchema: ValueDefinitionOp[O]
    ): Create[I,E,O] =
     Create[I,E,O](inputSchema, successSchema, errorSchema)
 
@@ -34,7 +35,7 @@ object Algebra {
     * @tparam A the data
     * @return a GADT algebra describing read.
     */
-  def read[A](successSchema: DataDefinitionOp[A]): Read[A] = Read(successSchema)
+  def read[A](successSchema: ValueDefinitionOp[A]): Read[A] = Read(successSchema)
 
   /**
     * Used to create a GADT describing how to upadate data.
@@ -47,31 +48,31 @@ object Algebra {
     * @return a GADT algebra describing update.
     */
   def update[I, E, O](
-    inputSchema: DataDefinitionOp[I],
-    errorSchema: DataDefinitionOp[E],
-    successSchema: DataDefinitionOp[O]
+    inputSchema: ValueDefinitionOp[I],
+    errorSchema: ValueDefinitionOp[E],
+    successSchema: ValueDefinitionOp[O]
   ): Update[I,E,O] = Update(inputSchema, errorSchema, successSchema)
 
   def delete[O](
-    outputSchema: DataDefinitionOp[O]
+    outputSchema: ValueDefinitionOp[O]
   ): Delete[O] = Delete(outputSchema)
 
 
   case class Create[I,E,O] private (
-    schemaForCreate: DataDefinitionOp[I],
-    successSchemaForCreate: DataDefinitionOp[O],
-    errorSchemaForCreate: DataDefinitionOp[E]
+    schemaForCreate: ValueDefinitionOp[I],
+    successSchemaForCreate: ValueDefinitionOp[O],
+    errorSchemaForCreate: ValueDefinitionOp[E]
   ) extends CrudOp[O]
-  case class Read[O] private (successSchemaForRead: DataDefinitionOp[O]) extends CrudOp[O]
+  case class Read[O] private (successSchemaForRead: ValueDefinitionOp[O]) extends CrudOp[O]
 
   case class Update[I,E,O] private (
-    inputSchema: DataDefinitionOp[I],
-    failureSchema: DataDefinitionOp[E],
-    successSchema: DataDefinitionOp[O]
+    inputSchema: ValueDefinitionOp[I],
+    failureSchema: ValueDefinitionOp[E],
+    successSchema: ValueDefinitionOp[O]
   ) extends CrudOp[O]
 
   case class Delete[O] private (
-    successSchema: DataDefinitionOp[O]) extends CrudOp[O]
+    successSchema: ValueDefinitionOp[O]) extends CrudOp[O]
 
   case class Search()
 

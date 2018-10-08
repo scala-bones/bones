@@ -18,7 +18,7 @@ import scala.util.{Failure, Success, Try}
 
 object ValidationDefinition {
 
-  /** Represents a validation operation */
+  /** Represents a validations operation */
   trait ValidationOp[T] {
     def isValid: T => Boolean
     def defaultError(t: T): String
