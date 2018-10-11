@@ -66,7 +66,6 @@ lazy val restUnfiltered = (project in file("rest-interpreters/unfiltered"))
       "org.tpolecat" %% "doobie-postgres" % doobieVersion,
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
       "org.scalatest" %% "scalatest" % "3.0.5" % Test
-//      "org.easymock" % "easymock" % "3.5.1" % Test
     )
   ).dependsOn(core, jsonLift)
 lazy val jsonLift = (project in file("json-interpreters/lift-json"))
@@ -81,6 +80,21 @@ lazy val jsonLift = (project in file("json-interpreters/lift-json"))
     )
   )
   .dependsOn(core)
+lazy val http4sVersion = "0.18.19"
+lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
+  .settings(
+    commonSettings,
+    name := "Bones Http4s Unfiltered",
+    libraryDependencies ++= Seq(
+      "org.http4s" %% "http4s-dsl" % http4sVersion,
+      "org.http4s" %% "http4s-blaze-server" % http4sVersion,
+      "org.http4s" %% "http4s-blaze-client" % http4sVersion,
+      "org.tpolecat" %% "doobie-core" % doobieVersion,
+      "org.tpolecat" %% "doobie-postgres" % doobieVersion,
+      "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+    )
+  ).dependsOn(core, jsonLift)
 lazy val examples = (project in file("examples"))
     .settings(
       commonSettings,
@@ -94,7 +108,7 @@ lazy val examples = (project in file("examples"))
         "org.scalatest" %% "scalatest" % "3.0.5" % Test
 //        "org.easymock" % "easymock" % "3.5.1" % Test
       )
-    ).dependsOn(core, jsonLift, restUnfiltered, jsonOas3)
+    ).dependsOn(core, jsonLift, restUnfiltered, jsonOas3, restHttp4s)
 
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.7")
