@@ -3,46 +3,41 @@ package com.bones
 import cats.effect.IO
 import com.bones.crud.Algebra._
 import com.bones.data.Value.{KvpNil, StringData, ValueDefinitionOp}
+import com.bones.http4s.Orm.Dao
 import com.bones.oas3.CrudOasInterpreter
-import com.bones.rest.unfiltered.Orm.Dao
-import com.bones.rest.unfiltered.UnfilteredUtil
 import com.bones.syntax._
 import com.bones.validation.ValidationDefinition.{IntValidation => iv, StringValidation => sv}
 import doobie.Transactor
 import doobie.util.transactor.Transactor.Aux
 import io.swagger.parser.{Swagger20Parser, SwaggerParser}
+import org.http4s.server.blaze.BlazeBuilder
 import unfiltered.filter.Planify
-
+import shapeless._
+import cats.implicits._
+import fs2.{Stream, StreamApp}
+import fs2.StreamApp.ExitCode
+import org.http4s.HttpService
+import org.http4s.server.blaze._
 
 object Interpreter {
 
-  def doInterpretation[A:Manifest,B](serviceDescription: List[CrudOp[A]], doobieInfo: Dao[A], transactor: TransactorF, endpoint: String, errorDef: ValueDefinitionOp[B]): Unit = {
+  def doInterpretation[A:Manifest,B](serviceDescription: List[CrudOp[A]], doobieInfo: Dao.Aux[A,Int], transactor: Transactor.Aux[IO,Unit], rootDir: String, errorDef: ValueDefinitionOp[B]): HttpService[IO] = {
 
-    val restToDoobieInterpreter = DirectToDoobie(endpoint)
+    import com.bones.http4s.Algebra._
+    import com.bones.http4s.Interpreter._
+    val service =
+      http4s(rootDir)
+      .contentType(jsonFormat)
+      .withSwagger()
 
-    val servletDefinitions = restToDoobieInterpreter.apply(serviceDescription).apply(doobieInfo).apply(transactor)
 
-    println("servlet defs: " + servletDefinitions)
+    saveWithDoobieInterpreter[A](serviceDescription, doobieInfo, transactor)
 
-    val plan = UnfilteredUtil.toPlan(servletDefinitions)
-
-    val oas = CrudOasInterpreter().apply(serviceDescription).apply(endpoint).spaces2
-
-//    println(oas)
-
-    new Swagger20Parser().parse(oas)
-    val swagger = new SwaggerParser().parse(oas)
-    val swaggerPretty = io.swagger.util.Json.pretty(swagger)
-//    println(swaggerPretty)
-
-//    println(DoobiePostgresSchema("person").apply(serviceDescription))
-
-    unfiltered.jetty.Server.http(5678).plan(new Planify(plan)).run
 
   }
 
 }
-object PersonEndpoint extends App {
+object PersonEndpoint extends StreamApp[IO] {
 
   case class Person(name: String, age: Int)
 
@@ -56,6 +51,10 @@ object PersonEndpoint extends App {
     key("age").int(iv.min(0)) ::
     KvpNil
   ).transform[Person]
+
+//  val personWithIdSchema = (
+//    key("id").int() :: personSchema ::: KvpNil
+//  ).transform[(Int, Person)]
 
   val errorDef: ValueDefinitionOp[String] = StringData()
 
@@ -74,9 +73,13 @@ object PersonEndpoint extends App {
     "org.postgresql.Driver", "jdbc:postgresql:bones", "postgres", ""
   )
 
+  import scala.concurrent.ExecutionContext.Implicits._
 
+  override def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
+    val http4Service = Interpreter.doInterpretation[Person, String](serviceDescription, Person.dao, transactor, "/person", errorDef)
+    BlazeBuilder[IO].bindHttp(8080, "localhost").mountService(http4Service, "/").serve
 
-  Interpreter.doInterpretation(serviceDescription, Person.dao, () => transactor, "/person", errorDef)
+  }
 
 
 

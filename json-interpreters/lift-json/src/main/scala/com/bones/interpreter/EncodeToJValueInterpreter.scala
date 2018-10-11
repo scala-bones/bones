@@ -4,6 +4,7 @@ import java.time.ZonedDateTime
 
 import com.bones.data.Value._
 import net.liftweb.json.JsonAST._
+import shapeless.HNil
 
 
 object EncodeToJValueInterpreter {
@@ -22,6 +23,7 @@ case class EncodeToJValueInterpreter() {
           case None => JNothing
         }
       }
+      case KvpNil => (input: A) => JObject()
       case op: KvpGroupHead[A,l,h,hl,t,tl] => (input: A) => {
         val l = op.split(input)
         val m1 = this.apply(op.head).apply(l._1)

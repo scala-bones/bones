@@ -58,20 +58,21 @@ object Algebra {
   ): Delete[O] = Delete(outputSchema)
 
 
-  case class Create[I,E,O] private (
+  case class Create[I,E,O](
     schemaForCreate: ValueDefinitionOp[I],
     successSchemaForCreate: ValueDefinitionOp[O],
     errorSchemaForCreate: ValueDefinitionOp[E]
   ) extends CrudOp[O]
-  case class Read[O] private (successSchemaForRead: ValueDefinitionOp[O]) extends CrudOp[O]
 
-  case class Update[I,E,O] private (
+  case class Read[O](successSchemaForRead: ValueDefinitionOp[O]) extends CrudOp[O]
+
+  case class Update[I,E,O](
     inputSchema: ValueDefinitionOp[I],
     failureSchema: ValueDefinitionOp[E],
     successSchema: ValueDefinitionOp[O]
   ) extends CrudOp[O]
 
-  case class Delete[O] private (
+  case class Delete[O] (
     successSchema: ValueDefinitionOp[O]) extends CrudOp[O]
 
   case class Search()

@@ -142,8 +142,8 @@ case class Key(name: String) { thisKey =>
   def enumeration(e: Enumeration): RequiredFieldDefinition[e.Value] =
     RequiredFieldDefinition(thisKey, EnumerationStringData(e), List.empty)
 
-  def enumeration(e: Enumeration)(v: ValidationOp[e.Value] with ToOptionalValidation[e.Value]*): RequiredFieldDefinition[e.Value] =
-    RequiredFieldDefinition(thisKey, EnumerationStringData(e), v.toList)
+//  def enumeration(e: Enumeration)(v: ValidationOp[e.Value] with ToOptionalValidation[e.Value]*): RequiredFieldDefinition[e.Value] =
+//    RequiredFieldDefinition(thisKey, EnumerationStringData(e), v.toList)
 
 
   def enum[A <: Enum[A]: Manifest](enums: List[A], v: ValidationOp[A] with ToOptionalValidation[A]*) : RequiredFieldDefinition[A] =
