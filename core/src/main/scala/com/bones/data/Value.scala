@@ -89,7 +89,7 @@ object Value {
       implicit prepend: Prepend.Aux[P, HNil, OUT],
       length: Length.Aux[P, PL],
       split: Split.Aux[OUT, PL, P, HNil]
-    ): KvpGroup[OUT, OUTL] =
+    ): KvpGroupHead[OUT, OUTL, P, PL, HNil, Nat._0] =
       KvpGroupHead[OUT, OUTL, P, PL, HNil, Nat._0](kvp, KvpNil, prepend, split, List.empty)
 
     def ::[H](v: KeyValueDefinition[H]): KvpSingleValueHead[H, HNil, Nat._0, H :: HNil, Nat._1] =

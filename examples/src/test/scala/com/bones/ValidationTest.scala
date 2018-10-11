@@ -5,8 +5,9 @@ import java.util.UUID
 
 import argonaut.{Json, JsonObject, Parse}
 import cats.data.Validated.Valid
-import com.bones.data.Algebra.{DataDefinitionOp, StringData}
+import com.bones.data.Value
 import com.bones.data.Error.CanNotConvert
+import com.bones.data.Value.KvpNil
 import com.bones.interpreter.{EncodeToJValueInterpreter, ValidatedFromJObjectInterpreter}
 import com.bones.oas3.{ValidationOasInterpreter, ValidationToPropertyInterpreter}
 import org.scalatest.FunSuite
@@ -22,15 +23,16 @@ class ValidationTest extends FunSuite {
 
     import com.bones.syntax._
 
-    val o1 = obj2(
-      key("key1").string(),
-      key("key2").string()
-    )
+    val o1 =
+      key("key1").string() ::
+      key("key2").string() ::
+      KvpNil
 
-    val o2 = obj2(
-      key("key3").string(),
-      key("key4").string()
-    )
+
+    val o2 =
+      key("key3").string() ::
+      key("key4").string() ::
+      KvpNil
 
 //    val o3 = o1 append o2
   }
@@ -65,15 +67,17 @@ class ValidationTest extends FunSuite {
     import com.bones.syntax._
 
 
-    val s2 = obj2(
-      key("val1").string(),
-      key("val2").string()
-    )
-    val i2 = obj2(
-      key("int1").int(),
-      key("int2").int()
-    )
-    val merged = s2 :: i2
+    val s2 =
+      key("val1").string() ::
+      key("val2").string() ::
+      KvpNil
+
+    val i2 =
+      key("int1").int() ::
+      key("int2").int() ::
+      KvpNil
+
+    val merged = s2 ::: i2
 
 //    val s = implicitly[Split[result.p.Out, result.lpLength.Out]]
 //    val s = Split[String :: String :: Int :: Int, Nat._2]
