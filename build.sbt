@@ -80,6 +80,28 @@ lazy val jsonLift = (project in file("json-interpreters/lift-json"))
     )
   )
   .dependsOn(core)
+lazy val circeVersion = "0.10.0"
+lazy val jsonCirce = (project in file("json-interpreters/circe"))
+  .settings(
+    commonSettings,
+    name := "Bones Circe",
+    libraryDependencies ++= Seq (
+      "io.circe" %% "circe-core" % circeVersion,
+      "io.circe" %% "circe-parser" % circeVersion,
+      "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+    )
+  ).dependsOn(core)
+lazy val jsonArgonaut = (project in file("json-interpreters/argonaut"))
+  .settings(
+    commonSettings,
+    name := "Bones Argonaut",
+    libraryDependencies ++= Seq (
+      "io.argonaut" %% "argonaut" % "6.2.2",
+      "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+    )
+  ).dependsOn(core)
 lazy val http4sVersion = "0.18.19"
 lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
   .settings(
