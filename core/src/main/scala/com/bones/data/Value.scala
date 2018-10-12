@@ -38,7 +38,9 @@ object Value {
   case class OptionalValueDefinition[B](valueDefinitionOp: ValueDefinitionOp[B]) extends ValueDefinitionOp[Option[B]]
 
   /** Syntactic sugar to wrap the data definition in an Optional type.
-    * Also a sort of marker interface, if this is mixed in, the field is optional. */
+    * Also a sort of marker interface, if this is mixed in, the field is optional.
+    * TODO: This should not extend ValueDefinitionOp[A]
+    **/
   trait ToOptionalData[A] extends ValueDefinitionOp[A] {
     def toOption = OptionalValueDefinition(this)
   }
@@ -72,10 +74,6 @@ object Value {
   final case class Transform[A:Manifest,B](op: ValueDefinitionOp[B], f: A => B, g: B => A) extends ValueDefinitionOp[A] with ToOptionalData[A] { thisBase =>
     val manifestOfA: Manifest[A] = manifest[A]
   }
-
-  final case class Check[L <: HList, N <: Nat](obj: KvpGroup[L, N], check: L => Validated[ValidationError[L], L])
-    extends ValueDefinitionOp[L] with ToOptionalData[L]
-
 
   sealed trait KvpGroup[L <: HList, HL <: Nat] extends ValueDefinitionOp[L] with ToOptionalData[L]
 

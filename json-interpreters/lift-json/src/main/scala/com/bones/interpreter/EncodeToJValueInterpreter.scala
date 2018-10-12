@@ -4,7 +4,6 @@ import java.time.ZonedDateTime
 
 import com.bones.data.Value._
 import net.liftweb.json.JsonAST._
-import shapeless.HNil
 
 
 object EncodeToJValueInterpreter {
@@ -37,21 +36,6 @@ case class EncodeToJValueInterpreter() {
         val m2 = this.apply(op.tail).apply(cast.tail).asInstanceOf[JObject]
         JObject(JField(op.fieldDefinition.key.name, val1) :: m2.obj)
       }
-//      case op: HListPrependN[A,p,s] => (input: A) => {
-//          val l = op.split(input)
-//          val m1 = this.apply(op.prefix).apply(l.head)
-//          val m2 = this.apply(op.suffix).apply(l.tail.head)
-//          JObject(m1.asInstanceOf[JObject].obj ::: m2.asInstanceOf[JObject].obj)
-//      }
-//      case op: HMember[a] => (input: A) => {
-//        import shapeless.::
-//        val res1 = apply(op.op1.op)(input.asInstanceOf[a :: HNil].head)
-//        JObject(List(JField(op.op1.key.name, res1)))
-//      }
-//      case op: HDataDefinition[a] => (input: A) => {
-//        import shapeless.::
-//        apply(op.op)(input.asInstanceOf[a :: HNil].head)
-//      }
       case ob: BooleanData => (input: A) => JBool(input.asInstanceOf[Boolean])
       case rs: StringData => (input: A) => JString(input.asInstanceOf[String])
       case ri: IntData => (input: A) => JInt(input.asInstanceOf[Int])
