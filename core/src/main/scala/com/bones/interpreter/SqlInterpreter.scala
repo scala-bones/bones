@@ -23,6 +23,7 @@ object SqlInterpreter {
       case esd: EnumerationStringData[a] => "text"
       case esd: EnumStringData[a] => "text"
       case t: Transform[a,b] => apply(t.op)
+      case o: ToOptionalData[a] => "N/A"
     }
 
 }

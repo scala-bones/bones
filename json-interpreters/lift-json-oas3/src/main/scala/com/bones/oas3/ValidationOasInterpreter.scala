@@ -168,7 +168,6 @@ case class ValidationOasInterpreter(validationInterpreter: ValidationToPropertyI
           "properties" := jObject(apply(transform.op))
         )
       )
-    case Check(obj, check) => Json("check" :=  "needs impl").objectOrEmpty
     case x => Json(x.toString := "needs impl").objectOrEmpty
   }
 }

@@ -2,7 +2,7 @@ package com.bones.http4s
 
 import cats.effect._
 import cats.implicits._
-import com.bones.crud.Algebra.{CrudOp, Read}
+import com.bones.crud.Algebra.{CrudOp, Read, Update}
 import com.bones.http4s.Algebra.InterchangeFormat
 import com.bones.http4s.Orm.Dao
 import com.bones.interpreter.{EncodeToJValueInterpreter, ValidatedFromJObjectInterpreter}
@@ -35,7 +35,7 @@ object Interpreter {
 
       def toResult(opt: Option[A], id: Int): IO[Response[IO]] = {
         opt match {
-          case Some(a) => Ok(prettyRender(interpreter.apply(a)))
+          case Some(a) => Ok(prettyRender(JObject.apply(JField("id", JInt(id)) :: interpreter.apply(a).asInstanceOf[JObject].obj)))
           case None => NotFound(prettyRender(errorJson))
         }
       }
@@ -50,6 +50,21 @@ object Interpreter {
           prog.flatMap(toResult(_,id))
         }
       }
+    }
+
+    def putJson[IN,E,OUT](update: Update[IN,E,OUT]): HttpService[IO] = {
+      val inInterpreter = ValidatedFromJObjectInterpreter().apply(update.inputSchema)
+      val outInterpreter = EncodeToJValueInterpreter().apply(update.successSchema)
+      val errorInterpreter = EncodeToJValueInterpreter().apply(update.failureSchema)
+      HttpService[IO] {
+        case Method.PUT -> Root / rootDir / IntVar(id) => {
+          val prog: IO[A] = for {
+            in <- inInterpreter.apply()
+            _ <- dao.update(id, )
+          }
+        }
+      }
+
     }
 
     val services = servletDefinitions.flatMap {
