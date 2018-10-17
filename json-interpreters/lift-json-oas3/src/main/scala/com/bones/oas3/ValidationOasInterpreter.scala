@@ -7,7 +7,7 @@ import java.util.UUID
 import argonaut.Argonaut._
 import argonaut._
 import com.bones.data.Value._
-import com.bones.validation.ValidationDefinition.{InvalidValue, OptionalValidation, ValidValue, ValidationOp}
+import com.bones.validation.ValidationDefinition.{InvalidValue, OptionalValidation, ValidValue, ValidationOp, DateValidationInstances}
 
 
 object ValidationOasInterpreter {
@@ -18,7 +18,7 @@ object ValidationOasInterpreter {
 
 case class ValidationToPropertyInterpreter() {
 
-  import com.bones.validation.ValidationDefinition.{BigDecimalValidation => bdv, IntValidation => iv, StringValidation => sv}
+  import com.bones.validation.ValidationDefinition.{BigDecimalValidation => bdv, IntValidation => iv, StringValidation => sv, DateValidationInstances => dv}
   val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_DATE_TIME
 
   private def toJson(a: Any): Option[Json] = a match {
@@ -68,6 +68,8 @@ case class ValidationToPropertyInterpreter() {
 
       case bdv.Max(max) => List("maximum" -> jNumber(max))
       case bdv.Min(min) => List("minimum" -> jNumber(min))
+
+      case _ => List.empty
 
     }
   }

@@ -2,8 +2,8 @@ package com.bones.argonaut
 
 import java.time.ZonedDateTime
 
+import argonaut._
 import com.bones.data.Value._
-import argonaut._, Argonaut._
 object EncodeToArgonautInterpreter {
 
   type EncodeToJValue[A] = A => Json
@@ -25,9 +25,9 @@ class EncodeToArgonautInterpreter {
         val l = op.split(input)
         val m1 = this.apply(op.head).apply(l._1)
         val m2 = this.apply(op.tail).apply(l._2)
-        val values1 = m1.obj.flatMap(_.toList).toList
-        val values2 = m2.obj.flatMap(_.toList).toList
-        Json.obj( (values1 ::: values2) :_*)
+        val values1 = m1.obj.toList.flatMap(_.toList)
+        val values2 = m2.obj.toList.flatMap(_.toList)
+        Json.obj( values1 ::: values2 :_*)
 
       }
       case op: KvpSingleValueHead[h,t,tl,A,ol] => (input: A) => {
@@ -35,8 +35,8 @@ class EncodeToArgonautInterpreter {
         val cast = input.asInstanceOf[h :: t]
         val val1 = apply(op.fieldDefinition.op).apply(cast.head)
 
-        val values = this.apply(op.tail).apply(cast.tail).obj.flatMap(_.toList).toList
-        Json.obj( ( (op.fieldDefinition.key.name, val1) :: values) :_* )
+        val values = this.apply(op.tail).apply(cast.tail).obj.toList.flatMap(_.toList)
+        Json.obj( (op.fieldDefinition.key.name, val1) :: values :_* )
       }
       case ob: BooleanData => (input: A) => Json.jBool(input.asInstanceOf[Boolean])
       case rs: StringData => (input: A) => Json.jString(input.asInstanceOf[String])

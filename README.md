@@ -32,18 +32,20 @@ import com.bones.validation.ValidationDefinition.{IntValidation => iv, StringVal
 
 case class Person(name: String, age: Int)
 
-val personSchema = obj2(
-  key("name").string(sv.matchesRegex("^[a-zA-Z ]*$".r)),
-  key("age").int(iv.min(0))
-).transform[Person]
-
+  val personSchema = (
+    key("name").string(sv.matchesRegex("^[a-zA-Z ]*$".r)) ::
+    key("age").int(iv.min(0)) ::
+    KvpNil
+  ).transform[Person]
+  
 val errorDef: DataDefinitionOp[String] = StringData()
 
-val serviceDescription =
-    create(personSchema, personSchema, errorDef) ::
-      read(personSchema) ::
-      Nil
-
+  val serviceDescription =
+    create(personSchema, errorDef, personSchema) ::
+    read(personSchema) ::
+    update(personSchema, errorDef, personSchema) ::
+    delete(personSchema) ::
+    Nil
 ```
 
 
@@ -66,37 +68,23 @@ and the postgres schema to support the REST web service.
 
 ** __Note:__ only GET and POST are currently supported **
 
-The __Direct to Doobie__ interpreter will spin up a Jetty container with an application which will listen
-for GET (based on the _read()_ definition) and POST (based on the _create()_ definition).  
+The __Http4s Circe Interpreter__ interpreter will spin up a Blaze container with an application which will listen
+for GET (based on the _read()_ definition) DELETE (based on the _deleted()_ definition )
+PUT (based on the _update()_ definition) and POST (based on the _create()_ definition).  
 By convention, the resulting interpreted application will expect a JSON object which will then be validated based on the schema.
 If validation is successful, we will issue an insert statement for the POST and a select statement for the GET request.
 By convention, the insert will use the DB specific auto-generated id and therefor it is implied that the 
 resulting JSON will also include an id property.
 
-To enable the Direct to Doobie service, we need to define queries specific to our case class
-as well as configure the name of the endpoint.
 
 ```$scala
 
 //the next bit of code are the Queries needed to select and insert data using Doobie.
-//(Doobie has an ORM example in a later library which we can use to get rid of the hard-coded queries.)  
-val doobieInfo = new DoobieInfo[Person] with EndPoint {
-    override def transactor: Aux[IO, Unit] = Transactor.fromDriverManager[IO](
-      "org.postgresql.Driver", "jdbc:postgresql:bones", "postgres", ""
-    )
-    
-    override def get(id: Long): doobie.ConnectionIO[Person] =
-      sql"select name, age from person where id = $id".query[Person].unique
-    
-    override def insert(a: Person): doobie.ConnectionIO[Int] = {
-      val name = a.name
-      val age = a.age
-      sql"insert into person (name, age) values ($name, $age)".update.run
-    }
-
-        
-    override def url: String = "/person"
-}
+//We have borrowed from Doobie's ORM example to get rid of the hard-coded queries.  
+  object Person {
+    implicit val dao: Dao.Aux[Person, Int] =
+      Dao.derive[Person, Int]("person", "id")
+  }
 ```
 
 Finally, given that we have a schema and the DoobieInfo for the case class, we 
@@ -105,16 +93,22 @@ can start the service.  For this interpreter we are using the Unfiltered library
 ```$scala
 //this will create the URL Paths, 
 //in this case the GET and POST will be available at https://localhost:5678/person will be available.
-val restToDoobieInterpreter = DirectToDoobie("/person")
+object PersonEndpoint extends StreamApp[IO] {
+  import Definitions._
 
-val serviceDefinitions = restToDoobieInterpreter(serviceDescription)(doobieInfo)
+  val transactor: Aux[IO, Unit] = Transactor.fromDriverManager[IO](
+    "org.postgresql.Driver", "jdbc:postgresql:bones", "postgres", ""
+  )
 
-//We can combine multiple servletDefinitions into a single plan.  Meaning
-//we can add additional endpoints besides "/person".
-val plan = UnfilteredUtil.toPlan(servletDefinitions)
+  import scala.concurrent.ExecutionContext.Implicits._
 
-//To start the daemon, we can pass the endpoint serviceDefinitions to Jetty.
-jetty.Http(5678).filter(new Planify(plan)).run
+  override def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
+    val http4Service = Interpreter.doInterpretation[Person, String](serviceDescription, Person.dao, transactor, "/person", errorDef)
+    BlazeBuilder[IO].bindHttp(8080, "localhost").mountService(http4Service, "/").serve
+
+  }
+
+}
 ```
 
 
@@ -169,8 +163,9 @@ Interpreters (no need to include core if you include this)
 ```libraryDependencies += "com.github.oletraveler" %% "bones" % "0.5.0-SNAPSHOT"```
 
 Interpreters (no need to include core if you include this)
-#### Lift Json Interpreter (currently the only interpreter)
-```libraryDependencies += "com.github.oletraveler" %% "bones-rest-unfiltered" % "0.5.0-SNAPSHOT"```
+#### Http4s Circe Interpreter (currently the only interpreter)
+Basic CRUD capabilities implemented with http4s, circe and doobie.
+```libraryDependencies += "com.github.oletraveler" %% "bones-http4s-circe" % "0.5.0-SNAPSHOT"```
 
 
 ## Credits

@@ -37,7 +37,7 @@ object Interpreter {
   }
 
 }
-object PersonEndpoint extends StreamApp[IO] {
+object Definitions {
 
   case class Person(name: String, age: Int)
 
@@ -48,26 +48,29 @@ object PersonEndpoint extends StreamApp[IO] {
 
   val personSchema = (
     key("name").string(sv.matchesRegex("^[a-zA-Z ]*$".r)) ::
-    key("age").int(iv.min(0)) ::
-    KvpNil
-  ).transform[Person]
+      key("age").int(iv.min(0)) ::
+      KvpNil
+    ).transform[Person]
 
-//  val personWithIdSchema = (
-//    key("id").int() :: personSchema ::: KvpNil
-//  ).transform[(Int, Person)]
+  //  val personWithIdSchema = (
+  //    key("id").int() :: personSchema ::: KvpNil
+  //  ).transform[(Int, Person)]
 
   val errorDef: ValueDefinitionOp[String] = StringData()
 
   val serviceDescription =
     create(personSchema, errorDef, personSchema) ::
-    read(personSchema) ::
-    update(personSchema, errorDef, personSchema) ::
-    delete(personSchema) ::
-    Nil
+      read(personSchema) ::
+      update(personSchema, errorDef, personSchema) ::
+      delete(personSchema) ::
+      Nil
 
   //Above is the description.
   //below interpreters the description into runnable code.
+}
 
+object PersonEndpoint extends StreamApp[IO] {
+  import Definitions._
 
   val transactor: Aux[IO, Unit] = Transactor.fromDriverManager[IO](
     "org.postgresql.Driver", "jdbc:postgresql:bones", "postgres", ""
@@ -80,7 +83,5 @@ object PersonEndpoint extends StreamApp[IO] {
     BlazeBuilder[IO].bindHttp(8080, "localhost").mountService(http4Service, "/").serve
 
   }
-
-
 
 }
