@@ -20,7 +20,7 @@ object ValidatedFromCirceInterpreter {
   type ValidatedFromJson[A] = Json => Validated[NonEmptyList[ExtractionError], A]
 
 }
-class ValidatedFromCirceInterpreter {
+case class ValidatedFromCirceInterpreter() {
 
   import com.bones.circe.ValidatedFromCirceInterpreter.ValidatedFromJson
 
@@ -238,7 +238,7 @@ class ValidatedFromCirceInterpreter {
               op.enums.find(_.toString === str).map(_.asInstanceOf[A])
                 .toRight(NonEmptyList.one(CanNotConvert(str, op.enums.getClass)))
                 .toValidated
-            case None => Invalid(NonEmptyList.one(invalidValue(json, classOf[a])))
+            case None => Invalid(NonEmptyList.one(invalidValue(json, op.manifestOfA.runtimeClass)))
           }
         }
       }

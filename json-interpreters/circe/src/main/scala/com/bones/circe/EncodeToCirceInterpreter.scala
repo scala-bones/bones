@@ -11,7 +11,7 @@ object EncodeToCirceInterpreter {
 
   type EncodeToJValue[A] = A => Json
 }
-class EncodeToCirceInterpreter {
+case class EncodeToCirceInterpreter() {
 
   def apply[A](fgo: ValueDefinitionOp[A]): EncodeToJValue[A] =
     fgo match {
