@@ -18,10 +18,6 @@ object Value {
     //lift any ValueDefinition into a FreeApplicative
     def lift: ValueDefinition[A] = ???
 
-//    def ::[B](valueDefinitionOp: ValueDefinitionOp[B]): HListPrependN[B::A::HNil, B::HNil, A::HNil] = {
-//      HDataDefinition[B](valueDefinitionOp) :: HDataDefinition[A](this)
-//    }
-
     def transform[Z:Manifest](implicit gen: Generic.Aux[Z, A]) = {
       Transform(this, gen.to _, gen.from _)
     }
@@ -41,8 +37,8 @@ object Value {
     * Also a sort of marker interface, if this is mixed in, the field is optional.
     * TODO: This should not extend ValueDefinitionOp[A]
     **/
-  trait ToOptionalData[A] extends ValueDefinitionOp[A] {
-    def toOption = OptionalValueDefinition(this)
+  trait ToOptionalData[B] { self: ValueDefinitionOp[B] =>
+    def toOption: OptionalValueDefinition[B] = OptionalValueDefinition[B](self)
   }
 
   final case class BooleanData() extends ValueDefinitionOp[Boolean] with ToOptionalData[Boolean]

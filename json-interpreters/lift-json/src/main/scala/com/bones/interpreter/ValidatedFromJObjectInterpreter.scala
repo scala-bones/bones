@@ -68,6 +68,7 @@ case class ValidatedFromJObjectInterpreter() {
               .andThen { l =>
                 vu.validate[A](l, op.validations).asInstanceOf[Validated[NonEmptyList[ExtractionError], A]]
               }
+          case other  => Invalid(NonEmptyList.one(invalidValue(other, classOf[Object])))
         }
       }
 
@@ -85,7 +86,7 @@ case class ValidatedFromJObjectInterpreter() {
             val headValue = fields.find(_.name == op.fieldDefinition.key.name).map(_.value) match {
               case Some(field) =>
                 headInterpreter.apply(field)
-                  .andThen(ex => vu.validate[A](ex.asInstanceOf[A], op.validations))
+                  .andThen(ex => vu.validate[h](ex.asInstanceOf[h], op.fieldDefinition.validations))
               case None =>
                 if (optional) Valid(None)
                 else Invalid(NonEmptyList.one(RequiredData(op)))
@@ -95,6 +96,7 @@ case class ValidatedFromJObjectInterpreter() {
 
             Applicative[({type AL[AA] = Validated[NonEmptyList[ExtractionError], AA]})#AL]
               .map2(headValue, tailValue)((l1, l2) => {
+
                 l1.asInstanceOf[h] :: l2.asInstanceOf[t]
               })
               .andThen { l =>
@@ -103,6 +105,7 @@ case class ValidatedFromJObjectInterpreter() {
 
 
           }
+          case other => Invalid(NonEmptyList.one(invalidValue(other, classOf[Object])))
         }
         result.asInstanceOf[Validated[cats.data.NonEmptyList[ExtractionError],A]]
       }
@@ -183,6 +186,7 @@ case class ValidatedFromJObjectInterpreter() {
             case (_, Invalid(x)) => Invalid(x)
           }).asInstanceOf[Validated[NonEmptyList[ExtractionError], A]]
         }
+        case other => Invalid(NonEmptyList.one(invalidValue(other, classOf[Object])))
       }
 
       case op: BigDecimalFromString => (jValue: JValue) => {
@@ -200,6 +204,11 @@ case class ValidatedFromJObjectInterpreter() {
             convertFromString(str)
           case x => Invalid(NonEmptyList.one(invalidValue(x, classOf[BigDecimal])))
         }
+      }
+      case op@ DoubleData() => (jValue: JValue) => jValue match {
+        case JNull | JNothing => Invalid(NonEmptyList.one(RequiredData(op)))
+        case JDouble(num) => Valid(num)
+        case x => Invalid(NonEmptyList.one(invalidValue(x, classOf[Double])))
       }
       case ConversionData(from, fab, _, _) => (jValue: JValue) => {
         val baseValue = apply(from).apply(jValue)
@@ -220,6 +229,7 @@ case class ValidatedFromJObjectInterpreter() {
         case JString(str) =>
           op.enums.find(_.toString === str).map(_.asInstanceOf[A]).toRight(NonEmptyList.one(CanNotConvert(str, op.enums.getClass)))
             .toValidated
+        case x => Invalid(NonEmptyList.one(invalidValue(x, op.manifestOfA.runtimeClass)))
       }
       case Transform(op, _, fba) => (jValue: JValue) => {
         val fromProducer = this.apply(op)

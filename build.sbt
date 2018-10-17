@@ -5,7 +5,8 @@ lazy val commonSettings = Seq(
   homepage := Some(url("https://github.com/oletraveler/bones")),
   startYear := Some(2018),
   licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
-  pomExtra := {
+  scalacOptions ++= Seq("-Ypartial-unification"),
+    pomExtra := {
     <scm>
       <url>git://github.com/oletraveler/bones.git</url>
       <connection>scm:git://github.com/oletraveler/bones.git</connection>
@@ -34,8 +35,8 @@ lazy val core = (project in file("core"))
     commonSettings,
     name := "Bones",
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % "1.2.0",
-      "org.typelevel" %% "cats-free" % "1.2.0",
+      "org.typelevel" %% "cats-core" % "1.4.0",
+      "org.typelevel" %% "cats-free" % "1.4.0",
       "com.chuusai" %% "shapeless" % "2.3.3",
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
       "org.scalatest" %% "scalatest" % "3.0.5" % Test
@@ -106,17 +107,18 @@ lazy val http4sVersion = "0.18.19"
 lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
   .settings(
     commonSettings,
-    name := "Bones Http4s Unfiltered",
+    name := "Bones Http4s Circe",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-dsl" % http4sVersion,
       "org.http4s" %% "http4s-blaze-server" % http4sVersion,
       "org.http4s" %% "http4s-blaze-client" % http4sVersion,
+      "org.http4s" %% "http4s-circe" % http4sVersion,
       "org.tpolecat" %% "doobie-core" % doobieVersion,
       "org.tpolecat" %% "doobie-postgres" % doobieVersion,
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
       "org.scalatest" %% "scalatest" % "3.0.5" % Test
     )
-  ).dependsOn(core, jsonLift)
+  ).dependsOn(core, jsonCirce)
 lazy val examples = (project in file("examples"))
     .settings(
       commonSettings,
