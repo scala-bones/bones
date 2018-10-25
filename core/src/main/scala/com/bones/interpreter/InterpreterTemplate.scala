@@ -27,6 +27,7 @@ class InterpreterTemplate {
       case esd: EnumStringData[a] => ???
       case t: Transform[a,b] => ???
       case tod: ToOptionalData[a] => ???
+      case br: ByteReferenceData => ???
     }
 
 }

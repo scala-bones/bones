@@ -1,5 +1,6 @@
 package com.bones.data
 
+import java.io.File
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
@@ -77,7 +78,11 @@ case class ConversionFieldDefinition[A,B](convertFrom: RequiredFieldDefinition[A
 case class Key(name: String) { thisKey =>
 
   /** Indicates that the data tied to this key is a String type that must pass the specified validations */
-  def string(f: ValidationOp[String] with ToOptionalValidation[String] *): RequiredFieldDefinition[String] = RequiredFieldDefinition(this, StringData(), f.toList)
+  def string(f: ValidationOp[String] with ToOptionalValidation[String] *): RequiredFieldDefinition[String] =
+    RequiredFieldDefinition(this, StringData(), f.toList)
+
+  def byteReference(f: ValidationOp[ByteReference] with ToOptionalValidation[ByteReference] *): RequiredFieldDefinition[ByteReference] =
+    RequiredFieldDefinition(this, ByteReferenceData(), f.toList)
 
   /** Indicates that the data tied to this key is an Int type that must pass the specified validations */
   def int(f: ValidationOp[Int] with ToOptionalValidation[Int] *): RequiredFieldDefinition[Int] = RequiredFieldDefinition[Int](this, IntData(), f.toList)
