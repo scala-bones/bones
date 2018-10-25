@@ -22,6 +22,7 @@ object SqlInterpreter {
       case cd: ConversionData[a,b] => apply(cd.from)
       case esd: EnumerationStringData[a] => "text"
       case esd: EnumStringData[a] => "text"
+      case br: ByteReferenceData => "byte"
       case t: Transform[a,b] => apply(t.op)
     }
 

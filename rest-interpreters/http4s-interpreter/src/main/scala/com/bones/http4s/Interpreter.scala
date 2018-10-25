@@ -12,11 +12,13 @@ import com.bones.http4s.Algebra.InterchangeFormat
 import com.bones.http4s.Orm.Dao
 import doobie.implicits._
 import doobie.util.transactor.Transactor
+import fs2.Stream
 import io.circe.{Json, JsonObject, ParsingFailure}
 import io.circe.syntax._
 import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.circe._
+import org.http4s.headers.`Content-Type`
 
 object Interpreter {
 
@@ -84,6 +86,20 @@ object Interpreter {
 
     }
 
+    def search(read: Read[A]): HttpService[IO] = {
+      val interpreter = EncodeToCirceInterpreter().apply(read.successSchemaForRead)
+      HttpService[IO] {
+        case Method.GET -> Root / rootDir => {
+          val stream = dao.findAll.transact(transactor)
+          Ok(Stream("[") ++
+            stream.map(a => interpreter.apply(a).noSpaces).intersperse(",") ++
+            Stream("]"),
+            `Content-Type`(MediaType.`application/json`)
+          )
+        }
+      }
+    }
+
     def getJson[IN](read: Read[A]): HttpService[IO] = {
       val interpreter = EncodeToCirceInterpreter().apply(read.successSchemaForRead)
       val errorJson = Json.obj(("success" -> Json.fromString("false")), ("error" -> Json.fromString("could not find it")))
@@ -103,6 +119,39 @@ object Interpreter {
             a
           }
           prog.flatMap(toResult(_, id))
+        }
+      }
+    }
+
+    def putJson2[E](update: Update[A,E,A]): HttpService[IO] = {
+      val inInterpreter = ValidatedFromCirceInterpreter().apply(update.inputSchema)
+      val outInterpreter = EncodeToCirceInterpreter().apply(update.successSchema)
+      val errorInterpreter = EncodeToCirceInterpreter().apply(update.failureSchema)
+      HttpService[IO] {
+        case req@Method.PUT -> Root / rootDir / IntVar(id) => {
+          val result: EitherT[IO, IO[Response[IO]], IO[Response[IO]]] = for {
+            body <- EitherT[IO, IO[Response[IO]], String] {
+              req.as[String].map(Right(_))
+            }
+            circe <- EitherT.fromEither[IO] {
+              io.circe.parser.parse(body).left.map(x => extractionErrorToOut(x))
+            }
+            in <- EitherT.fromEither[IO] {
+              inInterpreter.apply(circe).toEither.left.map(x => eeToOut(x))
+            }
+            _ <- EitherT[IO, Nothing, Int] {
+              dao.update(id, in).transact(transactor).map(r => Right(r))
+            }
+            a <- EitherT[IO, IO[Response[IO]], A] {
+              dao.find(id).map(_.toRight(missingIdToJson(id))).transact(transactor)
+            }
+          } yield {
+            Ok(outInterpreter.apply(a))
+          }
+
+          //This doesn't feel right.  Any help on this?
+          result.merge.map(_.unsafeRunSync())
+
         }
       }
     }
@@ -141,10 +190,10 @@ object Interpreter {
     }
 
     val services = servletDefinitions.flatMap {
-      case read: Read[A] => Some(getJson(read))
-      case delete: Delete[A] => Some(deleteJson(delete))
-      case create: Create[A,e,A] => Some(postJson(create))
-      case update: Update[A,e,A] => Some(putJson(update))
+      case read: Read[A] => List(getJson(read), search(read))
+      case delete: Delete[A] => List(deleteJson(delete))
+      case create: Create[A,e,A] => List(postJson(create))
+      case update: Update[A,e,A] => List(putJson(update))
       case _ => None
     }
     import cats.effect._, org.http4s._, org.http4s.dsl.io._, scala.concurrent.ExecutionContext.Implicits.global

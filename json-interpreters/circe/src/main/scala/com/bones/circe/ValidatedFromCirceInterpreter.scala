@@ -17,6 +17,10 @@ import com.bones.validation.{ValidationUtil => vu}
 import scala.util.control.NonFatal
 
 object ValidatedFromCirceInterpreter {
+//  trait Validated[I,O]
+//  case class ValidatedString() extends Validated[String,JString]
+//  case class ValidatedObject[A]() extends Validated[A, ]
+//
   type ValidatedFromJson[A] = Json => Validated[NonEmptyList[ExtractionError], A]
 
 }
