@@ -67,6 +67,7 @@ class EncodeToArgonautInterpreter {
         val b = fab(input)
         apply(op).apply(b)
       }
+      case ByteReferenceData() => ???
 
     }
 }

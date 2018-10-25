@@ -1,5 +1,7 @@
 package com.bones.data
 
+import java.io.{File, InputStream}
+import java.net.URI
 import java.time.ZonedDateTime
 import java.util.UUID
 
@@ -10,7 +12,17 @@ import com.bones.validation.ValidationDefinition.{ToOptionalValidation, Validati
 import shapeless.ops.hlist.{Length, Prepend, Split}
 import shapeless.{::, Generic, HList, HNil, Nat, Succ}
 
+
 object Value {
+
+  /**
+    * This is an abstraction which describes a reference to a bunch of bytes.  For instance, a local
+    * file, stream, buffer or a s3 bucket.
+    */
+  trait ByteReference {
+    def contentType: String
+    def inputStream: InputStream
+  }
 
   /** ValueDefinitionOp is the base trait to describe a piece of data which may be
     * a single value or an HList. */
@@ -50,6 +62,7 @@ object Value {
     extends ValueDefinitionOp[L] with ToOptionalData[L]
   final case class StringData() extends ValueDefinitionOp[String] with ToOptionalData[String]
   final case class BigDecimalFromString() extends ValueDefinitionOp[BigDecimal] with ToOptionalData[BigDecimal]
+  final case class ByteReferenceData() extends ValueDefinitionOp[ByteReference] with ToOptionalData[ByteReference]
 
   import java.time.format.DateTimeFormatter
 

@@ -12,8 +12,7 @@ import com.bones.validation.ValidationDefinition.{ValidationOp, IntValidation =>
 
 object Schemas {
 
-  //Define some example data types.
-  /** CreditCardType */
+  /** This is a product type example */
   sealed abstract class CreditCardType(val abbrev: String)
 
   object CreditCardTypes {
@@ -36,6 +35,7 @@ object Schemas {
 
   case class BillingLocation(countryIso: String, zipCode: Option[String])
 
+  // Scala Enumeration Example
   object Currency extends Enumeration {
     val USD = Value("USD")
     val CAD = Value("CAD")
