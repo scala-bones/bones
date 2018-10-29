@@ -7,7 +7,7 @@ import cats.Applicative
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import cats.implicits._
-import com.bones.data.{ConversionFieldDefinition, OptionalFieldDefinition, RequiredFieldDefinition}
+import com.bones.data.{SumTypeDefinition, OptionalFieldDefinition, RequiredFieldDefinition}
 import com.bones.data.Error.{CanNotConvert, ExtractionError, RequiredData, WrongTypeError}
 import com.bones.data.Value.{OptionalValueDefinition, ValueDefinitionOp, _}
 import com.bones.validation.{ValidationUtil => vu}
@@ -81,7 +81,7 @@ case class ValidatedFromJObjectInterpreter() {
             val optional = op.fieldDefinition match {
               case OptionalFieldDefinition(_, _, _) => true
               case RequiredFieldDefinition(_, _, _) => false
-              case ConversionFieldDefinition(_, _, _) => false
+              case SumTypeDefinition(_, _, _) => false
             }
             val headValue = fields.find(_.name == op.fieldDefinition.key.name).map(_.value) match {
               case Some(field) =>
@@ -210,7 +210,7 @@ case class ValidatedFromJObjectInterpreter() {
         case JDouble(num) => Valid(num)
         case x => Invalid(NonEmptyList.one(invalidValue(x, classOf[Double])))
       }
-      case ConversionData(from, fab, _, _) => (jValue: JValue) => {
+      case SumTypeData(from, fab, _, _, _) => (jValue: JValue) => {
         val baseValue = apply(from).apply(jValue)
         baseValue.andThen(a => fab(a).toValidated.leftMap(NonEmptyList.one))
       }
@@ -231,7 +231,7 @@ case class ValidatedFromJObjectInterpreter() {
             .toValidated
         case x => Invalid(NonEmptyList.one(invalidValue(x, op.manifestOfA.runtimeClass)))
       }
-      case Transform(op, _, fba) => (jValue: JValue) => {
+      case Transform(op, fba, _) => (jValue: JValue) => {
         val fromProducer = this.apply(op)
         fromProducer.apply(jValue).map(res => fba.apply(res))
       }

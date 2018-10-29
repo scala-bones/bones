@@ -6,8 +6,9 @@ import java.util.UUID
 
 import argonaut.Argonaut._
 import argonaut._
+import ArgonautScalaz._
 import com.bones.data.Value._
-import com.bones.validation.ValidationDefinition.{InvalidValue, OptionalValidation, ValidValue, ValidationOp, DateValidationInstances}
+import com.bones.validation.ValidationDefinition.{InvalidValue, OptionalValidation, ValidValue, ValidationOp}
 
 
 object ValidationOasInterpreter {
@@ -18,7 +19,7 @@ object ValidationOasInterpreter {
 
 case class ValidationToPropertyInterpreter() {
 
-  import com.bones.validation.ValidationDefinition.{BigDecimalValidation => bdv, IntValidation => iv, StringValidation => sv, DateValidationInstances => dv}
+  import com.bones.validation.ValidationDefinition.{BigDecimalValidation => bdv, IntValidation => iv, StringValidation => sv}
   val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_DATE_TIME
 
   private def toJson(a: Any): Option[Json] = a match {
@@ -75,21 +76,40 @@ case class ValidationToPropertyInterpreter() {
   }
 }
 
+
+import argonaut._, Argonaut._
+
 case class ValidationOasInterpreter(validationInterpreter: ValidationToPropertyInterpreter) {
+
+  val propertiesLens = jObjectPL  >=>
+    jsonObjectPL("properties") >=>
+    jObjectPL
+
+
   def apply[A](fgo: ValueDefinitionOp[A]): JsonObject = fgo match {
     case op: OptionalValueDefinition[b] =>
       val data = apply(op.valueDefinitionOp)
       (data - "required") :+ ("required", jBool(false)) :+ ("nullable", jBool(true))
-    case KvpNil => JsonObject.empty
+    case KvpNil =>
+      Json(("type", jString("object")), ("properties", Json.jEmptyObject)).objectOrEmpty
     case op: KvpGroupHead[A,al, h, hl, t, tl] => {
-      JsonObject.fromTraversableOnce(apply(op.head).toMap.toList ::: apply(op.tail).toMap.toList)
+      val head = apply(op.head)
+      val headProperties = propertiesLens.get(Json.jObject(head)).getOrElse(JsonObject.empty)
+      val tail = apply(op.tail)
+      propertiesLens.mod(obj => JsonObject.fromTraversableOnce(headProperties.toList ::: obj.toList), Json.jObject(tail)).objectOrEmpty
+//      JsonObject.fromTraversableOnce(apply(op.head).toMap.toList ::: apply(op.tail).toMap.toList)
     }
     case op: KvpSingleValueHead[h,t,tl,o,ol] => {
       val child = apply(op.fieldDefinition.op)
-      JsonObject.single(
+      val head = JsonObject.single(
         op.fieldDefinition.key.name,
-        jObject(JsonObject.fromTraversableOnce(child.toMap.toList ::: op.validations.flatMap(x => validationInterpreter.apply(x))
+        jObject(JsonObject.fromTraversableOnce(child.toList ::: op.validations.flatMap(x => validationInterpreter.apply(x))
       )))
+      val tail = apply(op.tail)
+
+      propertiesLens.mod(obj => JsonObject.fromTraversableOnce(head.toList ::: obj.toList), Json.jObject(tail)).objectOrEmpty
+//      JsonObject.fromTraversableOnce(head.toList ::: tail.toList)
+
     }
     case _: BooleanData =>
       Json(
@@ -147,12 +167,17 @@ case class ValidationOasInterpreter(validationInterpreter: ValidationToPropertyI
         "oneOf" :=
           ("schema" := jObject(schemaA))
       ).objectOrEmpty
-    case ConversionData(from, _, fba, _) =>
-      val fromOp = apply(from)
-      Json(
-        "type" := "object",
-        "properties" := jObject(fromOp)
-      ).objectOrEmpty
+    case sumType: SumTypeData[a,b] => //(from, _, fba, keys, _) =>
+      val fromOp = apply(sumType.from)
+
+      //TODO: Create these based on the actual type, do not assume string
+      val enums = sumType.keys.map(k => jString(k.toString))
+      JsonObject.fromTraversableOnce(fromOp.toList :+ ("enum" := jArray(enums)))
+
+//      Json(
+//        "type" := "object",
+//        "properties" := jObject(fromOp)
+//      ).objectOrEmpty
     case EnumerationStringData(enumeration) =>
       Json(
         "type" := "string",
@@ -164,12 +189,13 @@ case class ValidationOasInterpreter(validationInterpreter: ValidationToPropertyI
         "required" := true
       ).objectOrEmpty
     case transform: Transform[_,_] =>
-      JsonObject.single(transform.manifestOfA.runtimeClass.getSimpleName,
-        Json(
-          "type" := "object",
-          "properties" := jObject(apply(transform.op))
-        )
-      )
+      apply(transform.op)
+//      JsonObject.single(transform.manifestOfA.runtimeClass.getSimpleName,
+//        Json(
+//          "type" := "object",
+//          "properties" := jObject(apply(transform.op))
+//        )
+//      )
     case x => Json(x.toString := "needs impl").objectOrEmpty
   }
 }

@@ -53,15 +53,15 @@ case class EncodeToJValueInterpreter() {
           case Right(bInput) => apply(bDefinition)(bInput)
         }
       }
-      case ConversionData(from, _, fba, _) => (input: A) => {
+      case SumTypeData(from, _, fba, _,  _) => (input: A) => {
         val encoder = apply(from)
         val outputValue = fba(input)
         encoder.apply(outputValue)
       }
       case EnumerationStringData(enumeration) => (input: A) => JString(input.toString)
       case EnumStringData(enum) => (input: A) => JString(input.toString)
-      case Transform(op, fab, _) => (input: A) => {
-        val b = fab(input)
+      case Transform(op, _, fba) => (input: A) => {
+        val b = fba(input)
         apply(op).apply(b)
       }
 
