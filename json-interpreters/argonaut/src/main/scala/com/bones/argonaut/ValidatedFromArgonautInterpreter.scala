@@ -7,7 +7,7 @@ import cats.Applicative
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import com.bones.data.Error.{CanNotConvert, ExtractionError, RequiredData, WrongTypeError}
-import com.bones.data.{ConversionFieldDefinition, OptionalFieldDefinition, RequiredFieldDefinition}
+import com.bones.data.{SumTypeDefinition, OptionalFieldDefinition, RequiredFieldDefinition}
 import com.bones.data.Value._
 import cats.implicits._
 import shapeless.HNil
@@ -79,7 +79,7 @@ class ValidatedFromArgonautInterpreter {
             val optional = op.fieldDefinition match {
               case OptionalFieldDefinition(_, _, _) => true
               case RequiredFieldDefinition(_, _, _) => false
-              case ConversionFieldDefinition(_, _, _) => false
+              case SumTypeDefinition(_, _, _) => false
             }
             val headValue = fields.find(_._1 == op.fieldDefinition.key.name).map(_._2) match {
               case Some(field) =>
@@ -211,7 +211,7 @@ class ValidatedFromArgonautInterpreter {
           }
         }
       }
-      case ConversionData(from, fab, _, _) => (json: Json) => {
+      case SumTypeData(from, fab, _, _, _) => (json: Json) => {
         val baseValue = apply(from).apply(json)
         baseValue.andThen(a => fab(a).toValidated.leftMap(NonEmptyList.one))
       }
@@ -243,9 +243,9 @@ class ValidatedFromArgonautInterpreter {
           }
         }
       }
-      case Transform(op, _, fba) => (json: Json) => {
+      case Transform(op, fab, _) => (json: Json) => {
         val fromProducer = this.apply(op)
-        fromProducer.apply(json).map(res => fba.apply(res))
+        fromProducer.apply(json).map(res => fab.apply(res))
       }
     }
     result.asInstanceOf[ValidatedFromJson[A]]

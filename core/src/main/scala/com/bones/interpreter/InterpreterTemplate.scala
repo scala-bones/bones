@@ -22,7 +22,7 @@ class InterpreterTemplate {
       case dd: DoubleData => ???
       case ld: ListData[t, l] => ???
       case ed: EitherData[a,b] => ???
-      case cd: ConversionData[a,b] => ???
+      case cd: SumTypeData[a,b] => ???
       case esd: EnumerationStringData[a] => ???
       case esd: EnumStringData[a] => ???
       case t: Transform[a,b] => ???

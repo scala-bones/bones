@@ -21,6 +21,8 @@ object Schemas {
     case object Amex extends CreditCardType("Amex")
     case object Discover extends CreditCardType("Discover")
 
+    def keys = List(Visa, Mastercard, Amex, Discover).map(_.toString)
+
     def toCreditCardType: String => Either[CanNotConvert[String, CreditCardType], CreditCardType] = input => {
       input.toLowerCase match {
         case "visa" => Right(CreditCardTypes.Visa)
@@ -85,7 +87,7 @@ object Schemas {
     key("lastFour").string(sv.length(4), sv.matchesRegex("[0-9]{4}".r)) ::
     key("uuid").uuid() ::
     key("token").uuid() ::
-    key("ccType").string().convert(CreditCardTypes.toCreditCardType, (cct: CreditCardType) => cct.abbrev, "CreditCardType", List.empty) ::
+    key("ccType").string().asSumType(CreditCardTypes.toCreditCardType, (cct: CreditCardType) => cct.abbrev, CreditCardTypes.keys, "CreditCardType", List.empty) ::
     KvpNil
   ) ::: ccExp ::: (
     key("cardHolder").string() ::
