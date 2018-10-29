@@ -50,19 +50,32 @@ case class RequiredFieldDefinition[A](key: Key,
     OptionalFieldDefinition(key, op.toOption, optionalValidations)
   }
 
-  def convert[B](fab: A => Either[CanNotConvert[A,B], B], fba: B => A, description: String, validations: List[ValidationOp[B] with ToOptionalValidation[B]]): ConversionFieldDefinition[A,B] = {
-    val cd = ConversionData[A,B](op, fab, fba, description)
-    ConversionFieldDefinition[A,B](this, cd, validations)
+  def asSumType[B](fab: A => Either[CanNotConvert[A,B], B], fba: B => A, sumKeys: List[A], description: String, validations: List[ValidationOp[B] with ToOptionalValidation[B]]): SumTypeDefinition[A,B] = {
+    val cd = SumTypeData[A,B](op, fab, fba, sumKeys, description)
+    SumTypeDefinition[A,B](this, cd, validations)
   }
 
-  def transform[Z:Manifest]()(implicit gen: Generic.Aux[Z, A]): ConversionFieldDefinition[A,Z] = {
-    val newOp = ConversionData(op, (a: A) => Right(gen.from(a)), gen.to, s"Transform to type ${manifest[Z].runtimeClass.getSimpleName}")
-    ConversionFieldDefinition(this, newOp, List.empty)
+  def transform[B:Manifest]()(implicit gen: Generic.Aux[B, A]): TransformTypeDefinition[A,B] = {
+    val newOp = Transform[A,B](op, gen.from, gen.to)
+    TransformTypeDefinition[A,B](this, newOp, List.empty)
   }
 
 }
 
-case class ConversionFieldDefinition[A,B](convertFrom: RequiredFieldDefinition[A], op: ConversionData[A,B], validations: List[ValidationOp[B] with ToOptionalValidation[B]])
+case class TransformTypeDefinition[A,B](
+  convertFrom: RequiredFieldDefinition[A],
+  op: Transform[A,B],
+  validations: List[ValidationOp[B] with ToOptionalValidation[B]]
+) extends KeyValueDefinition[B] {
+  override val key: Key = convertFrom.key
+
+  def optional(): OptionalFieldDefinition[Option[B]] = {
+    val optionalValidations = validations.map(_.toOption)
+    OptionalFieldDefinition(key, op.toOption, optionalValidations)
+  }
+}
+
+case class SumTypeDefinition[A,B](convertFrom: RequiredFieldDefinition[A], op: SumTypeData[A,B], validations: List[ValidationOp[B] with ToOptionalValidation[B]])
   extends KeyValueDefinition[B] {
   /** String key, aka field name */
   override val key: Key = convertFrom.key

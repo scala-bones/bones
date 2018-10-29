@@ -56,7 +56,7 @@ class EncodeToArgonautInterpreter {
           case Right(bInput) => apply(bDefinition)(bInput)
         }
       }
-      case ConversionData(from, _, fba, _) => (input: A) => {
+      case SumTypeData(from, _, fba, _, _) => (input: A) => {
         val encoder = apply(from)
         val outputValue = fba(input)
         encoder.apply(outputValue)

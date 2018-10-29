@@ -7,7 +7,7 @@ import cats.Applicative
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import com.bones.data.Error.{CanNotConvert, ExtractionError, RequiredData, WrongTypeError}
-import com.bones.data.{ConversionFieldDefinition, OptionalFieldDefinition, RequiredFieldDefinition}
+import com.bones.data.{SumTypeDefinition, OptionalFieldDefinition, RequiredFieldDefinition}
 import com.bones.data.Value._
 import cats.implicits._
 import io.circe.Json
@@ -40,19 +40,21 @@ case class ValidatedFromCirceInterpreter() {
     WrongTypeError(expected, invalid)
   }
 
+  def optionalValueDefinition[A](op: OptionalValueDefinition[A]) : ValidatedFromJson[Option[A]] = json => {
+    val result = apply(op.valueDefinitionOp)(json) match {
+      case Valid(v) => Valid(Some(v))
+      case Invalid(x) =>
+        x.filterNot(_.isInstanceOf[RequiredData[_]]).toNel match {
+          case Some(nel) => Invalid(nel)
+          case None => Valid(None)
+        }
+    }
+    result
+  }
+
   def apply[A](fgo: ValueDefinitionOp[A]): ValidatedFromJson[A] = {
     val result = fgo match {
-      case op: OptionalValueDefinition[b] => (json: Json) => {
-        val result = apply(op.valueDefinitionOp)(json) match {
-          case Valid(v) => Valid(Some(v))
-          case Invalid(x) =>
-            x.filterNot(_.isInstanceOf[RequiredData[b]]).toNel match {
-              case Some(nel) => Invalid(nel)
-              case None => Valid(None)
-            }
-        }
-        result
-      }
+      case op: OptionalValueDefinition[b] => optionalValueDefinition(op)
       case KvpNil => (_: Json) => Valid(HNil)
 
       case op: KvpGroupHead[A, al, h, hl, t, tl] => (json: Json) => {
@@ -83,7 +85,7 @@ case class ValidatedFromCirceInterpreter() {
             val optional = op.fieldDefinition match {
               case OptionalFieldDefinition(_, _, _) => true
               case RequiredFieldDefinition(_, _, _) => false
-              case ConversionFieldDefinition(_, _, _) => false
+              case SumTypeDefinition(_, _, _) => false
             }
             val headValue = fields.find(_._1 == op.fieldDefinition.key.name).map(_._2) match {
               case Some(field) =>
@@ -214,7 +216,7 @@ case class ValidatedFromCirceInterpreter() {
           }
         }
       }
-      case ConversionData(from, fab, _, _) => (json: Json) => {
+      case SumTypeData(from, fab, _, _, _) => (json: Json) => {
         val baseValue = apply(from).apply(json)
         baseValue.andThen(a => fab(a).toValidated.leftMap(NonEmptyList.one))
       }
@@ -246,9 +248,9 @@ case class ValidatedFromCirceInterpreter() {
           }
         }
       }
-      case Transform(op, _, fba) => (json: Json) => {
+      case op: Transform[_,A] => (json: Json) => {
         val fromProducer = this.apply(op)
-        fromProducer.apply(json).map(res => fba.apply(res))
+        fromProducer.apply(json).map(res => op.g.apply(res))
       }
     }
     result.asInstanceOf[ValidatedFromJson[A]]

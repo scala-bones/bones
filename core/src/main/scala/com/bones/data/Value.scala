@@ -31,11 +31,17 @@ object Value {
     def lift: ValueDefinition[A] = ???
 
     def transform[Z:Manifest](implicit gen: Generic.Aux[Z, A]) = {
-      Transform(this, gen.to _, gen.from _)
+      Transform(this, gen.from, gen.to)
     }
 
-    def convert[B](fab: A => Either[CanNotConvert[A,B], B], fba: B => A, description: String, validations: List[ValidationOp[B] with ToOptionalValidation[B]]): ConversionData[A,B] = {
-      ConversionData[A,B](this, fab, fba, description)
+    def asSumType[B:Manifest](
+      description: String,
+      fab: A => Either[CanNotConvert[A,B], B],
+      fba: B => A,
+      keys: List[A],
+      validations: List[ValidationOp[B] with ToOptionalValidation[B]]
+    ): SumTypeData[A,B] = {
+      SumTypeData[A,B](this, fab, fba, keys, description)
     }
 
   }
@@ -70,18 +76,20 @@ object Value {
     extends ValueDefinitionOp[ZonedDateTime] with ToOptionalData[ZonedDateTime]
   final case class UuidData() extends ValueDefinitionOp[UUID] with ToOptionalData[UUID]
 
-  final case class ConversionData[A,B](
-                                        from: ValueDefinitionOp[A],
-                                        fab: A => Either[CanNotConvert[A,B], B],
-                                        fba: B => A, description: String
+  final case class SumTypeData[A,B](
+    from: ValueDefinitionOp[A],
+    fab: A => Either[CanNotConvert[A,B], B],
+    fba: B => A,
+    keys: List[A],
+    description: String
   ) extends ValueDefinitionOp[B] with ToOptionalData[B]
 
   final case class EnumerationStringData[A](enumeration: Enumeration) extends ValueDefinitionOp[A] with ToOptionalData[A]
   final case class EnumStringData[A <: Enum[A]:Manifest](enums: List[A]) extends ValueDefinitionOp[A] with ToOptionalData[A] {
     val manifestOfA: Manifest[A] = manifest[A]
   }
-  final case class Transform[A:Manifest,B](op: ValueDefinitionOp[B], f: A => B, g: B => A) extends ValueDefinitionOp[A] with ToOptionalData[A] { thisBase =>
-    val manifestOfA: Manifest[A] = manifest[A]
+  final case class Transform[A,B:Manifest](op: ValueDefinitionOp[A], f: A => B, g: B => A) extends ValueDefinitionOp[B] with ToOptionalData[B] { thisBase =>
+    val manifestOfA: Manifest[B] = manifest[B]
   }
 
   sealed trait KvpGroup[L <: HList, HL <: Nat] extends ValueDefinitionOp[L] with ToOptionalData[L]
@@ -132,11 +140,11 @@ object Value {
 
   /** This is a group of KvpGroup that are grouped and the validations match the entire group.  */
   final case class KvpGroupHead[OUT <: HList, OUTL <: Nat, H <: HList, HL<: Nat, T <: HList, TL <: Nat](
-                                                                                                         head: KvpGroup[H, HL],
-                                                                                                         tail: KvpGroup[T, TL],
-                                                                                                         prepend : Prepend.Aux[H, T, OUT],
-                                                                                                         split : Split.Aux[OUT, HL, H, T], // analogous: Split.Aux[prepend.OUT,HL,H,T] with lpLength: Length.Aux[H,HL],
-                                                                                                         validations: List[ValidationOp[OUT]]
+    head: KvpGroup[H, HL],
+    tail: KvpGroup[T, TL],
+    prepend : Prepend.Aux[H, T, OUT],
+    split : Split.Aux[OUT, HL, H, T], // analogous: Split.Aux[prepend.OUT,HL,H,T] with lpLength: Length.Aux[H,HL],
+    validations: List[ValidationOp[OUT]]
   ) extends KvpGroup[OUT, OUTL] {
     /**
       *
