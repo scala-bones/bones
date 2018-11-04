@@ -16,6 +16,7 @@ import shapeless._
 import cats.implicits._
 import fs2.{Stream, StreamApp}
 import fs2.StreamApp.ExitCode
+import io.swagger.v3.oas.models.info.Info
 import org.http4s.HttpService
 import org.http4s.server.blaze._
 
@@ -67,6 +68,16 @@ object Definitions {
 
   //Above is the description.
   //below interpreters the description into runnable code.
+}
+
+object PersonDoc extends App {
+  val info = new Info()
+    .description("Test Person Endpoint")
+    .title("Person")
+    .version("1.0")
+  val api = CrudOasInterpreter().toSwaggerCore(Definitions.serviceDescription, "person")
+  api.info(info)
+  println(io.swagger.v3.core.util.Json.mapper().writeValueAsString(api))
 }
 
 object PersonEndpoint extends StreamApp[IO] {
