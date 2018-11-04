@@ -11,6 +11,7 @@ class InterpreterTemplate {
   def apply[A](fgo: ValueDefinitionOp[A]): Unit =
     fgo match {
       case op: OptionalValueDefinition[a] => ???
+      case KvpNil => ???
       case op: KvpSingleValueHead[h,t,tl,A,al] => ???
       case op: KvpGroupHead[A,al, h, hl, t, tl] => ???
       case ob: BooleanData => ???
