@@ -243,7 +243,7 @@ class ValidatedFromArgonautInterpreter {
           }
         }
       }
-      case Transform(op, fab, _) => (json: Json) => {
+      case Convert(op, fab, _) => (json: Json) => {
         val fromProducer = this.apply(op)
         fromProducer.apply(json).map(res => fab.apply(res))
       }

@@ -30,8 +30,8 @@ object Value {
     //lift any ValueDefinition into a FreeApplicative
     def lift: ValueDefinition[A] = ???
 
-    def transform[Z:Manifest](implicit gen: Generic.Aux[Z, A]) = {
-      Transform(this, gen.from, gen.to)
+    def convert[Z:Manifest](implicit gen: Generic.Aux[Z, A]) = {
+      Convert(this, gen.from, gen.to)
     }
 
     def asSumType[B:Manifest](
@@ -88,11 +88,14 @@ object Value {
   final case class EnumStringData[A <: Enum[A]:Manifest](enums: List[A]) extends ValueDefinitionOp[A] with ToOptionalData[A] {
     val manifestOfA: Manifest[A] = manifest[A]
   }
-  final case class Transform[A,B:Manifest](op: ValueDefinitionOp[A], f: A => B, g: B => A) extends ValueDefinitionOp[B] with ToOptionalData[B] { thisBase =>
+  final case class Convert[A,B:Manifest](op: ValueDefinitionOp[A], f: A => B, g: B => A) extends ValueDefinitionOp[B] with ToOptionalData[B] { thisBase =>
     val manifestOfA: Manifest[B] = manifest[B]
   }
 
-  sealed trait KvpGroup[L <: HList, HL <: Nat] extends ValueDefinitionOp[L] with ToOptionalData[L]
+  sealed trait KvpGroup[L <: HList, HL <: Nat] extends ValueDefinitionOp[L] with ToOptionalData[L] {
+
+  }
+
 
   /**
     */

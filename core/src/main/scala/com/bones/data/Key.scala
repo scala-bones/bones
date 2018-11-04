@@ -56,16 +56,16 @@ case class RequiredFieldDefinition[A](key: Key,
   }
 
   def transform[B:Manifest]()(implicit gen: Generic.Aux[B, A]): TransformTypeDefinition[A,B] = {
-    val newOp = Transform[A,B](op, gen.from, gen.to)
+    val newOp = Convert[A,B](op, gen.from, gen.to)
     TransformTypeDefinition[A,B](this, newOp, List.empty)
   }
 
 }
 
 case class TransformTypeDefinition[A,B](
-  convertFrom: RequiredFieldDefinition[A],
-  op: Transform[A,B],
-  validations: List[ValidationOp[B] with ToOptionalValidation[B]]
+                                         convertFrom: RequiredFieldDefinition[A],
+                                         op: Convert[A,B],
+                                         validations: List[ValidationOp[B] with ToOptionalValidation[B]]
 ) extends KeyValueDefinition[B] {
   override val key: Key = convertFrom.key
 
@@ -84,6 +84,21 @@ case class SumTypeDefinition[A,B](convertFrom: RequiredFieldDefinition[A], op: S
     val optionalValidations = validations.map(_.toOption)
     OptionalFieldDefinition(key, op.toOption, optionalValidations)
   }
+}
+
+
+case class Inner[A,S<:String](key2: Key2[S])
+
+object Key2 {
+  import shapeless.syntax.singleton._
+  val key2 = Key2("test".narrow)
+
+  key2.addData("test".narrow, "test value")
+
+  val key3 = Key2("test3".narrow)
+}
+case class Key2[S <: String](name: S) {
+  def addData(s: S, value: String): Map[S,String] = Map( (s, value) )
 }
 
 

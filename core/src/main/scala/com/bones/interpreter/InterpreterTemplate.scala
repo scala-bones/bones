@@ -25,7 +25,7 @@ class InterpreterTemplate {
       case cd: SumTypeData[a,b] => ???
       case esd: EnumerationStringData[a] => ???
       case esd: EnumStringData[a] => ???
-      case t: Transform[a,b] => ???
+      case t: Convert[a,b] => ???
       case tod: ToOptionalData[a] => ???
       case br: ByteReferenceData => ???
     }

@@ -50,11 +50,11 @@ object Definitions {
     key("name").string(sv.matchesRegex("^[a-zA-Z ]*$".r)) ::
       key("age").int(iv.min(0)) ::
       KvpNil
-    ).transform[Person]
+    ).convert[Person]
 
   //  val personWithIdSchema = (
   //    key("id").int() :: personSchema ::: KvpNil
-  //  ).transform[(Int, Person)]
+  //  ).convert[(Int, Person)]
 
   val errorDef: ValueDefinitionOp[String] = StringData()
 

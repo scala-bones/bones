@@ -181,19 +181,21 @@ case class ValidationOasInterpreter(validationInterpreter: ValidationToPropertyI
     case EnumerationStringData(enumeration) =>
       Json(
         "type" := "string",
-        "required" := true
+        "required" := true,
+        "enum" := enumeration.values.map(_.toString).toList
       ).objectOrEmpty
     case EnumStringData(enum) =>
       Json(
         "type" := "string",
-        "required" := true
+        "required" := true,
+        "enum" := enum.map(_.toString)
       ).objectOrEmpty
-    case transform: Transform[_,_] =>
+    case transform: Convert[_,_] =>
       apply(transform.op)
-//      JsonObject.single(transform.manifestOfA.runtimeClass.getSimpleName,
+//      JsonObject.single(convert.manifestOfA.runtimeClass.getSimpleName,
 //        Json(
 //          "type" := "object",
-//          "properties" := jObject(apply(transform.op))
+//          "properties" := jObject(apply(convert.op))
 //        )
 //      )
     case x => Json(x.toString := "needs impl").objectOrEmpty
