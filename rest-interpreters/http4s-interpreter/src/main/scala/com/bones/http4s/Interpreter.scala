@@ -182,7 +182,7 @@ object Interpreter {
             Ok(outInterpreter.apply(a))
           }
 
-          //This doesn't feel right.  Any help on this?
+          //This doesn't seem right.  Any help on this?
           result.merge.map(_.unsafeRunSync())
 
         }
@@ -196,10 +196,7 @@ object Interpreter {
       case update: Update[A,e,A] => List(putJson(update))
       case _ => None
     }
-    import cats.effect._, org.http4s._, org.http4s.dsl.io._, scala.concurrent.ExecutionContext.Implicits.global
-    import cats.implicits._
-    import org.http4s.server.blaze._
-    import org.http4s.implicits._
+    import cats.effect._, org.http4s._
     services.foldLeft[HttpService[IO]](HttpService.empty)( (op1: HttpService[IO], op2: HttpService[IO]) => op1 <+> op2)
 
 

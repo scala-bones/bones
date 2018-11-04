@@ -101,11 +101,11 @@ object Schemas {
       KvpNil
     ).transform[BillingLocation].optional() ::
     KvpNil
-
   )
 
-  val creditCardSchema = obj.transform[CC]
-//  val creditCardWithUuid = obj(key("uuid").uuid()) :: creditCardSchema
+  case class OasMetadata(example: Option[String], description: Option[String])
+
+  val creditCardSchema = obj.convert[CC]
 
   //final type is basically ValueDefinitionOp[CC]
 
