@@ -68,7 +68,7 @@ case class EncodeToCirceInterpreter() {
       }
       case EnumerationStringData(enumeration) => (input: A) => Json.fromString(input.toString)
       case EnumStringData(enum) => (input: A) => Json.fromString(input.toString)
-      case Transform(op, fab, _) => (input: A) => {
+      case Convert(op, fab, _) => (input: A) => {
         val b = fab(input)
         apply(op).apply(b)
       }

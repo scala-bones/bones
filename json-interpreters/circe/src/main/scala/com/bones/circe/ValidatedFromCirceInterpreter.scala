@@ -248,7 +248,7 @@ case class ValidatedFromCirceInterpreter() {
           }
         }
       }
-      case op: Transform[_,A] => (json: Json) => {
+      case op: Convert[_,A] => (json: Json) => {
         val fromProducer = this.apply(op)
         fromProducer.apply(json).map(res => op.g.apply(res))
       }

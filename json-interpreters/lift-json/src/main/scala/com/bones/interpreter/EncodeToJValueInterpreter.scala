@@ -60,7 +60,7 @@ case class EncodeToJValueInterpreter() {
       }
       case EnumerationStringData(enumeration) => (input: A) => JString(input.toString)
       case EnumStringData(enum) => (input: A) => JString(input.toString)
-      case Transform(op, _, fba) => (input: A) => {
+      case Convert(op, _, fba) => (input: A) => {
         val b = fba(input)
         apply(op).apply(b)
       }

@@ -231,7 +231,7 @@ case class ValidatedFromJObjectInterpreter() {
             .toValidated
         case x => Invalid(NonEmptyList.one(invalidValue(x, op.manifestOfA.runtimeClass)))
       }
-      case Transform(op, fba, _) => (jValue: JValue) => {
+      case Convert(op, fba, _) => (jValue: JValue) => {
         val fromProducer = this.apply(op)
         fromProducer.apply(jValue).map(res => fba.apply(res))
       }
