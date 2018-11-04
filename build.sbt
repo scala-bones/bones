@@ -49,6 +49,7 @@ lazy val jsonOas3 = (project in file("json-interpreters/lift-json-oas3"))
     commonSettings,
     name := "DataDefinition to OAS3 Interpreter",
     libraryDependencies ++= Seq(
+      "io.swagger.core.v3" % "swagger-core" % "2.0.5",
       "io.argonaut" %% "argonaut" % "6.2.2",
       "io.argonaut" %% "argonaut-monocle" % "6.2.2",
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
@@ -125,6 +126,7 @@ lazy val examples = (project in file("examples"))
       commonSettings,
       name := "Bones Examples",
       libraryDependencies ++= Seq(
+        "io.swagger.core.v3" % "swagger-jaxrs2" % "2.0.5",
         "ws.unfiltered" %% "unfiltered-jetty" % "0.9.1",
         "org.tpolecat" %% "doobie-hikari" % doobieVersion,
         "io.swagger" % "swagger-parser" % "1.0.36",

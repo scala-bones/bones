@@ -36,7 +36,9 @@ trait KeyValueDefinition[A] {
   val asKvp: KvpGroup[A :: HNil, Nat._1] = this :: KvpNil
 }
 
-/** Indicates that the field is Optional */
+/** Indicates that the field is Optional
+  * TODO: Value definition type should (Which is Some Option[X] should not need to match KeyValueDefinition[Option[A]].
+  **/
 case class OptionalFieldDefinition[A](key: Key, op: ValueDefinitionOp[A], validations: List[ValidationOp[A]])
   extends KeyValueDefinition[A]
 

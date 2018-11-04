@@ -1,19 +1,13 @@
 package com.bones
 
-import java.time.{LocalDateTime, ZonedDateTime}
 import java.util.UUID
 
-import argonaut.{Json, JsonObject, Parse}
 import cats.data.Validated.Valid
-import com.bones.data.Value
-import com.bones.data.Error.CanNotConvert
 import com.bones.data.Value.KvpNil
 import com.bones.interpreter.{EncodeToJValueInterpreter, ValidatedFromJObjectInterpreter}
-import com.bones.oas3.{ValidationOasInterpreter, ValidationToPropertyInterpreter}
+import com.bones.oas3.SwaggerCoreInterpreter
+import io.swagger.v3.oas.models.{Components, OpenAPI}
 import org.scalatest.FunSuite
-import shapeless.HNil
-
-import scala.collection.mutable
 
 
 
@@ -162,15 +156,14 @@ class ValidationTest extends FunSuite {
     assert(printed === """{"firstFive":"12345","lastFour":"4321","uuid":"df15f08c-e6bd-11e7-aeb8-6003089f08b4","token":"e58e7dda-e6bd-11e7-b901-6003089f08b4","ccType":"Mastercard","expMonth":11,"expYear":2022,"cardHolder":"Lennart Augustsson","currencyEnum":"GBP","currencyIso":"USD","lastModifiedRequest":"4545d9da-e6be-11e7-86fb-6003089f08b4","billingLocation":{"countryIso":"US","zipCode":"80031"}}""")
 
 
-    val doc = ValidationOasInterpreter(ValidationToPropertyInterpreter())
-    val docResult = doc.apply(creditCardSchema)
+    val docResult = SwaggerCoreInterpreter(creditCardSchema)
 
-    println(Json.jObject(docResult).spaces2)
+    val components = new Components()
+    components.addSchemas("creditCard", docResult)
+    val openApi = new OpenAPI()
+    openApi.components(components)
 
-
-
-
-    import com.bones.crud.Algebra._
+    println(io.swagger.v3.core.util.Json.mapper().writeValueAsString(openApi))
 
 
 
