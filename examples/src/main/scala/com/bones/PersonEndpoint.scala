@@ -14,6 +14,7 @@ import org.http4s.server.blaze.BlazeBuilder
 import unfiltered.filter.Planify
 import shapeless._
 import cats.implicits._
+import com.bones.http4s.HttpInterpreter
 import fs2.{Stream, StreamApp}
 import fs2.StreamApp.ExitCode
 import io.swagger.v3.oas.models.info.Info
@@ -25,14 +26,13 @@ object Interpreter {
   def doInterpretation[A:Manifest,B](serviceDescription: List[CrudOp[A]], doobieInfo: Dao.Aux[A,Int], transactor: Transactor.Aux[IO,Unit], rootDir: String, errorDef: ValueDefinitionOp[B]): HttpService[IO] = {
 
     import com.bones.http4s.Algebra._
-    import com.bones.http4s.Interpreter._
     val service =
-      http4s(rootDir)
-      .contentType(jsonFormat)
+      HttpInterpreter(rootDir)
+      .withContentType(jsonFormat)
       .withSwagger()
 
 
-    saveWithDoobieInterpreter[A](serviceDescription, doobieInfo, transactor)
+    service.saveWithDoobieInterpreter[A](serviceDescription, doobieInfo, transactor)
 
 
   }
