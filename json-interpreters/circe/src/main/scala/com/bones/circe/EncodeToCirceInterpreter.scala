@@ -10,8 +10,6 @@ import io.circe.parser._
 object EncodeToCirceInterpreter {
 
   type EncodeToJValue[A] = A => Json
-}
-case class EncodeToCirceInterpreter() {
 
   def apply[A](fgo: ValueDefinitionOp[A]): EncodeToJValue[A] =
     fgo match {

@@ -23,9 +23,6 @@ object ValidatedFromCirceInterpreter {
 //
   type ValidatedFromJson[A] = Json => Validated[NonEmptyList[ExtractionError], A]
 
-}
-case class ValidatedFromCirceInterpreter() {
-
   import com.bones.circe.ValidatedFromCirceInterpreter.ValidatedFromJson
 
   protected def invalidValue[T](json: Json, expected: Class[T]): WrongTypeError[T] = {
