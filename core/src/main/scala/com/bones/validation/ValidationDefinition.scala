@@ -365,6 +365,8 @@ object ValidationDefinition {
     def greater(value: Int): Greater = Greater(value)
 
     def less(value: Int): Less = Less(value)
+
+    def positive(): Positive = Positive()
   }
 
   object BigDecimalValidation {
