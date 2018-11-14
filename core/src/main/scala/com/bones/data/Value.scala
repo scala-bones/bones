@@ -25,7 +25,7 @@ object Value {
   object ValueDefinitionOp {
 
     implicit class StringToEnum(op: ValueDefinitionOp[String]) {
-      def enumeration[A:Manifest](enumeration: Enumeration) =
+      def enumeration[A](enumeration: Enumeration) =
         EnumerationStringData[A](enumeration, List.empty)
 
       def enum[A <: Enum[A]: Manifest](enums: List[A]) =
@@ -37,20 +37,18 @@ object Value {
 
   /** ValueDefinitionOp is the base trait to describe a piece of data which may be
     * a single value or an HList. */
-  abstract class ValueDefinitionOp[A:Manifest] {
+  abstract class ValueDefinitionOp[A] {
     //lift any ValueDefinition into a FreeApplicative
 //    def lift: ValueDefinition[A] = ???
 
-    val manifestOfResultType = manifest[A]
-
-    def convert[Z:Manifest](validation: ValidationOp[Z] *)(implicit gen: Generic.Aux[Z, A]): XMapData[A,Z] =
+    def convert[Z](validation: ValidationOp[Z] *)(implicit gen: Generic.Aux[Z, A]): XMapData[A,Z] =
       XMapData(this, gen.from, gen.to, validation.toList)
 
-    def convert[Z:Manifest](implicit gen: Generic.Aux[Z, A]): XMapData[A,Z] = convert[Z]()
+    def convert[Z](implicit gen: Generic.Aux[Z, A]): XMapData[A,Z] = convert[Z]()
 
-    def xmap[B:Manifest](f: A => B, g: B => A, validations: ValidationOp[B]*) = XMapData(this, f, g, validations.toList)
+    def xmap[B](f: A => B, g: B => A, validations: ValidationOp[B]*) = XMapData(this, f, g, validations.toList)
 
-    def asSumType[B:Manifest](
+    def asSumType[B](
       description: String,
       fab: A => Either[CanNotConvert[A,B], B],
       fba: B => A,
@@ -66,9 +64,8 @@ object Value {
   type ValueDefinition[A] = FreeApplicative[ValueDefinitionOp, A]
 
   /** Wraps a data definition to mark the field optional */
-  case class OptionalValueDefinition[B:Manifest](valueDefinitionOp: ValueDefinitionOp[B])
+  case class OptionalValueDefinition[B](valueDefinitionOp: ValueDefinitionOp[B])
     extends ValueDefinitionOp[Option[B]] {
-    val manifestOfOptionType = manifest[B]
   }
 
   /** Syntactic sugar to wrap the data definition in an Optional type.
@@ -76,20 +73,18 @@ object Value {
     * TODO: This should not extend ValueDefinitionOp[A]
     **/
   trait ToOptionalData[B] { self: ValueDefinitionOp[B] =>
-    val optional: OptionalValueDefinition[B] = OptionalValueDefinition[B](self)(self.manifestOfResultType)
+    val optional: OptionalValueDefinition[B] = OptionalValueDefinition[B](self)
   }
 
   final case class BooleanData(validations: List[ValidationOp[Boolean]]) extends ValueDefinitionOp[Boolean] with ToOptionalData[Boolean]
   final case class DoubleData(validations: List[ValidationOp[Double]]) extends ValueDefinitionOp[Double] with ToOptionalData[Double]
-  final case class EitherData[A:Manifest, B:Manifest](
+  final case class EitherData[A, B](
       definitionA: ValueDefinitionOp[A],
       definitionB: ValueDefinitionOp[B])
     extends ValueDefinitionOp[Either[A, B]] with ToOptionalData[Either[A, B]] {
-    val manifestOfLeft = manifest[A]
-    val manifestOfRight = manifest[B]
   }
   final case class IntData(validations: List[ValidationOp[Int]]) extends ValueDefinitionOp[Int] with ToOptionalData[Int]
-  final case class ListData[T, L <: List[T]:Manifest](tDefinition: ValueDefinitionOp[T], validations: List[ValidationOp[L]])
+  final case class ListData[T, L <: List[T]](tDefinition: ValueDefinitionOp[T], validations: List[ValidationOp[L]])
     extends ValueDefinitionOp[L] with ToOptionalData[L]
   final case class StringData(validations: List[ValidationOp[String]])
     extends ValueDefinitionOp[String] with ToOptionalData[String]
@@ -105,38 +100,35 @@ object Value {
 
   final case class UuidData(validations: List[ValidationOp[UUID]]) extends ValueDefinitionOp[UUID] with ToOptionalData[UUID]
 
-  final case class Convert[A:Manifest,B:Manifest](
+  final case class Convert[A,B](
     from: ValueDefinitionOp[A],
     fab: A => Either[CanNotConvert[A,B], B],
     fba: B => Either[CanNotConvert[B,A], A],
     values: List[B] = List.empty,
     validations: List[ValidationOp[B]]
   ) extends ValueDefinitionOp[B] with ToOptionalData[B] {
-    val manifestOfInputType: Manifest[A] = manifest[A]
   }
 
-  final case class EnumerationStringData[A:Manifest](enumeration: Enumeration, validations: List[ValidationOp[A]])
+  final case class EnumerationStringData[A](enumeration: Enumeration, validations: List[ValidationOp[A]])
     extends ValueDefinitionOp[A] with ToOptionalData[A] {
 
   }
 
-  final case class EnumStringData[A <: Enum[A]:Manifest](enums: List[A], validations: List[ValidationOp[A]])
+  final case class EnumStringData[A <: Enum[A]](enums: List[A], validations: List[ValidationOp[A]])
     extends ValueDefinitionOp[A] with ToOptionalData[A] {
    }
 
-  final case class XMapData[A:Manifest,B:Manifest](from: ValueDefinitionOp[A], fab: A => B, fba: B => A, validations: List[ValidationOp[B]])
+  final case class XMapData[A,B](from: ValueDefinitionOp[A], fab: A => B, fba: B => A, validations: List[ValidationOp[B]])
     extends ValueDefinitionOp[B] with ToOptionalData[B] { thisBase =>
 
-    val manifestOfInputType = manifest[A]
   }
-  final case class SumTypeData[A:Manifest,B:Manifest](
+  final case class SumTypeData[A,B](
     from: ValueDefinitionOp[A],
     fab: A => Either[CanNotConvert[A,B], B],
     fba: B => A,
     keys: List[A],
     validations: List[ValidationOp[B]]
   ) extends ValueDefinitionOp[B] {
-    val manifestOfInputType = manifest[A]
   }
 
   sealed trait KvpGroup[L <: HList, HL <: Nat] extends ValueDefinitionOp[L] with ToOptionalData[L] {
@@ -150,27 +142,23 @@ object Value {
     /**
       * No need to write this as this becomes identity.
       */
-    def :::[P <: HList:Manifest, PL <: Nat, OUT <: HList:Manifest, OUTL <: Nat](kvp: KvpGroup[P, PL])(
+    def :::[P <: HList, PL <: Nat, OUT <: HList, OUTL <: Nat](kvp: KvpGroup[P, PL])(
       implicit prepend: Prepend.Aux[P, HNil, OUT],
       length: Length.Aux[P, PL],
       split: Split.Aux[OUT, PL, P, HNil]
     ): KvpGroupHead[OUT, OUTL, P, PL, HNil, Nat._0] =
       KvpGroupHead[OUT, OUTL, P, PL, HNil, Nat._0](kvp, KvpNil, prepend, split, List.empty)
 
-    def ::[H:Manifest](v: KeyValueDefinition[H]): KvpSingleValueHead[H, HNil, Nat._0, H :: HNil, Nat._1] =
+    def ::[H](v: KeyValueDefinition[H]): KvpSingleValueHead[H, HNil, Nat._0, H :: HNil, Nat._1] =
       KvpSingleValueHead(v, List.empty, this)
 
   }
 
-  final case class KvpSingleValueHead[H:Manifest, T <: HList: Manifest, TL <: Nat, OUT <: H :: T:Manifest, OUTL <: Nat](
+  final case class KvpSingleValueHead[H, T <: HList, TL <: Nat, OUT <: H :: T, OUTL <: Nat](
     fieldDefinition: KeyValueDefinition[H],
     validations: List[ValidationOp[OUT]],
     tail: KvpGroup[T, TL]
   ) extends KvpGroup[OUT, Succ[TL]] {
-
-    val manifestOfH = manifest[H]
-    val manifestOfT = manifest[T]
-    val manifestOfOut = manifest[OUT]
 
     /**
       *
@@ -180,30 +168,27 @@ object Value {
       * @tparam OUT2 New HList which combines L (from this) and P (from others)
       * @tparam P The HList output type of kvp
       */
-    def :::[OUT2 <: HList:Manifest, OUT2L <: Nat, P <: HList:Manifest, PL <: Nat](kvp: KvpGroup[P, PL], validations: ValidationOp[OUT] *)(
+    def :::[OUT2 <: HList, OUT2L <: Nat, P <: HList, PL <: Nat](kvp: KvpGroup[P, PL], validations: ValidationOp[OUT] *)(
             implicit prepend: Prepend.Aux[P, OUT, OUT2],
             split: Split.Aux[OUT2, PL, P, OUT]
     ): KvpGroupHead[OUT2, OUT2L, P, PL, OUT, Succ[TL]] =
       KvpGroupHead[OUT2, OUT2L, P, PL, OUT, Succ[TL]](kvp, this, prepend, split, List.empty)
 
     /** Not sure if we need prepend and split since we can do to a single element */
-    def ::[OUT2 <:HList:Manifest, P:Manifest](kvd: KeyValueDefinition[P]): KvpSingleValueHead[P, OUT, Succ[TL], P :: OUT, Succ[Succ[TL]]] =
+    def ::[OUT2 <:HList, P](kvd: KeyValueDefinition[P]): KvpSingleValueHead[P, OUT, Succ[TL], P :: OUT, Succ[Succ[TL]]] =
       KvpSingleValueHead[P, OUT, Succ[TL], P :: OUT, Succ[Succ[TL]]](kvd, List.empty, this)
 
     def validate(v: ValidationOp[OUT]): KvpSingleValueHead[H,T,TL,OUT,OUTL] = this.copy(validations = v :: validations)
   }
 
   /** This is a group of KvpGroup that are grouped and the validations match the entire group.  */
-  final case class KvpGroupHead[OUT <: HList:Manifest, OUTL <: Nat, H <: HList:Manifest, HL<: Nat, T <: HList:Manifest, TL <: Nat](
+  final case class KvpGroupHead[OUT <: HList, OUTL <: Nat, H <: HList, HL<: Nat, T <: HList, TL <: Nat](
     head: KvpGroup[H, HL],
     tail: KvpGroup[T, TL],
     prepend : Prepend.Aux[H, T, OUT],
     split : Split.Aux[OUT, HL, H, T], // analogous: Split.Aux[prepend.OUT,HL,H,T] with lpLength: Length.Aux[H,HL],
     validations: List[ValidationOp[OUT]]
   ) extends KvpGroup[OUT, OUTL] {
-    val manifestOfOUT = manifest[OUT]
-    val manifestOfH = manifest[H]
-    val manifestOfT = manifest[T]
     /**
       *
       * When we combine groups, we want to keep the validations separete, but we want to combine the result.
@@ -212,7 +197,7 @@ object Value {
       * @tparam OUT2 New HList which combines L (from this) and P (from others)
       * @tparam P The HList output type of the kvp group we are appending.
       */
-    def :::[OUT2 <: HList: Manifest, OUT2L <: Nat, P <: HList:Manifest, PL <: Nat](kvp: KvpGroup[P, PL])(
+    def :::[OUT2 <: HList, OUT2L <: Nat, P <: HList, PL <: Nat](kvp: KvpGroup[P, PL])(
       implicit prepend: Prepend.Aux[P, OUT, OUT2],
       lengthP: Length.Aux[P, PL],
       length: Length.Aux[OUT2, OUT2L],
@@ -220,7 +205,7 @@ object Value {
     ): KvpGroup[OUT2, OUT2L] =
       KvpGroupHead[OUT2, OUT2L, P, PL, OUT, OUTL](kvp, this, prepend, split, List.empty)
 
-    def ::[P:Manifest](kvd: KeyValueDefinition[P]): KvpSingleValueHead[P, OUT, OUTL, P :: OUT, Succ[OUTL]] =
+    def ::[P](kvd: KeyValueDefinition[P]): KvpSingleValueHead[P, OUT, OUTL, P :: OUT, Succ[OUTL]] =
       KvpSingleValueHead[P, OUT, OUTL, P :: OUT, Succ[OUTL]](kvd, List.empty, this)
 
     def validate(v: ValidationOp[OUT]): KvpGroupHead[OUT,OUTL, H, HL, T, TL] = this.copy(validations = v :: validations)

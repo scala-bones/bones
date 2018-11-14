@@ -139,10 +139,10 @@ class ValidationTest extends FunSuite {
     val jsonToCCProgram = ValidatedFromJObjectInterpreter().apply(creditCardSchema)
 
     //here, we will test that just the validations step is working
-    val btCc = jsonToCCProgram.apply(parsed)
+    val btCc = jsonToCCProgram.apply(Some(parsed))
 
     //tada!  We have can parse input from JsonExtract to CC using our dataDefinition.
-    assert(btCc == Valid(CC("12345", "4321", UUID.fromString("df15f08c-e6bd-11e7-aeb8-6003089f08b4"),
+    assert(btCc == Right(CC("12345", "4321", UUID.fromString("df15f08c-e6bd-11e7-aeb8-6003089f08b4"),
       UUID.fromString("e58e7dda-e6bd-11e7-b901-6003089f08b4"), CreditCardTypes.Mastercard, 11, 2022,
       "Lennart Augustsson", JavaCurrencyEnum.GBP, Currency.USD, None, UUID.fromString("4545d9da-e6be-11e7-86fb-6003089f08b4"),
       Some(BillingLocation("US", Some("80031")))

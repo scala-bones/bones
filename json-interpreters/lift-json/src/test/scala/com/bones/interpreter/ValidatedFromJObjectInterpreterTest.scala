@@ -33,7 +33,12 @@ class ValidatedFromJObjectInterpreterTest extends FunSuite with Checkers {
 
     val output = prog.apply(Some(validInput))
     output match {
-      case Right(r) => assert(r.head.left.toOption === Some("Hello String"))
+      case Right(r) => {
+        val head = r.head
+        val left = head.left
+        val op = left.toOption
+        assert(op === Some("Hello String"))
+      }
       case x => fail(s"expected, right, received $x")
     }
 
@@ -41,7 +46,7 @@ class ValidatedFromJObjectInterpreterTest extends FunSuite with Checkers {
     val intOutput = prog.apply(Some(validIntInput))
     intOutput match {
       case Right(Right(i) :: HNil) => assert(i === 42)
-      case x => fail(s"expected valid, left, received: $x")
+      case x => fail(s"expected right, right, received: $x")
     }
 
   }
