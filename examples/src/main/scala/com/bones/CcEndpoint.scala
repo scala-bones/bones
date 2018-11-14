@@ -6,6 +6,7 @@ import cats.effect.IO
 import com.bones.data.Value.{StringData, ValueDefinitionOp}
 import doobie.implicits._
 import doobie.{Transactor, Update0}
+import com.bones.syntax._
 
 import scala.collection.mutable
 
@@ -13,7 +14,7 @@ object CcEndpoint extends App {
 
   import Schemas._
 
-  val errorDef: ValueDefinitionOp[String] = StringData()
+  val errorDef: ValueDefinitionOp[String] = string
 
   val db = new mutable.HashMap[UUID,CC]()
 

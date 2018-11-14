@@ -1,11 +1,12 @@
 package com
 
-import com.bones.data.KeySyntax
-import com.bones.data.Sugar.ToHList
+import com.bones.data.{KeyValueDefinitionSugar, Sugar}
 
 package object bones {
 
-  object syntax extends KeySyntax with ToHList
+  object syntax extends Sugar with KeyValueDefinitionSugar
+
+
 
 
 }

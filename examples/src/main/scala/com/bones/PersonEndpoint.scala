@@ -14,6 +14,7 @@ import org.http4s.server.blaze.BlazeBuilder
 import unfiltered.filter.Planify
 import shapeless._
 import cats.implicits._
+import com.bones.data.KeyValueDefinition._
 import com.bones.http4s.HttpInterpreter
 import fs2.{Stream, StreamApp}
 import fs2.StreamApp.ExitCode
@@ -48,8 +49,8 @@ object Definitions {
   }
 
   val personSchema = (
-    key("name").string(sv.matchesRegex("^[a-zA-Z ]*$".r)) ::
-      key("age").int(iv.min(0)) ::
+    kvp("name", string(sv.matchesRegex("^[a-zA-Z ]*$".r))) ::
+      kvp("age", int(iv.min(0))) ::
       KvpNil
     ).convert[Person]
 
@@ -57,7 +58,7 @@ object Definitions {
   //    key("id").int() :: personSchema ::: KvpNil
   //  ).convert[(Int, Person)]
 
-  val errorDef: ValueDefinitionOp[String] = StringData()
+  val errorDef: ValueDefinitionOp[String] = string
 
   val serviceDescription =
     create(personSchema, errorDef, personSchema) ::

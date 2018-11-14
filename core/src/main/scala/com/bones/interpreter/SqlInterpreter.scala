@@ -19,11 +19,11 @@ object SqlInterpreter {
       case dd: DoubleData => "number"
       case ld: ListData[t, l] => "list"
       case ed: EitherData[a,b] => s"${apply(ed.definitionA)} can be null , ${apply(ed.definitionB)} can be null"
-      case cd: SumTypeData[a,b] => apply(cd.from)
+      case cd: Convert[a,b] => apply(cd.from)
       case esd: EnumerationStringData[a] => "text"
       case esd: EnumStringData[a] => "text"
       case br: ByteReferenceData => "byte"
-      case t: Convert[a,b] => apply(t.op)
+      case t: XMapData[a,b] => apply(t.from)
     }
 
 }

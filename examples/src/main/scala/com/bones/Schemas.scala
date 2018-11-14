@@ -1,14 +1,16 @@
 package com.bones
 
 import java.time.{LocalDateTime, ZonedDateTime}
-import java.util.UUID
+import java.util.{Currency, UUID}
 
 import com.bones.data.Error.CanNotConvert
 import com.bones.data.Value.KvpNil
 import com.bones.validation.ValidationDefinition.ValidationOp
 import shapeless.HNil
 import com.bones.validation.ValidationDefinition.{ValidationOp, IntValidation => iv, StringValidation => sv}
-
+import shapeless.syntax._
+import shapeless.ops._
+import shapeless._
 
 object Schemas {
 
@@ -76,36 +78,54 @@ object Schemas {
   import com.bones.syntax._
 
   val ccExp = (
-    key("expMonth").int(iv.between(1,12)) ::
-    key("expYear").int(iv.between(1950, 9999)) ::
+    kvp("expMonth", int(iv.between(1,12))) ::
+    kvp("expYear", int(iv.between(1950, 9999))) ::
     KvpNil
   ).validate(HasNotExpired)
+//
+//  val ccExp = (
+//    key("expMonth").int(iv.between(1,12)) ::
+//    key("expYear").int(iv.between(1950, 9999)) ::
+//    KvpNil
+//  ).validate(HasNotExpired)
+
+  val ccTypeValue =
+    string()
+      .asSumType[CreditCardType](
+        "CreditCardType",
+        CreditCardTypes.toCreditCardType,
+        (cct: CreditCardType) => cct.abbrev,
+        CreditCardTypes.keys,
+        List.empty
+      )
+
+  val x = ccExp ::: KvpNil
 
   // Here we are defining our expected input data.  This definition will drive the interpreters.
-  val obj = (
-    key("firstFive").string(sv.length(5), sv.matchesRegex("[0-9]{5}".r)) ::
-    key("lastFour").string(sv.length(4), sv.matchesRegex("[0-9]{4}".r)) ::
-    key("uuid").uuid() ::
-    key("token").uuid() ::
-    key("ccType").string().asSumType(CreditCardTypes.toCreditCardType, (cct: CreditCardType) => cct.abbrev, CreditCardTypes.keys, "CreditCardType", List.empty) ::
+  val ccObj = (
+    kvp("firstFive", string(sv.length(5), sv.matchesRegex("[0-9]{5}".r))) ::
+    kvp("lastFour", string(sv.length(4), sv.matchesRegex("[0-9]{4}".r))) ::
+    kvp("uuid", uuid) ::
+    kvp("token", uuid) ::
+    kvp("ccType", ccTypeValue) ::
     KvpNil
   ) ::: ccExp ::: (
-    key("cardHolder").string() ::
-    key("currencyEnum").enum(JavaCurrencyEnum.values.toList) ::
-    key("currencyIso").enumeration(Currency) ::
-    key("deletedAt").isoDateTime().optional() ::
-    key("lastModifiedRequest").uuid() ::
-    key("billingLocation").obj(
-      key("countryIso").string(sv.validVector(isoVector)) ::
-      key("zipCode").string().optional() ::
-      KvpNil
-    ).transform[BillingLocation].optional() ::
+    kvp("cardHolder", string) ::
+      kvp("currencyEnum", enum(JavaCurrencyEnum.values.toList)) ::
+      kvp("currencyIso", string.enumeration[Currency.Value](Currency)) ::
+      kvp("deletedAt", isoDateTime.optional) ::
+      kvp("lastModifiedRequest", uuid) ::
+      kvp("billingLocation", (
+        kvp("countryIso", string(sv.validVector(isoVector))) ::
+        kvp("zipCode", string().optional) ::
+        KvpNil
+      ).convert[BillingLocation].optional) ::
     KvpNil
   )
 
   case class OasMetadata(example: Option[String], description: Option[String])
 
-  val creditCardSchema = obj.convert[CC]
+  val creditCardSchema = ccObj.convert[CC]
 
   //final type is basically ValueDefinitionOp[CC]
 

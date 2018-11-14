@@ -32,7 +32,7 @@ case class HttpInterpreter(
   def withSwagger() = copy(produceSwagger = true)
 
 
-  def saveWithDoobieInterpreter[A](servletDefinitions: List[CrudOp[A]], dao: Dao.Aux[A, Int], transactor: Transactor.Aux[IO,Unit]) : HttpService[IO] = {
+  def saveWithDoobieInterpreter[A:Manifest](servletDefinitions: List[CrudOp[A]], dao: Dao.Aux[A, Int], transactor: Transactor.Aux[IO,Unit]) : HttpService[IO] = {
 
     def deleteJson(del: Delete[A]): HttpService[IO] = {
       val outInterpreter = EncodeToCirceInterpreter.apply(del.successSchema)
@@ -66,7 +66,7 @@ case class HttpInterpreter(
               io.circe.parser.parse(body).left.map(x => extractionErrorToOut(x))
             }
             in <- EitherT.fromEither[IO] {
-              inInterpreter.apply(circe).toEither.left.map(x => eeToOut(x))
+              inInterpreter.apply(Some(circe)).left.map(x => eeToOut(x))
             }
             id <- EitherT[IO, Nothing, Int] {
               dao.insert(in).transact(transactor).map(r => Right(r))
@@ -155,7 +155,7 @@ case class HttpInterpreter(
             io.circe.parser.parse(body).left.map(x => extractionErrorToOut(x))
           }
           a <- EitherT.fromEither[IO] {
-            ValidatedFromCirceInterpreter(valueDefinitionOp)(circe).toEither
+            ValidatedFromCirceInterpreter(valueDefinitionOp).apply(Some(circe))
               .left.map(eeToOut)
           }
         }  yield {
