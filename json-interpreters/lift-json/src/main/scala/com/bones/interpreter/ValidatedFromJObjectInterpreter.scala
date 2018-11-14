@@ -35,21 +35,38 @@ case class ValidatedFromJObjectInterpreter() {
     case a: JArray => Some(a)
     case _ => None
   }
+  private def toInt(jValue: JValue): Option[Int] = jValue match {
+    case a: JInt => Some(a.num.toInt)
+    case _ => None
+  }
+  private def fromJsonToString(jValue: JValue): Option[String] = jValue match {
+    case a: JString => Some(a.s)
+    case _ => None
+  }
+  private def toDouble(jValue: JValue): Option[Double] = jValue match {
+    case a: JDouble => Some(a.num)
+    case _ => None
+  }
+  private def toBoolean(jValue: JValue): Option[Boolean] = jValue match {
+    case a: JBool => Some(a.value)
+    case _ => None
+  }
 
-  def required[A:Manifest](op: ValueDefinitionOp[A], jsonOpt: Option[JValue], f: JValue => Option[A]): Either[NonEmptyList[ExtractionError],A] =
+
+  def required[A](op: ValueDefinitionOp[A], jsonOpt: Option[JValue], f: JValue => Option[A]): Either[NonEmptyList[ExtractionError],A] =
     for {
       json <- jsonOpt.toRight(NonEmptyList.one(RequiredData(op))).asInstanceOf[Either[NonEmptyList[ExtractionError],JValue]]
-      a <- f(json).toRight(NonEmptyList.one(invalidValue(json, manifest[A].runtimeClass))).asInstanceOf[Either[NonEmptyList[ExtractionError],A]]
+      a <- f(json).toRight(NonEmptyList.one(invalidValue(json, classOf[Object]))).asInstanceOf[Either[NonEmptyList[ExtractionError],A]]
     } yield a
 
-  def requiredConvert[A:Manifest,B](op: ValueDefinitionOp[B],
+  def requiredConvert[A,B](op: ValueDefinitionOp[B],
                                     jsonOpt: Option[JValue],
                                     f: JValue => Option[A],
                                     convert: A => Either[NonEmptyList[ExtractionError],B]
                                    ): Either[NonEmptyList[ExtractionError],B] =
     for {
       json <- jsonOpt.toRight(NonEmptyList.one(RequiredData(op)))
-      a <- f(json).toRight(NonEmptyList.one(invalidValue(json, manifest[A].runtimeClass)))
+      a <- f(json).toRight(NonEmptyList.one(invalidValue(json, classOf[Object])))
       converted <- convert(a)
     } yield converted
 
@@ -70,7 +87,6 @@ case class ValidatedFromJObjectInterpreter() {
   def apply[A](fgo: ValueDefinitionOp[A]): ValidatedFromJObject[A] = {
     val result = fgo match {
       case op: OptionalValueDefinition[a] =>
-        implicit val ma = op.manifestOfOptionType
         (jsonOpt: Option[JValue]) => jsonOpt match {
           case None => Right(None)
           case some@Some(json) => apply(op.valueDefinitionOp).apply(some).map(Some(_))
@@ -81,8 +97,6 @@ case class ValidatedFromJObjectInterpreter() {
       case op: KvpGroupHead[A, al, h, hl, t, tl] => {
 
         def children(json: JValue) : Either[NonEmptyList[ExtractionError], A] = {
-          implicit val mh = op.manifestOfH
-          implicit val mt = op.manifestOfT
           val headInterpreter = this.apply(op.head)
           val tailInterpreter = this.apply(op.tail)
 
@@ -90,10 +104,10 @@ case class ValidatedFromJObjectInterpreter() {
             .map2(headInterpreter(Some(json)).toValidated, tailInterpreter(Some(json)).toValidated)(
               (l1: h, l2: t) => {
                 op.prepend.apply(l1, l2)
-              })
-            .andThen { l =>
-              vu.validate[A](l, op.validations).asInstanceOf[Validated[NonEmptyList[ExtractionError], A]]
-            }.toEither
+              }).toEither
+            .flatMap { l =>
+              vu.validate[A](l, op.validations)
+            }
         }
 
         jsonOpt: Option[JValue] =>
@@ -108,8 +122,6 @@ case class ValidatedFromJObjectInterpreter() {
 
         def children(jsonObj: JObject) : Either[NonEmptyList[ExtractionError], A] = {
           val fields = jsonObj.obj
-          implicit val mt = op.manifestOfT
-          implicit val mh = op.manifestOfH
           val headInterpreter = apply(op.fieldDefinition.op)
           val tailInterpreter = apply(op.tail)
           val headValue = headInterpreter(fields.find(_.name == op.fieldDefinition.key).map(_.value))
@@ -128,25 +140,25 @@ case class ValidatedFromJObjectInterpreter() {
         (jsonOpt: Option[JValue]) =>
           for {
             json <- jsonOpt.toRight(NonEmptyList.one(RequiredData(op)))
-            jsonObj <- toObj(json).toRight(invalidValue(json, op.manifestOfResultType.runtimeClass))
+            jsonObj <- toObj(json).toRight(invalidValue(json, classOf[Object]))
             obj <- children(jsonObj)
           } yield obj
 
       }
       case op: StringData =>
-        required(op, _: Option[JValue], _.extractOpt[String]).flatMap(vu.validate(_, op.validations))
+        required(op, _: Option[JValue], fromJsonToString).flatMap(vu.validate(_, op.validations))
 
       case op: IntData =>
-        required(op, _: Option[JValue], _.extractOpt[Int]).flatMap(vu.validate(_, op.validations))
+        required(op, _: Option[JValue], toInt).flatMap(vu.validate(_, op.validations))
       case op: BooleanData =>
-        required(op, _: Option[JValue], _.extractOpt[Boolean]).flatMap(vu.validate(_, op.validations))
+        required(op, _: Option[JValue], toBoolean).flatMap(vu.validate(_, op.validations))
       case op: UuidData =>
         def convert(uuidString: String): Either[NonEmptyList[ExtractionError], UUID] = try {
           Right(UUID.fromString(uuidString))
         } catch {
           case _: IllegalArgumentException => Left(NonEmptyList.one(CanNotConvert(uuidString, classOf[UUID])))
         }
-        requiredConvert(op, _: Option[JValue], _.extractOpt[String], convert).flatMap(vu.validate(_, op.validations))
+        requiredConvert(op, _: Option[JValue], fromJsonToString, convert).flatMap(vu.validate(_, op.validations))
 
 
       case op@DateData(dateFormat, _, validations) =>
@@ -155,17 +167,22 @@ case class ValidatedFromJObjectInterpreter() {
         } catch {
           case NonFatal(ex) => Left(NonEmptyList.one(CanNotConvert(input, classOf[Date])))
         }
-        requiredConvert(op, _: Option[JValue], _.extractOpt[String], convert).flatMap(vu.validate(_, op.validations))
+        requiredConvert(op, _: Option[JValue], fromJsonToString, convert).flatMap(vu.validate(_, op.validations))
 
       case ed: EitherData[a, b] =>
-        implicit val mr = ed.manifestOfRight
-        implicit val ml = ed.manifestOfLeft
-        json: Option[JValue] =>
-          apply(ed.definitionA).apply(json).map(Left(_)) match {
-            case l: Left[_,_] => l
-            case Right(_) => apply(ed.definitionB).apply(json).map(Right(_))
+        json: Option[JValue] => {
+          val optionalA = OptionalValueDefinition(ed.definitionA)
+          val optionalB = OptionalValueDefinition(ed.definitionB)
+          apply(optionalA).apply(json).right.flatMap {
+            case Some(a) => Right(Left(a))
+            case None => {
+              apply(optionalB).apply(json).right.flatMap {
+                case Some(b) => Right(Right(b))
+                case None => Left(NonEmptyList.one(RequiredData(ed)))
+              }
+            }
           }
-
+        }
       case op@ListData(definition, validations) =>
         def traverseArray(arr: Seq[JValue]) = {
           arr.map(jValue => this.apply(op).apply(Some(jValue)))
@@ -179,7 +196,7 @@ case class ValidatedFromJObjectInterpreter() {
         jsonOpt: Option[JValue] => {
           for {
             json <- jsonOpt.toRight(NonEmptyList.one(RequiredData(op)))
-            arr <- toArray(json).toRight(NonEmptyList.one(invalidValue(json, op.manifestOfResultType.runtimeClass)))
+            arr <- toArray(json).toRight(NonEmptyList.one(invalidValue(json, classOf[List[Object]])))
             result <- traverseArray(arr.arr)
           } yield result
         }
@@ -193,21 +210,21 @@ case class ValidatedFromJObjectInterpreter() {
           }
         }
         jsonOpt: Option[JValue] =>
-          requiredConvert(op, jsonOpt, _.extractOpt[String], convertFromString)
+          requiredConvert(op, jsonOpt, fromJsonToString, convertFromString)
             .flatMap(vu.validate(_, op.validations))
 
       case op@ DoubleData(validations) =>
-        required(op, _: Option[JValue], _.extractOpt[Double])
+        required(op, _: Option[JValue], toDouble)
       case op: Convert[a,b] =>
-        implicit val manifestOfInputType = op.manifestOfInputType
         jsonOpt: Option[JValue] => {
           val baseValue = apply(op.from).apply(jsonOpt)
-          baseValue.flatMap(a => op.fab(a).leftMap(NonEmptyList.one)).asInstanceOf[Either[cats.data.NonEmptyList[com.bones.data.Error.ExtractionError],A]]
+          baseValue.flatMap(a => op.fab(a).leftMap(NonEmptyList.one))
             .flatMap(vu.validate(_, op.validations))
+            .asInstanceOf[Either[cats.data.NonEmptyList[com.bones.data.Error.ExtractionError],A]]
         }
       case op:EnumerationStringData[a] => (jsonOpt: Option[JValue]) => {
         jsonOpt.toRight[NonEmptyList[ExtractionError]](NonEmptyList.one(RequiredData(op)))
-          .flatMap(json => json.extractOpt[String] match {
+          .flatMap(json => fromJsonToString(json) match {
             case Some(str) => try {
               Right(op.enumeration.withName(str).asInstanceOf[A])
             } catch {
@@ -223,18 +240,14 @@ case class ValidatedFromJObjectInterpreter() {
             .toRight(NonEmptyList.one(CanNotConvert(str, op.enums.getClass)))
         }
         jsonOpt: Option[JValue] =>
-          requiredConvert(op, jsonOpt, _.extractOpt[String], convert)
+          requiredConvert(op, jsonOpt, fromJsonToString, convert)
             .flatMap(vu.validate(_, op.validations))
       }
       case op: XMapData[_,A] => (jsonOpt: Option[JValue]) => {
-        implicit val inputManifest = op.manifestOfInputType
-        implicit val outputManfiest = op.manifestOfResultType
         val fromProducer = this.apply(op.from)
         fromProducer.apply(jsonOpt).map(res => op.fab.apply(res))
       }
       case op: SumTypeData[a,A] => (json: Option[JValue]) => {
-        implicit val inputTypeManifest = op.manifestOfInputType
-        implicit val resultTypeManfiest = op.manifestOfResultType
         val fromProducer = this.apply(op.from)
         fromProducer.apply(json).flatMap(res => op.fab.apply(res))
       }
