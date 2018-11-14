@@ -44,9 +44,9 @@ object SwaggerCoreInterpreter {
         schema => {
           val tailSchema = tail(schema)
           val childSchema = child(new Schema[h])
-          tailSchema.addProperties(op.fieldDefinition.key.name, childSchema)
+          tailSchema.addProperties(op.fieldDefinition.key, childSchema)
           if (! childSchema.getNullable) {
-            tailSchema.addRequiredItem(op.fieldDefinition.key.name)
+            tailSchema.addRequiredItem(op.fieldDefinition.key)
           }
           tailSchema
         }
@@ -80,7 +80,7 @@ object SwaggerCoreInterpreter {
         val numberSchema = new NumberSchema()
           .example(3.14).nullable(false)
         schema => numberSchema.name(schema.getName)
-      case ListData(definition) =>
+      case ListData(definition, validations) =>
         val items = fromValueDef(definition)
         val arraySchema = new ArraySchema()
         val itemSchema = items(new Schema())
@@ -94,13 +94,13 @@ object SwaggerCoreInterpreter {
           .addAnyOfItem(b)
           .nullable(false)
         schema => composedSchema.name(schema.getName)
-      case sumType: SumTypeData[a,b] =>
+      case sumType: Convert[a,b] =>
         val fromOp = fromValueDef(sumType.from)
 
         //TODO: Create these based on the actual type, do not assume string
         schema => {
           val opSchema = fromOp(schema).asInstanceOf[StringSchema]
-          sumType.keys.foreach(a => opSchema.addEnumItemObject(a.toString))
+          sumType.values.foreach(a => opSchema.addEnumItemObject(a.toString))
           opSchema
         }
       case esd: EnumerationStringData[a] =>
@@ -121,8 +121,12 @@ object SwaggerCoreInterpreter {
           stringSchema
         }
 
-      case t: Convert[a,b] =>
-        val obj = fromValueDef(t.op)
+      case t: XMapData[a,b] =>
+        val obj = fromValueDef(t.from)
+        schema => obj(schema)
+
+      case x: SumTypeData[a,b] =>
+        val obj = fromValueDef(x.from)
         schema => obj(schema)
 
     }
@@ -130,7 +134,7 @@ object SwaggerCoreInterpreter {
 
   /**
     * Responsible for adding validation specific details to the SwaggerCore files.
-    * @param op The validation op we will add to the
+    * @param op The validation from we will add to the
     * @tparam A
     * @return
     */

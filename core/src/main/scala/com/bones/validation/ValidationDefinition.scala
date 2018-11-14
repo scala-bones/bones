@@ -38,22 +38,15 @@ object ValidationDefinition {
 
   }
 
-  trait ToOptionalValidation[T] extends ValidationOp[T] {
-    def toOption: ValidationOp[Option[T]] = OptionalValidation(this)
-  }
-  trait RequiredValidationOp[T] extends ValidationOp[T] with ToOptionalValidation[T]
-
-
-
   type Validation[A] = FreeApplicative[ValidationOp, A]
 
-  case class ValidValue[T](validValues: Vector[T]) extends ValidationOp[T] with ToOptionalValidation[T] {
+  case class ValidValue[T](validValues: Vector[T]) extends ValidationOp[T] {
     override def isValid: T => Boolean = validValues.contains
     override def defaultError(t: T): String = s"Value $t must be one of ${validValues.mkString("('","','","')")}"
     override def description: String = s"one of ${validValues.mkString("('","','","')")}"
   }
 
-  case class InvalidValue[T](invalidValues: Vector[T]) extends ValidationOp[T] with ToOptionalValidation[T] {
+  case class InvalidValue[T](invalidValues: Vector[T]) extends ValidationOp[T] {
     override def isValid: T => Boolean = str => {! invalidValues.contains(str)}
     override def defaultError(t: T): String = s"Value $t must not be one of ${invalidValues.mkString("('","','","')")}"
     override def description: String = s"not one of ${invalidValues.mkString("('","','","')")}"
@@ -70,7 +63,7 @@ object ValidationDefinition {
 
   object ListValidation {
 
-    case class PassesAll[A, L <: List[A]](validations: List[ValidationOp[A]]) extends ValidationOp[L] with ToOptionalValidation[L] {
+    case class PassesAll[A, L <: List[A]](validations: List[ValidationOp[A]]) extends ValidationOp[L] {
       val isValid: List[A] => Boolean = _.forall(a => validations.forall(v => v.isValid(a)))
 
       override def defaultError(t: L): String = s"a value in the list is invalid: ${t.mkString("[",",","]")}"
@@ -82,7 +75,7 @@ object ValidationDefinition {
 
   object StringValidation extends BaseValidationOp[String] {
 
-    case class IsAlphanum() extends ValidationOp[String] with ToOptionalValidation[String] {
+    case class IsAlphanum() extends ValidationOp[String] {
       val isValid: String => Boolean = alphanumRegx.findFirstMatchIn(_).isDefined
 
       override def defaultError(t: String): String = s"$t is not alphanumeric"
@@ -90,7 +83,7 @@ object ValidationDefinition {
       override def description: String = s"alphanumeric"
     }
 
-    case class MinLength(min: Int) extends ValidationOp[String] with ToOptionalValidation[String] {
+    case class MinLength(min: Int) extends ValidationOp[String] {
       val isValid: String => Boolean = _.length >= min
 
       override def defaultError(t: String): String = s"$t is less than $min"
@@ -98,7 +91,7 @@ object ValidationDefinition {
       override def description: String = s"minimum of $min"
     }
 
-    case class MaxLength(max: Int) extends ValidationOp[String] with ToOptionalValidation[String] {
+    case class MaxLength(max: Int) extends ValidationOp[String] {
       val isValid: String => Boolean = _.length <= max
 
       override def defaultError(t: String): String = s"$t is greater than $max"
@@ -107,7 +100,7 @@ object ValidationDefinition {
     }
 
 
-    case class MatchesRegex(r: Regex) extends ValidationOp[String] with ToOptionalValidation[String] {
+    case class MatchesRegex(r: Regex) extends ValidationOp[String] {
       val isValid: String => Boolean = r.findFirstMatchIn(_).isDefined
 
       override def defaultError(t: String): String = s"$t does not match regular expression ${r.toString}"
@@ -115,7 +108,7 @@ object ValidationDefinition {
       override def description: String = s"must match regular expression ${r.toString}"
     }
 
-    case class Length(length: Int) extends ValidationOp[String] with ToOptionalValidation[String] {
+    case class Length(length: Int) extends ValidationOp[String] {
       override def isValid: String => Boolean = _.length == length
 
       override def defaultError(t: String): String = s"$t does not have length $length"
@@ -123,13 +116,13 @@ object ValidationDefinition {
       override def description: String = s"length of $length"
     }
 
-    case class Custom(f: String => Boolean, defaultErrorF: String => String, description: String) extends ValidationOp[String] with ToOptionalValidation[String] {
+    case class Custom(f: String => Boolean, defaultErrorF: String => String, description: String) extends ValidationOp[String] {
       val isValid: String => Boolean = f
 
       override def defaultError(t: String): String = defaultErrorF(t)
     }
 
-    case class Guid() extends ValidationOp[String] with ToOptionalValidation[String] {
+    case class Guid() extends ValidationOp[String] {
       val isValid: String => Boolean = str => Try {
         UUID.fromString(str)
       } match {
@@ -142,7 +135,7 @@ object ValidationDefinition {
       override def description: String = "be a GUID"
     }
 
-    case class Uppercase() extends ValidationOp[String] with ToOptionalValidation[String] {
+    case class Uppercase() extends ValidationOp[String] {
       val isValid: String => Boolean = str => str.toUpperCase === str
 
       override def defaultError(t: String): String = s"$t must be uppercase"
@@ -150,7 +143,7 @@ object ValidationDefinition {
       override def description: String = "uppercase"
     }
 
-    case class CreditCard() extends ValidationOp[String] with ToOptionalValidation[String] {
+    case class CreditCard() extends ValidationOp[String] {
       override def isValid: String => Boolean = input => ValidationUtil.luhnCheck(10, input)
 
       override def defaultError(t: String): String = s"$t is not a valid credit card number"
@@ -160,7 +153,7 @@ object ValidationDefinition {
 
     private val tokenRegex = "^[a-zA-Z0-9_]*$".r
 
-    case class Token() extends ValidationOp[String] with ToOptionalValidation[String] {
+    case class Token() extends ValidationOp[String] {
       override def isValid: String => Boolean = tokenRegex.findFirstMatchIn(_).isDefined
 
       override def defaultError(t: String): String = s"$t is not a token"
@@ -172,7 +165,7 @@ object ValidationDefinition {
     val emailRegex: Regex =
       """^[a-zA-Z0-9\.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$""".r
 
-    case class Email() extends ValidationOp[String] with ToOptionalValidation[String] {
+    case class Email() extends ValidationOp[String] {
       override def isValid: String => Boolean = emailRegex.findFirstMatchIn(_).isDefined
 
       override def defaultError(t: String): String = s"$t is not a valid email"
@@ -182,7 +175,7 @@ object ValidationDefinition {
 
     val hexRegex: Regex = "^[0-9A-F]+$".r
 
-    case class Hex() extends ValidationOp[String] with ToOptionalValidation[String] {
+    case class Hex() extends ValidationOp[String] {
       override def isValid: String => Boolean = hexRegex.findFirstMatchIn(_).isDefined
 
       override def defaultError(t: String): String = s"$t is not hexadecimal"
@@ -192,7 +185,7 @@ object ValidationDefinition {
 
     val base64Regex: Regex = "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$".r
 
-    case class Base64() extends ValidationOp[String] with ToOptionalValidation[String] {
+    case class Base64() extends ValidationOp[String] {
       override def isValid: String => Boolean = input => base64Regex.findFirstMatchIn(input.trim).isDefined
 
       override def defaultError(t: String): String = s"$t is not Base64"
@@ -202,7 +195,7 @@ object ValidationDefinition {
 
     val hostnameRegex: Regex = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$".r
 
-    case class Hostname() extends ValidationOp[String] with ToOptionalValidation[String] {
+    case class Hostname() extends ValidationOp[String] {
       override def isValid: String => Boolean = hostnameRegex.findFirstMatchIn(_).isDefined
 
       override def defaultError(t: String): String = s"$t is not a hostname"
@@ -212,7 +205,7 @@ object ValidationDefinition {
 
     val ipv4Regex: Regex = "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$".r
 
-    case class Ipv4() extends ValidationOp[String] with ToOptionalValidation[String] {
+    case class Ipv4() extends ValidationOp[String] {
       override def isValid: String => Boolean = ipv4Regex.findFirstMatchIn(_).isDefined
 
       override def defaultError(t: String): String = s"$t is not an ipv4"
@@ -220,7 +213,7 @@ object ValidationDefinition {
       override def description: String = "IPv4"
     }
 
-    case class Lowercase() extends ValidationOp[String] with ToOptionalValidation[String] {
+    case class Lowercase() extends ValidationOp[String] {
       override def isValid: String => Boolean = str => str.toLowerCase === str
 
       override def defaultError(t: String): String = s"$t is not all lowercase"
@@ -228,7 +221,7 @@ object ValidationDefinition {
       override def description: String = "lowercase"
     }
 
-    case class Uri() extends ValidationOp[String] with ToOptionalValidation[String] {
+    case class Uri() extends ValidationOp[String] {
       override def isValid: String => Boolean = input => Try {
         URI.create(input)
       }.isSuccess
@@ -290,7 +283,7 @@ object ValidationDefinition {
 
   object IntValidation extends BaseValidationOp[Int] {
 
-    case class Between(min: Int, max: Int) extends ValidationOp[Int] with ToOptionalValidation[Int] {
+    case class Between(min: Int, max: Int) extends ValidationOp[Int] {
       val isValid: Int => Boolean = input => input >= min && input <= max
 
       override def defaultError(t: Int): String = s"$t is not between $min and $max"
@@ -299,7 +292,7 @@ object ValidationDefinition {
 
     }
 
-    case class Max(maxInt: Int) extends ValidationOp[Int] with ToOptionalValidation[Int] {
+    case class Max(maxInt: Int) extends ValidationOp[Int] {
       override def isValid: Int => Boolean = _ <= maxInt
 
       override def defaultError(t: Int): String = s"$t is greater than $maxInt"
@@ -307,7 +300,7 @@ object ValidationDefinition {
       override def description: String = s"maximum of $maxInt"
     }
 
-    case class Min(minInt: Int) extends ValidationOp[Int] with ToOptionalValidation[Int] {
+    case class Min(minInt: Int) extends ValidationOp[Int] {
       override def isValid: Int => Boolean = _ >= minInt
 
       override def defaultError(t: Int): String = s"$t is less than $minInt"
@@ -315,7 +308,7 @@ object ValidationDefinition {
       override def description: String = s"minimum of $minInt"
     }
 
-    case class Greater(greaterThan: Int) extends ValidationOp[Int] with ToOptionalValidation[Int] {
+    case class Greater(greaterThan: Int) extends ValidationOp[Int] {
       override def isValid: Int => Boolean = _ > greaterThan
 
       override def defaultError(t: Int): String = s"$t is not greater than $greaterThan"
@@ -323,7 +316,7 @@ object ValidationDefinition {
       override def description: String = s"greater than $greaterThan"
     }
 
-    case class Less(lessThan: Int) extends ValidationOp[Int] with ToOptionalValidation[Int] {
+    case class Less(lessThan: Int) extends ValidationOp[Int] {
       override def isValid: Int => Boolean = _ < lessThan
 
       override def defaultError(t: Int): String = s"$t is not less than $lessThan"
@@ -331,7 +324,7 @@ object ValidationDefinition {
       override def description: String = s"less than $lessThan"
     }
 
-    case class Multiple(multipleOf: Int) extends ValidationOp[Int] with ToOptionalValidation[Int] {
+    case class Multiple(multipleOf: Int) extends ValidationOp[Int] {
       override def isValid: Int => Boolean = _ % multipleOf === 0
 
       override def defaultError(t: Int): String = s"$t is not a multiple of $multipleOf"
@@ -339,7 +332,7 @@ object ValidationDefinition {
       override def description: String = s"multiple of $multipleOf"
     }
 
-    case class Positive() extends ValidationOp[Int] with ToOptionalValidation[Int] {
+    case class Positive() extends ValidationOp[Int] {
       override def isValid: Int => Boolean = _ >= 0
 
       override def defaultError(t: Int): String = s"$t is not positive"
@@ -347,7 +340,7 @@ object ValidationDefinition {
       override def description: String = s"positive"
     }
 
-    case class Negative() extends ValidationOp[Int] with ToOptionalValidation[Int] {
+    case class Negative() extends ValidationOp[Int] {
       override def isValid: Int => Boolean = _ <= 0
 
       override def defaultError(t: Int): String = s"$t is not negative"
@@ -371,7 +364,7 @@ object ValidationDefinition {
 
   object BigDecimalValidation {
 
-    case class Max(max: BigDecimal) extends ValidationOp[BigDecimal] with ToOptionalValidation[BigDecimal] {
+    case class Max(max: BigDecimal) extends ValidationOp[BigDecimal] {
       override def isValid: BigDecimal => Boolean = inputBd => max >= inputBd
 
       override def defaultError(t: BigDecimal): String = s"$t is greater than the maximum $max"
@@ -379,7 +372,7 @@ object ValidationDefinition {
       override def description: String = s"maximum value of ${max.toString()}"
     }
 
-    case class Min(min: BigDecimal) extends ValidationOp[BigDecimal] with ToOptionalValidation[BigDecimal] {
+    case class Min(min: BigDecimal) extends ValidationOp[BigDecimal] {
       override def isValid: BigDecimal => Boolean = inputBd => min <= inputBd
 
       override def defaultError(t: BigDecimal): String = s"$t is less than the minimum $min"
@@ -395,7 +388,7 @@ object ValidationDefinition {
       def description: String = formatDescription.getOrElse(s"Is a Date with format ${format.toString}")
     }
 
-    case class Min(minDate: ZonedDateTime, format: DateTimeFormatter) extends ValidationOp[ZonedDateTime] with ToOptionalValidation[ZonedDateTime] {
+    case class Min(minDate: ZonedDateTime, format: DateTimeFormatter) extends ValidationOp[ZonedDateTime] {
       override def isValid: ZonedDateTime => Boolean = _.isAfter(minDate)
 
       override def defaultError(t: ZonedDateTime): String = s"specified date ${format.format(t)} must be after ${format.format(minDate)}"
@@ -403,7 +396,7 @@ object ValidationDefinition {
       override def description: String = s"after ${format.format(minDate)}"
     }
 
-    case class Max(maxDate: ZonedDateTime, format: DateTimeFormatter) extends ValidationOp[ZonedDateTime] with ToOptionalValidation[ZonedDateTime] {
+    case class Max(maxDate: ZonedDateTime, format: DateTimeFormatter) extends ValidationOp[ZonedDateTime] {
       override def isValid: ZonedDateTime => Boolean = _.isBefore(maxDate)
 
       override def defaultError(t: ZonedDateTime): String = s"specified date ${format.format(t)} must be before ${format.format(maxDate)}"

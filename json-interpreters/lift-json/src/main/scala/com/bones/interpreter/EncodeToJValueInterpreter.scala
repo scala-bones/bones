@@ -34,16 +34,16 @@ case class EncodeToJValueInterpreter() {
         val cast = input.asInstanceOf[h :: t]
         val val1 = apply(op.fieldDefinition.op).apply(cast.head)
         val m2 = this.apply(op.tail).apply(cast.tail).asInstanceOf[JObject]
-        JObject(JField(op.fieldDefinition.key.name, val1) :: m2.obj)
+        JObject(JField(op.fieldDefinition.key, val1) :: m2.obj)
       }
       case ob: BooleanData => (input: A) => JBool(input.asInstanceOf[Boolean])
       case rs: StringData => (input: A) => JString(input.asInstanceOf[String])
       case ri: IntData => (input: A) => JInt(input.asInstanceOf[Int])
       case uu: UuidData => (input: A) => JString(input.toString)
-      case DateData(format, _) => (input: A) => JString(format.format(input.asInstanceOf[ZonedDateTime]))
+      case DateData(format, _, _) => (input: A) => JString(format.format(input.asInstanceOf[ZonedDateTime]))
       case bd: BigDecimalFromString => (input: A) => JString(input.toString)
       case dd: DoubleData => (input: A) => JDouble(input.asInstanceOf[Double])
-      case ListData(definition) => (input: A) => {
+      case ListData(definition, _) => (input: A) => {
         val f = apply(definition)
         JArray(input.asInstanceOf[List[A]].map(i => f(i)))
       }
@@ -53,16 +53,20 @@ case class EncodeToJValueInterpreter() {
           case Right(bInput) => apply(bDefinition)(bInput)
         }
       }
-      case SumTypeData(from, _, fba, _,  _) => (input: A) => {
+      case Convert(from, _, fba, _, _) => (input: A) => {
         val encoder = apply(from)
         val outputValue = fba(input)
         encoder.apply(outputValue)
       }
-      case EnumerationStringData(enumeration) => (input: A) => JString(input.toString)
-      case EnumStringData(enum) => (input: A) => JString(input.toString)
-      case Convert(op, _, fba) => (input: A) => {
+      case EnumerationStringData(enumeration, _) => (input: A) => JString(input.toString)
+      case EnumStringData(enum, _) => (input: A) => JString(input.toString)
+      case XMapData(op, _, fba, _) => (input: A) => {
         val b = fba(input)
         apply(op).apply(b)
+      }
+      case SumTypeData(op, fab, fba, keys, validations) => (input: A) => {
+        val a = fba(input)
+        apply(op).apply(a)
       }
 
     }

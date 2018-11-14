@@ -10,7 +10,7 @@ object Error {
 
   /**
     * Used to indicate a validations error.
-    * @param failurePoint The extraction op where the error failed.
+    * @param failurePoint The extraction from where the error failed.
     * @param input The input, if available.
     * @tparam T Type that was validated.
     */
@@ -18,6 +18,6 @@ object Error {
   case class WrongTypeError[T](expectedType: Class[T], providedType: Class[_]) extends ExtractionError
   case class CanNotConvert[A,T](input: A, toType: Class[T]) extends ExtractionError
   case class RequiredData[A](valueDefinitionOp: ValueDefinitionOp[A]) extends ExtractionError
-  case class FieldError[A](key: Key, errors: NonEmptyList[ExtractionError]) extends ExtractionError
+  case class FieldError[A](key: String, errors: NonEmptyList[ExtractionError]) extends ExtractionError
 
 }
