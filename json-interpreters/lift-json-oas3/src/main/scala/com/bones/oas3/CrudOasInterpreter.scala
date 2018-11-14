@@ -59,8 +59,8 @@ case class CrudOasInterpreter() {
 //
 //    val runtimeClass = manifest[A].runtimeClass
 //    val definitionAndPaths = ops map {
-//      case op: Read[o] => {
-//        val definitions = Map(runtimeClass.getSimpleName -> jObject(SwaggerCoreInterpreter(op.successSchemaForRead)))
+//      case from: Read[o] => {
+//        val definitions = Map(runtimeClass.getSimpleName -> jObject(SwaggerCoreInterpreter(from.successSchemaForRead)))
 //
 //        val path =  urlPath + "/{id}" :=
 //            Json("get" :=
@@ -91,7 +91,7 @@ case class CrudOasInterpreter() {
 //        (definitions, path)
 //
 //      }
-//      case op: Create[i,e,o] => {
+//      case from: Create[i,e,o] => {
 //        val path = urlPath :=
 //          Json("post" :=
 //            Json(
@@ -120,12 +120,12 @@ case class CrudOasInterpreter() {
 //          )
 //        (Map.empty, path)
 //      }
-//      case op: Update[i,e,o] => {
+//      case from: Update[i,e,o] => {
 //        val path = urlPath :=
 //          (Json("put" := true))
 //        (Map.empty, path)
 //      }
-//      case op: Delete[o] => {
+//      case from: Delete[o] => {
 //        val path = urlPath :=
 //          (Json("put" := true))
 //        (Map.empty, path)

@@ -36,17 +36,17 @@ class EncodeToArgonautInterpreter {
         val val1 = apply(op.fieldDefinition.op).apply(cast.head)
 
         val values = this.apply(op.tail).apply(cast.tail).obj.toList.flatMap(_.toList)
-        Json.obj( (op.fieldDefinition.key.name, val1) :: values :_* )
+        Json.obj( (op.fieldDefinition.key, val1) :: values :_* )
       }
       case ob: BooleanData => (input: A) => Json.jBool(input.asInstanceOf[Boolean])
       case rs: StringData => (input: A) => Json.jString(input.asInstanceOf[String])
       case ri: IntData => (input: A) => Json.jNumber(input.asInstanceOf[Int].toLong)
       case uu: UuidData => (input: A) => Json.jString(input.toString)
-      case DateData(format, _) => (input: A) => Json.jString(format.format(input.asInstanceOf[ZonedDateTime]))
+      case DateData(format, _, _) => (input: A) => Json.jString(format.format(input.asInstanceOf[ZonedDateTime]))
       case bd: BigDecimalFromString => (input: A) => Json.jString(input.toString)
       case dd: DoubleData => (input: A) =>
         Json.jNumber(input.asInstanceOf[Double])
-      case ListData(definition) => (input: A) => {
+      case ListData(definition, _) => (input: A) => {
         val f = apply(definition)
         Json.array(input.asInstanceOf[List[A]].map(i => f(i)) :_*)
       }
@@ -56,18 +56,18 @@ class EncodeToArgonautInterpreter {
           case Right(bInput) => apply(bDefinition)(bInput)
         }
       }
-      case SumTypeData(from, _, fba, _, _) => (input: A) => {
+      case Convert(from, _, fba, _, _) => (input: A) => {
         val encoder = apply(from)
         val outputValue = fba(input)
         encoder.apply(outputValue)
       }
-      case EnumerationStringData(enumeration) => (input: A) => Json.jString(input.toString)
-      case EnumStringData(enum) => (input: A) => Json.jString(input.toString)
-      case Convert(op, fab, _) => (input: A) => {
+      case EnumerationStringData(enumeration, _) => (input: A) => Json.jString(input.toString)
+      case EnumStringData(enum, _) => (input: A) => Json.jString(input.toString)
+      case XMapData(op, fab, _, _) => (input: A) => {
         val b = fab(input)
         apply(op).apply(b)
       }
-      case ByteReferenceData() => ???
+      case ByteReferenceData(_) => ???
 
     }
 }

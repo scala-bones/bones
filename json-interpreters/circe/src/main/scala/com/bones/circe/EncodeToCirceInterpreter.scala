@@ -2,10 +2,8 @@ package com.bones.circe
 
 import java.time.ZonedDateTime
 
-import com.bones.circe.EncodeToCirceInterpreter.EncodeToJValue
 import com.bones.data.Value._
 import io.circe._
-import io.circe.parser._
 
 object EncodeToCirceInterpreter {
 
@@ -35,13 +33,13 @@ object EncodeToCirceInterpreter {
         val val1 = apply(op.fieldDefinition.op).apply(cast.head)
 
         val values = this.apply(op.tail).apply(cast.tail).asObject.toList.flatMap(_.toList)
-        Json.obj( ( (op.fieldDefinition.key.name, val1) :: values) :_* )
+        Json.obj( ( (op.fieldDefinition.key, val1) :: values) :_* )
       }
       case ob: BooleanData => (input: A) => Json.fromBoolean(input.asInstanceOf[Boolean])
       case rs: StringData => (input: A) => Json.fromString(input.asInstanceOf[String])
       case ri: IntData => (input: A) => Json.fromInt(input.asInstanceOf[Int])
       case uu: UuidData => (input: A) => Json.fromString(input.toString)
-      case DateData(format, _) => (input: A) => Json.fromString(format.format(input.asInstanceOf[ZonedDateTime]))
+      case DateData(format, _, validations) => (input: A) => Json.fromString(format.format(input.asInstanceOf[ZonedDateTime]))
       case bd: BigDecimalFromString => (input: A) => Json.fromString(input.toString)
       case dd: DoubleData => (input: A) => {
         Json.fromDouble(input.asInstanceOf[Double]) match {
@@ -49,7 +47,7 @@ object EncodeToCirceInterpreter {
           case None => Json.fromString("NaN")
         }
       }
-      case ListData(definition) => (input: A) => {
+      case ListData(definition, validations) => (input: A) => {
         val f = apply(definition)
         Json.arr(input.asInstanceOf[List[A]].map(i => f(i)) :_*)
       }
@@ -59,14 +57,14 @@ object EncodeToCirceInterpreter {
           case Right(bInput) => apply(bDefinition)(bInput)
         }
       }
-      case SumTypeData(from, _, fba, _, _) => (input: A) => {
+      case Convert(from, _, fba, _, validations) => (input: A) => {
         val encoder = apply(from)
         val outputValue = fba(input)
         encoder.apply(outputValue)
       }
-      case EnumerationStringData(enumeration) => (input: A) => Json.fromString(input.toString)
-      case EnumStringData(enum) => (input: A) => Json.fromString(input.toString)
-      case Convert(op, fab, _) => (input: A) => {
+      case EnumerationStringData(enumeration, validations) => (input: A) => Json.fromString(input.toString)
+      case EnumStringData(enum, validations) => (input: A) => Json.fromString(input.toString)
+      case XMapData(op, fab, _, validations) => (input: A) => {
         val b = fab(input)
         apply(op).apply(b)
       }

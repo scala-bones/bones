@@ -26,13 +26,13 @@ object ValidationUtil {
   }
 
   /** Validate the input with the specified validations.  If any failed then Invalid, else Valid */
-  def validate[L](input: L, validations: List[ValidationOp[L]]): Validated[NonEmptyList[ValidationError[L]], L] = {
+  def validate[L](input: L, validations: List[ValidationOp[L]]): Either[NonEmptyList[ValidationError[L]], L] = {
     validations.flatMap(validation => {
       if (validation.isValid(input)) None
       else Some(ValidationError(validation, input))
     }) match {
-      case head :: tail => Invalid(NonEmptyList(head, tail))
-      case _ => Valid(input)
+      case head :: tail => Left(NonEmptyList(head, tail))
+      case _ => Right(input)
     }
   }
 
