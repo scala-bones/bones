@@ -163,7 +163,7 @@ class ValidationTest extends FunSuite {
     val openApi = new OpenAPI()
     openApi.components(components)
 
-    println(io.swagger.v3.core.util.Json.mapper().writeValueAsString(openApi))
+//    println(io.swagger.v3.core.util.Json.mapper().writeValueAsString(openApi))
 
 
 
