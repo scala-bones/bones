@@ -171,16 +171,22 @@ case class ValidatedFromJObjectInterpreter() {
 
       case ed: EitherData[a, b] =>
         json: Option[JValue] => {
-          val optionalA = OptionalValueDefinition(ed.definitionA)
-          val optionalB = OptionalValueDefinition(ed.definitionB)
-          apply(optionalA).apply(json).right.flatMap {
-            case Some(a) => Right(Left(a))
-            case None => {
-              apply(optionalB).apply(json).right.flatMap {
-                case Some(b) => Right(Right(b))
-                case None => Left(NonEmptyList.one(RequiredData(ed)))
+//          val optionalA = OptionalValueDefinition(ed.definitionA)
+//          val optionalB = OptionalValueDefinition(ed.definitionB)
+          apply(ed.definitionA).apply(json) match {
+            case Left(errorA) =>
+              //if we received a WrongTypeError we can try the other option
+              val errorsRevised = errorA.toList
+                .filterNot(_.isInstanceOf[WrongTypeError[_]])
+              if (errorsRevised.isEmpty) {
+                apply(ed.definitionB).apply(json) match {
+                  case Right(b) => Right(Right(b))
+                  case Left(errorB) => Left(errorB)
+                }
+              } else {
+                Left(errorA)
               }
-            }
+            case Right(a) => Right(Left(a))
           }
         }
       case op@ListData(definition, validations) =>

@@ -78,7 +78,7 @@ object PersonDoc extends App {
     .version("1.0")
   val api = CrudOasInterpreter().toSwaggerCore(Definitions.serviceDescription, "person")
   api.info(info)
-  println(io.swagger.v3.core.util.Json.mapper().writeValueAsString(api))
+//  println(io.swagger.v3.core.util.Json.mapper().writeValueAsString(api))
 }
 
 object PersonEndpoint extends StreamApp[IO] {
