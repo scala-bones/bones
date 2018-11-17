@@ -2,25 +2,19 @@ package com.bones
 
 import cats.effect.IO
 import com.bones.crud.Algebra._
-import com.bones.data.Value.{KvpNil, StringData, ValueDefinitionOp}
+import com.bones.data.Value.{KvpNil, ValueDefinitionOp}
+import com.bones.http4s.HttpInterpreter
 import com.bones.http4s.Orm.Dao
 import com.bones.oas3.CrudOasInterpreter
 import com.bones.syntax._
 import com.bones.validation.ValidationDefinition.{IntValidation => iv, StringValidation => sv}
 import doobie.Transactor
 import doobie.util.transactor.Transactor.Aux
-import io.swagger.parser.{Swagger20Parser, SwaggerParser}
-import org.http4s.server.blaze.BlazeBuilder
-import unfiltered.filter.Planify
-import shapeless._
-import cats.implicits._
-import com.bones.data.KeyValueDefinition._
-import com.bones.http4s.HttpInterpreter
-import fs2.{Stream, StreamApp}
 import fs2.StreamApp.ExitCode
+import fs2.{Stream, StreamApp}
 import io.swagger.v3.oas.models.info.Info
 import org.http4s.HttpService
-import org.http4s.server.blaze._
+import org.http4s.server.blaze.BlazeBuilder
 
 object Interpreter {
 

@@ -12,8 +12,6 @@ Some REST services (including Swagger doc) can be written in as little as 5 expr
  * Define the allowable actions (CRUD)
  * Pass the above 4 items to an interpreter.
  
-The idea is to break the application into 
- 
  
 
 ## DSL 
@@ -21,7 +19,6 @@ Bones defines a Domain Specific Language (DSL) for describing CRUD applications 
 
 Using the DSL will result in creating a Generalized Algebraic Data Type (GADT) data structure.
 The GADT structure describes the data, validation and available Create/Read/Update/Delete (CRUD) actions.
-
  
 As an example, we will describe a CRUD application that creates and reads a Person.
 
@@ -32,16 +29,18 @@ import com.bones.validation.ValidationDefinition.{IntValidation => iv, StringVal
 
 case class Person(name: String, age: Int)
 
-  val personSchema = (
-    key("name").string(sv.matchesRegex("^[a-zA-Z ]*$".r)) ::
-    key("age").int(iv.min(0)) ::
+val personSchema = (
+  kvp("name", string(sv.matchesRegex("^[a-zA-Z ]*$".r))) ::
+    kvp("age", int(iv.min(0))) ::
     KvpNil
-  ).transform[Person]
+  ).convert[Person]
   
 val errorDef: DataDefinitionOp[String] = StringData()
 
-  val serviceDescription =
-    create(personSchema, errorDef, personSchema) ::
+val errorDef: ValueDefinitionOp[String] = string
+
+val serviceDescription =
+  create(personSchema, errorDef, personSchema) ::
     read(personSchema) ::
     update(personSchema, errorDef, personSchema) ::
     delete(personSchema) ::
@@ -52,13 +51,14 @@ val errorDef: DataDefinitionOp[String] = StringData()
 ## Interpreters
 
 The power in creating a GADT structure, is that we can provide different interpretations of the defined Schema.
-Once the basic description of the service is created, many different programs can interpret not only the data structure 
+Once the basic description of the service is created, many different programs can interpret not only 
+the data structure 
 in different contexts, but also define implied behavior.  If implied behavior is similar between systems, then the exact
 same interpreter can be used across services and the only change would be the schema and service description as described above.
 
 I other words, if services perform similar behavior, 
-such as write to Kafka, S3, a DB or an external services, the boilerplate code can be reduced by using GADTs.
-This project is to provide a common vocabulary, and reasonable API, specifically for CRUD services.
+such as write to Kafka, S3, a Database or an external services, the boilerplate code can be reduced by using GADTs.
+This project is to provide a common vocabulary, and reasonable API, for any CRUD service.
 
 The following 3 interpreters work together to produce an actual REST web service, it's swagger documentation 
 and the postgres schema to support the REST web service.  
