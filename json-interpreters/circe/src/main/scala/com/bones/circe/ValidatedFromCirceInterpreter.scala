@@ -4,14 +4,13 @@ import java.time.ZonedDateTime
 import java.util.{Date, UUID}
 
 import cats.Applicative
-import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
+import cats.implicits._
 import com.bones.data.Error.{CanNotConvert, ExtractionError, RequiredData, WrongTypeError}
 import com.bones.data.Value.{ValueDefinitionOp, _}
-import cats.implicits._
+import com.bones.validation.{ValidationUtil => vu}
 import io.circe.{Json, JsonObject}
 import shapeless.HNil
-import com.bones.validation.{ValidationUtil => vu}
 
 import scala.util.control.NonFatal
 
@@ -21,8 +20,6 @@ object ValidatedFromCirceInterpreter {
 //  case class ValidatedObject[A]() extends Validated[A, ]
 //
   type ValidatedFromJson[A] = Option[Json] => Either[NonEmptyList[ExtractionError], A]
-
-  import com.bones.circe.ValidatedFromCirceInterpreter.ValidatedFromJson
 
   protected def invalidValue[T](json: Json, expected: Class[T]): WrongTypeError[T] = {
     val invalid = json.fold(
@@ -58,9 +55,10 @@ object ValidatedFromCirceInterpreter {
   def apply[A](fgo: ValueDefinitionOp[A]): ValidatedFromJson[A] = {
     val result = fgo match {
       case op: OptionalValueDefinition[a] =>
+        val applied = apply(op.valueDefinitionOp)
         (jsonOpt: Option[Json]) => jsonOpt match {
           case None => Right(None)
-          case some@Some(json) => apply(op.valueDefinitionOp).apply(some).map(Some(_))
+          case some@Some(json) => applied.apply(some).map(Some(_))
         }
       case KvpNil => (_: Option[Json]) => Right(HNil)
 
@@ -137,13 +135,13 @@ object ValidatedFromCirceInterpreter {
         }
         requiredConvert(op, _: Option[Json], _.asString, convert).flatMap(vu.validate(_, op.validations))
       case ed: EitherData[a, b] =>
+        val optionalA = apply(OptionalValueDefinition(ed.definitionA))
+        val optionalB = apply(OptionalValueDefinition(ed.definitionB))
         json: Option[Json] => {
-          val optionalA = OptionalValueDefinition(ed.definitionA)
-          val optionalB = OptionalValueDefinition(ed.definitionB)
-          apply(optionalA).apply(json).right.flatMap {
+          optionalA.apply(json).right.flatMap {
             case Some(a) => Right(Left(a))
             case None => {
-              apply(optionalB).apply(json).right.flatMap {
+              optionalB.apply(json).right.flatMap {
                 case Some(b) => Right(Right(b))
                 case None => Left(NonEmptyList.one(RequiredData(ed)))
               }
@@ -183,8 +181,9 @@ object ValidatedFromCirceInterpreter {
       case op: DoubleData =>
         required(op, _: Option[Json], _.asNumber.map(_.toDouble))
       case op: Convert[a,b] =>
+        val applied = apply(op.from)
         jsonOpt: Option[Json] => {
-          val baseValue = apply(op.from).apply(jsonOpt)
+          val baseValue = applied.apply(jsonOpt)
           baseValue.flatMap(a => op.fab(a).leftMap(NonEmptyList.one))
             .flatMap(vu.validate(_, op.validations))
             .asInstanceOf[Either[cats.data.NonEmptyList[com.bones.data.Error.ExtractionError],A]]
@@ -210,14 +209,16 @@ object ValidatedFromCirceInterpreter {
           requiredConvert(op, jsonOpt, _.asString, convert)
             .flatMap(vu.validate(_, op.validations))
       }
-      case op: XMapData[_,A] => (jsonOpt: Option[Json]) => {
+      case op: XMapData[_,A] =>
         val fromProducer = this.apply(op.from)
-        fromProducer.apply(jsonOpt).map(res => op.fab.apply(res))
-      }
-      case op: SumTypeData[a,A] => (json: Option[Json]) => {
+        (jsonOpt: Option[Json]) => {
+          fromProducer.apply(jsonOpt).map(res => op.fab.apply(res))
+        }
+      case op: SumTypeData[a,A] =>
         val fromProducer = this.apply(op.from)
-        fromProducer.apply(json).flatMap(res => op.fab.apply(res))
-      }
+        (json: Option[Json]) => {
+          fromProducer.apply(json).flatMap(res => op.fab.apply(res))
+        }
 
     }
     result.asInstanceOf[ValidatedFromJson[A]]

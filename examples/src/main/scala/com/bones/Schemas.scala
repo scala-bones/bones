@@ -1,16 +1,12 @@
 package com.bones
 
 import java.time.{LocalDateTime, ZonedDateTime}
-import java.util.{Currency, UUID}
+import java.util.UUID
 
 import com.bones.data.Error.CanNotConvert
 import com.bones.data.Value.KvpNil
-import com.bones.validation.ValidationDefinition.ValidationOp
-import shapeless.HNil
 import com.bones.validation.ValidationDefinition.{ValidationOp, IntValidation => iv, StringValidation => sv}
-import shapeless.syntax._
-import shapeless.ops._
-import shapeless._
+import shapeless.HNil
 
 object Schemas {
 
@@ -82,24 +78,15 @@ object Schemas {
     kvp("expYear", int(iv.between(1950, 9999))) ::
     KvpNil
   ).validate(HasNotExpired)
-//
-//  val ccExp = (
-//    key("expMonth").int(iv.between(1,12)) ::
-//    key("expYear").int(iv.between(1950, 9999)) ::
-//    KvpNil
-//  ).validate(HasNotExpired)
 
   val ccTypeValue =
-    string()
-      .asSumType[CreditCardType](
-        "CreditCardType",
+    string().asSumType[CreditCardType](
+      "CreditCardType",
         CreditCardTypes.toCreditCardType,
         (cct: CreditCardType) => cct.abbrev,
         CreditCardTypes.keys,
         List.empty
       )
-
-  val x = ccExp ::: KvpNil
 
   // Here we are defining our expected input data.  This definition will drive the interpreters.
   val ccObj = (
