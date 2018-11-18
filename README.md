@@ -152,6 +152,10 @@ Version 0.4.0 has JSON validation, but lacks the full CRUD definitions.
 Version 0.5.0-SNAPSHOT includes validation, CRUD and a partial REST Interpreter.
 
 
+### CI
+[![Build Status](https://travis-ci.org/OleTraveler/bones.svg?branch=master)](https://travis-ci.org/OleTraveler/bones)
+
+
 ### Stableish
 ```libraryDependencies += "com.github.oletraveler" %% "bones" % "0.4.0"```
 
