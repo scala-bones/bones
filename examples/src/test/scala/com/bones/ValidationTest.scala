@@ -8,6 +8,7 @@ import com.bones.interpreter.{EncodeToJValueInterpreter, ValidatedFromJObjectInt
 import com.bones.oas3.SwaggerCoreInterpreter
 import io.swagger.v3.oas.models.{Components, OpenAPI}
 import org.scalatest.FunSuite
+import shapeless.HNil
 
 
 
@@ -135,23 +136,23 @@ class ValidationTest extends FunSuite {
     val parsed = net.liftweb.json.parse(cc)
 
     //create the program that is responsible for converting JSON into a CC.
-//    val jsonToCCProgram = creditCardSchema.lift.foldMap[ValidatedFromJObject](ValidatedFromJObjectInterpreter())
-    val jsonToCCProgram = ValidatedFromJObjectInterpreter().apply(creditCardSchema)
+//    val jsonToCCProgram = creditCardSchema.lift.foldMap[ValidatedFromJObjectOpt](ValidatedFromJObjectInterpreter())
+    val jsonToCCProgram = ValidatedFromJObjectInterpreter().kvpGroup(creditCardSchema)
 
     //here, we will test that just the validations step is working
-    val btCc = jsonToCCProgram.apply(Some(parsed))
+    val btCc = jsonToCCProgram.apply(parsed)
 
     //tada!  We have can parse input from JsonExtract to CC using our dataDefinition.
     assert(btCc == Right(CC("12345", "4321", UUID.fromString("df15f08c-e6bd-11e7-aeb8-6003089f08b4"),
       UUID.fromString("e58e7dda-e6bd-11e7-b901-6003089f08b4"), CreditCardTypes.Mastercard, 11, 2022,
       "Lennart Augustsson", JavaCurrencyEnum.GBP, Currency.USD, None, UUID.fromString("4545d9da-e6be-11e7-86fb-6003089f08b4"),
-      Some(BillingLocation("US", Some("80031")))
+      BillingLocation("US", Some("80031"))
     )))
 
     //convert back to json
     val ccToJson = EncodeToJValueInterpreter()
     import net.liftweb.json._
-    val output = ccToJson.apply(creditCardSchema).apply(btCc.toOption.get)
+    val output = ccToJson.value(creditCardSchema).apply(btCc.toOption.get.head)
     val printed = compactRender(output)
     assert(printed === """{"firstFive":"12345","lastFour":"4321","uuid":"df15f08c-e6bd-11e7-aeb8-6003089f08b4","token":"e58e7dda-e6bd-11e7-b901-6003089f08b4","ccType":"Mastercard","expMonth":11,"expYear":2022,"cardHolder":"Lennart Augustsson","currencyEnum":"GBP","currencyIso":"USD","lastModifiedRequest":"4545d9da-e6be-11e7-86fb-6003089f08b4","billingLocation":{"countryIso":"US","zipCode":"80031"}}""")
 

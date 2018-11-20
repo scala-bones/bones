@@ -7,41 +7,41 @@ import io.swagger.v3.oas.models._
 import io.swagger.v3.oas.models.media.{Content, Encoding, IntegerSchema, MediaType}
 import io.swagger.v3.oas.models.parameters.Parameter
 import io.swagger.v3.oas.models.responses.{ApiResponse, ApiResponses}
+import shapeless.{HList, Nat}
 
 
 
-case class CrudOasInterpreter() {
+case class CrudOasInterpreter(entityName: String) {
 
 
-  def toSwaggerCore[A:Manifest](ops: List[CrudOp[A]], urlPath: String): OpenAPI = {
-    val name = manifest[A].runtimeClass.getSimpleName
+  def toSwaggerCore[A](ops: List[CrudOp[A]], urlPath: String): OpenAPI = {
 
     val openAPI = new OpenAPI()
     val withAddedPaths = ops.foreach {
       case op: Read[o] =>
         val outputSchema = SwaggerCoreInterpreter(op.successSchemaForRead)
         val components = new Components()
-          .addSchemas(name, outputSchema)
+          .addSchemas(entityName, outputSchema)
         openAPI.components(components)
 
         val apiResponse = new ApiResponse()
-          .$ref(s"#/components/schemas/${name}")
+          .$ref(s"#/components/schemas/${entityName}")
         val apiResponses = new ApiResponses()
           .addApiResponse("200", apiResponse)
 
         val paramSchema = new IntegerSchema()
         val param = new Parameter()
           .name("id").in("path").required(true)
-          .description(s"id of the ${name} to retrieve")
+          .description(s"id of the ${entityName} to retrieve")
           .schema(paramSchema)
 
         val operation = new Operation()
           .responses(apiResponses)
           .parameters(java.util.Collections.singletonList(param))
-          .tags(java.util.Collections.singletonList(name))
-          .summary(s"Find ${name} by ID")
-          .description(s"Returns ${name} by id")
-          .operationId(s"get${name}ById")
+          .tags(java.util.Collections.singletonList(entityName))
+          .summary(s"Find ${entityName} by ID")
+          .description(s"Returns ${entityName} by id")
+          .operationId(s"get${entityName}ById")
         val pathItem = new PathItem()
           .get(operation)
 
@@ -68,7 +68,7 @@ case class CrudOasInterpreter() {
 //                "description" := s"Returns the ${runtimeClass.getSimpleName} of the given id",
 //                "parameters" := List(
 //                  (
-//                    "name" := "id",
+//                    "entityName" := "id",
 //                    "in" := "path",
 //                    "required" := true
 //                  )
@@ -100,7 +100,7 @@ case class CrudOasInterpreter() {
 //              "parameters" := List(
 //                Json(
 //                  "in" := "body",
-//                  "name" := s"${runtimeClass.getSimpleName}",
+//                  "entityName" := s"${runtimeClass.getSimpleName}",
 //                  "schema" := Json(
 //                    "$ref" := s"#/definitions/${runtimeClass.getSimpleName}"
 //                    )

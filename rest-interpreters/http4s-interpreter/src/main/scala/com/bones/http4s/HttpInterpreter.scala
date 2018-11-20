@@ -1,26 +1,24 @@
 package com.bones.http4s
 
-import cats.FlatMap
-import cats.data.{EitherT, NonEmptyList, OptionT, Validated}
+import cats.data.{EitherT, NonEmptyList}
 import cats.effect._
 import cats.implicits._
-import org.http4s.implicits._
 import com.bones.circe.{EncodeToCirceInterpreter, ValidatedFromCirceInterpreter}
 import com.bones.crud.Algebra._
 import com.bones.data.Error.ExtractionError
-import com.bones.data.Value.ValueDefinitionOp
+import com.bones.data.Value.{KvpGroup, Value}
 import com.bones.http4s.Algebra.InterchangeFormat
 import com.bones.http4s.Orm.Dao
-import com.bones.syntax._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import fs2.Stream
-import io.circe.{Json, JsonObject, ParsingFailure}
 import io.circe.syntax._
+import io.circe.{Json, ParsingFailure}
 import org.http4s._
-import org.http4s.dsl.io._
 import org.http4s.circe._
+import org.http4s.dsl.io._
 import org.http4s.headers.`Content-Type`
+import shapeless.{::, HList, HNil, Nat}
 
 case class HttpInterpreter(
   entityRootDir: String,
@@ -32,10 +30,10 @@ case class HttpInterpreter(
   def withSwagger() = copy(produceSwagger = true)
 
 
-  def saveWithDoobieInterpreter[A:Manifest](servletDefinitions: List[CrudOp[A]], dao: Dao.Aux[A, Int], transactor: Transactor.Aux[IO,Unit]) : HttpService[IO] = {
+  def saveWithDoobieInterpreter[A](servletDefinitions: List[CrudOp[A]], dao: Dao.Aux[A, Int], transactor: Transactor.Aux[IO,Unit]) : HttpService[IO] = {
 
     def deleteJson(del: Delete[A]): HttpService[IO] = {
-      val outInterpreter = EncodeToCirceInterpreter.apply(del.successSchema)
+      val outInterpreter = EncodeToCirceInterpreter.value(del.successSchema)
 
       HttpService[IO] {
         case req@Method.DELETE -> Root / rootDir / IntVar(id) => {
@@ -44,7 +42,7 @@ case class HttpInterpreter(
               dao.find(id).transact(transactor).map(_.toRight(missingIdToJson(id)))
             }
             _ <- EitherT[IO, IO[Response[IO]], Int]{ dao.delete(id).map(Right(_)).transact(transactor) }
-          } yield Ok(outInterpreter.apply(entity))
+          } yield Ok(outInterpreter(entity))
 
           result.merge.unsafeRunSync()
 
@@ -53,9 +51,8 @@ case class HttpInterpreter(
 
     }
 
-    def postJson[E](create: Create[A,E,A]): HttpService[IO] = {
-      val inInterpreter = ValidatedFromCirceInterpreter(create.schemaForCreate)
-      val outInterpreter = EncodeToCirceInterpreter(create.successSchemaForCreate)
+    def postJson[E](create: Create[A,A,E], outWithIdInterpreter: OutWithIdInterpreter): HttpService[IO] = {
+      val inInterpreter = ValidatedFromCirceInterpreter.value(create.schemaForCreate)
       HttpService[IO] {
         case req@Method.POST -> Root / rootDir => {
           val result: EitherT[IO, IO[Response[IO]], IO[Response[IO]]] = for {
@@ -66,7 +63,7 @@ case class HttpInterpreter(
               io.circe.parser.parse(body).left.map(x => extractionErrorToOut(x))
             }
             in <- EitherT.fromEither[IO] {
-              inInterpreter.apply(Some(circe)).left.map(x => eeToOut(x))
+              inInterpreter.apply(circe).left.map(x => eeToOut(x))
             }
             id <- EitherT[IO, Nothing, Int] {
               dao.insert(in).transact(transactor).map(r => Right(r))
@@ -75,10 +72,10 @@ case class HttpInterpreter(
               dao.find(id).map(_.toRight(missingIdToJson(id))).transact(transactor)
             }
           } yield {
-            Ok(Json.obj( ("id", Json.fromInt(id)) :: outInterpreter.apply(a).asObject.map(_.toList).getOrElse(List.empty) :_*))
+            outWithIdInterpreter.apply(a,id,create.successSchemaForCreate)
           }
 
-          //This doesn't feel right.  Any help on this?
+          //This doesn't feel right.  Should we really be calling unsafeRunSync here or later Any help on this?
           result.merge.map(_.unsafeRunSync())
 
         }
@@ -87,7 +84,7 @@ case class HttpInterpreter(
     }
 
     def search(read: Read[A]): HttpService[IO] = {
-      val interpreter = EncodeToCirceInterpreter(read.successSchemaForRead)
+      val interpreter = EncodeToCirceInterpreter.value(read.successSchemaForRead)
       HttpService[IO] {
         case Method.GET -> Root / rootDir => {
           val stream = dao.findAll.transact(transactor)
@@ -100,27 +97,29 @@ case class HttpInterpreter(
       }
     }
 
-    def getJson[IN](read: Read[A], outInterpreter: OutInterpreter[A]): HttpService[IO] =
+    def getJson(read: Read[A], outInterpreter: OutWithIdInterpreter): HttpService[IO] = {
+
       HttpService[IO] {
         case Method.GET -> Root / rootDir / IntVar(id) => {
-          dao.find(id).transact(transactor).flatMap{
-            case Some(a) => outInterpreter.apply(a, read.successSchemaForRead)
+          dao.find(id).transact(transactor).flatMap {
+            case Some(a) => outInterpreter.apply(a, id, read.successSchemaForRead)
             case None => missingIdToJson(id)
           }
         }
       }
+    }
 
     // Either[NonEmptyList[ExtractionError]
-    type InInterpreter[A] = (Request[IO], ValueDefinitionOp[A]) => IO[Either[IO[Response[IO]], A]]
-    type OutInterpreter[A] = (A, ValueDefinitionOp[A]) => IO[Response[IO]]
-    type OutWithIdInterpreter[A] = (A, Long, ValueDefinitionOp[A]) => IO[Response[IO]]
+    type InInterpreter = (Request[IO], Value[A]) => IO[Either[IO[Response[IO]], A]]
+    type OutInterpreter = (A, Value[A]) => IO[Response[IO]]
+    type OutWithIdInterpreter = (A, Int, Value[A]) => IO[Response[IO]]
 
 
 
     def putJson[E](
-                    update: Update[A,E,A],
-                    inInterpreter: InInterpreter[A],
-                    outInterpreter: OutInterpreter[A]
+                    update: Update[A,A,E],
+                    inInterpreter: InInterpreter,
+                    outWithIdInterpreter: OutWithIdInterpreter
                   ): HttpService[IO] = {
       HttpService[IO] {
         case req@Method.PUT -> Root / rootDir / IntVar(id) => {
@@ -135,7 +134,7 @@ case class HttpInterpreter(
               dao.find(id).map(_.toRight(missingIdToJson(id))).transact(transactor)
             }
           } yield {
-            outInterpreter(a, update.successSchema)
+            outWithIdInterpreter(a, id, update.successSchema)
           }
 
           //This doesn't seem right.  Any help on this?
@@ -145,8 +144,8 @@ case class HttpInterpreter(
       }
     }
 
-    val jsonInInterpreter: InInterpreter[A] =
-      (req: Request[IO], valueDefinitionOp: ValueDefinitionOp[A]) => {
+    val jsonInInterpreter: InInterpreter =
+      (req: Request[IO], value: Value[A]) => {
         for {
           body <- EitherT[IO, IO[Response[IO]], String] {
             req.as[String].map(Right(_))
@@ -155,7 +154,7 @@ case class HttpInterpreter(
             io.circe.parser.parse(body).left.map(x => extractionErrorToOut(x))
           }
           a <- EitherT.fromEither[IO] {
-            ValidatedFromCirceInterpreter(valueDefinitionOp).apply(Some(circe))
+            ValidatedFromCirceInterpreter.value(value).apply(circe)
               .left.map(eeToOut)
           }
         }  yield {
@@ -163,27 +162,30 @@ case class HttpInterpreter(
         }
       }.value
 
-    val jsonOutInterpreter: OutInterpreter[A] =
-      (a: A, valueDefinitionOp: ValueDefinitionOp[A]) => {
-        Ok(EncodeToCirceInterpreter(valueDefinitionOp)(a))
+    val jsonOutInterpreter: OutInterpreter =
+      (a: A, value: Value[A]) => {
+        Ok(EncodeToCirceInterpreter.value(value)(a))
       }
-//    val jsonOutWithIdInterpreter: OutWithIdInterpreter[A] =
-//      (a: A, id: Long, valueDefinitionOp: ValueDefinitionOp[A]) => {
-//        import com.bones.syntax._
-//        import com.bones.validation.ValidationDefinition.IntValidation._
-//
-//        val outWithIdValueDefinition = key("id").int(positive()) :: valueDefinitionOp
-//
-//      }
+
+    def jsonOutWithIdInterpreter: OutWithIdInterpreter =
+      (a: A, id: Int, valueDefinitionOp: Value[A]) => {
+        import com.bones.syntax._
+        import com.bones.validation.ValidationDefinition.IntValidation._
+
+        val outWithIdValueDefinition = kvp("id", int(positive())) :: valueDefinitionOp
+        Ok(EncodeToCirceInterpreter.kvpGroup(outWithIdValueDefinition)(id :: a :: HNil))
+
+      }
 
     val services = servletDefinitions.flatMap {
-      case read: Read[A] => List(getJson(read, jsonOutInterpreter), search(read))
+      case read: Read[A] => List(getJson(read, jsonOutWithIdInterpreter), search(read))
       case delete: Delete[A] => List(deleteJson(delete))
-      case create: Create[A,e,A] => List(postJson(create))
-      case update: Update[A,e,A] => List(putJson(update, jsonInInterpreter, jsonOutInterpreter))
+      case create: Create[A,A,e] => List(postJson(create,jsonOutWithIdInterpreter))
+      case update: Update[A,A,e] => List(putJson(update, jsonInInterpreter, jsonOutWithIdInterpreter))
       case _ => None
     }
-    import cats.effect._, org.http4s._
+    import cats.effect._
+    import org.http4s._
     services.foldLeft[HttpService[IO]](HttpService.empty)( (op1: HttpService[IO], op2: HttpService[IO]) => op1 <+> op2)
 
 

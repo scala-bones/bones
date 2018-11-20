@@ -6,6 +6,7 @@ import java.util.UUID
 
 import com.bones.data.Value._
 import com.bones.validation.ValidationDefinition.ValidationOp
+import shapeless.{HList, Nat}
 
 /**
   * A field definition is essentially a key value pair and a list of validations to be applied to the value.
@@ -23,6 +24,8 @@ case class KeyValueDefinition[A](key: String, op: ValueDefinitionOp[A]) {
 
 trait KeyValueDefinitionSugar {
   def kvp[A](key: String, valueDefinitionOp: ValueDefinitionOp[A]) = KeyValueDefinition(key, valueDefinitionOp)
+  def kvpGroup[H<:HList, HL<:Nat](key: String, kvpGroup: KvpGroup[H,HL]) = KeyValueDefinition(key, KvpGroupData(kvpGroup, List.empty))
+  def kvpValue[A](key: String, value: Value[A]) = KeyValueDefinition(key, KvpValueData(value, List.empty))
 }
 
 
@@ -99,17 +102,20 @@ trait Sugar {
       v.toList
     )
 
-  def enumeration[A:Manifest](e: Enumeration) = EnumerationStringData[A](e, List.empty)
+  def enumeration[A:Manifest](e: Enumeration): EnumerationStringData[A] = EnumerationStringData[A](e, List.empty)
 
 //  def enumeration(e: Enumeration)(v: ValidationOp[e.Value] with ToOptionalValidation[e.Value]*): KeyValueDefinition[e.Value] =
 //    KeyValueDefinition(thisKey, EnumerationStringData(e), v.toList)
 
 
   def enum[A <: Enum[A]: Manifest](enums: List[A], v: ValidationOp[A]*) =
-    new EnumStringData[A](enums, v.toList)
+    EnumStringData[A](enums, v.toList)
 
-  def enum[A <: Enum[A]: Manifest](enums: List[A]) =
+  def enum[A <: Enum[A]: Manifest](enums: List[A]): EnumStringData[A] =
     EnumStringData[A](enums, List.empty)
+
+
+  def kvpGroup[H<:HList,HL<:Nat](kvpGroup: KvpGroup[H,HL], v: ValidationOp[H]*) = KvpGroupData(kvpGroup, v.toList)
 
 //  def obj[A <: HList,AL <: Nat](child: KvpGroup[A, AL]) =
 //    KeyValueDefinition[A](thisKey, child, List.empty)

@@ -26,7 +26,7 @@ object CcEndpoint extends App {
   import y._
 
   def insert1(name: String, age: Option[Short]): Update0 =
-    sql"insert into person (name, age) values ($name, $age)".update
+    sql"insert into person (entityName, age) values ($name, $age)".update
 
   insert1("Alice", Some(12)).run.transact(xa).unsafeRunSync
 
