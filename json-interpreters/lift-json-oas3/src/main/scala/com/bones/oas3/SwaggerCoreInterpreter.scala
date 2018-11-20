@@ -7,6 +7,7 @@ import com.bones.data.Value._
 import com.bones.validation.ValidationDefinition.{InvalidValue, OptionalValidation, ValidValue, ValidationOp}
 import io.swagger.v3.oas.models.media._
 import com.bones.validation.ValidationDefinition.{BigDecimalValidation => bdv, IntValidation => iv, StringValidation => sv}
+import shapeless.{HList, Nat}
 
 
 object SwaggerCoreInterpreter {
@@ -18,28 +19,25 @@ object SwaggerCoreInterpreter {
   }
 
   /** The entry point, converts a Value definition into a Schema-Core Schema */
-  def apply[A](vd: ValueDefinitionOp[A]): Schema[_] = fromValueDef(vd).apply(new Schema())
+  def apply[A](gd: Value[A]): Schema[_] = {
+    gd match {
+      case x: XMapData[_,_,a] => fromKvpGroup(x).apply(new Schema())
+    }
+  }
 
-  /**
-    * Recursive method which builds up a Swagger Core Schema object from the Value definition.
-    * @param vd The Value definition to convert to a Schema
-    **/
-  protected def fromValueDef[A](vd: ValueDefinitionOp[A]): Schema[_] => Schema[_] = {
-    vd match {
-      case op: OptionalValueDefinition[b] =>
-        val oasSchema = fromValueDef(op.valueDefinitionOp)
-        schema => oasSchema(schema).nullable(true)
+  protected def fromKvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]) : Schema[_] => Schema[_] = {
+    group match {
       case KvpNil =>
         val objectSchema = new ObjectSchema()
           .nullable(false)
         schema => objectSchema.name(schema.getName)
-      case op: KvpGroupHead[A, al, h, hl, t, tl] =>
-        val head = fromValueDef(op.head)
-        val tail = fromValueDef(op.tail)
+      case op: KvpGroupHead[H, al, h, hl, t, tl] =>
+        val head = fromKvpGroup(op.head)
+        val tail = fromKvpGroup(op.tail)
         schema => copySchema(head(schema), tail(schema))
       case op: KvpSingleValueHead[h, t, tl, o, ol] =>
         val child = fromValueDef(op.fieldDefinition.op)
-        val tail = fromValueDef(op.tail)
+        val tail = fromKvpGroup(op.tail)
 
         schema => {
           val tailSchema = tail(schema)
@@ -50,6 +48,24 @@ object SwaggerCoreInterpreter {
           }
           tailSchema
         }
+      case t: XMapData[a,al,b] =>
+        val obj = fromKvpGroup(t.from)
+        schema => obj(schema)
+
+
+    }
+  }
+
+  /**
+    * Recursive method which builds up a Swagger Core Schema object from the Value definition.
+    * @param vd The Value definition to convert to a Schema
+    **/
+  protected def fromValueDef[A](vd: ValueDefinitionOp[A]): Schema[_] => Schema[_] = {
+    vd match {
+      case op: OptionalValueDefinition[b] =>
+        val oasSchema = fromValueDef(op.valueDefinitionOp)
+        schema => oasSchema(schema).nullable(true)
+
       case _: BooleanData =>
         val boolSchema = new BooleanSchema()
           .example(new java.lang.Boolean(true))
@@ -94,15 +110,6 @@ object SwaggerCoreInterpreter {
           .addAnyOfItem(b)
           .nullable(false)
         schema => composedSchema.name(schema.getName)
-      case sumType: Convert[a,b] =>
-        val fromOp = fromValueDef(sumType.from)
-
-        //TODO: Create these based on the actual type, do not assume string
-        schema => {
-          val opSchema = fromOp(schema).asInstanceOf[StringSchema]
-          sumType.values.foreach(a => opSchema.addEnumItemObject(a.toString))
-          opSchema
-        }
       case esd: EnumerationStringData[a] =>
         val stringSchema = new StringSchema()
           .nullable(false).example(esd.enumeration.values.head.toString).asInstanceOf[StringSchema]
@@ -121,12 +128,12 @@ object SwaggerCoreInterpreter {
           stringSchema
         }
 
-      case t: XMapData[a,b] =>
-        val obj = fromValueDef(t.from)
-        schema => obj(schema)
-
       case x: SumTypeData[a,b] =>
         val obj = fromValueDef(x.from)
+        schema => obj(schema)
+
+      case gd: KvpGroupData[h,hl] =>
+        val obj = fromKvpGroup(gd.kvpGroup)
         schema => obj(schema)
 
     }

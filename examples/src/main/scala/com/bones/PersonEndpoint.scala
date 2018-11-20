@@ -2,7 +2,7 @@ package com.bones
 
 import cats.effect.IO
 import com.bones.crud.Algebra._
-import com.bones.data.Value.{KvpNil, ValueDefinitionOp}
+import com.bones.data.Value.{KvpGroup, KvpNil, Value, ValueDefinitionOp}
 import com.bones.http4s.HttpInterpreter
 import com.bones.http4s.Orm.Dao
 import com.bones.oas3.CrudOasInterpreter
@@ -15,10 +15,11 @@ import fs2.{Stream, StreamApp}
 import io.swagger.v3.oas.models.info.Info
 import org.http4s.HttpService
 import org.http4s.server.blaze.BlazeBuilder
+import shapeless.{HList, HNil, Nat}
 
 object Interpreter {
 
-  def doInterpretation[A:Manifest,B](serviceDescription: List[CrudOp[A]], doobieInfo: Dao.Aux[A,Int], transactor: Transactor.Aux[IO,Unit], rootDir: String, errorDef: ValueDefinitionOp[B]): HttpService[IO] = {
+  def doInterpretation[H,B](serviceDescription: List[CrudOp[H]], doobieInfo: Dao.Aux[H,Int], transactor: Transactor.Aux[IO,Unit], rootDir: String, errorDef: Value[B]): HttpService[IO] = {
 
     import com.bones.http4s.Algebra._
     val service =
@@ -27,7 +28,7 @@ object Interpreter {
       .withSwagger()
 
 
-    service.saveWithDoobieInterpreter[A](serviceDescription, doobieInfo, transactor)
+    service.saveWithDoobieInterpreter[H](serviceDescription, doobieInfo, transactor)
 
 
   }
@@ -43,7 +44,7 @@ object Definitions {
   }
 
   val personSchema = (
-    kvp("name", string(sv.matchesRegex("^[a-zA-Z ]*$".r))) ::
+    kvp("entityName", string(sv.matchesRegex("^[a-zA-Z ]*$".r))) ::
       kvp("age", int(iv.min(0))) ::
       KvpNil
     ).convert[Person]
@@ -52,9 +53,11 @@ object Definitions {
   //    key("id").int() :: personSchema ::: KvpNil
   //  ).convert[(Int, Person)]
 
-  val errorDef: ValueDefinitionOp[String] = string
+  case class Error(error: String)
 
-  val serviceDescription =
+  val errorDef = (kvp("error", string) :: KvpNil).convert[Error]
+
+  val serviceDescription: List[CrudOp[Person]] =
     create(personSchema, errorDef, personSchema) ::
       read(personSchema) ::
       update(personSchema, errorDef, personSchema) ::
@@ -70,7 +73,7 @@ object PersonDoc extends App {
     .description("Test Person Endpoint")
     .title("Person")
     .version("1.0")
-  val api = CrudOasInterpreter().toSwaggerCore(Definitions.serviceDescription, "person")
+  val api = CrudOasInterpreter("Person").toSwaggerCore(Definitions.serviceDescription, "person")
   api.info(info)
 //  println(io.swagger.v3.core.util.Json.mapper().writeValueAsString(api))
 }
@@ -85,7 +88,7 @@ object PersonEndpoint extends StreamApp[IO] {
   import scala.concurrent.ExecutionContext.Implicits._
 
   override def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
-    val http4Service = Interpreter.doInterpretation[Person, String](serviceDescription, Person.dao, transactor, "/person", errorDef)
+    val http4Service = Interpreter.doInterpretation[Person, Error](serviceDescription, Person.dao, transactor, "/person", errorDef)
     BlazeBuilder[IO].bindHttp(8080, "localhost").mountService(http4Service, "/").serve
 
   }
