@@ -10,7 +10,7 @@ import com.bones.data.Error.{CanNotConvert, ExtractionError, RequiredData, Wrong
 import com.bones.data.Value.{ValueDefinitionOp, _}
 import com.bones.validation.{ValidationUtil => vu}
 import io.circe.{Json, JsonObject}
-import shapeless.HNil
+import shapeless.{HList, HNil, Nat}
 
 import scala.util.control.NonFatal
 
@@ -19,7 +19,8 @@ object ValidatedFromCirceInterpreter {
 //  case class ValidatedString() extends Validated[String,JString]
 //  case class ValidatedObject[A]() extends Validated[A, ]
 //
-  type ValidatedFromJson[A] = Option[Json] => Either[NonEmptyList[ExtractionError], A]
+  type ValidatedFromJsonOption[A] = Option[Json] => Either[NonEmptyList[ExtractionError], A]
+  type ValidatedFromJson[A] = Json => Either[NonEmptyList[ExtractionError], A]
 
   protected def invalidValue[T](json: Json, expected: Class[T]): WrongTypeError[T] = {
     val invalid = json.fold(
@@ -32,8 +33,6 @@ object ValidatedFromCirceInterpreter {
     )
     WrongTypeError(expected, invalid)
   }
-
-  def optionalValueDefinition[A](op: OptionalValueDefinition[A]) : ValidatedFromJson[Option[A]] = ???
 
   def required[A](op: ValueDefinitionOp[A], jsonOpt: Option[Json], f: Json => Option[A]): Either[NonEmptyList[ExtractionError],A] =
     for {
@@ -52,49 +51,51 @@ object ValidatedFromCirceInterpreter {
       converted <- convert(a)
     } yield converted
 
-  def apply[A](fgo: ValueDefinitionOp[A]): ValidatedFromJson[A] = {
-    val result = fgo match {
-      case op: OptionalValueDefinition[a] =>
-        val applied = apply(op.valueDefinitionOp)
-        (jsonOpt: Option[Json]) => jsonOpt match {
-          case None => Right(None)
-          case some@Some(json) => applied.apply(some).map(Some(_))
-        }
-      case KvpNil => (_: Option[Json]) => Right(HNil)
+  def value[A](value: Value[A]): ValidatedFromJson[A] = {
+    value match {
+      case x: XMapData[_,_,a] => {
+        val kvp = kvpGroup(x)
+        (j: Json) => kvp.apply(j).map(_.head)
+      }
+    }
+  }
 
-      case op: KvpGroupHead[A, al, h, hl, t, tl] => {
+  def kvpGroup[H<:HList, HL<:Nat](group: KvpGroup[H,HL]): ValidatedFromJson[H] = {
+    group match {
+      case KvpNil => (_: Json) => Right(HNil)
 
-        def children(json: Json) : Either[NonEmptyList[ExtractionError], A] = {
-          val headInterpreter = this.apply(op.head)
-          val tailInterpreter = this.apply(op.tail)
+      case op: KvpGroupHead[H, al, h, hl, t, tl] => {
+
+        def children(json: Json) : Either[NonEmptyList[ExtractionError], H] = {
+          val headInterpreter = kvpGroup(op.head)
+          val tailInterpreter = kvpGroup(op.tail)
 
           Applicative[({type AL[AA] = Validated[NonEmptyList[ExtractionError], AA]})#AL]
-            .map2(headInterpreter(Some(json)).toValidated, tailInterpreter(Some(json)).toValidated)(
+            .map2(headInterpreter(json).toValidated, tailInterpreter(json).toValidated)(
               (l1: h, l2: t) => {
                 op.prepend.apply(l1, l2)
               })
             .andThen { l =>
-              vu.validate[A](l, op.validations).asInstanceOf[Validated[NonEmptyList[ExtractionError], A]]
+              vu.validate[H](l, op.validations).asInstanceOf[Validated[NonEmptyList[ExtractionError], H]]
             }.toEither
         }
 
-        jsonOpt: Option[Json] =>
+        json: Json =>
           for {
-            json <- jsonOpt.toRight(NonEmptyList.one(RequiredData(op)))
-            _ <- json.asObject.toRight(NonEmptyList.one(WrongTypeError(classOf[Any], json.getClass)))
-            obj <- children(json)
-          } yield obj
+            obj <- json.asObject.toRight(NonEmptyList.one(WrongTypeError(classOf[Any], json.getClass)))
+            kids <- children(json)
+          } yield kids
       }
 
       case op: KvpSingleValueHead[h, t, tl, a, al] => {
 
-        def children(jsonObj: JsonObject, json: Json) : Either[NonEmptyList[ExtractionError], A] = {
+        def children(jsonObj: JsonObject, json: Json) : Either[NonEmptyList[ExtractionError], H] = {
           val fields = jsonObj.toList
-          val headInterpreter = apply(op.fieldDefinition.op)
-          val tailInterpreter = apply(op.tail)
+          val headInterpreter = valueDefinition(op.fieldDefinition.op)
+          val tailInterpreter = kvpGroup(op.tail)
           val headValue = headInterpreter(fields.find(_._1 == op.fieldDefinition.key).map(_._2))
 
-          val tailValue = tailInterpreter.apply(Some(json.obj))
+          val tailValue = tailInterpreter(json.obj)
 
           Applicative[({type AL[AA] = Validated[NonEmptyList[ExtractionError], AA]})#AL]
             .map2(headValue.toValidated, tailValue.toValidated)((l1, l2) => {
@@ -102,17 +103,33 @@ object ValidatedFromCirceInterpreter {
             }).toEither
             .flatMap { l =>
               vu.validate(l.asInstanceOf[a], op.validations)
-            }.asInstanceOf[Either[NonEmptyList[ExtractionError], A]]
+            }.asInstanceOf[Either[NonEmptyList[ExtractionError], H]]
         }
 
-        (jsonOpt: Option[Json]) =>
+        json: Json =>
           for {
-            json <- jsonOpt.toRight(NonEmptyList.one(RequiredData(op)))
-            jsonObj <- json.asObject.toRight(invalidValue(json, classOf[Object]))
+            jsonObj <- json.asObject.toRight(NonEmptyList.one(invalidValue(json, classOf[Object])))
             obj <- children(jsonObj, json)
           } yield obj
-
       }
+      case op: XMapData[h,hl,b] =>
+        val fromProducer = kvpGroup(op.from).asInstanceOf[ValidatedFromJson[h]]
+        (json: Json) => {
+          fromProducer(json).map(hl => op.fab(hl)).map(x => x :: HNil)
+        }
+
+    }
+  }
+
+  def valueDefinition[A](fgo: ValueDefinitionOp[A]): ValidatedFromJsonOption[A] = {
+    val result = fgo match {
+      case op: OptionalValueDefinition[a] =>
+        val applied = valueDefinition(op.valueDefinitionOp)
+        (jsonOpt: Option[Json]) => jsonOpt match {
+          case None => Right(None)
+          case some@Some(json) => applied(some).map(Some(_))
+        }
+
 
       case op: StringData =>
         required(op, _: Option[Json], _.asString).flatMap(vu.validate(_, op.validations))
@@ -135,13 +152,13 @@ object ValidatedFromCirceInterpreter {
         }
         requiredConvert(op, _: Option[Json], _.asString, convert).flatMap(vu.validate(_, op.validations))
       case ed: EitherData[a, b] =>
-        val optionalA = apply(OptionalValueDefinition(ed.definitionA))
-        val optionalB = apply(OptionalValueDefinition(ed.definitionB))
+        val optionalA = valueDefinition(OptionalValueDefinition(ed.definitionA))
+        val optionalB = valueDefinition(OptionalValueDefinition(ed.definitionB))
         json: Option[Json] => {
-          optionalA.apply(json).right.flatMap {
+          optionalA(json).right.flatMap {
             case Some(a) => Right(Left(a))
             case None => {
-              optionalB.apply(json).right.flatMap {
+              optionalB(json).right.flatMap {
                 case Some(b) => Right(Right(b))
                 case None => Left(NonEmptyList.one(RequiredData(ed)))
               }
@@ -152,7 +169,7 @@ object ValidatedFromCirceInterpreter {
 
       case op: ListData[t,l] =>
         def traverseArray(arr: Seq[Json]) = {
-          arr.map(jValue => this.apply(op).apply(Some(jValue)))
+          arr.map(jValue => valueDefinition(op).apply(Some(jValue)))
             .foldLeft[Either[NonEmptyList[ExtractionError], List[_]]](Right(List.empty))((b, v) => (b, v) match {
             case (Right(a), Right(i)) => Right(a :+ i)
             case (Left(a), Left(b)) => Left(a ::: b)
@@ -180,14 +197,6 @@ object ValidatedFromCirceInterpreter {
             .flatMap(vu.validate(_, op.validations))
       case op: DoubleData =>
         required(op, _: Option[Json], _.asNumber.map(_.toDouble))
-      case op: Convert[a,b] =>
-        val applied = apply(op.from)
-        jsonOpt: Option[Json] => {
-          val baseValue = applied.apply(jsonOpt)
-          baseValue.flatMap(a => op.fab(a).leftMap(NonEmptyList.one))
-            .flatMap(vu.validate(_, op.validations))
-            .asInstanceOf[Either[cats.data.NonEmptyList[com.bones.data.Error.ExtractionError],A]]
-        }
       case op:EnumerationStringData[a] => (jsonOpt: Option[Json]) => {
         jsonOpt.toRight[NonEmptyList[ExtractionError]](NonEmptyList.one(RequiredData(op)))
           .flatMap(json => json.asString match {
@@ -209,18 +218,22 @@ object ValidatedFromCirceInterpreter {
           requiredConvert(op, jsonOpt, _.asString, convert)
             .flatMap(vu.validate(_, op.validations))
       }
-      case op: XMapData[_,A] =>
-        val fromProducer = this.apply(op.from)
-        (jsonOpt: Option[Json]) => {
-          fromProducer.apply(jsonOpt).map(res => op.fab.apply(res))
-        }
       case op: SumTypeData[a,A] =>
-        val fromProducer = this.apply(op.from)
+        val fromProducer = valueDefinition(op.from)
         (json: Option[Json]) => {
           fromProducer.apply(json).flatMap(res => op.fab.apply(res))
         }
+      case op: KvpGroupData[h,hl] => {
+        val fg = kvpGroup(op.kvpGroup)
+        (jsonOpt: Option[Json]) => {
+          jsonOpt match {
+            case Some(json) => fg(json).flatMap(res => vu.validate(res, op.validations))
+            case None => Left(NonEmptyList.one(RequiredData(op)))
+          }
+        }
+      }
 
     }
-    result.asInstanceOf[ValidatedFromJson[A]]
+    result.asInstanceOf[ValidatedFromJsonOption[A]]
   }
 }
