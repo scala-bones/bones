@@ -135,7 +135,7 @@ lazy val examples = (project in file("examples"))
         "org.scalatest" %% "scalatest" % "3.0.5" % Test
 //        "org.easymock" % "easymock" % "3.5.1" % Test
       )
-    ).dependsOn(core, jsonLift, restUnfiltered, jsonOas3, restHttp4s)
+    ).dependsOn(core, jsonOas3, restHttp4s)
 
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.7")

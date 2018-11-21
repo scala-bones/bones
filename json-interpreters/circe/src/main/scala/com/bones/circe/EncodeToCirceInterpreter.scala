@@ -10,26 +10,31 @@ object EncodeToCirceInterpreter {
 
   type EncodeToJValue[A] = A => Json
 
-  def value[A](value: Value[A]): EncodeToJValue[A] = {
-    value match {
-      case x: XMapData[_,_,A] =>
-        (a: A) => kvpGroup(x).apply(a :: HNil)
+  def dataClass[A](dc: DataClass[A]): EncodeToJValue[A] = {
+    dc match {
+      case x: XMapData[a,al,b] =>
+        (input: A) => kvpGroup(x.from).apply(x.fba(input))
+
+      case op: OptionalDataClass[a] =>
+        (a: A) => a match {
+          case Some(x) => dataClass(op.value).apply(x)
+          case None => Json.Null
+        }
     }
   }
 
   def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): EncodeToJValue[H] =
     group match {
       case KvpNil => (input: H) => Json.obj()
-      case op: KvpGroupHead[H,l,h,hl,t,tl] => (input: H) => {
+      case op: KvpGroupHead[out,l,h,hl,t,tl] => (input: H) => {
         val l = op.split(input)
         val m1 = kvpGroup(op.head).apply(l._1)
-        val m2 = kvpGroup(op.tail).apply(l._2)
+        val m2 = kvpGroup[t,tl](op.tail).apply(l._2)
         val values1 = m1.asObject.toList.flatMap(_.toList)
         val values2 = m2.asObject.toList.flatMap(_.toList)
         Json.obj( (values1 ::: values2) :_*)
-
       }
-      case op: KvpSingleValueHead[h,t,tl,H,ol] => (input: H) => {
+      case op: KvpSingleValueHead[h,t,tl,H] => (input: H) => {
         import shapeless.::
         val cast = input.asInstanceOf[h :: t]
         val val1 = valueDefinition(op.fieldDefinition.op).apply(cast.head)
@@ -37,13 +42,24 @@ object EncodeToCirceInterpreter {
         val values = kvpGroup(op.tail)(cast.tail).asObject.toList.flatMap(_.toList)
         Json.obj( ( (op.fieldDefinition.key, val1) :: values) :_* )
       }
-      case XMapData(op, _, fba, validations) => (input: H) => {
-        val b = fba(input)
-        kvpGroup(op).apply(b)
+      case op: KvpDataClassHead[h,t,tl,o] => {
+        val hF = dataClass(op.dataClass)
+        val tailF = kvpGroup(op.tail)
+        (input: H) => {
+          val hFields = hF(input.head).asObject.toList.flatMap(_.toList)
+          val tailFields = tailF(input.tail).asObject.toList.flatMap(_.toList)
+          Json.obj( (hFields ::: tailFields) :_*)
+        }
       }
-
-
+      case op: OptionalKvpGroup[h,hl] =>
+        val oF = kvpGroup(op.kvpGroup)
+        input: H => input.head match {
+          case Some(kvp) => oF(kvp)
+          case None => Json.Null
+        }
     }
+
+
 
   def valueDefinition[A](fgo: ValueDefinitionOp[A]): EncodeToJValue[A] =
     fgo match {

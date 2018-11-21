@@ -46,7 +46,7 @@ object Schemas {
 
   case class CC(firstFive: String, lastFour: String, uuid: UUID, token: UUID, ccType: CreditCardType,
                 expMonth: Int, expYear: Int, cardholder: String, jce: JavaCurrencyEnum, currency: Currency.Value, deletedAt: Option[ZonedDateTime],
-                lastModifiedRequest: UUID, billingLocation: BillingLocation)
+                lastModifiedRequest: UUID, billingLocation: Option[BillingLocation])
 
   val isoVector = Vector("US", "CA", "MX")
 
@@ -106,7 +106,7 @@ object Schemas {
         kvp("countryIso", string(sv.validVector(isoVector))) ::
         kvp("zipCode", string().optional) ::
         KvpNil
-      ).convert[BillingLocation]) :: //TODO: OPtional
+      ).convert[BillingLocation].optional) :: //TODO: OPtional
     KvpNil
   )
 

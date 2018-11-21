@@ -49,6 +49,26 @@ object ValidatedFromArgonautInterpreter {
       converted <- convert(a)
     } yield converted
 
+  def dataClass[A:Manifest](dc: DataClass[A]): ValidatedFromJsonOption[A] = {
+    dc match {
+      case op: XMapData[h,hl,b] => {
+        val fromProducer = kvpGroup(op.from)
+        (jsonOpt: Option[Json]) => for {
+          json <- jsonOpt.toRight(NonEmptyList.one(RequiredData(null)))
+          res <- fromProducer(json).right.map(res => op.fab(res))
+        } yield res
+      }
+      case opt: OptionalDataClass[a] =>
+        implicit val ma = opt.manifestOfA
+        val dcF = dataClass(opt.value)
+        jsonOpt: Option[Json] => jsonOpt match {
+          case Some(json) => dcF(jsonOpt).right.map(Some(_))
+          case None => Right(None)
+        }
+
+    }
+  }
+
   def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): ValidatedFromJson[H] = {
       group match {
         case KvpNil => (_: Json) => Right(HNil)
@@ -75,7 +95,7 @@ object ValidatedFromArgonautInterpreter {
               obj <- children(json)
             } yield obj
         }
-        case op: KvpSingleValueHead[h, t, tl, a, al] => {
+        case op: KvpSingleValueHead[h, t, tl, a] => {
 
           def children(jsonObj: JsonObject, json: Json) : Either[NonEmptyList[ExtractionError], H] = {
             val fields = jsonObj.toList
@@ -101,11 +121,6 @@ object ValidatedFromArgonautInterpreter {
               obj <- children(jsonObj, json)
             } yield obj
 
-        }
-        case op: XMapData[h,hl,b] => (json: Json) => {
-          val fromProducer = kvpGroup(op.from)
-          fromProducer(json)
-            .map(res => op.fab.apply(res) :: HNil)
         }
       }
 

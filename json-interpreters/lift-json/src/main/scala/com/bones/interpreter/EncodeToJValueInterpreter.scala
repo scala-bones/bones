@@ -15,13 +15,18 @@ object EncodeToJValueInterpreter {
 case class EncodeToJValueInterpreter() {
   import EncodeToJValueInterpreter._
 
-  def value[A](v: Value[A]) : EncodeToJValue[A] =
-    v match {
-      case x: XMapData[h,hl,A] => {
-        (a: A) => kvpGroup(x).apply(a :: HNil)
-      }
-    }
+  def dataClass[A](dc: DataClass[A]): EncodeToJValue[A] = {
+    dc match {
+      case x: XMapData[a,al,b] =>
+        (input: A) => kvpGroup(x.from).apply(x.fba(input))
 
+      case op: OptionalDataClass[a] =>
+        (a: A) => a match {
+          case Some(x) => dataClass(op.value).apply(x)
+          case None => JNull
+        }
+    }
+  }
   def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): EncodeToJValue[H] =
     group match {
       case KvpNil => (input: H) => JObject()
@@ -31,19 +36,19 @@ case class EncodeToJValueInterpreter() {
         val m2 = kvpGroup(op.tail).apply(l._2)
         JObject(m1.asInstanceOf[JObject].obj ::: m2.asInstanceOf[JObject].obj)
       }
-      case op: KvpSingleValueHead[h,t,tl,H,ol] => (input: H) => {
+      case op: KvpSingleValueHead[h,t,tl,H] => (input: H) => {
         import shapeless.::
         val cast = input.asInstanceOf[h :: t]
         val val1 = valueDefinition(op.fieldDefinition.op).apply(cast.head)
         val m2 = kvpGroup(op.tail).apply(cast.tail).asInstanceOf[JObject]
         JObject(JField(op.fieldDefinition.key, val1) :: m2.obj)
       }
-      case x: XMapData[h,hl,b] => (input: H) => {
-        val hl = x.fba(input.head)
-        kvpGroup(x.from).apply(hl)
-      }
-
-
+      case op: OptionalKvpGroup[h,hl] =>
+        val oF = kvpGroup(op.kvpGroup)
+        (input: H) => input.head match {
+          case Some(x) => oF(x)
+          case None => JNull
+        }
     }
 
   def valueDefinition[A](fgo: ValueDefinitionOp[A]): EncodeToJValue[A] =

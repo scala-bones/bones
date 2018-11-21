@@ -1,6 +1,6 @@
 package com.bones.crud
 
-import com.bones.data.Value.Value
+import com.bones.data.Value.DataClass
 
 
 /**
@@ -20,9 +20,9 @@ object Algebra {
     * @return a GADT describing create
     */
   def create[I,O,E](
-    inputSchema: Value[I],
-    successSchema: Value[O],
-    errorSchema: Value[E]
+                     inputSchema: DataClass[I],
+                     successSchema: DataClass[O],
+                     errorSchema: DataClass[E]
    ): Create[I,O,E] =
     Create[I,O,E](inputSchema, successSchema, errorSchema)
 
@@ -32,7 +32,7 @@ object Algebra {
     * @tparam A the data
     * @return a GADT algebra describing read.
     */
-  def read[A](successSchema: Value[A]): Read[A] = Read(successSchema)
+  def read[A](successSchema: DataClass[A]): Read[A] = Read(successSchema)
 
   /**
     * Used to create a GADT describing how to upadate data.
@@ -45,32 +45,32 @@ object Algebra {
     * @return a GADT algebra describing update.
     */
   def update[I,O,E](
-    inputSchema: Value[I],
-    successSchema: Value[O],
-    errorSchema: Value[E]
+                     inputSchema: DataClass[I],
+                     successSchema: DataClass[O],
+                     errorSchema: DataClass[E]
   ): Update[I,E,O] = Update(inputSchema, errorSchema, successSchema)
 
   def delete[O](
-    outputSchema: Value[O]
+    outputSchema: DataClass[O]
   ): Delete[O] = Delete(outputSchema)
 
 
   case class Create[I,O,E](
-    schemaForCreate: Value[I],
-    successSchemaForCreate: Value[O],
-    errorSchemaForCreate: Value[E]
+                            schemaForCreate: DataClass[I],
+                            successSchemaForCreate: DataClass[O],
+                            errorSchemaForCreate: DataClass[E]
   ) extends CrudOp[I]
 
-  case class Read[A](successSchemaForRead: Value[A]) extends CrudOp[A]
+  case class Read[A](successSchemaForRead: DataClass[A]) extends CrudOp[A]
 
   case class Update[I,O,E](
-    inputSchema: Value[I],
-    successSchema: Value[O],
-    failureSchema: Value[E]
-  ) extends CrudOp[O]
+                            inputSchema: DataClass[I],
+                            successSchema: DataClass[O],
+                            failureSchema: DataClass[E]
+  ) extends CrudOp[I]
 
   case class Delete[O] (
-    successSchema: Value[O]) extends CrudOp[O]
+    successSchema: DataClass[O]) extends CrudOp[O]
 
   case class Search()
 

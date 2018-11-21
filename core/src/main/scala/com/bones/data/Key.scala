@@ -25,7 +25,7 @@ case class KeyValueDefinition[A](key: String, op: ValueDefinitionOp[A]) {
 trait KeyValueDefinitionSugar {
   def kvp[A](key: String, valueDefinitionOp: ValueDefinitionOp[A]) = KeyValueDefinition(key, valueDefinitionOp)
   def kvpGroup[H<:HList, HL<:Nat](key: String, kvpGroup: KvpGroup[H,HL]) = KeyValueDefinition(key, KvpGroupData(kvpGroup, List.empty))
-  def kvpValue[A](key: String, value: Value[A]) = KeyValueDefinition(key, KvpValueData(value, List.empty))
+  def kvpValue[A](key: String, value: DataClass[A]) = KeyValueDefinition[A](key, KvpValueData(value, List.empty))
 }
 
 
@@ -104,7 +104,7 @@ trait Sugar {
 
   def enumeration[A:Manifest](e: Enumeration): EnumerationStringData[A] = EnumerationStringData[A](e, List.empty)
 
-//  def enumeration(e: Enumeration)(v: ValidationOp[e.Value] with ToOptionalValidation[e.Value]*): KeyValueDefinition[e.Value] =
+//  def enumeration(e: Enumeration)(v: ValidationOp[e.DataClass] with ToOptionalValidation[e.DataClass]*): KeyValueDefinition[e.DataClass] =
 //    KeyValueDefinition(thisKey, EnumerationStringData(e), v.toList)
 
 

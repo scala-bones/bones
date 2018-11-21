@@ -85,17 +85,36 @@ case class ValidatedFromJObjectInterpreter() {
     WrongTypeError(expected, invalid)
   }
 
-  def value[A](value: Value[A]): ValidatedFromJObject[A] = {
+  def dataClass[A](value: DataClass[A]): ValidatedFromJObject[A] = {
     value match {
-      case x: XMapData[h,hl,A] => {
-        (j: JValue) => kvpGroup(x).apply(j).map(_.head)
+      case x: XMapData[h,hl,a] => {
+        val kvpF = kvpGroup(x.from)
+        (j: JValue) => kvpF(j).map(result => x.fab(result))
       }
+      case o: OptionalDataClass[a] =>
+        val oF = dataClass(o.value)
+        (j: JValue) => oF(j).map(Some(_))
     }
   }
 
   def kvpGroup[H<:HList, HL<:Nat](group: KvpGroup[H,HL]): ValidatedFromJObject[H] = {
     group match {
       case KvpNil => (_: JValue) => Right(HNil)
+
+      case op: KvpDataClassHead[h,t,tl,out] => {
+        val dcF = dataClass(op.dataClass)
+        val tailF = kvpGroup(op.tail)
+        (json:JValue) => {
+          Applicative[({type AL[AA] = Validated[NonEmptyList[ExtractionError], AA]})#AL]
+            .map2(dcF(json).toValidated, tailF(json).toValidated)(
+              (l1: h, l2: t) => {
+                l1 :: l2 :: HNil
+              }).toEither
+            .flatMap { l =>
+              vu.validate[out](l.asInstanceOf[out], op.validations)
+            }
+        }
+      }
 
       case op: KvpGroupHead[H, al, h, hl, t, tl] => {
 
@@ -122,7 +141,7 @@ case class ValidatedFromJObjectInterpreter() {
 
       }
 
-      case op: KvpSingleValueHead[h, t, tl, a, al] => {
+      case op: KvpSingleValueHead[h, t, tl, a] => {
 
         def children(jsonObj: JObject) : Either[NonEmptyList[ExtractionError], H] = {
           val fields = jsonObj.obj
@@ -148,14 +167,7 @@ case class ValidatedFromJObjectInterpreter() {
           } yield obj
 
       }
-      case op: XMapData[h,hl,b] => {
-        val fromProducer = kvpGroup(op.from).asInstanceOf[ValidatedFromJObject[h]]
-        //        implicit val isCons = op.isConsImplicit
-        (json: JValue) => {
-          fromProducer(json) // give me the a, which is an HList
-            .map(h => op.fab(h) :: HNil)
-        }
-      }
+      case op: OptionalKvpGroup[h,hl] => ???
     }
 
   }
@@ -278,7 +290,7 @@ case class ValidatedFromJObjectInterpreter() {
         }
       }
       case op: KvpValueData[a] => {
-        val fg = value(op.value)
+        val fg = dataClass(op.value)
         (jsonOpt:Option[JValue]) => {
           jsonOpt match {
             case Some(json) => fg(json).flatMap(res => vu.validate(res, op.validations))

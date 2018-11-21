@@ -6,7 +6,7 @@ import cats.implicits._
 import com.bones.circe.{EncodeToCirceInterpreter, ValidatedFromCirceInterpreter}
 import com.bones.crud.Algebra._
 import com.bones.data.Error.ExtractionError
-import com.bones.data.Value.{KvpGroup, Value}
+import com.bones.data.Value.{DataClass, KvpGroup, KvpNil}
 import com.bones.http4s.Algebra.InterchangeFormat
 import com.bones.http4s.Orm.Dao
 import doobie.implicits._
@@ -33,7 +33,7 @@ case class HttpInterpreter(
   def saveWithDoobieInterpreter[A](servletDefinitions: List[CrudOp[A]], dao: Dao.Aux[A, Int], transactor: Transactor.Aux[IO,Unit]) : HttpService[IO] = {
 
     def deleteJson(del: Delete[A]): HttpService[IO] = {
-      val outInterpreter = EncodeToCirceInterpreter.value(del.successSchema)
+      val outInterpreter = EncodeToCirceInterpreter.dataClass(del.successSchema)
 
       HttpService[IO] {
         case req@Method.DELETE -> Root / rootDir / IntVar(id) => {
@@ -52,7 +52,7 @@ case class HttpInterpreter(
     }
 
     def postJson[E](create: Create[A,A,E], outWithIdInterpreter: OutWithIdInterpreter): HttpService[IO] = {
-      val inInterpreter = ValidatedFromCirceInterpreter.value(create.schemaForCreate)
+      val inInterpreter = ValidatedFromCirceInterpreter.dataClass(create.schemaForCreate)
       HttpService[IO] {
         case req@Method.POST -> Root / rootDir => {
           val result: EitherT[IO, IO[Response[IO]], IO[Response[IO]]] = for {
@@ -63,7 +63,7 @@ case class HttpInterpreter(
               io.circe.parser.parse(body).left.map(x => extractionErrorToOut(x))
             }
             in <- EitherT.fromEither[IO] {
-              inInterpreter.apply(circe).left.map(x => eeToOut(x))
+              inInterpreter.apply(Some(circe)).left.map(x => eeToOut(x))
             }
             id <- EitherT[IO, Nothing, Int] {
               dao.insert(in).transact(transactor).map(r => Right(r))
@@ -84,7 +84,7 @@ case class HttpInterpreter(
     }
 
     def search(read: Read[A]): HttpService[IO] = {
-      val interpreter = EncodeToCirceInterpreter.value(read.successSchemaForRead)
+      val interpreter = EncodeToCirceInterpreter.dataClass(read.successSchemaForRead)
       HttpService[IO] {
         case Method.GET -> Root / rootDir => {
           val stream = dao.findAll.transact(transactor)
@@ -110,9 +110,9 @@ case class HttpInterpreter(
     }
 
     // Either[NonEmptyList[ExtractionError]
-    type InInterpreter = (Request[IO], Value[A]) => IO[Either[IO[Response[IO]], A]]
-    type OutInterpreter = (A, Value[A]) => IO[Response[IO]]
-    type OutWithIdInterpreter = (A, Int, Value[A]) => IO[Response[IO]]
+    type InInterpreter = (Request[IO], DataClass[A]) => IO[Either[IO[Response[IO]], A]]
+    type OutInterpreter = (A, DataClass[A]) => IO[Response[IO]]
+    type OutWithIdInterpreter = (A, Int, DataClass[A]) => IO[Response[IO]]
 
 
 
@@ -145,7 +145,7 @@ case class HttpInterpreter(
     }
 
     val jsonInInterpreter: InInterpreter =
-      (req: Request[IO], value: Value[A]) => {
+      (req: Request[IO], value: DataClass[A]) => {
         for {
           body <- EitherT[IO, IO[Response[IO]], String] {
             req.as[String].map(Right(_))
@@ -154,7 +154,7 @@ case class HttpInterpreter(
             io.circe.parser.parse(body).left.map(x => extractionErrorToOut(x))
           }
           a <- EitherT.fromEither[IO] {
-            ValidatedFromCirceInterpreter.value(value).apply(circe)
+            ValidatedFromCirceInterpreter.dataClass(value).apply(Some(circe))
               .left.map(eeToOut)
           }
         }  yield {
@@ -163,16 +163,16 @@ case class HttpInterpreter(
       }.value
 
     val jsonOutInterpreter: OutInterpreter =
-      (a: A, value: Value[A]) => {
-        Ok(EncodeToCirceInterpreter.value(value)(a))
+      (a: A, value: DataClass[A]) => {
+        Ok(EncodeToCirceInterpreter.dataClass(value)(a))
       }
 
     def jsonOutWithIdInterpreter: OutWithIdInterpreter =
-      (a: A, id: Int, valueDefinitionOp: Value[A]) => {
+      (a: A, id: Int, valueDefinitionOp: DataClass[A]) => {
         import com.bones.syntax._
         import com.bones.validation.ValidationDefinition.IntValidation._
 
-        val outWithIdValueDefinition = kvp("id", int(positive())) :: valueDefinitionOp
+        val outWithIdValueDefinition = kvp("id", int(positive())) :: valueDefinitionOp :: KvpNil
         Ok(EncodeToCirceInterpreter.kvpGroup(outWithIdValueDefinition)(id :: a :: HNil))
 
       }
