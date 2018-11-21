@@ -48,7 +48,7 @@ object Algebra {
                      inputSchema: DataClass[I],
                      successSchema: DataClass[O],
                      errorSchema: DataClass[E]
-  ): Update[I,E,O] = Update(inputSchema, errorSchema, successSchema)
+  ): Update[I,O,E] = Update(inputSchema, successSchema, errorSchema)
 
   def delete[O](
     outputSchema: DataClass[O]

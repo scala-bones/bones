@@ -31,10 +31,12 @@ object Orm {
       class Partial[A, K] {
         def apply[R <: HList, S <: HList](table: String, keyCol: String)(
           implicit ev: LabelledGeneric.Aux[A, R],
-          co: Composite[A],
+          ra: Read[A],
+          wa: Write[A],
           ks: Keys.Aux[R, S],
           tl: ToList[S, Symbol],
-          ci: Composite[K]
+          rk: Read[K],
+          wk: Write[K]
         ): Aux[A, K] =
           new Dao[A] {
             void(ev)
@@ -58,7 +60,7 @@ object Orm {
             def findAll: Stream[ConnectionIO, A] =
               Query0[A](s"""
                 SELECT ${cols.mkString(", ")}
-                FROM $table
+                FROM $table limit 100
               """).stream
 
             def update(k: Key, a: A): ConnectionIO[Int] =
@@ -80,5 +82,4 @@ object Orm {
     }
 
   }
-
 }

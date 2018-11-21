@@ -15,10 +15,7 @@ import shapeless.{HList, HNil, Nat}
 import scala.util.control.NonFatal
 
 object ValidatedFromCirceInterpreter {
-//  trait Validated[I,O]
-//  case class ValidatedString() extends Validated[String,JString]
-//  case class ValidatedObject[A]() extends Validated[A, ]
-//
+
   type ValidatedFromJsonOption[A] = Option[Json] => Either[NonEmptyList[ExtractionError], A]
   type ValidatedFromJson[A] = Json => Either[NonEmptyList[ExtractionError], A]
 
@@ -75,10 +72,10 @@ object ValidatedFromCirceInterpreter {
       case KvpNil => (_: Json) => Right(HNil)
 
       case op: KvpGroupHead[H, al, h, hl, t, tl] => {
+        val headInterpreter = kvpGroup(op.head)
+        val tailInterpreter = kvpGroup(op.tail)
 
         def children(json: Json) : Either[NonEmptyList[ExtractionError], H] = {
-          val headInterpreter = kvpGroup(op.head)
-          val tailInterpreter = kvpGroup(op.tail)
 
           Applicative[({type AL[AA] = Validated[NonEmptyList[ExtractionError], AA]})#AL]
             .map2(headInterpreter(json).toValidated, tailInterpreter(json).toValidated)(
@@ -125,7 +122,7 @@ object ValidatedFromCirceInterpreter {
       case dc: KvpDataClassHead[h,t,tl,o] => {
         val dcF = dataClass(dc.dataClass)
         val tailF = kvpGroup(dc.tail)
-        (json: Json) => {
+        json: Json => {
           Applicative[({type AL[AA] = Validated[NonEmptyList[ExtractionError], AA]})#AL]
             .map2(dcF(Some(json)).toValidated, tailF(json).toValidated)((l1, l2) => {
               l1.asInstanceOf[h] :: l2.asInstanceOf[t]
@@ -147,8 +144,6 @@ object ValidatedFromCirceInterpreter {
           case None => Right(None)
           case some@Some(json) => applied(some).map(Some(_))
         }
-
-
       case op: StringData =>
         required(op, _: Option[Json], _.asString).flatMap(vu.validate(_, op.validations))
       case op: IntData => required(op, _: Option[Json], _.asNumber.flatMap(_.toInt)).flatMap(vu.validate(_, op.validations))
@@ -183,11 +178,10 @@ object ValidatedFromCirceInterpreter {
             }
           }
         }
-
-
       case op: ListData[t,l] =>
+        val valueF = valueDefinition(op)
         def traverseArray(arr: Seq[Json]) = {
-          arr.map(jValue => valueDefinition(op).apply(Some(jValue)))
+          arr.map(jValue => valueF.apply(Some(jValue)))
             .foldLeft[Either[NonEmptyList[ExtractionError], List[_]]](Right(List.empty))((b, v) => (b, v) match {
             case (Right(a), Right(i)) => Right(a :+ i)
             case (Left(a), Left(b)) => Left(a ::: b)
@@ -237,9 +231,9 @@ object ValidatedFromCirceInterpreter {
             .flatMap(vu.validate(_, op.validations))
       }
       case op: SumTypeData[a,A] =>
-        val fromProducer = valueDefinition(op.from)
+        val valueF = valueDefinition(op.from)
         (json: Option[Json]) => {
-          fromProducer.apply(json).flatMap(res => op.fab.apply(res))
+          valueF.apply(json).flatMap(res => op.fab.apply(res))
         }
       case op: KvpGroupData[h,hl] => {
         val fg = kvpGroup(op.kvpGroup)

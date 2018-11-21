@@ -57,7 +57,7 @@ lazy val jsonOas3 = (project in file("json-interpreters/lift-json-oas3"))
 //      "org.easymock" % "easymock" % "3.5.1" % Test
     )
   ).dependsOn(core)
-lazy val doobieVersion = "0.5.3"
+lazy val doobieVersion = "0.6.0"
 lazy val restUnfiltered = (project in file("rest-interpreters/unfiltered"))
   .settings(
     commonSettings,
@@ -105,7 +105,7 @@ lazy val jsonArgonaut = (project in file("json-interpreters/argonaut"))
       "org.scalatest" %% "scalatest" % "3.0.5" % Test
     )
   ).dependsOn(core)
-lazy val http4sVersion = "0.18.19"
+lazy val http4sVersion = "0.20.0-M3"
 lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
   .settings(
     commonSettings,
@@ -117,6 +117,7 @@ lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
       "org.http4s" %% "http4s-circe" % http4sVersion,
       "org.tpolecat" %% "doobie-core" % doobieVersion,
       "org.tpolecat" %% "doobie-postgres" % doobieVersion,
+      "org.tpolecat" %% "doobie-hikari" % doobieVersion,
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
       "org.scalatest" %% "scalatest" % "3.0.5" % Test
     )
