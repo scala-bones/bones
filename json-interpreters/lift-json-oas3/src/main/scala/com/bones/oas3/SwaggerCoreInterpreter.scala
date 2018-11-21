@@ -18,10 +18,22 @@ object SwaggerCoreInterpreter {
     tail
   }
 
-  /** The entry point, converts a Value definition into a Schema-Core Schema */
-  def apply[A](gd: Value[A]): Schema[_] = {
+  def apply[A:Manifest](gd: DataClass[A]): Schema[_] = dataClass(gd).apply(new Schema())
+
+  /** The entry point, converts a DataClass definition into a Schema-Core Schema */
+  def dataClass[A:Manifest](gd: DataClass[A]): Schema[_] => Schema[_] = {
     gd match {
-      case x: XMapData[_,_,a] => fromKvpGroup(x).apply(new Schema())
+      case x: XMapData[_,_,a] =>
+        val fromF = fromKvpGroup(x.from)
+        schema => {
+          val s = fromF(schema)
+          s.name(manifest[A].runtimeClass.getSimpleName)
+        }
+      case o: OptionalDataClass[a] => {
+        implicit val ma = o.manifestOfA
+        val optF = dataClass(o.value)
+        schema => schema.setNullable(true); schema
+      }
     }
   }
 
@@ -35,7 +47,7 @@ object SwaggerCoreInterpreter {
         val head = fromKvpGroup(op.head)
         val tail = fromKvpGroup(op.tail)
         schema => copySchema(head(schema), tail(schema))
-      case op: KvpSingleValueHead[h, t, tl, o, ol] =>
+      case op: KvpSingleValueHead[h, t, tl, o] =>
         val child = fromValueDef(op.fieldDefinition.op)
         val tail = fromKvpGroup(op.tail)
 
@@ -48,17 +60,14 @@ object SwaggerCoreInterpreter {
           }
           tailSchema
         }
-      case t: XMapData[a,al,b] =>
-        val obj = fromKvpGroup(t.from)
-        schema => obj(schema)
-
-
+      case op: KvpDataClassHead[h,t,tl,o] => ???
+      case op: OptionalKvpGroup[h,hl] => ???
     }
   }
 
   /**
-    * Recursive method which builds up a Swagger Core Schema object from the Value definition.
-    * @param vd The Value definition to convert to a Schema
+    * Recursive method which builds up a Swagger Core Schema object from the DataClass definition.
+    * @param vd The DataClass definition to convert to a Schema
     **/
   protected def fromValueDef[A](vd: ValueDefinitionOp[A]): Schema[_] => Schema[_] = {
     vd match {

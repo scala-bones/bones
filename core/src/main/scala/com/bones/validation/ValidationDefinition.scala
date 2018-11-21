@@ -42,13 +42,13 @@ object ValidationDefinition {
 
   case class ValidValue[T](validValues: Vector[T]) extends ValidationOp[T] {
     override def isValid: T => Boolean = validValues.contains
-    override def defaultError(t: T): String = s"Value $t must be one of ${validValues.mkString("('","','","')")}"
+    override def defaultError(t: T): String = s"DataClass $t must be one of ${validValues.mkString("('","','","')")}"
     override def description: String = s"one of ${validValues.mkString("('","','","')")}"
   }
 
   case class InvalidValue[T](invalidValues: Vector[T]) extends ValidationOp[T] {
     override def isValid: T => Boolean = str => {! invalidValues.contains(str)}
-    override def defaultError(t: T): String = s"Value $t must not be one of ${invalidValues.mkString("('","','","')")}"
+    override def defaultError(t: T): String = s"DataClass $t must not be one of ${invalidValues.mkString("('","','","')")}"
     override def description: String = s"not one of ${invalidValues.mkString("('","','","')")}"
   }
 

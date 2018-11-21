@@ -51,11 +51,21 @@ object ValidatedFromCirceInterpreter {
       converted <- convert(a)
     } yield converted
 
-  def value[A](value: Value[A]): ValidatedFromJson[A] = {
+  def dataClass[A](value: DataClass[A]): ValidatedFromJsonOption[A] = {
     value match {
-      case x: XMapData[_,_,a] => {
-        val kvp = kvpGroup(x)
-        (j: Json) => kvp.apply(j).map(_.head)
+      case x: XMapData[a,al,b] => {
+        val kvp = kvpGroup(x.from)
+        (jOpt: Option[Json]) => jOpt match {
+          case None => Left(NonEmptyList.one(RequiredData(null)))
+          case Some(j) => kvp.apply(j).right.map(x.fab(_).asInstanceOf[A])
+        }
+      }
+      case op: OptionalDataClass[a] => {
+        val dcF = dataClass(op.value)
+        (jOpt: Option[Json]) => jOpt match {
+          case None => Right(None).map(_.asInstanceOf[A])
+          case Some(j) => dcF.apply(Some(j)).map(_.asInstanceOf[A])
+        }
       }
     }
   }
@@ -87,12 +97,12 @@ object ValidatedFromCirceInterpreter {
           } yield kids
       }
 
-      case op: KvpSingleValueHead[h, t, tl, a, al] => {
+      case op: KvpSingleValueHead[h, t, tl, a] => {
+        val headInterpreter = valueDefinition(op.fieldDefinition.op)
+        val tailInterpreter = kvpGroup(op.tail)
 
         def children(jsonObj: JsonObject, json: Json) : Either[NonEmptyList[ExtractionError], H] = {
           val fields = jsonObj.toList
-          val headInterpreter = valueDefinition(op.fieldDefinition.op)
-          val tailInterpreter = kvpGroup(op.tail)
           val headValue = headInterpreter(fields.find(_._1 == op.fieldDefinition.key).map(_._2))
 
           val tailValue = tailInterpreter(json.obj)
@@ -112,11 +122,19 @@ object ValidatedFromCirceInterpreter {
             obj <- children(jsonObj, json)
           } yield obj
       }
-      case op: XMapData[h,hl,b] =>
-        val fromProducer = kvpGroup(op.from).asInstanceOf[ValidatedFromJson[h]]
+      case dc: KvpDataClassHead[h,t,tl,o] => {
+        val dcF = dataClass(dc.dataClass)
+        val tailF = kvpGroup(dc.tail)
         (json: Json) => {
-          fromProducer(json).map(hl => op.fab(hl)).map(x => x :: HNil)
+          Applicative[({type AL[AA] = Validated[NonEmptyList[ExtractionError], AA]})#AL]
+            .map2(dcF(Some(json)).toValidated, tailF(json).toValidated)((l1, l2) => {
+              l1.asInstanceOf[h] :: l2.asInstanceOf[t]
+            }).toEither
+            .flatMap { l =>
+              vu.validate(l.asInstanceOf[o], dc.validations)
+            }.asInstanceOf[Either[NonEmptyList[ExtractionError], H]]
         }
+      }
 
     }
   }
