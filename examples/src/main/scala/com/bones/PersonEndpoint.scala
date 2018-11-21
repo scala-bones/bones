@@ -2,7 +2,7 @@ package com.bones
 
 import cats.effect.IO
 import com.bones.crud.Algebra._
-import com.bones.data.Value.{KvpGroup, KvpNil, Value, ValueDefinitionOp}
+import com.bones.data.Value.{KvpGroup, KvpNil, DataClass, ValueDefinitionOp}
 import com.bones.http4s.HttpInterpreter
 import com.bones.http4s.Orm.Dao
 import com.bones.oas3.CrudOasInterpreter
@@ -19,7 +19,7 @@ import shapeless.{HList, HNil, Nat}
 
 object Interpreter {
 
-  def doInterpretation[H,B](serviceDescription: List[CrudOp[H]], doobieInfo: Dao.Aux[H,Int], transactor: Transactor.Aux[IO,Unit], rootDir: String, errorDef: Value[B]): HttpService[IO] = {
+  def doInterpretation[H,B](serviceDescription: List[CrudOp[H]], doobieInfo: Dao.Aux[H,Int], transactor: Transactor.Aux[IO,Unit], rootDir: String, errorDef: DataClass[B]): HttpService[IO] = {
 
     import com.bones.http4s.Algebra._
     val service =
@@ -44,7 +44,7 @@ object Definitions {
   }
 
   val personSchema = (
-    kvp("entityName", string(sv.matchesRegex("^[a-zA-Z ]*$".r))) ::
+      kvp("name", string(sv.matchesRegex("^[a-zA-Z ]*$".r))) ::
       kvp("age", int(iv.min(0))) ::
       KvpNil
     ).convert[Person]
@@ -58,9 +58,9 @@ object Definitions {
   val errorDef = (kvp("error", string) :: KvpNil).convert[Error]
 
   val serviceDescription: List[CrudOp[Person]] =
-    create(personSchema, errorDef, personSchema) ::
+    create(personSchema, personSchema, errorDef) ::
       read(personSchema) ::
-      update(personSchema, errorDef, personSchema) ::
+      update(personSchema, personSchema, errorDef) ::
       delete(personSchema) ::
       Nil
 

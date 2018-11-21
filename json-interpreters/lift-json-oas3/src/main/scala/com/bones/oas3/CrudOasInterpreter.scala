@@ -14,7 +14,7 @@ import shapeless.{HList, Nat}
 case class CrudOasInterpreter(entityName: String) {
 
 
-  def toSwaggerCore[A](ops: List[CrudOp[A]], urlPath: String): OpenAPI = {
+  def toSwaggerCore[A:Manifest](ops: List[CrudOp[A]], urlPath: String): OpenAPI = {
 
     val openAPI = new OpenAPI()
     val withAddedPaths = ops.foreach {

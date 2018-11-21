@@ -5,12 +5,21 @@ import shapeless.{HList, Nat}
 
 object SqlInterpreter {
 
+  def dataClass[H:Manifest](dc: DataClass[H]): String = {
+    dc match {
+      case op: OptionalDataClass[h] =>
+        implicit val ma = op.manifestOfA
+        dataClass(op.value) + " nullable"
+      case x: XMapData[a,al,b] => s"create table ${manifest[H].runtimeClass.getSimpleName}\n ${kvpGroup(x.from)}"
+    }
+  }
+
   def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]) : String = {
     group match {
       case KvpNil => ""
       case op: KvpGroupHead[a, al, h, hl, t, tl] => s"${kvpGroup(op.head)}, ${kvpGroup(op.tail)}"
-      case op: KvpSingleValueHead[h, t, tl, a, al] => s"${op.fieldDefinition.key} ${valueDefinition(op.fieldDefinition.op)}"
-      case t: XMapData[a, al, b] => kvpGroup(t.from)
+      case op: KvpSingleValueHead[h, t, tl, a] => s"${op.fieldDefinition.key} ${valueDefinition(op.fieldDefinition.op)}"
+      case op: KvpDataClassHead[h,t,tl,out] => s"${kvpGroup(op.tail)}}"
     }
   }
 
