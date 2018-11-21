@@ -2,35 +2,42 @@ package com.bones
 
 import java.util.UUID
 
-import cats.effect.IO
+import cats.effect.{ExitCode, IO, IOApp}
 import com.bones.data.Value.{StringData, ValueDefinitionOp}
+import doobie.util.yolo._
 import doobie.implicits._
 import doobie.{Transactor, Update0}
 import com.bones.syntax._
 
 import scala.collection.mutable
 
-object CcEndpoint extends App {
+object CcEndpoint extends IOApp {
 
   import Schemas._
 
-  val errorDef: ValueDefinitionOp[String] = string
 
-  val db = new mutable.HashMap[UUID,CC]()
+  override def run(args: List[String]): IO[ExitCode] = {
 
-  val xa = Transactor.fromDriverManager[IO](
-    "org.postgresql.Driver", "jdbc:postgresql:world", "postgres", ""
-  )
+    val errorDef: ValueDefinitionOp[String] = string
 
-  val y = xa.yolo
-  import y._
+    val db = new mutable.HashMap[UUID, CC]()
 
-  def insert1(name: String, age: Option[Short]): Update0 =
-    sql"insert into person (entityName, age) values ($name, $age)".update
+    val xa = Transactor.fromDriverManager[IO](
+      "org.postgresql.Driver", "jdbc:postgresql:world", "postgres", ""
+    )
 
-  insert1("Alice", Some(12)).run.transact(xa).unsafeRunSync
+    val y = xa.yolo
+    import y._
 
-  insert1("Bob", None).quick.unsafeRunSync
+    def insert1(name: String, age: Option[Short]): Update0 =
+      sql"insert into person (entityName, age) values ($name, $age)".update
+
+    insert1("Alice", Some(12)).run.transact(xa).unsafeRunSync
+
+    insert1("Bob", None).quick.unsafeRunSync
+
+    IO.pure(ExitCode.Success)
+  }
 
 //  val plan = DirectToDoobie.toPlan(paths)
 //
