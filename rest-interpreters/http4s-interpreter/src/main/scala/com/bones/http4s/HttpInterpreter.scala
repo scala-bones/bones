@@ -9,6 +9,7 @@ import com.bones.data.Error.ExtractionError
 import com.bones.data.Value.{DataClass, KvpGroup, KvpNil}
 import com.bones.http4s.Algebra.InterchangeFormat
 import com.bones.http4s.Orm.Dao
+import doobie.hikari.imports.HikariTransactor
 import doobie.implicits._
 import doobie.util.transactor.Transactor
 import fs2.Stream
@@ -30,7 +31,7 @@ case class HttpInterpreter(
   def withSwagger() = copy(produceSwagger = true)
 
 
-  def saveWithDoobieInterpreter[A](servletDefinitions: List[CrudOp[A]], dao: Dao.Aux[A, Int], transactor: Transactor.Aux[IO,Unit]) : HttpService[IO] = {
+  def saveWithDoobieInterpreter[A](servletDefinitions: List[CrudOp[A]], dao: Dao.Aux[A, Int], transactor: HikariTransactor[IO]) : HttpService[IO] = {
 
     def deleteJson(del: Delete[A]): HttpService[IO] = {
       val outInterpreter = EncodeToCirceInterpreter.dataClass(del.successSchema)
@@ -91,7 +92,7 @@ case class HttpInterpreter(
           Ok(Stream("[") ++
             stream.map(a => interpreter(a).noSpaces).intersperse(",") ++
             Stream("]"),
-            `Content-Type`(MediaType.`application/json`)
+            `Content-Type`(MediaType.application.json)
           )
         }
       }
@@ -184,6 +185,11 @@ case class HttpInterpreter(
       case update: Update[A,A,e] => List(putJson(update, jsonInInterpreter, jsonOutWithIdInterpreter))
       case _ => None
     }
+//    val oasInterpreter = CrudOasInterpreter()
+//    val swaggerServices = servletDefinitions.flatMap {
+//      case read: Read[A] =>
+//    }
+
     import cats.effect._
     import org.http4s._
     services.foldLeft[HttpService[IO]](HttpService.empty)( (op1: HttpService[IO], op2: HttpService[IO]) => op1 <+> op2)
