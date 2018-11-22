@@ -60,10 +60,12 @@ trait Sugar {
 
   /** Indicates that the data tied to this key is a Date type with the especified format that must pass the specified validations. */
   def date(dateFormat: DateTimeFormatter, formatDescription: String, v: ValidationOp[ZonedDateTime] *) =
-    DateData(dateFormat, formatDescription, v.toList)
+    DateTimeData(dateFormat, formatDescription, v.toList)
 
   /** Indicates that the data tied to this key is a BigDecimal that must pass the specified validations. */
   def bigDecimal(v: ValidationOp[BigDecimal] *) = BigDecimalData(v.toList)
+
+  def binary(v: ValidationOp[Array[Byte]]*)= BinaryData(v.toList)
 
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
   def either[A,B](definitionA: ValueDefinitionOp[A], definitionB: ValueDefinitionOp[B]) =
@@ -71,17 +73,17 @@ trait Sugar {
 
   /** Expecting a string that is in the format of an iso date time */
   def isoDateTime(v: ValidationOp[ZonedDateTime] *) =
-    DateData(
+    DateTimeData(
         DateTimeFormatter.ISO_DATE_TIME,
         "ISO date-time format with the offset and zone if available, such as '2011-12-03T10:15:30', '2011-12-03T10:15:30+01:00' or '2011-12-03T10:15:30+01:00[Europe/Paris]'",
         v.toList)
 
-  val isoDateTime: DateData = isoDateTime()
+  val isoDateTime: DateTimeData = isoDateTime()
 
 
   /** Expecting a string that is in the format of an iso date */
   def isoDate(v: ValidationOp[ZonedDateTime]*) =
-    DateData(
+    DateTimeData(
       DateTimeFormatter.ISO_LOCAL_DATE,
       "ISO date format with the offset if available, such as '2011-12-03' or '2011-12-03+01:00'",
       v.toList

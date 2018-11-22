@@ -31,7 +31,7 @@ object SqlInterpreter {
       case rs: StringData => "text"
       case ri: LongData => "int8"
       case uu: UuidData => "varchar(36)"
-      case dd: DateData => "timestamp"
+      case dd: DateTimeData => "timestamp"
       case bd: BigDecimalData => "number"
       case ld: ListData[t, l] => "list"
       case ed: EitherData[a,b] => s"${valueDefinition(ed.definitionA)} can be null , ${valueDefinition(ed.definitionB)} can be null"

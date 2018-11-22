@@ -1,20 +1,18 @@
 package com.bones.oas3
 
-import argonaut.Argonaut._
-import argonaut.{Json, _}
 import com.bones.crud.Algebra._
 import io.swagger.v3.oas.models._
-import io.swagger.v3.oas.models.media.{Content, Encoding, IntegerSchema, MediaType}
+import io.swagger.v3.oas.models.media.IntegerSchema
 import io.swagger.v3.oas.models.parameters.Parameter
 import io.swagger.v3.oas.models.responses.{ApiResponse, ApiResponses}
-import shapeless.{HList, Nat}
 
 
 
-case class CrudOasInterpreter(entityName: String) {
+object CrudOasInterpreter {
 
 
   def toSwaggerCore[A:Manifest](ops: List[CrudOp[A]], urlPath: String): OpenAPI = {
+    val entityName = manifest[A].runtimeClass.getSimpleName
 
     val openAPI = new OpenAPI()
     val withAddedPaths = ops.foreach {

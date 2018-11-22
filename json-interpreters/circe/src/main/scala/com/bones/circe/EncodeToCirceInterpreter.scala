@@ -76,7 +76,7 @@ object EncodeToCirceInterpreter {
       case rs: StringData => (input: A) => Json.fromString(input.asInstanceOf[String])
       case ri: LongData => (input: A) => Json.fromInt(input.asInstanceOf[Int])
       case uu: UuidData => (input: A) => Json.fromString(input.toString)
-      case DateData(format, _, validations) => (input: A) => Json.fromString(format.format(input.asInstanceOf[ZonedDateTime]))
+      case DateTimeData(format, _, validations) => (input: A) => Json.fromString(format.format(input.asInstanceOf[ZonedDateTime]))
       case bd: BigDecimalData => (input: A) => Json.fromBigDecimal(input.asInstanceOf[BigDecimal])
       case ListData(definition, validations) => (input: A) => {
         val f = valueDefinition(definition)

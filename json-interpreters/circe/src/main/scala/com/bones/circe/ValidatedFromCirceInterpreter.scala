@@ -157,7 +157,7 @@ object ValidatedFromCirceInterpreter {
         requiredConvert(op, _: Option[Json], _.asString, convert).flatMap(vu.validate(_, op.validations))
       }
 
-      case op@DateData(dateFormat, _, _) =>
+      case op@DateTimeData(dateFormat, _, _) =>
         def convert(input: String): Either[NonEmptyList[ExtractionError], ZonedDateTime] = try {
           Right(ZonedDateTime.parse(input, dateFormat))
         } catch {
