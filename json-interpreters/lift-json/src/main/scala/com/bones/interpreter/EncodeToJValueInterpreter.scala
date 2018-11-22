@@ -4,7 +4,7 @@ import java.time.ZonedDateTime
 
 import com.bones.data.Value._
 import net.liftweb.json.JsonAST._
-import shapeless.{HList, HNil, Nat}
+import shapeless.{HList, Nat}
 
 
 object EncodeToJValueInterpreter {
@@ -21,8 +21,9 @@ case class EncodeToJValueInterpreter() {
         (input: A) => kvpGroup(x.from).apply(x.fba(input))
 
       case op: OptionalDataClass[a] =>
-        (a: A) => a match {
-          case Some(x) => dataClass(op.value).apply(x)
+        val dataF = dataClass(op.value)
+        a: A => a match {
+          case Some(x) => dataF.apply(x)
           case None => JNull
         }
     }
@@ -49,6 +50,15 @@ case class EncodeToJValueInterpreter() {
           case Some(x) => oF(x)
           case None => JNull
         }
+      case op: KvpDataClassHead[h,t,tl,out] => {
+        val dataF = dataClass(op.dataClass)
+        val tailF = kvpGroup(op.tail)
+        input: H => {
+          val headJsonObj = dataF.apply(input.head)
+          val tailJsonObj = tailF.apply(input.tail)
+          JObject(headJsonObj.asInstanceOf[JObject].obj ::: tailJsonObj.asInstanceOf[JObject].obj)
+        }
+      }
     }
 
   def valueDefinition[A](fgo: ValueDefinitionOp[A]): EncodeToJValue[A] =
@@ -61,11 +71,10 @@ case class EncodeToJValueInterpreter() {
       }
       case ob: BooleanData => (input: A) => JBool(input.asInstanceOf[Boolean])
       case rs: StringData => (input: A) => JString(input.asInstanceOf[String])
-      case ri: IntData => (input: A) => JInt(input.asInstanceOf[Int])
+      case ri: LongData => (input: A) => JInt(BigInt(input.asInstanceOf[Long]))
       case uu: UuidData => (input: A) => JString(input.toString)
       case DateData(format, _, _) => (input: A) => JString(format.format(input.asInstanceOf[ZonedDateTime]))
-      case bd: BigDecimalFromString => (input: A) => JString(input.toString)
-      case dd: DoubleData => (input: A) => JDouble(input.asInstanceOf[Double])
+      case bd: BigDecimalData => (input: A) => JString(input.toString)
       case ListData(definition, _) => (input: A) => {
         val f = valueDefinition(definition)
         JArray(input.asInstanceOf[List[A]].map(i => f(i)))

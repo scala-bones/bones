@@ -68,8 +68,8 @@ class ValidationTest extends FunSuite {
       KvpNil
 
     val i2 =
-      kvp("int1", int) ::
-      kvp("int2", int) ::
+      kvp("int1", long) ::
+      kvp("int2", long) ::
       KvpNil
 
     val merged = s2 ::: i2

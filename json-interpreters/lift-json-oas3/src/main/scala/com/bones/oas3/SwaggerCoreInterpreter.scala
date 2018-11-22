@@ -6,7 +6,7 @@ import java.util.UUID
 import com.bones.data.Value._
 import com.bones.validation.ValidationDefinition.{InvalidValue, OptionalValidation, ValidValue, ValidationOp}
 import io.swagger.v3.oas.models.media._
-import com.bones.validation.ValidationDefinition.{BigDecimalValidation => bdv, IntValidation => iv, StringValidation => sv}
+import com.bones.validation.ValidationDefinition.{BigDecimalValidation => bdv, LongValidation => iv, StringValidation => sv}
 import shapeless.{HList, Nat}
 
 
@@ -60,8 +60,21 @@ object SwaggerCoreInterpreter {
           }
           tailSchema
         }
-      case op: KvpDataClassHead[h,t,tl,o] => ???
-      case op: OptionalKvpGroup[h,hl] => ???
+      case op: KvpDataClassHead[h,t,tl,o] =>
+        implicit val mh = op.manifestOfH
+        val dataClassF = dataClass(op.dataClass)
+        val tailF = fromKvpGroup(op.tail)
+        schema => {
+          dataClassF.apply(schema)
+          tailF.apply(schema)
+        }
+      case op: OptionalKvpGroup[h,hl] =>
+        val kvpF = fromKvpGroup(op.kvpGroup)
+        schema => {
+          kvpF.apply(schema)
+          schema.setNullable(false)
+          schema
+        }
     }
   }
 
@@ -85,7 +98,7 @@ object SwaggerCoreInterpreter {
           .example("ABC")
           .nullable(false)
         schema => stringSchema.name(schema.getName)
-      case _: IntData =>
+      case _: LongData =>
         val intSchema = new IntegerSchema()
           .nullable(false).example(123).format("int64")
         schema => intSchema.name(schema.getName)
@@ -97,14 +110,10 @@ object SwaggerCoreInterpreter {
         val stringSchema = new StringSchema()
           .example(dd.dateFormat.format(LocalDateTime.now())).nullable(false)
         schema => stringSchema.name(schema.getName)
-      case _: BigDecimalFromString =>
+      case _: BigDecimalData =>
         val stringSchema = new StringSchema()
           .example("3.14").nullable(false)
         schema => stringSchema.name(schema.getName)
-      case _: DoubleData =>
-        val numberSchema = new NumberSchema()
-          .example(3.14).nullable(false)
-        schema => numberSchema.name(schema.getName)
       case ListData(definition, validations) =>
         val items = fromValueDef(definition)
         val arraySchema = new ArraySchema()

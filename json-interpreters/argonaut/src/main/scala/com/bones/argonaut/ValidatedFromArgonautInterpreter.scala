@@ -136,8 +136,8 @@ object ValidatedFromArgonautInterpreter {
 
       case op: StringData =>
         required(op, _: Option[Json], _.string).flatMap(vu.validate(_, op.validations))
-      case op: IntData =>
-        required(op, _: Option[Json], _.number.flatMap(_.toInt)).flatMap(vu.validate(_, op.validations))
+      case op: LongData =>
+        required(op, _: Option[Json], _.number.flatMap(_.toLong)).flatMap(vu.validate(_, op.validations))
       case op: BooleanData =>
         required(op, _: Option[Json], _.bool).flatMap(vu.validate(_, op.validations))
       case op: UuidData => {
@@ -187,7 +187,7 @@ object ValidatedFromArgonautInterpreter {
             result <- traverseArray(arr)
           } yield result
         }
-      case op: BigDecimalFromString =>
+      case op: BigDecimalData =>
         def convertFromString(str: String): Either[NonEmptyList[ExtractionError], BigDecimal] = {
           try {
             Right(BigDecimal(str))
@@ -198,9 +198,6 @@ object ValidatedFromArgonautInterpreter {
         jsonOpt: Option[Json] =>
           requiredConvert(op, jsonOpt, _.string, convertFromString)
             .flatMap(vu.validate(_, op.validations))
-      case op: DoubleData =>
-        required(op, _: Option[Json], _.number.flatMap(_.toDouble))
-          .flatMap(vu.validate(_, op.validations))
       case op:EnumerationStringData[a] => (jsonOpt: Option[Json]) => {
         jsonOpt.toRight[NonEmptyList[ExtractionError]](NonEmptyList.one(RequiredData(op)))
           .flatMap(json => json.string match {

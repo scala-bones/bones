@@ -5,7 +5,7 @@ import java.util.UUID
 
 import com.bones.data.Error.CanNotConvert
 import com.bones.data.Value.KvpNil
-import com.bones.validation.ValidationDefinition.{ValidationOp, IntValidation => iv, StringValidation => sv}
+import com.bones.validation.ValidationDefinition.{ValidationOp, LongValidation => iv, StringValidation => sv}
 import shapeless.HNil
 
 object Schemas {
@@ -45,7 +45,7 @@ object Schemas {
 
 
   case class CC(firstFive: String, lastFour: String, uuid: UUID, token: UUID, ccType: CreditCardType,
-                expMonth: Int, expYear: Int, cardholder: String, jce: JavaCurrencyEnum, currency: Currency.Value, deletedAt: Option[ZonedDateTime],
+                expMonth: Long, expYear: Long, cardholder: String, jce: JavaCurrencyEnum, currency: Currency.Value, deletedAt: Option[ZonedDateTime],
                 lastModifiedRequest: UUID, billingLocation: Option[BillingLocation])
 
   val isoVector = Vector("US", "CA", "MX")
@@ -56,8 +56,8 @@ object Schemas {
 
   import shapeless.::
 
-  object HasNotExpired extends ValidationOp[Int :: Int :: HNil] {
-    override def isValid: Int :: Int :: HNil => Boolean = input => {
+  object HasNotExpired extends ValidationOp[Long :: Long :: HNil] {
+    override def isValid: Long :: Long :: HNil => Boolean = input => {
       val now = LocalDateTime.now()
       val expMonth = input.head
       val expYear = input.tail.head
@@ -67,15 +67,15 @@ object Schemas {
 
     }
 
-    override def defaultError(t: ::[Int, ::[Int, HNil]]): String = "Expired Card"
+    override def defaultError(t: ::[Long, ::[Long, HNil]]): String = "Expired Card"
 
     override def description: String = "Credit Card Expiration Date must be in the future"
   }
   import com.bones.syntax._
 
   val ccExp = (
-    kvp("expMonth", int(iv.between(1,12))) ::
-    kvp("expYear", int(iv.between(1950, 9999))) ::
+    kvp("expMonth", long(iv.between(1,12))) ::
+    kvp("expYear", long(iv.between(1950, 9999))) ::
     KvpNil
   ).validate(HasNotExpired)
 

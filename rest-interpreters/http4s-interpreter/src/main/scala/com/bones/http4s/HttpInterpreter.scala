@@ -31,7 +31,7 @@ case class HttpInterpreter(
   def withSwagger() = copy(produceSwagger = true)
 
 
-  def saveWithDoobieInterpreter[A](servletDefinitions: List[CrudOp[A]], dao: Dao.Aux[A, Int], transactor: HikariTransactor[IO]) : HttpService[IO] = {
+  def saveWithDoobieInterpreter[A:Manifest](servletDefinitions: List[CrudOp[A]], dao: Dao.Aux[A, Long], transactor: HikariTransactor[IO]) : HttpService[IO] = {
 
     def deleteJson(del: Delete[A]): HttpService[IO] = {
       val outInterpreter = EncodeToCirceInterpreter.dataClass(del.successSchema)
@@ -66,7 +66,7 @@ case class HttpInterpreter(
             in <- EitherT.fromEither[IO] {
               inInterpreter.apply(Some(circe)).left.map(x => eeToOut(x))
             }
-            id <- EitherT[IO, Nothing, Int] {
+            id <- EitherT[IO, Nothing, Long] {
               dao.insert(in).transact(transactor).map(r => Right(r))
             }
             a <- EitherT[IO, IO[Response[IO]], A] {
@@ -113,7 +113,7 @@ case class HttpInterpreter(
     // Either[NonEmptyList[ExtractionError]
     type InInterpreter = (Request[IO], DataClass[A]) => IO[Either[IO[Response[IO]], A]]
     type OutInterpreter = (A, DataClass[A]) => IO[Response[IO]]
-    type OutWithIdInterpreter = (A, Int, DataClass[A]) => IO[Response[IO]]
+    type OutWithIdInterpreter = (A, Long, DataClass[A]) => IO[Response[IO]]
 
 
 
@@ -128,7 +128,7 @@ case class HttpInterpreter(
             in <- EitherT[IO, IO[Response[IO]], A] {
               inInterpreter(req, update.inputSchema)
             }
-            _ <- EitherT[IO, Nothing, Int] {
+            _ <- EitherT[IO, Nothing, Long] {
               dao.update(id, in).transact(transactor).map(r => Right(r))
             }
             a <- EitherT[IO, IO[Response[IO]], A] {
@@ -169,11 +169,11 @@ case class HttpInterpreter(
       }
 
     def jsonOutWithIdInterpreter: OutWithIdInterpreter =
-      (a: A, id: Int, valueDefinitionOp: DataClass[A]) => {
+      (a: A, id: Long, valueDefinitionOp: DataClass[A]) => {
         import com.bones.syntax._
-        import com.bones.validation.ValidationDefinition.IntValidation._
+        import com.bones.validation.ValidationDefinition.LongValidation._
 
-        val outWithIdValueDefinition = kvp("id", int(positive())) :: valueDefinitionOp :: KvpNil
+        val outWithIdValueDefinition = kvp("id", long(positive())) :: valueDefinitionOp :: KvpNil
         Ok(EncodeToCirceInterpreter.kvpGroup(outWithIdValueDefinition)(id :: a :: HNil))
 
       }
@@ -206,7 +206,7 @@ case class HttpInterpreter(
     val errors = ee.map(_.toString)
     BadRequest(Json.obj(("success", "false".asJson), ("errors", errors.asJson)))
   }
-  def missingIdToJson(id: Int) : IO[Response[IO]] = {
+  def missingIdToJson(id: Long) : IO[Response[IO]] = {
     val errors = Vector(s"Could find entity with id  ${id}")
     BadRequest( Json.obj(("success", "false".asJson), ("errors", errors.asJson)) )
   }
