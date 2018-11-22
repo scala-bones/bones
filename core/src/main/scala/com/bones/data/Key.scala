@@ -12,20 +12,13 @@ import shapeless.{HList, Nat}
   * A field definition is essentially a key value pair and a list of validations to be applied to the value.
   * @tparam A The type this field definition is describing.
   */
-case class KeyValueDefinition[A](key: String, op: ValueDefinitionOp[A]) {
-
-//  def xmap[B:Manifest](fab: A => B, fba: B => A) = KeyValueDefinition(key, XMapData(op, fab, fba), List.empty)
-//
-//  def convert[B:Manifest](fab: A => Either[CanNotConvert[A,B], B], fba: B => Either[CanNotConvert[B,A],A], bValidations: List[ValidationOp[B]])
-//    : KeyValueDefinition[B] = KeyValueDefinition(key, Convert[A,B](op, fab, fba), bValidations)
-
-}
+case class KeyValueDefinition[A](key: String, op: ValueDefinitionOp[A])
 
 
 trait KeyValueDefinitionSugar {
   def kvp[A](key: String, valueDefinitionOp: ValueDefinitionOp[A]) = KeyValueDefinition(key, valueDefinitionOp)
   def kvpGroup[H<:HList, HL<:Nat](key: String, kvpGroup: KvpGroup[H,HL]) = KeyValueDefinition(key, KvpGroupData(kvpGroup, List.empty))
-  def kvpValue[A](key: String, value: DataClass[A]) = KeyValueDefinition[A](key, KvpValueData(value, List.empty))
+  def kvpValue[A](key: String, value: DataClass[A]): KeyValueDefinition[A] = KeyValueDefinition[A](key, KvpValueData(value, List.empty))
 }
 
 
@@ -38,17 +31,10 @@ trait Sugar {
 
   val string: StringData = string()
 
-  def byteReference(v: ValidationOp[ByteReference] *) = ByteReferenceData(v.toList)
-
   /** Indicates that the data tied to this key is an Int type that must pass the specified validations */
-  def int(f: ValidationOp[Int] *) = IntData(f.toList)
+  def long(f: ValidationOp[Long] *) = LongData(f.toList)
 
-  val int: IntData = int()
-
-  /** Indicates that the data tied to this key is an Double type that must pass the specified validations.
-    * In the JSON world, this would be a number which is converted to a Double.
-    **/
-  def double(f: ValidationOp[Double]*) = DoubleData(f.toList)
+  val long: LongData = long()
 
   /**
     * Indicates that the data tied to this key is a list (JSON Array) type.  All values are type
@@ -60,7 +46,7 @@ trait Sugar {
     * @tparam L The List[T] type.
     * @return
     */
-  def list[T, L <: List[T]:Manifest](dataDefinitionOp: ValueDefinitionOp[T], v: ValidationOp[L]*) =
+  def list[T, L <: List[T]](dataDefinitionOp: ValueDefinitionOp[T], v: ValidationOp[L]*) =
     ListData(dataDefinitionOp, v.toList)
 
 
@@ -77,11 +63,10 @@ trait Sugar {
     DateData(dateFormat, formatDescription, v.toList)
 
   /** Indicates that the data tied to this key is a BigDecimal that must pass the specified validations. */
-  def bigDecimal(v: ValidationOp[BigDecimal] *) =
-    BigDecimalFromString(v.toList)
+  def bigDecimal(v: ValidationOp[BigDecimal] *) = BigDecimalData(v.toList)
 
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
-  def either[A:Manifest,B:Manifest](definitionA: ValueDefinitionOp[A], definitionB: ValueDefinitionOp[B]) =
+  def either[A,B](definitionA: ValueDefinitionOp[A], definitionB: ValueDefinitionOp[B]) =
     EitherData(definitionA, definitionB)
 
   /** Expecting a string that is in the format of an iso date time */
@@ -102,24 +87,16 @@ trait Sugar {
       v.toList
     )
 
-  def enumeration[A:Manifest](e: Enumeration): EnumerationStringData[A] = EnumerationStringData[A](e, List.empty)
+  def enumeration[A](e: Enumeration): EnumerationStringData[A] = EnumerationStringData[A](e, List.empty)
 
-//  def enumeration(e: Enumeration)(v: ValidationOp[e.DataClass] with ToOptionalValidation[e.DataClass]*): KeyValueDefinition[e.DataClass] =
-//    KeyValueDefinition(thisKey, EnumerationStringData(e), v.toList)
-
-
-  def enum[A <: Enum[A]: Manifest](enums: List[A], v: ValidationOp[A]*) =
+  def enum[A <: Enum[A]](enums: List[A], v: ValidationOp[A]*): EnumStringData[A] =
     EnumStringData[A](enums, v.toList)
 
-  def enum[A <: Enum[A]: Manifest](enums: List[A]): EnumStringData[A] =
+  def enum[A <: Enum[A]](enums: List[A]): EnumStringData[A] =
     EnumStringData[A](enums, List.empty)
 
 
   def kvpGroup[H<:HList,HL<:Nat](kvpGroup: KvpGroup[H,HL], v: ValidationOp[H]*) = KvpGroupData(kvpGroup, v.toList)
-
-//  def obj[A <: HList,AL <: Nat](child: KvpGroup[A, AL]) =
-//    KeyValueDefinition[A](thisKey, child, List.empty)
-
 
 }
 

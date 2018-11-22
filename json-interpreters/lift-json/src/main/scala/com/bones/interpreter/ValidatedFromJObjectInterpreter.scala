@@ -36,8 +36,8 @@ case class ValidatedFromJObjectInterpreter() {
     case a: JArray => Some(a)
     case _ => None
   }
-  private def toInt(jValue: JValue): Option[Int] = jValue match {
-    case a: JInt => Some(a.num.toInt)
+  private def toLong(jValue: JValue): Option[Long] = jValue match {
+    case a: JInt => Some(a.num.toLong)
     case _ => None
   }
   private def fromJsonToString(jValue: JValue): Option[String] = jValue match {
@@ -182,8 +182,8 @@ case class ValidatedFromJObjectInterpreter() {
       case op: StringData =>
         required(op, _: Option[JValue], fromJsonToString).flatMap(vu.validate(_, op.validations))
 
-      case op: IntData =>
-        required(op, _: Option[JValue], toInt).flatMap(vu.validate(_, op.validations))
+      case op: LongData =>
+        required(op, _: Option[JValue], toLong).flatMap(vu.validate(_, op.validations))
       case op: BooleanData =>
         required(op, _: Option[JValue], toBoolean).flatMap(vu.validate(_, op.validations))
       case op: UuidData =>
@@ -241,7 +241,7 @@ case class ValidatedFromJObjectInterpreter() {
           } yield result
         }
 
-      case op: BigDecimalFromString =>
+      case op: BigDecimalData =>
         def convertFromString(str: String): Either[NonEmptyList[ExtractionError], BigDecimal] = {
           try {
             Right(BigDecimal(str))
@@ -253,9 +253,6 @@ case class ValidatedFromJObjectInterpreter() {
           requiredConvert(op, jsonOpt, fromJsonToString, convertFromString)
             .flatMap(vu.validate(_, op.validations))
 
-      case op@ DoubleData(validations) =>
-        required(op, _: Option[JValue], toDouble)
-          .flatMap(d => vu.validate(d, validations))
       case op:EnumerationStringData[a] => (jsonOpt: Option[JValue]) => {
         jsonOpt.toRight[NonEmptyList[ExtractionError]](NonEmptyList.one(RequiredData(op)))
           .flatMap(json => fromJsonToString(json) match {

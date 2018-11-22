@@ -146,7 +146,7 @@ object ValidatedFromCirceInterpreter {
         }
       case op: StringData =>
         required(op, _: Option[Json], _.asString).flatMap(vu.validate(_, op.validations))
-      case op: IntData => required(op, _: Option[Json], _.asNumber.flatMap(_.toInt)).flatMap(vu.validate(_, op.validations))
+      case op: LongData => required(op, _: Option[Json], _.asNumber.flatMap(_.toLong)).flatMap(vu.validate(_, op.validations))
       case op: BooleanData => required(op, _: Option[Json], _.asBoolean).flatMap(vu.validate(_, op.validations))
       case op: UuidData => {
         def convert(uuidString: String): Either[NonEmptyList[ExtractionError], UUID] = try {
@@ -196,7 +196,7 @@ object ValidatedFromCirceInterpreter {
             result <- traverseArray(arr)
           } yield result
         }
-      case op: BigDecimalFromString =>
+      case op: BigDecimalData =>
         def convertFromString(str: String): Either[NonEmptyList[ExtractionError], BigDecimal] = {
           try {
             Right(BigDecimal(str))
@@ -207,8 +207,6 @@ object ValidatedFromCirceInterpreter {
         jsonOpt: Option[Json] =>
           requiredConvert(op, jsonOpt, _.asString, convertFromString)
             .flatMap(vu.validate(_, op.validations))
-      case op: DoubleData =>
-        required(op, _: Option[Json], _.asNumber.map(_.toDouble))
       case op:EnumerationStringData[a] => (jsonOpt: Option[Json]) => {
         jsonOpt.toRight[NonEmptyList[ExtractionError]](NonEmptyList.one(RequiredData(op)))
           .flatMap(json => json.asString match {

@@ -73,12 +73,10 @@ class EncodeToArgonautInterpreter {
 
       case ob: BooleanData => (input: A) => Json.jBool(input.asInstanceOf[Boolean])
       case rs: StringData => (input: A) => Json.jString(input.asInstanceOf[String])
-      case ri: IntData => (input: A) => Json.jNumber(input.asInstanceOf[Int].toLong)
+      case ri: LongData => (input: A) => Json.jNumber(input.asInstanceOf[Int].toLong)
       case uu: UuidData => (input: A) => Json.jString(input.toString)
       case DateData(format, _, _) => (input: A) => Json.jString(format.format(input.asInstanceOf[ZonedDateTime]))
-      case bd: BigDecimalFromString => (input: A) => Json.jString(input.toString)
-      case dd: DoubleData => (input: A) =>
-        Json.jNumber(input.asInstanceOf[Double])
+      case bd: BigDecimalData => (input: A) => Json.jNumber(input.asInstanceOf[BigDecimal])
       case ListData(definition, _) => (input: A) => {
         val f = valueDefinition(definition)
         Json.array(input.asInstanceOf[List[A]].map(i => f(i)) :_*)
@@ -91,7 +89,6 @@ class EncodeToArgonautInterpreter {
       }
       case EnumerationStringData(enumeration, _) => (input: A) => Json.jString(input.toString)
       case EnumStringData(enum, _) => (input: A) => Json.jString(input.toString)
-      case ByteReferenceData(_) => ???
 
     }
 }

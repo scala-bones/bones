@@ -1,8 +1,6 @@
 package com.bones.validation
 
-import cats.arrow.FunctionK
-import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, Validated}
+import cats.data.NonEmptyList
 import cats.implicits._
 import com.bones.data.Error.ValidationError
 import com.bones.validation.ValidationDefinition.ValidationOp
@@ -11,21 +9,7 @@ import scala.annotation.tailrec
 
 object ValidationUtil {
 
-  type ValidationResult[A] = A => Validated[ValidationError[A],A]
-  object validationInterpreter extends FunctionK[ValidationOp, ValidationResult] {
-    override def apply[A](fa: ValidationOp[A]): ValidationResult[A] = a => runValidation(a, fa)
-  }
-
-
-  def runValidation[T](input: T, validation: ValidationOp[T]): Validated[ValidationError[T], T] = {
-    if (validation.isValid(input)) {
-      Valid(input)
-    } else {
-      Invalid(ValidationError(validation,input))
-    }
-  }
-
-  /** Validate the input with the specified validations.  If any failed then Invalid, else Valid */
+  /** Validate the input with all specified validations.  If any failed then Left, else Right(input) */
   def validate[L](input: L, validations: List[ValidationOp[L]]): Either[NonEmptyList[ValidationError[L]], L] = {
     validations.flatMap(validation => {
       if (validation.isValid(input)) None
@@ -37,7 +21,7 @@ object ValidationUtil {
   }
 
 
-  def digitToInt(x:Char): Int = x.toInt - '0'.toInt
+  private def digitToInt(x:Char): Int = x.toInt - '0'.toInt
 
   /** True if the string passes the Luhn algorithm using the specified mod variable. */
   def luhnCheck(mod: Int, str: String): Boolean = {
