@@ -195,7 +195,7 @@ case class ValidatedFromJObjectInterpreter() {
         requiredConvert(op, _: Option[JValue], fromJsonToString, convert).flatMap(vu.validate(_, op.validations))
 
 
-      case op@DateData(dateFormat, _, validations) =>
+      case op@DateTimeData(dateFormat, _, validations) =>
         def convert(input: String): Either[NonEmptyList[ExtractionError], ZonedDateTime] = try {
           Right(ZonedDateTime.parse(input, dateFormat))
         } catch {

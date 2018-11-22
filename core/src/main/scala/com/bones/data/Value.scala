@@ -81,10 +81,17 @@ object Value {
     extends ValueDefinitionOp[String] with ToOptionalData[String]
   final case class BigDecimalData(validations: List[ValidationOp[BigDecimal]])
     extends ValueDefinitionOp[BigDecimal] with ToOptionalData[BigDecimal]
+  // use to describe files.
+  // usually multi-part forms: https://swagger.io/docs/specification/describing-request-body/multipart-requests/
+  final case class BinaryData(validations: List[ValidationOp[Array[Byte]]])
+    extends ValueDefinitionOp[Array[Byte]] with ToOptionalData[Array[Byte]]
+  // base64-encoded characters, for example, U3dhZ2dlciByb2Nrcw==
+  final case class ByteArrayData(validations: List[ValueDefinitionOp[Array[Byte]]])
+    extends ValueDefinitionOp[Array[Byte]] with ToOptionalData[Array[Byte]]
 
   import java.time.format.DateTimeFormatter
 
-  final case class DateData(dateFormat: DateTimeFormatter, formatDescription: String, validations: List[ValidationOp[ZonedDateTime]])
+  final case class DateTimeData(dateFormat: DateTimeFormatter, formatDescription: String, validations: List[ValidationOp[ZonedDateTime]])
     extends ValueDefinitionOp[ZonedDateTime] with ToOptionalData[ZonedDateTime]
 
   final case class UuidData(validations: List[ValidationOp[UUID]]) extends ValueDefinitionOp[UUID] with ToOptionalData[UUID]
