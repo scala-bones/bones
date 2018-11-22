@@ -33,7 +33,7 @@ class InterpreterTemplate {
       case rs: StringData => ???
       case ri: LongData => ???
       case uu: UuidData => ???
-      case dd: DateData => ???
+      case dd: DateTimeData => ???
       case bd: BigDecimalData => ???
       case ld: ListData[t, l] => ???
       case ed: EitherData[a,b] => ???

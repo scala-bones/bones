@@ -106,7 +106,7 @@ object SwaggerCoreInterpreter {
         val stringSchema = new UUIDSchema()
           .example(UUID.randomUUID().toString).nullable(false)
         schema => stringSchema.name(schema.getName)
-      case dd: DateData =>
+      case dd: DateTimeData =>
         val stringSchema = new StringSchema()
           .example(dd.dateFormat.format(LocalDateTime.now())).nullable(false)
         schema => stringSchema.name(schema.getName)

@@ -73,7 +73,7 @@ case class EncodeToJValueInterpreter() {
       case rs: StringData => (input: A) => JString(input.asInstanceOf[String])
       case ri: LongData => (input: A) => JInt(BigInt(input.asInstanceOf[Long]))
       case uu: UuidData => (input: A) => JString(input.toString)
-      case DateData(format, _, _) => (input: A) => JString(format.format(input.asInstanceOf[ZonedDateTime]))
+      case DateTimeData(format, _, _) => (input: A) => JString(format.format(input.asInstanceOf[ZonedDateTime]))
       case bd: BigDecimalData => (input: A) => JString(input.toString)
       case ListData(definition, _) => (input: A) => {
         val f = valueDefinition(definition)

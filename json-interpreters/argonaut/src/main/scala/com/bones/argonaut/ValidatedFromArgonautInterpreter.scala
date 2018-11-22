@@ -148,7 +148,7 @@ object ValidatedFromArgonautInterpreter {
         }
         requiredConvert(op, _: Option[Json], _.string, convert).flatMap(vu.validate(_, op.validations))
       }
-      case op@DateData(dateFormat, _, validations) =>
+      case op@DateTimeData(dateFormat, _, validations) =>
         def convert(input: String): Either[NonEmptyList[ExtractionError], ZonedDateTime] = try {
           Right(ZonedDateTime.parse(input, dateFormat))
         } catch {

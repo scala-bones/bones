@@ -70,9 +70,9 @@ object PersonDoc extends App {
     .description("Test Person Endpoint")
     .title("Person")
     .version("1.0")
-  val api = CrudOasInterpreter("Person").toSwaggerCore(Definitions.serviceDescription, "person")
+  val api = CrudOasInterpreter.toSwaggerCore(Definitions.serviceDescription, "person")
   api.info(info)
-//  println(io.swagger.v3.core.util.Json.mapper().writeValueAsString(api))
+  println(io.swagger.v3.core.util.Json.mapper().writeValueAsString(api))
 }
 
 object PersonEndpoint extends IOApp {

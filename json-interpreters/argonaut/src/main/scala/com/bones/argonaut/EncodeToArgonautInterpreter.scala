@@ -75,7 +75,7 @@ class EncodeToArgonautInterpreter {
       case rs: StringData => (input: A) => Json.jString(input.asInstanceOf[String])
       case ri: LongData => (input: A) => Json.jNumber(input.asInstanceOf[Int].toLong)
       case uu: UuidData => (input: A) => Json.jString(input.toString)
-      case DateData(format, _, _) => (input: A) => Json.jString(format.format(input.asInstanceOf[ZonedDateTime]))
+      case DateTimeData(format, _, _) => (input: A) => Json.jString(format.format(input.asInstanceOf[ZonedDateTime]))
       case bd: BigDecimalData => (input: A) => Json.jNumber(input.asInstanceOf[BigDecimal])
       case ListData(definition, _) => (input: A) => {
         val f = valueDefinition(definition)
