@@ -1,70 +1,38 @@
 package com.bones.data
 
-import java.io.InputStream
 import java.time.ZonedDateTime
 import java.util.UUID
 
 import cats.free.FreeApplicative
 import com.bones.data.Error.CanNotConvert
-import com.bones.data.Value.KvpGroup
 import com.bones.validation.ValidationDefinition.ValidationOp
 import shapeless.ops.hlist
-import shapeless.ops.hlist.Length.Aux
-import shapeless.ops.hlist.Split.Aux
 import shapeless.ops.hlist.{Length, Prepend, Split}
 import shapeless.{::, Generic, HList, HNil, Nat, Succ}
 
 
 object Value {
 
+  sealed trait DataClass[A]
 
-
-
-  sealed trait DataClass[A] {
-  }
-
-//  trait ToOptionalDataClass[B] { self: DataClass[B] =>
-//    implicit val ma = manifestOfA
-//  }
-  /** Specifies that we have simple functions from A to B and B to A for reverse mapping.
+  /** Specifies that we have simple functions from A to B and B to A.
     */
   final case class XMapData[A<:HList,AL<:Nat,B:Manifest](from: KvpGroup[A,AL], fab: A => B, fba: B => A, validations: List[ValidationOp[B]])
     extends DataClass[B]{ thisBase =>
-    val manifestOfA = manifest[B]
-
-    //    override def :::[OUT2 <: HList, OUT2L <: Nat, P <: HList, PL <: Nat](kvp: KvpGroup[P, PL])(
-    //      implicit prepend: Prepend.Aux[P, B :: HNil, OUT2],
-    //      lengthP: Length.Aux[P, PL],
-    //      length: Length.Aux[OUT2, OUT2L],
-    //      split: Split.Aux[OUT2, PL, P, B :: HNil]
-    //    ): KvpGroup[OUT2, OUT2L] =
-    //      KvpGroupHead[OUT2, OUT2L, P, PL, B :: HNil, Nat._1](kvp, this, prepend, split, List.empty)
-    //
-    //    override def ::[H](v: KeyValueDefinition[H]): KvpSingleValueHead[H, B :: HNil, Nat._1, H :: B :: HNil] =
-    //      KvpSingleValueHead(v, List.empty, this)
+    val manifestOfA: Manifest[B] = manifest[B]
     def optional: OptionalDataClass[B] = OptionalDataClass[B](thisBase)
-
   }
+
   case class OptionalDataClass[A:Manifest](value: DataClass[A]) extends DataClass[Option[A]] {
-    val manifestOfA = manifest[A]
-  }
-
-
-  /**
-    * This is an abstraction which describes a reference to a bunch of bytes.  For instance, a local
-    * file, stream, buffer or a s3 bucket.
-    */
-  trait ByteReference {
-    def contentType: String
-    def inputStream: InputStream
+    val manifestOfA: Manifest[A] = manifest[A]
   }
 
   object ValueDefinitionOp {
     implicit class StringToEnum(op: ValueDefinitionOp[String]) {
-      def enumeration[A](enumeration: Enumeration) =
+      def enumeration[A](enumeration: Enumeration): EnumerationStringData[A] =
         EnumerationStringData[A](enumeration, List.empty)
 
-      def enum[A <: Enum[A]: Manifest](enums: List[A]) =
+      def enum[A <: Enum[A]: Manifest](enums: List[A]): EnumStringData[A] =
         EnumStringData[A](enums, List.empty)
     }
   }
@@ -72,8 +40,6 @@ object Value {
   /** ValueDefinitionOp is the base trait to describe a piece of data which may be
     * a single value or an HList. */
   abstract class ValueDefinitionOp[A] {
-    //lift any ValueDefinition into a FreeApplicative
-//    def lift: ValueDefinition[A] = ???
 
     def asSumType[B](
                       description: String,
@@ -97,28 +63,24 @@ object Value {
 
   /** Syntactic sugar to wrap the data definition in an Optional type.
     * Also a sort of marker interface, if this is mixed in, the field is optional.
-    * TODO: This should not extend ValueDefinitionOp[A]
     **/
   trait ToOptionalData[B] { self: ValueDefinitionOp[B] =>
     val optional: OptionalValueDefinition[B] = OptionalValueDefinition[B](self)
   }
 
   final case class BooleanData(validations: List[ValidationOp[Boolean]]) extends ValueDefinitionOp[Boolean] with ToOptionalData[Boolean]
-  final case class DoubleData(validations: List[ValidationOp[Double]]) extends ValueDefinitionOp[Double] with ToOptionalData[Double]
   final case class EitherData[A, B](
       definitionA: ValueDefinitionOp[A],
       definitionB: ValueDefinitionOp[B])
     extends ValueDefinitionOp[Either[A, B]] with ToOptionalData[Either[A, B]] {
   }
-  final case class IntData(validations: List[ValidationOp[Int]]) extends ValueDefinitionOp[Int] with ToOptionalData[Int]
+  final case class LongData(validations: List[ValidationOp[Long]]) extends ValueDefinitionOp[Long] with ToOptionalData[Long]
   final case class ListData[T, L <: List[T]](tDefinition: ValueDefinitionOp[T], validations: List[ValidationOp[L]])
     extends ValueDefinitionOp[L] with ToOptionalData[L]
   final case class StringData(validations: List[ValidationOp[String]])
     extends ValueDefinitionOp[String] with ToOptionalData[String]
-  final case class BigDecimalFromString(validations: List[ValidationOp[BigDecimal]])
+  final case class BigDecimalData(validations: List[ValidationOp[BigDecimal]])
     extends ValueDefinitionOp[BigDecimal] with ToOptionalData[BigDecimal]
-  final case class ByteReferenceData(validations: List[ValidationOp[ByteReference]])
-    extends ValueDefinitionOp[ByteReference] with ToOptionalData[ByteReference]
 
   import java.time.format.DateTimeFormatter
 
@@ -144,8 +106,6 @@ object Value {
 
   final case class KvpValueData[A](value: DataClass[A], validations: List[ValidationOp[A]])
     extends ValueDefinitionOp[A] with ToOptionalData[A]
-
-
 
   final case class SumTypeData[A,B](
     from: ValueDefinitionOp[A],
@@ -175,14 +135,15 @@ object Value {
 
     def ::[H](v: KeyValueDefinition[H]): KvpSingleValueHead[H, L, HL, H :: L]
 
-    def ::[A](dc: DataClass[A]): KvpDataClassHead[A,L,HL,A::L] =
+    def ::[A:Manifest](dc: DataClass[A]): KvpDataClassHead[A,L,HL,A::L] =
       KvpDataClassHead(dc, List.empty, this)
 
-    def optional = OptionalKvpGroup[L,HL](this)
+    def optional: OptionalKvpGroup[L,HL] = OptionalKvpGroup[L,HL](this)
   }
 
   final case class OptionalKvpGroup[H<:HList, HL<:Nat](kvpGroup: KvpGroup[H,HL])
     extends KvpGroup[Option[H]::HNil, Nat._1] {
+
     override def :::[OUT2 <: HList, OUT2L <: Nat, P <: HList, PL <: Nat](kvp: KvpGroup[P, PL])(
       implicit prepend: hlist.Prepend.Aux[P, Option[H] :: HNil, OUT2],
       lengthP: Length.Aux[P, PL],
@@ -193,11 +154,6 @@ object Value {
     override def ::[HH](v: KeyValueDefinition[HH]):
       KvpSingleValueHead[HH, Option[H] :: HNil, Nat._1, HH :: Option[H] :: HNil] = ???
   }
-
-
-
-//  case class OptionalKvpGroup[L<:HList,HL<:Nat](kvpGroup: KvpGroup[L,HL]) extends KvpGroup[Option[L]]
-
 
   /**
     */
@@ -216,11 +172,14 @@ object Value {
 
   }
 
-  final case class KvpDataClassHead[H, T<: HList, TL<:Nat, OUT<:H :: T](
+  final case class KvpDataClassHead[H:Manifest, T<: HList, TL<:Nat, OUT<:H :: T](
     dataClass: DataClass[H],
     validations: List[ValidationOp[OUT]],
     tail: KvpGroup[T,TL]
   ) extends KvpGroup[OUT,Succ[TL]] {
+
+    val manifestOfH:Manifest[H] = manifest[H]
+
     override def :::[OUT2 <: HList, OUT2L <: Nat, P <: HList, PL <: Nat](kvp: KvpGroup[P, PL])(
       implicit prepend: Prepend.Aux[P, OUT, OUT2],
       lengthP: Length.Aux[P, PL],

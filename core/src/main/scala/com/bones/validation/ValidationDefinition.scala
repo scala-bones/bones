@@ -6,10 +6,8 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
-import cats.data.{NonEmptyList, Validated}
 import cats.free.FreeApplicative
 import cats.implicits._
-import com.bones.data.Error.ExtractionError
 
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
@@ -26,6 +24,7 @@ object ValidationDefinition {
     def description: String
   }
 
+  /** The input is optional */
   case class OptionalValidation[T](op: ValidationOp[T]) extends ValidationOp[Option[T]] {
     override def isValid: Option[T] => Boolean = {
       case None => true
@@ -40,18 +39,21 @@ object ValidationDefinition {
 
   type Validation[A] = FreeApplicative[ValidationOp, A]
 
+  /** Input must be one of the specified validValues. */
   case class ValidValue[T](validValues: Vector[T]) extends ValidationOp[T] {
     override def isValid: T => Boolean = validValues.contains
     override def defaultError(t: T): String = s"DataClass $t must be one of ${validValues.mkString("('","','","')")}"
     override def description: String = s"one of ${validValues.mkString("('","','","')")}"
   }
 
+  /** Input must not be one of the invalidValues. */
   case class InvalidValue[T](invalidValues: Vector[T]) extends ValidationOp[T] {
     override def isValid: T => Boolean = str => {! invalidValues.contains(str)}
     override def defaultError(t: T): String = s"DataClass $t must not be one of ${invalidValues.mkString("('","','","')")}"
     override def description: String = s"not one of ${invalidValues.mkString("('","','","')")}"
   }
 
+  /** Base trait for validation as to include valid and invalid values */
   trait BaseValidationOp[T] {
     def validVector(validValues: Vector[T]) = ValidValue(validValues)
     def valid(t: T*): ValidValue[T] = validVector(t.toVector)
@@ -231,9 +233,6 @@ object ValidationDefinition {
       override def description: String = "URI"
     }
 
-    type ValidateString[T] = String => Validated[NonEmptyList[ExtractionError], T]
-
-
     /** Length of string must be equal to theLength param */
     def length(theLength: Int): Length = Length(theLength)
 
@@ -281,83 +280,83 @@ object ValidationDefinition {
   }
 
 
-  object IntValidation extends BaseValidationOp[Int] {
+  object LongValidation extends BaseValidationOp[Long] {
 
-    case class Between(min: Int, max: Int) extends ValidationOp[Int] {
-      val isValid: Int => Boolean = input => input >= min && input <= max
+    case class Between(min: Long, max: Long) extends ValidationOp[Long] {
+      val isValid: Long => Boolean = input => input >= min && input <= max
 
-      override def defaultError(t: Int): String = s"$t is not between $min and $max"
+      override def defaultError(t: Long): String = s"$t is not between $min and $max"
 
       override def description: String = s"between $min and $max"
 
     }
 
-    case class Max(maxInt: Int) extends ValidationOp[Int] {
-      override def isValid: Int => Boolean = _ <= maxInt
+    case class Max(maxLong: Long) extends ValidationOp[Long] {
+      override def isValid: Long => Boolean = _ <= maxLong
 
-      override def defaultError(t: Int): String = s"$t is greater than $maxInt"
+      override def defaultError(t: Long): String = s"$t is greater than $maxLong"
 
-      override def description: String = s"maximum of $maxInt"
+      override def description: String = s"maximum of $maxLong"
     }
 
-    case class Min(minInt: Int) extends ValidationOp[Int] {
-      override def isValid: Int => Boolean = _ >= minInt
+    case class Min(minLong: Long) extends ValidationOp[Long] {
+      override def isValid: Long => Boolean = _ >= minLong
 
-      override def defaultError(t: Int): String = s"$t is less than $minInt"
+      override def defaultError(t: Long): String = s"$t is less than $minLong"
 
-      override def description: String = s"minimum of $minInt"
+      override def description: String = s"minimum of $minLong"
     }
 
-    case class Greater(greaterThan: Int) extends ValidationOp[Int] {
-      override def isValid: Int => Boolean = _ > greaterThan
+    case class Greater(greaterThan: Long) extends ValidationOp[Long] {
+      override def isValid: Long => Boolean = _ > greaterThan
 
-      override def defaultError(t: Int): String = s"$t is not greater than $greaterThan"
+      override def defaultError(t: Long): String = s"$t is not greater than $greaterThan"
 
       override def description: String = s"greater than $greaterThan"
     }
 
-    case class Less(lessThan: Int) extends ValidationOp[Int] {
-      override def isValid: Int => Boolean = _ < lessThan
+    case class Less(lessThan: Long) extends ValidationOp[Long] {
+      override def isValid: Long => Boolean = _ < lessThan
 
-      override def defaultError(t: Int): String = s"$t is not less than $lessThan"
+      override def defaultError(t: Long): String = s"$t is not less than $lessThan"
 
       override def description: String = s"less than $lessThan"
     }
 
-    case class Multiple(multipleOf: Int) extends ValidationOp[Int] {
-      override def isValid: Int => Boolean = _ % multipleOf === 0
+    case class Multiple(multipleOf: Long) extends ValidationOp[Long] {
+      override def isValid: Long => Boolean = _ % multipleOf === 0
 
-      override def defaultError(t: Int): String = s"$t is not a multiple of $multipleOf"
+      override def defaultError(t: Long): String = s"$t is not a multiple of $multipleOf"
 
       override def description: String = s"multiple of $multipleOf"
     }
 
-    case class Positive() extends ValidationOp[Int] {
-      override def isValid: Int => Boolean = _ >= 0
+    case class Positive() extends ValidationOp[Long] {
+      override def isValid: Long => Boolean = _ >= 0
 
-      override def defaultError(t: Int): String = s"$t is not positive"
+      override def defaultError(t: Long): String = s"$t is not positive"
 
       override def description: String = s"positive"
     }
 
-    case class Negative() extends ValidationOp[Int] {
-      override def isValid: Int => Boolean = _ <= 0
+    case class Negative() extends ValidationOp[Long] {
+      override def isValid: Long => Boolean = _ <= 0
 
-      override def defaultError(t: Int): String = s"$t is not negative"
+      override def defaultError(t: Long): String = s"$t is not negative"
 
       override def description: String = s"negative"
     }
 
 
-    def between(min: Int, max: Int): Between = Between(min, max)
+    def between(min: Long, max: Long): Between = Between(min, max)
 
-    def max(maxValue: Int): Max = Max(maxValue)
+    def max(maxValue: Long): Max = Max(maxValue)
 
-    def min(minValue: Int): Min = Min(minValue)
+    def min(minValue: Long): Min = Min(minValue)
 
-    def greater(value: Int): Greater = Greater(value)
+    def greater(value: Long): Greater = Greater(value)
 
-    def less(value: Int): Less = Less(value)
+    def less(value: Long): Less = Less(value)
 
     def positive(): Positive = Positive()
   }

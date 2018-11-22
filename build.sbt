@@ -1,6 +1,6 @@
 lazy val commonSettings = Seq(
   organization := "com.github.oletraveler",
-  scalaVersion := "2.12.4", //TODO: cross compile 2.11.12 and 2.12.4
+  scalaVersion := "2.12.7", //TODO: cross compile 2.11.12 and 2.12.4
   version      := "0.5.0-SNAPSHOT",
   homepage := Some(url("https://github.com/oletraveler/bones")),
   startYear := Some(2018),
@@ -79,11 +79,10 @@ lazy val jsonLift = (project in file("json-interpreters/lift-json"))
       "net.liftweb" %% "lift-json" % "3.3.0",
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
       "org.scalatest" %% "scalatest" % "3.0.5" % Test
-//      "org.easymock" % "easymock" % "3.5.1" % Test
     )
   )
   .dependsOn(core)
-lazy val circeVersion = "0.10.0"
+lazy val circeVersion = "0.10.1"
 lazy val jsonCirce = (project in file("json-interpreters/circe"))
   .settings(
     commonSettings,

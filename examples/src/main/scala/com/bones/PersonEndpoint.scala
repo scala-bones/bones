@@ -7,18 +7,16 @@ import com.bones.http4s.HttpInterpreter
 import com.bones.http4s.Orm.Dao
 import com.bones.oas3.CrudOasInterpreter
 import com.bones.syntax._
-import com.bones.validation.ValidationDefinition.{IntValidation => iv, StringValidation => sv}
+import com.bones.validation.ValidationDefinition.{LongValidation => iv, StringValidation => sv}
 import doobie.Transactor
 import doobie.hikari.HikariTransactor
 import doobie.util.transactor.Transactor.Aux
-import fs2.Stream
 import io.swagger.v3.oas.models.info.Info
 import org.http4s.HttpService
-import org.http4s.server.blaze.BlazeBuilder
 
 object Interpreter {
 
-  def doInterpretation[H,B](serviceDescription: List[CrudOp[H]], doobieInfo: Dao.Aux[H,Int], transactor: HikariTransactor[IO], rootDir: String, errorDef: DataClass[B]): HttpService[IO] = {
+  def doInterpretation[H:Manifest,B](serviceDescription: List[CrudOp[H]], doobieInfo: Dao.Aux[H,Long], transactor: HikariTransactor[IO], rootDir: String, errorDef: DataClass[B]): HttpService[IO] = {
 
     import com.bones.http4s.Algebra._
     val service =
@@ -35,21 +33,21 @@ object Interpreter {
 }
 object Definitions {
 
-  case class Person(name: String, age: Int)
+  case class Person(name: String, age: Long)
 
   object Person {
-    implicit val dao: Dao.Aux[Person, Int] =
-      Dao.derive[Person, Int]("person", "id")
+    implicit val dao: Dao.Aux[Person, Long] =
+      Dao.derive[Person, Long]("person", "id")
   }
 
   val personSchema = (
       kvp("name", string(sv.matchesRegex("^[a-zA-Z ]*$".r))) ::
-      kvp("age", int(iv.min(0))) ::
+      kvp("age", long(iv.min(0))) ::
       KvpNil
     ).convert[Person]
 
   //  val personWithIdSchema = (
-  //    key("id").int() :: personSchema ::: KvpNil
+  //    key("id").long() :: personSchema ::: KvpNil
   //  ).convert[(Int, Person)]
 
   case class Error(error: String)
@@ -85,17 +83,10 @@ object PersonEndpoint extends IOApp {
   )
 
   import cats.effect._
+  import cats.implicits._
   import doobie._
   import doobie.hikari._
-
-  import org.http4s.implicits._
-  import org.http4s.dsl.io._
   import org.http4s.server.blaze._
-  import cats.effect._
-  import cats.implicits._
-  import org.http4s.HttpRoutes
-
-  import org.http4s.syntax._
 
   val hikariTransactor: Resource[IO, HikariTransactor[IO]] =
     for {
@@ -111,9 +102,9 @@ object PersonEndpoint extends IOApp {
       )
     } yield xa
 
-  import scala.concurrent.ExecutionContext.Implicits._
-
   override def run(args: List[String]): IO[ExitCode] = {
+
+    //definately not how to ue hikariTransactor, but it'll do for now.
     hikariTransactor.use{ xa =>
       val http4Service = Interpreter.doInterpretation[Person, Error](serviceDescription, Person.dao, xa, "/person", errorDef)
       BlazeBuilder[IO].bindHttp(8080, "localhost").mountService(http4Service, "/")

@@ -1,7 +1,7 @@
 package com.bones.interpreter
 
 import cats.data.Validated.{Invalid, Valid}
-import com.bones.data.Value.{IntData, KvpNil, StringData}
+import com.bones.data.Value.{LongData, KvpNil, StringData}
 import org.scalatest.{FunSuite, MustMatchers}
 import org.scalatest.prop.Checkers
 import com.bones.syntax._
@@ -26,7 +26,7 @@ class ValidatedFromJObjectInterpreterTest extends FunSuite with Checkers {
   }
 
   test ("either") {
-    val eitherDesc = kvp("test", either(string, int)) :: KvpNil
+    val eitherDesc = kvp("test", either(string, long)) :: KvpNil
     val prog = interpreter.kvpGroup(eitherDesc)
 
     val validInput = JObject(JField("test", JString("Hello String")))

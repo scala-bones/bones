@@ -31,17 +31,15 @@ class InterpreterTemplate {
       case op: OptionalValueDefinition[a] => ???
       case ob: BooleanData => ???
       case rs: StringData => ???
-      case ri: IntData => ???
+      case ri: LongData => ???
       case uu: UuidData => ???
       case dd: DateData => ???
-      case bd: BigDecimalFromString => ???
-      case dd: DoubleData => ???
+      case bd: BigDecimalData => ???
       case ld: ListData[t, l] => ???
       case ed: EitherData[a,b] => ???
       case esd: EnumerationStringData[a] => ???
       case esd: EnumStringData[a] => ???
       case kvp: KvpGroupData[h,hl] => ???
-      case br: ByteReferenceData => ???
     }
 
 }
