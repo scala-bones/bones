@@ -11,6 +11,7 @@ import com.bones.validation.ValidationDefinition.{LongValidation => iv, StringVa
 import doobie.Transactor
 import doobie.hikari.HikariTransactor
 import doobie.util.transactor.Transactor.Aux
+import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Info
 import org.http4s.HttpService
 
@@ -33,7 +34,7 @@ object Interpreter {
 }
 object Definitions {
 
-  case class Person(name: String, age: Long)
+  case class Person(name: String, age: Long, gender: Option[String])
 
   object Person {
     implicit val dao: Dao.Aux[Person, Long] =
@@ -43,6 +44,7 @@ object Definitions {
   val personSchema = (
       kvp("name", string(sv.matchesRegex("^[a-zA-Z ]*$".r))) ::
       kvp("age", long(iv.min(0))) ::
+      kvp("gender", string.optional) ::
       KvpNil
     ).convert[Person]
 
@@ -70,9 +72,36 @@ object PersonDoc extends App {
     .description("Test Person Endpoint")
     .title("Person")
     .version("1.0")
-  val api = CrudOasInterpreter.toSwaggerCore(Definitions.serviceDescription, "person")
-  api.info(info)
-  println(io.swagger.v3.core.util.Json.mapper().writeValueAsString(api))
+
+  val openApi = new OpenAPI()
+  for (elem <- Definitions.serviceDescription) {
+    elem match {
+      case create: Create[i,o,e] =>
+        CrudOasInterpreter.post(
+          (create.schemaForCreate, "Person"),
+          (create.successSchemaForCreate, "PersonWithId"),
+          (create.errorSchemaForCreate, "Error"),
+          "/person",
+          List("application/json")
+        ).apply(openApi)
+      case read: Read[o] =>
+        CrudOasInterpreter.get( (read.successSchemaForRead, "PersonWithId"), "/person")
+          .apply(openApi)
+      case delete: Delete[o] =>
+        CrudOasInterpreter
+          .delete( (delete.successSchema, "PersonWithId"), "/person", List("application/json") )
+          .apply(openApi)
+      case update: Update[i,o,e] =>
+        CrudOasInterpreter.put(
+          (update.inputSchema, "Person"),
+          (update.successSchema, "PersonWithId"),
+          (update.failureSchema, "Error"),
+          "/person",
+          List("application/json")
+        ).apply(openApi)
+    }
+  }
+  println(io.swagger.v3.core.util.Json.mapper().writeValueAsString(openApi))
 }
 
 object PersonEndpoint extends IOApp {
