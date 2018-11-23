@@ -18,16 +18,15 @@ object SwaggerCoreInterpreter {
     tail
   }
 
-  def apply[A:Manifest](gd: DataClass[A]): Schema[_] = dataClass(gd).apply(new Schema())
+  def apply[A](gd: DataClass[A]): Schema[_] = dataClass(gd).apply(new Schema())
 
   /** The entry point, converts a DataClass definition into a Schema-Core Schema */
-  def dataClass[A:Manifest](gd: DataClass[A]): Schema[_] => Schema[_] = {
+  def dataClass[A](gd: DataClass[A]): Schema[_] => Schema[_] = {
     gd match {
       case x: XMapData[_,_,a] =>
         val fromF = fromKvpGroup(x.from)
         schema => {
-          val s = fromF(schema)
-          s.name(manifest[A].runtimeClass.getSimpleName)
+          fromF(schema)
         }
       case o: OptionalDataClass[a] => {
         implicit val ma = o.manifestOfA

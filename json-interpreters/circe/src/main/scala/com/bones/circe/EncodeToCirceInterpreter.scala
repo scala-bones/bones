@@ -74,7 +74,7 @@ object EncodeToCirceInterpreter {
         }
       case ob: BooleanData => (input: A) => Json.fromBoolean(input.asInstanceOf[Boolean])
       case rs: StringData => (input: A) => Json.fromString(input.asInstanceOf[String])
-      case ri: LongData => (input: A) => Json.fromInt(input.asInstanceOf[Int])
+      case ri: LongData => (input: A) => Json.fromInt(input.asInstanceOf[Long].toInt)
       case uu: UuidData => (input: A) => Json.fromString(input.toString)
       case DateTimeData(format, _, validations) => (input: A) => Json.fromString(format.format(input.asInstanceOf[ZonedDateTime]))
       case bd: BigDecimalData => (input: A) => Json.fromBigDecimal(input.asInstanceOf[BigDecimal])
