@@ -65,8 +65,6 @@ trait Sugar {
   /** Indicates that the data tied to this key is a BigDecimal that must pass the specified validations. */
   def bigDecimal(v: ValidationOp[BigDecimal] *) = BigDecimalData(v.toList)
 
-  def binary(v: ValidationOp[Array[Byte]]*)= BinaryData(v.toList)
-
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
   def either[A,B](definitionA: ValueDefinitionOp[A], definitionB: ValueDefinitionOp[B]) =
     EitherData(definitionA, definitionB)

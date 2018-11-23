@@ -1,137 +1,241 @@
 package com.bones.oas3
 
 import com.bones.crud.Algebra._
+import com.bones.data.Value.DataClass
 import io.swagger.v3.oas.models._
-import io.swagger.v3.oas.models.media.IntegerSchema
-import io.swagger.v3.oas.models.parameters.Parameter
+import io.swagger.v3.oas.models.media._
+import io.swagger.v3.oas.models.parameters.{Parameter, RequestBody}
 import io.swagger.v3.oas.models.responses.{ApiResponse, ApiResponses}
+import scala.collection.JavaConverters._
 
 
 
 object CrudOasInterpreter {
 
 
-  def toSwaggerCore[A:Manifest](ops: List[CrudOp[A]], urlPath: String): OpenAPI = {
-    val entityName = manifest[A].runtimeClass.getSimpleName
 
-    val openAPI = new OpenAPI()
-    val withAddedPaths = ops.foreach {
-      case op: Read[o] =>
-        val outputSchema = SwaggerCoreInterpreter(op.successSchemaForRead)
-        val components = new Components()
-          .addSchemas(entityName, outputSchema)
-        openAPI.components(components)
-
-        val apiResponse = new ApiResponse()
-          .$ref(s"#/components/schemas/${entityName}")
-        val apiResponses = new ApiResponses()
-          .addApiResponse("200", apiResponse)
-
-        val paramSchema = new IntegerSchema()
-        val param = new Parameter()
-          .name("id").in("path").required(true)
-          .description(s"id of the ${entityName} to retrieve")
-          .schema(paramSchema)
-
-        val operation = new Operation()
-          .responses(apiResponses)
-          .parameters(java.util.Collections.singletonList(param))
-          .tags(java.util.Collections.singletonList(entityName))
-          .summary(s"Find ${entityName} by ID")
-          .description(s"Returns ${entityName} by id")
-          .operationId(s"get${entityName}ById")
-        val pathItem = new PathItem()
-          .get(operation)
-
-        openAPI.path(urlPath + "/{id}", pathItem)
-
-      case _ =>
+  private def upsertComponent[A](openApi: OpenAPI, entityName: String, schema: Schema[A]) : Unit = {
+    var components = openApi.getComponents
+    if (components == null) {
+      components = new Components()
+      openApi.setComponents(components)
     }
-    openAPI
+    var schemas = components.getSchemas
+    if (schemas == null) {
+      schemas = new java.util.HashMap[String,Schema[_]]()
+      components.setSchemas(schemas)
+    }
+    if (! components.getSchemas.containsKey(entityName)) {
+      components.addSchemas(entityName, schema)
+    }
+  }
+
+  private def upcertPath(openAPI: OpenAPI, path: String, f: PathItem => Unit) = {
+    var paths = openAPI.getPaths
+    if (paths == null) {
+      paths = new Paths()
+      openAPI.setPaths(paths)
+    }
+    var pathItem = paths.get(path)
+    if (pathItem == null) {
+      pathItem = new PathItem()
+      paths.addPathItem(path, pathItem)
+    }
+    f(pathItem)
+
   }
 
 
-//  case class ToJsonResult(definitions: Map[Class[_], Json], paths: List[(JsonField, Json)])
+  def get[A](outputSchema: (DataClass[A], String), urlPath: String): OpenAPI => OpenAPI = { openAPI =>
 
-//  def toJson[A:Manifest](ops: List[CrudOp[A]]): (Map[String, Json], List[(JsonField, Json)]) => {
-//
-//    val runtimeClass = manifest[A].runtimeClass
-//    val definitionAndPaths = ops map {
-//      case from: Read[o] => {
-//        val definitions = Map(runtimeClass.getSimpleName -> jObject(SwaggerCoreInterpreter(from.successSchemaForRead)))
-//
-//        val path =  urlPath + "/{id}" :=
-//            Json("get" :=
-//              Json(
-//                "description" := s"Returns the ${runtimeClass.getSimpleName} of the given id",
-//                "parameters" := List(
-//                  (
-//                    "entityName" := "id",
-//                    "in" := "path",
-//                    "required" := true
-//                  )
-//                ),
-//                "produces" := Json.array(
-//                  jString("application/json")
-//                ),
-//                "responses" := Json(
-//                  "200" := Json(
-//                    "description" := s"The ${runtimeClass.getSimpleName} of the given id",
-//                    "schema" :=
-//                      Json(
-//                        "$ref" := s"#/definitions/${runtimeClass.getSimpleName}"
-//                      )
-//                  )
-//                )
-//              )
-//            )
-//
-//        (definitions, path)
-//
-//      }
-//      case from: Create[i,e,o] => {
-//        val path = urlPath :=
-//          Json("post" :=
-//            Json(
-//              "summary" := s"Creates a new ${runtimeClass.getSimpleName}",
-//              "consumes" := List("application/json"),
-//              "parameters" := List(
-//                Json(
-//                  "in" := "body",
-//                  "entityName" := s"${runtimeClass.getSimpleName}",
-//                  "schema" := Json(
-//                    "$ref" := s"#/definitions/${runtimeClass.getSimpleName}"
-//                    )
-//                )
-//              ),
-//              "produces" := List("application/json"),
-//              "responses" := (
-//                "200" := (
-//                  "description" := s"The ${runtimeClass.getSimpleName} of the given id",
-//                  "schema" :=
-//                    (
-//                      "$ref" := s"#/definitions/${runtimeClass.getSimpleName}"
-//                    )
-//                )
-//              )
-//            )
-//          )
-//        (Map.empty, path)
-//      }
-//      case from: Update[i,e,o] => {
-//        val path = urlPath :=
-//          (Json("put" := true))
-//        (Map.empty, path)
-//      }
-//      case from: Delete[o] => {
-//        val path = urlPath :=
-//          (Json("put" := true))
-//        (Map.empty, path)
-//      }
-//    }
-//
-//    //combine the definitions to avoid duplicates.
-//    val definitions = definitionAndPaths.flatMap(_._1.toList).toMap
-//    (definitions, definitionAndPaths.map(_._2))
-//  }
+    val outputEntityName = outputSchema._2
+
+    val inputSchema = SwaggerCoreInterpreter(outputSchema._1).name(outputEntityName)
+
+    upsertComponent(openAPI, outputEntityName, inputSchema)
+
+    val apiResponse = new ApiResponse()
+      .$ref(s"#/components/schemas/${outputEntityName}")
+    val apiResponses = new ApiResponses()
+      .addApiResponse("200", apiResponse)
+
+    val paramSchema = new IntegerSchema()
+    val param = new Parameter()
+      .name("id").in("path").required(true)
+      .description(s"id of the ${outputEntityName} to retrieve")
+      .schema(paramSchema)
+
+    val operation = new Operation()
+      .responses(apiResponses)
+      .parameters(java.util.Collections.singletonList(param))
+      .tags(java.util.Collections.singletonList(outputEntityName))
+      .summary(s"Find ${outputEntityName} by ID")
+      .description(s"Returns ${outputEntityName} by id")
+      .operationId(s"get${outputEntityName}ById")
+
+    upcertPath(openAPI, "/{id}", _.get(operation))
+
+    openAPI
+  }
+
+  def delete[O](
+                          outputSchemaWithName: (DataClass[O], String),
+                          urlPath: String,
+                          contentTypes: List[String]
+                        ): OpenAPI => OpenAPI = { openAPI =>
+
+    val outputEntityName = outputSchemaWithName._2
+    val outputComponentSchema = SwaggerCoreInterpreter(outputSchemaWithName._1).name(outputEntityName)
+
+    upsertComponent(openAPI, outputEntityName, outputComponentSchema)
+
+    val apiResponse = new ApiResponse()
+      .$ref(s"#/components/schemas/${outputEntityName}")
+    val apiResponses = new ApiResponses()
+      .addApiResponse("200", apiResponse)
+
+    val paramSchema = new IntegerSchema()
+    val param = new Parameter()
+      .name("id").in("path").required(true)
+      .description(s"id of the ${outputEntityName} to delete")
+      .schema(paramSchema)
+
+    val operation = new Operation()
+      .responses(apiResponses)
+      .parameters(java.util.Collections.singletonList(param))
+      .tags(java.util.Collections.singletonList(outputEntityName))
+      .summary(s"Delete ${outputEntityName} by ID")
+      .description(s"Delete ${outputEntityName} by id")
+      .operationId(s"get${outputEntityName}ById")
+
+    upcertPath(openAPI, "/{id}", _.delete(operation))
+    openAPI
+  }
+
+  def put[I,O, E](
+    inputSchemaAndName: (DataClass[I], String),
+    outputSchemaAndName: (DataClass[O], String),
+    errorSchemaAndName: (DataClass[E], String),
+    urlPath: String,
+    contentTypes: List[String]
+  ): OpenAPI => OpenAPI = { openAPI =>
+
+    val inputEntityName = inputSchemaAndName._2
+    val outputEntityName = outputSchemaAndName._2
+    val errorEntityName = errorSchemaAndName._2
+
+    val inputComponentSchema = SwaggerCoreInterpreter(inputSchemaAndName._1).name(inputEntityName)
+    val outputComponentSchema = SwaggerCoreInterpreter(outputSchemaAndName._1).name(outputEntityName)
+    val errorComponentSchema = SwaggerCoreInterpreter(errorSchemaAndName._1).name(errorEntityName)
+
+    upsertComponent(openAPI, inputEntityName, inputComponentSchema)
+    upsertComponent(openAPI, outputEntityName, outputComponentSchema)
+    upsertComponent(openAPI, errorEntityName, errorComponentSchema)
+
+    val outputComponentRef = s"#/components/schemas/${outputEntityName}"
+    val inputComponentRef = s"#/components/schemas/${inputEntityName}"
+    val errorComponentRef = s"#/components/schemas/${errorEntityName}"
+
+    val apiResponses = new ApiResponses()
+      .addApiResponse("200", new ApiResponse().$ref(outputComponentRef))
+      .addApiResponse("400", new ApiResponse().$ref(errorComponentRef))
+
+    val inputOasSchema = new Schema()
+      .$ref(inputComponentRef)
+
+
+    val operation = new Operation()
+      .responses(apiResponses)
+      .tags(java.util.Collections.singletonList(outputEntityName))
+      .summary(s"Update ${inputEntityName}, returning ${outputEntityName}")
+      .description(s"Update and return the updated ${outputEntityName}")
+      .operationId(s"put${inputEntityName}")
+
+    contentTypes.foreach(contentType => {
+      val encoding = new Encoding().contentType(contentType)
+      val encodings = Map((contentType, encoding))
+      val mediaType = new MediaType()
+        .schema(inputOasSchema)
+        .encoding(encodings.asJava)
+
+      val content = new Content()
+        .addMediaType(contentType, mediaType)
+
+      val requestBody = new RequestBody()
+        .$ref(inputComponentRef)
+        .content(content)
+
+      operation.setRequestBody(requestBody)
+    })
+
+
+    upcertPath(openAPI, "/{id}", _.put(operation))
+
+    openAPI
+
+  }
+
+  def post[I,O, E](
+    inputSchemaAndName: (DataClass[I], String),
+    outputSchemaAndName: (DataClass[O], String),
+    errorSchemaAndName: (DataClass[E], String),
+    urlPath: String,
+    contentTypes: List[String]): OpenAPI => OpenAPI = { openAPI =>
+
+    val inputEntityName = inputSchemaAndName._2
+    val outputEntityName = outputSchemaAndName._2
+    val errorEntityName = errorSchemaAndName._2
+
+    val inputComponentSchema = SwaggerCoreInterpreter(inputSchemaAndName._1).name(inputEntityName)
+    val outputComponentSchema = SwaggerCoreInterpreter(outputSchemaAndName._1).name(outputEntityName)
+    val errorComponentSchema = SwaggerCoreInterpreter(errorSchemaAndName._1).name(errorEntityName)
+
+    upsertComponent(openAPI, inputEntityName, inputComponentSchema)
+    upsertComponent(openAPI, outputEntityName, outputComponentSchema)
+    upsertComponent(openAPI, errorEntityName, errorComponentSchema)
+
+    val outputComponentRef = s"#/components/schemas/${outputEntityName}"
+    val inputComponentRef = s"#/components/schemas/${inputEntityName}"
+    val errorComponentRef = s"#/components/schemas/${errorEntityName}"
+
+    val apiResponses = new ApiResponses()
+      .addApiResponse("200", new ApiResponse().$ref(outputComponentRef))
+      .addApiResponse("400", new ApiResponse().$ref(errorComponentRef))
+
+    val inputOasSchema = new Schema()
+        .$ref(inputComponentRef)
+
+
+    val operation = new Operation()
+      .responses(apiResponses)
+      .tags(java.util.Collections.singletonList(outputEntityName))
+      .summary(s"Create ${inputEntityName}, returning ${outputEntityName}")
+      .description(s"Create and return the newly created ${outputEntityName}")
+      .operationId(s"post${inputEntityName}")
+
+    contentTypes.foreach(contentType => {
+      val encoding = new Encoding().contentType(contentType)
+      val encodings = Map((contentType, encoding))
+      val mediaType = new MediaType()
+        .schema(inputOasSchema)
+        .encoding(encodings.asJava)
+
+      val content = new Content()
+        .addMediaType(contentType, mediaType)
+
+      val requestBody = new RequestBody()
+        .$ref(inputComponentRef)
+        .content(content)
+
+      operation.setRequestBody(requestBody)
+    })
+
+
+
+    upcertPath(openAPI, "", _.post(operation))
+
+    openAPI
+
+  }
+
 }
