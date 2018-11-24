@@ -115,11 +115,11 @@ class ValidationTest extends FunSuite {
 //        |}
 //      """.stripMargin
 //
-//    //sorry, we still use lift in my projects.  I will soon create a Circe JsonExtract.
+//    //sorry, we still use lift in my projects.  I will soon createOperation a Circe JsonExtract.
 //    val parsed = net.liftweb.json.parse(cc)
 //    val jsonProducer = LiftJsonExtract(parsed)
 //
-//    //create the program that is responsible for converting JSON into a CC.
+//    //createOperation the program that is responsible for converting JSON into a CC.
 //    val jsonToCCProgram = y.lift.foldMap[ValidateFromProducer](ValidatedFromJObjectInterpreter())
 //
 //    //here, we will test that just the validations step is working
@@ -132,10 +132,10 @@ class ValidationTest extends FunSuite {
 
 //    import Schemas._
 //
-//    //sorry, we still use lift in my projects.  I will soon create a Circe JsonExtract.
+//    //sorry, we still use lift in my projects.  I will soon createOperation a Circe JsonExtract.
 //    val parsed = net.liftweb.json.parse(cc)
 //
-//    //create the program that is responsible for converting JSON into a CC.
+//    //createOperation the program that is responsible for converting JSON into a CC.
 ////    val jsonToCCProgram = creditCardSchema.lift.foldMap[ValidatedFromJObjectOpt](ValidatedFromJObjectInterpreter())
 //    val jsonToCCProgram = ValidatedFromJObjectInterpreter().kvpGroup(creditCardSchema)
 //
