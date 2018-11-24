@@ -10,7 +10,7 @@ object SqlInterpreter {
       case op: OptionalDataClass[h] =>
         implicit val ma = op.manifestOfA
         dataClass(op.value) + " nullable"
-      case x: XMapData[a,al,b] => s"create table ${manifest[H].runtimeClass.getSimpleName}\n ${kvpGroup(x.from)}"
+      case x: XMapData[a,al,b] => s"createOperation table ${manifest[H].runtimeClass.getSimpleName}\n ${kvpGroup(x.from)}"
     }
   }
 

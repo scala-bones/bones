@@ -97,7 +97,7 @@ object CrudOasInterpreter {
     val paramSchema = new IntegerSchema()
     val param = new Parameter()
       .name("id").in("path").required(true)
-      .description(s"id of the ${outputEntityName} to delete")
+      .description(s"id of the ${outputEntityName} to deleteOperation")
       .schema(paramSchema)
 
     val operation = new Operation()
