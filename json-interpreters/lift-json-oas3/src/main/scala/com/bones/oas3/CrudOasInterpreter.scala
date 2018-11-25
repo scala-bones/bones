@@ -12,6 +12,52 @@ import scala.collection.JavaConverters._
 
 object CrudOasInterpreter {
 
+  def jsonApiForService[CI, CO, CE, RO, RE, UI, UO, UE, DO, DE](
+                                                                 serviceOps: ServiceOps[CI, CO, CE, RO, RE, UI, UO, UE, DO, DE]
+                                                               ): OpenAPI => OpenAPI = { openApi =>
+
+    serviceOps.createOperation.map(co => {
+      CrudOasInterpreter
+        .post(
+          (co.schemaForCreate, serviceOps.path),
+          (co.successSchemaForCreate, serviceOps.path),
+          (co.errorSchemaForCreate, "Error"),
+          s"/${serviceOps.path}",
+          List("application/json")
+        )
+        .apply(openApi)
+    })
+
+    serviceOps.readOperation.map(
+      read =>
+        CrudOasInterpreter
+          .get((read.successSchemaForRead, serviceOps.path),
+            s"/${serviceOps.path}")
+          .apply(openApi))
+
+    serviceOps.updateOperation.foreach(
+      update =>
+        CrudOasInterpreter
+          .put(
+            (update.inputSchema, serviceOps.path),
+            (update.successSchema, serviceOps.path),
+            (update.failureSchema, "Error"),
+            s"/${serviceOps.path}",
+            List("application/json")
+          )
+          .apply(openApi))
+
+    serviceOps.deleteOperation.foreach(
+      delete =>
+        CrudOasInterpreter
+          .delete((delete.successSchema, serviceOps.path),
+            s"/${serviceOps.path}",
+            List("application/json"))
+          .apply(openApi))
+
+    openApi
+  }
+
 
 
   private def upsertComponent[A](openApi: OpenAPI, entityName: String, schema: Schema[A]) : Unit = {

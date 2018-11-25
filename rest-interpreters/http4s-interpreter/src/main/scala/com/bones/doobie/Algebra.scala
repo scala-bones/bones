@@ -1,4 +1,4 @@
-package com.bones.http4s
+package com.bones.doobie
 
 import io.circe.Json
 
