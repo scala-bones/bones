@@ -104,6 +104,15 @@ lazy val jsonArgonaut = (project in file("json-interpreters/argonaut"))
       "org.scalatest" %% "scalatest" % "3.0.5" % Test
     )
   ).dependsOn(core)
+lazy val dbDoobie = (project in file("db-interpreters/doobie"))
+  .settings(
+    commonSettings,
+    name := "Bones Doobie",
+    libraryDependencies ++= Seq(
+      "org.tpolecat" %% "doobie-core" % doobieVersion,
+      "org.tpolecat" %% "doobie-postgres" % doobieVersion
+    )
+  ).dependsOn(core)
 lazy val http4sVersion = "0.20.0-M3"
 lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
   .settings(
@@ -112,15 +121,13 @@ lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-dsl" % http4sVersion,
       "org.http4s" %% "http4s-blaze-server" % http4sVersion,
-      "org.http4s" %% "http4s-blaze-client" % http4sVersion,
       "org.http4s" %% "http4s-circe" % http4sVersion,
-      "org.tpolecat" %% "doobie-core" % doobieVersion,
-      "org.tpolecat" %% "doobie-postgres" % doobieVersion,
-      "org.tpolecat" %% "doobie-hikari" % doobieVersion,
+//      "org.http4s" %% "http4s-blaze-client" % http4sVersion,
+//      "io.swagger.core.v3" % "swagger-core" % "2.0.5",
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
       "org.scalatest" %% "scalatest" % "3.0.5" % Test
     )
-  ).dependsOn(core, jsonCirce)
+  ).dependsOn(core, jsonCirce, jsonOas3)
 lazy val examples = (project in file("examples"))
     .settings(
       commonSettings,
@@ -135,7 +142,7 @@ lazy val examples = (project in file("examples"))
         "org.scalatest" %% "scalatest" % "3.0.5" % Test
 //        "org.easymock" % "easymock" % "3.5.1" % Test
       )
-    ).dependsOn(core, jsonOas3, restHttp4s)
+    ).dependsOn(core, jsonOas3, dbDoobie, restHttp4s, jsonOas3)
 
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.7")

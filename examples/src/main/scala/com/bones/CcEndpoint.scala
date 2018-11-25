@@ -4,9 +4,9 @@ import java.util.UUID
 
 import cats.effect.{ExitCode, IO, IOApp}
 import com.bones.data.Value.{StringData, ValueDefinitionOp}
-import doobie.util.yolo._
-import doobie.implicits._
-import doobie.{Transactor, Update0}
+import _root_.doobie.util.yolo._
+import _root_.doobie.implicits._
+import _root_.doobie.{Transactor, Update0}
 import com.bones.syntax._
 
 import scala.collection.mutable

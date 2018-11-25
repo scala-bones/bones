@@ -1,12 +1,9 @@
-package com.bones.http4s
+package com.bones.doobie
 
+import cats.effect._
 import cats.implicits._
 import doobie._
 import doobie.implicits._
-import doobie.hikari._
-import cats._
-import cats.effect._
-import cats.implicits._
 import fs2.Stream
 import shapeless._
 import shapeless.ops.hlist._
@@ -17,13 +14,6 @@ object Orm {
   // to silence unused warnings
   def void[A](a: A): Unit = (a, ())._2
 
-
-  def withHikari[R](statement: ConnectionIO[R], transactor: Resource[IO, HikariTransactor[IO]]): IO[R] = {
-      transactor.use { xa => {
-        statement.transact(xa)
-      }
-    }
-  }
 
   trait Dao[A] {
     type Key

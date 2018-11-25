@@ -1,27 +1,32 @@
 package com.bones
 
-import cats.effect.{IO, IOApp}
-import com.bones.Definitions.personWithId
+import doobie._
+import _root_.doobie.implicits._
+import _root_.doobie.hikari._
+import _root_.doobie.util.transactor.Transactor
+import _root_.doobie.util.ExecutionContexts
+import cats._
+import cats.effect._
+import cats.implicits._
 import com.bones.crud.Algebra._
-import com.bones.data.Value.{DataClass, KvpNil}
-import com.bones.http4s.Algebra.jsonFormat
-import com.bones.http4s.{HttpInterpreter, Orm}
-import com.bones.http4s.Orm.Dao
+import com.bones.data.Value.KvpNil
+import com.bones.doobie.Algebra.jsonFormat
+import com.bones.doobie.Orm.Dao
+import com.bones.doobie.{HttpInterpreter, Orm, WithId}
 import com.bones.oas3.CrudOasInterpreter
 import com.bones.syntax._
 import com.bones.validation.ValidationDefinition.{LongValidation => iv, StringValidation => sv}
-import doobie.Transactor
-import doobie.hikari.HikariTransactor
-import doobie.util.transactor.Transactor.Aux
-import io.swagger.v3.oas.models.OpenAPI
-import io.swagger.v3.oas.models.info.Info
-import org.http4s.HttpService
+import _root_.io.swagger.v3.oas.models.OpenAPI
+import _root_.io.swagger.v3.oas.models.info.Info
+import org.http4s.server.blaze._
+
+
 
 
 object Definitions {
 
   case class Person(name: String, age: Long, gender: Option[String])
-  case class WithId[P](id: Long, p: P)
+
 
   object Person {
     implicit val dao: Dao.Aux[Person, Long] =
@@ -50,7 +55,47 @@ object Definitions {
 
   //Above is the description.
   //below interpreters the description into runnable code.
+
+  object Test {
+    val createF: Person => IO[Either[Error,WithId[Person]]] =
+      person => IO{ (Right(WithId(1l,person))) }
+
+    val readF: Person.dao.Key => IO[Either[Error,WithId[Person]]] =
+      (id) => IO{ Right(WithId(id, Person("Test", 11, None)))}
+
+    val updateF: (Long, Person) => IO[Either[Error, WithId[Person]]] =
+      (id, person) => IO{ Right(WithId(id,person))}
+
+    val deleteF: Long => IO[Either[Error, WithId[Person]]] =
+      (id) => IO{ Right(WithId(id,Person("Test", 11, None)))}
+  }
+
+
+  case class WithTransaction(xa: Transactor[IO]) {
+
+
+    val createF: Person => IO[Either[Error,WithId[Person]]] =
+      person => Person.dao.insert(person).transact(xa)
+        .map(id => Right(WithId(id,person)))
+
+    val readF: Person.dao.Key => IO[Either[Error,WithId[Person]]] =
+      (id) => Person.dao.find(id).transact(xa)
+        .map(_.toRight(Error(s"Person with id ${id} not found")))
+        .map(_.map(person => WithId[Person](id, person)))
+
+    val updateF: (Long, Person) => IO[Either[Error, WithId[Person]]] =
+      (id, person) => Person.dao.update(id, person).transact(xa)
+        .map(i => Right(WithId(i,person)))
+
+    val deleteF: Long => IO[Either[Error, WithId[Person]]] =
+      (id) => for {
+        person <- readF(id)
+        _ <- Person.dao.delete(id).transact(xa)
+      } yield person
+  }
 }
+
+
 
 
 object PersonDoc extends App {
@@ -60,35 +105,9 @@ object PersonDoc extends App {
     .version("1.0")
 
   val openApi = new OpenAPI()
-  val ps = Definitions.personService
 
-  ps.createOperation.foreach(co => CrudOasInterpreter.post(
-    (co.schemaForCreate, ps.path),
-    (co.successSchemaForCreate, ps.path),
-    (co.errorSchemaForCreate, "Error"),
-    s"/${ps.path}",
-    List("application/json")
-  ).apply(openApi))
+  CrudOasInterpreter.jsonApiForService(Definitions.personService).apply(openApi)
 
-  ps.readOperation.foreach(read =>
-    CrudOasInterpreter.get( (read.successSchemaForRead, ps.path), s"/${ps.path}").apply(openApi)
-  )
-
-  ps.updateOperation.foreach(update =>
-    CrudOasInterpreter.put(
-      (update.inputSchema, ps.path),
-      (update.successSchema, ps.path),
-      (update.failureSchema, "Error"),
-      s"/${ps.path}",
-      List("application/json")
-    ).apply(openApi)
-  )
-
-  ps.deleteOperation.foreach(delete =>
-    CrudOasInterpreter
-      .delete( (delete.successSchema, ps.path), s"/${ps.path}", List("application/json") )
-      .apply(openApi)
-  )
 
   println(io.swagger.v3.core.util.Json.mapper().writeValueAsString(openApi))
 }
@@ -96,19 +115,14 @@ object PersonDoc extends App {
 object PersonEndpoint extends IOApp {
   import Definitions._
 
-  val transactor: Aux[IO, Unit] = Transactor.fromDriverManager[IO](
+  val transactor: Transactor.Aux[IO, Unit] = Transactor.fromDriverManager[IO](
     "org.postgresql.Driver", "jdbc:postgresql:bones", "postgres", ""
   )
 
-  import cats.effect._
-  import cats.implicits._
-  import doobie._
-  import doobie.hikari._
-  import org.http4s.server.blaze._
 
   val hikariTransactor: Resource[IO, HikariTransactor[IO]] =
     for {
-      ce <- ExecutionContexts.fixedThreadPool[IO](64) // our connect EC
+      ce <- ExecutionContexts.fixedThreadPool[IO](32) // our connect EC
       te <- ExecutionContexts.cachedThreadPool[IO]    // our transaction EC
       xa <- HikariTransactor.newHikariTransactor[IO](
         "org.postgresql.Driver",                        // driver classname
@@ -120,6 +134,8 @@ object PersonEndpoint extends IOApp {
       )
     } yield xa
 
+
+
   override def run(args: List[String]): IO[ExitCode] = {
 
     val service =
@@ -127,40 +143,25 @@ object PersonEndpoint extends IOApp {
         .withContentType(jsonFormat)
         .withSwagger()
 
-    val createF: Person => IO[Either[Error,WithId[Person]]] =
-      (person) => {
-        Orm.withHikari[Person.dao.Key](Person.dao.insert(person),hikariTransactor)
-          .map(id => Right(WithId(id,person)))
-      }
-    val readF: Person.dao.Key => IO[Either[Error,WithId[Person]]] =
-      (id) => {
-        Orm.withHikari[Option[Person]](Person.dao.find(id), hikariTransactor)
-          .map(_.toRight(Error(s"Person with id ${id} not found")))
-          .map(_.map(person => WithId[Person](id, person)))
-      }
-    val updateF: (Long, Person) => IO[Either[Error, WithId[Person]]] =
-      (id, person) =>
-        Orm.withHikari(Person.dao.update(id, person), hikariTransactor)
-        .map(i => Right(WithId(i,person)))
-
-    val deleteF: Long => IO[Either[Error, WithId[Person]]] =
-      (id) => for {
-        person <- readF(id)
-        _ <- Orm.withHikari(Person.dao.delete(id), hikariTransactor)
-      } yield person
 
 
-    val http4Service = service.forService(
-      personService,
-      createF,
-      readF,
-      updateF,
-      deleteF
-    )
 
-    BlazeBuilder[IO].bindHttp(8080, "localhost").mountService(http4Service, "/")
-      .serve
-      .compile.drain.as(ExitCode.Success)
+    hikariTransactor.use { xa =>
+      val middleware = Definitions.WithTransaction(xa)
+      val http4Service = service.forService(
+        personService,
+        middleware.createF,
+        middleware.readF,
+        middleware.updateF,
+        middleware.deleteF
+      )
+
+      BlazeBuilder[IO].bindHttp(8080, "localhost").mountService(http4Service, "/")
+        .serve
+        .compile.drain.as(ExitCode.Success)
+
+    }
+
 
 
 
