@@ -69,7 +69,7 @@ val service =
     // .withContentType(protobufFormat) Not implemented yet.
 
 // The generated endpoint will take care of extracting JSON and validating against the schema defined above.
-val http4Service = service.forService(
+val http4Service: HttpRoutes[IO] = service.forService(
     personService,
     person => IO { Right(person) }, // create: a function from Person => IO[Either[Error,Person]] 
     id => IO { Right(Person("Janis Ian", 30, None))}, //read: a function from long => IO[Either[Error,Person]]
