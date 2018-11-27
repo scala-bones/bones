@@ -151,3 +151,4 @@ addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.7")
 
 testOptions in Test += Tests.Argument("-oF")
 
+resolvers += "tPoleCat" at "https://dl.bintray.com/tpolecat/maven/"
