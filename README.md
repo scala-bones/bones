@@ -68,7 +68,9 @@ val service =
     .withContentType(jsonFormat)
     // .withContentType(protobufFormat) Not implemented yet.
 
-// The generated endpoint will take care of extracting JSON and validating against the schema defined above.
+// The generated endpoint will take care of unmarshalling JSON and validating against the schema defined above.
+// If successfull, will pass the Person case class to the specified function.
+// Also responsible for marshalling the Error or Successful Results.
 val http4Service: HttpRoutes[IO] = service.forService(
     personService,
     person => IO { Right(person) }, // create: a function from Person => IO[Either[Error,Person]] 

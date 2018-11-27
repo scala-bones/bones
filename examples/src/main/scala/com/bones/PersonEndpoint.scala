@@ -56,21 +56,6 @@ object Definitions {
   //Above is the description.
   //below interpreters the description into runnable code.
 
-  object Test {
-    val createF: Person => IO[Either[Error,WithId[Person]]] =
-      person => IO{ (Right(WithId(1l,person))) }
-
-    val readF: Person.dao.Key => IO[Either[Error,WithId[Person]]] =
-      (id) => IO{ Right(WithId(id, Person("Test", 11, None)))}
-
-    val updateF: (Long, Person) => IO[Either[Error, WithId[Person]]] =
-      (id, person) => IO{ Right(WithId(id,person))}
-
-    val deleteF: Long => IO[Either[Error, WithId[Person]]] =
-      (id) => IO{ Right(WithId(id,Person("Test", 11, None)))}
-  }
-
-
   case class WithTransaction(xa: Transactor[IO]) {
 
 
