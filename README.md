@@ -39,12 +39,12 @@ case class Error(error: String)
   
 val errorDef = (kvp("error", string) :: KvpNil).convert[Error]
 
-val serviceDescription =
-  create(personSchema, errorDef, personSchema) ::
-    read(personSchema) ::
-    update(personSchema, errorDef, personSchema) ::
-    delete(personSchema) ::
-    Nil
+val personService = ServiceOps.withPath("person")
+    .withCreate(personSchema, personWithId, errorDef)
+    .withRead(personWithId, errorDef)
+    .withUpdate(personSchema, personWithId, errorDef)
+    .withDelete(personWithId, errorDef)
+
 ```
 
 

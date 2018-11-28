@@ -104,6 +104,22 @@ lazy val jsonArgonaut = (project in file("json-interpreters/argonaut"))
       "org.scalatest" %% "scalatest" % "3.0.5" % Test
     )
   ).dependsOn(core)
+lazy val protobuf = (project in file("json-interpreters/protobuf"))
+  .settings(
+    commonSettings,
+    name := "Bones Protobuf",
+    libraryDependencies ++= Seq (
+      "com.google.protobuf" % "protobuf-java" % "3.6.1"
+    )
+  ).dependsOn(core)
+lazy val bson = (project in file("json-interpreters/bson"))
+  .settings(
+    commonSettings,
+    name := "Bones Bson",
+    libraryDependencies ++= Seq (
+      "org.reactivemongo" %% "reactivemongo-bson" % "0.16.0"
+    )
+  ).dependsOn(core)
 lazy val dbDoobie = (project in file("db-interpreters/doobie"))
   .settings(
     commonSettings,
