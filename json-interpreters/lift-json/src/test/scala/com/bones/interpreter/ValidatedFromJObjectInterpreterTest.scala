@@ -10,7 +10,7 @@ import shapeless.{::, HNil}
 
 class ValidatedFromJObjectInterpreterTest extends FunSuite with Checkers {
 
-  val interpreter = new ValidatedFromJObjectInterpreter()
+  val interpreter = ValidatedFromJObjectInterpreter
 
   test("json to string") {
     val str = kvp("test", string()) :: KvpNil
