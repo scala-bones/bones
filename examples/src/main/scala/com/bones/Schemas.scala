@@ -5,7 +5,7 @@ import java.util.UUID
 
 import com.bones.data.Error.CanNotConvert
 import com.bones.data.Value.KvpNil
-import com.bones.validation.ValidationDefinition.{ValidationOp, LongValidation => iv, StringValidation => sv}
+import com.bones.validation.ValidationDefinition.ValidationOp
 import shapeless.HNil
 
 object Schemas {
@@ -74,8 +74,8 @@ object Schemas {
   import com.bones.syntax._
 
   val ccExp = (
-    kvp("expMonth", long(iv.between(1,12))) ::
-    kvp("expYear", long(iv.between(1950, 9999))) ::
+    kvp("expMonth", long(lv.between(1,12))) ::
+    kvp("expYear", long(lv.between(1950, 9999))) ::
     KvpNil
   ).validate(HasNotExpired)
 
