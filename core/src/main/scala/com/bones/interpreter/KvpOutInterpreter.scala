@@ -1,16 +1,34 @@
 package com.bones.interpreter
 
+import cats.data.NonEmptyList
+import com.bones.data.Error.ExtractionError
 import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
 import shapeless.{HList, Nat}
 
+object KvpOutInterpreter {
+  type FOUT[OUT,A] = A => Either[NonEmptyList[ExtractionError],A]
+}
+/**
+  * Base trait for converting from HList or Case class to an interchange format such as JSON.
+  * @tparam OUT The interchange format.
+  */
 trait KvpOutputInterpreter[OUT] {
 
   def none: OUT
   def empty: OUT
   def appendGroup(prefix: OUT, postfix: OUT): OUT
   def toObj[A](kvDef: KeyValueDefinition[A], value: OUT): OUT
-  //  def prefixElementToGroup(prefix: KVP, postfix: OUT): OUT
+  def booleanToOut[A](op: BooleanData): A => OUT
+  def stringToOut[A](op: StringData): A => OUT
+  def longToOut[A](op: LongData): A => OUT
+  def uuidToOut[A](op: UuidData): A => OUT
+  def dateTimeToOut[A](op: DateTimeData): A => OUT
+  def bigDecimalToOut[A](op: BigDecimalData): A => OUT
+  def listDataToOut[A,T,L<: List[T]](op: ListData[T,L]): A => OUT
+  def enumerationToOut[A](op: EnumerationStringData[A]): A => OUT
+  def enumToOut[A](op: EnumStringData[_]): A => OUT
+
 
   def dataClass[A](dc: DataClass[A]): A => OUT = {
     dc match {
@@ -63,17 +81,6 @@ trait KvpOutputInterpreter[OUT] {
           case None => none
         }
     }
-
-  def booleanToOut[A](op: BooleanData): A => OUT
-  def stringToOut[A](op: StringData): A => OUT
-  def longToOut[A](op: LongData): A => OUT
-  def uuidToOut[A](op: UuidData): A => OUT
-  def dateTimeToOut[A](op: DateTimeData): A => OUT
-  def bigDecimalToOut[A](op: BigDecimalData): A => OUT
-  def listDataToOut[A,T,L<: List[T]](op: ListData[T,L]): A => OUT
-  def enumerationToOut[A](op: EnumerationStringData[A]): A => OUT
-  def enumToOut[A](op: EnumStringData[_]): A => OUT
-
 
   def valueDefinition[A](fgo: ValueDefinitionOp[A]): A => OUT =
     fgo match {

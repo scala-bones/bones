@@ -3,92 +3,48 @@ package com.bones.argonaut
 import java.time.ZonedDateTime
 
 import argonaut._
+import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
-import shapeless.{HList, HNil, Nat}
-object EncodeToArgonautInterpreter {
+import com.bones.interpreter.KvpOutputInterpreter
 
-  type EncodeToJValue[A] = A => Json
-}
-class EncodeToArgonautInterpreter {
+object EncodeToArgonautInterpreter extends KvpOutputInterpreter[Json]{
+  override def none: Json = Json.jNull
 
-  import EncodeToArgonautInterpreter._
+  override def empty: Json = Json.obj()
 
-  def dataClass[A](dc: DataClass[A]): EncodeToJValue[A] = {
-    dc match {
-      case x: XMapData[a,al,b] =>
-        (input: A) => kvpGroup(x.from).apply(x.fba(input))
-      case op: OptionalDataClass[a] =>
-        (a: A) => a match {
-          case Some(x) => dataClass(op.value).apply(x)
-          case None => Json.jNull
-        }
-    }
-  }
-  def kvpGroup[H<:HList, HL<:Nat](group: KvpGroup[H,HL]) : EncodeToJValue[H] = {
-    group match {
-      case KvpNil => (input: H) => Json.obj()
-      case op: KvpGroupHead[a,l,h,hl,t,tl] => {
-        val fh = kvpGroup[h,hl](op.head)
-        val ft = kvpGroup[t,tl](op.tail)
-        (input: H) => {
-          val split = op.split(input)
-          val values1 = fh(split._1).obj.toList.flatMap(_.toList)
-          val values2 = ft(split._2).obj.toList.flatMap(_.toList)
-          Json.obj( values1 ::: values2 :_*)
-        }
-      }
-      case op: KvpDataClassHead[h,t,tl,o] =>
-        val headF = dataClass(op.dataClass)
-        val tailF = kvpGroup(op.tail)
-        input: H => {
-          val headFields = headF(input.head.asInstanceOf[h]).obj.toList.flatMap(_.toList)
-          val tailFields = tailF(input.tail.asInstanceOf[t]).obj.toList.flatMap(_.toList)
-          Json.obj( (headFields ::: tailFields):_*)
-        }
-      case op: KvpSingleValueHead[h,t,tl,H] => (input: H) => {
-        import shapeless.::
-        val cast = input.asInstanceOf[h :: t]
-        val val1 = valueDefinition(op.fieldDefinition.op).apply(cast.head)
-
-        val values = kvpGroup(op.tail).apply(cast.tail).obj.toList.flatMap(_.toList)
-        Json.obj( (op.fieldDefinition.key, val1) :: values :_* )
-      }
-      case op: OptionalKvpGroup[h,hl] =>
-        val oF = kvpGroup(op.kvpGroup)
-        input: H => input.head match {
-          case Some(kvp) => oF(kvp)
-          case None => Json.jNull
-        }
-    }
+  override def appendGroup(prefix: Json, postfix: Json): Json = {
+    val values1 = prefix.obj.toList.flatMap(_.toList)
+    val values2 = postfix.obj.toList.flatMap(_.toList)
+    Json.obj( values1 ::: values2 :_*)
   }
 
-  def valueDefinition[A](fgo: ValueDefinitionOp[A]): EncodeToJValue[A] =
-    fgo match {
-      case op: OptionalValueDefinition[b] => (input: A) => {
-        input match {
-          case Some(x) => valueDefinition(op.valueDefinitionOp).apply(x)
-          case None => Json.jNull
-        }
-      }
+  override def toObj[A](kvDef: KeyValueDefinition[A], value: Json): Json =
+    Json.obj( (kvDef.key, value) )
 
-      case ob: BooleanData => (input: A) => Json.jBool(input.asInstanceOf[Boolean])
-      case rs: StringData => (input: A) => Json.jString(input.asInstanceOf[String])
-      case ri: LongData => (input: A) => Json.jNumber(input.asInstanceOf[Int].toLong)
-      case uu: UuidData => (input: A) => Json.jString(input.toString)
-      case DateTimeData(format, _, _) => (input: A) => Json.jString(format.format(input.asInstanceOf[ZonedDateTime]))
-      case bd: BigDecimalData => (input: A) => Json.jNumber(input.asInstanceOf[BigDecimal])
-      case ListData(definition, _) => (input: A) => {
-        val f = valueDefinition(definition)
-        Json.array(input.asInstanceOf[List[A]].map(i => f(i)) :_*)
-      }
-      case EitherData(aDefinition, bDefinition) => (input: A) => {
-        input match {
-          case Left(aInput) => valueDefinition(aDefinition)(aInput)
-          case Right(bInput) => valueDefinition(bDefinition)(bInput)
-        }
-      }
-      case EnumerationStringData(enumeration, _) => (input: A) => Json.jString(input.toString)
-      case EnumStringData(enum, _) => (input: A) => Json.jString(input.toString)
+  override def booleanToOut[A](op: BooleanData): A => Json =
+    input => Json.jBool(input.asInstanceOf[Boolean])
 
-    }
+  override def stringToOut[A](op: StringData): A => Json =
+    input => Json.jString(input.toString)
+
+  override def longToOut[A](op: LongData): A => Json =
+    input => Json.jNumber(input.asInstanceOf[Long])
+
+  override def uuidToOut[A](op: UuidData): A => Json =
+    input => Json.jString(input.toString)
+
+  override def dateTimeToOut[A](op: DateTimeData): A => Json =
+    input => Json.jString(op.dateFormat.format(input.asInstanceOf[ZonedDateTime]))
+
+  override def bigDecimalToOut[A](op: BigDecimalData): A => Json =
+    input => Json.jNumber(input.asInstanceOf[BigDecimal])
+
+  override def listDataToOut[A, T, L <: List[T]](op: ListData[T, L]): A => Json =
+    input => Json.array(input.asInstanceOf[List[Json]] :_*)
+
+  override def enumerationToOut[A](op: EnumerationStringData[A]): A => Json =
+    input => Json.jString(input.toString)
+
+  override def enumToOut[A](op: EnumStringData[_]): A => Json =
+    input => Json.jString(input.toString)
 }
