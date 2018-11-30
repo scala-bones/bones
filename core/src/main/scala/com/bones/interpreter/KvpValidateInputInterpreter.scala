@@ -196,18 +196,28 @@ trait KvpValidateInputInterpreter[IN] {
         required(op, _:Option[IN], extractZonedDateTime(_,dateFormat))
           .flatMap(vu.validate(_, op.validations))
       case ed: EitherData[a, b] =>
-        val optionalA = valueDefinition(OptionalValueDefinition(ed.definitionA))
-        val optionalB = valueDefinition(OptionalValueDefinition(ed.definitionB))
+        val optionalA = valueDefinition(ed.definitionA)
+        val optionalB = valueDefinition(ed.definitionB)
         in: Option[IN] =>
         {
-          optionalA(in).right.flatMap {
-            case Some(a) => Right(Left(a))
-            case None => {
-              optionalB(in).right.flatMap {
-                case Some(b) => Right(Right(b))
-                case None    => Left(NonEmptyList.one(RequiredData(ed)))
+          optionalA(in) match {
+            case Left(err) =>
+              val nonWrongTypeError = err.toList.filter {
+                case WrongTypeError(_,_) => false
+                case RequiredData(_) => false
+                case _ => true
               }
-            }
+              if (nonWrongTypeError.isEmpty) {
+                optionalB(in) match {
+                  case Right(b) => Right(Right(b))
+                  case Left(err) => {
+                    Left(NonEmptyList.one(RequiredData(ed)))
+                  }
+                }
+              } else {
+                Left(err)
+              }
+            case Right(a) => Right(Left(a))
           }
         }
       case op: ListData[t, l] =>
