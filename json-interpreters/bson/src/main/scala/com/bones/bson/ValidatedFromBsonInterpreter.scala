@@ -4,16 +4,12 @@ import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import java.util.UUID
 
-import cats.Applicative
-import cats.data.{NonEmptyList, Validated}
+import cats.data.NonEmptyList
 import cats.implicits._
-import com.bones.data.Error.{CanNotConvert, ExtractionError, RequiredData, WrongTypeError}
+import com.bones.data.Error.{CanNotConvert, ExtractionError, WrongTypeError}
 import com.bones.data.KeyValueDefinition
-import com.bones.data.Value.{ValueDefinitionOp, _}
 import com.bones.interpreter.KvpValidateInputInterpreter
-import com.bones.validation.{ValidationUtil => vu}
 import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDocument, BSONDouble, BSONLong, BSONString, BSONValue}
-import shapeless.{HList, HNil, Nat}
 
 
 class ValidatedFromBsonInterpreter extends KvpValidateInputInterpreter[BSONValue] {
