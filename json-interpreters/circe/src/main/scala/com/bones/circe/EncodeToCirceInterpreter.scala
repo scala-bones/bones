@@ -2,101 +2,53 @@ package com.bones.circe
 
 import java.time.ZonedDateTime
 
+import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
+import com.bones.interpreter.KvpOutputInterpreter
+import io.circe.Json.JObject
 import io.circe._
 import shapeless.{HList, HNil, Nat}
 
-object EncodeToCirceInterpreter {
+object EncodeToCirceInterpreter extends KvpOutputInterpreter[Json] {
+  override def none: Json = Json.Null
 
-  type EncodeToJValue[A] = A => Json
+  override def empty: Json = Json.obj()
 
-  def dataClass[A](dc: DataClass[A]): EncodeToJValue[A] = {
-    dc match {
-      case x: XMapData[a,al,b] =>
-        val groupF = kvpGroup(x.from)
-        input: A => groupF.apply(x.fba(input))
-      case op: OptionalDataClass[a] =>
-        val dataClassF = dataClass(op.value)
-        a: A => a match {
-          case Some(x) => dataClassF.apply(x)
-          case None => Json.Null
-        }
-    }
+  override def appendGroup(prefix: Json, postfix: Json): Json = {
+    val v1 = prefix.asObject.toList.flatMap(_.toList)
+    val v2 = postfix.asObject.toList.flatMap(_.toList)
+    Json.obj( v1 ::: v2 :_*)
   }
 
-  def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): EncodeToJValue[H] =
-    group match {
-      case KvpNil => (input: H) => Json.obj()
-      case op: KvpGroupHead[out,l,h,hl,t,tl] =>
-        val headF = kvpGroup(op.head)
-        val tailF = kvpGroup[t,tl](op.tail)
-        (input: H) => {
-          val l = op.split(input)
-          val values1 = headF.apply(l._1).asObject.toList.flatMap(_.toList)
-          val values2 = tailF.apply(l._2).asObject.toList.flatMap(_.toList)
-          Json.obj( (values1 ::: values2) :_*)
-        }
-      case op: KvpSingleValueHead[h,t,tl,H] =>
-        val valueF = valueDefinition(op.fieldDefinition.op)
-        (input: H) => {
-          import shapeless.::
-          val cast = input.asInstanceOf[h :: t]
-          val val1 = valueF.apply(cast.head)
-          val values = kvpGroup(op.tail)(cast.tail).asObject.toList.flatMap(_.toList)
-          Json.obj( ( (op.fieldDefinition.key, val1) :: values) :_* )
-        }
-      case op: KvpDataClassHead[h,t,tl,o] => {
-        val hF = dataClass(op.dataClass)
-        val tailF = kvpGroup(op.tail)
-        (input: H) => {
-          val hFields = hF(input.head).asObject.toList.flatMap(_.toList)
-          val tailFields = tailF(input.tail).asObject.toList.flatMap(_.toList)
-          Json.obj( (hFields ::: tailFields) :_*)
-        }
-      }
-      case op: OptionalKvpGroup[h,hl] =>
-        val oF = kvpGroup(op.kvpGroup)
-        input: H => input.head match {
-          case Some(kvp) => oF(kvp)
-          case None => Json.Null
-        }
-    }
 
-  def valueDefinition[A](fgo: ValueDefinitionOp[A]): EncodeToJValue[A] =
-    fgo match {
-      case op: OptionalValueDefinition[b] =>
-        val valueF = valueDefinition(op.valueDefinitionOp)
-        (input: A) => {
-          input match {
-            case Some(x) => valueF(x)
-            case None => Json.Null
-          }
-        }
-      case ob: BooleanData => (input: A) => Json.fromBoolean(input.asInstanceOf[Boolean])
-      case rs: StringData => (input: A) => Json.fromString(input.asInstanceOf[String])
-      case ri: LongData => (input: A) => Json.fromInt(input.asInstanceOf[Long].toInt)
-      case uu: UuidData => (input: A) => Json.fromString(input.toString)
-      case DateTimeData(format, _, validations) => (input: A) => Json.fromString(format.format(input.asInstanceOf[ZonedDateTime]))
-      case bd: BigDecimalData => (input: A) => Json.fromBigDecimal(input.asInstanceOf[BigDecimal])
-      case ld: ListData[t,l] =>
-        val f = valueDefinition(ld.tDefinition)
-        (input: A) => {
-          Json.arr(input.asInstanceOf[List[t]].map(i => f(i)) :_*)
-        }
-      case EitherData(aDefinition, bDefinition) =>
-        val aF = valueDefinition(aDefinition)
-        val bF = valueDefinition(bDefinition)
-        (input: A) => {
-          input match {
-            case Left(aInput) => aF(aInput)
-            case Right(bInput) => bF(bInput)
-          }
-        }
-      case EnumerationStringData(enumeration, validations) => (input: A) => Json.fromString(input.toString)
-      case EnumStringData(enum, validations) => (input: A) => Json.fromString(input.toString)
-      case gd: KvpGroupData[h,hl] => {
-        val fh = kvpGroup(gd.kvpGroup)
-        input: A => fh(input.asInstanceOf[h])
-      }
-    }
+  override def toObj[A](kvDef: KeyValueDefinition[A], value: Json): Json =
+    Json.obj( (kvDef.key, value) )
+
+  override def booleanToOut[A](op: BooleanData): A => Json =
+    input => Json.fromBoolean(input.asInstanceOf[Boolean])
+
+  override def stringToOut[A](op: StringData): A => Json =
+    input => Json.fromString(input.toString)
+
+  override def longToOut[A](op: LongData): A => Json =
+    input => Json.fromLong(input.asInstanceOf[Long])
+
+  override def uuidToOut[A](op: UuidData): A => Json =
+    input => Json.fromString(input.toString)
+
+  override def dateTimeToOut[A](op: DateTimeData): A => Json =
+    input => Json.fromString(op.dateFormat.format(input.asInstanceOf[ZonedDateTime]))
+
+  override def bigDecimalToOut[A](op: BigDecimalData): A => Json =
+    input => Json.fromBigDecimal(input.asInstanceOf[BigDecimal])
+
+  override def listDataToOut[A, T, L <: List[T]](op: ListData[T, L]): A => Json =
+    input => Json.arr(input.asInstanceOf[List[Json]] :_*)
+
+  override def enumerationToOut[A](op: EnumerationStringData[A]): A => Json =
+    input => Json.fromString(input.toString)
+
+  override def enumToOut[A](op: EnumStringData[_]): A => Json =
+    input => Json.fromString(input.toString)
+
 }
