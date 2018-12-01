@@ -9,10 +9,12 @@ import cats.implicits._
 import com.bones.data.Error.{CanNotConvert, ExtractionError, WrongTypeError}
 import com.bones.data.KeyValueDefinition
 import com.bones.interpreter.KvpValidateInputInterpreter
-import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDocument, BSONDouble, BSONLong, BSONString, BSONValue}
+import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDecimal, BSONDocument, BSONDouble, BSONInteger, BSONLong, BSONString, BSONTimestamp, BSONValue}
+
+import scala.util.Try
 
 
-class ValidatedFromBsonInterpreter extends KvpValidateInputInterpreter[BSONValue] {
+object ValidatedFromBsonInterpreter extends KvpValidateInputInterpreter[BSONValue] {
 
   type ValidatedFromJsonOption[A] =
     Option[BSONValue] => Either[NonEmptyList[ExtractionError], A]
@@ -55,6 +57,7 @@ class ValidatedFromBsonInterpreter extends KvpValidateInputInterpreter[BSONValue
   override def extractLong(in: BSONValue): Either[NonEmptyList[WrongTypeError[Long]], Long] =
     in match {
       case BSONLong(long) => Right(long)
+      case BSONInteger(i) => Right(i.toLong)
       case x => invalidValue(x, classOf[Long])
     }
 
@@ -75,6 +78,10 @@ class ValidatedFromBsonInterpreter extends KvpValidateInputInterpreter[BSONValue
       case BSONDateTime(date) =>
         val i = Instant.ofEpochSecond(date)
         Right(ZonedDateTime.ofInstant(i, ZoneOffset.UTC))
+      case BSONTimestamp(date) =>
+        val i = Instant.ofEpochSecond(date)
+        Right(ZonedDateTime.ofInstant(i, ZoneOffset.UTC))
+
       case x => invalidValue(x, classOf[ZonedDateTime])
     }
 
@@ -92,6 +99,10 @@ class ValidatedFromBsonInterpreter extends KvpValidateInputInterpreter[BSONValue
   override def extractBigDecimal(in: BSONValue): Either[NonEmptyList[ExtractionError], BigDecimal] =
     in match {
       case BSONDouble(d) => Right(BigDecimal(d))
+      case bd: BSONDecimal =>
+        BSONDecimal.toBigDecimal(bd).map(Right(_)).getOrElse(Left(NonEmptyList.one(CanNotConvert(in, classOf[BigDecimal]))))
+      case BSONInteger(i) => Right(BigDecimal(i))
+      case BSONLong(l) => Right(BigDecimal(l))
       case x => invalidValue(x, classOf[BigDecimal])
     }
 }

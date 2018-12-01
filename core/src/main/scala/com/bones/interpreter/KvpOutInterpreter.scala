@@ -46,7 +46,7 @@ trait KvpOutputInterpreter[OUT] {
 
   def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): H => OUT =
     group match {
-      case KvpNil => (input: H) => none
+      case KvpNil => (input: H) => empty
       case op: KvpGroupHead[out,l,h,hl,t,tl] =>
         val headF = kvpGroup(op.head)
         val tailF = kvpGroup[t,tl](op.tail)
