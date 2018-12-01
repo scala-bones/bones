@@ -143,7 +143,7 @@ lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
       "org.scalatest" %% "scalatest" % "3.0.5" % Test
     )
-  ).dependsOn(core, jsonCirce, jsonOas3)
+  ).dependsOn(core, jsonCirce, jsonOas3, bson)
 lazy val examples = (project in file("examples"))
     .settings(
       commonSettings,
