@@ -1,5 +1,8 @@
 package com.bones.interpreter
 
+import java.time.ZonedDateTime
+import java.util.UUID
+
 import cats.data.NonEmptyList
 import com.bones.data.Error.ExtractionError
 import com.bones.data.KeyValueDefinition
@@ -19,13 +22,13 @@ trait KvpOutputInterpreter[OUT] {
   def empty: OUT
   def appendGroup(prefix: OUT, postfix: OUT): OUT
   def toObj[A](kvDef: KeyValueDefinition[A], value: OUT): OUT
-  def booleanToOut[A](op: BooleanData): A => OUT
-  def stringToOut[A](op: StringData): A => OUT
-  def longToOut[A](op: LongData): A => OUT
-  def uuidToOut[A](op: UuidData): A => OUT
-  def dateTimeToOut[A](op: DateTimeData): A => OUT
-  def bigDecimalToOut[A](op: BigDecimalData): A => OUT
-  def listDataToOut[A,T,L<: List[T]](op: ListData[T,L]): A => OUT
+  def booleanToOut[A](op: BooleanData): Boolean => OUT
+  def stringToOut[A](op: StringData): String => OUT
+  def longToOut[A](op: LongData): Long => OUT
+  def uuidToOut[A](op: UuidData): UUID => OUT
+  def dateTimeToOut[A](op: DateTimeData): ZonedDateTime => OUT
+  def bigDecimalToOut[A](op: BigDecimalData): BigDecimal => OUT
+  def listDataToOut[A,T](op: ListData[T]): A => OUT
   def enumerationToOut[A](op: EnumerationStringData[A]): A => OUT
   def enumToOut[A](op: EnumStringData[_]): A => OUT
 
@@ -98,7 +101,8 @@ trait KvpOutputInterpreter[OUT] {
       case uu: UuidData => uuidToOut(uu)
       case dd: DateTimeData => dateTimeToOut(dd)
       case bd: BigDecimalData => bigDecimalToOut(bd)
-      case ld: ListData[t,l] => listDataToOut(ld)
+      case ld: ListData[t] => listDataToOut(ld)
+//      case ListData(vDefinition, _) => listDataToOut(vDefinition)
       case EitherData(aDefinition, bDefinition) =>
         val aF = valueDefinition(aDefinition)
         val bF = valueDefinition(bDefinition)

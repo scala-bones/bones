@@ -75,8 +75,8 @@ object Value {
     extends ValueDefinitionOp[Either[A, B]] with ToOptionalData[Either[A, B]] {
   }
   final case class LongData(validations: List[ValidationOp[Long]]) extends ValueDefinitionOp[Long] with ToOptionalData[Long]
-  final case class ListData[T, L <: List[T]](tDefinition: ValueDefinitionOp[T], validations: List[ValidationOp[L]])
-    extends ValueDefinitionOp[L] with ToOptionalData[L]
+  final case class ListData[T](tDefinition: ValueDefinitionOp[T], validations: List[ValidationOp[List[T]]])
+    extends ValueDefinitionOp[List[T]] with ToOptionalData[List[T]]
   final case class StringData(validations: List[ValidationOp[String]])
     extends ValueDefinitionOp[String] with ToOptionalData[String]
   final case class BigDecimalData(validations: List[ValidationOp[BigDecimal]])
