@@ -36,13 +36,11 @@ trait KvpValidateInputInterpreter[IN] {
                              op: ValueDefinitionOp[B],
                              inOpt: Option[IN],
                              f: IN => Option[A],
-                             convert: A => Either[NonEmptyList[ExtractionError], B]) =
+                             convert: A => Either[NonEmptyList[ExtractionError], B]): Either[NonEmptyList[ExtractionError], A] =
     for {
       in <- inOpt
         .toRight(NonEmptyList.one(RequiredData(op)))
-        .asInstanceOf[Either[NonEmptyList[ExtractionError], IN]]
-      a <- f(in)
-        .toRight(NonEmptyList.one(invalidValue(in, classOf[Object])))
+      a <- f(in).map(Right(_)).getOrElse(invalidValue(in, classOf[Object]))
     } yield a
 
   def required[A](
@@ -52,7 +50,6 @@ trait KvpValidateInputInterpreter[IN] {
     for {
       json <- inOpt
         .toRight(NonEmptyList.one(RequiredData(op)))
-        .asInstanceOf[Either[NonEmptyList[ExtractionError], IN]]
       a <- f(json)
     } yield a
 
@@ -64,15 +61,15 @@ trait KvpValidateInputInterpreter[IN] {
         (jOpt: Option[IN]) =>
           jOpt match {
             case None    => Left(NonEmptyList.one(RequiredData(null)))
-            case Some(j) => kvp.apply(j).right.map(x.fab(_).asInstanceOf[A])
+            case Some(j) => kvp.apply(j).right.map(x.fab(_))
           }
       }
-      case op: OptionalDataClass[a] => {
-        val dcF = dataClass(op.value)
+      case dc: OptionalDataClass[a] => {
+        val dcF = dataClass(value)
         (jOpt: Option[IN]) =>
           jOpt match {
-            case None    => Right(None).map(_.asInstanceOf[A])
-            case Some(j) => dcF.apply(Some(j)).map(_.asInstanceOf[A])
+            case None    => Right(None)
+            case Some(j) => dcF.apply(Some(j))
           }
       }
     }
@@ -99,12 +96,11 @@ trait KvpValidateInputInterpreter[IN] {
             .map2(headInterpreter(in).toValidated,
               tailInterpreter(in).toValidated)((l1: h, l2: t) => {
               op.prepend.apply(l1, l2)
-            })
-            .andThen { l =>
+            }).toEither
+            .flatMap { l =>
               vu.validate[H](l, op.validations)
-                .asInstanceOf[Validated[NonEmptyList[ExtractionError], H]]
             }
-            .toEither
+
         }
       }
 
@@ -171,7 +167,7 @@ trait KvpValidateInputInterpreter[IN] {
 
 
   def valueDefinition[A](fgo: ValueDefinitionOp[A]): Option[IN] => Either[NonEmptyList[ExtractionError],A] = {
-    val result = fgo match {
+    val result: Option[IN] => Either[NonEmptyList[ExtractionError],A] = fgo match {
       case op: OptionalValueDefinition[a] =>
         val applied = valueDefinition(op.valueDefinitionOp)
         (in: Option[IN]) =>
@@ -220,13 +216,12 @@ trait KvpValidateInputInterpreter[IN] {
             case Right(a) => Right(Left(a))
           }
         }
-      case op: ListData[t, l] =>
-        val valueF = valueDefinition(op)
-        def traverseArray(arr: Seq[IN]) = {
-          arr
-            .map(jValue => valueF.apply(Some(jValue)))
-            .foldLeft[Either[NonEmptyList[ExtractionError], List[_]]](
-            Right(List.empty))((b, v) =>
+      case op: ListData[t] =>
+        val valueF = valueDefinition(op.tDefinition)
+        def traverseArray(arr: Seq[IN]): Either[NonEmptyList[ExtractionError], List[t]] = {
+          val arrayApplied: Seq[Either[NonEmptyList[ExtractionError], t]] = arr.map(jValue => valueF.apply(Some(jValue)))
+          arrayApplied.foldLeft[Either[NonEmptyList[ExtractionError], List[t]]](
+              Right(List.empty))((b, v) =>
             (b, v) match {
               case (Right(a), Right(i)) => Right(a :+ i)
               case (Left(a), Left(b))   => Left(a ::: b)
@@ -239,8 +234,9 @@ trait KvpValidateInputInterpreter[IN] {
           for {
             in <- inOpt.toRight(NonEmptyList.one(RequiredData(op)))
             arr <- extractArray(in)
-            result <- traverseArray(arr)
-          } yield result
+            listOfIn <- traverseArray(arr)
+          } yield listOfIn
+
         }
       case op: BigDecimalData =>
         jsonOpt: Option[IN] =>
@@ -280,7 +276,7 @@ trait KvpValidateInputInterpreter[IN] {
         val valueF = valueDefinition(op.from)
         (in: Option[IN]) =>
         {
-          valueF.apply(in).flatMap(res => op.fab.apply(res))
+          valueF.apply(in).flatMap(res => op.fab.apply(res).left.map(NonEmptyList.one(_)))
         }
       case op: KvpGroupData[h, hl] => {
         val fg = kvpGroup(op.kvpGroup)
@@ -288,14 +284,16 @@ trait KvpValidateInputInterpreter[IN] {
         {
           jsonOpt match {
             case Some(json) =>
-              fg(json).flatMap(res => vu.validate(res, op.validations))
+              fg(json)
+                .flatMap(res => vu.validate(res, op.validations))
+                .map(_.asInstanceOf[A])
             case None => Left(NonEmptyList.one(RequiredData(op)))
           }
         }
       }
 
     }
-    result.asInstanceOf[Option[IN] => Either[NonEmptyList[ExtractionError],A]]
+    result
   }
 
 

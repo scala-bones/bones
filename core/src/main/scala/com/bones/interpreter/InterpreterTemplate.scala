@@ -35,7 +35,7 @@ class InterpreterTemplate {
       case uu: UuidData => ???
       case dd: DateTimeData => ???
       case bd: BigDecimalData => ???
-      case ld: ListData[t, l] => ???
+      case ld: ListData[t] => ???
       case ed: EitherData[a,b] => ???
       case esd: EnumerationStringData[a] => ???
       case esd: EnumStringData[a] => ???
