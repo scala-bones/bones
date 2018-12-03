@@ -1,6 +1,7 @@
 package com.bones.bson
 
 import java.time.ZonedDateTime
+import java.util.UUID
 
 import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
@@ -24,31 +25,31 @@ object EncodeToBson extends KvpOutputInterpreter[BSONValue] {
   }
 
   @inline
-  override def booleanToOut[A](op: BooleanData): A => BSONValue =
-    input => BSONBoolean(input.asInstanceOf[Boolean])
+  override def booleanToOut[A](op: BooleanData): Boolean => BSONValue =
+    input => BSONBoolean(input)
 
   @inline
-  override def stringToOut[A](op: StringData): A => BSONValue =
-    input => BSONString(input.asInstanceOf[String])
+  override def stringToOut[A](op: StringData): String => BSONValue =
+    input => BSONString(input)
 
   @inline
-  override def longToOut[A](op: LongData): A => BSONValue =
-    input => BSONLong(input.asInstanceOf[Long])
+  override def longToOut[A](op: LongData): Long => BSONValue =
+    input => BSONLong(input)
 
   @inline
-  override def uuidToOut[A](op: UuidData): A => BSONValue =
+  override def uuidToOut[A](op: UuidData): UUID => BSONValue =
     input => BSONString(input.toString)
 
   @inline
-  override def dateTimeToOut[A](op: DateTimeData): A => BSONValue =
-    input => BSONDateTime(input.asInstanceOf[ZonedDateTime].toEpochSecond)
+  override def dateTimeToOut[A](op: DateTimeData): ZonedDateTime => BSONValue =
+    input => BSONDateTime(input.toEpochSecond)
 
   @inline
-  override def bigDecimalToOut[A](op: BigDecimalData): A => BSONValue =
-    input => BSONDecimal.fromBigDecimal(input.asInstanceOf[BigDecimal]).getOrElse(BSONString(input.toString))
+  override def bigDecimalToOut[A](op: BigDecimalData): BigDecimal => BSONValue =
+    input => BSONDecimal.fromBigDecimal(input).getOrElse(BSONString(input.toString))
 
   @inline
-  override def listDataToOut[A, T, L<:List[T]](op: ListData[T, L]): A => BSONValue = {
+  override def listDataToOut[A, T](op: ListData[T]): A => BSONValue = {
     val f = valueDefinition(op.tDefinition)
     (input: A) => {
       BSONArray(input.asInstanceOf[List[T]].map(i => f(i)))

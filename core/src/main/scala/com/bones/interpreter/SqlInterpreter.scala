@@ -33,7 +33,7 @@ object SqlInterpreter {
       case uu: UuidData => "varchar(36)"
       case dd: DateTimeData => "timestamp"
       case bd: BigDecimalData => "number"
-      case ld: ListData[t, l] => "list"
+      case ld: ListData[t] => "list"
       case ed: EitherData[a,b] => s"${valueDefinition(ed.definitionA)} can be null , ${valueDefinition(ed.definitionB)} can be null"
       case esd: EnumerationStringData[a] => "text"
       case esd: EnumStringData[a] => "text"

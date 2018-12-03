@@ -43,10 +43,9 @@ trait Sugar {
     * @param dataDefinitionOp - One of the supported ValueDefinitionOp types.
     * @param v List of validations each element of the list must pass to be valid.
     * @tparam T The type of each element.  Can be an EitherFieldDefinition if more than one type is expected in the list.
-    * @tparam L The List[T] type.
     * @return
     */
-  def list[T, L <: List[T]](dataDefinitionOp: ValueDefinitionOp[T], v: ValidationOp[L]*) =
+  def list[T](dataDefinitionOp: ValueDefinitionOp[T], v: ValidationOp[List[T]]*) =
     ListData(dataDefinitionOp, v.toList)
 
 
