@@ -44,6 +44,7 @@ trait KvpOutputInterpreter[OUT] {
           case Some(x) => dataClassF.apply(x)
           case None => none
         }
+      case op: XMapListData[a] => ???
     }
   }
 

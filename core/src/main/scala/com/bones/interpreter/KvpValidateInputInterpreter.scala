@@ -23,14 +23,14 @@ trait KvpValidateInputInterpreter[IN] {
                    headInterpreter: Option[IN] =>  Either[NonEmptyList[ExtractionError],A]
                   ): Either[NonEmptyList[ExtractionError],A]
 
-  def extractString(in: IN): Either[NonEmptyList[WrongTypeError[String]], String]
-  def extractLong(in: IN): Either[NonEmptyList[WrongTypeError[Long]], Long]
-  def extractBool(in: IN): Either[NonEmptyList[WrongTypeError[Boolean]], Boolean]
+  def extractString(in: IN): Either[NonEmptyList[ExtractionError], String]
+  def extractLong(in: IN): Either[NonEmptyList[ExtractionError], Long]
+  def extractBool(in: IN): Either[NonEmptyList[ExtractionError], Boolean]
   def extractUuid(in: IN): Either[NonEmptyList[ExtractionError], UUID]
   def extractZonedDateTime(in: IN, dateFormat: DateTimeFormatter): Either[NonEmptyList[ExtractionError], ZonedDateTime]
   def extractArray(in: IN): Either[NonEmptyList[ExtractionError], Seq[IN]]
   def extractBigDecimal(in: IN): Either[NonEmptyList[ExtractionError], BigDecimal]
-  protected def invalidValue[T](in: IN, expected: Class[T]): Left[NonEmptyList[WrongTypeError[T]], Nothing]
+  protected def invalidValue[T](in: IN, expected: Class[T]): Left[NonEmptyList[ExtractionError], Nothing]
 
   def requiredConvert[A, B](
                              op: ValueDefinitionOp[B],
@@ -65,13 +65,37 @@ trait KvpValidateInputInterpreter[IN] {
           }
       }
       case dc: OptionalDataClass[a] => {
-        val dcF = dataClass(value)
+        val dcF = dataClass(dc.value)
         (jOpt: Option[IN]) =>
           jOpt match {
             case None    => Right(None)
-            case Some(j) => dcF.apply(Some(j))
+            case Some(j) => dcF.apply(Some(j)).asInstanceOf[Either[NonEmptyList[ExtractionError],A]]
           }
       }
+      case op: XMapListData[b] => {
+        val valueF = dataClass(op.value)
+        def traverseArray(arr: Seq[IN]): Either[NonEmptyList[ExtractionError], List[b]] = {
+          val arrayApplied: Seq[Either[NonEmptyList[ExtractionError], b]] = arr.map(jValue => valueF.apply(Some(jValue)))
+          arrayApplied.foldLeft[Either[NonEmptyList[ExtractionError], List[b]]](
+            Right(List.empty))((b, v) =>
+            (b, v) match {
+              case (Right(a), Right(i)) => Right(a :+ i)
+              case (Left(a), Left(b))   => Left(a ::: b)
+              case (Left(x), _)         => Left(x)
+              case (_, Left(x))         => Left(x)
+            })
+        }
+        inOpt: Option[IN] =>
+        {
+          for {
+            in <- inOpt.toRight(NonEmptyList.one(RequiredData(null)))
+            arr <- extractArray(in)
+            listOfIn <- traverseArray(arr)
+          } yield listOfIn
+
+        }
+      }
+
     }
   }
 
@@ -201,6 +225,7 @@ trait KvpValidateInputInterpreter[IN] {
               val nonWrongTypeError = err.toList.filter {
                 case WrongTypeError(_,_) => false
                 case RequiredData(_) => false
+                case CanNotConvert(_,_) => false
                 case _ => true
               }
               if (nonWrongTypeError.isEmpty) {
@@ -290,6 +315,9 @@ trait KvpValidateInputInterpreter[IN] {
             case None => Left(NonEmptyList.one(RequiredData(op)))
           }
         }
+      }
+      case op: KvpValueData[a] => {
+        dataClass(op.value)
       }
 
     }
