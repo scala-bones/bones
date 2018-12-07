@@ -21,11 +21,19 @@ object Value {
     extends DataClass[B]{ thisBase =>
     val manifestOfA: Manifest[B] = manifest[B]
     def optional: OptionalDataClass[B] = OptionalDataClass[B](thisBase)
+    def list: XMapListData[B] = XMapListData[B](thisBase)
   }
 
-  case class OptionalDataClass[A:Manifest](value: DataClass[A]) extends DataClass[Option[A]] {
+  final case class OptionalDataClass[A:Manifest](value: DataClass[A]) extends DataClass[Option[A]] {
     val manifestOfA: Manifest[A] = manifest[A]
   }
+
+  final case class XMapListData[B:Manifest](value: DataClass[B])
+    extends DataClass[List[B]] { thisBase =>
+    val manifestB: Manifest[B] = manifest[B]
+    def optional: OptionalDataClass[List[B]] = OptionalDataClass[List[B]](thisBase)
+  }
+
 
   object ValueDefinitionOp {
     implicit class StringToEnum(op: ValueDefinitionOp[String]) {
@@ -77,6 +85,7 @@ object Value {
   final case class LongData(validations: List[ValidationOp[Long]]) extends ValueDefinitionOp[Long] with ToOptionalData[Long]
   final case class ListData[T](tDefinition: ValueDefinitionOp[T], validations: List[ValidationOp[List[T]]])
     extends ValueDefinitionOp[List[T]] with ToOptionalData[List[T]]
+
   final case class StringData(validations: List[ValidationOp[String]])
     extends ValueDefinitionOp[String] with ToOptionalData[String]
   final case class BigDecimalData(validations: List[ValidationOp[BigDecimal]])
