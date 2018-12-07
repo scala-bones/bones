@@ -63,6 +63,7 @@ trait Sugar {
 
   /** Indicates that the data tied to this key is a BigDecimal that must pass the specified validations. */
   def bigDecimal(v: ValidationOp[BigDecimal] *) = BigDecimalData(v.toList)
+  val bigDecimal: BigDecimalData = bigDecimal()
 
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
   def either[A,B](definitionA: ValueDefinitionOp[A], definitionB: ValueDefinitionOp[B]) =
@@ -85,6 +86,7 @@ trait Sugar {
       "ISO date format with the offset if available, such as '2011-12-03' or '2011-12-03+01:00'",
       v.toList
     )
+  val isoDate: DateTimeData = isoDate()
 
   def enumeration[A](e: Enumeration): EnumerationStringData[A] = EnumerationStringData[A](e, List.empty)
 
