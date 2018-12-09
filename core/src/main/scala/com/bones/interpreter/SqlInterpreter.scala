@@ -11,6 +11,7 @@ object SqlInterpreter {
         implicit val ma = op.manifestOfA
         dataClass(op.value) + " nullable"
       case x: XMapData[a,al,b] => s"createOperation table ${manifest[H].runtimeClass.getSimpleName}\n ${kvpGroup(x.from)}"
+      case ld: XMapListData[b] => s" list "
     }
   }
 

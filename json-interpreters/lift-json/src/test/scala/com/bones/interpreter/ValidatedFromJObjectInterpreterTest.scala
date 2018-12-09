@@ -1,11 +1,10 @@
 package com.bones.interpreter
 
-import cats.data.Validated.{Invalid, Valid}
-import com.bones.data.Value.{LongData, KvpNil, StringData}
-import org.scalatest.{FunSuite, MustMatchers}
-import org.scalatest.prop.Checkers
+import com.bones.data.Value.KvpNil
 import com.bones.syntax._
 import net.liftweb.json.JsonAST.{JField, JInt, JObject, JString}
+import org.scalatest.FunSuite
+import org.scalatest.prop.Checkers
 import shapeless.{::, HNil}
 
 class ValidatedFromJObjectInterpreterTest extends FunSuite with Checkers {
@@ -17,7 +16,7 @@ class ValidatedFromJObjectInterpreterTest extends FunSuite with Checkers {
     val validated = interpreter.kvpGroup(str)
 
     val input = JObject(JField("test", JString("Hello World")))
-    val output = validated.apply(input)
+    val output = validated.apply(input, Vector.empty)
 
     output match {
       case Right(str) => assert( str.head === "Hello World" )
@@ -31,7 +30,7 @@ class ValidatedFromJObjectInterpreterTest extends FunSuite with Checkers {
 
     val validInput = JObject(JField("test", JString("Hello String")))
 
-    val output = prog(validInput)
+    val output = prog(validInput, Vector.empty)
     output match {
       case Right(r) => {
         val head = r.head
@@ -43,7 +42,7 @@ class ValidatedFromJObjectInterpreterTest extends FunSuite with Checkers {
     }
 
     val validIntInput = JObject(JField("test", JInt(42)))
-    val intOutput = prog.apply(validIntInput)
+    val intOutput = prog.apply(validIntInput, Vector.empty)
     intOutput match {
       case Right(Right(i) :: HNil) => assert(i === 42)
       case x => fail(s"expected right, right, received: $x")
