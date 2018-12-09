@@ -140,7 +140,9 @@ trait KvpValidateInputInterpreter[IN] {
 
         (in: IN, path: Vector[String]) => {
 
-          val head = headValue(in, op.fieldDefinition, headInterpreter, path)
+          val headPath = path :+ op.fieldDefinition.key
+
+          val head = headValue(in, op.fieldDefinition, headInterpreter, headPath)
           val tailValue = tailInterpreter(in, path)
 
           Applicative[({
@@ -239,8 +241,16 @@ trait KvpValidateInputInterpreter[IN] {
         }
       case op: ListData[t] =>
         val valueF = valueDefinition(op.tDefinition)
+        def appendArrayInex(path: Vector[String], index: Int) : Vector[String] = {
+          val size = path.length
+          if (path.length == 0) path
+          else path.updated(path.length - 1, path(path.length - 1) + s"[${index}]")
+        }
+
         def traverseArray(arr: Seq[IN], path: Vector[String]): Either[NonEmptyList[ExtractionError], List[t]] = {
-          val arrayApplied: Seq[Either[NonEmptyList[ExtractionError], t]] = arr.map(jValue => valueF(Some(jValue), path))
+          val arrayApplied: Seq[Either[NonEmptyList[ExtractionError], t]] =
+            arr.zipWithIndex.map(jValue => valueF(Some(jValue._1), appendArrayInex(path, jValue._2)))
+
           arrayApplied.foldLeft[Either[NonEmptyList[ExtractionError], List[t]]](
               Right(List.empty))((b, v) =>
             (b, v) match {
