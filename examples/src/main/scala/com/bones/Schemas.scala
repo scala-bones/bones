@@ -138,4 +138,25 @@ object Schemas {
       |}
     """.stripMargin
 
+  val ccBadBilling =
+    """
+      |{
+      |  "firstFive" : "12345",
+      |  "lastFour" : "4321",
+      |  "uuid" : "df15f08c-e6bd-11e7-aeb8-6003089f08b4",
+      |  "token" : "e58e7dda-e6bd-11e7-b901-6003089f08b4",
+      |  "ccType" : "mastercard",
+      |  "expMonth" : 11,
+      |  "expYear" : 2022,
+      |  "cardHolder" : "Lennart Augustsson",
+      |  "currencyEnum" : "GBP",
+      |  "currencyIso" : "USD",
+      |  "lastModifiedRequest" : "4545d9da-e6be-11e7-86fb-6003089f08b4",
+      |  "billingLocation" : {
+      |     "countryIso": "BZ",
+      |     "zipCode": "80031"
+      |  }
+      |}
+    """.stripMargin
+
 }

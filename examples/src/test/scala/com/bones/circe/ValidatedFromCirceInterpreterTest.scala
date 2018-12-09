@@ -56,7 +56,7 @@ class ValidatedFromCirceInterpreterTest extends FunSuite {
       KvpNil
 
     ValidatedFromCirceInterpreter.kvpGroup(bd).apply(circeDoc, Vector.empty) match {
-      case Left(err) => fail(s"expected succcess, received: ${err}")
+      case Left(err) => fail(s"expected success, received: ${err}")
       case Right(r) => assert(r.head.head == BigDecimal(100.001))
     }
   }
