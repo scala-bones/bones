@@ -2,7 +2,9 @@ package com.bones
 
 import java.util.UUID
 
+import cats.data.NonEmptyList
 import cats.data.Validated.Valid
+import com.bones.circe.ValidatedFromCirceInterpreter
 import com.bones.data.Value.KvpNil
 //import com.bones.interpreter.{EncodeToJValueInterpreter, ValidatedFromJObjectInterpreter}
 import com.bones.oas3.SwaggerCoreInterpreter
@@ -126,6 +128,27 @@ class ValidationTest extends FunSuite {
 //    val btCc = jsonToCCProgram.apply(jsonProducer)
 //    btCc.isValid
 
+  }
+
+  test("error paths") {
+    import Schemas._
+
+    //sorry, we still use lift in my projects.  I will soon createOperation a Circe JsonExtract.
+    val parsed = io.circe.parser.parse(ccBadBilling).toOption
+
+    //createOperation the program that is responsible for converting JSON into a CC.
+  //    val jsonToCCProgram = creditCardSchema.lift.foldMap[ValidatedFromJObjectOpt](ValidatedFromJObjectInterpreter())
+    val jsonToCCProgram = ValidatedFromCirceInterpreter.dataClass(creditCardSchema)
+
+    //here, we will test that just the validations step is working
+    val btCc = jsonToCCProgram.apply(parsed, Vector.empty)
+
+    btCc match {
+      case Left(NonEmptyList(head, tail)) => {
+        assert( head.path === Vector("billingLocation", "countryIso"))
+      }
+      case Right(x) => fail(s"Expected fail, received ${x}")
+    }
   }
 
   test("validations example") {
