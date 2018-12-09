@@ -50,11 +50,8 @@ lazy val jsonOas3 = (project in file("json-interpreters/lift-json-oas3"))
     name := "DataDefinition to OAS3 Interpreter",
     libraryDependencies ++= Seq(
       "io.swagger.core.v3" % "swagger-core" % "2.0.5",
-      "io.argonaut" %% "argonaut" % "6.2.2",
-      "io.argonaut" %% "argonaut-monocle" % "6.2.2",
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
       "org.scalatest" %% "scalatest" % "3.0.5" % Test
-//      "org.easymock" % "easymock" % "3.5.1" % Test
     )
   ).dependsOn(core)
 lazy val doobieVersion = "0.6.0"
