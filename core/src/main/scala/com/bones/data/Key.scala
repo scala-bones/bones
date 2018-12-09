@@ -88,12 +88,12 @@ trait Sugar {
     )
   val isoDate: DateTimeData = isoDate()
 
-  def enumeration[A](e: Enumeration): EnumerationStringData[A] = EnumerationStringData[A](e, List.empty)
+  def enumeration[A:Manifest](e: Enumeration): EnumerationStringData[A] = EnumerationStringData[A](e, List.empty)
 
-  def enum[A <: Enum[A]](enums: List[A], v: ValidationOp[A]*): EnumStringData[A] =
+  def enum[A <: Enum[A]:Manifest](enums: List[A], v: ValidationOp[A]*): EnumStringData[A] =
     EnumStringData[A](enums, v.toList)
 
-  def enum[A <: Enum[A]](enums: List[A]): EnumStringData[A] =
+  def enum[A <: Enum[A]:Manifest](enums: List[A]): EnumStringData[A] =
     EnumStringData[A](enums, List.empty)
 
 

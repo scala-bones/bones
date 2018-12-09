@@ -37,7 +37,7 @@ object Value {
 
   object ValueDefinitionOp {
     implicit class StringToEnum(op: ValueDefinitionOp[String]) {
-      def enumeration[A](enumeration: Enumeration): EnumerationStringData[A] =
+      def enumeration[A:Manifest](enumeration: Enumeration): EnumerationStringData[A] =
         EnumerationStringData[A](enumeration, List.empty)
 
       def enum[A <: Enum[A]: Manifest](enums: List[A]): EnumStringData[A] =
@@ -51,7 +51,7 @@ object Value {
 
     def asSumType[B](
                       description: String,
-                      fab: A => Either[CanNotConvert[A,B], B],
+                      fab: (A, Vector[String]) => Either[CanNotConvert[A,B], B],
                       fba: B => A,
                       keys: List[A],
                       validations: List[ValidationOp[B]]
@@ -101,12 +101,14 @@ object Value {
 
   final case class UuidData(validations: List[ValidationOp[UUID]]) extends ValueDefinitionOp[UUID] with ToOptionalData[UUID]
 
-  final case class EnumerationStringData[A](enumeration: Enumeration, validations: List[ValidationOp[A]])
+  final case class EnumerationStringData[A:Manifest](enumeration: Enumeration, validations: List[ValidationOp[A]])
     extends ValueDefinitionOp[A] with ToOptionalData[A] {
+    val manifestOfA = manifest[A]
   }
 
-  final case class EnumStringData[A <: Enum[A]](enums: List[A], validations: List[ValidationOp[A]])
+  final case class EnumStringData[A <: Enum[A]:Manifest](enums: List[A], validations: List[ValidationOp[A]])
     extends ValueDefinitionOp[A] with ToOptionalData[A] {
+    val manifestOfA = manifest[A]
    }
 
   final case class KvpGroupData[H<:HList, HL<:Nat](kvpGroup: KvpGroup[H,HL], validations: List[ValidationOp[H]])
@@ -121,7 +123,7 @@ object Value {
 
   final case class SumTypeData[A,B](
     from: ValueDefinitionOp[A],
-    fab: A => Either[CanNotConvert[A,B], B],
+    fab: (A,Vector[String]) => Either[CanNotConvert[A,B], B],
     fba: B => A,
     keys: List[A],
     validations: List[ValidationOp[B]]

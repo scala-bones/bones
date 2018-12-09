@@ -21,13 +21,13 @@ object Schemas {
 
     def keys = List(Visa, Mastercard, Amex, Discover).map(_.toString)
 
-    def toCreditCardType: String => Either[CanNotConvert[String, CreditCardType], CreditCardType] = input => {
+    def toCreditCardType(input: String, path: Vector[String]):  Either[CanNotConvert[String, CreditCardType], CreditCardType] = {
       input.toLowerCase match {
         case "visa" => Right(CreditCardTypes.Visa)
         case "mastercard" => Right(CreditCardTypes.Mastercard)
         case "amex" => Right(CreditCardTypes.Amex)
         case "discover" => Right(CreditCardTypes.Discover)
-        case x => Left(CanNotConvert(x, classOf[CreditCardType]))
+        case x => Left(CanNotConvert(path, x, classOf[CreditCardType]))
       }
     }
   }
@@ -82,7 +82,7 @@ object Schemas {
   val ccTypeValue =
     string().asSumType[CreditCardType](
       "CreditCardType",
-        CreditCardTypes.toCreditCardType,
+        CreditCardTypes.toCreditCardType(_,_),
         (cct: CreditCardType) => cct.abbrev,
         CreditCardTypes.keys,
         List.empty

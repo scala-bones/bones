@@ -6,7 +6,9 @@ import com.bones.validation.ValidationDefinition.ValidationOp
 
 object Error {
   /** Error Case */
-  sealed trait ExtractionError
+  sealed trait ExtractionError {
+    def path: Vector[String]
+  }
 
   /**
     * Used to indicate a validations error.
@@ -14,10 +16,10 @@ object Error {
     * @param input The input, if available.
     * @tparam T Type that was validated.
     */
-  case class ValidationError[T](failurePoint: ValidationOp[T], input: T) extends ExtractionError
-  case class WrongTypeError[T](expectedType: Class[T], providedType: Class[_]) extends ExtractionError
-  case class CanNotConvert[A,T](input: A, toType: Class[T]) extends ExtractionError
-  case class RequiredData[A](valueDefinitionOp: ValueDefinitionOp[A]) extends ExtractionError
-  case class FieldError[A](key: String, errors: NonEmptyList[ExtractionError]) extends ExtractionError
+  case class ValidationError[T](path: Vector[String], failurePoint: ValidationOp[T], input: T) extends ExtractionError
+  case class WrongTypeError[T](path: Vector[String], expectedType: Class[T], providedType: Class[_]) extends ExtractionError
+  case class CanNotConvert[A,T](path: Vector[String], input: A, toType: Class[T]) extends ExtractionError
+  case class RequiredData[A](path: Vector[String], zvalueDefinitionOp: ValueDefinitionOp[A]) extends ExtractionError
+  case class FieldError[A](path: Vector[String], key: String, errors: NonEmptyList[ExtractionError]) extends ExtractionError
 
 }

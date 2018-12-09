@@ -7,7 +7,7 @@ import java.util.UUID
 import cats.data.NonEmptyList
 import cats.implicits._
 import com.bones.data.Error.{CanNotConvert, ExtractionError, WrongTypeError}
-import com.bones.data.KeyValueDefinition
+import com.bones.data.{KeyValueDefinition, Value}
 import com.bones.interpreter.KvpValidateInputInterpreter
 import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDecimal, BSONDocument, BSONDouble, BSONInteger, BSONLong, BSONString, BSONTimestamp, BSONValue}
 
@@ -21,8 +21,10 @@ object ValidatedFromBsonInterpreter extends KvpValidateInputInterpreter[BSONValu
   type ValidatedFromJson[A] =
     BSONValue => Either[NonEmptyList[ExtractionError], A]
 
-  def invalidValue[T](bson: BSONValue,
-                                expected: Class[T]): Left[NonEmptyList[WrongTypeError[T]], Nothing] = {
+
+  override protected def invalidValue[T](bson: BSONValue,
+                                         expected: Class[T],
+                                         path: Vector[String]): Left[NonEmptyList[ExtractionError], Nothing] = {
     val invalid = bson match {
       case _: BSONBoolean  => classOf[Boolean]
       case _: BSONDouble   => classOf[Double]
@@ -31,49 +33,59 @@ object ValidatedFromBsonInterpreter extends KvpValidateInputInterpreter[BSONValu
       case _: BSONDocument => classOf[Object]
       case _               => classOf[Any]
     }
-    Left(NonEmptyList.one(WrongTypeError(expected, invalid)))
+    Left(NonEmptyList.one(WrongTypeError(path, expected, invalid)))
   }
 
-  def headValue[A](in: BSONValue,
-                   kv: KeyValueDefinition[A],
-                   headInterpreter: Option[BSONValue] =>  Either[NonEmptyList[ExtractionError],A]
-                   ): Either[NonEmptyList[ExtractionError],A] = {
+
+  override def headValue[A](in: BSONValue,
+                            kv: KeyValueDefinition[A],
+                            headInterpreter: (Option[BSONValue], Vector[String]) => Either[NonEmptyList[ExtractionError], A],
+                            path: Vector[String]): Either[NonEmptyList[ExtractionError], A] = {
     in match {
       case doc: BSONDocument =>
         val fields = doc.elements
         headInterpreter(
-          fields.find(_.name == kv.key).map(_.value))
-      case _ => invalidValue(in, classOf[BSONDocument])
+          fields.find(_.name == kv.key).map(_.value), path)
+      case _ => invalidValue(in, classOf[BSONDocument], path)
     }
 
   }
 
-  override def extractString(in: BSONValue): Either[NonEmptyList[WrongTypeError[String]], String] =
+  override def extractString[A](op: Value.ValueDefinitionOp[A], clazz: Class[_])(in: BSONValue, path: Vector[String]):
+    Either[NonEmptyList[ExtractionError], String] =
     in match {
       case BSONString(str) => Right(str)
-      case x => invalidValue(x, classOf[String])
+      case x => invalidValue(x, clazz, path)
     }
 
-  override def extractLong(in: BSONValue): Either[NonEmptyList[WrongTypeError[Long]], Long] =
+
+  override def extractLong(op: Value.LongData)(in: BSONValue, path: Vector[String]):
+    Either[NonEmptyList[ExtractionError], Long] =
     in match {
       case BSONLong(long) => Right(long)
       case BSONInteger(i) => Right(i.toLong)
-      case x => invalidValue(x, classOf[Long])
+      case x => invalidValue(x, classOf[Long], path)
     }
 
-  override def extractBool(in: BSONValue): Either[NonEmptyList[WrongTypeError[Boolean]], Boolean] =
-    in match{
-      case BSONBoolean(bool) => Right(bool)
-      case x => invalidValue(x, classOf[Boolean])
-    }
 
-  override def extractUuid(in: BSONValue): Either[NonEmptyList[ExtractionError], UUID] =
+  override def extractBool(op: Value.BooleanData)(in: BSONValue, path: Vector[String]):
+    Either[NonEmptyList[ExtractionError], Boolean] =
     in match {
-      case BSONString(str) => stringToUuid(str)
-      case x => invalidValue(x, classOf[UUID])
+      case BSONBoolean(bool) => Right(bool)
+      case x => invalidValue(x, classOf[Boolean], path)
     }
 
-  override def extractZonedDateTime(in: BSONValue, format: DateTimeFormatter): Either[NonEmptyList[WrongTypeError[ZonedDateTime]], ZonedDateTime] =
+
+  override def extractUuid(op: Value.UuidData)(in: BSONValue, path: Vector[String]): Either[NonEmptyList[ExtractionError], UUID] =
+    in match {
+      case BSONString(str) => stringToUuid(str, path)
+      case x => invalidValue(x, classOf[UUID], path)
+    }
+
+
+  override def extractZonedDateTime(dateFormat: DateTimeFormatter, op: Value.DateTimeData)
+                                   (in: BSONValue, path: Vector[String]):
+                                    Either[NonEmptyList[ExtractionError], ZonedDateTime] =
     in match {
       case BSONDateTime(date) =>
         val i = Instant.ofEpochSecond(date)
@@ -82,27 +94,42 @@ object ValidatedFromBsonInterpreter extends KvpValidateInputInterpreter[BSONValu
         val i = Instant.ofEpochSecond(date)
         Right(ZonedDateTime.ofInstant(i, ZoneOffset.UTC))
 
-      case x => invalidValue(x, classOf[ZonedDateTime])
+      case x => invalidValue(x, classOf[ZonedDateTime], path)
     }
 
-  override def extractArray(in: BSONValue): Either[NonEmptyList[ExtractionError], Seq[BSONValue]] =
+
+  override def extractArray[A](op: Value.ListData[A])(in: BSONValue, path: Vector[String]): Either[NonEmptyList[ExtractionError], Seq[BSONValue]] =
     in match {
       case BSONArray(arr) =>
         (arr.toList.map(_.toEither.leftMap(NonEmptyList.one).toValidated).sequence).toEither match {
           case Right(s) => Right(s)
-          case Left(err) => Left(NonEmptyList.one(CanNotConvert(arr, classOf[Seq[_]])))
+          case Left(err) => Left(NonEmptyList.one(CanNotConvert(path, arr, classOf[Seq[_]])))
         }
-      case x => invalidValue(x, classOf[Array[_]])
+      case x => invalidValue(x, classOf[Array[_]], path)
 
     }
 
-  override def extractBigDecimal(in: BSONValue): Either[NonEmptyList[ExtractionError], BigDecimal] =
+  override def extractXMapArray[A](op: Value.XMapListData[A])
+                                  (in: BSONValue, path: Vector[String]):
+                                  Either[NonEmptyList[ExtractionError], Seq[BSONValue]] =
+    in match {
+      case BSONArray(arr) =>
+        (arr.toList.map(_.toEither.leftMap(NonEmptyList.one).toValidated).sequence).toEither match {
+          case Right(s) => Right(s)
+          case Left(err) => Left(NonEmptyList.one(CanNotConvert(path, arr, classOf[Seq[_]])))
+        }
+      case x => invalidValue(x, classOf[Array[_]], path)
+
+    }
+
+
+  override def extractBigDecimal(op: Value.BigDecimalData)(in: BSONValue, path: Vector[String]): Either[NonEmptyList[ExtractionError], BigDecimal] =
     in match {
       case BSONDouble(d) => Right(BigDecimal(d))
       case bd: BSONDecimal =>
-        BSONDecimal.toBigDecimal(bd).map(Right(_)).getOrElse(Left(NonEmptyList.one(CanNotConvert(in, classOf[BigDecimal]))))
+        BSONDecimal.toBigDecimal(bd).map(Right(_)).getOrElse(Left(NonEmptyList.one(CanNotConvert(path, in, classOf[BigDecimal]))))
       case BSONInteger(i) => Right(BigDecimal(i))
       case BSONLong(l) => Right(BigDecimal(l))
-      case x => invalidValue(x, classOf[BigDecimal])
+      case x => invalidValue(x, classOf[BigDecimal], path)
     }
 }
