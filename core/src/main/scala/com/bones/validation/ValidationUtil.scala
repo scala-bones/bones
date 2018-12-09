@@ -10,10 +10,10 @@ import scala.annotation.tailrec
 object ValidationUtil {
 
   /** Validate the input with all specified validations.  If any failed then Left, else Right(input) */
-  def validate[L](input: L, validations: List[ValidationOp[L]]): Either[NonEmptyList[ValidationError[L]], L] = {
+  def validate[L](validations: List[ValidationOp[L]])(input: L, path: Vector[String]): Either[NonEmptyList[ValidationError[L]], L] = {
     validations.flatMap(validation => {
       if (validation.isValid(input)) None
-      else Some(ValidationError(validation, input))
+      else Some(ValidationError(path, validation, input))
     }) match {
       case head :: tail => Left(NonEmptyList(head, tail))
       case _ => Right(input)

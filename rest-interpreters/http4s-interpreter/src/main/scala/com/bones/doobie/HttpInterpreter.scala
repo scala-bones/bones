@@ -129,7 +129,7 @@ object HttpInterpreter {
               .map(Right(_))
           }
           in <- EitherT.fromEither[IO] {
-            inInterpreter.apply(Some(body)).left.map(x => eeToOut(x))
+            inInterpreter.apply(Some(body), Vector.empty).left.map(x => eeToOut(x))
           }
           out <- EitherT[IO, IO[Response[IO]], CO] {
             createF
@@ -170,7 +170,7 @@ object HttpInterpreter {
             io.circe.parser.parse(body).left.map(x => extractionErrorToOut(x))
           }
           in <- EitherT.fromEither[IO] {
-            inInterpreter.apply(Some(circe)).left.map(x => eeToOut(x))
+            inInterpreter.apply(Some(circe), Vector.empty).left.map(x => eeToOut(x))
           }
           out <- EitherT[IO, IO[Response[IO]], CO] {
             createF
@@ -261,7 +261,7 @@ object HttpInterpreter {
               .map(Right(_))
           }
           in <- EitherT.fromEither[IO] {
-            inInterpreter.apply(Some(body)).left.map(x => eeToOut(x))
+            inInterpreter.apply(Some(body), Vector.empty).left.map(x => eeToOut(x))
           }
           out <- EitherT[IO, IO[Response[IO]], UO] {
             updateF(id, in).map(_.left.map(ce =>
@@ -300,7 +300,7 @@ object HttpInterpreter {
             io.circe.parser.parse(body).left.map(x => extractionErrorToOut(x))
           }
           in <- EitherT.fromEither[IO] {
-            inInterpreter.apply(Some(circe)).left.map(x => eeToOut(x))
+            inInterpreter.apply(Some(circe), Vector.empty).left.map(x => eeToOut(x))
           }
           out <- EitherT[IO, IO[Response[IO]], UO] {
             updateF(id, in).map(_.left.map(ce =>
