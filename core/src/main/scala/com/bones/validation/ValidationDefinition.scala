@@ -63,21 +63,9 @@ object ValidationDefinition {
 
   private val alphanumRegx = "^[a-zA-Z0-9]*$".r
 
-  object ListValidation {
-
-    case class PassesAll[A, L <: List[A]](validations: List[ValidationOp[A]]) extends ValidationOp[L] {
-      val isValid: List[A] => Boolean = _.forall(a => validations.forall(v => v.isValid(a)))
-
-      override def defaultError(t: L): String = s"a value in the list is invalid: ${t.mkString("[",",","]")}"
-
-      override def description: String = "all values are valid"
-    }
-
-  }
-
   object StringValidation extends BaseValidationOp[String] {
 
-    case class IsAlphanum() extends ValidationOp[String] {
+    object IsAlphanum extends ValidationOp[String] {
       val isValid: String => Boolean = alphanumRegx.findFirstMatchIn(_).isDefined
 
       override def defaultError(t: String): String = s"$t is not alphanumeric"
@@ -124,7 +112,7 @@ object ValidationDefinition {
       override def defaultError(t: String): String = defaultErrorF(t)
     }
 
-    case class Guid() extends ValidationOp[String] {
+    object Guid extends ValidationOp[String] {
       val isValid: String => Boolean = str => Try {
         UUID.fromString(str)
       } match {
@@ -137,7 +125,7 @@ object ValidationDefinition {
       override def description: String = "be a GUID"
     }
 
-    case class Uppercase() extends ValidationOp[String] {
+    object Uppercase extends ValidationOp[String] {
       val isValid: String => Boolean = str => str.toUpperCase === str
 
       override def defaultError(t: String): String = s"$t must be uppercase"
@@ -145,7 +133,7 @@ object ValidationDefinition {
       override def description: String = "uppercase"
     }
 
-    case class CreditCard() extends ValidationOp[String] {
+    object CreditCard extends ValidationOp[String] {
       override def isValid: String => Boolean = input => ValidationUtil.luhnCheck(10, input)
 
       override def defaultError(t: String): String = s"$t is not a valid credit card number"
@@ -155,7 +143,7 @@ object ValidationDefinition {
 
     private val tokenRegex = "^[a-zA-Z0-9_]*$".r
 
-    case class Token() extends ValidationOp[String] {
+    object Token extends ValidationOp[String] {
       override def isValid: String => Boolean = tokenRegex.findFirstMatchIn(_).isDefined
 
       override def defaultError(t: String): String = s"$t is not a token"
@@ -167,7 +155,7 @@ object ValidationDefinition {
     val emailRegex: Regex =
       """^[a-zA-Z0-9\.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$""".r
 
-    case class Email() extends ValidationOp[String] {
+    object Email extends ValidationOp[String] {
       override def isValid: String => Boolean = emailRegex.findFirstMatchIn(_).isDefined
 
       override def defaultError(t: String): String = s"$t is not a valid email"
@@ -177,7 +165,7 @@ object ValidationDefinition {
 
     val hexRegex: Regex = "^[0-9A-F]+$".r
 
-    case class Hex() extends ValidationOp[String] {
+    object Hex extends ValidationOp[String] {
       override def isValid: String => Boolean = hexRegex.findFirstMatchIn(_).isDefined
 
       override def defaultError(t: String): String = s"$t is not hexadecimal"
@@ -187,7 +175,7 @@ object ValidationDefinition {
 
     val base64Regex: Regex = "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$".r
 
-    case class Base64() extends ValidationOp[String] {
+    object Base64 extends ValidationOp[String] {
       override def isValid: String => Boolean = input => base64Regex.findFirstMatchIn(input.trim).isDefined
 
       override def defaultError(t: String): String = s"$t is not Base64"
@@ -197,7 +185,7 @@ object ValidationDefinition {
 
     val hostnameRegex: Regex = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$".r
 
-    case class Hostname() extends ValidationOp[String] {
+    object Hostname extends ValidationOp[String] {
       override def isValid: String => Boolean = hostnameRegex.findFirstMatchIn(_).isDefined
 
       override def defaultError(t: String): String = s"$t is not a hostname"
@@ -207,7 +195,7 @@ object ValidationDefinition {
 
     val ipv4Regex: Regex = "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$".r
 
-    case class Ipv4() extends ValidationOp[String] {
+    object Ipv4 extends ValidationOp[String] {
       override def isValid: String => Boolean = ipv4Regex.findFirstMatchIn(_).isDefined
 
       override def defaultError(t: String): String = s"$t is not an ipv4"
@@ -215,7 +203,7 @@ object ValidationDefinition {
       override def description: String = "IPv4"
     }
 
-    case class Lowercase() extends ValidationOp[String] {
+    object Lowercase extends ValidationOp[String] {
       override def isValid: String => Boolean = str => str.toLowerCase === str
 
       override def defaultError(t: String): String = s"$t is not all lowercase"
@@ -223,7 +211,7 @@ object ValidationDefinition {
       override def description: String = "lowercase"
     }
 
-    case class Uri() extends ValidationOp[String] {
+    object Uri extends ValidationOp[String] {
       override def isValid: String => Boolean = input => Try {
         URI.create(input)
       }.isSuccess
@@ -246,37 +234,41 @@ object ValidationDefinition {
     def matchesRegex(r: Regex): MatchesRegex = MatchesRegex(r)
 
     /** String must be alpha numeric */
-    def alphanum(): IsAlphanum = IsAlphanum()
+    def alphanum = IsAlphanum
+
+    /** */
+    def custom(f: String => Boolean, defaultErrorF: String => String, description: String) =
+      Custom(f, defaultErrorF, description)
 
     /** String must be a guid */
-    def guid(): Guid = Guid()
+    def guid = Guid
 
     /** String must be a valid email format */
-    def email(): Email = Email()
+    def email = Email
 
     /** String must be a token, which is alpha numeric with underscore. */
-    def token(): Token = Token()
+    def token = Token
 
     /** String must be a valid hexadecimal String */
-    def hex(): Hex = Hex()
+    def hex = Hex
 
     /** String must be in base64 */
-    def base64(): Base64 = Base64()
+    def base64 = Base64
 
     /** String must be a hostname */
-    def hostname(): Hostname = Hostname()
+    def hostname = Hostname
 
     /** String must be an IPv4 */
-    def iPv4(): Ipv4 = Ipv4()
+    def iPv4 = Ipv4
 
     /** String must be all lowercase, that is all letters in the string must be lowercase. */
-    def lowercase(): Lowercase = Lowercase()
+    def lowercase = Lowercase
 
     /** String must be a Uri */
-    def uri(): Uri = Uri()
+    def uri = Uri
 
     /** String must be a valid credit card */
-    def creditCard(): CreditCard = CreditCard()
+    def creditCard = CreditCard
   }
 
 

@@ -31,8 +31,15 @@ object SwaggerCoreInterpreter {
       case o: OptionalDataClass[a] => {
         implicit val ma = o.manifestOfA
         val optF = dataClass(o.value)
-        schema => schema.setNullable(true); schema
+        schema => {
+          optF(schema)
+          schema.setNullable(true)
+        }; schema
       }
+      case xm: XMapListData[a] =>
+        val fromF = dataClass(xm.value)
+        schema => fromF(schema); schema
+
     }
   }
 
@@ -179,29 +186,29 @@ object SwaggerCoreInterpreter {
           schema.setDescription(newDescription)
           schema
         }
-      case sv.IsAlphanum() =>
+      case sv.IsAlphanum =>
         schema => schema.pattern("^[:alnum:]+$"); schema
       case sv.MinLength(min) => schema => schema.minLength(min)
       case sv.MaxLength(max) => schema => schema.maxLength(max)
       case sv.MatchesRegex(r) => schema => schema.pattern(r.toString())
       case sv.Length(l) => schema => schema.minLength(l).maxLength(l)
       case sv.Custom(_,_,_) => identity
-      case sv.Guid() => schema =>
+      case sv.Guid => schema =>
         schema.minLength(36).maxLength(36)
           .pattern("(^([0-9A-Fa-f]{8}[-][0-9A-Fa-f]{4}[-][0-9A-Fa-f]{4}[-][0-9A-Fa-f]{4}[-][0-9A-Fa-f]{12})$)")
           .format("guid")
-      case sv.Uppercase() => identity
-      case sv.CreditCard() => identity
-      case sv.Token() => identity
-      case sv.Email() =>
+      case sv.Uppercase => identity
+      case sv.CreditCard => identity
+      case sv.Token => identity
+      case sv.Email =>
         val emailSchema = new EmailSchema()
         schema => emailSchema.setName(schema.getName); emailSchema
-      case sv.Hex() => identity
-      case sv.Base64() => identity
-      case sv.Hostname() => _.format("hostname")
-      case sv.Ipv4() => _.format("ipv4")
-      case sv.Lowercase() => identity
-      case sv.Uri() => _.format("uri")
+      case sv.Hex => identity
+      case sv.Base64 => identity
+      case sv.Hostname => _.format("hostname")
+      case sv.Ipv4 => _.format("ipv4")
+      case sv.Lowercase => identity
+      case sv.Uri => _.format("uri")
 
       case iv.Between(min, max) => _.exclusiveMinimum(true).exclusiveMaximum(true)
         .minimum(new java.math.BigDecimal(min))
