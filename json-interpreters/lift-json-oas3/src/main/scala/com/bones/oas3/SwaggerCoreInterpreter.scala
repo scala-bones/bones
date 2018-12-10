@@ -218,9 +218,8 @@ object SwaggerCoreInterpreter {
       case iv.Max(max) => _.maximum(new java.math.BigDecimal(max))
       case iv.Min(min) => _.minimum(new java.math.BigDecimal(min))
       case iv.Multiple(x) => _.multipleOf(new java.math.BigDecimal(x))
-      case iv.Negative() => _.exclusiveMaximum(true).maximum(java.math.BigDecimal.ZERO)
-      case iv.Positive() => _.exclusiveMinimum(true).minimum(java.math.BigDecimal.ZERO)
-
+      case iv.Negative => _.exclusiveMaximum(true).maximum(java.math.BigDecimal.ZERO)
+      case iv.Positive => _.exclusiveMinimum(true).minimum(java.math.BigDecimal.ZERO)
       case bdv.Max(max) => _.maximum(max.bigDecimal)
       case bdv.Min(min) => _.minimum(min.bigDecimal)
 

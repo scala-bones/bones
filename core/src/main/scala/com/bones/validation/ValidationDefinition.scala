@@ -323,7 +323,7 @@ object ValidationDefinition {
       override def description: String = s"multiple of $multipleOf"
     }
 
-    case class Positive() extends ValidationOp[Long] {
+    object Positive extends ValidationOp[Long] {
       override def isValid: Long => Boolean = _ >= 0
 
       override def defaultError(t: Long): String = s"$t is not positive"
@@ -331,7 +331,7 @@ object ValidationDefinition {
       override def description: String = s"positive"
     }
 
-    case class Negative() extends ValidationOp[Long] {
+    object Negative extends ValidationOp[Long] {
       override def isValid: Long => Boolean = _ <= 0
 
       override def defaultError(t: Long): String = s"$t is not negative"
@@ -350,7 +350,9 @@ object ValidationDefinition {
 
     def less(value: Long): Less = Less(value)
 
-    def positive(): Positive = Positive()
+    def positive = Positive
+
+    def negative = Negative
   }
 
   object BigDecimalValidation {
