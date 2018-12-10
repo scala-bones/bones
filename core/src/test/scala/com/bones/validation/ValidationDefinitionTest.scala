@@ -93,7 +93,8 @@ class ValidationDefinitionTest extends FunSuite with Checkers {
     assert(hex.isValid("ABCG") === false)
   }
 
-  ignore("base64") {
+  test("base64") {
+    pending
     val v = base64
     assert(v.isValid("A1B2C3E4F567890$") === true)
     assert(v.isValid("¢¢£") === false)
