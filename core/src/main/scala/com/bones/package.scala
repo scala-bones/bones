@@ -5,13 +5,18 @@ import com.bones.validation.ValidationDefinition.{BigDecimalValidation, LongVali
 
 package object bones {
 
+  /** So we can just import com.bones.syntax._ */
   object syntax extends Sugar with KeyValueDefinitionSugar {
+
+    /** sv = String Validation */
     val sv = StringValidation
+
+    /** lv = Long validation */
     val lv = LongValidation
+    
+    /** bdv = Big Decimal Validation */
     val bdv = BigDecimalValidation
   }
-
-
 
 
 }

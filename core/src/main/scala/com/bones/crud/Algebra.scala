@@ -25,8 +25,8 @@ object Algebra {
     ): ServiceOps[I, O, E, RO, RE, UI, UO, UE, DO, DE] =
       withCreate(Create[I, O, E](inputSchema, successSchema, errorSchema))
 
-    def withCreate[I, O, E](
-        create: Create[I, O, E]): ServiceOps[I, O, E, RO, RE, UI, UO, UE, DO, DE] =
+    def withCreate[I, O, E](create: Create[I, O, E])
+      : ServiceOps[I, O, E, RO, RE, UI, UO, UE, DO, DE] =
       copy(createOperation = Some(create))
 
     def withRead[O, E](successSchema: DataClass[O], errorSchema: DataClass[E])
@@ -43,8 +43,8 @@ object Algebra {
     ): ServiceOps[CI, CO, CE, RO, RE, I, O, E, DO, DE] =
       withUpdate(Update(inputSchema, successSchema, errorSchema))
 
-    def withUpdate[I, O, E](
-        update: Update[I, O, E]): ServiceOps[CI, CO, CE, RO, RE, I, O, E, DO, DE] =
+    def withUpdate[I, O, E](update: Update[I, O, E])
+      : ServiceOps[CI, CO, CE, RO, RE, I, O, E, DO, DE] =
       copy(updateOperation = Some(update))
 
     def withDelete[O, E](
@@ -53,8 +53,8 @@ object Algebra {
     ): ServiceOps[CI, CO, CE, RO, RE, UI, UO, UE, O, E] =
       withDelete(Delete(outputSchema, errorSchema))
 
-    def withDelete[O, E](
-        delete: Delete[O, E]): ServiceOps[CI, CO, CE, RO, RE, UI, UO, UE, O, E] =
+    def withDelete[O, E](delete: Delete[O, E])
+      : ServiceOps[CI, CO, CE, RO, RE, UI, UO, UE, O, E] =
       copy(deleteOperation = Some(delete))
   }
 
