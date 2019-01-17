@@ -2,22 +2,17 @@ package com.bones.argonaut
 
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.util.{Date, UUID}
+import java.util.UUID
 
-import cats.Applicative
-import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, Validated}
-import com.bones.data.Error.{CanNotConvert, ExtractionError, RequiredData, WrongTypeError}
-import com.bones.data.Value._
-import cats.implicits._
-import shapeless.{HList, HNil, Nat}
-import com.bones.validation.{ValidationUtil => vu}
+import argonaut.Argonaut._
 import argonaut._
-import Argonaut._
+import cats.data.NonEmptyList
+import cats.implicits._
+import com.bones.data.Error.{ExtractionError, RequiredData, WrongTypeError}
 import com.bones.data.KeyValueDefinition
+import com.bones.data.Value._
 import com.bones.interpreter.KvpValidateInputInterpreter
-
-import scala.util.control.NonFatal
+import com.bones.interpreter.KvpValidateInputInterpreter._
 
 object ValidatedFromArgonautInterpreter extends KvpValidateInputInterpreter[Json] {
 

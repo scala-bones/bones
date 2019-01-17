@@ -17,7 +17,45 @@ import com.bones.validation.{ValidationUtil => vu}
 import scala.util.control.NonFatal
 
 
+object KvpValidateInputInterpreter {
+  def stringToUuid(uuidString: String, path: Vector[String]): Either[NonEmptyList[ExtractionError], UUID] = try {
+    Right(UUID.fromString(uuidString))
+  } catch {
+    case _: IllegalArgumentException => Left(NonEmptyList.one(CanNotConvert(path, uuidString, classOf[UUID])))
+  }
+
+  def stringToZonedDateTime(input: String, dateFormat: DateTimeFormatter, path: Vector[String]): Either[NonEmptyList[ExtractionError], ZonedDateTime] = try {
+    Right(ZonedDateTime.parse(input, dateFormat))
+  } catch {
+    case NonFatal(ex) => Left(NonEmptyList.one(CanNotConvert(path, input, classOf[Date])))
+  }
+
+  def stringToBigDecimal(input: String, path: Vector[String]): Either[NonEmptyList[ExtractionError], BigDecimal] = try {
+    Right(BigDecimal(input))
+  } catch {
+    case _: NumberFormatException => Left(NonEmptyList.one(CanNotConvert(path, input, classOf[BigDecimal])))
+  }
+
+  def stringToEnumeration[A](str: String, path: Vector[String], enumeration: Enumeration, manifest: Manifest[A]): Either[NonEmptyList[CanNotConvert[String,Object]],A] = try {
+    val clazz = manifest.runtimeClass.asInstanceOf[Class[A]]
+    Right(clazz.cast(enumeration.withName(str)))
+  } catch {
+    case ex: NoSuchElementException =>
+      Left(
+        NonEmptyList.one(CanNotConvert(path, str, classOf[Object])))
+  }
+
+  def stringToEnum[A <: Enum[A]](str: String, path: Vector[String], enums: List[A]): Either[NonEmptyList[CanNotConvert[String,Object]],A] =
+    enums
+      .find(_.toString === str)
+      .toRight(NonEmptyList.one(CanNotConvert(path, str, classOf[Object])))
+
+}
+
 trait KvpValidateInputInterpreter[IN] {
+
+  import KvpValidateInputInterpreter._
+
 
   def headValue[A](in: IN,
                    kv: KeyValueDefinition[A],
@@ -180,20 +218,6 @@ trait KvpValidateInputInterpreter[IN] {
   }
 
 
-  def stringToUuid(uuidString: String, path: Vector[String]): Either[NonEmptyList[ExtractionError], UUID] = try {
-    Right(UUID.fromString(uuidString))
-  } catch {
-    case _: IllegalArgumentException => Left(NonEmptyList.one(CanNotConvert(path, uuidString, classOf[UUID])))
-  }
-
-  def stringToZonedDateTime(input: String, dateFormat: DateTimeFormatter, path: Vector[String]): Either[NonEmptyList[ExtractionError], ZonedDateTime] = try {
-    Right(ZonedDateTime.parse(input, dateFormat))
-  } catch {
-    case NonFatal(ex) => Left(NonEmptyList.one(CanNotConvert(path, input, classOf[Date])))
-  }
-
-
-
   def valueDefinition[A](fgo: ValueDefinitionOp[A]): (Option[IN], Vector[String]) => Either[NonEmptyList[ExtractionError],A] = {
     val result: (Option[IN], Vector[String]) => Either[NonEmptyList[ExtractionError],A] = fgo match {
       case op: OptionalValueDefinition[a] =>
@@ -269,35 +293,21 @@ trait KvpValidateInputInterpreter[IN] {
         }
       case op: BigDecimalData =>
           required(op, op.validations, extractBigDecimal(op))
-      case op: EnumerationStringData[a] =>
-
-        def strToEnumeration(str: String, path: Vector[String]): Either[NonEmptyList[CanNotConvert[String,Object]],A] = try {
-          Right(op.enumeration.withName(str).asInstanceOf[A])
-        } catch {
-          case ex: NoSuchElementException =>
-            Left(
-              NonEmptyList.one(CanNotConvert(path, str, classOf[Object])))
-        }
-
+      case op: EnumerationStringData[A] =>
         (inOpt: Option[IN], path: Vector[String]) => for {
           in <- inOpt.toRight[NonEmptyList[ExtractionError]](
             NonEmptyList.one(RequiredData(path, op)))
           str <- extractString(op, op.manifestOfA.runtimeClass)(in,path)
-          enum <- strToEnumeration(str, path)
+          enum <- stringToEnumeration(str, path, op.enumeration, op.manifestOfA)
         } yield enum
 
-      case op: EnumStringData[A] =>
-        def strToEnum(str: String, path: Vector[String]): Either[NonEmptyList[CanNotConvert[String,Object]],A] =
-          op.enums
-            .find(_.toString === str)
-            .toRight(NonEmptyList.one(CanNotConvert(path, str, classOf[Object])))
-
+      case op: EnumStringData[a] =>
         (inOpt: Option[IN], path: Vector[String]) => for {
           in <- inOpt.toRight[NonEmptyList[ExtractionError]](
             NonEmptyList.one(RequiredData(path, op)))
           str <- extractString(op, op.manifestOfA.runtimeClass)(in,path)
-          enum <- strToEnum(str,path)
-        } yield enum
+          enum <- stringToEnum[a](str,path,op.enums)
+        } yield enum.asInstanceOf[A]
 
       case op: SumTypeData[a, A] =>
         val valueF = valueDefinition(op.from)

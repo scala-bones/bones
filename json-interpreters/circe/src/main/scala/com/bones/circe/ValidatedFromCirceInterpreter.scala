@@ -9,6 +9,7 @@ import com.bones.data.Error.{ExtractionError, RequiredData, WrongTypeError}
 import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
 import com.bones.interpreter.KvpValidateInputInterpreter
+import com.bones.interpreter.KvpValidateInputInterpreter._
 import io.circe.Json
 
 object ValidatedFromCirceInterpreter extends KvpValidateInputInterpreter[Json] {

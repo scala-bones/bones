@@ -1,23 +1,21 @@
 package com.bones
 
-import doobie._
-import _root_.doobie.implicits._
 import _root_.doobie.hikari._
-import _root_.doobie.util.transactor.Transactor
+import _root_.doobie.implicits._
 import _root_.doobie.util.ExecutionContexts
-import cats._
+import _root_.doobie.util.transactor.Transactor
+import _root_.io.swagger.v3.oas.models.OpenAPI
+import _root_.io.swagger.v3.oas.models.info.Info
 import cats.effect._
 import cats.implicits._
 import com.bones.crud.Algebra._
 import com.bones.data.Value.KvpNil
 import com.bones.doobie.Algebra.jsonFormat
 import com.bones.doobie.Orm.Dao
-import com.bones.doobie.{HttpInterpreter, Orm, WithId}
+import com.bones.doobie.{HttpInterpreter, WithId}
 import com.bones.oas3.CrudOasInterpreter
 import com.bones.syntax._
 import com.bones.validation.ValidationDefinition.{LongValidation => iv, StringValidation => sv}
-import _root_.io.swagger.v3.oas.models.OpenAPI
-import _root_.io.swagger.v3.oas.models.info.Info
 import org.http4s.server.blaze._
 
 
