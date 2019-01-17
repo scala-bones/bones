@@ -106,7 +106,9 @@ lazy val protobuf = (project in file("json-interpreters/protobuf"))
     commonSettings,
     name := "Bones Protobuf",
     libraryDependencies ++= Seq (
-      "com.google.protobuf" % "protobuf-java" % "3.6.1"
+      "com.google.protobuf" % "protobuf-java" % "3.6.1",
+      "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.0.5" % Test
     )
   ).dependsOn(core)
 lazy val bson = (project in file("json-interpreters/bson"))

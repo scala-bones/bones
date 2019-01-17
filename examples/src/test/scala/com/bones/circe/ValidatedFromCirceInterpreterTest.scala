@@ -1,7 +1,5 @@
 package com.bones.circe
 
-import argonaut.Parse
-import argonaut.{Json => AJson}
 import com.bones.data.Value.KvpNil
 import com.bones.syntax._
 import io.circe.{Json => CJson}
@@ -24,7 +22,6 @@ class ValidatedFromCirceInterpreterTest extends FunSuite {
   """
   val circeDoc: CJson = parse(json).getOrElse(CJson.Null)
 
-  val argonautDoc = Parse.parse(json).right.get
 //  val liftJson = net.liftweb.json.parse(""" { "numbers" : [1, 2, 3, 4] } """)
 
 

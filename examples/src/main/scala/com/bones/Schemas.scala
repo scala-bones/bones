@@ -106,7 +106,7 @@ object Schemas {
         kvp("countryIso", string(sv.validVector(isoVector))) ::
         kvp("zipCode", string().optional) ::
         KvpNil
-      ).convert[BillingLocation].optional) :: //TODO: OPtional
+      ).convert[BillingLocation].optional) :: //TODO: Optional
     KvpNil
   )
 

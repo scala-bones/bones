@@ -9,6 +9,8 @@ import cats.implicits._
 import com.bones.data.Error.{CanNotConvert, ExtractionError, WrongTypeError}
 import com.bones.data.{KeyValueDefinition, Value}
 import com.bones.interpreter.KvpValidateInputInterpreter
+import com.bones.interpreter.KvpValidateInputInterpreter._
+
 import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDecimal, BSONDocument, BSONDouble, BSONInteger, BSONLong, BSONString, BSONTimestamp, BSONValue}
 
 import scala.util.Try
