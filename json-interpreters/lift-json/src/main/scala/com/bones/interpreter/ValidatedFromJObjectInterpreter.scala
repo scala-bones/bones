@@ -8,6 +8,8 @@ import cats.data.NonEmptyList
 import com.bones.data.Error._
 import com.bones.data.{KeyValueDefinition, Value}
 import net.liftweb.json.JsonAST._
+import com.bones.interpreter.KvpValidateInputInterpreter._
+
 
 import scala.util.Try
 
