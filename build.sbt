@@ -44,6 +44,7 @@ lazy val core = (project in file("core"))
     ),
     description := "DSL for Data Description using ASTs and interpreters"
   )
+  .enablePlugins(ScalaJSPlugin)
 lazy val jsonOas3 = (project in file("json-interpreters/lift-json-oas3"))
   .settings(
     commonSettings,
