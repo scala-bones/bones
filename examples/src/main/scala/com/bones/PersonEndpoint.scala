@@ -126,9 +126,6 @@ object PersonEndpoint extends IOApp {
         .withContentType(jsonFormat)
         .withSwagger()
 
-
-
-
     hikariTransactor.use { xa =>
       val middleware = Definitions.WithTransaction(xa)
       val http4Service = service.forService(
