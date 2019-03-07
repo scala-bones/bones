@@ -19,7 +19,7 @@ object Orm {
     type Key
     def insert(a: A): ConnectionIO[Key]
     def find(k: Key): ConnectionIO[Option[A]]
-    def findAll: Stream[ConnectionIO, A]
+    def findAll: Stream[ConnectionIO, (Key, A)]
     def update(k: Key, a: A): ConnectionIO[Int]
     def delete(k: Key): ConnectionIO[Int]
   }
@@ -60,9 +60,9 @@ object Orm {
                 WHERE $keyCol = ?
               """).option(key)
 
-            def findAll: Stream[ConnectionIO, A] =
-              Query0[A](s"""
-                SELECT ${cols.mkString(", ")}
+            def findAll: Stream[ConnectionIO, (Key, A)] =
+              Query0[(Key,A)](s"""
+                SELECT $keyCol, ${cols.mkString(", ")}
                 FROM $table limit 100
               """).stream
 

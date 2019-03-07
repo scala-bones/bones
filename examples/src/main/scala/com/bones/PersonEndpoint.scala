@@ -10,13 +10,14 @@ import cats.effect._
 import cats.implicits._
 import com.bones.crud.Algebra._
 import com.bones.data.Value.KvpNil
-import com.bones.doobie.Algebra.jsonFormat
+import com.bones.doobie.Algebra.{JsonFormat}
 import com.bones.doobie.Orm.Dao
 import com.bones.doobie.{HttpInterpreter, WithId}
 import com.bones.oas3.CrudOasInterpreter
 import com.bones.syntax._
 import com.bones.validation.ValidationDefinition.{LongValidation => iv, StringValidation => sv}
 import org.http4s.server.blaze._
+import fs2.Stream
 
 
 
@@ -56,6 +57,8 @@ object Definitions {
 
   case class WithTransaction(xa: Transactor[IO]) {
 
+    val searchF: Stream[IO, WithId[Person]] =
+      Person.dao.findAll.transact(xa).map(i => WithId(i._1,i._2))
 
     val createF: Person => IO[Either[Error,WithId[Person]]] =
       person => Person.dao.insert(person).transact(xa)
@@ -123,7 +126,7 @@ object PersonEndpoint extends IOApp {
 
     val service =
       HttpInterpreter("/person")
-        .withContentType(jsonFormat)
+        .withContentType(JsonFormat)
         .withSwagger()
 
     hikariTransactor.use { xa =>
@@ -132,6 +135,7 @@ object PersonEndpoint extends IOApp {
         personService,
         middleware.createF,
         middleware.readF,
+        middleware.searchF,
         middleware.updateF,
         middleware.deleteF
       )
