@@ -1,10 +1,6 @@
 package com.bones
 
-import cats.effect._
-import cats.implicits._
-import _root_.doobie.{ConnectionIO, _}
-import _root_.doobie.implicits._
-import fs2.Stream
+import _root_.doobie.ConnectionIO
 
 package object doobie {
 

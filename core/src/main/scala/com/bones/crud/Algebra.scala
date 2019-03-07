@@ -123,6 +123,6 @@ object Algebra {
       errorSchema: DataClass[E]
   )
 
-  case class Search()
+  case class Search[O](successSchema: DataClass[O])
 
 }
