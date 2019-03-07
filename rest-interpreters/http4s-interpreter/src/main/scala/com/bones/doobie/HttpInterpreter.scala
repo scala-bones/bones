@@ -15,6 +15,7 @@ import org.http4s.dsl.io._
 import org.http4s.util.CaseInsensitiveString
 import reactivemongo.bson.{BSONDocument, BSONValue}
 import reactivemongo.bson.buffer.{ArrayBSONBuffer, ArrayReadableBuffer}
+import fs2.Stream
 
 case class HttpInterpreter(entityRootDir: String,
                            formats: List[InterchangeFormat[_]] = List.empty,
@@ -32,11 +33,31 @@ case class HttpInterpreter(entityRootDir: String,
                                          f: I => Either[E, O])
 
 
-
+  /**
+    *
+    * @param serviceOps
+    * @param searchF
+    * @param createF
+    * @param readF
+    * @param updateF
+    * @param deleteF
+    * @tparam CI Create Input Type (Usually without an ID)
+    * @tparam CO Create Output Type (Usually with an ID)
+    * @tparam CE Create Error type.
+    * @tparam RO Read Input Type ( Usually with an ID, probably the same as CO)
+    * @tparam RE
+    * @tparam UI
+    * @tparam UO
+    * @tparam UE
+    * @tparam DO
+    * @tparam DE
+    * @return
+    */
   def forService[CI, CO, CE, RO, RE, UI, UO, UE, DO, DE](
       serviceOps: ServiceOps[CI, CO, CE, RO, RE, UI, UO, UE, DO, DE],
       createF: CI => IO[Either[CE, CO]],
       readF: Long => IO[Either[RE, RO]],
+      searchF: fs2.Stream[IO, RO],
       updateF: (Long, UI) => IO[Either[UE, UO]],
       deleteF: Long => IO[Either[DE, DO]]): HttpRoutes[IO] = {
 
@@ -110,6 +131,22 @@ object HttpInterpreter {
     val buffer = new ArrayBSONBuffer()
     BSONDocument.write(bsonValue.asInstanceOf[BSONDocument], buffer)
     buffer.array
+  }
+
+  def searchJson[CO](
+    search: Search[CO],
+    searchF: fs2.Stream[IO,CO]
+  ) : HttpRoutes[IO] = {
+    val outInterpreter = EncodeToCirceInterpreter.dataClass(search.successSchema)
+    HttpRoutes.of[IO] {
+      case req @ Method.GET -> Root / entityRootDir if contentType(req).contains("application/json") => {
+        Ok(
+          Stream("[") ++ searchF.map(e => outInterpreter(e).asJson.noSpaces).intersperse(",") ++ Stream("]"),
+          Header("Content-Type", "application/json")
+        )
+      }
+    }
+
   }
 
   def postBson[CI, CO, CE](

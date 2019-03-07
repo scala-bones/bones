@@ -22,8 +22,8 @@ class ProtobufSequentialInputInterpreterTest extends FunSuite with Checkers {
     KvpNil
   ).convert[Person]
 
-  val buff: Array[Byte] = ???
-  val cin: CodedInputStream = CodedInputStream.newInstance(buff)
-  ProtobufSequentialInputInterpreter.dataClass(person)(0,Vector.empty)._2(cin)
+//  val buff: Array[Byte] = ???
+//  val cin: CodedInputStream = CodedInputStream.newInstance(buff)
+//  ProtobufSequentialInputInterpreter.dataClass(person)(0,Vector.empty)._2(cin)
 
 }

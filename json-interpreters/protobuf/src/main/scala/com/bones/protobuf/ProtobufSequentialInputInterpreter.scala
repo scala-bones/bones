@@ -6,9 +6,9 @@ import java.util.UUID
 
 import cats.Applicative
 import cats.data.{NonEmptyList, Validated}
-import com.bones.data.Error.{CanNotConvert, ExtractionError, RequiredData}
+import com.bones.data.Error.{CanNotConvert, ExtractionError, RequiredData, WrongTypeError}
 import com.bones.data.Value._
-import com.google.protobuf.CodedInputStream
+import com.google.protobuf.{CodedInputStream, InvalidProtocolBufferException}
 import shapeless.{HList, HNil, Nat}
 import cats.implicits._
 import com.bones.validation.{ValidationUtil => vu}
@@ -260,9 +260,16 @@ object ProtobufSequentialInputInterpreter {
             val length    = in.readRawVarint32()
             val oldLimit  = in.pushLimit(length)
             val result = children._2(in)
-            in.checkLastTagWas(0) // TODO: do something with this error
-            in.popLimit(oldLimit)
-            result.asInstanceOf[Either[NonEmptyList[ExtractionError],A]]
+            try {
+              in.checkLastTagWas(0)
+              in.popLimit(oldLimit)
+              result.asInstanceOf[Either[NonEmptyList[ExtractionError], A]]
+            } catch {
+              case ex: InvalidProtocolBufferException => {
+                in.getLastTag
+                Left(NonEmptyList.one(WrongTypeError(path, classOf[HList], classOf[Any])))
+              }
+            }
           })
         }
       }

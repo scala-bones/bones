@@ -144,6 +144,16 @@ lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
       "org.scalatest" %% "scalatest" % "3.0.5" % Test
     )
   ).dependsOn(core, jsonCirce, jsonOas3, bson)
+lazy val react = (project in file("client-interpreters/react"))
+  .settings(
+    commonSettings,
+    name := "Bones React",
+    libraryDependencies ++= Seq(
+      "com.lihaoyi" %% "scalatags" % "0.6.7",
+      "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+    )
+  ).dependsOn(core)
 lazy val examples = (project in file("examples"))
     .settings(
       commonSettings,
@@ -158,7 +168,7 @@ lazy val examples = (project in file("examples"))
         "org.scalatest" %% "scalatest" % "3.0.5" % Test
 //        "org.easymock" % "easymock" % "3.5.1" % Test
       )
-    ).dependsOn(core, jsonOas3, dbDoobie, restHttp4s, jsonOas3)
+    ).dependsOn(core, jsonOas3, dbDoobie, restHttp4s, jsonOas3, protobuf)
 
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.7")
