@@ -21,5 +21,8 @@ object Error {
   case class CanNotConvert[A,T](path: Vector[String], input: A, toType: Class[T]) extends ExtractionError
   case class RequiredData[A](path: Vector[String], zvalueDefinitionOp: ValueDefinitionOp[A]) extends ExtractionError
   case class FieldError[A](path: Vector[String], key: String, errors: NonEmptyList[ExtractionError]) extends ExtractionError
+  case class ParsingError[A](message: String) extends ExtractionError {
+    override def path: Vector[String] = Vector.empty
+  }
 
 }

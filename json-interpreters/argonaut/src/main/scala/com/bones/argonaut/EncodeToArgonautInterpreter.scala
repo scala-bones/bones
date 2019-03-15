@@ -9,6 +9,7 @@ import com.bones.data.Value._
 import com.bones.interpreter.KvpOutputInterpreter
 
 object EncodeToArgonautInterpreter extends KvpOutputInterpreter[Json]{
+
   override def none: Json = Json.jNull
 
   override def empty: Json = Json.obj()

@@ -50,7 +50,7 @@ object ProtoFileInterpreter {
         if (field.repeated) "repeated"
         else if (field.required) "required"
         else "optional"
-      s"${indent}${repeatedRequired} ${field.name} ${field.dataType.name} = ${field.index}"
+      s"${indent}${repeatedRequired} ${field.dataType.name} ${field.name} = ${field.index};"
     }).mkString("\n")
   }
 
