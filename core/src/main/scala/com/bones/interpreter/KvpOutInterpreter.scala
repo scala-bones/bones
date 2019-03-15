@@ -1,5 +1,6 @@
 package com.bones.interpreter
 
+import java.nio.charset.Charset
 import java.time.ZonedDateTime
 import java.util.UUID
 
@@ -9,6 +10,8 @@ import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
 import shapeless.{HList, Nat}
 
+import scala.scalajs.niocharset.StandardCharsets
+
 object KvpOutInterpreter {
   type FOUT[OUT,A] = A => Either[NonEmptyList[ExtractionError],A]
 }
@@ -17,6 +20,11 @@ object KvpOutInterpreter {
   * @tparam OUT The interchange format.
   */
 trait KvpOutputInterpreter[OUT] {
+
+  def toBytArray[A](dc: DataClass[A], charSet: Charset = StandardCharsets.UTF_8): Unit = {
+
+  }
+
 
   def none: OUT
   def empty: OUT

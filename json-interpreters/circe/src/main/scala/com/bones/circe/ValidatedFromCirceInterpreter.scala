@@ -1,11 +1,12 @@
 package com.bones.circe
 
+import java.nio.charset.Charset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 import cats.data.NonEmptyList
-import com.bones.data.Error.{ExtractionError, RequiredData, WrongTypeError}
+import com.bones.data.Error.{ExtractionError, ParsingError, RequiredData, WrongTypeError}
 import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
 import com.bones.interpreter.KvpValidateInputInterpreter
@@ -13,6 +14,12 @@ import com.bones.interpreter.KvpValidateInputInterpreter._
 import io.circe.Json
 
 object ValidatedFromCirceInterpreter extends KvpValidateInputInterpreter[Json] {
+
+
+  def fromByteArray(arr: Array[Byte], charSet: Charset): Either[NonEmptyList[ParsingError[Array[Byte]]], Json] = {
+    val input = new String(arr, charSet)
+    io.circe.parser.parse(input).left.map(x => NonEmptyList.one(ParsingError(x.message)))
+  }
 
   protected def invalidValue[T](json: Json, expected: Class[T], path: Vector[String]):
   Left[NonEmptyList[WrongTypeError[T]], Nothing] = {

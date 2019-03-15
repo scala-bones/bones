@@ -1,5 +1,6 @@
 package com.bones.argonaut
 
+import java.nio.charset.Charset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
@@ -8,13 +9,18 @@ import argonaut.Argonaut._
 import argonaut._
 import cats.data.NonEmptyList
 import cats.implicits._
-import com.bones.data.Error.{ExtractionError, RequiredData, WrongTypeError}
+import com.bones.data.Error.{ParsingError, ExtractionError, RequiredData, WrongTypeError}
 import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
 import com.bones.interpreter.KvpValidateInputInterpreter
 import com.bones.interpreter.KvpValidateInputInterpreter._
 
 object ValidatedFromArgonautInterpreter extends KvpValidateInputInterpreter[Json] {
+
+
+  def fromByteArray(arr: Array[Byte], charset: Charset): Either[ExtractionError,Json] =
+    Parse.parse(new String(arr, charset)).left.map(err => ParsingError(err))
+
 
 
   override def headValue[A](in: Json,

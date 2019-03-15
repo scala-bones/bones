@@ -1,5 +1,6 @@
 package com.bones.interpreter
 
+import java.nio.charset.{Charset, StandardCharsets}
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.{Date, UUID}
@@ -55,7 +56,6 @@ object KvpValidateInputInterpreter {
 trait KvpValidateInputInterpreter[IN] {
 
   import KvpValidateInputInterpreter._
-
 
   def headValue[A](in: IN,
                    kv: KeyValueDefinition[A],

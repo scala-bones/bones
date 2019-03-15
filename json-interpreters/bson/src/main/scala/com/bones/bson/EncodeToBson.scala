@@ -6,11 +6,19 @@ import java.util.UUID
 import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
 import com.bones.interpreter.KvpOutputInterpreter
+import reactivemongo.bson.buffer.ArrayBSONBuffer
 import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDecimal, BSONDocument, BSONElement, BSONLong, BSONNull, BSONString, BSONValue}
 
 
 
 object EncodeToBson extends KvpOutputInterpreter[BSONValue] {
+
+  def bsonResultToBytes(bsonValue: BSONValue) : Array[Byte] = {
+    val buffer = new ArrayBSONBuffer()
+    BSONDocument.write(bsonValue.asInstanceOf[BSONDocument], buffer)
+    buffer.array
+  }
+
 
   @inline
   val none: BSONValue = BSONNull

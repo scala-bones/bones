@@ -1,22 +1,29 @@
 package com.bones.bson
 
+import java.nio.charset.Charset
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import java.util.UUID
 
 import cats.data.NonEmptyList
 import cats.implicits._
-import com.bones.data.Error.{CanNotConvert, ExtractionError, WrongTypeError}
+import com.bones.data.Error.{CanNotConvert, ExtractionError, ParsingError, WrongTypeError}
 import com.bones.data.{KeyValueDefinition, Value}
 import com.bones.interpreter.KvpValidateInputInterpreter
 import com.bones.interpreter.KvpValidateInputInterpreter._
-
+import reactivemongo.bson.buffer.ArrayReadableBuffer
 import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDecimal, BSONDocument, BSONDouble, BSONInteger, BSONLong, BSONString, BSONTimestamp, BSONValue}
 
 import scala.util.Try
 
 
 object ValidatedFromBsonInterpreter extends KvpValidateInputInterpreter[BSONValue] {
+
+  def fromByteArray(arr: Array[Byte]) : Either[NonEmptyList[ExtractionError], BSONValue] = {
+      val buffer = ArrayReadableBuffer(arr)
+      Try {BSONDocument.read(buffer) }.toEither.left.map(err => NonEmptyList.one(ParsingError(err.getMessage)))
+  }
+
 
   type ValidatedFromJsonOption[A] =
     Option[BSONValue] => Either[NonEmptyList[ExtractionError], A]
