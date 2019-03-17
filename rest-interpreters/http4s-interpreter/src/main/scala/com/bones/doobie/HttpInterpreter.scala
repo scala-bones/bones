@@ -8,6 +8,7 @@ import com.bones.crud.Algebra._
 import com.bones.data.Error.ExtractionError
 import com.bones.data.Value.DataClass
 import com.bones.doobie.Algebra.InterchangeFormat
+import com.bones.doobie.HttpInterpreter.DeleteInterpreterGroup
 import io.circe.syntax._
 import io.circe.{Json, ParsingFailure}
 import org.http4s.{HttpRoutes, _}
@@ -38,7 +39,7 @@ case class HttpInterpreter(entityRootDir: String,
 
 
   /**
-    *
+    * Creates an Http4s Routs for the given input.
     * @param serviceOps
     * @param searchF
     * @param createF
@@ -95,15 +96,81 @@ case class HttpInterpreter(entityRootDir: String,
 
     })
 
-    val createHttpService = serviceOps.createOperation.map(postJson(_, createF))
-    val readHttpService = serviceOps.readOperation.map(getJson(_, readF))
-    val deleteHttpService =
-      serviceOps.deleteOperation.map(deleteJson(_, deleteF))
+    val readHttpService = serviceOps.readOperation.toList.flatMap(read => {
+      val outputF = EncodeToCirceInterpreter.dataClass(read.successSchemaForRead)
+      val errorF = EncodeToCirceInterpreter.dataClass(read.errorSchema)
+      val json = GetInterpreterGroup[RO, RE](
+        "application/json",
+        ro => outputF(ro).spaces2.getBytes(charset),
+        re => errorF(re).spaces2.getBytes(charset)
+      )
 
-    val createBsonHttpService = serviceOps.createOperation.map(postBson(_,createF))
+      val bOutputF = EncodeToBson.dataClass(read.successSchemaForRead)
+      val bErrorF = EncodeToBson.dataClass(read.errorSchema)
+      val bson = GetInterpreterGroup[RO, RE](
+        "application/ubjson",
+        ro => EncodeToBson.bsonResultToBytes(bOutputF(ro)),
+        re => EncodeToBson.bsonResultToBytes(bErrorF(re))
+      )
+
+      get(json, readF) :: get(bson, readF) :: Nil
+
+    })
+
+    val createHttpService = serviceOps.createOperation.toList.flatMap(create => {
+      val inputF = ValidatedFromCirceInterpreter.dataClass(create.inputSchema)
+      val outputF = EncodeToCirceInterpreter.dataClass(create.successSchema)
+      val errorF = EncodeToCirceInterpreter.dataClass(create.errorSchema)
+
+      val json = PutPostInterpreterGroup[CI,CO,CE](
+        "application/json",
+        bytes => ValidatedFromCirceInterpreter.fromByteArray(bytes, charset)
+          .flatMap(json => inputF(Some(json), Vector.empty)),
+        uo => outputF(uo).spaces2.getBytes(charset),
+        ue => errorF(ue).spaces2.getBytes(charset)
+      )
+
+      val bInputF = ValidatedFromBsonInterpreter.dataClass(create.inputSchema)
+      val bOutputF = EncodeToBson.dataClass(create.successSchema)
+      val bErrorF = EncodeToBson.dataClass(create.errorSchema)
+
+      val bson = PutPostInterpreterGroup[CI,CO,CE](
+        "application/ubjson",
+        byte => ValidatedFromBsonInterpreter.fromByteArray(byte)
+          .flatMap(bjson => bInputF(Some(bjson), Vector.empty)),
+        co => EncodeToBson.bsonResultToBytes(bOutputF(co)),
+        ce => EncodeToBson.bsonResultToBytes(bErrorF(ce))
+      )
+
+      post(json, createF) :: post(bson, createF) :: Nil
+
+    })
+
+    val deleteHttpService =
+      serviceOps.deleteOperation.toList.flatMap(del => {
+        val outputF = EncodeToCirceInterpreter.dataClass(del.successSchema)
+        val errorF = EncodeToCirceInterpreter.dataClass(del.errorSchema)
+        val json = DeleteInterpreterGroup[DO,DE](
+          "application/json",
+          dout => outputF(dout).spaces2.getBytes(charset),
+          de => errorF(de).spaces2.getBytes(charset)
+        )
+
+        val bOutputF = EncodeToBson.dataClass(del.successSchema)
+        val bErrorF = EncodeToBson.dataClass(del.errorSchema)
+        val bson = DeleteInterpreterGroup[DO,DE](
+          "application/json",
+          dout => EncodeToBson.bsonResultToBytes(bOutputF(dout)),
+          de => EncodeToBson.bsonResultToBytes(bErrorF(de))
+        )
+
+        delete(json, deleteF) :: delete(bson, deleteF) :: Nil
+
+      })
+
 
     val services: List[HttpRoutes[IO]] =
-      createHttpService.toList ::: readHttpService.toList ::: updateHttpService ::: deleteHttpService.toList ::: createBsonHttpService.toList
+      createHttpService ::: readHttpService ::: updateHttpService ::: deleteHttpService
 
     import cats.data.Kleisli
     import cats.effect._
@@ -127,6 +194,22 @@ object HttpInterpreter {
     errorInterpreter: UE => Array[Byte]
   )
 
+  case class GetInterpreterGroup[RO, RE](
+    contentType: String,
+    outInterpreter: RO => Array[Byte],
+    errorInterpreter: RE => Array[Byte]
+  )
+
+  case class DeleteInterpreterGroup[DO,DE](
+    contentType: String,
+    outInterpreter: DO => Array[Byte],
+    errorInterpreter: DE => Array[Byte]
+  )
+
+  case class SearchInterpreterGroup[SO](
+    contentType: String,
+    outInterpreter: SO => Array[Byte]
+  )
 
   def extractionErrorToOut(pf: ParsingFailure): IO[Response[IO]] = {
     val errors = Vector(s"Could not parse json ${pf.message}")
@@ -141,178 +224,83 @@ object HttpInterpreter {
     BadRequest(Json.obj(("success", "false".asJson), ("errors", errors.asJson)))
   }
 
-  def deleteJson[DO, DE](
-      del: Delete[DO, DE],
-      deleteF: Long => IO[Either[DE, DO]]): HttpRoutes[IO] = {
-    val outInterpreter = EncodeToCirceInterpreter.dataClass(del.successSchema)
-    val errorInterpreter = EncodeToCirceInterpreter.dataClass(del.errorSchema)
+  def delete[DO,DE](
+    interpreterGroup: DeleteInterpreterGroup[DO,DE],
+    deleteF: Long => IO[Either[DE, DO]]
+  ): HttpRoutes[IO] =     HttpRoutes.of[IO] {
+    case req @ Method.DELETE -> Root / rootDir / LongVar(id) => {
+      val result = for {
+        entity <- EitherT[IO, IO[Response[IO]], DO] {
+          deleteF(id).map(_.left.map(de =>
+            InternalServerError(interpreterGroup.errorInterpreter(de), Header("Content-Type", interpreterGroup.contentType))))
+        }
+      } yield Ok(interpreterGroup.outInterpreter(entity), Header("Content-Type", interpreterGroup.contentType))
 
-    HttpRoutes.of[IO] {
-      case req @ Method.DELETE -> Root / rootDir / LongVar(id) => {
-        val result = for {
-          entity <- EitherT[IO, IO[Response[IO]], DO] {
-            deleteF(id).map(_.left.map(de =>
-              InternalServerError(errorInterpreter(de))))
-          }
-        } yield Ok(outInterpreter(entity))
-
-        result.value.flatMap(_.merge)
-      }
+      result.value.flatMap(_.merge)
     }
-
   }
-
-  def contentToCirce(req: Request[IO]): Either[NonEmptyList[ExtractionError], Json] = ???
-  def contentToBson(req: Request[IO]): Either[NonEmptyList[ExtractionError], BSONValue] = ???
 
   def contentType(req: Request[IO]): Option[String] =
     req.headers.find(header => header.name == CaseInsensitiveString("Content-Type")).map(_.value)
 
-  def bsonResultToBytes(bsonValue: BSONValue) : Array[Byte] = {
-    val buffer = new ArrayBSONBuffer()
-    BSONDocument.write(bsonValue.asInstanceOf[BSONDocument], buffer)
-    buffer.array
-  }
-
-  def searchJson[CO](
-    search: Search[CO],
+  def search[CO](
+    interpreterGroup: SearchInterpreterGroup[CO],
     searchF: fs2.Stream[IO,CO]
-  ) : HttpRoutes[IO] = {
-    val outInterpreter = EncodeToCirceInterpreter.dataClass(search.successSchema)
+  ): HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
-      case req @ Method.GET -> Root / entityRootDir if contentType(req).contains("application/json") => {
+      case req @ Method.GET -> Root / entityRootDir if contentType(req).contains(interpreterGroup.contentType) => {
         Ok(
-          Stream("[") ++ searchF.map(e => outInterpreter(e).asJson.noSpaces).intersperse(",") ++ Stream("]"),
+          Stream("[") ++ searchF.map(e => interpreterGroup.outInterpreter(e).asJson.noSpaces).intersperse(",") ++ Stream("]"),
           Header("Content-Type", "application/json")
         )
       }
     }
-
   }
 
-  def postBson[CI, CO, CE](
-    create: Create[CI,CO,CE],
-    createF: CI => IO[Either[CE,CO]]): HttpRoutes[IO] = {
-
-    val inInterpreter = ValidatedFromBsonInterpreter.dataClass(create.schemaForCreate)
-    val outInterpreter = EncodeToBson.dataClass(create.successSchemaForCreate)
-    val errorOutInterpreter = EncodeToBson.dataClass(create.errorSchemaForCreate)
+  def post[CI, CO, CE](
+                        interpreterGroup: PutPostInterpreterGroup[CI, CO, CE],
+                        createF: CI => IO[Either[CE, CO]]
+  ): HttpRoutes[IO] =
     HttpRoutes.of[IO] {
-      case req @ Method.POST -> Root / entityRootDir if contentType(req).contains("application/ubjson") => {
+      case req @ Method.POST -> Root / entityRootDir if contentType(req).contains(interpreterGroup.contentType) => {
         val result: EitherT[IO, IO[Response[IO]], IO[Response[IO]]] = for {
-          body <- EitherT[IO, IO[Response[IO]], BSONDocument] {
-            req.as[Array[Byte]]
-              .map(ArrayReadableBuffer(_))
-              .map(BSONDocument.read)
-              .map(Right(_))
+          body <- EitherT[IO, IO[Response[IO]], Array[Byte]] {
+            req.as[Array[Byte]].map(Right(_))
           }
           in <- EitherT.fromEither[IO] {
-            inInterpreter.apply(Some(body), Vector.empty).left.map(x => eeToOut(x))
+            interpreterGroup.inInterpreter(body).left.map(x => eeToOut(x))
           }
           out <- EitherT[IO, IO[Response[IO]], CO] {
-            createF
-              .apply(in)
+            createF(in)
               .map(_.left.map(ce => {
-                val out = errorOutInterpreter(ce)
-                InternalServerError(bsonResultToBytes(out), Header("Content-Type", "application/ubjson"))
+                val out = interpreterGroup.errorInterpreter(ce)
+                InternalServerError(out, Header("Content-Type", interpreterGroup.contentType))
               }))
           }
         } yield {
-          Ok(bsonResultToBytes(outInterpreter(out)), Header("Content-Type", "application/ubjson"))
+          Ok(interpreterGroup.outInterpreter(out), Header("Content-Type", interpreterGroup.contentType))
         }
-
         result.value.flatMap(_.merge)
       }
     }
 
-  }
 
 
-  def postJson[CI, CO, CE](
-      create: Create[CI, CO, CE],
-      createF: CI => IO[Either[CE, CO]]): HttpRoutes[IO] = {
-    val inInterpreter =
-      ValidatedFromCirceInterpreter.dataClass(create.schemaForCreate)
-    val outInterpreter =
-      EncodeToCirceInterpreter.dataClass(create.successSchemaForCreate)
-    val errorOutInterpreter =
-      EncodeToCirceInterpreter.dataClass(create.errorSchemaForCreate)
+  /**
+    * Create a get endpoint.
+    * @param interpreterGroup
+    * @param readF
+    * @tparam RO
+    * @tparam RE
+    * @return
+    */
+  def get[RO, RE](interpreterGroup: GetInterpreterGroup[RO,RE], readF: Long => IO[Either[RE,RO]]): HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
-      case req @ Method.POST -> Root / entityRootDir if contentType(req).contains("application/json") => {
-
-        val result: EitherT[IO, IO[Response[IO]], IO[Response[IO]]] = for {
-          body <- EitherT[IO, IO[Response[IO]], String] {
-            req.as[String].map(Right(_))
-          }
-          circe <- EitherT.fromEither[IO] {
-            io.circe.parser.parse(body).left.map(x => extractionErrorToOut(x))
-          }
-          in <- EitherT.fromEither[IO] {
-            inInterpreter.apply(Some(circe), Vector.empty).left.map(x => eeToOut(x))
-          }
-          out <- EitherT[IO, IO[Response[IO]], CO] {
-            createF
-              .apply(in)
-              .map(_.left.map(ce =>
-                InternalServerError(errorOutInterpreter(ce))))
-          }
-        } yield {
-          Ok(outInterpreter(out))
-        }
-
-        result.value.flatMap(_.merge)
-
-      }
-    }
-
-  }
-
-  //    def search(read: Read[RO,RE]): HttpService[IO] = {
-  //      val interpreter = EncodeToCirceInterpreter.dataClass(read.successSchemaForRead)
-  //      val errorInterpreter = EncodeToCirceInterpreter.dataClass(read.successSchemaForRead)
-  //      HttpService[IO] {
-  //        case Method.GET -> Root / rootDir => {
-  //          val stream = dao.findAll.transact(transactor)
-  //          Ok(Stream("[") ++
-  //            stream.map(a => interpreter(a).noSpaces).intersperse(",") ++
-  //            Stream("]"),
-  //            `Content-Type`(MediaType.application.json)
-  //          )
-  //        }
-  //      }
-  //    }
-
-  def getBson[RO,RE](read: Read[RO, RE],
-                     readF: Long => IO[Either[RE, RO]]): HttpRoutes[IO] = {
-
-    val successOut =
-      EncodeToBson.dataClass(read.successSchemaForRead)
-    val errorOut = EncodeToBson.dataClass(read.errorSchema)
-
-    HttpRoutes.of[IO] {
-      case req @ Method.GET -> Root / rootDir / LongVar(id) if contentType(req).contains("application/ubjson")=> {
+      case req @ Method.GET -> Root / rootDir / LongVar(id) if contentType(req).contains(interpreterGroup.contentType) => {
         readF(id)
           .flatMap({
-            case Left(re)  => BadRequest(bsonResultToBytes(errorOut(re)), Header("Content-Type", "application/ubjson"))
-            case Right(ro) => Ok(bsonResultToBytes(successOut(ro)), Header("Content-Type", "application/ubjson"))
-          })
-      }
-    }
-  }
-
-  def getJson[RO, RE](read: Read[RO, RE],
-                      readF: Long => IO[Either[RE, RO]]): HttpRoutes[IO] = {
-
-    val successOut =
-      EncodeToCirceInterpreter.dataClass(read.successSchemaForRead)
-    val errorOut = EncodeToCirceInterpreter.dataClass(read.errorSchema)
-
-    HttpRoutes.of[IO] {
-      case req @ Method.GET -> Root / rootDir / LongVar(id) if contentType(req).contains("application/json") => {
-        readF(id)
-          .flatMap({
-            case Left(re)  => BadRequest(errorOut(re))
-            case Right(ro) => Ok(successOut(ro))
+            case Left(re)  => BadRequest(interpreterGroup.errorInterpreter(re), Header("Content-Type", interpreterGroup.contentType))
+            case Right(ro) => Ok(interpreterGroup.outInterpreter(ro), Header("Content-Type", interpreterGroup.contentType))
           })
       }
     }
@@ -321,8 +309,8 @@ object HttpInterpreter {
 
   /**
     * Create a PUT endpoint given serialization functors and business logic.
-    * @param interpreterGroup
-    * @param updateF
+    * @param interpreterGroup contains functions to and from Array[Byte]
+    * @param updateF Business logic to execute after
     * @tparam UI
     * @tparam UO
     * @tparam UE

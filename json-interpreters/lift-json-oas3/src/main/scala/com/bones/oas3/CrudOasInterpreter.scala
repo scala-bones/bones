@@ -19,9 +19,9 @@ object CrudOasInterpreter {
     serviceOps.createOperation.map(co => {
       CrudOasInterpreter
         .post(
-          (co.schemaForCreate, serviceOps.path),
-          (co.successSchemaForCreate, serviceOps.path),
-          (co.errorSchemaForCreate, "Error"),
+          (co.inputSchema, serviceOps.path),
+          (co.successSchema, serviceOps.path),
+          (co.errorSchema, "Error"),
           s"/${serviceOps.path}",
           List("application/json")
         )

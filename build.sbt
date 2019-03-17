@@ -129,7 +129,7 @@ lazy val dbDoobie = (project in file("db-interpreters/doobie"))
       "org.tpolecat" %% "doobie-postgres" % doobieVersion
     )
   ).dependsOn(core)
-lazy val http4sVersion = "0.20.0-M3"
+lazy val http4sVersion = "0.20.0-M6"
 lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
   .settings(
     commonSettings,

@@ -104,9 +104,9 @@ object Algebra {
   ): Delete[O, E] = Delete(outputSchema, errorSchema)
 
   case class Create[I, O, E](
-      schemaForCreate: DataClass[I],
-      successSchemaForCreate: DataClass[O],
-      errorSchemaForCreate: DataClass[E]
+                              inputSchema: DataClass[I],
+                              successSchema: DataClass[O],
+                              errorSchema: DataClass[E]
   )
 
   case class Read[O, E](successSchemaForRead: DataClass[O],
