@@ -133,12 +133,19 @@ object ProtobufSequentialInputInterpreter {
 
   def valueDefinition[A](fgo: ValueDefinitionOp[A]): ExtractFromProto[A] =
     fgo match {
-      case op: OptionalValueDefinition[a] => ???
-//        val vd = valueDefinition(op.valueDefinitionOp)
-//        last: LastFieldNumber => {
-//          val thisTag = (last + 1)
-//          ()
-//        }
+      case op: OptionalValueDefinition[a] =>
+        val vd = valueDefinition(op.valueDefinitionOp)
+        (fieldNumber: LastFieldNumber, path: Path) => {
+          val (tag, fa) = vd(fieldNumber, path)
+          (tag, in => {
+            val result = if (in.getLastTag == tag) {
+              fa(in).right.map(Some(_))
+            } else {
+              Right(None)
+            }
+            result.asInstanceOf[Either[NonEmptyList[ExtractionError],A]]
+          })
+        }
       case ob: BooleanData =>
         (fieldNumber: LastFieldNumber, path: Path) => {
           val thisField = fieldNumber << 3 | VARINT
@@ -238,6 +245,7 @@ object ProtobufSequentialInputInterpreter {
 //        (false, EitherType(a._2,b._2), (in, path) => ???)
       case esd: EnumerationStringData[a] =>
         (last: LastFieldNumber, path: Path) => {
+
           val thisField = (last + 1) << 3 | LENGTH_DELIMITED
           (thisField, in =>
             convert(in, classOf[String], path)(_.readString)
