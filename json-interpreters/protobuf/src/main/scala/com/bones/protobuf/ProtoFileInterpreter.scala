@@ -4,6 +4,9 @@ import com.bones.data.Value._
 import shapeless.ops.hlist.Repeat
 import shapeless.{HList, Nat}
 
+/**
+  * Create a Protobuf file descriptor based on the Kvp.
+  */
 object ProtoFileInterpreter {
 
   type Required = Boolean
@@ -142,7 +145,7 @@ object ProtoFileInterpreter {
       case ld: ListData[t] =>
         val result = valueDefinition(ld.tDefinition)(name, index)
         (result._1.copy(repeated = true), result._2)
-      case ed: EitherData[a,b] => ???
+      case ed: EitherData[a,b] => ??? //use one of
       case esd: EnumerationStringData[a] => (MessageField(PbString, true, false, name, index), Vector.empty)
       case esd: EnumStringData[a] => (MessageField(PbString, true, false, name, index), Vector.empty)
       case st: SumTypeData[A,a] =>
