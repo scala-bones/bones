@@ -76,7 +76,6 @@ object ProtobufSequentialInputInterpreter {
               .flatMap { l =>
                 vu.validate(op.validations)(l.asInstanceOf[a],path)
               }
-
           })
         }
       case op: KvpGroupHead[a, al, h, hl, t, tl] =>

@@ -54,7 +54,7 @@ object Value {
 
   /** ValueDefinitionOp is the base trait to describe a piece of data which may be
     * a single value or an HList. */
-  abstract class ValueDefinitionOp[A] {
+  sealed abstract class ValueDefinitionOp[A] {
 
     def asSumType[B](
         description: String,
@@ -65,7 +65,6 @@ object Value {
     ): SumTypeData[A, B] = {
       SumTypeData[A, B](this, fab, fba, keys, validations)
     }
-
   }
 
   type ValueDefinition[A] = FreeApplicative[ValueDefinitionOp, A]
