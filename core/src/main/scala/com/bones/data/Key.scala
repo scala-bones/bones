@@ -57,6 +57,8 @@ trait Sugar {
   /** Indicates that the data tied to this key is an boolean type that must pass the specified validations. */
   def boolean(f: ValidationOp[Boolean]*) = BooleanData(f.toList)
 
+  val boolean: BooleanData = boolean()
+
   /** Indicates that the data tied to this key is a UUID type that must pass the specified validations. */
   def uuid(v: ValidationOp[UUID]*) = UuidData(v.toList)
 
