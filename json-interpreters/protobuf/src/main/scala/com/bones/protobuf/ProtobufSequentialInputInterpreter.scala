@@ -1,6 +1,6 @@
 package com.bones.protobuf
 
-import java.io.IOException
+import java.io.{ByteArrayInputStream, IOException}
 import java.time.{LocalDateTime, ZonedDateTime}
 import java.util.UUID
 
@@ -25,7 +25,16 @@ object ProtobufSequentialInputInterpreter {
   type ExtractDataClassFromProto[A] = (LastFieldNumber, Path) => (LastFieldNumber, CodedInputStream => Either[NonEmptyList[ExtractionError],A])
   type ExtractGroupFromProto[H<:HList] = (LastFieldNumber, Path) => (LastFieldNumber, CodedInputStream => Either[NonEmptyList[ExtractionError],H])
 
-  def dataClass[A](dc: DataClass[A]): ExtractDataClassFromProto[A] = {
+  def fromBytes[A](dc: DataClass[A]): Array[Byte] => Either[NonEmptyList[ExtractionError], A] =  {
+    val interpreter = ProtobufSequentialInputInterpreter.dataClass(dc)(0, Vector.empty)
+    (bytes: Array[Byte]) => {
+      val is = new ByteArrayInputStream(bytes)
+      val cin: CodedInputStream = CodedInputStream.newInstance(is)
+      interpreter._2(cin)
+    }
+  }
+
+  private def dataClass[A](dc: DataClass[A]): ExtractDataClassFromProto[A] = {
     dc match {
       case t: XMapData[a, al, b] => {
         val kvp = kvpGroup(t.from)
@@ -53,7 +62,7 @@ object ProtobufSequentialInputInterpreter {
   }
 
 
-  def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): ExtractGroupFromProto[H] = {
+  private def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): ExtractGroupFromProto[H] = {
     group match {
       case KvpNil =>
         (lastFieldNumber, path) =>
@@ -65,9 +74,9 @@ object ProtobufSequentialInputInterpreter {
           val headResult = vd(lastFieldNumber, path :+ op.fieldDefinition.key)
           val tailResult = kvpGroup(op.tail)(lastFieldNumber + 1, path)
           (tailResult._1, in => {
-            in.readTag()
+            val thisTag = in.readTag()
 
-            Applicative[({
+            val result = Applicative[({
               type AL[AA] = Validated[NonEmptyList[ExtractionError], AA]
             })#AL]
               .map2(headResult._2.apply(in).toValidated, tailResult._2(in).toValidated)((l1: h, l2: t) => {
@@ -76,6 +85,7 @@ object ProtobufSequentialInputInterpreter {
               .flatMap { l =>
                 vu.validate(op.validations)(l.asInstanceOf[a],path)
               }
+            result
           })
         }
       case op: KvpGroupHead[a, al, h, hl, t, tl] =>
@@ -125,12 +135,12 @@ object ProtobufSequentialInputInterpreter {
 
 
   // see https://developers.google.com/protocol-buffers/docs/encoding
-  val VARINT = 0 //	Varint	int32, int64, uint32, uint64, sint32, sint64, bool, enum
-  val BIT64 = 1	// 64-bit	fixed64, sfixed64, double
-  val LENGTH_DELIMITED = 2	// Length-delimited	string, bytes, embedded messages, packed repeated fields
-  val BIT32 = 5	// 32-bit	fixed32, sfixed32, float
+  private val VARINT = 0 //	Varint	int32, int64, uint32, uint64, sint32, sint64, bool, enum
+  private val BIT64 = 1	// 64-bit	fixed64, sfixed64, double
+  private val LENGTH_DELIMITED = 2	// Length-delimited	string, bytes, embedded messages, packed repeated fields
+  private val BIT32 = 5	// 32-bit	fixed32, sfixed32, float
 
-  def valueDefinition[A](fgo: ValueDefinitionOp[A]): ExtractFromProto[A] =
+  private def valueDefinition[A](fgo: ValueDefinitionOp[A]): ExtractFromProto[A] =
     fgo match {
       case op: OptionalValueDefinition[a] =>
         val vd = valueDefinition(op.valueDefinitionOp)
@@ -147,7 +157,7 @@ object ProtobufSequentialInputInterpreter {
         }
       case ob: BooleanData =>
         (fieldNumber: LastFieldNumber, path: Path) => {
-          val thisField = fieldNumber << 3 | VARINT
+          val thisField = (fieldNumber + 1) << 3 | VARINT
           (thisField, in => {
             val result = if (in.getLastTag == thisField) {
               convert(in, classOf[Boolean], path)(_.readBool())
@@ -159,10 +169,14 @@ object ProtobufSequentialInputInterpreter {
         }
       case rs: StringData =>
         (fieldNumber: LastFieldNumber, path: Path) => {
-          val thisField = fieldNumber << 3 | LENGTH_DELIMITED
+          val thisField = (fieldNumber + 1) << 3 | LENGTH_DELIMITED
           (thisField, in => {
-            val result = if (in.getLastTag == thisField) {
-              convert(in, classOf[String], path)(_.readStringRequireUtf8())
+            val lastTag = in.getLastTag
+            val result = if (lastTag == thisField) {
+              convert(in, classOf[String], path)(cis => {
+                val x = cis.readStringRequireUtf8()
+                x
+              })
             } else {
               Left(NonEmptyList.one(RequiredData(path, rs)))
             }
@@ -171,7 +185,7 @@ object ProtobufSequentialInputInterpreter {
         }
       case ri: LongData =>
         (fieldNumber: LastFieldNumber, path: Path) => {
-          val thisField = fieldNumber << 3 | VARINT
+          val thisField = (fieldNumber + 1) << 3 | VARINT
           (thisField, in => {
             val result = if (in.getLastTag == thisField) {
               convert(in, classOf[Long], path)(_.readInt64()).asInstanceOf[Either[NonEmptyList[ExtractionError],A]]
@@ -183,10 +197,15 @@ object ProtobufSequentialInputInterpreter {
         }
       case uu: UuidData =>
         (fieldNumber: LastFieldNumber, path: Path) => {
-          val thisField = fieldNumber << 3 | LENGTH_DELIMITED
+          val thisField = (fieldNumber + 1) << 3 | LENGTH_DELIMITED
           (thisField, in => {
             val result = if (in.getLastTag == thisField) {
               convert(in, classOf[String], path)(cis => cis.readString())
+                .flatMap(str => try {
+                  Right(UUID.fromString(str))
+                } catch {
+                  case arg: IllegalArgumentException => Left(NonEmptyList.one(CanNotConvert(path, str, classOf[UUID])))
+                })
             } else {
               Left(NonEmptyList.one(RequiredData(path, uu)))
             }
@@ -195,7 +214,7 @@ object ProtobufSequentialInputInterpreter {
         }
       case dd: DateTimeData =>
         (fieldNumber: LastFieldNumber, path: Path) => {
-          val thisField = fieldNumber << 3 | VARINT
+          val thisField = (fieldNumber + 1) << 3 | VARINT
           (thisField, in => {
             val result = if (in.getLastTag == thisField) {
               convert(in, classOf[String], path)(_.readString).flatMap(stringToZonedDateTime(_,dd.dateFormat, path))
@@ -207,7 +226,7 @@ object ProtobufSequentialInputInterpreter {
         }
       case bd: BigDecimalData =>
         (fieldNumber: LastFieldNumber, path: Path) => {
-          val thisField = fieldNumber << 3 | LENGTH_DELIMITED
+          val thisField = (fieldNumber + 1) << 3 | LENGTH_DELIMITED
           (thisField, in => {
             val result = if (in.getLastTag == thisField) {
               convert(in, classOf[String], path)(_.readString).flatMap(stringToBigDecimal(_,path))
@@ -243,9 +262,9 @@ object ProtobufSequentialInputInterpreter {
 //        val b = valueDefinition(ed.definitionB)
 //        (false, EitherType(a._2,b._2), (in, path) => ???)
       case esd: EnumerationStringData[a] =>
-        (last: LastFieldNumber, path: Path) => {
+        (fieldNumber: LastFieldNumber, path: Path) => {
 
-          val thisField = (last + 1) << 3 | LENGTH_DELIMITED
+          val thisField = (fieldNumber + 1) << 3 | LENGTH_DELIMITED
           (thisField, in =>
             convert(in, classOf[String], path)(_.readString)
               .flatMap(stringToEnumeration(_,path,esd.enumeration, esd.manifestOfA))
@@ -253,8 +272,8 @@ object ProtobufSequentialInputInterpreter {
           )
         }
       case esd: EnumStringData[a] =>
-        (last: LastFieldNumber, path: Path) => {
-          val thisField = (last + 1) << 3 | LENGTH_DELIMITED
+        (fieldNumber: LastFieldNumber, path: Path) => {
+          val thisField = (fieldNumber + 1) << 3 | LENGTH_DELIMITED
           (thisField, in => convert(in, classOf[String], path)(_.readString).flatMap(stringToEnum[a](_,path,esd.enums).asInstanceOf[Either[NonEmptyList[ExtractionError],A]]))
         }
 
@@ -280,15 +299,38 @@ object ProtobufSequentialInputInterpreter {
           })
         }
       }
+      case kvp: KvpValueData[a] =>
+        val groupExtract = dataClass(kvp.value)
+        (last: LastFieldNumber, path: Path) => {
+          val thisField = (last + 1) << 3 | LENGTH_DELIMITED
+          val children = groupExtract.apply(0, path)
+          (thisField, (in: CodedInputStream) => {
+            val length    = in.readRawVarint32()
+            val oldLimit  = in.pushLimit(length)
+            val result = children._2(in)
+            try {
+              in.readTag()
+              in.checkLastTagWas(0)
+              in.popLimit(oldLimit)
+              result.asInstanceOf[Either[NonEmptyList[ExtractionError], A]]
+            } catch {
+              case ex: InvalidProtocolBufferException => {
+                in.getLastTag
+                Left(NonEmptyList.one(WrongTypeError(path, classOf[HList], classOf[Any])))
+              }
+            }
+          })
+        }
     }
 
 
   private def convert[A,T](in: CodedInputStream, clazz: Class[A], path: Vector[String])(f: CodedInputStream => A): Either[NonEmptyList[CanNotConvert[CodedInputStream,A]],A] =
     try {
-      in.readTag()
       Right(f(in))
     } catch {
-      case e: IOException => Left(NonEmptyList.one(CanNotConvert(path, in, clazz)))
+      case e: IOException => {
+        Left(NonEmptyList.one(CanNotConvert(path, in, clazz)))
+      }
     }
 
 }
