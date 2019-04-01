@@ -86,11 +86,6 @@ object ValidatedFromCirceInterpreter extends KvpValidateInputInterpreter[Json] {
       .toRight(determineError(in, op, classOf[List[A]], path))
 
 
-  override def extractXMapArray[A](op: XMapListData[A])(in: Json, path: Vector[String]):
-    Either[NonEmptyList[ExtractionError], Seq[Json]] =
-      in.asArray
-        .toRight(determineError(in, null, classOf[List[A]], path))
-
   override def extractBigDecimal(op: BigDecimalData)(in: Json, path: Vector[String]):
   Either[NonEmptyList[ExtractionError], BigDecimal] =
     in.asNumber

@@ -9,7 +9,7 @@ import doobie.Query
 
 class FindInterpreter[K](key: KeyValueDefinition[K]) {
 
-  def dataClass[A](dc: DataClass[A]): K => ConnectionIO[Option[A]] = {
+  def dataClass[A](dc: BonesSchema[A]): K => ConnectionIO[Option[A]] = {
     val fields: List[String] = FieldNames.dataClass(dc)
     def tableName = TableName.getTableName(dc)
     val query = s"""select ${fields.mkString(", ")} from $tableName where ${camelToSnake(key.key)} = ?"""
@@ -20,10 +20,8 @@ class FindInterpreter[K](key: KeyValueDefinition[K]) {
 }
 
 object TableName {
-  def getTableName[B](dc: DataClass[B]): String = dc match {
+  def getTableName[B](dc: BonesSchema[B]): String = dc match {
     case t: XMapData[a, al, b] => camelToSnake(t.manifestOfA.runtimeClass.getSimpleName)
-    case o: OptionalDataClass[a] => getTableName(o.value)
-    case ld: XMapListData[b] => getTableName(ld.value)
   }
 }
 
@@ -31,11 +29,9 @@ object TableName {
 
 object FieldNames {
 
-  def dataClass[A](dc: DataClass[A]): List[String] =
+  def dataClass[A](dc: BonesSchema[A]): List[String] =
     dc match {
       case t: XMapData[a, al, b] => kvpGroup(t.from)
-      case o: OptionalDataClass[a] => dataClass(o.value)
-      case ld: XMapListData[b] => dataClass(ld.value)
     }
 
   def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): List[String] =
@@ -44,8 +40,6 @@ object FieldNames {
       case op: KvpSingleValueHead[h, t, tl, a] => List(camelToSnake(op.fieldDefinition.key)) ::: kvpGroup(op.tail)
       case op: KvpGroupHead[a, al, h, hl, t, tl] =>
         kvpGroup(op.head) ::: kvpGroup(op.tail)
-      case op: KvpDataClassHead[h,t,tl,out] =>
-        dataClass(op.dataClass) ::: kvpGroup(op.tail)
       case op: OptionalKvpGroup[h,hl] =>
         kvpGroup(op.kvpGroup)
     }

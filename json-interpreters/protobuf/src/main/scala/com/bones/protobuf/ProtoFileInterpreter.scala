@@ -43,9 +43,8 @@ object ProtoFileInterpreter {
   trait NestedType
   case class NestedMessage(name: String, dataTypes: Vector[MessageField]) extends NestedType
   case class NestedEnum(name: String, value: (String, Int)) extends NestedType
-
-  /** Container for a Proto Message */
   case class Message(name: String, messageFields: Vector[MessageField], nestedTypes: Vector[NestedType])
+    extends NestedType
 
   def messageFieldsToProtoFile(fields: Vector[ProtoFileInterpreter.MessageField], indent: String): String = {
     fields.sortBy(_.index).map(field => {
@@ -83,29 +82,11 @@ object ProtoFileInterpreter {
      """.stripMargin
   }
 
-  def dataClass[A](dc: DataClass[A]): Message = {
+  def fromSchema[A](dc: BonesSchema[A]): Message = {
     dc match {
       case t: XMapData[a, al, b] =>
         val (messageFields, nestedTypes, lastIndex) = kvpGroup(t.from)(0)
         Message(t.manifestOfA.runtimeClass.getSimpleName, messageFields, nestedTypes)
-
-      case o: OptionalDataClass[a] =>
-        dataClass(o.value)
-      case ld: XMapListData[b] =>
-        dataClass(ld.value)
-    }
-  }
-
-  private def nestedDataClass[A](dc: DataClass[A]): Int => (Vector[MessageField], Vector[NestedType], Int) = lastIndex => {
-    dc match {
-      case t: XMapData[a, al, b] =>
-        kvpGroup(t.from)(lastIndex)
-      case o: OptionalDataClass[a] =>
-        val x = nestedDataClass(o.value)(lastIndex)
-        (x._1, x._2, x._3)
-      case ld: XMapListData[b] =>
-        val x = nestedDataClass(ld.value)(lastIndex)
-        (x._1, x._2, x._3)
     }
   }
 
@@ -122,10 +103,6 @@ object ProtoFileInterpreter {
         val head = kvpGroup(op.head)(lastIndex)
         val tail = kvpGroup(op.tail)(head._3)
         (head._1 ++ tail._1, head._2 ++ tail._2, tail._3)
-      case op: KvpDataClassHead[h,t,tl,out] =>
-        val head = nestedDataClass(op.dataClass)(lastIndex)
-        val tail = kvpGroup(op.tail)(head._3)
-        (head._1 ++ tail._1, head._2 ++ tail._2, lastIndex)
       case op: OptionalKvpGroup[h,hl] =>
         kvpGroup(op.kvpGroup)(lastIndex)
     }
@@ -154,9 +131,9 @@ object ProtoFileInterpreter {
         val result = kvpGroup(kvp.kvpGroup)(0)
         val nested = NestedMessage(name, result._1)
         (MessageField(NestedDataType(name), true, false, name, index), Vector(nested))
-      case k: KvpValueData[a] =>
-        val result = nestedDataClass(k.value)(0)
-        val nested = NestedMessage(name, result._1)
+      case t: XMapData[h,hl,a] =>
+        val (messageFields, _, _) = kvpGroup(t.from)(0)
+        val nested = NestedMessage(name, messageFields)
         (MessageField(NestedDataType(name), true, false, name, index), Vector(nested))
 
     }

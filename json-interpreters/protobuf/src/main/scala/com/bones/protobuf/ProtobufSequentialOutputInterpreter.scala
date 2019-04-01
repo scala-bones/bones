@@ -26,32 +26,21 @@ object ProtobufSequentialOutputInterpreter {
   type EncodeToProto[A] = FieldNumber => A => (ComputeSize, Encode)
   type EncodeGroupToProto[H<:HList] = LastFieldNumber => H =>  (ComputeSize, Encode)
 
-  def encodeToBytes[A](dc: DataClass[A]): A => Array[Byte] = {
-    val interpreter = ProtobufSequentialOutputInterpreter.dataClass(dc)(0)
-    (a: A) => {
-      val (fSize, fEncode) = interpreter(a)
-      val os = new ByteArrayOutputStream()
-      val cos: CodedOutputStream = CodedOutputStream.newInstance(os)
-      fEncode(cos)
-      cos.flush()
-      os.flush()
-      os.close()
-      os.toByteArray
+  def encodeToBytes[A](dc: BonesSchema[A]): A => Array[Byte] = dc match {
+    case x: XMapData[_,_,A] => {
+      val group = kvpGroup(x.from).apply(0)
+      (a: A) => {
+        val hlist = x.fba(a)
+        val (_, fEncode) = group(hlist)
+        val os = new ByteArrayOutputStream()
+        val cos: CodedOutputStream = CodedOutputStream.newInstance(os)
+        fEncode(cos)
+        cos.flush()
+        os.flush()
+        os.close()
+        os.toByteArray
+      }
     }
-  }
-
-  protected def dataClass[A](dc: DataClass[A]): EncodeToProto[A] = {
-    val result = dc match {
-      case t: XMapData[a, al, b] => (fieldNumber: FieldNumber) =>
-        val kvp = kvpGroup(t.from)(fieldNumber)
-        (input: A) => {
-          val hlist = t.fba(input.asInstanceOf[b])
-          kvp(hlist)
-        }
-      case o: OptionalDataClass[a] => ???
-      case ld: XMapListData[b] => ???
-    }
-    result.asInstanceOf[EncodeToProto[A]]
   }
 
   protected def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): EncodeGroupToProto[H] = {
@@ -89,21 +78,6 @@ object ProtobufSequentialOutputInterpreter {
           (fCompute, fEncode)
         }
 
-      case op: KvpDataClassHead[h,t,tl,out] => (fieldNumber: FieldNumber) =>
-        val headF = dataClass(op.dataClass)(fieldNumber)
-        val tailF = kvpGroup(op.tail)(fieldNumber)
-        (input: out) => {
-//          val cast = input.asInstanceOf[h :: t]
-          val headResult: (ComputeSize, Encode) = headF(input.head)
-          val tailResult: (ComputeSize, Encode) = tailF(input.tail)
-          val fCompute: ComputeSize = () => headResult._1() + tailResult._1()
-
-          val fEncode = (outputStream: CodedOutputStream) => {
-            Applicative[({type AL[AA] = Either[NonEmptyList[IOException], AA]})#AL] //TODO: not quite.
-              .map2(headResult._2(outputStream), tailResult._2(outputStream))((l1: CodedOutputStream, l2: CodedOutputStream) => l2)
-          }
-          (fCompute, fEncode)
-        }
       case op: OptionalKvpGroup[h,hl] => (fieldNumber: FieldNumber) =>
         val kvpGroupF = kvpGroup(op.kvpGroup)(fieldNumber)
         (input: Option[h] :: HNil) => {
@@ -186,19 +160,32 @@ object ProtobufSequentialOutputInterpreter {
       case kvp: KvpGroupData[h, hl] => (fieldNumber: FieldNumber) =>
         val enc = kvpGroup(kvp.kvpGroup)(0)
         (h: h) => enc(h)
-      case kvp: KvpValueData[a] => (fieldNumber: FieldNumber) =>
-        val dc = dataClass(kvp.value)(0)
+      case x: XMapData[h,hl,a] => (fieldNumber: FieldNumber) =>
+        val group = kvpGroup(x.from).apply(0)
         (a: A) => {
-          val (childSizeF, childEncodeF) = dc(a)
-          val size = childSizeF()
-          val sizeF: ComputeSize = () => size
+          val hlist = x.fba(a)
+          val (fSize, fEncode) = group(hlist)
           val encodeF: Encode = (outputStream: CodedOutputStream) => {
             outputStream.writeTag(fieldNumber, 2)
-            outputStream.writeUInt32NoTag(size)
-            childEncodeF(outputStream)
+            outputStream.writeUInt32NoTag(fSize())
+            fEncode(outputStream)
           }
-          (sizeF, encodeF)
+          (fSize, encodeF)
         }
+
+//        val dc = kvpGroup(kvp.from)(0)
+//        (a: A) => {
+//          val hlist = kvp.fba(a)
+//          val (childSizeF, childEncodeF) = dc(hlist)
+//          val size = childSizeF()
+//          val sizeF: ComputeSize = () => size
+//          val encodeF: Encode = (outputStream: CodedOutputStream) => {
+//            outputStream.writeTag(fieldNumber, 2)
+//            outputStream.writeUInt32NoTag(size)
+//            childEncodeF(outputStream)
+//          }
+//          (sizeF, encodeF)
+//        }
 
     }
     result.asInstanceOf[EncodeToProto[A]]

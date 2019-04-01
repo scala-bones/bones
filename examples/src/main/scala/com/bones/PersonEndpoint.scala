@@ -40,7 +40,7 @@ object Definitions {
     ).convert[Person]
 
   val personWithId =
-    (kvp("id", long) :: personSchema :: KvpNil).convert[WithId[Person]]
+    (kvp("id", long) :: personSchema :><: KvpNil).convert[WithId[Person]]
 
   case class Error(error: String)
 

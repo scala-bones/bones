@@ -1,11 +1,12 @@
 package com.bones.oas3
 
 import com.bones.crud.Algebra._
-import com.bones.data.Value.DataClass
+import com.bones.data.Value.BonesSchema
 import io.swagger.v3.oas.models._
 import io.swagger.v3.oas.models.media._
 import io.swagger.v3.oas.models.parameters.{Parameter, RequestBody}
 import io.swagger.v3.oas.models.responses.{ApiResponse, ApiResponses}
+
 import scala.collection.JavaConverters._
 
 
@@ -92,7 +93,7 @@ object CrudOasInterpreter {
   }
 
 
-  def get[A](outputSchema: (DataClass[A], String), urlPath: String): OpenAPI => OpenAPI = { openAPI =>
+  def get[A](outputSchema: (BonesSchema[A], String), urlPath: String): OpenAPI => OpenAPI = { openAPI =>
 
     val outputEntityName = outputSchema._2
 
@@ -125,7 +126,7 @@ object CrudOasInterpreter {
   }
 
   def delete[O](
-                          outputSchemaWithName: (DataClass[O], String),
+                          outputSchemaWithName: (BonesSchema[O], String),
                           urlPath: String,
                           contentTypes: List[String]
                         ): OpenAPI => OpenAPI = { openAPI =>
@@ -159,9 +160,9 @@ object CrudOasInterpreter {
   }
 
   def put[I,O, E](
-    inputSchemaAndName: (DataClass[I], String),
-    outputSchemaAndName: (DataClass[O], String),
-    errorSchemaAndName: (DataClass[E], String),
+    inputSchemaAndName: (BonesSchema[I], String),
+    outputSchemaAndName: (BonesSchema[O], String),
+    errorSchemaAndName: (BonesSchema[E], String),
     urlPath: String,
     contentTypes: List[String]
   ): OpenAPI => OpenAPI = { openAPI =>
@@ -222,11 +223,11 @@ object CrudOasInterpreter {
   }
 
   def post[I,O, E](
-    inputSchemaAndName: (DataClass[I], String),
-    outputSchemaAndName: (DataClass[O], String),
-    errorSchemaAndName: (DataClass[E], String),
-    urlPath: String,
-    contentTypes: List[String]): OpenAPI => OpenAPI = { openAPI =>
+                    inputSchemaAndName: (BonesSchema[I], String),
+                    outputSchemaAndName: (BonesSchema[O], String),
+                    errorSchemaAndName: (BonesSchema[E], String),
+                    urlPath: String,
+                    contentTypes: List[String]): OpenAPI => OpenAPI = { openAPI =>
 
     val inputEntityName = inputSchemaAndName._2
     val outputEntityName = outputSchemaAndName._2

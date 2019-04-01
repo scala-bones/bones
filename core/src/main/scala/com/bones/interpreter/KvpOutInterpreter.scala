@@ -32,23 +32,12 @@ trait KvpOutputInterpreter[OUT] {
   def enumerationToOut[A](op: EnumerationStringData[A]): A => OUT
   def enumToOut[A](op: EnumStringData[_]): A => OUT
 
-
-  def dataClass[A](dc: DataClass[A]): A => OUT = {
-    dc match {
-      case x: XMapData[a,al,b] =>
-        val groupF = kvpGroup(x.from)
-        input: A => groupF.apply(x.fba(input))
-      case op: OptionalDataClass[a] =>
-        val dataClassF = dataClass(op.value)
-        a: A => a match {
-          case Some(x) => dataClassF.apply(x)
-          case None => none
-        }
-      case op: XMapListData[a] => ???
-    }
+  def fromSchema[A](bonesSchema: BonesSchema[A]): A => OUT = bonesSchema match {
+    case x: XMapData[_,_,A] => valueDefinition(x)
   }
 
-  def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): H => OUT =
+
+  protected def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): H => OUT =
     group match {
       case KvpNil => (input: H) => empty
       case op: KvpGroupHead[out,l,h,hl,t,tl] =>
@@ -69,15 +58,6 @@ trait KvpOutputInterpreter[OUT] {
           val tail = kvpGroup(op.tail)(cast.tail)
           appendGroup(toObj(op.fieldDefinition, val1), tail)
         }
-      case op: KvpDataClassHead[h,t,tl,o] => {
-        val hF = dataClass(op.dataClass)
-        val tailF = kvpGroup(op.tail)
-        (input: H) => {
-          val head = hF(input.head)
-          val tail = tailF(input.tail)
-          appendGroup(head, tail)
-        }
-      }
       case op: OptionalKvpGroup[h,hl] =>
         val oF = kvpGroup(op.kvpGroup)
         input: H => input.head match {
@@ -86,7 +66,7 @@ trait KvpOutputInterpreter[OUT] {
         }
     }
 
-  def valueDefinition[A](fgo: ValueDefinitionOp[A]): A => OUT =
+  protected def valueDefinition[A](fgo: ValueDefinitionOp[A]): A => OUT =
     fgo match {
       case op: OptionalValueDefinition[b] =>
         val valueF = valueDefinition(op.valueDefinitionOp)
@@ -118,6 +98,12 @@ trait KvpOutputInterpreter[OUT] {
       case gd: KvpGroupData[h,hl] => {
         val fh = kvpGroup(gd.kvpGroup)
         input: A => fh(input.asInstanceOf[h])
+      }
+      case x: XMapData[h,hl,A] => {
+        val fh = kvpGroup(x.from)
+        input: A => {
+          fh(x.fba(input))
+        }
       }
     }
 
