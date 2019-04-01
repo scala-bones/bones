@@ -102,7 +102,7 @@ object Schemas {
       kvp("currencyIso", string.enumeration[Currency.Value](Currency)) ::
       kvp("deletedAt", isoDateTime.optional) ::
       kvp("lastModifiedRequest", uuid) ::
-      kvpValue("billingLocation", (
+      kvp("billingLocation", (
         kvp("countryIso", string(sv.validVector(isoVector))) ::
         kvp("zipCode", string().optional) ::
         KvpNil

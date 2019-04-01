@@ -1,6 +1,6 @@
 package com.bones.crud
 
-import com.bones.data.Value.DataClass
+import com.bones.data.Value.BonesSchema
 
 /**
   * Defines the algebra for the CRUD actions.
@@ -19,9 +19,9 @@ object Algebra {
       deleteOperation: Option[Delete[DO, DE]]
   ) {
     def withCreate[I, O, E](
-        inputSchema: DataClass[I],
-        successSchema: DataClass[O],
-        errorSchema: DataClass[E]
+                             inputSchema: BonesSchema[I],
+                             successSchema: BonesSchema[O],
+                             errorSchema: BonesSchema[E]
     ): ServiceOps[I, O, E, RO, RE, UI, UO, UE, DO, DE] =
       withCreate(Create[I, O, E](inputSchema, successSchema, errorSchema))
 
@@ -29,7 +29,7 @@ object Algebra {
       : ServiceOps[I, O, E, RO, RE, UI, UO, UE, DO, DE] =
       copy(createOperation = Some(create))
 
-    def withRead[O, E](successSchema: DataClass[O], errorSchema: DataClass[E])
+    def withRead[O, E](successSchema: BonesSchema[O], errorSchema: BonesSchema[E])
       : ServiceOps[CI, CO, CE, O, E, UI, UO, UE, DO, DE] =
       withRead(Read(successSchema, errorSchema))
 
@@ -37,9 +37,9 @@ object Algebra {
         read: Read[O, E]): ServiceOps[CI, CO, CE, O, E, UI, UO, UE, DO, DE] =
       copy(readOperation = Some(read))
     def withUpdate[I, O, E](
-        inputSchema: DataClass[I],
-        successSchema: DataClass[O],
-        errorSchema: DataClass[E]
+        inputSchema: BonesSchema[I],
+        successSchema: BonesSchema[O],
+        errorSchema: BonesSchema[E]
     ): ServiceOps[CI, CO, CE, RO, RE, I, O, E, DO, DE] =
       withUpdate(Update(inputSchema, successSchema, errorSchema))
 
@@ -48,8 +48,8 @@ object Algebra {
       copy(updateOperation = Some(update))
 
     def withDelete[O, E](
-        outputSchema: DataClass[O],
-        errorSchema: DataClass[E]
+        outputSchema: BonesSchema[O],
+        errorSchema: BonesSchema[E]
     ): ServiceOps[CI, CO, CE, RO, RE, UI, UO, UE, O, E] =
       withDelete(Delete(outputSchema, errorSchema))
 
@@ -66,9 +66,9 @@ object Algebra {
     * @return a GADT describing createOperation
     */
   def create[I, O, E](
-      inputSchema: DataClass[I],
-      successSchema: DataClass[O],
-      errorSchema: DataClass[E]
+      inputSchema: BonesSchema[I],
+      successSchema: BonesSchema[O],
+      errorSchema: BonesSchema[E]
   ): Create[I, O, E] =
     Create[I, O, E](inputSchema, successSchema, errorSchema)
 
@@ -78,8 +78,8 @@ object Algebra {
     * @tparam O the data
     * @return a GADT algebra describing readOperation.
     */
-  def read[O, E](successSchema: DataClass[O],
-                 errorSchema: DataClass[E]): Read[O, E] =
+  def read[O, E](successSchema: BonesSchema[O],
+                 errorSchema: BonesSchema[E]): Read[O, E] =
     Read(successSchema, errorSchema)
 
   /**
@@ -93,36 +93,36 @@ object Algebra {
     * @return a GADT algebra describing updateOperation.
     */
   def update[I, O, E](
-      inputSchema: DataClass[I],
-      successSchema: DataClass[O],
-      errorSchema: DataClass[E]
+      inputSchema: BonesSchema[I],
+      successSchema: BonesSchema[O],
+      errorSchema: BonesSchema[E]
   ): Update[I, O, E] = Update(inputSchema, successSchema, errorSchema)
 
   def delete[O, E](
-      outputSchema: DataClass[O],
-      errorSchema: DataClass[E]
+      outputSchema: BonesSchema[O],
+      errorSchema: BonesSchema[E]
   ): Delete[O, E] = Delete(outputSchema, errorSchema)
 
   case class Create[I, O, E](
-                              inputSchema: DataClass[I],
-                              successSchema: DataClass[O],
-                              errorSchema: DataClass[E]
+                              inputSchema: BonesSchema[I],
+                              successSchema: BonesSchema[O],
+                              errorSchema: BonesSchema[E]
   )
 
-  case class Read[O, E](successSchemaForRead: DataClass[O],
-                        errorSchema: DataClass[E])
+  case class Read[O, E](successSchemaForRead: BonesSchema[O],
+                        errorSchema: BonesSchema[E])
 
   case class Update[I, O, E](
-      inputSchema: DataClass[I],
-      successSchema: DataClass[O],
-      failureSchema: DataClass[E]
+      inputSchema: BonesSchema[I],
+      successSchema: BonesSchema[O],
+      failureSchema: BonesSchema[E]
   )
 
   case class Delete[O, E](
-      successSchema: DataClass[O],
-      errorSchema: DataClass[E]
+      successSchema: BonesSchema[O],
+      errorSchema: BonesSchema[E]
   )
 
-  case class Search[O](successSchema: DataClass[O])
+  case class Search[O](successSchema: BonesSchema[O])
 
 }

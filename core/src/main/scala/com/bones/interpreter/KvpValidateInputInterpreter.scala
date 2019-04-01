@@ -53,6 +53,10 @@ object KvpValidateInputInterpreter {
 
 }
 
+/**
+  * Base trait for converting from an interchange format such as JSON to an HList or Case class.
+  * @tparam IN
+  */
 trait KvpValidateInputInterpreter[IN] {
 
   import KvpValidateInputInterpreter._
@@ -70,19 +74,11 @@ trait KvpValidateInputInterpreter[IN] {
   def extractZonedDateTime(dateFormat: DateTimeFormatter, op: DateTimeData)(in: IN, path: Vector[String]): Either[NonEmptyList[ExtractionError], ZonedDateTime]
   def extractArray[A](op: ListData[A])(in: IN, path: Vector[String]): Either[NonEmptyList[ExtractionError], Seq[IN]]
   def extractBigDecimal(op: BigDecimalData)(in: IN, path: Vector[String]): Either[NonEmptyList[ExtractionError], BigDecimal]
-  def extractXMapArray[A](op: XMapListData[A])(in: IN, path: Vector[String]): Either[NonEmptyList[ExtractionError], Seq[IN]]
   protected def invalidValue[T](in: IN, expected: Class[T], path: Vector[String]): Left[NonEmptyList[ExtractionError], Nothing]
 
-//  def requiredConvert[A, B](
-//                             op: ValueDefinitionOp[B],
-//                             inOpt: Option[IN],
-//                             f: IN => Option[A],
-//                             convert: A => Either[NonEmptyList[ExtractionError], B]): Either[NonEmptyList[ExtractionError], A] =
-//    for {
-//      in <- inOpt
-//        .toRight(NonEmptyList.one(RequiredData(op)))
-//      a <- f(in).map(Right(_)).getOrElse(invalidValue(in, classOf[Object]))
-//    } yield a
+  def fromSchema[A](schema: BonesSchema[A]) : (IN, Vector[String]) => Either[NonEmptyList[ExtractionError],A] = schema match {
+    case x: XMapData[_,_,A] => (in, path)  => valueDefinition(x).apply(Some(in), path)
+  }
 
   def required[A](
                    op: ValueDefinitionOp[A],
@@ -96,50 +92,6 @@ trait KvpValidateInputInterpreter[IN] {
       a <- f(json, path)
       v <- vu.validate(validations)(a,path)
     } yield a
-
-
-  def dataClass[A](value: DataClass[A]): (Option[IN], Vector[String]) => Either[NonEmptyList[ExtractionError],A] = {
-    value match {
-      case x: XMapData[a, al, b] => {
-        val kvp = kvpGroup(x.from)
-        (jOpt: Option[IN], path: Vector[String]) =>
-          jOpt match {
-            case None    => Left(NonEmptyList.one(RequiredData(path, null)))
-            case Some(j) => kvp(j,path).right.map(x.fab(_))
-          }
-      }
-      case dc: OptionalDataClass[a] => {
-        val dcF = dataClass(dc.value)
-        (jOpt: Option[IN], path: Vector[String]) =>
-          jOpt match {
-            case None    => Right(None)
-            case Some(j) => dcF(Some(j), path).asInstanceOf[Either[NonEmptyList[ExtractionError],A]]
-          }
-      }
-      case op: XMapListData[b] => {
-        val valueF = dataClass(op.value)
-        def traverseArray(arr: Seq[IN], path: Vector[String]): Either[NonEmptyList[ExtractionError], List[b]] = {
-          val arrayApplied: Seq[Either[NonEmptyList[ExtractionError], b]] = arr.map(jValue => valueF(Some(jValue), path))
-          arrayApplied.foldLeft[Either[NonEmptyList[ExtractionError], List[b]]](
-            Right(List.empty))((b, v) =>
-            (b, v) match {
-              case (Right(a), Right(i)) => Right(a :+ i)
-              case (Left(a), Left(b))   => Left(a ::: b)
-              case (Left(x), _)         => Left(x)
-              case (_, Left(x))         => Left(x)
-            })
-        }
-        (inOpt: Option[IN], path: Vector[String]) =>
-        {
-          for {
-            in <- inOpt.toRight(NonEmptyList.one(RequiredData(path,null)))
-            arr <- extractXMapArray(op)(in, path)
-            listOfIn <- traverseArray(arr, path)
-          } yield listOfIn
-        }
-      }
-    }
-  }
 
 
   def kvpGroup[H <: HList, HL <: Nat](group: KvpGroup[H, HL]): (IN, Vector[String]) => Either[NonEmptyList[ExtractionError],H] = {
@@ -196,24 +148,6 @@ trait KvpValidateInputInterpreter[IN] {
             .asInstanceOf[Either[NonEmptyList[ExtractionError], H]]
         }
       }
-      case dc: KvpDataClassHead[h, t, tl, o] => {
-        val dcF = dataClass(dc.dataClass)
-        val tailF = kvpGroup(dc.tail)
-        (in: IN, path: Vector[String]) =>
-        {
-          Applicative[({type AL[AA] = Validated[NonEmptyList[ExtractionError], AA]})#AL]
-            .map2(dcF(Some(in), path).toValidated, tailF(in, path).toValidated)(
-              (l1, l2) => {
-                l1.asInstanceOf[h] :: l2.asInstanceOf[t]
-              })
-            .toEither
-            .flatMap { l =>
-              vu.validate(dc.validations)(l.asInstanceOf[o], path)
-            }
-            .asInstanceOf[Either[NonEmptyList[ExtractionError], H]]
-        }
-      }
-
     }
   }
 
@@ -328,10 +262,14 @@ trait KvpValidateInputInterpreter[IN] {
           }
         }
       }
-      case op: KvpValueData[a] => {
-        dataClass(op.value)
+      case x: XMapData[a, al, A] => {
+        val kvp = kvpGroup(x.from)
+        (jOpt: Option[IN], path: Vector[String]) =>
+          jOpt match {
+            case None    => Left(NonEmptyList.one(RequiredData(path, null)))
+            case Some(j) => kvp(j,path).right.map(x.fab(_))
+          }
       }
-
     }
     result
   }

@@ -27,7 +27,7 @@ class ProtobufSequentialInputInterpreterTest extends FunSuite with Checkers with
     kvp("id", uuid) ::
     kvp("name", string) ::
     kvp("age", long) ::
-    kvpValue("location", loc) ::
+    kvp("location", loc) ::
     kvp("knowsAboutGadt", boolean) ::
     kvp("favoriteColor", string.optional) ::
     KvpNil
@@ -57,11 +57,13 @@ class ProtobufSequentialInputInterpreterTest extends FunSuite with Checkers with
     val os = new ByteArrayOutputStream()
     val cos: CodedOutputStream = CodedOutputStream.newInstance(os)
 
-    val result = ProtoFileInterpreter.dataClass(person)
+    val result = ProtoFileInterpreter.fromSchema(person)
 
     val str = ProtoFileInterpreter.messageToProtoFile(result)
 
     val bytes = ProtobufSequentialOutputInterpreter.encodeToBytes(person)(monica)
+
+    print(convertBytesToHex(bytes))
 
     val isItMonica = ProtobufSequentialInputInterpreter.fromBytes(person)(bytes)
 

@@ -68,9 +68,9 @@ object ValidatedFromArgonautInterpreter extends KvpValidateInputInterpreter[Json
       in.array.toRight(NonEmptyList.one(WrongTypeError(path, classOf[Array[_]],in.getClass)))
 
 
-  override def extractXMapArray[A](op: XMapListData[A])(in: Json, path: Vector[String]):
-    Either[NonEmptyList[ExtractionError], Seq[Json]] =
-      in.array.toRight(NonEmptyList.one(WrongTypeError(path, classOf[Array[_]],in.getClass)))
+//  override def extractXMapArray[A](op: XMapListData[A])(in: Json, path: Vector[String]):
+//    Either[NonEmptyList[ExtractionError], Seq[Json]] =
+//      in.array.toRight(NonEmptyList.one(WrongTypeError(path, classOf[Array[_]],in.getClass)))
 
 
   override def extractBigDecimal(op: BigDecimalData)(in: Json, path: Vector[String]): Either[NonEmptyList[ExtractionError], BigDecimal] =

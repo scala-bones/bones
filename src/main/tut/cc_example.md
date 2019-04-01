@@ -5,8 +5,8 @@ Here is an example data definition.
 
 ```$scala
     val extractData = obj12(
-      key("firstFive").string(sv.length(5), sv.matchesRegex("[0-9]{5}".r)),
-      key("lastFour").string(sv.length(4), sv.matchesRegex("[0-9]{4}".r)),
+      key("firstFive").string(sv.lengthO(5), sv.matchesRegex("[0-9]{5}".r)),
+      key("lastFour").string(sv.lengthO(4), sv.matchesRegex("[0-9]{4}".r)),
       key("uuid").uuid(),
       key("token").uuid(),
       key("ccType").string().convert(CreditCardTypes.toCreditCardType, (cct: CreditCardType) => cct.abbrev, "CreditCardType", List.empty),
@@ -72,8 +72,8 @@ And here we can see the full context in the [Example Test](src/test/scala/com/ot
 
     // Here we are defining our expected input data.  This definition will drive the interpreters.
     val extractData = obj12(
-      key("firstFive").string(sv.length(5), sv.matchesRegex("[0-9]{5}".r)),
-      key("lastFour").string(sv.length(4), sv.matchesRegex("[0-9]{4}".r)),
+      key("firstFive").string(sv.lengthO(5), sv.matchesRegex("[0-9]{5}".r)),
+      key("lastFour").string(sv.lengthO(4), sv.matchesRegex("[0-9]{4}".r)),
       key("uuid").uuid(),
       key("token").uuid(),
       key("ccType").string().convert(CreditCardTypes.toCreditCardType, (cct: CreditCardType) => cct.abbrev, "CreditCardType", List.empty),

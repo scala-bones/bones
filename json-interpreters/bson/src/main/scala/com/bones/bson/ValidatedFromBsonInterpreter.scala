@@ -118,20 +118,6 @@ object ValidatedFromBsonInterpreter extends KvpValidateInputInterpreter[BSONValu
 
     }
 
-  override def extractXMapArray[A](op: Value.XMapListData[A])
-                                  (in: BSONValue, path: Vector[String]):
-                                  Either[NonEmptyList[ExtractionError], Seq[BSONValue]] =
-    in match {
-      case BSONArray(arr) =>
-        (arr.toList.map(_.toEither.leftMap(NonEmptyList.one).toValidated).sequence).toEither match {
-          case Right(s) => Right(s)
-          case Left(err) => Left(NonEmptyList.one(CanNotConvert(path, arr, classOf[Seq[_]])))
-        }
-      case x => invalidValue(x, classOf[Array[_]], path)
-
-    }
-
-
   override def extractBigDecimal(op: Value.BigDecimalData)(in: BSONValue, path: Vector[String]): Either[NonEmptyList[ExtractionError], BigDecimal] =
     in match {
       case BSONDouble(d) => Right(BigDecimal(d))

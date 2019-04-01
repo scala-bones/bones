@@ -25,39 +25,24 @@ object ProtobufSequentialInputInterpreter {
   type ExtractDataClassFromProto[A] = (LastFieldNumber, Path) => (LastFieldNumber, CodedInputStream => Either[NonEmptyList[ExtractionError],A])
   type ExtractGroupFromProto[H<:HList] = (LastFieldNumber, Path) => (LastFieldNumber, CodedInputStream => Either[NonEmptyList[ExtractionError],H])
 
-  def fromBytes[A](dc: DataClass[A]): Array[Byte] => Either[NonEmptyList[ExtractionError], A] =  {
-    val interpreter = ProtobufSequentialInputInterpreter.dataClass(dc)(0, Vector.empty)
-    (bytes: Array[Byte]) => {
-      val is = new ByteArrayInputStream(bytes)
-      val cin: CodedInputStream = CodedInputStream.newInstance(is)
-      interpreter._2(cin)
-    }
-  }
-
-  private def dataClass[A](dc: DataClass[A]): ExtractDataClassFromProto[A] = {
-    dc match {
-      case t: XMapData[a, al, b] => {
-        val kvp = kvpGroup(t.from)
-        (lastFieldNumber, path) => {
-          val kvpResult = kvp(lastFieldNumber, path)
-          (kvpResult._1, in => {
-            val b = kvpResult._2(in).map(t.fab(_))
-            b.asInstanceOf[Either[NonEmptyList[ExtractionError],A]]
-          })
-        }
+  def fromBytes[A](dc: BonesSchema[A]): Array[Byte] => Either[NonEmptyList[ExtractionError], A] =  dc match {
+    case x: XMapData[_,_,A] => {
+      val kvp = kvpGroup(x.from)
+      (bytes: Array[Byte]) => {
+        val kvpResult = kvp(0, Vector.empty)
+        val is = new ByteArrayInputStream(bytes)
+        val cis: CodedInputStream = CodedInputStream.newInstance(is)
+        val b = kvpResult._2(cis).map(o => {
+          x.fab(o)
+        })
+        b.asInstanceOf[Either[NonEmptyList[ExtractionError],A]]
       }
-      case o: OptionalDataClass[a] => ???
-//      {
-//        val dc = dataClass(o.value)
-//        (lastFieldNumber, path) => {
-//          val dcResult = dc(lastFieldNumber, path)
-//          (in: CodedInputStream) => {
-//            val b = dcResult._2(in).map(t.fab)
-//            (kvpResult._1, b)
-//          }
-//        }
+//      val interpreter = ProtobufSequentialInputInterpreter.valueDefinition(x)(0, Vector.empty)
+//      (bytes: Array[Byte]) => {
+//        val is = new ByteArrayInputStream(bytes)
+//        val cin: CodedInputStream = CodedInputStream.newInstance(is)
+//        interpreter._2(cin)
 //      }
-      case ld: XMapListData[b] => ???
     }
   }
 
@@ -106,27 +91,6 @@ object ProtobufSequentialInputInterpreter {
               }
 
             totalResult
-          })
-        }
-
-      case op: KvpDataClassHead[h,t,tl,out] =>
-        val head = dataClass(op.dataClass)
-        val tail = kvpGroup(op.tail)
-        (lastFieldNumber, path) => {
-          val headResult = head.apply(lastFieldNumber, path)
-          val tailResult = tail.apply(lastFieldNumber, path)
-          (tailResult._1, in => {
-            val headValue = headResult._2.apply(in)
-            val tailValue = tailResult._2.apply(in)
-            Applicative[({
-              type AL[AA] = Validated[NonEmptyList[ExtractionError], AA]
-            })#AL]
-              .map2(headResult._2.apply(in).toValidated, tailResult._2(in).toValidated)((l1: h, l2: t) => {
-                l1 :: l2
-              }).toEither
-              .flatMap { l =>
-                vu.validate(op.validations)(l.asInstanceOf[out],path)
-              }
           })
         }
       case op: OptionalKvpGroup[h,hl] => ???
@@ -299,15 +263,15 @@ object ProtobufSequentialInputInterpreter {
           })
         }
       }
-      case kvp: KvpValueData[a] =>
-        val groupExtract = dataClass(kvp.value)
+      case kvp: XMapData[a, al, b] => {
+        val groupExtract = kvpGroup(kvp.from)
         (last: LastFieldNumber, path: Path) => {
           val thisField = (last + 1) << 3 | LENGTH_DELIMITED
           val children = groupExtract.apply(0, path)
           (thisField, (in: CodedInputStream) => {
             val length    = in.readRawVarint32()
             val oldLimit  = in.pushLimit(length)
-            val result = children._2(in)
+            val result = children._2(in).map(kvp.fab(_))
             try {
               in.readTag()
               in.checkLastTagWas(0)
@@ -321,6 +285,16 @@ object ProtobufSequentialInputInterpreter {
             }
           })
         }
+
+//        val kvp = kvpGroup(t.from)
+//        (lastFieldNumber, path) => {
+//          val kvpResult = kvp(lastFieldNumber, path)
+//          (kvpResult._1, in => {
+//            val b = kvpResult._2(in).map(t.fab(_))
+//            b.asInstanceOf[Either[NonEmptyList[ExtractionError],A]]
+//          })
+//        }
+      }
     }
 
 

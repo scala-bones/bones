@@ -101,9 +101,9 @@ object ValidationDefinition {
     case class Length(length: Int) extends ValidationOp[String] {
       override def isValid: String => Boolean = _.length == length
 
-      override def defaultError(t: String): String = s"$t does not have length $length"
+      override def defaultError(t: String): String = s"$t does not have lengthO $length"
 
-      override def description: String = s"length of $length"
+      override def description: String = s"lengthO of $length"
     }
 
     case class Custom(f: String => Boolean, defaultErrorF: String => String, description: String) extends ValidationOp[String] {

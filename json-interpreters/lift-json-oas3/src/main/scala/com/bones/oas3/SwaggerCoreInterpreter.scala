@@ -4,9 +4,8 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import com.bones.data.Value._
-import com.bones.validation.ValidationDefinition.{InvalidValue, OptionalValidation, ValidValue, ValidationOp}
+import com.bones.validation.ValidationDefinition.{InvalidValue, OptionalValidation, ValidValue, ValidationOp, BigDecimalValidation => bdv, LongValidation => iv, StringValidation => sv}
 import io.swagger.v3.oas.models.media._
-import com.bones.validation.ValidationDefinition.{BigDecimalValidation => bdv, LongValidation => iv, StringValidation => sv}
 import shapeless.{HList, Nat}
 
 
@@ -18,29 +17,8 @@ object SwaggerCoreInterpreter {
     tail
   }
 
-  def apply[A](gd: DataClass[A]): Schema[_] = dataClass(gd).apply(new Schema())
-
-  /** The entry point, converts a DataClass definition into a Schema-Core Schema */
-  def dataClass[A](gd: DataClass[A]): Schema[_] => Schema[_] = {
-    gd match {
-      case x: XMapData[_,_,a] =>
-        val fromF = fromKvpGroup(x.from)
-        schema => {
-          fromF(schema)
-        }
-      case o: OptionalDataClass[a] => {
-        implicit val ma = o.manifestOfA
-        val optF = dataClass(o.value)
-        schema => {
-          optF(schema)
-          schema.setNullable(true)
-        }; schema
-      }
-      case xm: XMapListData[a] =>
-        val fromF = dataClass(xm.value)
-        schema => fromF(schema); schema
-
-    }
+  def apply[A](gd: BonesSchema[A]): Schema[_] = gd match {
+    case x: XMapData[_,_,A] => fromValueDef(x).apply(new Schema())
   }
 
   protected def fromKvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]) : Schema[_] => Schema[_] = {
@@ -65,14 +43,6 @@ object SwaggerCoreInterpreter {
             tailSchema.addRequiredItem(op.fieldDefinition.key)
           }
           tailSchema
-        }
-      case op: KvpDataClassHead[h,t,tl,o] =>
-        implicit val mh = op.manifestOfH
-        val dataClassF = dataClass(op.dataClass)
-        val tailF = fromKvpGroup(op.tail)
-        schema => {
-          dataClassF.apply(schema)
-          tailF.apply(schema)
         }
       case op: OptionalKvpGroup[h,hl] =>
         val kvpF = fromKvpGroup(op.kvpGroup)
@@ -159,7 +129,11 @@ object SwaggerCoreInterpreter {
       case gd: KvpGroupData[h,hl] =>
         val obj = fromKvpGroup(gd.kvpGroup)
         schema => obj(schema)
-
+      case x: XMapData[_,_,a] =>
+        val fromF = fromKvpGroup(x.from)
+        schema => {
+          fromF(schema)
+        }
     }
   }
 
