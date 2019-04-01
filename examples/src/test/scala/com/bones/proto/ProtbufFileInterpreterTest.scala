@@ -6,7 +6,7 @@ import org.scalatest.FunSuite
 
 class ProtbufFileInterpreterTest extends FunSuite {
 
-  val result = ProtoFileInterpreter.dataClass(Schemas.creditCardSchema)
+  val result = ProtoFileInterpreter.fromSchema(Schemas.creditCardSchema)
 
   val str = ProtoFileInterpreter.messageToProtoFile(result)
 

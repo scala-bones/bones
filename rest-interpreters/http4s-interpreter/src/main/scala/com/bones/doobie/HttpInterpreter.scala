@@ -6,7 +6,6 @@ import com.bones.bson.{EncodeToBson, ValidatedFromBsonInterpreter}
 import com.bones.circe.{EncodeToCirceInterpreter, ValidatedFromCirceInterpreter}
 import com.bones.crud.Algebra._
 import com.bones.data.Error.ExtractionError
-import com.bones.data.Value.DataClass
 import com.bones.doobie.Algebra.InterchangeFormat
 import com.bones.doobie.HttpInterpreter.DeleteInterpreterGroup
 import io.circe.syntax._
@@ -68,26 +67,26 @@ case class HttpInterpreter(entityRootDir: String,
 
 
     val updateHttpService = serviceOps.updateOperation.toList.flatMap(update => {
-      val inputF = ValidatedFromCirceInterpreter.dataClass(update.inputSchema)
-      val outputF = EncodeToCirceInterpreter.dataClass(update.successSchema)
-      val errorF = EncodeToCirceInterpreter.dataClass(update.failureSchema)
+      val inputF = ValidatedFromCirceInterpreter.fromSchema(update.inputSchema)
+      val outputF = EncodeToCirceInterpreter.fromSchema(update.successSchema)
+      val errorF = EncodeToCirceInterpreter.fromSchema(update.failureSchema)
 
       val json = PutPostInterpreterGroup[UI,UO,UE](
         "application/json",
         bytes => ValidatedFromCirceInterpreter.fromByteArray(bytes, charset)
-          .flatMap(json => inputF(Some(json), Vector.empty)),
+          .flatMap(json => inputF(json, Vector.empty)),
         uo => outputF(uo).spaces2.getBytes(charset),
         ue => errorF(ue).spaces2.getBytes(charset)
       )
 
-      val bInputF = ValidatedFromBsonInterpreter.dataClass(update.inputSchema)
-      val bOutputF = EncodeToBson.dataClass(update.successSchema)
-      val bErrorF = EncodeToBson.dataClass(update.failureSchema)
+      val bInputF = ValidatedFromBsonInterpreter.fromSchema(update.inputSchema)
+      val bOutputF = EncodeToBson.fromSchema(update.successSchema)
+      val bErrorF = EncodeToBson.fromSchema(update.failureSchema)
 
       val bson = PutPostInterpreterGroup[UI,UO,UE](
         "application/ubjson",
         byte => ValidatedFromBsonInterpreter.fromByteArray(byte)
-          .flatMap(bjson => bInputF(Some(bjson), Vector.empty)),
+          .flatMap(bjson => bInputF(bjson, Vector.empty)),
         uo => EncodeToBson.bsonResultToBytes(bOutputF(uo)),
         ue => EncodeToBson.bsonResultToBytes(bErrorF(ue))
       )
@@ -97,16 +96,16 @@ case class HttpInterpreter(entityRootDir: String,
     })
 
     val readHttpService = serviceOps.readOperation.toList.flatMap(read => {
-      val outputF = EncodeToCirceInterpreter.dataClass(read.successSchemaForRead)
-      val errorF = EncodeToCirceInterpreter.dataClass(read.errorSchema)
+      val outputF = EncodeToCirceInterpreter.fromSchema(read.successSchemaForRead)
+      val errorF = EncodeToCirceInterpreter.fromSchema(read.errorSchema)
       val json = GetInterpreterGroup[RO, RE](
         "application/json",
         ro => outputF(ro).spaces2.getBytes(charset),
         re => errorF(re).spaces2.getBytes(charset)
       )
 
-      val bOutputF = EncodeToBson.dataClass(read.successSchemaForRead)
-      val bErrorF = EncodeToBson.dataClass(read.errorSchema)
+      val bOutputF = EncodeToBson.fromSchema(read.successSchemaForRead)
+      val bErrorF = EncodeToBson.fromSchema(read.errorSchema)
       val bson = GetInterpreterGroup[RO, RE](
         "application/ubjson",
         ro => EncodeToBson.bsonResultToBytes(bOutputF(ro)),
@@ -118,26 +117,26 @@ case class HttpInterpreter(entityRootDir: String,
     })
 
     val createHttpService = serviceOps.createOperation.toList.flatMap(create => {
-      val inputF = ValidatedFromCirceInterpreter.dataClass(create.inputSchema)
-      val outputF = EncodeToCirceInterpreter.dataClass(create.successSchema)
-      val errorF = EncodeToCirceInterpreter.dataClass(create.errorSchema)
+      val inputF = ValidatedFromCirceInterpreter.fromSchema(create.inputSchema)
+      val outputF = EncodeToCirceInterpreter.fromSchema(create.successSchema)
+      val errorF = EncodeToCirceInterpreter.fromSchema(create.errorSchema)
 
       val json = PutPostInterpreterGroup[CI,CO,CE](
         "application/json",
         bytes => ValidatedFromCirceInterpreter.fromByteArray(bytes, charset)
-          .flatMap(json => inputF(Some(json), Vector.empty)),
+          .flatMap(json => inputF(json, Vector.empty)),
         uo => outputF(uo).spaces2.getBytes(charset),
         ue => errorF(ue).spaces2.getBytes(charset)
       )
 
-      val bInputF = ValidatedFromBsonInterpreter.dataClass(create.inputSchema)
-      val bOutputF = EncodeToBson.dataClass(create.successSchema)
-      val bErrorF = EncodeToBson.dataClass(create.errorSchema)
+      val bInputF = ValidatedFromBsonInterpreter.fromSchema(create.inputSchema)
+      val bOutputF = EncodeToBson.fromSchema(create.successSchema)
+      val bErrorF = EncodeToBson.fromSchema(create.errorSchema)
 
       val bson = PutPostInterpreterGroup[CI,CO,CE](
         "application/ubjson",
         byte => ValidatedFromBsonInterpreter.fromByteArray(byte)
-          .flatMap(bjson => bInputF(Some(bjson), Vector.empty)),
+          .flatMap(bjson => bInputF(bjson, Vector.empty)),
         co => EncodeToBson.bsonResultToBytes(bOutputF(co)),
         ce => EncodeToBson.bsonResultToBytes(bErrorF(ce))
       )
@@ -148,16 +147,16 @@ case class HttpInterpreter(entityRootDir: String,
 
     val deleteHttpService =
       serviceOps.deleteOperation.toList.flatMap(del => {
-        val outputF = EncodeToCirceInterpreter.dataClass(del.successSchema)
-        val errorF = EncodeToCirceInterpreter.dataClass(del.errorSchema)
+        val outputF = EncodeToCirceInterpreter.fromSchema(del.successSchema)
+        val errorF = EncodeToCirceInterpreter.fromSchema(del.errorSchema)
         val json = DeleteInterpreterGroup[DO,DE](
           "application/json",
           dout => outputF(dout).spaces2.getBytes(charset),
           de => errorF(de).spaces2.getBytes(charset)
         )
 
-        val bOutputF = EncodeToBson.dataClass(del.successSchema)
-        val bErrorF = EncodeToBson.dataClass(del.errorSchema)
+        val bOutputF = EncodeToBson.fromSchema(del.successSchema)
+        val bErrorF = EncodeToBson.fromSchema(del.errorSchema)
         val bson = DeleteInterpreterGroup[DO,DE](
           "application/json",
           dout => EncodeToBson.bsonResultToBytes(bOutputF(dout)),

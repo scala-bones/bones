@@ -51,7 +51,7 @@ class ValidationDefinitionTest extends FunSuite with Checkers {
     assert( s.isValid("12345") === false)
   }
 
-  test("length") {
+  test("lengthO") {
     val s = length(5)
     assert( s.isValid("12345") === true )
     assert( s.isValid("1234") === false)

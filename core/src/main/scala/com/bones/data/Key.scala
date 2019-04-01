@@ -21,8 +21,6 @@ trait KeyValueDefinitionSugar {
   def kvpGroup[H <: HList, HL <: Nat](key: String, kvpGroup: KvpGroup[H, HL]) =
     KeyValueDefinition(key, KvpGroupData(kvpGroup, List.empty))
 
-  def kvpValue[A](key: String, value: DataClass[A]): KeyValueDefinition[A] =
-    KeyValueDefinition[A](key, KvpValueData(value, List.empty))
 }
 
 /** Starting point for obtaining a value is to define a key */

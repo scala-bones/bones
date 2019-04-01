@@ -42,9 +42,9 @@ class ValidationTest extends FunSuite {
 //    val x = Wrap("x" :: "y" :: HNil)
 //    val y = Wrap(1 :: 2 :: HNil)
 //
-//    case class Append[L1, L2](w1: Wrap[L1], w2: Wrap[L2], prepend: Prepend[L1, L2], length: Length[L1])
+//    case class Append[L1, L2](w1: Wrap[L1], w2: Wrap[L2], prepend: Prepend[L1, L2], lengthO: Length[L1])
 //
-//    def append[L1, L2](w1: Wrap[L1], w2: Wrap[L2])(implicit prepend: Prepend[L1, L2], length: Length[L1]) = Append(w1, w2, prepend, length)
+//    def append[L1, L2](w1: Wrap[L1], w2: Wrap[L2])(implicit prepend: Prepend[L1, L2], lengthO: Length[L1]) = Append(w1, w2, prepend, lengthO)
 //
 //    val xAppendY = append(x,y)
 //
@@ -134,11 +134,11 @@ class ValidationTest extends FunSuite {
     import Schemas._
 
     //sorry, we still use lift in my projects.  I will soon createOperation a Circe JsonExtract.
-    val parsed = io.circe.parser.parse(ccBadBilling).toOption
+    val parsed = io.circe.parser.parse(ccBadBilling).toOption.get
 
     //createOperation the program that is responsible for converting JSON into a CC.
   //    val jsonToCCProgram = creditCardSchema.lift.foldMap[ValidatedFromJObjectOpt](ValidatedFromJObjectInterpreter())
-    val jsonToCCProgram = ValidatedFromCirceInterpreter.dataClass(creditCardSchema)
+    val jsonToCCProgram = ValidatedFromCirceInterpreter.fromSchema(creditCardSchema)
 
     //here, we will test that just the validations step is working
     val btCc = jsonToCCProgram.apply(parsed, Vector.empty)

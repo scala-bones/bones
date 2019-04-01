@@ -75,13 +75,6 @@ object ValidatedFromJObjectInterpreter extends KvpValidateInputInterpreter[JValu
     }
 
 
-  override def extractXMapArray[A](op: Value.XMapListData[A])(in: JValue, path: Vector[String]): Either[NonEmptyList[ExtractionError], Seq[JValue]] =
-    in match {
-      case JArray(s) => Right(s)
-      case _ => Left(NonEmptyList.one(WrongTypeError(path, classOf[Array[_]], in.getClass)))
-    }
-
-
   override def extractBigDecimal(op: Value.BigDecimalData)(in: JValue, path: Vector[String]):
     Either[NonEmptyList[ExtractionError], BigDecimal] =
     in match {

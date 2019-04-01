@@ -5,22 +5,11 @@ import shapeless.{HList, Nat}
 
 object SqlInterpreter {
 
-  def dataClass[H:Manifest](dc: DataClass[H]): String = {
-    dc match {
-      case op: OptionalDataClass[h] =>
-        implicit val ma = op.manifestOfA
-        dataClass(op.value) + " nullable"
-      case x: XMapData[a,al,b] => s"createOperation table ${manifest[H].runtimeClass.getSimpleName}\n ${kvpGroup(x.from)}"
-      case ld: XMapListData[b] => s" list "
-    }
-  }
-
   def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]) : String = {
     group match {
       case KvpNil => ""
       case op: KvpGroupHead[a, al, h, hl, t, tl] => s"${kvpGroup(op.head)}, ${kvpGroup(op.tail)}"
       case op: KvpSingleValueHead[h, t, tl, a] => s"${op.fieldDefinition.key} ${valueDefinition(op.fieldDefinition.op)}"
-      case op: KvpDataClassHead[h,t,tl,out] => s"${kvpGroup(op.tail)}}"
       case op: OptionalKvpGroup[h,hl] => s"${kvpGroup(op.kvpGroup)}"
     }
   }
@@ -39,6 +28,8 @@ object SqlInterpreter {
       case esd: EnumerationStringData[a] => "text"
       case esd: EnumStringData[a] => "text"
       case gr: KvpGroupData[h,hl] => kvpGroup(gr.kvpGroup)
+      case x: XMapData[h,al,b] => s"createOperation table ${x.manifestOfA.runtimeClass.getSimpleName}\n ${kvpGroup(x.from)}"
+
     }
 
 }
