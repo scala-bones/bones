@@ -45,7 +45,7 @@ lazy val core = (project in file("core"))
     description := "DSL for Data Description using ASTs and interpreters"
   )
   .enablePlugins(ScalaJSPlugin)
-lazy val jsonOas3 = (project in file("json-interpreters/lift-json-oas3"))
+lazy val jsonOas3 = (project in file("interchange-format-interpreters/lift-json-oas3"))
   .settings(
     commonSettings,
     name := "DataDefinition to OAS3 Interpreter",
@@ -69,7 +69,7 @@ lazy val restUnfiltered = (project in file("rest-interpreters/unfiltered"))
       "org.scalatest" %% "scalatest" % "3.0.5" % Test
     )
   ).dependsOn(core, jsonLift)
-lazy val jsonLift = (project in file("json-interpreters/lift-json"))
+lazy val jsonLift = (project in file("interchange-format-interpreters/lift-json"))
   .settings(
     commonSettings,
     name := "Bones Json Lift",
@@ -81,7 +81,7 @@ lazy val jsonLift = (project in file("json-interpreters/lift-json"))
   )
   .dependsOn(core)
 lazy val circeVersion = "0.10.1"
-lazy val jsonCirce = (project in file("json-interpreters/circe"))
+lazy val jsonCirce = (project in file("interchange-format-interpreters/circe"))
   .settings(
     commonSettings,
     name := "Bones Circe",
@@ -92,7 +92,7 @@ lazy val jsonCirce = (project in file("json-interpreters/circe"))
       "org.scalatest" %% "scalatest" % "3.0.5" % Test
     )
   ).dependsOn(core)
-lazy val jsonArgonaut = (project in file("json-interpreters/argonaut"))
+lazy val jsonArgonaut = (project in file("interchange-format-interpreters/argonaut"))
   .settings(
     commonSettings,
     name := "Bones Argonaut",
@@ -102,7 +102,7 @@ lazy val jsonArgonaut = (project in file("json-interpreters/argonaut"))
       "org.scalatest" %% "scalatest" % "3.0.5" % Test
     )
   ).dependsOn(core)
-lazy val protobuf = (project in file("json-interpreters/protobuf"))
+lazy val protobuf = (project in file("interchange-format-interpreters/protobuf"))
   .settings(
     commonSettings,
     name := "Bones Protobuf",
@@ -112,7 +112,7 @@ lazy val protobuf = (project in file("json-interpreters/protobuf"))
       "org.scalatest" %% "scalatest" % "3.0.5" % Test
     )
   ).dependsOn(core)
-lazy val bson = (project in file("json-interpreters/bson"))
+lazy val bson = (project in file("interchange-format-interpreters/bson"))
   .settings(
     commonSettings,
     name := "Bones Bson",
