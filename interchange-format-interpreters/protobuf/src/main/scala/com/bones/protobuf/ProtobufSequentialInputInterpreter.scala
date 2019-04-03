@@ -37,12 +37,6 @@ object ProtobufSequentialInputInterpreter {
         })
         b.asInstanceOf[Either[NonEmptyList[ExtractionError],A]]
       }
-//      val interpreter = ProtobufSequentialInputInterpreter.valueDefinition(x)(0, Vector.empty)
-//      (bytes: Array[Byte]) => {
-//        val is = new ByteArrayInputStream(bytes)
-//        val cin: CodedInputStream = CodedInputStream.newInstance(is)
-//        interpreter._2(cin)
-//      }
     }
   }
 
@@ -285,15 +279,6 @@ object ProtobufSequentialInputInterpreter {
             }
           })
         }
-
-//        val kvp = kvpGroup(t.from)
-//        (lastFieldNumber, path) => {
-//          val kvpResult = kvp(lastFieldNumber, path)
-//          (kvpResult._1, in => {
-//            val b = kvpResult._2(in).map(t.fab(_))
-//            b.asInstanceOf[Either[NonEmptyList[ExtractionError],A]]
-//          })
-//        }
       }
     }
 
