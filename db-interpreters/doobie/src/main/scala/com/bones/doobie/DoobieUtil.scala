@@ -2,7 +2,7 @@ package com.bones.doobie
 
 import scala.annotation.tailrec
 
-object Util {
+object DoobieUtil {
   /**
     * Converts from camelCase to snake_case
     * e.g.: camelCase => camel_case
