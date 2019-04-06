@@ -28,7 +28,9 @@ lazy val commonSettings = Seq(
     else
       Some("releases"  at nexus + "service/local/staging/deploy/maven2")
   },
-  publishMavenStyle := true
+  publishMavenStyle := true,
+  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.7")
+
 )
 lazy val core = (project in file("core"))
   .settings(
@@ -171,7 +173,6 @@ lazy val examples = (project in file("examples"))
     ).dependsOn(core, jsonOas3, dbDoobie, restHttp4s, jsonOas3, protobuf)
 
 
-addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.7")
 
 //enablePlugins(TutPlugin)
 

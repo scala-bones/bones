@@ -32,7 +32,7 @@ object Value {
 
     def asSumType[B](
         description: String,
-        fab: (A, Vector[String]) => Either[CanNotConvert[A, B], B],
+        fab: (A, List[String]) => Either[CanNotConvert[A, B], B],
         fba: B => A,
         keys: List[A],
         validations: List[ValidationOp[B]]
@@ -135,7 +135,7 @@ object Value {
 
   final case class SumTypeData[A, B](
       from: ValueDefinitionOp[A],
-      fab: (A, Vector[String]) => Either[CanNotConvert[A, B], B],
+      fab: (A, List[String]) => Either[CanNotConvert[A, B], B],
       fba: B => A,
       keys: List[A],
       validations: List[ValidationOp[B]]

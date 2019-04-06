@@ -10,7 +10,7 @@ import com.bones.data.Error.{ExtractionError, ParsingError, RequiredData, WrongT
 import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
 import com.bones.interpreter.KvpValidateInputInterpreter
-import com.bones.interpreter.KvpValidateInputInterpreter._
+import com.bones.Util._
 import io.circe.Json
 
 object ValidatedFromCirceInterpreter extends KvpValidateInputInterpreter[Json] {
@@ -21,7 +21,7 @@ object ValidatedFromCirceInterpreter extends KvpValidateInputInterpreter[Json] {
     io.circe.parser.parse(input).left.map(x => NonEmptyList.one(ParsingError(x.message)))
   }
 
-  protected def invalidValue[T](json: Json, expected: Class[T], path: Vector[String]):
+  protected def invalidValue[T](json: Json, expected: Class[T], path: List[String]):
   Left[NonEmptyList[WrongTypeError[T]], Nothing] = {
     val invalid = json.fold(
       classOf[Nothing],
@@ -34,7 +34,7 @@ object ValidatedFromCirceInterpreter extends KvpValidateInputInterpreter[Json] {
     Left(NonEmptyList.one(WrongTypeError(path, expected, invalid)))
   }
 
-  protected def determineError[A](in: Json, op: ValueDefinitionOp[A], expectedType: Class[_], path: Vector[String]): NonEmptyList[ExtractionError] = {
+  protected def determineError[A](in: Json, op: ValueDefinitionOp[A], expectedType: Class[_], path: List[String]): NonEmptyList[ExtractionError] = {
     val error =
       if (in.isNull) RequiredData(path, op)
       else  WrongTypeError(path, expectedType, in.getClass)
@@ -44,8 +44,8 @@ object ValidatedFromCirceInterpreter extends KvpValidateInputInterpreter[Json] {
 
   override def headValue[A](in: Json,
                             kv: KeyValueDefinition[A],
-                            headInterpreter: (Option[Json], Vector[String]) => Either[NonEmptyList[ExtractionError], A],
-                            path: Vector[String]): Either[NonEmptyList[ExtractionError], A] =
+                            headInterpreter: (Option[Json], List[String]) => Either[NonEmptyList[ExtractionError], A],
+                            path: List[String]): Either[NonEmptyList[ExtractionError], A] =
     in.asObject match {
       case Some(jsonObj) =>
         val fields = jsonObj.toList
@@ -54,39 +54,39 @@ object ValidatedFromCirceInterpreter extends KvpValidateInputInterpreter[Json] {
     }
 
 
-  override def extractString[A](op: ValueDefinitionOp[A], clazz: Class[_])(in: Json, path: Vector[String]):
+  override def extractString[A](op: ValueDefinitionOp[A], clazz: Class[_])(in: Json, path: List[String]):
     Either[NonEmptyList[ExtractionError], String] =
       in.asString.toRight(determineError(in,op,clazz, path))
 
 
-  override def extractLong(op: LongData)(in: Json, path: Vector[String]):
+  override def extractLong(op: LongData)(in: Json, path: List[String]):
     Either[NonEmptyList[WrongTypeError[Long]], Long] =
     in.asNumber.flatMap(_.toLong).toRight(NonEmptyList.one(WrongTypeError(path,classOf[Long], in.getClass)))
 
 
-  override def extractBool(op: BooleanData)(in: Json, path: Vector[String]): Either[NonEmptyList[ExtractionError], Boolean] =
+  override def extractBool(op: BooleanData)(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Boolean] =
     in.asBoolean.toRight(determineError(in, op, classOf[Boolean], path))
 
 
-  override def extractUuid(op: UuidData)(in: Json, path: Vector[String]): Either[NonEmptyList[ExtractionError], UUID] =
+  override def extractUuid(op: UuidData)(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], UUID] =
     in.asString
       .toRight(determineError(in, op, classOf[UUID], path))
       .flatMap(stringToUuid(_,path))
 
 
-  override def extractZonedDateTime(dateFormat: DateTimeFormatter, op: DateTimeData)(in: Json, path: Vector[String]):
+  override def extractZonedDateTime(dateFormat: DateTimeFormatter, op: DateTimeData)(in: Json, path: List[String]):
     Either[NonEmptyList[ExtractionError], ZonedDateTime] =
     in.asString
       .toRight(determineError(in, op, classOf[ZonedDateTime], path))
       .flatMap(stringToZonedDateTime(_,dateFormat, path))
 
 
-  override def extractArray[A](op: ListData[A])(in: Json, path: Vector[String]): Either[NonEmptyList[ExtractionError], Seq[Json]] =
+  override def extractArray[A](op: ListData[A])(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Seq[Json]] =
     in.asArray
       .toRight(determineError(in, op, classOf[List[A]], path))
 
 
-  override def extractBigDecimal(op: BigDecimalData)(in: Json, path: Vector[String]):
+  override def extractBigDecimal(op: BigDecimalData)(in: Json, path: List[String]):
   Either[NonEmptyList[ExtractionError], BigDecimal] =
     in.asNumber
       .flatMap(_.toBigDecimal)

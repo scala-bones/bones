@@ -74,7 +74,7 @@ case class HttpInterpreter(entityRootDir: String,
       val json = PutPostInterpreterGroup[UI,UO,UE](
         "application/json",
         bytes => ValidatedFromCirceInterpreter.fromByteArray(bytes, charset)
-          .flatMap(json => inputF(json, Vector.empty)),
+          .flatMap(json => inputF(json, List.empty)),
         uo => outputF(uo).spaces2.getBytes(charset),
         ue => errorF(ue).spaces2.getBytes(charset)
       )
@@ -86,7 +86,7 @@ case class HttpInterpreter(entityRootDir: String,
       val bson = PutPostInterpreterGroup[UI,UO,UE](
         "application/ubjson",
         byte => ValidatedFromBsonInterpreter.fromByteArray(byte)
-          .flatMap(bjson => bInputF(bjson, Vector.empty)),
+          .flatMap(bjson => bInputF(bjson, List.empty)),
         uo => EncodeToBson.bsonResultToBytes(bOutputF(uo)),
         ue => EncodeToBson.bsonResultToBytes(bErrorF(ue))
       )
@@ -124,7 +124,7 @@ case class HttpInterpreter(entityRootDir: String,
       val json = PutPostInterpreterGroup[CI,CO,CE](
         "application/json",
         bytes => ValidatedFromCirceInterpreter.fromByteArray(bytes, charset)
-          .flatMap(json => inputF(json, Vector.empty)),
+          .flatMap(json => inputF(json, List.empty)),
         uo => outputF(uo).spaces2.getBytes(charset),
         ue => errorF(ue).spaces2.getBytes(charset)
       )
@@ -136,7 +136,7 @@ case class HttpInterpreter(entityRootDir: String,
       val bson = PutPostInterpreterGroup[CI,CO,CE](
         "application/ubjson",
         byte => ValidatedFromBsonInterpreter.fromByteArray(byte)
-          .flatMap(bjson => bInputF(bjson, Vector.empty)),
+          .flatMap(bjson => bInputF(bjson, List.empty)),
         co => EncodeToBson.bsonResultToBytes(bOutputF(co)),
         ce => EncodeToBson.bsonResultToBytes(bErrorF(ce))
       )
@@ -211,7 +211,7 @@ object HttpInterpreter {
   )
 
   def extractionErrorToOut(pf: ParsingFailure): IO[Response[IO]] = {
-    val errors = Vector(s"Could not parse json ${pf.message}")
+    val errors = List(s"Could not parse json ${pf.message}")
     BadRequest(Json.obj(("success", "false".asJson), ("errors", errors.asJson)))
   }
   def eeToOut(ee: NonEmptyList[ExtractionError]): IO[Response[IO]] = {
@@ -219,7 +219,7 @@ object HttpInterpreter {
     BadRequest(Json.obj(("success", "false".asJson), ("errors", errors.asJson)))
   }
   def missingIdToJson(id: Long): IO[Response[IO]] = {
-    val errors = Vector(s"Could find entity with id  ${id}")
+    val errors = List(s"Could find entity with id  ${id}")
     BadRequest(Json.obj(("success", "false".asJson), ("errors", errors.asJson)))
   }
 
