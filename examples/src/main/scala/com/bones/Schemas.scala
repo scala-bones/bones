@@ -21,7 +21,7 @@ object Schemas {
 
     def keys = List(Visa, Mastercard, Amex, Discover).map(_.toString)
 
-    def toCreditCardType(input: String, path: Vector[String]):  Either[CanNotConvert[String, CreditCardType], CreditCardType] = {
+    def toCreditCardType(input: String, path: List[String]):  Either[CanNotConvert[String, CreditCardType], CreditCardType] = {
       input.toLowerCase match {
         case "visa" => Right(CreditCardTypes.Visa)
         case "mastercard" => Right(CreditCardTypes.Mastercard)
@@ -48,7 +48,7 @@ object Schemas {
                 expMonth: Long, expYear: Long, cardholder: String, jce: JavaCurrencyEnum, currency: Currency.Value, deletedAt: Option[ZonedDateTime],
                 lastModifiedRequest: UUID, billingLocation: Option[BillingLocation])
 
-  val isoVector = Vector("US", "CA", "MX")
+  val isoList = Vector("US", "CA", "MX")
 
 
 
@@ -103,7 +103,7 @@ object Schemas {
       kvp("deletedAt", isoDateTime.optional) ::
       kvp("lastModifiedRequest", uuid) ::
       kvp("billingLocation", (
-        kvp("countryIso", string(sv.validVector(isoVector))) ::
+        kvp("countryIso", string(sv.validVector(isoList))) ::
         kvp("zipCode", string().optional) ::
         KvpNil
       ).convert[BillingLocation].optional) :: //TODO: Optional

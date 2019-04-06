@@ -8,7 +8,7 @@ import cats.data.NonEmptyList
 import com.bones.data.Error._
 import com.bones.data.{KeyValueDefinition, Value}
 import net.liftweb.json.JsonAST._
-import com.bones.interpreter.KvpValidateInputInterpreter._
+import com.bones.Util._
 
 
 import scala.util.Try
@@ -18,8 +18,8 @@ object ValidatedFromJObjectInterpreter extends KvpValidateInputInterpreter[JValu
 
   override def headValue[A](in: JValue,
                             kv: KeyValueDefinition[A],
-                            headInterpreter: (Option[JValue], Vector[String]) => Either[NonEmptyList[ExtractionError], A],
-                            path: Vector[String]): Either[NonEmptyList[ExtractionError], A] = {
+                            headInterpreter: (Option[JValue], List[String]) => Either[NonEmptyList[ExtractionError], A],
+                            path: List[String]): Either[NonEmptyList[ExtractionError], A] = {
     in match {
       case obj: JObject =>
         headInterpreter(obj.obj.find(_.name == kv.key).map(_.value), path)
@@ -29,13 +29,13 @@ object ValidatedFromJObjectInterpreter extends KvpValidateInputInterpreter[JValu
 
 
 
-  override def extractString[A](op: Value.ValueDefinitionOp[A], clazz: Class[_])(in: JValue, path: Vector[String]): Either[NonEmptyList[ExtractionError], String] =
+  override def extractString[A](op: Value.ValueDefinitionOp[A], clazz: Class[_])(in: JValue, path: List[String]): Either[NonEmptyList[ExtractionError], String] =
     in match {
       case JString(s) => Right(s)
       case _ => Left(NonEmptyList.one(WrongTypeError(path, clazz, in.getClass)))
     }
 
-  override def extractLong(op: Value.LongData)(in: JValue, path: Vector[String]): Either[NonEmptyList[ExtractionError], Long] =
+  override def extractLong(op: Value.LongData)(in: JValue, path: List[String]): Either[NonEmptyList[ExtractionError], Long] =
     in match {
       case JInt(i) => {
         if (i.isValidLong) Right(i.toLong)
@@ -47,35 +47,35 @@ object ValidatedFromJObjectInterpreter extends KvpValidateInputInterpreter[JValu
       case _ => Left(NonEmptyList.one(WrongTypeError(path, classOf[Long], in.getClass)))
     }
 
-  override def extractBool(op: Value.BooleanData)(in: JValue, path: Vector[String]): Either[NonEmptyList[ExtractionError], Boolean] =
+  override def extractBool(op: Value.BooleanData)(in: JValue, path: List[String]): Either[NonEmptyList[ExtractionError], Boolean] =
     in match {
       case JBool(b) => Right(b)
       case _ => Left(NonEmptyList.one(WrongTypeError(path, classOf[Boolean], in.getClass)))
     }
 
 
-  override def extractUuid(op: Value.UuidData)(in: JValue, path: Vector[String]): Either[NonEmptyList[ExtractionError], UUID] =
+  override def extractUuid(op: Value.UuidData)(in: JValue, path: List[String]): Either[NonEmptyList[ExtractionError], UUID] =
     in match {
       case JString(s) => stringToUuid(s,path)
       case _ => Left(NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass)))
     }
 
 
-  override def extractZonedDateTime(dateFormat: DateTimeFormatter, op: Value.DateTimeData)(in: JValue, path: Vector[String]): Either[NonEmptyList[ExtractionError], ZonedDateTime] =
+  override def extractZonedDateTime(dateFormat: DateTimeFormatter, op: Value.DateTimeData)(in: JValue, path: List[String]): Either[NonEmptyList[ExtractionError], ZonedDateTime] =
     in match {
       case JString(s) => stringToZonedDateTime(s, dateFormat, path)
       case _ => Left(NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass)))
     }
 
 
-  override def extractArray[A](op: Value.ListData[A])(in: JValue, path: Vector[String]): Either[NonEmptyList[ExtractionError], Seq[JValue]] =
+  override def extractArray[A](op: Value.ListData[A])(in: JValue, path: List[String]): Either[NonEmptyList[ExtractionError], Seq[JValue]] =
     in match {
       case JArray(s) => Right(s)
       case _ => Left(NonEmptyList.one(WrongTypeError(path, classOf[Array[_]], in.getClass)))
     }
 
 
-  override def extractBigDecimal(op: Value.BigDecimalData)(in: JValue, path: Vector[String]):
+  override def extractBigDecimal(op: Value.BigDecimalData)(in: JValue, path: List[String]):
     Either[NonEmptyList[ExtractionError], BigDecimal] =
     in match {
       case JInt(i) => Right(BigDecimal(i))
@@ -87,7 +87,7 @@ object ValidatedFromJObjectInterpreter extends KvpValidateInputInterpreter[JValu
     }
 
 
-  override protected def invalidValue[T](in: JValue, expected: Class[T], path: Vector[String]): Left[NonEmptyList[WrongTypeError[T]], Nothing] = {
+  override protected def invalidValue[T](in: JValue, expected: Class[T], path: List[String]): Left[NonEmptyList[WrongTypeError[T]], Nothing] = {
     val invalid = in match {
       case JObject(_) => classOf[Object]
       case JBool(_) => classOf[Boolean]

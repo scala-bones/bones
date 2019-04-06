@@ -54,7 +54,7 @@ object ProtobufSequentialOutputInterpreter {
           val tailResult = tailF(input.tail)
           val fCompute: ComputeSize = () => headResult._1() + tailResult._1()
           val fEncode: Encode = (outputStream: CodedOutputStream) => {
-            Applicative[({type AL[AA] = Either[NonEmptyList[IOException], AA]})#AL]
+            Applicative[Either[NonEmptyList[IOException], ?]]
               .map2(headResult._2(outputStream), tailResult._2(outputStream))((l1: CodedOutputStream, l2: CodedOutputStream) => {
                 l2
               })
@@ -70,7 +70,7 @@ object ProtobufSequentialOutputInterpreter {
           val tailResult = tailF(cast.tail)
           val fCompute: ComputeSize = () => headResult._1() + tailResult._1()
           val fEncode = (outputStream: CodedOutputStream) => {
-            Applicative[({type AL[AA] = Either[NonEmptyList[IOException], AA]})#AL]
+            Applicative[Either[NonEmptyList[IOException], ?]]
               .map2(headResult._2(outputStream), tailResult._2(outputStream))((l1: CodedOutputStream, l2: CodedOutputStream) => {
                 l2
               })

@@ -32,6 +32,7 @@ class InterpreterTemplate {
       case esd: EnumerationStringData[a] => ???
       case esd: EnumStringData[a] => ???
       case kvp: KvpGroupData[h,hl] => ???
+      case x: XMapData[a,al,b] => ???
     }
 
 }

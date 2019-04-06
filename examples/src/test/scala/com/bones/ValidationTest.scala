@@ -141,11 +141,11 @@ class ValidationTest extends FunSuite {
     val jsonToCCProgram = ValidatedFromCirceInterpreter.fromSchema(creditCardSchema)
 
     //here, we will test that just the validations step is working
-    val btCc = jsonToCCProgram.apply(parsed, Vector.empty)
+    val btCc = jsonToCCProgram.apply(parsed, List.empty)
 
     btCc match {
       case Left(NonEmptyList(head, tail)) => {
-        assert( head.path === Vector("billingLocation", "countryIso"))
+        assert( head.path === List("billingLocation", "countryIso"))
       }
       case Right(x) => fail(s"Expected fail, received ${x}")
     }

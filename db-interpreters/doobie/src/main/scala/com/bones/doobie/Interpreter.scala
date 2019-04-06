@@ -1,21 +1,36 @@
 package com.bones.doobie
 
+import java.sql.{ResultSet, SQLException}
+import java.util.{Calendar, TimeZone}
+
 import com.bones.data.Value._
 import doobie.free.connection.ConnectionIO
-import shapeless.{HList, Nat}
-import Util.camelToSnake
-import com.bones.data.KeyValueDefinition
+import shapeless.{HList, HNil, Nat}
+import DoobieUtil.camelToSnake
+import cats.data.NonEmptyList
+import com.bones.Util
+import com.bones.data.Error.{ExtractionError, RequiredData, SystemError}
+import com.bones.Util._
 import doobie.Query
+import doobie.util.query.Query0
 
-class FindInterpreter[K](key: KeyValueDefinition[K]) {
+import scala.util.Try
 
-  def dataClass[A](dc: BonesSchema[A]): K => ConnectionIO[Option[A]] = {
-    val fields: List[String] = FieldNames.dataClass(dc)
-    def tableName = TableName.getTableName(dc)
-    val query = s"""select ${fields.mkString(", ")} from $tableName where ${camelToSnake(key.key)} = ?"""
-//    k => Query[K, A](query).option(k)
-    ???
-  }
+object FindInterpreter {
+
+  val utcCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+  type FieldName = String
+  type Path = List[String]
+
+//  def fromSchema[A](dc: BonesSchema[A]): Int => ConnectionIO[Option[A]] = {
+//    val fields: List[String] = FieldNames.fromSchema(dc)
+//    def tableName = TableName.getTableName(dc)
+//    val query = s"""select ${fields.mkString(", ")} from $tableName where id =  = ?"""
+//    (id: Int) => Query0[A](query).option(id)
+//  }
+
+
+
 
 }
 
@@ -29,7 +44,7 @@ object TableName {
 
 object FieldNames {
 
-  def dataClass[A](dc: BonesSchema[A]): List[String] =
+  def fromSchema[A](dc: BonesSchema[A]): List[String] =
     dc match {
       case t: XMapData[a, al, b] => kvpGroup(t.from)
     }
@@ -44,4 +59,42 @@ object FieldNames {
         kvpGroup(op.kvpGroup)
     }
 
+
+  def valueDefinition[A](fgo: ValueDefinitionOp[A]): List[String] =
+    fgo match {
+      case op: OptionalValueDefinition[a] => valueDefinition(op.valueDefinitionOp)
+      case ob: BooleanData => List.empty
+      case rs: StringData => List.empty
+      case ri: LongData => List.empty
+      case uu: UuidData => List.empty
+      case dd: DateTimeData => List.empty
+      case bd: BigDecimalData => List.empty
+      case ld: ListData[t] => List.empty
+      case ed: EitherData[a,b] => List.empty
+      case esd: EnumerationStringData[a] => List.empty
+      case esd: EnumStringData[a] => List.empty
+      case kvp: KvpGroupData[h,hl] => kvpGroup(kvp.kvpGroup)
+      case x: XMapData[_,_,_] => kvpGroup(x.from)
+    }
+
+}
+
+object X {
+//  import doobie._
+//  import doobie.implicits._
+//  import cats._
+//  import cats.data._
+//  import cats.effect.IO
+//  import cats.implicits._
+//  import scala.concurrent.ExecutionContext
+//
+//  {
+//    sql"select name from country"
+//      .query[String]    // Query0[String]
+//      .to[List]         // ConnectionIO[List[String]]
+//      .transact(xa)     // IO[List[String]]
+//      .unsafeRunSync    // List[String]
+//      .take(5)          // List[String]
+//      .foreach(println) // Unit
+//  }
 }

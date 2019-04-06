@@ -4,21 +4,21 @@ import java.io.{ByteArrayInputStream, IOException}
 import java.time.{LocalDateTime, ZonedDateTime}
 import java.util.UUID
 
-import cats.Applicative
-import cats.data.{NonEmptyList, Validated}
+import cats.data.NonEmptyList
 import com.bones.data.Error.{CanNotConvert, ExtractionError, RequiredData, WrongTypeError}
 import com.bones.data.Value._
 import com.google.protobuf.{CodedInputStream, InvalidProtocolBufferException}
 import shapeless.{HList, HNil, Nat}
 import cats.implicits._
+import com.bones.Util
 import com.bones.validation.{ValidationUtil => vu}
 
 
 object ProtobufSequentialInputInterpreter {
 
-  import com.bones.interpreter.KvpValidateInputInterpreter._
+  import com.bones.Util._
 
-  type Path = Vector[String]
+  type Path = List[String]
   type LastFieldNumber = Int
   type Tag = Int
   type ExtractFromProto[A] = (LastFieldNumber, Path) => (Tag, CodedInputStream => Either[NonEmptyList[ExtractionError],A])
@@ -29,7 +29,7 @@ object ProtobufSequentialInputInterpreter {
     case x: XMapData[_,_,A] => {
       val kvp = kvpGroup(x.from)
       (bytes: Array[Byte]) => {
-        val kvpResult = kvp(0, Vector.empty)
+        val kvpResult = kvp(0, List.empty)
         val is = new ByteArrayInputStream(bytes)
         val cis: CodedInputStream = CodedInputStream.newInstance(is)
         val b = kvpResult._2(cis).map(o => {
@@ -55,12 +55,8 @@ object ProtobufSequentialInputInterpreter {
           (tailResult._1, in => {
             val thisTag = in.readTag()
 
-            val result = Applicative[({
-              type AL[AA] = Validated[NonEmptyList[ExtractionError], AA]
-            })#AL]
-              .map2(headResult._2.apply(in).toValidated, tailResult._2(in).toValidated)((l1: h, l2: t) => {
-                l1 :: l2
-              }).toEither
+            val result = Util.eitherMap2(headResult._2.apply(in), tailResult._2(in))(
+              (l1: h, l2: t) => { l1 :: l2 })
               .flatMap { l =>
                 vu.validate(op.validations)(l.asInstanceOf[a],path)
               }
@@ -74,12 +70,9 @@ object ProtobufSequentialInputInterpreter {
           val headResult = head(lastFieldNumber, path)
           val tailResult = tail(headResult._1, path)
           (tailResult._1, in => {
-            val totalResult = Applicative[({
-              type AL[AA] = Validated[NonEmptyList[ExtractionError], AA]
-            })#AL]
-              .map2(headResult._2.apply(in).toValidated, tailResult._2(in).toValidated)((l1: h, l2: t) => {
-                op.prepend(l1,l2)
-              }).toEither
+            val totalResult = Util.eitherMap2(headResult._2.apply(in), tailResult._2(in))(
+                (l1: h, l2: t) => { op.prepend(l1,l2) }
+              )
               .flatMap { l =>
                 vu.validate[H](op.validations)(l,path)
               }
@@ -198,7 +191,7 @@ object ProtobufSequentialInputInterpreter {
         val child = valueDefinition(ld.tDefinition)
         def loop[C](thisField: Int,
                     codedInputStream: CodedInputStream,
-                    path: Vector[String],
+                    path: List[String],
                     f: CodedInputStream => Either[NonEmptyList[ExtractionError],C]
                    ) : List[Either[NonEmptyList[ExtractionError],C]] = {
           val lastTag = codedInputStream.getLastTag
@@ -283,7 +276,7 @@ object ProtobufSequentialInputInterpreter {
     }
 
 
-  private def convert[A,T](in: CodedInputStream, clazz: Class[A], path: Vector[String])(f: CodedInputStream => A): Either[NonEmptyList[CanNotConvert[CodedInputStream,A]],A] =
+  private def convert[A,T](in: CodedInputStream, clazz: Class[A], path: List[String])(f: CodedInputStream => A): Either[NonEmptyList[CanNotConvert[CodedInputStream,A]],A] =
     try {
       Right(f(in))
     } catch {
