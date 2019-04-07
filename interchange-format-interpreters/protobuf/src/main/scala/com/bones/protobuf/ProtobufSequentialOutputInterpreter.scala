@@ -9,7 +9,7 @@ import cats.data.{NonEmptyList, Validated}
 import com.bones.data.Error.ExtractionError
 import com.bones.data.Value._
 import com.google.protobuf.CodedOutputStream
-import shapeless.{::, HList, HNil, Nat}
+import shapeless._, ops.hlist.IsHCons
 import cats.implicits._
 
 
@@ -81,7 +81,6 @@ object ProtobufSequentialOutputInterpreter {
       case op: OptionalKvpGroup[h,hl] => (fieldNumber: FieldNumber) =>
         val kvpGroupF = kvpGroup(op.kvpGroup)(fieldNumber)
         (input: Option[h] :: HNil) => {
-//          val cast = input.asInstanceOf[Option[h] :: HNil]
           input.head match {
             case None => (
               () => 0,
