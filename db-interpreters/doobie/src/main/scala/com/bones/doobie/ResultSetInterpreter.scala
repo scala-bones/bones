@@ -50,7 +50,7 @@ object ResultSetInterpreter {
             val result = child(rs) match {
               case Left(i) =>
                 if (i.length == 1) i.head match {
-                  case RequiredData(_,childOp) if (childOp == op) => Right(None)
+                  case RequiredData(_,childOp) if childOp == op => Right(None)
                   case _ => Left(i)
                 } else {
                   Left(i)
