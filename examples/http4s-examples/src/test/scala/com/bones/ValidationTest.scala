@@ -131,7 +131,7 @@ class ValidationTest extends FunSuite {
   }
 
   test("error paths") {
-    import Schemas._
+    import com.bones.schemas.Schemas._
 
     //sorry, we still use lift in my projects.  I will soon createOperation a Circe JsonExtract.
     val parsed = io.circe.parser.parse(ccBadBilling).toOption.get
