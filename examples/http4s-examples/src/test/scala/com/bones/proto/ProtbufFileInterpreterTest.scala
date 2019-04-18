@@ -1,7 +1,7 @@
 package com.bones.proto
 
-import com.bones.Schemas
 import com.bones.protobuf.ProtoFileInterpreter
+import com.bones.schemas.Schemas
 import org.scalatest.FunSuite
 
 class ProtbufFileInterpreterTest extends FunSuite {
