@@ -1,16 +1,33 @@
 package com.bones.doobie
 
+import java.sql.Types
+
 import com.bones.data.Value._
-import shapeless.{HNil,HList,Nat}
+import com.bones.doobie.DoobieUtil.camelToSnake
+import shapeless.{HList, HNil, Nat}
 
 /** Responsible for getting a list of columns for the select or insert clause */
 object DbColumnInterpreter {
 
-  type ColumnName = String
-  type ToColumns = ColumnName => List[String]
+  case class Column(name: String, columnDefinition: String, nullable: Boolean)
+  case class Table(name: String, columns: List[Column])
+
+  type Key = String
+  type ToColumns = Key => List[Column]
+
+  def tableDefinition[A](bonesSchema: BonesSchema[A]): String = {
+    def nullableString(nullable: Boolean) = if (nullable) "" else " not null"
+    bonesSchema match {
+      case x: XMapData[h,n,b] =>
+        val result = valueDefinition(x)("")
+        val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
+        val columnString = result.map(c => s"${c.name} ${c.columnDefinition} ${nullableString(c.nullable)}").mkString("(",",",")")
+        s"create table $tableName $columnString"
+    }
+  }
 
 
-  private def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): List[String] = {
+  private def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): List[Column] = {
     group match {
       case KvpNil => List.empty
       case op: KvpSingleValueHead[h, t, tl, a] =>
@@ -25,25 +42,28 @@ object DbColumnInterpreter {
     }
   }
 
-  private val nameToColumn: ColumnName => List[String] = name => DoobieUtil.camelToSnake(name) :: Nil
+  private def nameToColumn[A](columnDefinition: String): ToColumns =
+    name => List( Column(DoobieUtil.camelToSnake(name), columnDefinition, false) )
 
   private def valueDefinition[A](fgo: ValueDefinitionOp[A]): ToColumns =
     fgo match {
       case op: OptionalValueDefinition[b] =>
-          valueDefinition(op.valueDefinitionOp)
-      case ob: BooleanData => nameToColumn
-      case rs: StringData => nameToColumn
-      case ri: LongData => nameToColumn
-      case uu: UuidData => nameToColumn
-      case dd: DateTimeData => nameToColumn
-      case bd: BigDecimalData => nameToColumn
-      case ld: ListData[t] => nameToColumn
-      case ed: EitherData[a,b] => nameToColumn
-      case esd: EnumerationStringData[a] => nameToColumn
-      case esd: EnumStringData[a] => nameToColumn
+          key => valueDefinition(op.valueDefinitionOp)(key).map(_.copy(nullable = true))
+      case ob: BooleanData => nameToColumn("bool")
+      case rs: StringData => nameToColumn("text")
+      case ri: LongData => nameToColumn("int8")
+      case uu: UuidData => nameToColumn("text")
+      case dd: DateTimeData => nameToColumn("timestamp")
+      case bd: BigDecimalData => nameToColumn("numeric")
+      case ld: ListData[t] => ???
+      case ed: EitherData[a,b] => ???
+      case esd: EnumerationStringData[a] => nameToColumn("text")
+      case esd: EnumStringData[a] => nameToColumn("text")
       case kvp: KvpGroupData[h,hl] =>
         _ => kvpGroup(kvp.kvpGroup)
       case x: XMapData[a,al,b] =>
         _ => kvpGroup(x.from)
+      case m: SumTypeData[a,b] =>
+        key => valueDefinition(m.from)(key)
     }
 }

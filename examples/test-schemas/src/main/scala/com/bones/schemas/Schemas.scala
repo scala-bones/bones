@@ -1,4 +1,4 @@
-package com.bones
+package com.bones.schemas
 
 import java.time.{LocalDateTime, ZonedDateTime}
 import java.util.UUID

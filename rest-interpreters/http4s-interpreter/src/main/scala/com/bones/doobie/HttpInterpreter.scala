@@ -1,5 +1,7 @@
 package com.bones.doobie
 
+import java.nio.charset.StandardCharsets
+
 import cats.data.{EitherT, NonEmptyList}
 import cats.effect._
 import com.bones.bson.{EncodeToBson, ValidatedFromBsonInterpreter}
@@ -17,8 +19,6 @@ import org.http4s.util.CaseInsensitiveString
 import reactivemongo.bson.{BSONDocument, BSONValue}
 import reactivemongo.bson.buffer.{ArrayBSONBuffer, ArrayReadableBuffer}
 import fs2.Stream
-
-import scala.scalajs.niocharset.StandardCharsets
 
 case class HttpInterpreter(entityRootDir: String,
                            formats: List[InterchangeFormat[_]] = List.empty,

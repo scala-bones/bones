@@ -46,7 +46,15 @@ lazy val core = (project in file("core"))
     ),
     description := "DSL for Data Description using ASTs and interpreters"
   )
-  .enablePlugins(ScalaJSPlugin)
+lazy val testSchemas = (project in file("examples/test-schemas"))
+  .settings(
+    commonSettings,
+    name := "Test Schemas",
+    libraryDependencies ++= Seq(
+      "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+    )
+  ).dependsOn(core)
 lazy val jsonOas3 = (project in file("interchange-format-interpreters/lift-json-oas3"))
   .settings(
     commonSettings,
@@ -128,9 +136,11 @@ lazy val dbDoobie = (project in file("db-interpreters/doobie"))
     name := "Bones Doobie",
     libraryDependencies ++= Seq(
       "org.tpolecat" %% "doobie-core" % doobieVersion,
-      "org.tpolecat" %% "doobie-postgres" % doobieVersion
+      "org.tpolecat" %% "doobie-postgres" % doobieVersion,
+      "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.0.5" % Test
     )
-  ).dependsOn(core)
+  ).dependsOn(core, testSchemas % "test->compile")
 lazy val http4sVersion = "0.20.0-M6"
 lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
   .settings(
@@ -156,7 +166,7 @@ lazy val react = (project in file("client-interpreters/react"))
       "org.scalatest" %% "scalatest" % "3.0.5" % Test
     )
   ).dependsOn(core)
-lazy val examples = (project in file("examples"))
+lazy val examples = (project in file("examples/http4s-examples"))
     .settings(
       commonSettings,
       name := "Bones Examples",
@@ -170,7 +180,7 @@ lazy val examples = (project in file("examples"))
         "org.scalatest" %% "scalatest" % "3.0.5" % Test
 //        "org.easymock" % "easymock" % "3.5.1" % Test
       )
-    ).dependsOn(core, jsonOas3, dbDoobie, restHttp4s, jsonOas3, protobuf)
+    ).dependsOn(core, jsonOas3, dbDoobie, restHttp4s, jsonOas3, protobuf, testSchemas)
 
 
 

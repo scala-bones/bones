@@ -13,7 +13,7 @@ import scala.collection.mutable
 
 object CcEndpoint extends IOApp {
 
-  import Schemas._
+  import com.bones.schemas.Schemas._
 
 
   override def run(args: List[String]): IO[ExitCode] = {

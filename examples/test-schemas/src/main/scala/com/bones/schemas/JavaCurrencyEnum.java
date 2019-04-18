@@ -1,4 +1,4 @@
-package com.bones;
+package com.bones.schemas;
 
 /** Java Enum Example */
 public enum JavaCurrencyEnum {
