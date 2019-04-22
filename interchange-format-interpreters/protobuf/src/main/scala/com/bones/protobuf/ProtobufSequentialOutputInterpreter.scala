@@ -78,6 +78,25 @@ object ProtobufSequentialOutputInterpreter {
           (fCompute, fEncode)
         }
 
+      case op: KvpXMapDataHead[a,h,n,ho,ht,nt] => (fieldNumber: FieldNumber) => {
+        val headF = kvpGroup(op.xmapData.from)(fieldNumber)
+        val tailF = kvpGroup(op.tail)(fieldNumber)
+        (input: ho) => {
+          val cast = input.asInstanceOf[a :: h]
+          val headGroup = op.xmapData.fba(cast.head)
+          val headResult = headF(headGroup)
+          val tailResult = tailF(cast.tail)
+          val fCompute: ComputeSize = () => headResult._1() + tailResult._1()
+          val fEncode = (outputStream: CodedOutputStream) => {
+            Applicative[Either[NonEmptyList[IOException], ?]]
+              .map2(headResult._2(outputStream), tailResult._2(outputStream))((l1: CodedOutputStream, l2: CodedOutputStream) => {
+                l2
+              })
+          }
+          (fCompute, fEncode)
+        }
+      }
+
       case op: OptionalKvpGroup[h,hl] => (fieldNumber: FieldNumber) =>
         val kvpGroupF = kvpGroup(op.kvpGroup)(fieldNumber)
         (input: Option[h] :: HNil) => {

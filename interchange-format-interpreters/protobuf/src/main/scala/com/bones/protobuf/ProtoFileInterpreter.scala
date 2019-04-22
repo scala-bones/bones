@@ -72,6 +72,9 @@ object ProtoFileInterpreter {
 
   }
 
+  def fromSchemaToProtoFile[A](dc: BonesSchema[A]) : String =
+    messageToProtoFile(fromSchema(dc))
+
   def messageToProtoFile(message: Message) : String = {
     s"""
        |message ${message.name} {
@@ -99,6 +102,10 @@ object ProtoFileInterpreter {
         val (messageFields, nestedTypes, lastUsedIndex) = kvpGroup(op.tail)(thisIndex)
         (messageFields :+ r._1, r._2 ++ nestedTypes, lastUsedIndex)
       }
+      case op: KvpXMapDataHead[a,ht,nt,ho,hx,nx] =>
+        val head = kvpGroup(op.xmapData.from)(lastIndex)
+        val tail = kvpGroup(op.tail)(head._3)
+        (head._1 ++ tail._1, head._2 ++ tail._2, tail._3)
       case op: KvpGroupHead[a, al, h, hl, t, tl] =>
         val head = kvpGroup(op.head)(lastIndex)
         val tail = kvpGroup(op.tail)(head._3)

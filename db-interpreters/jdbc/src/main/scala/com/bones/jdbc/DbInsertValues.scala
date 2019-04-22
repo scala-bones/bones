@@ -1,12 +1,14 @@
-package com.bones.doobie
+package com.bones.jdbc
 
-import java.sql.{Connection, PreparedStatement, SQLException, Types}
+import java.sql._
 import java.time.ZonedDateTime
 import java.util.UUID
 
 import com.bones.data.Value._
-import shapeless.{HList, HNil, Nat}
-import DoobieUtil._
+import shapeless.{::, HList, HNil, Nat}
+import DbUtil._
+import com.bones.data.Error.SystemError
+import javax.sql.DataSource
 
 object DbInsertValues {
 
@@ -20,12 +22,23 @@ object DbInsertValues {
   type ID = Long
   type InsertPair[A] = Key => (Index, A) => (Index, List[(ColumnName, SetValue)])
 
-  case class DbException(sQLException: SQLException, query: Option[String])
+  def insertQuery[A](bonesSchema: BonesSchema[A]): DataSource => A => Either[SystemError, (ID,A)] = {
+    val iq = insertQueryWithConnection(bonesSchema)
+    ds => {
+      a => {
+        try {
+          val con = ds.getConnection
+          val result = iq(a)(con)
+          con.close()
+          result
+        } catch {
+          case ex: SQLException => Left(SystemError(List.empty, ex, Some("Error retrieving connection")))
+        }
+      }
+    }
+  }
 
-//  case class InsertResult[A](A => List[(ColumnName, SetValue)])
-
-
-  def insertQuery[A](bonesSchema: BonesSchema[A]): A => Connection => Either[DbException, A] =
+  def insertQueryWithConnection[A](bonesSchema: BonesSchema[A]): A => Connection => Either[SystemError, (ID,A) ] =
     bonesSchema match {
       case x: XMapData[h,n,b] => {
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
@@ -34,13 +47,19 @@ object DbInsertValues {
           val result = updates("")(1,a)
           val sql = s"""insert into $tableName ( ${result._2.map(_._1).mkString(",")} ) values ( ${result._2.map(_ => "?").mkString(",")}  )"""
           con: Connection => {
-            val statement = con.prepareCall(sql)
+            val statement = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
             try {
               result._2.map(_._2).foreach(f => f(statement))
-              statement.execute()
-              Right(a)
+              statement.executeUpdate()
+              val generatedKeys = statement.getGeneratedKeys
+              try {
+                if (generatedKeys.next) Right( (generatedKeys.getLong(1), a ) )
+                else throw new SQLException("Creating user failed, no ID obtained.")
+              } finally {
+                generatedKeys.close()
+              }
             } catch {
-              case e: SQLException => Left(DbException(e,Some(sql)))
+              case e: SQLException => Left(SystemError(List.empty, e,Some("SQL Statement: " + sql)))
             } finally {
               statement.close()
             }

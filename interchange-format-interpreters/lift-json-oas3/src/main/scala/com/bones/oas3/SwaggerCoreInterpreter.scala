@@ -34,7 +34,6 @@ object SwaggerCoreInterpreter {
       case op: KvpSingleValueHead[h, t, tl, o] =>
         val child = fromValueDef(op.fieldDefinition.op)
         val tail = fromKvpGroup(op.tail)
-
         schema => {
           val tailSchema = tail(schema)
           val childSchema = child(new Schema[h])
@@ -43,6 +42,12 @@ object SwaggerCoreInterpreter {
             tailSchema.addRequiredItem(op.fieldDefinition.key)
           }
           tailSchema
+        }
+      case op: KvpXMapDataHead[a,ht,nt,ho,xh,xl] =>
+        val valueF = fromValueDef(op.xmapData)
+        schema => {
+          valueF(schema)
+          schema
         }
       case op: OptionalKvpGroup[h,hl] =>
         val kvpF = fromKvpGroup(op.kvpGroup)

@@ -1,11 +1,14 @@
-package com.bones.doobie
+package com.bones.jdbc
 
 import java.sql.{Connection, PreparedStatement, SQLException, Types}
 import java.time.ZonedDateTime
 
 import com.bones.data.Value._
 import shapeless.{::, HList, HNil, Nat}
-import DoobieUtil._
+import DbUtil._
+import cats.data.NonEmptyList
+import com.bones.data.Error.{ExtractionError, SystemError}
+import javax.sql.DataSource
 
 /** insert into table (field1, field2, field3) values (:value1, :value2, :value3) */
 object DbUpdateValues {
@@ -23,7 +26,14 @@ object DbUpdateValues {
     lastIndex: Index, predefineUpdateStatements: List[(UpdateString, SetNull)], actionableUpdateStatements: A => List[SetValue])
 
 
-  def updateQuery[A](bonesSchema: BonesSchema[A]): (ID, A) => Connection => Either[SQLException, A] =
+  def updateQuery[A](bonesSchema: BonesSchema[A]): DataSource => (ID, A) => Either[NonEmptyList[ExtractionError], A] = {
+    val uq = updateQueryWithConnection(bonesSchema)
+    ds =>
+      (id, a) => withDataSource[A](ds)(con => uq(id,a)(con))
+  }
+
+
+  def updateQueryWithConnection[A](bonesSchema: BonesSchema[A]): (ID, A) => Connection => Either[NonEmptyList[SystemError], A] =
     bonesSchema match {
       case x: XMapData[h,n,b] => {
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
@@ -37,7 +47,7 @@ object DbUpdateValues {
               statement.execute()
               Right(a)
             } catch {
-              case e: SQLException => Left(e)
+              case e: SQLException => Left(NonEmptyList.one(SystemError(List.empty, e,Some(sql))))
             } finally {
               statement.close()
             }
@@ -85,7 +95,7 @@ object DbUpdateValues {
   /** Create the return type for valueDefinition given the arguments */
   private def psF[A](f: Index => (PreparedStatement,  A) => Unit, sqlType: Int) : (Index, Key) => DefinitionResult[A] =
   (index, key) => {
-    val updateString = s"set ${key} = ?"
+    val updateString = s"${camelToSnake(key)} = ?"
     val fI = f(index)
     val psNull: SetNull = ps => ps.setNull(index, sqlType)
     val setValue: A => List[SetValue] = a => {
@@ -119,7 +129,7 @@ object DbUpdateValues {
       case ri: LongData => psF(i => (ps,a) => ps.setLong(i,a), Types.BIGINT)
       case uu: UuidData => psF(i => (ps,a) => ps.setString(i,a.toString), Types.VARCHAR)
       case dd: DateTimeData =>
-        psF((i: Index) => (ps: PreparedStatement ,a: ZonedDateTime) => ps.setDate(i, new java.sql.Date(a.toInstant.toEpochMilli)), Types.VARCHAR)
+        psF((i: Index) => (ps: PreparedStatement ,a: ZonedDateTime) => ps.setDate(i, new java.sql.Date(a.toInstant.toEpochMilli)), Types.DATE)
       case bd: BigDecimalData =>
         psF[BigDecimal](i => (ps,a) => ps.setBigDecimal(i,a.underlying), Types.NUMERIC)
       case ld: ListData[t] => ???

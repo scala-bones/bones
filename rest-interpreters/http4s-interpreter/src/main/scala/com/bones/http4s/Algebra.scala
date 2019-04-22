@@ -1,4 +1,4 @@
-package com.bones.doobie
+package com.bones.http4s
 
 import io.circe.Json
 import reactivemongo.bson.BSONValue
@@ -14,14 +14,12 @@ object Algebra {
   object BsonFormat extends InterchangeFormat[BSONValue] {
     val contentType = "application/ubjson"
   }
-  case class ProtoBuffFormat[P]() extends InterchangeFormat[P] {
+  object ProtoBuffFormat extends InterchangeFormat[Array[Byte]] {
     val contentType = "application/protobuf"
   }
-  case class AvroFormat[A]() extends InterchangeFormat[A] {
+  object AvroFormat extends InterchangeFormat[Array[Byte]] {
     val contentType = "application/avro"
   }
 
-  val protoBuffFormat = ProtoBuffFormat[String]()
-  val avroFormat = AvroFormat[String]
 
 }

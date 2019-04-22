@@ -58,6 +58,17 @@ trait KvpOutputInterpreter[OUT] {
           val tail = kvpGroup(op.tail)(cast.tail)
           appendGroup(toObj(op.fieldDefinition, val1), tail)
         }
+      case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] => {
+        val headF = kvpGroup(op.xmapData.from)
+        val tailF = kvpGroup(op.tail)
+        (input: H) => {
+          import shapeless.::
+          val cast = input.asInstanceOf[a :: ht]
+          val head = headF(op.xmapData.fba(cast.head))
+          val tail = kvpGroup(op.tail)(cast.tail)
+          appendGroup(head, tail)
+        }
+      }
       case op: OptionalKvpGroup[h,hl] =>
         val oF = kvpGroup(op.kvpGroup)
         input: H => input.head match {
