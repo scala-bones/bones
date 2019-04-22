@@ -1,9 +1,9 @@
-package com.bones.doobie
+package com.bones.jdbc
 
 import java.sql.Types
 
 import com.bones.data.Value._
-import com.bones.doobie.DoobieUtil.camelToSnake
+import DbUtil.camelToSnake
 import shapeless.{HList, HNil, Nat}
 
 /** Responsible for getting a list of columns for the select or insert clause */
@@ -21,7 +21,8 @@ object DbColumnInterpreter {
       case x: XMapData[h,n,b] =>
         val result = valueDefinition(x)("")
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
-        val columnString = result.map(c => s"${c.name} ${c.columnDefinition} ${nullableString(c.nullable)}").mkString("(",",",")")
+        val columnsWithId = Column("id", "SERIAL", false) :: result
+        val columnString = columnsWithId.map(c => s"${c.name} ${c.columnDefinition} ${nullableString(c.nullable)}").mkString("(",",",")")
         s"create table $tableName $columnString"
     }
   }
@@ -43,7 +44,7 @@ object DbColumnInterpreter {
   }
 
   private def nameToColumn[A](columnDefinition: String): ToColumns =
-    name => List( Column(DoobieUtil.camelToSnake(name), columnDefinition, false) )
+    name => List( Column(DbUtil.camelToSnake(name), columnDefinition, false) )
 
   private def valueDefinition[A](fgo: ValueDefinitionOp[A]): ToColumns =
     fgo match {

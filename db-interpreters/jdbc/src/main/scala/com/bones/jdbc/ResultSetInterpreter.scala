@@ -1,4 +1,4 @@
-package com.bones.doobie
+package com.bones.jdbc
 
 import java.sql.{ResultSet, SQLException}
 import java.time.{ZoneId, ZonedDateTime}
@@ -8,8 +8,8 @@ import com.bones.Util
 import com.bones.Util.{stringToEnum, stringToEnumeration, stringToUuid}
 import com.bones.data.Error.{ExtractionError, RequiredData, SystemError}
 import com.bones.data.Value._
-import com.bones.doobie.DoobieUtil.camelToSnake
-import com.bones.doobie.FindInterpreter.{FieldName, Path, utcCalendar}
+import DbUtil.camelToSnake
+import FindInterpreter.{FieldName, Path, utcCalendar}
 import shapeless.{HList, HNil, Nat}
 
 /** Responsible for converting a result set into the result type */
@@ -50,12 +50,13 @@ object ResultSetInterpreter {
             val result = child(rs) match {
               case Left(i) =>
                 if (i.length == 1) i.head match {
-                  case RequiredData(_,childOp) if childOp == op => Right(None)
+                  case RequiredData(_,childOp)
+                    if childOp == op.valueDefinitionOp => Right(None)
                   case _ => Left(i)
                 } else {
                   Left(i)
                 }
-              case x => x.asInstanceOf[Either[NonEmptyList[ExtractionError], A]]
+              case x => x.map(s => Some(s))
             }
             result.asInstanceOf[Either[NonEmptyList[ExtractionError], Option[a]]]
       case ob: BooleanData => (path, fieldName) => rs =>  catchSql(rs.getBoolean(fieldName), path, ob)
@@ -65,7 +66,8 @@ object ResultSetInterpreter {
         catchSql[String](rs.getString(fieldName), path, uu)
           .flatMap(str => stringToUuid(str, path))
       case dd: DateTimeData => (path, fieldName) => rs =>
-        catchSql(rs.getDate(fieldName, utcCalendar), path, dd).map(date => ZonedDateTime.ofInstant(date.toInstant, ZoneId.of("UTC")))
+        catchSql(rs.getDate(fieldName, utcCalendar), path, dd)
+          .map(date => ZonedDateTime.ofInstant(date.toInstant, ZoneId.of("UTC")))
       case bd: BigDecimalData => (path, fieldName) => rs => catchSql(BigDecimal(rs.getBigDecimal(fieldName)), path, bd)
       case ld: ListData[t] => ???
       case ed: EitherData[a,b] => ???
@@ -90,16 +92,21 @@ object ResultSetInterpreter {
         val groupF = kvpGroup(x.from)
         (path, _) =>
           groupF(path).andThen(_.map(x.fab))
+      case s: SumTypeData[a,b] =>
+        val fromF = valueDefinition(s.from)
+        (path, fieldName) =>
+          fromF(path,fieldName).andThen(_.flatMap(a => s.fab(a, path).left.map(NonEmptyList.one(_))))
     }
 
   private def catchSql[A](f: => A, path: Path, op: ValueDefinitionOp[_]): Either[NonEmptyList[ExtractionError],A] = try {
     val result = f
     if (result == null) {
       Left(NonEmptyList.one(RequiredData(path, op)))
+    } else {
+      Right(result)
     }
-    Right(f)
   } catch {
-    case ex: SQLException => Left(NonEmptyList.one(SystemError(path, ex)))
+    case ex: SQLException => Left(NonEmptyList.one(SystemError(path, ex, None)))
   }
 
 

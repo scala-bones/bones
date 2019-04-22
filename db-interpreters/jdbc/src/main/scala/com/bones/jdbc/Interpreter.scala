@@ -1,20 +1,10 @@
-package com.bones.doobie
+package com.bones.jdbc
 
-import java.sql.{ResultSet, SQLException}
 import java.util.{Calendar, TimeZone}
 
 import com.bones.data.Value._
-import doobie.free.connection.ConnectionIO
-import shapeless.{HList, HNil, Nat}
-import DoobieUtil.camelToSnake
-import cats.data.NonEmptyList
-import com.bones.Util
-import com.bones.data.Error.{ExtractionError, RequiredData, SystemError}
-import com.bones.Util._
-import doobie.Query
-import doobie.util.query.Query0
-
-import scala.util.Try
+import com.bones.jdbc.DbUtil.camelToSnake
+import shapeless.{HList, Nat}
 
 object FindInterpreter {
 
@@ -79,22 +69,3 @@ object FieldNames {
 
 }
 
-object X {
-//  import doobie._
-//  import doobie.implicits._
-//  import cats._
-//  import cats.data._
-//  import cats.effect.IO
-//  import cats.implicits._
-//  import scala.concurrent.ExecutionContext
-//
-//  {
-//    sql"select name from country"
-//      .query[String]    // Query0[String]
-//      .to[List]         // ConnectionIO[List[String]]
-//      .transact(xa)     // IO[List[String]]
-//      .unsafeRunSync    // List[String]
-//      .take(5)          // List[String]
-//      .foreach(println) // Unit
-//  }
-}

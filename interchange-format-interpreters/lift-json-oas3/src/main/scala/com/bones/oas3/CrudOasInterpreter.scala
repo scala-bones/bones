@@ -14,6 +14,7 @@ import scala.collection.JavaConverters._
 object CrudOasInterpreter {
 
   def jsonApiForService[CI, CO, CE, RO, RE, UI, UO, UE, DO, DE](
+                                                                 contentTypes: List[String],
                                                                  serviceOps: ServiceOps[CI, CO, CE, RO, RE, UI, UO, UE, DO, DE]
                                                                ): OpenAPI => OpenAPI = { openApi =>
 
@@ -24,7 +25,7 @@ object CrudOasInterpreter {
           (co.successSchema, serviceOps.path),
           (co.errorSchema, "Error"),
           s"/${serviceOps.path}",
-          List("application/json")
+          contentTypes
         )
         .apply(openApi)
     })
@@ -44,7 +45,7 @@ object CrudOasInterpreter {
             (update.successSchema, serviceOps.path),
             (update.failureSchema, "Error"),
             s"/${serviceOps.path}",
-            List("application/json")
+            contentTypes
           )
           .apply(openApi))
 
@@ -53,7 +54,7 @@ object CrudOasInterpreter {
         CrudOasInterpreter
           .delete((delete.successSchema, serviceOps.path),
             s"/${serviceOps.path}",
-            List("application/json"))
+            contentTypes)
           .apply(openApi))
 
     openApi

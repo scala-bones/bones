@@ -73,8 +73,6 @@ lazy val restUnfiltered = (project in file("rest-interpreters/unfiltered"))
     libraryDependencies ++= Seq(
       "javax.servlet" % "javax.servlet-api" % "3.0.1",
       "ws.unfiltered" %% "unfiltered-filter" % "0.9.1",
-      "org.tpolecat" %% "doobie-core" % doobieVersion,
-      "org.tpolecat" %% "doobie-postgres" % doobieVersion,
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
       "org.scalatest" %% "scalatest" % "3.0.5" % Test
     )
@@ -130,18 +128,17 @@ lazy val bson = (project in file("interchange-format-interpreters/bson"))
       "org.reactivemongo" %% "reactivemongo-bson" % "0.16.0"
     )
   ).dependsOn(core)
-lazy val dbDoobie = (project in file("db-interpreters/doobie"))
+lazy val dbJdbc = (project in file("db-interpreters/jdbc"))
   .settings(
     commonSettings,
-    name := "Bones Doobie",
+    name := "Bones JDBC",
     libraryDependencies ++= Seq(
-      "org.tpolecat" %% "doobie-core" % doobieVersion,
-      "org.tpolecat" %% "doobie-postgres" % doobieVersion,
+      "org.postgresql" % "postgresql" % "42.2.5",
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
       "org.scalatest" %% "scalatest" % "3.0.5" % Test
     )
   ).dependsOn(core, testSchemas % "test->compile")
-lazy val http4sVersion = "0.20.0-M6"
+lazy val http4sVersion = "0.20.0-RC1"
 lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
   .settings(
     commonSettings,
@@ -155,7 +152,7 @@ lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
       "org.scalatest" %% "scalatest" % "3.0.5" % Test
     )
-  ).dependsOn(core, jsonCirce, jsonOas3, bson)
+  ).dependsOn(core, jsonCirce, jsonOas3, protobuf, bson)
 lazy val react = (project in file("client-interpreters/react"))
   .settings(
     commonSettings,
@@ -173,14 +170,14 @@ lazy val examples = (project in file("examples/http4s-examples"))
       libraryDependencies ++= Seq(
         "io.swagger.core.v3" % "swagger-jaxrs2" % "2.0.5",
         "ws.unfiltered" %% "unfiltered-jetty" % "0.9.1",
-        "org.tpolecat" %% "doobie-hikari" % doobieVersion,
         "io.swagger" % "swagger-parser" % "1.0.36",
         "org.slf4j" % "slf4j-simple" % "1.6.3",
+        "com.zaxxer" % "HikariCP" % "2.7.8",
         "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
         "org.scalatest" %% "scalatest" % "3.0.5" % Test
 //        "org.easymock" % "easymock" % "3.5.1" % Test
       )
-    ).dependsOn(core, jsonOas3, dbDoobie, restHttp4s, jsonOas3, protobuf, testSchemas)
+    ).dependsOn(core, jsonOas3, dbJdbc, restHttp4s, jsonOas3, protobuf, testSchemas)
 
 
 
