@@ -24,6 +24,6 @@ object Error {
   case class ParsingError[A](message: String) extends ExtractionError {
     override def path: List[String] = List.empty
   }
-  case class SystemError(path: List[String], th: Throwable) extends ExtractionError
+  case class SystemError(path: List[String], th: Throwable, message: Option[String]) extends ExtractionError
 
 }

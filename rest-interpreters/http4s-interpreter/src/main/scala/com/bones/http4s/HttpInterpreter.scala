@@ -1,37 +1,32 @@
-package com.bones.doobie
+package com.bones.http4s
 
 import java.nio.charset.StandardCharsets
 
 import cats.data.{EitherT, NonEmptyList}
 import cats.effect._
+import cats._
+import cats.implicits._
+import cats.data._
+import cats.kernel.Semigroup
 import com.bones.bson.{EncodeToBson, ValidatedFromBsonInterpreter}
 import com.bones.circe.{EncodeToCirceInterpreter, ValidatedFromCirceInterpreter}
 import com.bones.crud.Algebra._
 import com.bones.data.Error.ExtractionError
-import com.bones.doobie.Algebra.InterchangeFormat
-import com.bones.doobie.HttpInterpreter.DeleteInterpreterGroup
+import com.bones.data.Value.BonesSchema
+import com.bones.oas3.CrudOasInterpreter
+import com.bones.protobuf.{ProtoFileInterpreter, ProtobufSequentialInputInterpreter, ProtobufSequentialOutputInterpreter}
+import fs2.Stream
 import io.circe.syntax._
 import io.circe.{Json, ParsingFailure}
-import org.http4s.{HttpRoutes, _}
+import io.swagger.v3.oas.models.OpenAPI
 import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.util.CaseInsensitiveString
-import reactivemongo.bson.{BSONDocument, BSONValue}
-import reactivemongo.bson.buffer.{ArrayBSONBuffer, ArrayReadableBuffer}
-import fs2.Stream
+import org.http4s._
 
-case class HttpInterpreter(entityRootDir: String,
-                           formats: List[InterchangeFormat[_]] = List.empty,
-                           produceSwagger: Boolean = false,
-                           charset: java.nio.charset.Charset = StandardCharsets.UTF_8 ) {
+case class HttpInterpreter(charset: java.nio.charset.Charset = StandardCharsets.UTF_8 ) {
 
   import HttpInterpreter._
-
-  def withContentTypes(format: InterchangeFormat[_]*) =
-    copy(formats = format.toList ::: formats)
-  def withContentType(format: InterchangeFormat[_]) =
-    copy(formats = format :: formats)
-  def withSwagger() = copy(produceSwagger = true)
 
   case class DataTransformation[I, O, E](description: String,
                                          f: I => Either[E, O])
@@ -91,7 +86,19 @@ case class HttpInterpreter(entityRootDir: String,
         ue => EncodeToBson.bsonResultToBytes(bErrorF(ue))
       )
 
-      put(json, updateF) :: put(bson, updateF) :: Nil
+
+      val pInputF = ProtobufSequentialInputInterpreter.fromBytes(update.inputSchema)
+      val pOutputF = ProtobufSequentialOutputInterpreter.encodeToBytes(update.successSchema)
+      val pErrorF =  ProtobufSequentialOutputInterpreter.encodeToBytes(update.failureSchema)
+
+      val protoBuf = PutPostInterpreterGroup[UI,UO,UE](
+        "application/protobuf",
+        bytes => pInputF(bytes),
+        uo => pOutputF(uo),
+        ue => pErrorF(ue)
+      )
+
+      put(json, updateF) :: put(bson, updateF) :: put(protoBuf, updateF) :: Nil
 
     })
 
@@ -112,7 +119,15 @@ case class HttpInterpreter(entityRootDir: String,
         re => EncodeToBson.bsonResultToBytes(bErrorF(re))
       )
 
-      get(json, readF) :: get(bson, readF) :: Nil
+      val pOutputF = ProtobufSequentialOutputInterpreter.encodeToBytes(read.successSchemaForRead)
+      val pErrorF = ProtobufSequentialOutputInterpreter.encodeToBytes(read.errorSchema)
+      val protoBuf = GetInterpreterGroup[RO,RE](
+        contentType = "appliation/protobuf",
+        pOutputF,
+        pErrorF
+      )
+
+      get(json, readF) :: get(bson, readF) :: get(protoBuf, readF) :: Nil
 
     })
 
@@ -141,7 +156,18 @@ case class HttpInterpreter(entityRootDir: String,
         ce => EncodeToBson.bsonResultToBytes(bErrorF(ce))
       )
 
-      post(json, createF) :: post(bson, createF) :: Nil
+      val pInputF = ProtobufSequentialInputInterpreter.fromBytes(create.inputSchema)
+      val pOutputF = ProtobufSequentialOutputInterpreter.encodeToBytes(create.successSchema)
+      val pErrorF = ProtobufSequentialOutputInterpreter.encodeToBytes(create.errorSchema)
+      val protoBuf = PutPostInterpreterGroup[CI,CO,CE](
+        "application/protobuf",
+        pInputF,
+        pOutputF,
+        pErrorF
+      )
+
+
+      post(json, createF) :: post(bson, createF) :: post(protoBuf, createF) :: Nil
 
     })
 
@@ -158,27 +184,39 @@ case class HttpInterpreter(entityRootDir: String,
         val bOutputF = EncodeToBson.fromSchema(del.successSchema)
         val bErrorF = EncodeToBson.fromSchema(del.errorSchema)
         val bson = DeleteInterpreterGroup[DO,DE](
-          "application/json",
+          "application/ubjson",
           dout => EncodeToBson.bsonResultToBytes(bOutputF(dout)),
           de => EncodeToBson.bsonResultToBytes(bErrorF(de))
         )
 
-        delete(json, deleteF) :: delete(bson, deleteF) :: Nil
+        val pOutputF = ProtobufSequentialOutputInterpreter.encodeToBytes(del.successSchema)
+        val pErrorF = ProtobufSequentialOutputInterpreter.encodeToBytes(del.errorSchema)
+        val protobuf = DeleteInterpreterGroup[DO,DE](
+          "application/protobuf",
+          pOutputF,
+          pErrorF
+        )
+
+        delete(json, deleteF) :: delete(bson, deleteF) :: delete(protobuf, deleteF) :: Nil
 
       })
 
 
-    val services: List[HttpRoutes[IO]] =
-      createHttpService ::: readHttpService ::: updateHttpService ::: deleteHttpService
+    val contentTypes = "application/json" :: "application/ubjson" :: "application/protobuf" :: Nil
+    val swagger = swaggerDoc(contentTypes, serviceOps)
 
-    import cats.data.Kleisli
-    import cats.effect._
-    import cats.implicits._
-    import org.http4s._
-    import org.http4s.dsl.io._
-    import org.http4s.implicits._
+
+
+
+
+    val services: List[HttpRoutes[IO]] =
+      protoBuff(serviceOps) :: swagger :: createHttpService ::: readHttpService ::: updateHttpService ::: deleteHttpService
+
     services.foldLeft[HttpRoutes[IO]](HttpRoutes.empty)(
-      (op1: HttpRoutes[IO], op2: HttpRoutes[IO]) => op1 <+> op2)
+      (op1: HttpRoutes[IO], op2: HttpRoutes[IO]) =>
+        op1 <+> op2
+//        Semigroup[HttpRoutes[IO]].combine(op1,op2)
+    )
 
   }
 
@@ -221,6 +259,82 @@ object HttpInterpreter {
   def missingIdToJson(id: Long): IO[Response[IO]] = {
     val errors = List(s"Could find entity with id  ${id}")
     BadRequest(Json.obj(("success", "false".asJson), ("errors", errors.asJson)))
+  }
+
+  def swaggerDoc(contentTypes: List[String], serviceOps: ServiceOps[_,_,_,_,_,_,_,_,_,_]): HttpRoutes[IO] = {
+    val openApi = CrudOasInterpreter.jsonApiForService(contentTypes,
+      serviceOps
+    )(new OpenAPI())
+    val html = io.swagger.v3.core.util.Json.mapper().writeValueAsString(openApi)
+
+    HttpRoutes.of[IO] {
+      case GET -> Root / "swagger" / serviceOps.path => Ok(html, Header("Content-Type", "text/html"))
+    }
+  }
+
+  def protoBuff(serviceOps: ServiceOps[_,_,_,_,_,_,_,_,_,_]): HttpRoutes[IO] = {
+    def toFile[A] = ProtoFileInterpreter.fromSchemaToProtoFile(_:BonesSchema[A])
+
+    val createProto = serviceOps.createOperation.map(algebra => {
+      s"""
+          | // Create Input Message
+          | ${toFile(algebra.inputSchema)}
+          |
+          | // Create Successful Output Message
+          | ${toFile(algebra.successSchema)}
+          |
+          | // Create Error Output Message
+          | ${toFile(algebra.errorSchema)}
+          |
+        """.stripMargin
+    }).getOrElse("")
+
+    val readProto = serviceOps.readOperation.map(algebra => {
+      s"""
+         |
+         | // Read Successful Output Message
+         | ${toFile(algebra.successSchemaForRead)}
+         |
+         | // Read Error Output Message
+         | ${toFile(algebra.errorSchema)}
+         |
+        """.stripMargin
+    }).getOrElse("")
+
+    val updateProto = serviceOps.updateOperation.map(algebra => {
+      s"""
+         | // Update Input Message
+         | ${toFile(algebra.inputSchema)}
+         |
+         | // Update Successful Output Message
+         | ${toFile(algebra.successSchema)}
+         |
+         | // Update Error Output Message
+         | ${toFile(algebra.failureSchema)}
+         |
+        """.stripMargin
+    }).getOrElse("")
+
+    val deleteProto = serviceOps.deleteOperation.map(algebra => {
+      s"""
+         | // Delete Successful Output Message
+         | ${toFile(algebra.successSchema)}
+         |
+         | // Delete Error Output Message
+         | ${toFile(algebra.errorSchema)}
+         |
+        """.stripMargin
+    }).getOrElse("")
+
+    val text = createProto + readProto + updateProto + deleteProto
+
+    HttpRoutes.of[IO] {
+      case GET -> Root / "proto" / serviceOps.path => Ok(text, Header("Content-Type", "text/plain"))
+    }
+
+
+
+
   }
 
   def delete[DO,DE](
