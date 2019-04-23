@@ -1,48 +1,65 @@
 package com.bones.fullstack
 
 import cats.effect.IO
-import com.bones.Definitions.{Error, Person, WithId, personSchema}
+import com.bones.crud.Algebra.ServiceOps
 import com.bones.data.Value.BonesSchema
 import com.bones.jdbc.{DbDelete, DbGet, DbInsertValues, DbUpdateValues}
 import fs2.Stream
 import javax.sql.DataSource
 
-case class CrudDbDefinitions[A](schema: BonesSchema[A], ds: DataSource) {
+object CrudDbDefinitions {
+  case class WithId[A](id: Long, a: A)
+  case class DbError(message: String)
+}
 
-  val searchF: Stream[IO, WithId[Person]] = Stream.empty
+case class CrudDbDefinitions[CI, RO, UI, DO](
+  schema: ServiceOps[CI, _, _, RO, _, UI, _, _, DO, _],
+  ds: DataSource) {
 
+  import CrudDbDefinitions._
 
-  private val insertQuery = DbInsertValues.insertQuery(personSchema)(ds)
-  val createF: Person => IO[Either[Error,WithId[Person]]] = {
-    (person:Person) => IO {
-      insertQuery(person)
-        .right.map(pid => WithId(pid._1, pid._2))
-        .left.map(ex => Error(ex.toString))
-    }
+  val searchF: Stream[IO, RO] = Stream.empty
+
+  def createF: CI => IO[Either[DbError,WithId[CI]]] = {
+    schema.createOperation.map(op => {
+      val insertQuery = DbInsertValues.insertQuery(op.inputSchema)(ds)
+      (input:CI) => IO {
+        insertQuery(input)
+          .right.map(pid => WithId(pid._1, pid._2))
+          .left.map(ex => DbError(ex.toString))
+      }
+    }).getOrElse(  (input: CI) => IO { Left(DbError("Create Not Supported"))} )
   }
 
-  private val readQuery = DbGet.getEntity(personSchema)(ds)
-  val readF: Long => IO[Either[Error, WithId[Person]]] =
-    id => IO {
-      readQuery(id)
-        .right.map(pid => WithId(id, pid))
-        .left.map(ex => Error(ex.toString()))
-    }
+  val readF: Long => IO[Either[DbError, RO]] = {
+    schema.readOperation.map(op => {
+      val readQuery = DbGet.getEntity(op.successSchemaForRead)(ds)
+      (id: Long) => IO {
+        readQuery(id)
+          .left.map(ex => DbError(ex.toString()))
+      }
+    }).getOrElse(  (id: Long) => IO { Left(DbError("Read Not Supported"))} )
+  }
 
+  val updateF: (Long, UI) => IO[Either[DbError, WithId[UI]]] = {
+    schema.updateOperation.map(op => {
+      val updateQuery = DbUpdateValues.updateQuery(op.inputSchema)(ds)
+      (id: Long, input: UI) => IO {
+        updateQuery(id,input)
+          .right.map(pid => WithId(id, pid))
+          .left.map(ex => DbError(ex.toString()))
+      }
+    }).getOrElse( (id: Long, input:UI) => IO { Left(DbError("Update not supported"))})
+  }
 
-  val updateQuery = DbUpdateValues.updateQuery(personSchema)(ds)
-  val updateF: (Long, Person) => IO[Either[Error, WithId[Person]]] =
-    (id, person) => IO {
-      updateQuery(id,person)
-        .right.map(pid => WithId(id, pid))
-        .left.map(ex => Error(ex.toString()))
-    }
+  val deleteF: Long => IO[Either[DbError, DO]] = {
+    schema.deleteOperation.map(op => {
+      val deleteQuery = DbDelete.delete(op.successSchema)(ds)
+      (id: Long) => IO {
+        deleteQuery(id)
+          .left.map(ex => DbError(ex.toString()))
+      }
+    }).getOrElse( (id:Long) => IO { Left(DbError("Delete not supported "))})
+  }
 
-  val deleteQuery = DbDelete.delete(personSchema)(ds)
-  val deleteF: Long => IO[Either[Error, WithId[Person]]] =
-    (id) => IO {
-      deleteQuery(id)
-        .right.map(pid => WithId(id, pid))
-        .left.map(ex => Error(ex.toString()))
-    }
 }

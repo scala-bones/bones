@@ -3,7 +3,7 @@ package com.bones.interpreter
 import java.nio.charset.{Charset, StandardCharsets}
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.util.{Date, UUID}
+import java.util.{Base64, Date, UUID}
 
 import cats.Applicative
 import cats.data.{NonEmptyList, Validated}
@@ -16,6 +16,7 @@ import com.bones.validation.ValidationDefinition.ValidationOp
 import shapeless.{HList, HNil, Nat}
 import com.bones.validation.{ValidationUtil => vu}
 
+import scala.util.Try
 import scala.util.control.NonFatal
 
 
@@ -84,6 +85,20 @@ trait KvpValidateInputInterpreter[IN] {
         }
       }
 
+      case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] => {
+        val headInterpreter = kvpGroup(op.xmapData.from)
+        val tailInterpreter = kvpGroup(op.tail)
+        (in: IN, path: List[String]) => {
+          Util.eitherMap2(headInterpreter(in, path),
+            tailInterpreter(in, path))((l1: xl, l2: ht) => {
+            op.xmapData.fab(l1) :: l2
+          })
+            .flatMap { l =>
+              vu.validate[ho](op.validations)(l.asInstanceOf[ho],path)
+            }
+        }
+      }
+
       case op: KvpSingleValueHead[h, t, tl, a] => {
 
 
@@ -129,6 +144,16 @@ trait KvpValidateInputInterpreter[IN] {
         required(op, op.validations, extractUuid(op))
       case op @ DateTimeData(dateFormat, _, _) =>
         required(op, op.validations, extractZonedDateTime(dateFormat,op))
+      case op @ ByteArrayData(validations) =>
+        val decoder= Base64.getDecoder
+        (inOpt: Option[IN], path: List[String]) =>
+          for {
+            in <- inOpt.toRight[NonEmptyList[ExtractionError]](
+            NonEmptyList.one(RequiredData(path, op)))
+            str <- extractString(op, classOf[Array[Byte]])(in,path)
+            arr <- Try { decoder.decode(str) }.toEither.left.map(thr => NonEmptyList.one(CanNotConvert(path, str, classOf[Array[Byte]])))
+          } yield arr
+
       case ed: EitherData[a, b] =>
         val optionalA = valueDefinition(ed.definitionA)
         val optionalB = valueDefinition(ed.definitionB)

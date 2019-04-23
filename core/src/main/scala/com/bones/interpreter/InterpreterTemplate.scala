@@ -30,6 +30,7 @@ class InterpreterTemplate {
       case bd: BigDecimalData => ???
       case ld: ListData[t] => ???
       case ed: EitherData[a,b] => ???
+      case ba: ByteArrayData => ???
       case esd: EnumerationStringData[a] => ???
       case esd: EnumStringData[a] => ???
       case kvp: KvpGroupData[h,hl] => ???

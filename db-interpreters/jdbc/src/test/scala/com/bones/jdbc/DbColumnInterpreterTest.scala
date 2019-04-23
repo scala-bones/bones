@@ -7,6 +7,5 @@ class DbColumnInterpreterTest extends FunSuite {
 
   val result = DbColumnInterpreter.tableDefinition(Schemas.creditCardSchema)
 
-  println(result)
 
 }

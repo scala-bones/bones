@@ -28,10 +28,25 @@ object ResultSetInterpreter {
           })
         }
       }
-    case op: KvpGroupHead[a, al, h, hl, t, tl] =>
+    case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] =>
+      val headF = kvpGroup(op.xmapData.from)
+      val tailF = kvpGroup(op.tail)
+      import shapeless.::
       path => {
-        val rsToHead = kvpGroup(op.head)(path)
-        val rsToTail = kvpGroup(op.tail)(path)
+        val rsToHead = headF(path)
+        val rsToTail = tailF(path)
+        rs => {
+          Util.eitherMap2(rsToHead(rs), rsToTail(rs))((l1: xl, l2: ht) => {
+            (op.xmapData.fab(l1) :: l2).asInstanceOf[H]
+          })
+        }
+      }
+    case op: KvpGroupHead[a, al, h, hl, t, tl] =>
+      val headF = kvpGroup(op.head)
+      val tailF = kvpGroup(op.tail)
+      path => {
+        val rsToHead = headF(path)
+        val rsToTail = tailF(path)
         rs => {
           Util.eitherMap2(rsToHead(rs), rsToTail(rs))((l1: h, l2: t) => {
             op.prepend(l1, l2)
@@ -69,6 +84,7 @@ object ResultSetInterpreter {
         catchSql(rs.getDate(fieldName, utcCalendar), path, dd)
           .map(date => ZonedDateTime.ofInstant(date.toInstant, ZoneId.of("UTC")))
       case bd: BigDecimalData => (path, fieldName) => rs => catchSql(BigDecimal(rs.getBigDecimal(fieldName)), path, bd)
+      case ba: ByteArrayData => (path, fieldName) => rs => catchSql(rs.getBytes(fieldName), path, ba)
       case ld: ListData[t] => ???
       case ed: EitherData[a,b] => ???
       case esd: EnumerationStringData[a] =>

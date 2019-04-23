@@ -37,11 +37,11 @@ lazy val core = (project in file("core"))
     commonSettings,
     name := "Bones",
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % "1.4.0",
-      "org.typelevel" %% "cats-free" % "1.4.0",
+      "org.typelevel" %% "cats-core" % "1.6.0",
+      "org.typelevel" %% "cats-free" % "1.6.0",
       "com.chuusai" %% "shapeless" % "2.3.3",
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
-      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+      "org.scalatest" %% "scalatest" % "3.0.7" % Test
       //      "org.easymock" % "easymock" % "3.5.1" % Test
     ),
     description := "DSL for Data Description using ASTs and interpreters"
@@ -52,7 +52,7 @@ lazy val testSchemas = (project in file("examples/test-schemas"))
     name := "Test Schemas",
     libraryDependencies ++= Seq(
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
-      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+      "org.scalatest" %% "scalatest" % "3.0.7" % Test
     )
   ).dependsOn(core)
 lazy val jsonOas3 = (project in file("interchange-format-interpreters/lift-json-oas3"))
@@ -60,9 +60,9 @@ lazy val jsonOas3 = (project in file("interchange-format-interpreters/lift-json-
     commonSettings,
     name := "DataDefinition to OAS3 Interpreter",
     libraryDependencies ++= Seq(
-      "io.swagger.core.v3" % "swagger-core" % "2.0.5",
+      "io.swagger.core.v3" % "swagger-core" % "2.0.7",
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
-      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+      "org.scalatest" %% "scalatest" % "3.0.7" % Test
     )
   ).dependsOn(core)
 lazy val doobieVersion = "0.6.0"
@@ -74,7 +74,7 @@ lazy val restUnfiltered = (project in file("rest-interpreters/unfiltered"))
       "javax.servlet" % "javax.servlet-api" % "3.0.1",
       "ws.unfiltered" %% "unfiltered-filter" % "0.9.1",
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
-      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+      "org.scalatest" %% "scalatest" % "3.0.7" % Test
     )
   ).dependsOn(core, jsonLift)
 lazy val jsonLift = (project in file("interchange-format-interpreters/lift-json"))
@@ -84,11 +84,11 @@ lazy val jsonLift = (project in file("interchange-format-interpreters/lift-json"
     libraryDependencies ++= Seq (
       "net.liftweb" %% "lift-json" % "3.3.0",
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
-      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+      "org.scalatest" %% "scalatest" % "3.0.7" % Test
     )
   )
   .dependsOn(core)
-lazy val circeVersion = "0.10.1"
+lazy val circeVersion = "0.11.1"
 lazy val jsonCirce = (project in file("interchange-format-interpreters/circe"))
   .settings(
     commonSettings,
@@ -97,7 +97,7 @@ lazy val jsonCirce = (project in file("interchange-format-interpreters/circe"))
       "io.circe" %% "circe-core" % circeVersion,
       "io.circe" %% "circe-parser" % circeVersion,
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
-      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+      "org.scalatest" %% "scalatest" % "3.0.7" % Test
     )
   ).dependsOn(core)
 lazy val jsonArgonaut = (project in file("interchange-format-interpreters/argonaut"))
@@ -105,9 +105,9 @@ lazy val jsonArgonaut = (project in file("interchange-format-interpreters/argona
     commonSettings,
     name := "Bones Argonaut",
     libraryDependencies ++= Seq (
-      "io.argonaut" %% "argonaut" % "6.2.2",
+      "io.argonaut" %% "argonaut" % "6.2.3",
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
-      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+      "org.scalatest" %% "scalatest" % "3.0.7" % Test
     )
   ).dependsOn(core)
 lazy val protobuf = (project in file("interchange-format-interpreters/protobuf"))
@@ -115,9 +115,9 @@ lazy val protobuf = (project in file("interchange-format-interpreters/protobuf")
     commonSettings,
     name := "Bones Protobuf",
     libraryDependencies ++= Seq (
-      "com.google.protobuf" % "protobuf-java" % "3.6.1",
+      "com.google.protobuf" % "protobuf-java" % "3.7.1",
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
-      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+      "org.scalatest" %% "scalatest" % "3.0.7" % Test
     )
   ).dependsOn(core)
 lazy val bson = (project in file("interchange-format-interpreters/bson"))
@@ -125,7 +125,7 @@ lazy val bson = (project in file("interchange-format-interpreters/bson"))
     commonSettings,
     name := "Bones Bson",
     libraryDependencies ++= Seq (
-      "org.reactivemongo" %% "reactivemongo-bson" % "0.16.0"
+      "org.reactivemongo" %% "reactivemongo-bson" % "0.16.5"
     )
   ).dependsOn(core)
 lazy val dbJdbc = (project in file("db-interpreters/jdbc"))
@@ -135,10 +135,10 @@ lazy val dbJdbc = (project in file("db-interpreters/jdbc"))
     libraryDependencies ++= Seq(
       "org.postgresql" % "postgresql" % "42.2.5",
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
-      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+      "org.scalatest" %% "scalatest" % "3.0.7" % Test
     )
   ).dependsOn(core, testSchemas % "test->compile")
-lazy val http4sVersion = "0.20.0-RC1"
+lazy val http4sVersion = "0.20.0"
 lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
   .settings(
     commonSettings,
@@ -150,7 +150,7 @@ lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
 //      "org.http4s" %% "http4s-blaze-client" % http4sVersion,
 //      "io.swagger.core.v3" % "swagger-core" % "2.0.5",
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
-      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+      "org.scalatest" %% "scalatest" % "3.0.7" % Test
     )
   ).dependsOn(core, jsonCirce, jsonOas3, protobuf, bson)
 lazy val react = (project in file("client-interpreters/react"))
@@ -170,11 +170,11 @@ lazy val examples = (project in file("examples/http4s-examples"))
       libraryDependencies ++= Seq(
         "io.swagger.core.v3" % "swagger-jaxrs2" % "2.0.5",
         "ws.unfiltered" %% "unfiltered-jetty" % "0.9.1",
-        "io.swagger" % "swagger-parser" % "1.0.36",
-        "org.slf4j" % "slf4j-simple" % "1.6.3",
-        "com.zaxxer" % "HikariCP" % "2.7.8",
+        "io.swagger" % "swagger-parser" % "1.0.44",
+        "org.slf4j" % "slf4j-simple" % "1.7.26",
+        "com.zaxxer" % "HikariCP" % "3.3.1",
         "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
-        "org.scalatest" %% "scalatest" % "3.0.5" % Test
+        "org.scalatest" %% "scalatest" % "3.0.7" % Test
 //        "org.easymock" % "easymock" % "3.5.1" % Test
       )
     ).dependsOn(core, jsonOas3, dbJdbc, restHttp4s, jsonOas3, protobuf, testSchemas)

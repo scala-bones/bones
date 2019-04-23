@@ -15,6 +15,7 @@ object FormInterpreter {
       case op: KvpSingleValueHead[h, t, tl, a] => ???
       case op: KvpGroupHead[a, al, h, hl, t, tl] => ???
       case op: OptionalKvpGroup[h,hl] => ???
+      case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] => ???
     }
   }
 
@@ -27,12 +28,14 @@ object FormInterpreter {
       case uu: UuidData => ???
       case dd: DateTimeData => ???
       case bd: BigDecimalData => ???
+      case ba: ByteArrayData => ???
       case ld: ListData[t] => ???
       case ed: EitherData[a,b] => ???
       case esd: EnumerationStringData[a] => ???
       case esd: EnumStringData[a] => ???
       case kvp: KvpGroupData[h,hl] => ???
       case t: XMapData[a, al, b] => ???
+      case s: SumTypeData[a,b] => ???
 
     }
 }
