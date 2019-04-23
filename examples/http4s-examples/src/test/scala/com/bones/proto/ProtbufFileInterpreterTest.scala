@@ -10,6 +10,6 @@ class ProtbufFileInterpreterTest extends FunSuite {
 
   val str = ProtoFileInterpreter.messageToProtoFile(result)
 
-  println(str)
+//  println(str)
 
 }

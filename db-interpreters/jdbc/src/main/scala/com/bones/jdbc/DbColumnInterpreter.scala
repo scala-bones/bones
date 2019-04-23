@@ -1,10 +1,8 @@
 package com.bones.jdbc
 
-import java.sql.Types
-
 import com.bones.data.Value._
 import DbUtil.camelToSnake
-import shapeless.{HList, HNil, Nat}
+import shapeless.{HList, Nat}
 
 /** Responsible for getting a list of columns for the select or insert clause */
 object DbColumnInterpreter {
@@ -22,7 +20,7 @@ object DbColumnInterpreter {
         val result = valueDefinition(x)("")
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
         val columnsWithId = Column("id", "SERIAL", false) :: result
-        val columnString = columnsWithId.map(c => s"${c.name} ${c.columnDefinition} ${nullableString(c.nullable)}").mkString("(",",",")")
+        val columnString = columnsWithId.map(c => s"${c.name} ${c.columnDefinition}${nullableString(c.nullable)}").mkString("(",", ",")")
         s"create table $tableName $columnString"
     }
   }
@@ -37,6 +35,10 @@ object DbColumnInterpreter {
         headResult ::: tailResult
       case op: KvpGroupHead[a, al, h, hl, t, tl] =>
         val headResult = kvpGroup(op.head)
+        val tailResult = kvpGroup(op.tail)
+        headResult ::: tailResult
+      case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] =>
+        val headResult = kvpGroup(op.xmapData.from)
         val tailResult = kvpGroup(op.tail)
         headResult ::: tailResult
       case op: OptionalKvpGroup[h,hl] => ???
@@ -56,6 +58,7 @@ object DbColumnInterpreter {
       case uu: UuidData => nameToColumn("text")
       case dd: DateTimeData => nameToColumn("timestamp")
       case bd: BigDecimalData => nameToColumn("numeric")
+      case bd: ByteArrayData => nameToColumn("bytea")
       case ld: ListData[t] => ???
       case ed: EitherData[a,b] => ???
       case esd: EnumerationStringData[a] => nameToColumn("text")

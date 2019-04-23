@@ -63,6 +63,23 @@ object ProtobufSequentialInputInterpreter {
             result
           })
         }
+      case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] =>
+        val head = kvpGroup(op.xmapData.from)
+        val tail = kvpGroup(op.tail)
+        (lastFieldNumber, path) => {
+          val headResult = head(lastFieldNumber, path)
+          val tailResult = tail(headResult._1, path)
+          (tailResult._1, in => {
+            val totalResult = Util.eitherMap2(headResult._2(in), tailResult._2(in))(
+              (l1: xl, l2: ht) => { op.xmapData.fab(l1) :: l2 }
+            )
+              .flatMap { l =>
+                vu.validate[ho](op.validations)(l.asInstanceOf[ho],path)
+              }
+
+            totalResult
+          })
+        }
       case op: KvpGroupHead[a, al, h, hl, t, tl] =>
         val head = kvpGroup(op.head)
         val tail = kvpGroup(op.tail)
@@ -144,6 +161,18 @@ object ProtobufSequentialInputInterpreter {
               Left(NonEmptyList.one(RequiredData(path, ri)))
             }
             result.asInstanceOf[Either[NonEmptyList[ExtractionError],Long]]
+          })
+        }
+      case ba: ByteArrayData =>
+        (fieldNumber: LastFieldNumber, path: Path) => {
+          val thisField = (fieldNumber + 1) << 3 | LENGTH_DELIMITED
+          (thisField, in => {
+            val result = if (in.getLastTag == thisField) {
+              convert(in, classOf[Array[Byte]], path)(_.readByteArray()).asInstanceOf[Either[NonEmptyList[ExtractionError],A]]
+            } else {
+              Left(NonEmptyList.one(RequiredData(path, ba)))
+            }
+            result.asInstanceOf[Either[NonEmptyList[ExtractionError],Array[Byte]]]
           })
         }
       case uu: UuidData =>
@@ -228,6 +257,16 @@ object ProtobufSequentialInputInterpreter {
           (thisField, in => convert(in, classOf[String], path)(_.readString).flatMap(stringToEnum[a](_,path,esd.enums).asInstanceOf[Either[NonEmptyList[ExtractionError],A]]))
         }
 
+      case sum: SumTypeData[a,b] => {
+        val f = valueDefinition(sum.from)
+        (last: LastFieldNumber, path: Path) => {
+          val result = f(last, path)
+          val fCis = (cis: CodedInputStream) => {
+            result._2(cis).flatMap(a => sum.fab(a,path).left.map(x => NonEmptyList.one(x)))
+          }
+          (result._1, fCis)
+        }
+      }
       case kvp: KvpGroupData[h,hl] => {
         val groupExtract = kvpGroup(kvp.kvpGroup)
         (last: LastFieldNumber, path: Path) => {

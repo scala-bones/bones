@@ -90,6 +90,16 @@ object DbInsertValues {
           (tailList._1, headList._2 ::: tailList._2)
         }
       }
+      case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] => {
+        val headF = kvpGroup(op.xmapData.from)
+        val tailF = kvpGroup(op.tail)
+        (i:Index,h:H) => {
+//          val hSplit = op.split(h)
+          val headList = headF(i,op.xmapData.fba(h.head))
+          val tailList = tailF(headList._1, h.tail)
+          (tailList._1, headList._2 ::: tailList._2)
+        }
+      }
       case op: OptionalKvpGroup[h,hl] => ???
     }
   }
@@ -130,6 +140,8 @@ object DbInsertValues {
         psF[ZonedDateTime]( (ps, i ,a) => ps.setDate(i, new java.sql.Date(a.toInstant.toEpochMilli)))
       case bd: BigDecimalData =>
         psF[BigDecimal]( (ps,i, a) => ps.setBigDecimal(i,a.underlying))
+      case ba: ByteArrayData =>
+        psF[scala.Array[Byte]]( (ps,i,a) => ps.setBytes(i, a))
       case ld: ListData[t] => ???
       case ed: EitherData[a,b] => ???
       case esd: EnumerationStringData[a] =>

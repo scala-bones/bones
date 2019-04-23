@@ -33,6 +33,9 @@ object ProtoFileInterpreter {
   case object PbString extends DataType {
     val name = "string"
   }
+  case object Bytes extends DataType {
+    val name = "bytes"
+  }
   case class NestedDataType(messageName: String) extends DataType {
     val name = messageName.capitalize
   }
@@ -126,13 +129,14 @@ object ProtoFileInterpreter {
       case uu: UuidData => (MessageField(PbString, true, false, name, index), Vector.empty)
       case dd: DateTimeData => (MessageField(PbString, true, false, name, index), Vector.empty)
       case bd: BigDecimalData => (MessageField(PbString, true, false, name, index), Vector.empty)
+      case ba: ByteArrayData => (MessageField(Bytes, true, false, name, index), Vector.empty)
       case ld: ListData[t] =>
         val result = valueDefinition(ld.tDefinition)(name, index)
         (result._1.copy(repeated = true), result._2)
       case ed: EitherData[a,b] => ??? //use one of
       case esd: EnumerationStringData[a] => (MessageField(PbString, true, false, name, index), Vector.empty)
       case esd: EnumStringData[a] => (MessageField(PbString, true, false, name, index), Vector.empty)
-      case st: SumTypeData[A,a] =>
+      case st: SumTypeData[a,b] =>
         (MessageField(PbString, true, false, name, index), Vector.empty)
       case kvp: KvpGroupData[h,hl] =>
         val result = kvpGroup(kvp.kvpGroup)(0)

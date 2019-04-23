@@ -154,6 +154,11 @@ object ProtobufSequentialOutputInterpreter {
             () => CodedOutputStream.computeStringSize(fieldNumber, d.toString()),
             write(_.writeString(fieldNumber, d.toString))
           )
+      case ba: ByteArrayData => (fieldNumber: FieldNumber) =>
+        (arr: Array[Byte]) => (
+          CodedOutputStream.computeByteArraySize(fieldNumber, arr),
+          write(_.writeByteArray(fieldNumber, arr))
+        )
       case ld: ListData[t] => (fieldNumber: FieldNumber) =>
         val ft = valueDefinition(ld.tDefinition)(fieldNumber)
         (l: List[t]) => {
@@ -175,6 +180,12 @@ object ProtobufSequentialOutputInterpreter {
           () => CodedOutputStream.computeStringSize(fieldNumber, a.toString),
           write(_.writeString(fieldNumber, a.toString))
         )
+      case st: SumTypeData[a,b] => (fieldNumber: FieldNumber) =>
+        val enc = valueDefinition(st.from)(fieldNumber)
+        (out: A) => {
+          val a = st.fba(out)
+          enc(a)
+        }
       case kvp: KvpGroupData[h, hl] => (fieldNumber: FieldNumber) =>
         val enc = kvpGroup(kvp.kvpGroup)(0)
         (h: h) => enc(h)
