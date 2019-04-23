@@ -95,6 +95,11 @@ object SwaggerCoreInterpreter {
         val stringSchema = new StringSchema()
           .example("3.14").nullable(false)
         schema => stringSchema.name(schema.getName)
+      case _: ByteArrayData =>
+        val baSchema = new ByteArraySchema()
+          .example("0123456789abcdef")
+          .nullable(false)
+        schema => baSchema.name(schema.getName)
       case ListData(definition, validations) =>
         val items = fromValueDef(definition)
         val arraySchema = new ArraySchema()

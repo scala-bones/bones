@@ -213,9 +213,7 @@ case class HttpInterpreter(charset: java.nio.charset.Charset = StandardCharsets.
       protoBuff(serviceOps) :: swagger :: createHttpService ::: readHttpService ::: updateHttpService ::: deleteHttpService
 
     services.foldLeft[HttpRoutes[IO]](HttpRoutes.empty)(
-      (op1: HttpRoutes[IO], op2: HttpRoutes[IO]) =>
-        op1 <+> op2
-//        Semigroup[HttpRoutes[IO]].combine(op1,op2)
+      (op1: HttpRoutes[IO], op2: HttpRoutes[IO]) => op1 <+> op2
     )
 
   }

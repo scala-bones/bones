@@ -18,6 +18,7 @@ object EncodeToJValueInterpreter extends KvpOutputInterpreter[JValue] {
   override def appendGroup(prefix: JValue, postfix: JValue): JValue =
     (prefix, postfix) match {
       case ( JObject(fields), JObject(fields2) ) => JObject(fields ::: fields2)
+      case (_,_) => JObject()
     }
 
   override def toObj[A](kvDef: KeyValueDefinition[A], value: JValue): JValue =

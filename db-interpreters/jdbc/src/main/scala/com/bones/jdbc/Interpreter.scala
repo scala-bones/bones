@@ -12,16 +12,6 @@ object FindInterpreter {
   type FieldName = String
   type Path = List[String]
 
-//  def fromSchema[A](dc: BonesSchema[A]): Int => ConnectionIO[Option[A]] = {
-//    val fields: List[String] = FieldNames.fromSchema(dc)
-//    def tableName = TableName.getTableName(dc)
-//    val query = s"""select ${fields.mkString(", ")} from $tableName where id =  = ?"""
-//    (id: Int) => Query0[A](query).option(id)
-//  }
-
-
-
-
 }
 
 object TableName {
@@ -43,6 +33,8 @@ object FieldNames {
     group match {
       case KvpNil => List.empty
       case op: KvpSingleValueHead[h, t, tl, a] => List(camelToSnake(op.fieldDefinition.key)) ::: kvpGroup(op.tail)
+      case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] =>
+        kvpGroup(op.xmapData.from) ::: kvpGroup(op.tail)
       case op: KvpGroupHead[a, al, h, hl, t, tl] =>
         kvpGroup(op.head) ::: kvpGroup(op.tail)
       case op: OptionalKvpGroup[h,hl] =>
@@ -59,10 +51,12 @@ object FieldNames {
       case uu: UuidData => List.empty
       case dd: DateTimeData => List.empty
       case bd: BigDecimalData => List.empty
+      case ba: ByteArrayData => List.empty
       case ld: ListData[t] => List.empty
       case ed: EitherData[a,b] => List.empty
       case esd: EnumerationStringData[a] => List.empty
       case esd: EnumStringData[a] => List.empty
+      case st: SumTypeData[a,b] => valueDefinition(st.from)
       case kvp: KvpGroupData[h,hl] => kvpGroup(kvp.kvpGroup)
       case x: XMapData[_,_,_] => kvpGroup(x.from)
     }

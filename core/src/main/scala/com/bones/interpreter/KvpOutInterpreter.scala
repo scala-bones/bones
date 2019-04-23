@@ -93,6 +93,7 @@ trait KvpOutputInterpreter[OUT] {
       case uu: UuidData => uuidToOut(uu)
       case dd: DateTimeData => dateTimeToOut(dd)
       case bd: BigDecimalData => bigDecimalToOut(bd)
+      case ba: ByteArrayData => ???
       case ld: ListData[t] => listDataToOut(ld)
 //      case ListData(vDefinition, _) => listDataToOut(vDefinition)
       case EitherData(aDefinition, bDefinition) =>
@@ -115,6 +116,10 @@ trait KvpOutputInterpreter[OUT] {
         input: A => {
           fh(x.fba(input))
         }
+      }
+      case s: SumTypeData[a,b] => {
+        val fh = valueDefinition(s.from)
+        input: A => fh(s.fba(input))
       }
     }
 

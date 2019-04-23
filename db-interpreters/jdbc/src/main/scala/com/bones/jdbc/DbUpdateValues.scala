@@ -73,6 +73,19 @@ object DbUpdateValues {
           DefinitionResult(tailResult.lastIndex, headResult.predefineUpdateStatements ::: tailResult.predefineUpdateStatements, f)
         }
       }
+      case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] => {
+        val headF = kvpGroup(op.xmapData.from)
+        val tailF = kvpGroup(op.tail)
+        (i: Index) => {
+          val headResult = headF(i)
+          val tailResult = tailF(headResult.lastIndex)
+          val f = (input: H) => {
+            val headList = headResult.actionableUpdateStatements(op.xmapData.fba(input.head))
+            val tailList = tailResult.actionableUpdateStatements(input.tail)
+            (headList ::: tailList)
+          }
+          DefinitionResult[H](tailResult.lastIndex, headResult.predefineUpdateStatements ::: tailResult.predefineUpdateStatements, f)
+        }      }
       case op: KvpGroupHead[a, al, h, hl, t, tl] => {
         val headF = kvpGroup(op.head)
         val tailF = kvpGroup(op.tail)
@@ -132,6 +145,8 @@ object DbUpdateValues {
         psF((i: Index) => (ps: PreparedStatement ,a: ZonedDateTime) => ps.setDate(i, new java.sql.Date(a.toInstant.toEpochMilli)), Types.DATE)
       case bd: BigDecimalData =>
         psF[BigDecimal](i => (ps,a) => ps.setBigDecimal(i,a.underlying), Types.NUMERIC)
+      case ba: ByteArrayData =>
+        psF[Array[Byte]](i => (ps,a) => ps.setBytes(i,a), Types.BINARY)
       case ld: ListData[t] => ???
       case ed: EitherData[a,b] => ???
       case esd: EnumerationStringData[a] => psF(i => (ps,a) => ps.setString(i,a.toString), Types.VARCHAR)

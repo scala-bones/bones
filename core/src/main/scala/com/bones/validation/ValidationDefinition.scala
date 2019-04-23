@@ -373,6 +373,9 @@ object ValidationDefinition {
       override def description: String = s"minimum value of $min"
     }
 
+    def min(m: BigDecimal) = Min(m)
+    def max(m: BigDecimal) = Max(m)
+
   }
 
   object DateValidationInstances {
