@@ -40,12 +40,12 @@ object DbUpdateValues {
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
         val updates = valueDefinition(x)(1,tableName)
         (id: Long, a: A) => {
-          val sql = s"""update ${tableName} set ${updates.predefineUpdateStatements.map(_._1).mkString(",")} where id = ${id}"""
+          val sql = s"""update ${tableName} set ${updates.predefineUpdateStatements.map(_._1).mkString(",")} where id = ?"""
           (con: Connection) => {
             val statement = con.prepareCall(sql)
             try {
               updates.actionableUpdateStatements(a).foreach(f => f(statement))
-              statement.setLong("id", id)
+              statement.setLong(updates.lastIndex, id)
               statement.execute()
               Right(WithId(id, a))
             } catch {
