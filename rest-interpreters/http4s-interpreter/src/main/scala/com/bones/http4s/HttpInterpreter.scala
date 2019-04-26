@@ -56,10 +56,11 @@ case class HttpInterpreter(charset: java.nio.charset.Charset = StandardCharsets.
       serviceOps: ServiceOps[CI, CO, CE, RO, RE, UI, UO, UE, DO, DE],
       createF: CI => IO[Either[CE, CO]],
       readF: Long => IO[Either[RE, RO]],
-      searchF: fs2.Stream[IO, RO],
+      searchF: Stream[IO, RO],
       updateF: (Long, UI) => IO[Either[UE, UO]],
       deleteF: Long => IO[Either[DE, DO]]): HttpRoutes[IO] = {
 
+    val path = serviceOps.path
 
     val updateHttpService = serviceOps.updateOperation.toList.flatMap(update => {
       val inputF = ValidatedFromCirceInterpreter.fromSchema(update.inputSchema)
@@ -98,7 +99,7 @@ case class HttpInterpreter(charset: java.nio.charset.Charset = StandardCharsets.
         ue => pErrorF(ue)
       )
 
-      put(json, updateF) :: put(bson, updateF) :: put(protoBuf, updateF) :: Nil
+      put(path, json, updateF) :: put(path, bson, updateF) :: put(path, protoBuf, updateF) :: Nil
 
     })
 
@@ -127,7 +128,16 @@ case class HttpInterpreter(charset: java.nio.charset.Charset = StandardCharsets.
         pErrorF
       )
 
-      get(json, readF) :: get(bson, readF) :: get(protoBuf, readF) :: Nil
+      val jsonSearch = SearchInterpreterGroup[RO](
+        "application/json",
+        ro => {
+          Stream("[".getBytes(charset)) ++
+            ro.map(out => outputF(out).asJson.noSpaces.getBytes(charset)).intersperse(",".getBytes(charset)) ++
+            Stream("]".getBytes(charset))
+        }
+      )
+
+      get(path, json, readF) :: get(path, bson, readF) :: get(path, protoBuf, readF) :: search(path, jsonSearch, searchF) :: Nil
 
     })
 
@@ -167,7 +177,7 @@ case class HttpInterpreter(charset: java.nio.charset.Charset = StandardCharsets.
       )
 
 
-      post(json, createF) :: post(bson, createF) :: post(protoBuf, createF) :: Nil
+      post(path, json, createF) :: post(path, bson, createF) :: post(path, protoBuf, createF) :: Nil
 
     })
 
@@ -197,7 +207,7 @@ case class HttpInterpreter(charset: java.nio.charset.Charset = StandardCharsets.
           pErrorF
         )
 
-        delete(json, deleteF) :: delete(bson, deleteF) :: delete(protobuf, deleteF) :: Nil
+        delete(path, json, deleteF) :: delete(path, bson, deleteF) :: delete(path, protobuf, deleteF) :: Nil
 
       })
 
@@ -243,7 +253,7 @@ object HttpInterpreter {
 
   case class SearchInterpreterGroup[SO](
     contentType: String,
-    outInterpreter: SO => Array[Byte]
+    outInterpreter: Stream[IO, SO] => Stream[IO, Array[Byte]]
   )
 
   def extractionErrorToOut(pf: ParsingFailure): IO[Response[IO]] = {
@@ -336,10 +346,11 @@ object HttpInterpreter {
   }
 
   def delete[DO,DE](
+    path: String,
     interpreterGroup: DeleteInterpreterGroup[DO,DE],
     deleteF: Long => IO[Either[DE, DO]]
   ): HttpRoutes[IO] =     HttpRoutes.of[IO] {
-    case req @ Method.DELETE -> Root / rootDir / LongVar(id) => {
+    case req @ Method.DELETE -> Root / path / LongVar(id) => {
       val result = for {
         entity <- EitherT[IO, IO[Response[IO]], DO] {
           deleteF(id).map(_.left.map(de =>
@@ -355,13 +366,14 @@ object HttpInterpreter {
     req.headers.find(header => header.name == CaseInsensitiveString("Content-Type")).map(_.value)
 
   def search[CO](
+    path: String,
     interpreterGroup: SearchInterpreterGroup[CO],
     searchF: fs2.Stream[IO,CO]
   ): HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
-      case req @ Method.GET -> Root / entityRootDir if contentType(req).contains(interpreterGroup.contentType) => {
+      case req @ Method.GET -> Root / path if contentType(req).contains(interpreterGroup.contentType) => {
         Ok(
-          Stream("[") ++ searchF.map(e => interpreterGroup.outInterpreter(e).asJson.noSpaces).intersperse(",") ++ Stream("]"),
+          interpreterGroup.outInterpreter(searchF),
           Header("Content-Type", "application/json")
         )
       }
@@ -369,11 +381,12 @@ object HttpInterpreter {
   }
 
   def post[CI, CO, CE](
+                        path: String,
                         interpreterGroup: PutPostInterpreterGroup[CI, CO, CE],
                         createF: CI => IO[Either[CE, CO]]
   ): HttpRoutes[IO] =
     HttpRoutes.of[IO] {
-      case req @ Method.POST -> Root / entityRootDir if contentType(req).contains(interpreterGroup.contentType) => {
+      case req @ Method.POST -> Root / path if contentType(req).contains(interpreterGroup.contentType) => {
         val result: EitherT[IO, IO[Response[IO]], IO[Response[IO]]] = for {
           body <- EitherT[IO, IO[Response[IO]], Array[Byte]] {
             req.as[Array[Byte]].map(Right(_))
@@ -405,9 +418,9 @@ object HttpInterpreter {
     * @tparam RE
     * @return
     */
-  def get[RO, RE](interpreterGroup: GetInterpreterGroup[RO,RE], readF: Long => IO[Either[RE,RO]]): HttpRoutes[IO] = {
+  def get[RO, RE](path: String, interpreterGroup: GetInterpreterGroup[RO,RE], readF: Long => IO[Either[RE,RO]]): HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
-      case req @ Method.GET -> Root / rootDir / LongVar(id) if contentType(req).contains(interpreterGroup.contentType) => {
+      case req @ Method.GET -> Root / path / LongVar(id) if contentType(req).contains(interpreterGroup.contentType) => {
         readF(id)
           .flatMap({
             case Left(re)  => BadRequest(interpreterGroup.errorInterpreter(re), Header("Content-Type", interpreterGroup.contentType))
@@ -428,12 +441,13 @@ object HttpInterpreter {
     * @return
     */
   def put[UI, UO, UE](
+      path: String,
       interpreterGroup: PutPostInterpreterGroup[UI, UO, UE],
       updateF: (Long, UI) => IO[Either[UE, UO]]
   ): HttpRoutes[IO] = {
 
     HttpRoutes.of[IO] {
-      case req @ Method.PUT -> Root / rootDir / LongVar(id) if contentType(req).contains(interpreterGroup.contentType) => {
+      case req @ Method.PUT -> Root / path / LongVar(id) if contentType(req).contains(interpreterGroup.contentType) => {
         val result: EitherT[IO, IO[Response[IO]], IO[Response[IO]]] = for {
           body <- EitherT[IO, IO[Response[IO]], Array[Byte]] {
             req.as[Array[Byte]].map(Right(_))

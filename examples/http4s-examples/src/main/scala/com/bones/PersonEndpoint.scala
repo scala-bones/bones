@@ -5,7 +5,7 @@ import _root_.io.swagger.v3.oas.models.info.Info
 import cats.effect.IO
 import com.bones.crud.Algebra._
 import com.bones.data.Value.KvpNil
-import com.bones.fullstack.CrudDbDefinitions.{DbError, WithId}
+import com.bones.fullstack.CrudDbDefinitions.DbError
 import com.bones.fullstack.LocalhostAllIOApp
 import com.bones.syntax._
 import com.bones.validation.ValidationDefinition.{LongValidation => iv, StringValidation => sv}
@@ -25,16 +25,13 @@ object Definitions {
       KvpNil
     ).convert[Person]
 
-  val personWithId =
-    (kvp("id", long) :: personSchema :><: KvpNil).convert[WithId[Person]]
-
   val errorDef = (kvp("error", string) :: KvpNil).convert[DbError]
 
   val personService = ServiceOps.withPath("person")
-    .withCreate(personSchema, personWithId, errorDef)
-    .withRead(personWithId, errorDef)
-    .withUpdate(personSchema, personWithId, errorDef)
-    .withDelete(personWithId, errorDef)
+    .withCreate(personSchema, personSchema, errorDef)
+    .withRead(personSchema, errorDef)
+    .withUpdate(personSchema, personSchema, errorDef)
+    .withDelete(personSchema, errorDef)
 
   //Above is the description.
   //below interpreters the description into runnable code.
