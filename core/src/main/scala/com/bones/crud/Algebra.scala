@@ -9,6 +9,13 @@ object Algebra {
 
   object ServiceOps {
     def withPath(path: String) = ServiceOps(path, None, None, None, None)
+    def basicCrud[A,E](path: String, schema: BonesSchema[A], errorSchema: BonesSchema[E]) = {
+      ServiceOps.withPath(path)
+        .withCreate(schema, schema, errorSchema)
+        .withRead(schema, errorSchema)
+        .withUpdate(schema, schema, errorSchema)
+        .withDelete(schema, errorSchema)
+    }
   }
 
   case class ServiceOps[CI, CO, CE, RO, RE, UI, UO, UE, DO, DE](

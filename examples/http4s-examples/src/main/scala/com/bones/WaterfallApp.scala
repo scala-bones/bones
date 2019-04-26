@@ -39,11 +39,7 @@ object WaterfallDefinitions {
     ).convert[Waterfall]
 
   val waterfallService =
-    ServiceOps.withPath("waterfall")
-      .withCreate(waterfall, waterfall, errorDef)
-      .withRead(waterfall, errorDef)
-      .withUpdate(waterfall, waterfall, errorDef)
-      .withDelete(waterfall, errorDef)
+    ServiceOps.basicCrud("waterfall", waterfall, errorDef)
 
   object WaterVolume extends Enumeration {
     type WaterVolume = Value
