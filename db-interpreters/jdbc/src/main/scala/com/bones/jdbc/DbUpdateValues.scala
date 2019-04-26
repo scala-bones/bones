@@ -7,6 +7,7 @@ import com.bones.data.Value._
 import shapeless.{::, HList, HNil, Nat}
 import DbUtil._
 import cats.data.NonEmptyList
+import com.bones.crud.WithId
 import com.bones.data.Error.{ExtractionError, SystemError}
 import javax.sql.DataSource
 
@@ -26,26 +27,27 @@ object DbUpdateValues {
     lastIndex: Index, predefineUpdateStatements: List[(UpdateString, SetNull)], actionableUpdateStatements: A => List[SetValue])
 
 
-  def updateQuery[A](bonesSchema: BonesSchema[A]): DataSource => (ID, A) => Either[NonEmptyList[ExtractionError], A] = {
+  def updateQuery[A](bonesSchema: BonesSchema[A]): DataSource => (Long, A) => Either[NonEmptyList[ExtractionError], WithId[Long,A]] = {
     val uq = updateQueryWithConnection(bonesSchema)
     ds =>
-      (id, a) => withDataSource[A](ds)(con => uq(id,a)(con))
+      (id, a) => withDataSource[WithId[Long,A]](ds)(con => uq(id,a)(con))
   }
 
 
-  def updateQueryWithConnection[A](bonesSchema: BonesSchema[A]): (ID, A) => Connection => Either[NonEmptyList[SystemError], A] =
+  def updateQueryWithConnection[A](bonesSchema: BonesSchema[A]): (Long, A) => Connection => Either[NonEmptyList[SystemError], WithId[Long,A]] =
     bonesSchema match {
       case x: XMapData[h,n,b] => {
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
         val updates = valueDefinition(x)(1,tableName)
-        (id: ID, a: A) => {
+        (id: Long, a: A) => {
           val sql = s"""update ${tableName} set ${updates.predefineUpdateStatements.map(_._1).mkString(",")} where id = ${id}"""
           (con: Connection) => {
             val statement = con.prepareCall(sql)
             try {
               updates.actionableUpdateStatements(a).foreach(f => f(statement))
+              statement.setLong("id", id)
               statement.execute()
-              Right(a)
+              Right(WithId(id, a))
             } catch {
               case e: SQLException => Left(NonEmptyList.one(SystemError(List.empty, e,Some(sql))))
             } finally {

@@ -134,6 +134,7 @@ lazy val dbJdbc = (project in file("db-interpreters/jdbc"))
     name := "Bones JDBC",
     libraryDependencies ++= Seq(
       "org.postgresql" % "postgresql" % "42.2.5",
+      "co.fs2" %% "fs2-core" % "1.0.4",
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
       "org.scalatest" %% "scalatest" % "3.0.7" % Test
     )
@@ -160,7 +161,7 @@ lazy val react = (project in file("client-interpreters/react"))
     libraryDependencies ++= Seq(
       "com.lihaoyi" %% "scalatags" % "0.6.7",
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
-      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+      "org.scalatest" %% "scalatest" % "3.0.7" % Test
     )
   ).dependsOn(core)
 lazy val examples = (project in file("examples/http4s-examples"))

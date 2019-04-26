@@ -373,8 +373,17 @@ object ValidationDefinition {
       override def description: String = s"minimum value of $min"
     }
 
+    case object Positive extends ValidationOp[BigDecimal] {
+      override def isValid: BigDecimal => Boolean = _ > BigDecimal(0)
+
+      override def defaultError(t: BigDecimal): String = s"$t must be positive"
+
+      override def description: String = s"positive"
+    }
+
     def min(m: BigDecimal) = Min(m)
     def max(m: BigDecimal) = Max(m)
+    val positive = Positive
 
   }
 

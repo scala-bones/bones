@@ -25,5 +25,6 @@ object Error {
     override def path: List[String] = List.empty
   }
   case class SystemError(path: List[String], th: Throwable, message: Option[String]) extends ExtractionError
+  case class NotFound[ID](id: ID, entityName: String, path: List[String]) extends ExtractionError
 
 }

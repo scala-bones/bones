@@ -1,21 +1,20 @@
 package com.bones.fullstack
 
 
-import com.bones.Definitions
-import com.bones.data.Value.BonesSchema
-import com.bones.http4s.HttpInterpreter
 import cats.effect._
 import cats.implicits._
 import com.bones.crud.Algebra.ServiceOps
-import com.bones.fullstack.CrudDbDefinitions.{DbError, WithId}
-import com.bones.jdbc.DbColumnInterpreter
+import com.bones.crud.WithId
+import com.bones.fullstack.CrudDbDefinitions.DbError
+import com.bones.http4s.HttpInterpreter
+import com.bones.jdbc.{DbColumnInterpreter, DbUtil}
+import com.bones.syntax.{kvp, long, lv}
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import javax.sql.DataSource
-import org.http4s.{Header, HttpRoutes}
-import org.http4s.syntax._
 import org.http4s.dsl.io._
-import org.http4s.implicits._
 import org.http4s.server.blaze._
+import org.http4s.server.middleware.CORS
+import org.http4s.{Header, HttpRoutes}
 
 object LocalhostAllIOApp {
 
@@ -23,7 +22,7 @@ object LocalhostAllIOApp {
     val config = new HikariConfig
     config.setJdbcUrl("jdbc:postgresql:bones")
     config.setDriverClassName("org.postgresql.Driver")
-    config.setUsername("postgres")
+    config.setUsername("tstevens")
     config.setPassword("")
     config.addDataSourceProperty("cachePrepStmts", "true")
     config.addDataSourceProperty("prepStmtCacheSize", "250")
@@ -41,12 +40,21 @@ object LocalhostAllIOApp {
   }
 
   def serviceRoutesWithCrudMiddleware[CI, CO, CE, RO, RE, UI, UO, UE, DO, DE](
-    serviceOp: ServiceOps[CI, WithId[CI], DbError, RO, DbError, UI, WithId[UI], DbError, DO, DbError],
+    serviceOp: ServiceOps[CI, CI, DbError, RO, DbError, UI, UI, DbError, DO, DbError],
     ds: DataSource
   ): HttpRoutes[IO] = {
+    val createOperationWitId = serviceOp.createOperation.map(c => c.copy(successSchema = WithId.entityWithId(DbUtil.longIdKeyValueDef, c.successSchema)))
+    val readOperationWithId = serviceOp.readOperation.map(r => r.copy(successSchemaForRead = WithId.entityWithId(DbUtil.longIdKeyValueDef, r.successSchemaForRead)))
+    val updateOperationWithId = serviceOp.updateOperation.map(u => u.copy(successSchema = WithId.entityWithId(DbUtil.longIdKeyValueDef, u.successSchema)))
+    val deleteOperationWithid = serviceOp.deleteOperation.map(d => d.copy(successSchema = WithId.entityWithId(DbUtil.longIdKeyValueDef, d.successSchema)))
+    val serviceOpWithId =
+      ServiceOps(serviceOp.path, createOperationWitId, readOperationWithId, updateOperationWithId, deleteOperationWithid)
+
     val middleware = CrudDbDefinitions(serviceOp, ds)
-    val interpreterRoutes = HttpInterpreter().forService[CI, WithId[CI], DbError, RO, DbError, UI, WithId[UI], DbError, DO, DbError](
-      serviceOp,
+
+
+    val interpreterRoutes = HttpInterpreter().forService[CI, WithId[Long,CI], DbError, WithId[Long,RO], DbError, UI, WithId[Long,UI], DbError, WithId[Long,DO], DbError](
+      serviceOpWithId,
       middleware.createF,
       middleware.readF,
       middleware.searchF,
@@ -65,8 +73,10 @@ abstract class LocalhostAllIOApp() extends IOApp {
 
   override def run(args: List[String]): IO[ExitCode] = {
 
+    val allServices = services
 
-    BlazeBuilder[IO].bindHttp(8080, "localhost").mountService(services, "/")
+
+    BlazeBuilder[IO].bindHttp(8080, "localhost").mountService(CORS(allServices), "/")
       .serve
       .compile.drain.as(ExitCode.Success)
 

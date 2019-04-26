@@ -4,6 +4,7 @@ import java.sql.{CallableStatement, Connection, SQLException}
 
 import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionError, SystemError}
+import com.bones.syntax.{kvp, long, lv}
 import javax.sql.DataSource
 
 import scala.annotation.tailrec
@@ -39,7 +40,7 @@ object DbUtil {
       case ex: SQLException => Left(NonEmptyList.one(SystemError(List.empty, ex, None)))
     }
 
-  def withStatement[A](con: CallableStatement)(f: CallableStatement => Either[NonEmptyList[SystemError],A]): Either[NonEmptyList[SystemError],A] =
+  def withStatement[A](con: CallableStatement)(f: CallableStatement => Either[NonEmptyList[ExtractionError],A]): Either[NonEmptyList[ExtractionError],A] =
     try {
       f(con)
     } catch {
@@ -47,4 +48,6 @@ object DbUtil {
     } finally {
       con.close()
     }
+
+  val longIdKeyValueDef = kvp("id", long(lv.min(0)))
 }

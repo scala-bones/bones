@@ -28,9 +28,11 @@ object Value {
 
   /** ValueDefinitionOp is the base trait to describe a piece of data which may be
     * a single value or an HList. */
-  sealed abstract class ValueDefinitionOp[A] {
+  sealed abstract class ValueDefinitionOp[A:Manifest] {
 
-    def asSumType[B](
+    val manifestOfA = manifest[A]
+
+    def asSumType[B:Manifest](
         description: String,
         fab: (A, List[String]) => Either[CanNotConvert[A, B], B],
         fba: B => A,
@@ -44,30 +46,32 @@ object Value {
   type ValueDefinition[A] = FreeApplicative[ValueDefinitionOp, A]
 
   /** Wraps a data definition to mark the field optional */
-  case class OptionalValueDefinition[B](valueDefinitionOp: ValueDefinitionOp[B])
+  case class OptionalValueDefinition[B:Manifest](valueDefinitionOp: ValueDefinitionOp[B])
       extends ValueDefinitionOp[Option[B]] {}
 
   /** Syntactic sugar to wrap the data definition in an Optional type. */
   trait ToOptionalData[B] { self: ValueDefinitionOp[B] =>
+    private implicit val manifestOfB = self.manifestOfA
     val optional: OptionalValueDefinition[B] = OptionalValueDefinition[B](self)
   }
 
   /** Syntactic sugar to wrap the definition in a List type. */
   trait ToListData[B] { self: ValueDefinitionOp[B] =>
+    private implicit val manifestOfB = self.manifestOfA
     val list: ListData[B] = ListData[B](self, List.empty)
   }
 
   final case class BooleanData(validations: List[ValidationOp[Boolean]])
       extends ValueDefinitionOp[Boolean]
       with ToOptionalData[Boolean]
-  final case class EitherData[A, B](definitionA: ValueDefinitionOp[A],
+  final case class EitherData[A:Manifest, B:Manifest](definitionA: ValueDefinitionOp[A],
                                     definitionB: ValueDefinitionOp[B])
       extends ValueDefinitionOp[Either[A, B]]
       with ToOptionalData[Either[A, B]] {}
   final case class LongData(validations: List[ValidationOp[Long]])
       extends ValueDefinitionOp[Long]
       with ToOptionalData[Long]
-  final case class ListData[T](tDefinition: ValueDefinitionOp[T],
+  final case class ListData[T:Manifest](tDefinition: ValueDefinitionOp[T],
                                validations: List[ValidationOp[List[T]]])
       extends ValueDefinitionOp[List[T]]
       with ToOptionalData[List[T]]
@@ -99,7 +103,6 @@ object Value {
       validations: List[ValidationOp[A]])
       extends ValueDefinitionOp[A]
       with ToOptionalData[A] {
-    val manifestOfA: Manifest[A] = manifest[A]
   }
 
   final case class EnumStringData[A <: Enum[A]: Manifest](
@@ -107,10 +110,9 @@ object Value {
       validations: List[ValidationOp[A]])
       extends ValueDefinitionOp[A]
       with ToOptionalData[A] {
-    val manifestOfA: Manifest[A] = manifest[A]
   }
 
-  final case class KvpGroupData[H <: HList, HL <: Nat](
+  final case class KvpGroupData[H <: HList : Manifest, HL <: Nat](
       kvpGroup: KvpGroup[H, HL],
       validations: List[ValidationOp[H]])
       extends ValueDefinitionOp[H]
@@ -130,10 +132,9 @@ object Value {
      fba: B => A,
      validations: List[ValidationOp[B]])
     extends ValueDefinitionOp[B] with ToOptionalData[B] with ToListData[B] with BonesSchema[B]{
-    val manifestOfA: Manifest[B] = manifest[B]
   }
 
-  final case class SumTypeData[A, B](
+  final case class SumTypeData[A, B:Manifest](
       from: ValueDefinitionOp[A],
       fab: (A, List[String]) => Either[CanNotConvert[A, B], B],
       fba: B => A,
