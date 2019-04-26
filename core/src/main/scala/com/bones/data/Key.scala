@@ -18,7 +18,7 @@ trait KeyValueDefinitionSugar {
   def kvp[A](key: String, valueDefinitionOp: ValueDefinitionOp[A]) =
     KeyValueDefinition(key, valueDefinitionOp)
 
-  def kvpGroup[H <: HList, HL <: Nat](key: String, kvpGroup: KvpGroup[H, HL]) =
+  def kvpGroup[H <: HList :Manifest, HL <: Nat](key: String, kvpGroup: KvpGroup[H, HL]) =
     KeyValueDefinition(key, KvpGroupData(kvpGroup, List.empty))
 
 }
@@ -48,7 +48,7 @@ trait Sugar {
     * @tparam T The type of each element.  Can be an EitherFieldDefinition if more than one type is expected in the list.
     * @return
     */
-  def list[T](dataDefinitionOp: ValueDefinitionOp[T],
+  def list[T:Manifest](dataDefinitionOp: ValueDefinitionOp[T],
               v: ValidationOp[List[T]]*) =
     ListData(dataDefinitionOp, v.toList)
 
@@ -76,7 +76,7 @@ trait Sugar {
   val bigDecimal: BigDecimalData = bigDecimal()
 
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
-  def either[A, B](definitionA: ValueDefinitionOp[A],
+  def either[A:Manifest, B:Manifest](definitionA: ValueDefinitionOp[A],
                    definitionB: ValueDefinitionOp[B]) =
     EitherData(definitionA, definitionB)
 
@@ -118,7 +118,7 @@ trait Sugar {
   def enum[A <: Enum[A]: Manifest](enums: List[A]): EnumStringData[A] =
     EnumStringData[A](enums, List.empty)
 
-  def kvpGroup[H <: HList, HL <: Nat](kvpGroup: KvpGroup[H, HL],
+  def kvpGroup[H <: HList:Manifest, HL <: Nat](kvpGroup: KvpGroup[H, HL],
                                       v: ValidationOp[H]*) =
     KvpGroupData(kvpGroup, v.toList)
 

@@ -7,6 +7,7 @@ import java.util.UUID
 import com.bones.data.Value._
 import shapeless.{::, HList, HNil, Nat}
 import DbUtil._
+import com.bones.crud.WithId
 import com.bones.data.Error.SystemError
 import javax.sql.DataSource
 
@@ -22,7 +23,7 @@ object DbInsertValues {
   type ID = Long
   type InsertPair[A] = Key => (Index, A) => (Index, List[(ColumnName, SetValue)])
 
-  def insertQuery[A](bonesSchema: BonesSchema[A]): DataSource => A => Either[SystemError, (ID,A)] = {
+  def insertQuery[A](bonesSchema: BonesSchema[A]): DataSource => A => Either[SystemError, WithId[ID,A]] = {
     val iq = insertQueryWithConnection(bonesSchema)
     ds => {
       a => {
@@ -38,7 +39,7 @@ object DbInsertValues {
     }
   }
 
-  def insertQueryWithConnection[A](bonesSchema: BonesSchema[A]): A => Connection => Either[SystemError, (ID,A) ] =
+  def insertQueryWithConnection[A](bonesSchema: BonesSchema[A]): A => Connection => Either[SystemError, WithId[Long,A] ] =
     bonesSchema match {
       case x: XMapData[h,n,b] => {
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
@@ -53,7 +54,7 @@ object DbInsertValues {
               statement.executeUpdate()
               val generatedKeys = statement.getGeneratedKeys
               try {
-                if (generatedKeys.next) Right( (generatedKeys.getLong(1), a ) )
+                if (generatedKeys.next) Right( WithId(generatedKeys.getLong(1), a ) )
                 else throw new SQLException("Creating user failed, no ID obtained.")
               } finally {
                 generatedKeys.close()

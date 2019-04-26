@@ -5,7 +5,7 @@ import java.time.ZonedDateTime
 import cats.effect.IO
 import com.bones.crud.Algebra.ServiceOps
 import com.bones.data.Value.KvpNil
-import com.bones.fullstack.CrudDbDefinitions.WithId
+import com.bones.fullstack.CrudDbDefinitions.DbError
 import com.bones.fullstack.LocalhostAllIOApp
 import com.bones.syntax._
 import com.bones.validation.ValidationDefinition.{BigDecimalValidation => dv, LongValidation => lv, StringValidation => sv}
@@ -17,32 +17,33 @@ import cats.implicits._
 
 object WaterfallDefinitions {
 
-  case class Error(error: String)
-  val errorDef = (kvp("error", string) :: KvpNil).convert[Error]
+//  case class Error(error: String)
+  val errorDef = (kvp("error", string) :: KvpNil).convert[DbError]
 
 
-  case class Waterfall(name: String, latitude: BigDecimal, longitude: BigDecimal, cubicFeetPerMinute: Option[Long], heightInInches: Option[Long])
+  case class ImperialMeasurement(feet: Long, inches: Long)
+  val imperialMeasurement = (
+    kvp("feet", long(lv.min(0))) ::
+    kvp("inches", long(lv.between(0,12))) ::
+    KvpNil
+  ).convert[ImperialMeasurement]
+
+  case class Waterfall(name: String, latitude: BigDecimal, longitude: BigDecimal, cubicFeetPerMinute: Option[BigDecimal], height: Option[ImperialMeasurement])
   val waterfall = (
-    kvp("name", string(sv.alphanum, sv.max(500))) ::
+    kvp("name", string(sv.max(500))) ::
       kvp("latitude", bigDecimal(dv.min(-180), dv.max(180))) ::
       kvp("longitude", bigDecimal(dv.min(-180), dv.max(180))) ::
-      kvp("cubicFeetPerMinute", long(lv.positive).optional) ::
-      kvp("heightInInches", long(lv.positive).optional) ::
+      kvp("cubicFeetPerMinute", bigDecimal(dv.positive).optional) ::
+      kvp("height", imperialMeasurement.optional) ::
       KvpNil
     ).convert[Waterfall]
 
-  val waterfallWithId = (
-    kvp("id", long(lv.min(0))) ::
-    waterfall :><:
-    KvpNil
-  ).convert[WithId[Waterfall]]
-
   val waterfallService =
     ServiceOps.withPath("waterfall")
-      .withCreate(waterfall, waterfallWithId, errorDef)
-      .withRead(waterfallWithId, errorDef)
-      .withUpdate(waterfall, waterfallWithId, errorDef)
-      .withDelete(waterfallWithId, errorDef)
+      .withCreate(waterfall, waterfall, errorDef)
+      .withRead(waterfall, errorDef)
+      .withUpdate(waterfall, waterfall, errorDef)
+      .withDelete(waterfall, errorDef)
 
   object WaterVolume extends Enumeration {
     type WaterVolume = Value
@@ -59,18 +60,12 @@ object WaterfallDefinitions {
       KvpNil
     ).convert[WaterfallVisit]
 
-  val waterfallVisitWithId = (
-    kvp("id", long(lv.min(0))) ::
-    waterfallVisit :><:
-    KvpNil
-  ).convert[WithId[WaterfallVisit]]
-
   val waterfallVisitService =
     ServiceOps.withPath("waterfallVisit")
-      .withCreate(waterfallVisit, waterfallVisitWithId, errorDef)
-      .withRead(waterfallVisitWithId, errorDef)
-      .withUpdate(waterfallVisit, waterfallVisitWithId, errorDef)
-      .withDelete(waterfallVisitWithId, errorDef)
+      .withCreate(waterfallVisit, waterfallVisit, errorDef)
+      .withRead(waterfallVisit, errorDef)
+      .withUpdate(waterfallVisit, waterfallVisit, errorDef)
+      .withDelete(waterfallVisit, errorDef)
 
 }
 
@@ -82,6 +77,9 @@ object WaterfallApp extends LocalhostAllIOApp() {
   val ds = localhostDataSource
 
   override def services: HttpRoutes[IO] = {
-    dbSchemaEndpoint(waterfallService) <+> dbSchemaEndpoint(waterfallVisitService)
+    serviceRoutesWithCrudMiddleware(waterfallService, ds) <+>
+//    serviceRoutesWithCrudMiddleware(waterfallVisitService, ds) <+>
+      dbSchemaEndpoint(waterfallService) <+>
+      dbSchemaEndpoint(waterfallVisitService)
   }
 }
