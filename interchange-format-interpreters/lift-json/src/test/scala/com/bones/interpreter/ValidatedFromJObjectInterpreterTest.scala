@@ -13,7 +13,7 @@ class ValidatedFromJObjectInterpreterTest extends FunSuite with Checkers {
 
   test("json to string") {
     val str = kvp("test", string()) :: KvpNil
-    val validated = interpreter.kvpGroup(str)
+    val validated = interpreter.kvpHList(str)
 
     val input = JObject(JField("test", JString("Hello World")))
     val output = validated.apply(input, List.empty)
@@ -26,7 +26,7 @@ class ValidatedFromJObjectInterpreterTest extends FunSuite with Checkers {
 
   test ("either") {
     val eitherDesc = kvp("test", either(string, long)) :: KvpNil
-    val prog = interpreter.kvpGroup(eitherDesc)
+    val prog = interpreter.kvpHList(eitherDesc)
 
     val validInput = JObject(JField("test", JString("Hello String")))
 

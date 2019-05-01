@@ -61,17 +61,17 @@ trait KvpValidateInputInterpreter[IN] {
     } yield a
 
 
-  def kvpGroup[H <: HList, HL <: Nat](group: KvpGroup[H, HL]): (IN, List[String]) => Either[NonEmptyList[ExtractionError],H] = {
+  def kvpHList[H <: HList, HL <: Nat](group: KvpHList[H, HL]): (IN, List[String]) => Either[NonEmptyList[ExtractionError],H] = {
     group match {
       case KvpNil =>
         (_: IN, _: List[String]) =>
           Right(HNil)
 
-      case op: OptionalKvpGroup[h,hl] => ???
+      case op: OptionalKvpHList[h,hl] => ???
 
-      case op: KvpGroupHead[H, al, h, hl, t, tl] => {
-        val headInterpreter = kvpGroup(op.head)
-        val tailInterpreter = kvpGroup(op.tail)
+      case op: KvpHListHead[H, al, h, hl, t, tl] => {
+        val headInterpreter = kvpHList(op.head)
+        val tailInterpreter = kvpHList(op.tail)
 
         (in: IN, path: List[String]) => {
 
@@ -86,8 +86,8 @@ trait KvpValidateInputInterpreter[IN] {
       }
 
       case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] => {
-        val headInterpreter = kvpGroup(op.xmapData.from)
-        val tailInterpreter = kvpGroup(op.tail)
+        val headInterpreter = kvpHList(op.xmapData.from)
+        val tailInterpreter = kvpHList(op.tail)
         (in: IN, path: List[String]) => {
           Util.eitherMap2(headInterpreter(in, path),
             tailInterpreter(in, path))((l1: xl, l2: ht) => {
@@ -103,7 +103,7 @@ trait KvpValidateInputInterpreter[IN] {
 
 
         val headInterpreter = valueDefinition(op.fieldDefinition.op)
-        val tailInterpreter = kvpGroup(op.tail)
+        val tailInterpreter = kvpHList(op.tail)
 
         (in: IN, path: List[String]) => {
 
@@ -232,8 +232,8 @@ trait KvpValidateInputInterpreter[IN] {
         {
           valueF(in, path).flatMap(res => op.fab(res, path).left.map(NonEmptyList.one))
         }
-      case op: KvpGroupData[h, hl] => {
-        val fg = kvpGroup(op.kvpGroup)
+      case op: KvpHListData[h, hl] => {
+        val fg = kvpHList(op.kvpHList)
         (jsonOpt: Option[IN], path: List[String]) =>
         {
           jsonOpt match {
@@ -246,7 +246,7 @@ trait KvpValidateInputInterpreter[IN] {
         }
       }
       case x: XMapData[a, al, A] => {
-        val kvp = kvpGroup(x.from)
+        val kvp = kvpHList(x.from)
         (jOpt: Option[IN], path: List[String]) =>
           jOpt match {
             case None    => Left(NonEmptyList.one(RequiredData(path, null)))

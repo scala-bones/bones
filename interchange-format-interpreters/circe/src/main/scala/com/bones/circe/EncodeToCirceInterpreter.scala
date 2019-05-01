@@ -13,7 +13,7 @@ object EncodeToCirceInterpreter extends KvpOutputInterpreter[Json] {
 
   override def empty: Json = Json.obj()
 
-  override def appendGroup(prefix: Json, postfix: Json): Json = {
+  override def combine(prefix: Json, postfix: Json): Json = {
     val v1 = prefix.asObject.toList.flatMap(_.toList)
     val v2 = postfix.asObject.toList.flatMap(_.toList)
     Json.obj( v1 ::: v2 :_*)

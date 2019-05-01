@@ -91,30 +91,30 @@ object ProtoFileInterpreter {
   def fromSchema[A](dc: BonesSchema[A]): Message = {
     dc match {
       case t: XMapData[a, al, b] =>
-        val (messageFields, nestedTypes, lastIndex) = kvpGroup(t.from)(0)
+        val (messageFields, nestedTypes, lastIndex) = kvpHList(t.from)(0)
         Message(t.manifestOfA.runtimeClass.getSimpleName, messageFields, nestedTypes)
     }
   }
 
-  def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): Int => (Vector[MessageField], Vector[NestedType], Int) = lastIndex => {
+  def kvpHList[H<:HList,HL<:Nat](group: KvpHList[H,HL]): Int => (Vector[MessageField], Vector[NestedType], Int) = lastIndex => {
     group match {
       case KvpNil => (Vector.empty, Vector.empty, lastIndex)
       case op: KvpSingleValueHead[h, t, tl, a] => {
         val thisIndex = lastIndex + 1
         val r = valueDefinition(op.fieldDefinition.op)(op.fieldDefinition.key, thisIndex)
-        val (messageFields, nestedTypes, lastUsedIndex) = kvpGroup(op.tail)(thisIndex)
+        val (messageFields, nestedTypes, lastUsedIndex) = kvpHList(op.tail)(thisIndex)
         (messageFields :+ r._1, r._2 ++ nestedTypes, lastUsedIndex)
       }
       case op: KvpXMapDataHead[a,ht,nt,ho,hx,nx] =>
-        val head = kvpGroup(op.xmapData.from)(lastIndex)
-        val tail = kvpGroup(op.tail)(head._3)
+        val head = kvpHList(op.xmapData.from)(lastIndex)
+        val tail = kvpHList(op.tail)(head._3)
         (head._1 ++ tail._1, head._2 ++ tail._2, tail._3)
-      case op: KvpGroupHead[a, al, h, hl, t, tl] =>
-        val head = kvpGroup(op.head)(lastIndex)
-        val tail = kvpGroup(op.tail)(head._3)
+      case op: KvpHListHead[a, al, h, hl, t, tl] =>
+        val head = kvpHList(op.head)(lastIndex)
+        val tail = kvpHList(op.tail)(head._3)
         (head._1 ++ tail._1, head._2 ++ tail._2, tail._3)
-      case op: OptionalKvpGroup[h,hl] =>
-        kvpGroup(op.kvpGroup)(lastIndex)
+      case op: OptionalKvpHList[h,hl] =>
+        kvpHList(op.kvpHList)(lastIndex)
     }
   }
 
@@ -138,12 +138,12 @@ object ProtoFileInterpreter {
       case esd: EnumStringData[a] => (MessageField(PbString, true, false, name, index), Vector.empty)
       case st: SumTypeData[a,b] =>
         (MessageField(PbString, true, false, name, index), Vector.empty)
-      case kvp: KvpGroupData[h,hl] =>
-        val result = kvpGroup(kvp.kvpGroup)(0)
+      case kvp: KvpHListData[h,hl] =>
+        val result = kvpHList(kvp.kvpHList)(0)
         val nested = NestedMessage(name, result._1)
         (MessageField(NestedDataType(name), true, false, name, index), Vector(nested))
       case t: XMapData[h,hl,a] =>
-        val (messageFields, _, _) = kvpGroup(t.from)(0)
+        val (messageFields, _, _) = kvpHList(t.from)(0)
         val nested = NestedMessage(name, messageFields)
         (MessageField(NestedDataType(name), true, false, name, index), Vector(nested))
 

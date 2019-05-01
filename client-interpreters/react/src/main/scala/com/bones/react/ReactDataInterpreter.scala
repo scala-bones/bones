@@ -23,17 +23,17 @@ object ReactDataInterpreter {
 
 
 
-  def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): List[ReactComponentData] = {
+  def kvpHList[H<:HList,HL<:Nat](group: KvpHList[H,HL]): List[ReactComponentData] = {
     group match {
       case KvpNil => List.empty
       case op: KvpSingleValueHead[h, t, tl, a] =>
-        valueDefinition(op.fieldDefinition.op)(Some(op.fieldDefinition.key)) ++ kvpGroup(op.tail)
-      case op: KvpGroupHead[a, al, h, hl, t, tl] =>
-        kvpGroup(op.head) ++ kvpGroup(op.tail)
-      case op: OptionalKvpGroup[h,hl] =>
-        kvpGroup(op.kvpGroup)
+        valueDefinition(op.fieldDefinition.op)(Some(op.fieldDefinition.key)) ++ kvpHList(op.tail)
+      case op: KvpHListHead[a, al, h, hl, t, tl] =>
+        kvpHList(op.head) ++ kvpHList(op.tail)
+      case op: OptionalKvpHList[h,hl] =>
+        kvpHList(op.kvpHList)
       case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] =>
-        kvpGroup(op.xmapData.from) ++ kvpGroup(op.tail)
+        kvpHList(op.xmapData.from) ++ kvpHList(op.tail)
     }
   }
 
@@ -61,8 +61,8 @@ object ReactDataInterpreter {
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'enumeration'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
       case esd: EnumStringData[a] =>
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'enumeration'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
-      case kvp: KvpGroupData[h,hl] =>
-        val groupData = kvpGroup(kvp.kvpGroup)
+      case kvp: KvpHListData[h,hl] =>
+        val groupData = kvpHList(kvp.kvpHList)
         keyOpt => {
           keyOpt.map(key => {
             val realTypes = s"""${key}:{ ${groupData.map(_.realTypes).mkString(",")}"""
@@ -71,7 +71,7 @@ object ReactDataInterpreter {
           }).toList
         }
       case x: XMapData[a,al,b] =>
-        val groupData = kvpGroup(x.from)
+        val groupData = kvpHList(x.from)
         keyOpt => {
           keyOpt match {
             case Some(key) => {
