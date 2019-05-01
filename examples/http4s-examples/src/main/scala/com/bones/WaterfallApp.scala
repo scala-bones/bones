@@ -1,6 +1,6 @@
 package com.bones
 
-import java.time.ZonedDateTime
+import java.time.{LocalDateTime, ZonedDateTime}
 
 import cats.effect.IO
 import com.bones.crud.Algebra.ServiceOps
@@ -28,30 +28,37 @@ object WaterfallDefinitions {
     KvpNil
   ).convert[ImperialMeasurement]
 
-  case class Waterfall(name: String, latitude: BigDecimal, longitude: BigDecimal, cubicFeetPerMinute: Option[BigDecimal], height: Option[ImperialMeasurement])
-  val waterfall = (
-    kvp("name", string(sv.max(500))) ::
-      kvp("latitude", bigDecimal(dv.min(-180), dv.max(180))) ::
-      kvp("longitude", bigDecimal(dv.min(-180), dv.max(180))) ::
-      kvp("cubicFeetPerMinute", bigDecimal(dv.positive).optional) ::
-      kvp("height", imperialMeasurement.optional) ::
-      KvpNil
-    ).convert[Waterfall]
-
-  val waterfallService =
-    ServiceOps.basicCrud("waterfall", waterfall, errorDef)
-
   object WaterVolume extends Enumeration {
     type WaterVolume = Value
     val Low, Average, High = Value
   }
 
 
-  case class WaterfallVisit(waterfallId: Long, visitDate: ZonedDateTime, waterVolume: WaterVolume.WaterVolume, notes: Option[String])
+  case class Waterfall(name: String, latitude: BigDecimal, longitude: BigDecimal, cubicFeetPerMinute: Option[BigDecimal],
+                       height: Option[ImperialMeasurement], waterValue: WaterVolume.Value, // discoveryDate: ZonedDateTime,
+                       wantToVisit: Boolean)
+  val waterfall = (
+    kvp("name", string(sv.max(200))) ::
+      kvp("latitude", bigDecimal(dv.min(-180), dv.max(180))) ::
+      kvp("longitude", bigDecimal(dv.min(-180), dv.max(180))) ::
+      kvp("cubicFeetPerMinute", bigDecimal(dv.positive).optional) ::
+      kvp("height", imperialMeasurement.optional) ::
+      kvp("waterVolume", enumeration[WaterVolume.Value](WaterVolume)) ::
+//      kvp("discoveryDate", isoDateTime()) ::
+      kvp("wantToVisit", boolean) ::
+      KvpNil
+    ).convert[Waterfall]
+
+  val waterfallService =
+    ServiceOps.basicCrud("waterfall", waterfall, errorDef)
+
+
+
+  case class WaterfallVisit(waterfallId: Long, waterVolume: WaterVolume.Value, notes: Option[String])
   val waterfallVisit = (
     kvp("waterfallId", long(lv.min(1))) ::
-      kvp("visitDate", isoDate()) ::
-      kvp("waterVolume", enumeration[WaterVolume.WaterVolume](WaterVolume)) ::
+//      kvp("visitDate", isoDate()) ::
+      kvp("waterVolume", enumeration[WaterVolume.Value](WaterVolume)) ::
       kvp("notes", string.optional) ::
       KvpNil
     ).convert[WaterfallVisit]
@@ -76,6 +83,7 @@ object WaterfallApp extends LocalhostAllIOApp() {
     serviceRoutesWithCrudMiddleware(waterfallService, ds) <+>
 //    serviceRoutesWithCrudMiddleware(waterfallVisitService, ds) <+>
       dbSchemaEndpoint(waterfallService) <+>
-      dbSchemaEndpoint(waterfallVisitService)
+      dbSchemaEndpoint(waterfallVisitService) <+>
+      reactEndpoints(List(waterfall, waterfallVisit))
   }
 }

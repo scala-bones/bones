@@ -2,6 +2,7 @@ package com.bones.jdbc
 
 import java.sql.{ResultSet, SQLException}
 import java.time.{ZoneId, ZonedDateTime}
+import java.util.Date
 
 import cats.data.NonEmptyList
 import com.bones.Util
@@ -82,8 +83,8 @@ object ResultSetInterpreter {
           .flatMap(str => stringToUuid(str, path))
       case dd: DateTimeData => (path, fieldName) => rs =>
         catchSql(rs.getDate(fieldName, utcCalendar), path, dd)
-          .map(date => ZonedDateTime.ofInstant(date.toInstant, ZoneId.of("UTC")))
-      case bd: BigDecimalData => (path, fieldName) => rs => catchSql(BigDecimal(rs.getBigDecimal(fieldName)), path, bd)
+          .map(date => ZonedDateTime.ofInstant(new Date(date.getTime).toInstant, ZoneId.of("UTC")))
+      case bd: BigDecimalData => (path, fieldName) => rs => catchSql(rs.getBigDecimal(fieldName), path, bd).map(bd => BigDecimal(bd))
       case ba: ByteArrayData => (path, fieldName) => rs => catchSql(rs.getBytes(fieldName), path, ba)
       case ld: ListData[t] => ???
       case ed: EitherData[a,b] => ???

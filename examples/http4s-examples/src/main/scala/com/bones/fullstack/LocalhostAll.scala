@@ -5,9 +5,11 @@ import cats.effect._
 import cats.implicits._
 import com.bones.crud.Algebra.ServiceOps
 import com.bones.crud.WithId
+import com.bones.data.Value.BonesSchema
 import com.bones.fullstack.CrudDbDefinitions.DbError
 import com.bones.http4s.HttpInterpreter
 import com.bones.jdbc.{DbColumnInterpreter, DbUtil}
+import com.bones.react.{CreateReactFile, CreateReactFiles}
 import com.bones.syntax.{kvp, long, lv}
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import javax.sql.DataSource
@@ -39,6 +41,14 @@ object LocalhostAllIOApp {
     }).getOrElse(HttpRoutes.empty)
   }
 
+  def reactEndpoints(schemas: List[BonesSchema[_]]): HttpRoutes[IO] = {
+    val (indexJs, indexHtml, library) = CreateReactFiles.fromSchemas(schemas)
+    HttpRoutes.of[IO] {
+      case GET -> Root / "webapp" / "index.html" => Ok(indexHtml, Header("Content-Type", "text/html"))
+      case GET -> Root / "webapp" / "index.js" => Ok(library + "\n" + indexJs, Header("Content-Type", "text/javascript"))
+    }
+  }
+
   def serviceRoutesWithCrudMiddleware[CI, CO, CE, RO, RE, UI, UO, UE, DO, DE](
     serviceOp: ServiceOps[CI, CI, DbError, RO, DbError, UI, UI, DbError, DO, DbError],
     ds: DataSource
@@ -62,6 +72,7 @@ object LocalhostAllIOApp {
       middleware.deleteF
     )
     val dbRoutes = dbSchemaEndpoint(serviceOp)
+
     interpreterRoutes <+> dbRoutes
 
   }
