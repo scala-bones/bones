@@ -21,25 +21,31 @@ object FormInterpreter {
   type Key = String
 
   trait InputType[A]
-  case class StringInput(maxLength: Int, defaultValue: Option[String]) extends InputType[String]
-  case class SelectInput(options: List[(Value,DisplayValue)], default: Option[(Value,DisplayValue)]) extends InputType[String]
-  case class Checkbox(default: Option[Boolean]) extends InputType[Boolean]
-  case class LongInput(default: Option[Long]) extends InputType[Long]
-  case class BigDecimalInput(default: Option[BigDecimal]) extends InputType[BigDecimal]
-  case class DateInput(default: Option[ZonedDateTime]) extends InputType[ZonedDateTime]
-  case class TextArea(maxLength: Int, default: Option[String]) extends InputType[String]
+  case class StringInput(maxLength: Int) extends InputType[String]
+  case class SelectInput(options: List[(Value,DisplayValue)]) extends InputType[String]
+  case object Checkbox extends InputType[Boolean]
+  case class LongInput(maxLength: Int) extends InputType[Long]
+  case object BigDecimalInput extends InputType[BigDecimal]
+  case object DateInput extends InputType[ZonedDateTime]
+  case class TextArea(maxLength: Int) extends InputType[String]
   case class File() extends InputType[Array[Byte]]
-  case class ReactComponentReference(parentLabel: String) extends InputType[HList]
+  case class ReactComponentReference(childLabel: String) extends InputType[HList]
 
 
 
-  case class ReactFormValue(inputName: String, label: String, required: Boolean, inputType: InputType[_])
-  case class ReactComponent(name: String, label: String, formValues: List[ReactFormValue])
+  case class ReactFormValue(label: String, required: Boolean, inputType: InputType[_]) {
+    val inputName = keyToName(label)
+  }
+  case class ReactValueContainer(label: String, formValues: List[ReactFormValue], options: List[(String,List[String])]) {
+    val name = keyToName(label)
+  }
 
-  def createComponents[A](bonesSchema: BonesSchema[A]): List[ReactComponent] = {
+  def createComponents[A](bonesSchema: BonesSchema[A]): List[ReactValueContainer] = {
     bonesSchema match {
       case x: XMapData[a,al,b] => {
-        val componentKey = x.manifestOfA.runtimeClass.getSimpleName
+        val simpleName = x.manifestOfA.runtimeClass.getSimpleName
+        val componentKey = Character.toLowerCase(simpleName.charAt(0)) + simpleName.substring(1)
+
         // We can ignore the first form value as we do not need it at the entry point
         val (_, components) = valueDefinition(x)(componentKey)
         components
@@ -47,7 +53,7 @@ object FormInterpreter {
     }
   }
 
-  def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): (List[ReactFormValue], List[ReactComponent]) = {
+  def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): (List[ReactFormValue], List[ReactValueContainer]) = {
     group match {
       case KvpNil => (List.empty, List.empty)
       case op: KvpSingleValueHead[h, t, tl, a] =>
@@ -68,7 +74,7 @@ object FormInterpreter {
 
   private def keyToName(key: String) : String = key
 
-  def valueDefinition[A](fgo: ValueDefinitionOp[A]): Key => (ReactFormValue, List[ReactComponent]) =
+  def valueDefinition[A](fgo: ValueDefinitionOp[A]): Key => (ReactFormValue, List[ReactValueContainer]) =
     fgo match {
       case op: OptionalValueDefinition[a] =>
         val child = valueDefinition(op.valueDefinitionOp)
@@ -77,49 +83,50 @@ object FormInterpreter {
           (form.copy(required = false), component)
         }
       case ob: BooleanData =>
-        key => ( ReactFormValue(key, keyToName(key), false, Checkbox(None)), List.empty )
+        key => ( ReactFormValue(key, false, Checkbox), List.empty )
       case rs: StringData =>
         key =>
           val maxLength = rs.validations.flatMap(v => v match {
             case MaxLength(l) => Some(l)
+            case _ => None
           }).headOption
 
           val inputType = maxLength match {
-            case Some(i) if i > 50 => TextArea(i, None)
-            case Some(i) => StringInput(i, None)
-            case None => TextArea(Int.MaxValue, None)
+            case Some(i) if i > 200 => TextArea(i)
+            case Some(i) => StringInput(i)
+            case None => TextArea(Int.MaxValue)
           }
-          ( ReactFormValue(key, keyToName(key), false, inputType), List.empty )
+          ( ReactFormValue( key, false, inputType), List.empty )
       case ri: LongData =>
         key =>
-          ( ReactFormValue(key, keyToName(key), false, LongInput(None)), List.empty )
+          ( ReactFormValue( key, false, LongInput(20)), List.empty )
       case uu: UuidData =>
-        key => ( ReactFormValue(key, keyToName(key), false, StringInput(36, None)), List.empty )
+        key => ( ReactFormValue( key, false, StringInput(36)), List.empty )
       case dd: DateTimeData =>
-        key => ( ReactFormValue(key, keyToName(key), false, DateInput(None)), List.empty )
+        key => ( ReactFormValue( key, false, DateInput), List.empty )
       case bd: BigDecimalData =>
-        key => ( ReactFormValue(key, keyToName(key), false, BigDecimalInput(None)), List.empty )
+        key => ( ReactFormValue( key, false, BigDecimalInput), List.empty )
       case ba: ByteArrayData =>
-        key => ( ReactFormValue(key, keyToName(key), false, File()), List.empty)
+        key => ( ReactFormValue( key, false, File()), List.empty)
       case ld: ListData[t] => ???
       case ed: EitherData[a,b] => ???
       case esd: EnumerationStringData[a] =>
-        val values: List[(Value, DisplayValue)] = esd.enumeration.values.map(v => (v.toString, keyToName(v.toString))).toList.sortBy(_._1)
-        key => ( ReactFormValue(key, keyToName(key), false, SelectInput(values, None)), List.empty )
+        val values: List[(Value, DisplayValue)] = esd.enumeration.values.map(v => (keyToName(v.toString), v.toString)).toList.sortBy(_._1)
+        key => ( ReactFormValue( key, false, SelectInput(values)), List.empty )
       case esd: EnumStringData[a] =>
-        val values: List[(Value, DisplayValue)] = esd.enums.map(v => (v.toString, keyToName(v.toString))).sortBy(_._1)
-        key => ( ReactFormValue(key, keyToName(key), false, SelectInput(values, None)), List.empty )
+        val values: List[(Value, DisplayValue)] = esd.enums.map(v => (keyToName(v.toString), v.toString)).sortBy(_._1)
+        key => ( ReactFormValue( key, false, SelectInput(values)), List.empty )
       case kvp: KvpGroupData[h,hl] =>
         val (childForms, childComponents) = kvpGroup(kvp.kvpGroup)
         key => {
-          val newComponent = ReactComponent(keyToName(key), key, childForms)
-          (ReactFormValue(keyToName(key), key, false, ReactComponentReference(key)), newComponent :: childComponents)
+          val newComponent = ReactValueContainer(key, childForms, List.empty)
+          (ReactFormValue( key, false, ReactComponentReference(key)), newComponent :: childComponents)
         }
       case t: XMapData[a, al, b] =>
         val (childForms, childComponents) = kvpGroup(t.from)
         key => {
-          val newComponent = ReactComponent(keyToName(key), key, childForms)
-          (ReactFormValue(keyToName(key), key, false, ReactComponentReference(key)), newComponent :: childComponents)
+          val newComponent = ReactValueContainer( key, childForms, List.empty)
+          (ReactFormValue( key, false, ReactComponentReference(key)), newComponent :: childComponents)
         }
       case s: SumTypeData[a,b] =>
         valueDefinition(s.from)

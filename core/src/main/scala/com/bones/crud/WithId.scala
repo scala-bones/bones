@@ -15,4 +15,6 @@ object WithId {
           ).convert[WithId[ID,A]]
     }
 }
+
+/** Provides the ability to couple an ID with an Entity A, see companion class for BonesSchema */
 case class WithId[ID,A](id: ID, a: A)
