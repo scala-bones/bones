@@ -18,8 +18,8 @@ trait KeyValueDefinitionSugar {
   def kvp[A](key: String, valueDefinitionOp: ValueDefinitionOp[A]) =
     KeyValueDefinition(key, valueDefinitionOp)
 
-  def kvpGroup[H <: HList :Manifest, HL <: Nat](key: String, kvpGroup: KvpGroup[H, HL]) =
-    KeyValueDefinition(key, KvpGroupData(kvpGroup, List.empty))
+  def kvpHList[H <: HList :Manifest, HL <: Nat](key: String, kvpHList: KvpHList[H, HL]) =
+    KeyValueDefinition(key, KvpHListData(kvpHList, List.empty))
 
 }
 
@@ -118,8 +118,8 @@ trait Sugar {
   def enum[A <: Enum[A]: Manifest](enums: List[A]): EnumStringData[A] =
     EnumStringData[A](enums, List.empty)
 
-  def kvpGroup[H <: HList:Manifest, HL <: Nat](kvpGroup: KvpGroup[H, HL],
-                                      v: ValidationOp[H]*) =
-    KvpGroupData(kvpGroup, v.toList)
+  def kvpHList[H <: HList:Manifest, HL <: Nat](kvpHList: KvpHList[H, HL],
+                                               v: ValidationOp[H]*) =
+    KvpHListData(kvpHList, v.toList)
 
 }

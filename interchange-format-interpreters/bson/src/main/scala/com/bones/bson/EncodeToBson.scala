@@ -25,7 +25,7 @@ object EncodeToBson extends KvpOutputInterpreter[BSONValue] {
   @inline
   val empty: BSONValue = BSONDocument.empty
   @inline
-  def appendGroup(pre: BSONValue, post: BSONValue) : BSONValue = {
+  def combine(pre: BSONValue, post: BSONValue) : BSONValue = {
     (pre, post) match {
       case (BSONDocument(preElement), BSONDocument(postElements)) => BSONDocument(preElement.append(postElements))
       case _ => throw new RuntimeException("pre and post must be BSONDocument options")

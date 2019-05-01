@@ -160,7 +160,7 @@ class ValidationTest extends FunSuite {
 //
 //    //createOperation the program that is responsible for converting JSON into a CC.
 ////    val jsonToCCProgram = creditCardSchema.lift.foldMap[ValidatedFromJObjectOpt](ValidatedFromJObjectInterpreter())
-//    val jsonToCCProgram = ValidatedFromJObjectInterpreter().kvpGroup(creditCardSchema)
+//    val jsonToCCProgram = ValidatedFromJObjectInterpreter().kvpHList(creditCardSchema)
 //
 //    //here, we will test that just the validations step is working
 //    val btCc = jsonToCCProgram.apply(parsed)

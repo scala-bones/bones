@@ -15,7 +15,7 @@ object EncodeToJValueInterpreter extends KvpOutputInterpreter[JValue] {
 
   override def empty: JValue = JObject()
 
-  override def appendGroup(prefix: JValue, postfix: JValue): JValue =
+  override def combine(prefix: JValue, postfix: JValue): JValue =
     (prefix, postfix) match {
       case ( JObject(fields), JObject(fields2) ) => JObject(fields ::: fields2)
       case (_,_) => JObject()

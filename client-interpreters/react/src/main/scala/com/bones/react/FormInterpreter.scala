@@ -53,21 +53,21 @@ object FormInterpreter {
     }
   }
 
-  def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): (List[ReactFormValue], List[ReactValueContainer]) = {
+  def kvpHList[H<:HList,HL<:Nat](group: KvpHList[H,HL]): (List[ReactFormValue], List[ReactValueContainer]) = {
     group match {
       case KvpNil => (List.empty, List.empty)
       case op: KvpSingleValueHead[h, t, tl, a] =>
         val (headFormValue, headComponents) = valueDefinition(op.fieldDefinition.op)(op.fieldDefinition.key)
-        val (tailFormValues, tailComponents) = kvpGroup(op.tail)
+        val (tailFormValues, tailComponents) = kvpHList(op.tail)
         (headFormValue :: tailFormValues, headComponents ::: tailComponents)
-      case op: KvpGroupHead[a, al, h, hl, t, tl] =>
-        val (headFormValues, headComponents) = kvpGroup(op.head)
-        val (tailFormValues, tailComponents) = kvpGroup(op.tail)
+      case op: KvpHListHead[a, al, h, hl, t, tl] =>
+        val (headFormValues, headComponents) = kvpHList(op.head)
+        val (tailFormValues, tailComponents) = kvpHList(op.tail)
         (headFormValues ::: tailFormValues, headComponents ::: tailComponents)
-      case op: OptionalKvpGroup[h,hl] => ???
+      case op: OptionalKvpHList[h,hl] => ???
       case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] =>
-        val (headFormValues, headComponents) = kvpGroup(op.xmapData.from)
-        val (tailFormValues, tailComponents) = kvpGroup(op.tail)
+        val (headFormValues, headComponents) = kvpHList(op.xmapData.from)
+        val (tailFormValues, tailComponents) = kvpHList(op.tail)
         (headFormValues ::: tailFormValues, headComponents ::: tailComponents)
     }
   }
@@ -116,14 +116,14 @@ object FormInterpreter {
       case esd: EnumStringData[a] =>
         val values: List[(Value, DisplayValue)] = esd.enums.map(v => (keyToName(v.toString), v.toString)).sortBy(_._1)
         key => ( ReactFormValue( key, false, SelectInput(values)), List.empty )
-      case kvp: KvpGroupData[h,hl] =>
-        val (childForms, childComponents) = kvpGroup(kvp.kvpGroup)
+      case kvp: KvpHListData[h,hl] =>
+        val (childForms, childComponents) = kvpHList(kvp.kvpHList)
         key => {
           val newComponent = ReactValueContainer(key, childForms, List.empty)
           (ReactFormValue( key, false, ReactComponentReference(key)), newComponent :: childComponents)
         }
       case t: XMapData[a, al, b] =>
-        val (childForms, childComponents) = kvpGroup(t.from)
+        val (childForms, childComponents) = kvpHList(t.from)
         key => {
           val newComponent = ReactValueContainer( key, childForms, List.empty)
           (ReactFormValue( key, false, ReactComponentReference(key)), newComponent :: childComponents)

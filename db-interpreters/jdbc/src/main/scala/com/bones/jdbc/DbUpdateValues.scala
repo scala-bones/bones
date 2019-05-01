@@ -58,12 +58,12 @@ object DbUpdateValues {
       }
     }
 
-  def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): Index => DefinitionResult[H] = {
+  def kvpHList[H<:HList,HL<:Nat](group: KvpHList[H,HL]): Index => DefinitionResult[H] = {
     group match {
       case KvpNil => i => DefinitionResult(i, List.empty, (h: HNil) => List.empty)
       case op: KvpSingleValueHead[h, t, tl, a] => {
         val headF = valueDefinition(op.fieldDefinition.op)
-        val tailF = kvpGroup(op.tail)
+        val tailF = kvpHList(op.tail)
         (i: Index) => {
           val headResult = headF(i,op.fieldDefinition.key)
           val tailResult = tailF(headResult.lastIndex)
@@ -76,8 +76,8 @@ object DbUpdateValues {
         }
       }
       case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] => {
-        val headF = kvpGroup(op.xmapData.from)
-        val tailF = kvpGroup(op.tail)
+        val headF = kvpHList(op.xmapData.from)
+        val tailF = kvpHList(op.tail)
         (i: Index) => {
           val headResult = headF(i)
           val tailResult = tailF(headResult.lastIndex)
@@ -88,9 +88,9 @@ object DbUpdateValues {
           }
           DefinitionResult[H](tailResult.lastIndex, headResult.predefineUpdateStatements ::: tailResult.predefineUpdateStatements, f)
         }      }
-      case op: KvpGroupHead[a, al, h, hl, t, tl] => {
-        val headF = kvpGroup(op.head)
-        val tailF = kvpGroup(op.tail)
+      case op: KvpHListHead[a, al, h, hl, t, tl] => {
+        val headF = kvpHList(op.head)
+        val tailF = kvpHList(op.tail)
         (i: Index) => {
           val headResult = headF(i)
           val tailResult = tailF(headResult.lastIndex)
@@ -103,7 +103,7 @@ object DbUpdateValues {
           DefinitionResult[H](tailResult.lastIndex, headResult.predefineUpdateStatements ::: tailResult.predefineUpdateStatements, f)
         }
       }
-      case op: OptionalKvpGroup[h,hl] => ???
+      case op: OptionalKvpHList[h,hl] => ???
     }
   }
 
@@ -153,8 +153,8 @@ object DbUpdateValues {
       case ed: EitherData[a,b] => ???
       case esd: EnumerationStringData[a] => psF(i => (ps,a) => ps.setString(i,a.toString), Types.VARCHAR)
       case esd: EnumStringData[a] => psF(i => (ps,a) => ps.setString(i,a.toString), Types.VARCHAR)
-      case kvp: KvpGroupData[h,hl] => {
-        val groupF = kvpGroup(kvp.kvpGroup)
+      case kvp: KvpHListData[h,hl] => {
+        val groupF = kvpHList(kvp.kvpHList)
         (i,k) => {
           val result = groupF(i)
           val fa = (a: A) => result.actionableUpdateStatements(a.asInstanceOf[h])
@@ -162,7 +162,7 @@ object DbUpdateValues {
         }
       }
       case x: XMapData[a,al,b] =>
-        val groupF = kvpGroup(x.from)
+        val groupF = kvpHList(x.from)
         (i,k) => {
           val result = groupF(i)
           val fa = (input: A) => result.actionableUpdateStatements(x.fba(input))
