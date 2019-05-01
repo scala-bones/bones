@@ -163,7 +163,7 @@ lazy val react = (project in file("client-interpreters/react"))
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
       "org.scalatest" %% "scalatest" % "3.0.7" % Test
     )
-  ).dependsOn(core)
+  ).dependsOn(core, testSchemas % "test")
 lazy val examples = (project in file("examples/http4s-examples"))
     .settings(
       commonSettings,
@@ -178,7 +178,7 @@ lazy val examples = (project in file("examples/http4s-examples"))
         "org.scalatest" %% "scalatest" % "3.0.7" % Test
 //        "org.easymock" % "easymock" % "3.5.1" % Test
       )
-    ).dependsOn(core, jsonOas3, dbJdbc, restHttp4s, jsonOas3, protobuf, testSchemas)
+    ).dependsOn(core, jsonOas3, dbJdbc, restHttp4s, jsonOas3, protobuf, react, testSchemas % "test")
 
 
 
