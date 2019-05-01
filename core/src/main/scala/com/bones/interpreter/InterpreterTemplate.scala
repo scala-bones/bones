@@ -9,12 +9,12 @@ import shapeless.{HList, Nat}
   */
 class InterpreterTemplate {
 
-  def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): Unit = {
+  def kvpHList[H<:HList,HL<:Nat](group: KvpHList[H,HL]): Unit = {
     group match {
       case KvpNil => ???
       case op: KvpSingleValueHead[h, t, tl, a] => ???
-      case op: KvpGroupHead[a, al, h, hl, t, tl] => ???
-      case op: OptionalKvpGroup[h,hl] => ???
+      case op: KvpHListHead[a, al, h, hl, t, tl] => ???
+      case op: OptionalKvpHList[h,hl] => ???
       case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] => ???
     }
   }
@@ -33,7 +33,7 @@ class InterpreterTemplate {
       case ba: ByteArrayData => ???
       case esd: EnumerationStringData[a] => ???
       case esd: EnumStringData[a] => ???
-      case kvp: KvpGroupData[h,hl] => ???
+      case kvp: KvpHListData[h,hl] => ???
       case x: XMapData[a,al,b] => ???
       case s: SumTypeData[a,b] => ???
     }

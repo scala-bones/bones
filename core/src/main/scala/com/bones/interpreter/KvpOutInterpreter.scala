@@ -20,7 +20,7 @@ trait KvpOutputInterpreter[OUT] {
 
   def none: OUT
   def empty: OUT
-  def appendGroup(prefix: OUT, postfix: OUT): OUT
+  def combine(prefix: OUT, postfix: OUT): OUT
   def toObj[A](kvDef: KeyValueDefinition[A], value: OUT): OUT
   def booleanToOut[A](op: BooleanData): Boolean => OUT
   def stringToOut[A](op: StringData): String => OUT
@@ -37,17 +37,17 @@ trait KvpOutputInterpreter[OUT] {
   }
 
 
-  protected def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): H => OUT =
+  protected def kvpHList[H<:HList,HL<:Nat](group: KvpHList[H,HL]): H => OUT =
     group match {
       case KvpNil => (input: H) => empty
-      case op: KvpGroupHead[out,l,h,hl,t,tl] =>
-        val headF = kvpGroup(op.head)
-        val tailF = kvpGroup[t,tl](op.tail)
+      case op: KvpHListHead[out,l,h,hl,t,tl] =>
+        val headF = kvpHList(op.head)
+        val tailF = kvpHList[t,tl](op.tail)
         (input: H) => {
           val l = op.split(input)
           val headOut = headF.apply(l._1)
           val tailOut = tailF.apply(l._2)
-          appendGroup(headOut, tailOut)
+          combine(headOut, tailOut)
         }
       case op: KvpSingleValueHead[h,t,tl,H] =>
         val valueF = valueDefinition(op.fieldDefinition.op)
@@ -55,22 +55,22 @@ trait KvpOutputInterpreter[OUT] {
           import shapeless.::
           val cast = input.asInstanceOf[h :: t]
           val val1 = valueF.apply(cast.head)
-          val tail = kvpGroup(op.tail)(cast.tail)
-          appendGroup(toObj(op.fieldDefinition, val1), tail)
+          val tail = kvpHList(op.tail)(cast.tail)
+          combine(toObj(op.fieldDefinition, val1), tail)
         }
       case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] => {
-        val headF = kvpGroup(op.xmapData.from)
-        val tailF = kvpGroup(op.tail)
+        val headF = kvpHList(op.xmapData.from)
+        val tailF = kvpHList(op.tail)
         (input: H) => {
           import shapeless.::
           val cast = input.asInstanceOf[a :: ht]
           val head = headF(op.xmapData.fba(cast.head))
-          val tail = kvpGroup(op.tail)(cast.tail)
-          appendGroup(head, tail)
+          val tail = kvpHList(op.tail)(cast.tail)
+          combine(head, tail)
         }
       }
-      case op: OptionalKvpGroup[h,hl] =>
-        val oF = kvpGroup(op.kvpGroup)
+      case op: OptionalKvpHList[h,hl] =>
+        val oF = kvpHList(op.kvpHList)
         input: H => input.head match {
           case Some(kvp) => oF(kvp)
           case None => none
@@ -107,12 +107,12 @@ trait KvpOutputInterpreter[OUT] {
         }
       case e: EnumerationStringData[a] => enumerationToOut(e)
       case e: EnumStringData[a] => enumToOut(e)
-      case gd: KvpGroupData[h,hl] => {
-        val fh = kvpGroup(gd.kvpGroup)
+      case gd: KvpHListData[h,hl] => {
+        val fh = kvpHList(gd.kvpHList)
         input: A => fh(input.asInstanceOf[h])
       }
       case x: XMapData[h,hl,A] => {
-        val fh = kvpGroup(x.from)
+        val fh = kvpHList(x.from)
         input: A => {
           fh(x.fba(input))
         }

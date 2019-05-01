@@ -69,21 +69,21 @@ object DbInsertValues {
       }
     }
 
-  def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): (Index, H) => (Index, List[(ColumnName, SetValue)]) = {
+  def kvpHList[H<:HList,HL<:Nat](group: KvpHList[H,HL]): (Index, H) => (Index, List[(ColumnName, SetValue)]) = {
     group match {
       case KvpNil => (i,h) => (i, List.empty)
       case op: KvpSingleValueHead[h, t, tl, a] => {
         val headF = valueDefinition(op.fieldDefinition.op)(op.fieldDefinition.key)
-        val tailF = kvpGroup(op.tail)
+        val tailF = kvpHList(op.tail)
         (i: Index,h:H) => {
           val headResult = headF(i,h.head)
           val tailResult = tailF(headResult._1,h.tail)
           (tailResult._1, headResult._2 ::: tailResult._2)
         }
       }
-      case op: KvpGroupHead[a, al, h, hl, t, tl] => {
-        val headF = kvpGroup(op.head)
-        val tailF = kvpGroup(op.tail)
+      case op: KvpHListHead[a, al, h, hl, t, tl] => {
+        val headF = kvpHList(op.head)
+        val tailF = kvpHList(op.tail)
         (i:Index,h:H) => {
           val hSplit = op.split(h)
           val headList = headF(i,hSplit._1)
@@ -92,8 +92,8 @@ object DbInsertValues {
         }
       }
       case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] => {
-        val headF = kvpGroup(op.xmapData.from)
-        val tailF = kvpGroup(op.tail)
+        val headF = kvpHList(op.xmapData.from)
+        val tailF = kvpHList(op.tail)
         (i:Index,h:H) => {
 //          val hSplit = op.split(h)
           val headList = headF(i,op.xmapData.fba(h.head))
@@ -101,7 +101,7 @@ object DbInsertValues {
           (tailList._1, headList._2 ::: tailList._2)
         }
       }
-      case op: OptionalKvpGroup[h,hl] => ???
+      case op: OptionalKvpHList[h,hl] => ???
     }
   }
 
@@ -149,15 +149,15 @@ object DbInsertValues {
         psF[A]( (ps,i,a) => ps.setString(i,a.toString))
       case esd: EnumStringData[a] =>
         psF( (ps,i,a) => ps.setString(i,a.toString) )
-      case kvp: KvpGroupData[h,hl] =>
-        val groupF = kvpGroup(kvp.kvpGroup)
+      case kvp: KvpHListData[h,hl] =>
+        val groupF = kvpHList(kvp.kvpHList)
         k => {
           (index, a) => {
             groupF(index,a.asInstanceOf[h])
           }
         }
       case x: XMapData[a,al,b] =>
-        val groupF = kvpGroup(x.from)
+        val groupF = kvpHList(x.from)
         k => {
           (index, h) => {
             groupF(index,x.fba(h))

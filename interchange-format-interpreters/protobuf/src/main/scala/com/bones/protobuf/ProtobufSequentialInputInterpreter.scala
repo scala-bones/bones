@@ -23,11 +23,11 @@ object ProtobufSequentialInputInterpreter {
   type Tag = Int
   type ExtractFromProto[A] = (LastFieldNumber, Path) => (Tag, CodedInputStream => Either[NonEmptyList[ExtractionError],A])
   type ExtractDataClassFromProto[A] = (LastFieldNumber, Path) => (LastFieldNumber, CodedInputStream => Either[NonEmptyList[ExtractionError],A])
-  type ExtractGroupFromProto[H<:HList] = (LastFieldNumber, Path) => (LastFieldNumber, CodedInputStream => Either[NonEmptyList[ExtractionError],H])
+  type ExtractHListFromProto[H<:HList] = (LastFieldNumber, Path) => (LastFieldNumber, CodedInputStream => Either[NonEmptyList[ExtractionError],H])
 
   def fromBytes[A](dc: BonesSchema[A]): Array[Byte] => Either[NonEmptyList[ExtractionError], A] =  dc match {
     case x: XMapData[_,_,A] => {
-      val kvp = kvpGroup(x.from)
+      val kvp = kvpHList(x.from)
       (bytes: Array[Byte]) => {
         val kvpResult = kvp(0, List.empty)
         val is = new ByteArrayInputStream(bytes)
@@ -41,7 +41,7 @@ object ProtobufSequentialInputInterpreter {
   }
 
 
-  private def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): ExtractGroupFromProto[H] = {
+  private def kvpHList[H<:HList,HL<:Nat](group: KvpHList[H,HL]): ExtractHListFromProto[H] = {
     group match {
       case KvpNil =>
         (lastFieldNumber, path) =>
@@ -51,7 +51,7 @@ object ProtobufSequentialInputInterpreter {
         val vd = valueDefinition(op.fieldDefinition.op)
         (lastFieldNumber, path) => {
           val headResult = vd(lastFieldNumber, path :+ op.fieldDefinition.key)
-          val tailResult = kvpGroup(op.tail)(lastFieldNumber + 1, path)
+          val tailResult = kvpHList(op.tail)(lastFieldNumber + 1, path)
           (tailResult._1, in => {
             val thisTag = in.readTag()
 
@@ -64,8 +64,8 @@ object ProtobufSequentialInputInterpreter {
           })
         }
       case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] =>
-        val head = kvpGroup(op.xmapData.from)
-        val tail = kvpGroup(op.tail)
+        val head = kvpHList(op.xmapData.from)
+        val tail = kvpHList(op.tail)
         (lastFieldNumber, path) => {
           val headResult = head(lastFieldNumber, path)
           val tailResult = tail(headResult._1, path)
@@ -80,9 +80,9 @@ object ProtobufSequentialInputInterpreter {
             totalResult
           })
         }
-      case op: KvpGroupHead[a, al, h, hl, t, tl] =>
-        val head = kvpGroup(op.head)
-        val tail = kvpGroup(op.tail)
+      case op: KvpHListHead[a, al, h, hl, t, tl] =>
+        val head = kvpHList(op.head)
+        val tail = kvpHList(op.tail)
         (lastFieldNumber, path) => {
           val headResult = head(lastFieldNumber, path)
           val tailResult = tail(headResult._1, path)
@@ -97,7 +97,7 @@ object ProtobufSequentialInputInterpreter {
             totalResult
           })
         }
-      case op: OptionalKvpGroup[h,hl] => ???
+      case op: OptionalKvpHList[h,hl] => ???
     }
   }
 
@@ -267,8 +267,8 @@ object ProtobufSequentialInputInterpreter {
           (result._1, fCis)
         }
       }
-      case kvp: KvpGroupData[h,hl] => {
-        val groupExtract = kvpGroup(kvp.kvpGroup)
+      case kvp: KvpHListData[h,hl] => {
+        val groupExtract = kvpHList(kvp.kvpHList)
         (last: LastFieldNumber, path: Path) => {
           val thisField = (last + 1) << 3 | LENGTH_DELIMITED
           val children = groupExtract.apply(0, path)
@@ -290,7 +290,7 @@ object ProtobufSequentialInputInterpreter {
         }
       }
       case kvp: XMapData[a, al, b] => {
-        val groupExtract = kvpGroup(kvp.from)
+        val groupExtract = kvpHList(kvp.from)
         (last: LastFieldNumber, path: Path) => {
           val thisField = (last + 1) << 3 | LENGTH_DELIMITED
           val children = groupExtract.apply(0, path)

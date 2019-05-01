@@ -30,7 +30,7 @@ class ValidatedFromCirceInterpreterTest extends FunSuite {
   test("kvp String") {
     val str = kvp("name", string(sv.length(3))) :: KvpNil
 
-    ValidatedFromCirceInterpreter.kvpGroup(str).apply(circeDoc, List.empty) match {
+    ValidatedFromCirceInterpreter.kvpHList(str).apply(circeDoc, List.empty) match {
       case Left(err) => fail(s"expected success, received: ${err}")
       case Right(r) => assert(r.head === "Foo")
     }
@@ -40,7 +40,7 @@ class ValidatedFromCirceInterpreterTest extends FunSuite {
   test( "kvp String fail validation") {
     val str = kvp("name", string(sv.length(2))) :: KvpNil
 
-    ValidatedFromCirceInterpreter.kvpGroup(str).apply(circeDoc, List.empty) match {
+    ValidatedFromCirceInterpreter.kvpHList(str).apply(circeDoc, List.empty) match {
       case Left(err) => succeed
       case Right(r) => fail(s"expected validation failure, received: ${r}")
     }
@@ -49,10 +49,10 @@ class ValidatedFromCirceInterpreterTest extends FunSuite {
 
   test("kvp BigDecimal") {
     val bd =
-      kvpGroup("values", kvp("baz", bigDecimal(bdv.Min(BigDecimal(0)))) :: KvpNil ) ::
+      kvpHList("values", kvp("baz", bigDecimal(bdv.Min(BigDecimal(0)))) :: KvpNil ) ::
       KvpNil
 
-    ValidatedFromCirceInterpreter.kvpGroup(bd).apply(circeDoc, List.empty) match {
+    ValidatedFromCirceInterpreter.kvpHList(bd).apply(circeDoc, List.empty) match {
       case Left(err) => fail(s"expected success, received: ${err}")
       case Right(r) => assert(r.head.head == BigDecimal(100.001))
     }

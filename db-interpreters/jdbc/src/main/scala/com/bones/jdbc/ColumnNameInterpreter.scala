@@ -10,17 +10,17 @@ object ColumnNameInterpreter {
   type ColumnName = String
   type Key = String
 
-  def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): List[ColumnName] = {
+  def kvpHList[H<:HList,HL<:Nat](group: KvpHList[H,HL]): List[ColumnName] = {
     group match {
       case KvpNil => List.empty
       case op: KvpSingleValueHead[h, t, tl, a] =>
         val headList = valueDefinition(op.fieldDefinition.op)(op.fieldDefinition.key)
-        val tailList = kvpGroup(op.tail)
+        val tailList = kvpHList(op.tail)
         headList ::: tailList
-      case op: KvpGroupHead[a, al, h, hl, t, tl] =>
-        kvpGroup(op.head) ::: kvpGroup(op.tail)
-      case op: OptionalKvpGroup[h,hl] =>
-        kvpGroup(op.kvpGroup)
+      case op: KvpHListHead[a, al, h, hl, t, tl] =>
+        kvpHList(op.head) ::: kvpHList(op.tail)
+      case op: OptionalKvpHList[h,hl] =>
+        kvpHList(op.kvpHList)
       case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] =>
         valueDefinition(op.xmapData)("")
     }
@@ -43,10 +43,10 @@ object ColumnNameInterpreter {
       case ed: EitherData[a,b] => ???
       case esd: EnumerationStringData[a] => keyToColumNames
       case esd: EnumStringData[a] => keyToColumNames
-      case kvp: KvpGroupData[h,hl] =>
-        _ => kvpGroup(kvp.kvpGroup)
+      case kvp: KvpHListData[h,hl] =>
+        _ => kvpHList(kvp.kvpHList)
       case x: XMapData[a,al,b] =>
-        _ => kvpGroup(x.from)
+        _ => kvpHList(x.from)
       case s: SumTypeData[a,b] =>
         valueDefinition(s.from)
     }

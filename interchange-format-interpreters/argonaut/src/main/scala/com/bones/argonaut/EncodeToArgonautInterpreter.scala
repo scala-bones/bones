@@ -14,7 +14,7 @@ object EncodeToArgonautInterpreter extends KvpOutputInterpreter[Json]{
 
   override def empty: Json = Json.obj()
 
-  override def appendGroup(prefix: Json, postfix: Json): Json = {
+  override def combine(prefix: Json, postfix: Json): Json = {
     val values1 = prefix.obj.toList.flatMap(_.toList)
     val values2 = postfix.obj.toList.flatMap(_.toList)
     Json.obj( values1 ::: values2 :_*)

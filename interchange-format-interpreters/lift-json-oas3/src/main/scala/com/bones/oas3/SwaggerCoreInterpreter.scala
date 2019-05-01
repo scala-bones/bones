@@ -21,19 +21,19 @@ object SwaggerCoreInterpreter {
     case x: XMapData[_,_,A] => fromValueDef(x).apply(new Schema())
   }
 
-  protected def fromKvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]) : Schema[_] => Schema[_] = {
+  protected def fromKvpHList[H<:HList,HL<:Nat](group: KvpHList[H,HL]) : Schema[_] => Schema[_] = {
     group match {
       case KvpNil =>
         val objectSchema = new ObjectSchema()
           .nullable(false)
         schema => objectSchema.name(schema.getName)
-      case op: KvpGroupHead[H, al, h, hl, t, tl] =>
-        val head = fromKvpGroup(op.head)
-        val tail = fromKvpGroup(op.tail)
+      case op: KvpHListHead[H, al, h, hl, t, tl] =>
+        val head = fromKvpHList(op.head)
+        val tail = fromKvpHList(op.tail)
         schema => copySchema(head(schema), tail(schema))
       case op: KvpSingleValueHead[h, t, tl, o] =>
         val child = fromValueDef(op.fieldDefinition.op)
-        val tail = fromKvpGroup(op.tail)
+        val tail = fromKvpHList(op.tail)
         schema => {
           val tailSchema = tail(schema)
           val childSchema = child(new Schema[h])
@@ -49,8 +49,8 @@ object SwaggerCoreInterpreter {
           valueF(schema)
           schema
         }
-      case op: OptionalKvpGroup[h,hl] =>
-        val kvpF = fromKvpGroup(op.kvpGroup)
+      case op: OptionalKvpHList[h,hl] =>
+        val kvpF = fromKvpHList(op.kvpHList)
         schema => {
           kvpF.apply(schema)
           schema.setNullable(false)
@@ -136,11 +136,11 @@ object SwaggerCoreInterpreter {
         val obj = fromValueDef(x.from)
         schema => obj(schema)
 
-      case gd: KvpGroupData[h,hl] =>
-        val obj = fromKvpGroup(gd.kvpGroup)
+      case gd: KvpHListData[h,hl] =>
+        val obj = fromKvpHList(gd.kvpHList)
         schema => obj(schema)
       case x: XMapData[_,_,a] =>
-        val fromF = fromKvpGroup(x.from)
+        val fromF = fromKvpHList(x.from)
         schema => {
           fromF(schema)
         }

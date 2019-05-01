@@ -13,16 +13,16 @@ object FlattenedHeaderInterpreter {
     }
   }
 
-  def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): List[String] = {
-    group match {
+  def kvpHList[H<:HList,HL<:Nat](input: KvpHList[H,HL]): List[String] = {
+    input match {
       case KvpNil => List.empty
       case op: KvpSingleValueHead[h, t, tl, a] =>
-        valueDefinition(op.fieldDefinition.op)(Some(op.fieldDefinition.key)) ++ kvpGroup(op.tail)
-      case op: KvpGroupHead[a, al, h, hl, t, tl] =>
-        kvpGroup(op.head) ++ kvpGroup(op.tail)
-      case op: OptionalKvpGroup[h,hl] => ???
+        valueDefinition(op.fieldDefinition.op)(Some(op.fieldDefinition.key)) ++ kvpHList(op.tail)
+      case op: KvpHListHead[a, al, h, hl, t, tl] =>
+        kvpHList(op.head) ++ kvpHList(op.tail)
+      case op: OptionalKvpHList[h,hl] => ???
       case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] =>
-        kvpGroup(op.xmapData.from) ++ kvpGroup(op.tail)
+        kvpHList(op.xmapData.from) ++ kvpHList(op.tail)
     }
   }
 
@@ -53,11 +53,11 @@ object FlattenedHeaderInterpreter {
       case ba: ByteArrayData => keyToName
       case esd: EnumerationStringData[a] => keyToName
       case esd: EnumStringData[a] => keyToName
-      case kvp: KvpGroupData[h,hl] => {
-        _ => kvpGroup(kvp.kvpGroup)
+      case kvp: KvpHListData[h,hl] => {
+        _ => kvpHList(kvp.kvpHList)
       }
       case x: XMapData[a,al,b] =>
-        _ => kvpGroup(x.from)
+        _ => kvpHList(x.from)
       case s: SumTypeData[a,b] =>
         _ => valueDefinition(s.from)(None)
     }

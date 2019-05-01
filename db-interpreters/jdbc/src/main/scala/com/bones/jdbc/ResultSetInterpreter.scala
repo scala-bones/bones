@@ -16,13 +16,13 @@ import shapeless.{HList, HNil, Nat}
 /** Responsible for converting a result set into the result type */
 object ResultSetInterpreter {
 
-  def kvpGroup[H<:HList,N<:Nat](group: KvpGroup[H,N]): Path => ResultSet => Either[NonEmptyList[ExtractionError], H] = group match {
+  def kvpHList[H<:HList,N<:Nat](group: KvpHList[H,N]): Path => ResultSet => Either[NonEmptyList[ExtractionError], H] = group match {
     case KvpNil => path => rs => Right(HNil)
     case op: KvpSingleValueHead[h, t, tl, a] =>
       path => {
         val newPath = op.fieldDefinition.key :: path
         val rsToHead = valueDefinition(op.fieldDefinition.op)(newPath, camelToSnake(op.fieldDefinition.key))
-        val rsToTail = kvpGroup(op.tail)(path)
+        val rsToTail = kvpHList(op.tail)(path)
         rs => {
           Util.eitherMap2(rsToHead(rs), rsToTail(rs))((l1: h, l2: t) => {
             (l1 :: l2).asInstanceOf[a]
@@ -30,8 +30,8 @@ object ResultSetInterpreter {
         }
       }
     case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] =>
-      val headF = kvpGroup(op.xmapData.from)
-      val tailF = kvpGroup(op.tail)
+      val headF = kvpHList(op.xmapData.from)
+      val tailF = kvpHList(op.tail)
       import shapeless.::
       path => {
         val rsToHead = headF(path)
@@ -42,9 +42,9 @@ object ResultSetInterpreter {
           })
         }
       }
-    case op: KvpGroupHead[a, al, h, hl, t, tl] =>
-      val headF = kvpGroup(op.head)
-      val tailF = kvpGroup(op.tail)
+    case op: KvpHListHead[a, al, h, hl, t, tl] =>
+      val headF = kvpHList(op.head)
+      val tailF = kvpHList(op.tail)
       path => {
         val rsToHead = headF(path)
         val rsToTail = tailF(path)
@@ -54,7 +54,7 @@ object ResultSetInterpreter {
           })
         }
       }
-    case op: OptionalKvpGroup[h,hl] => ???
+    case op: OptionalKvpHList[h,hl] => ???
   }
 
   def valueDefinition[A](fgo: ValueDefinitionOp[A]): (Path, FieldName) => ResultSet => Either[NonEmptyList[ExtractionError], A] =
@@ -100,13 +100,13 @@ object ResultSetInterpreter {
           r <- catchSql(rs.getString(fieldName), path, esd)
           e <- stringToEnum(r, path, esd.enums)
         } yield e.asInstanceOf[A]
-      case kvp: KvpGroupData[h,hl] =>
-        val groupF = kvpGroup(kvp.kvpGroup)
+      case kvp: KvpHListData[h,hl] =>
+        val groupF = kvpHList(kvp.kvpHList)
         (path, _) => //Ignore fieldName here
           groupF(path).andThen(_.map(_.asInstanceOf[A]))
 
       case x: XMapData[a,al,b] =>
-        val groupF = kvpGroup(x.from)
+        val groupF = kvpHList(x.from)
         (path, _) =>
           groupF(path).andThen(_.map(x.fab))
       case s: SumTypeData[a,b] =>

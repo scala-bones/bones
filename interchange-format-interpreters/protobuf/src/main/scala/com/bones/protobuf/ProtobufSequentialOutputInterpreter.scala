@@ -24,11 +24,11 @@ object ProtobufSequentialOutputInterpreter {
   type ComputeSize = () => Int
   type Encode = CodedOutputStream => Either[NonEmptyList[IOException], CodedOutputStream]
   type EncodeToProto[A] = FieldNumber => A => (ComputeSize, Encode)
-  type EncodeGroupToProto[H<:HList] = LastFieldNumber => H =>  (ComputeSize, Encode)
+  type EncodeHListToProto[H<:HList] = LastFieldNumber => H =>  (ComputeSize, Encode)
 
   def encodeToBytes[A](dc: BonesSchema[A]): A => Array[Byte] = dc match {
     case x: XMapData[_,_,A] => {
-      val group = kvpGroup(x.from).apply(0)
+      val group = kvpHList(x.from).apply(0)
       (a: A) => {
         val hlist = x.fba(a)
         val (_, fEncode) = group(hlist)
@@ -43,12 +43,12 @@ object ProtobufSequentialOutputInterpreter {
     }
   }
 
-  protected def kvpGroup[H<:HList,HL<:Nat](group: KvpGroup[H,HL]): EncodeGroupToProto[H] = {
+  protected def kvpHList[H<:HList,HL<:Nat](group: KvpHList[H,HL]): EncodeHListToProto[H] = {
     group match {
       case KvpNil => (fieldNumber: FieldNumber) => (_:HNil) => (() => 0, (os: CodedOutputStream) => Right(os))
       case op: KvpSingleValueHead[h, t, tl, o] => (fieldNumber: FieldNumber) =>
         val headF = valueDefinition(op.fieldDefinition.op)(fieldNumber + 1)
-        val tailF = kvpGroup(op.tail)(fieldNumber + 1)
+        val tailF = kvpHList(op.tail)(fieldNumber + 1)
         (input: o) => {
           val headResult = headF(input.head)
           val tailResult = tailF(input.tail)
@@ -61,9 +61,9 @@ object ProtobufSequentialOutputInterpreter {
           }
           (fCompute, fEncode)
         }
-      case op: KvpGroupHead[a, al, h, hl, t, tl] => (fieldNumber: FieldNumber) =>
-        val headF = kvpGroup(op.head)(fieldNumber)
-        val tailF = kvpGroup(op.tail)(fieldNumber)
+      case op: KvpHListHead[a, al, h, hl, t, tl] => (fieldNumber: FieldNumber) =>
+        val headF = kvpHList(op.head)(fieldNumber)
+        val tailF = kvpHList(op.tail)(fieldNumber)
         (input: H) => {
           val cast = input.asInstanceOf[h :: t]
           val headResult = headF(cast.head)
@@ -79,8 +79,8 @@ object ProtobufSequentialOutputInterpreter {
         }
 
       case op: KvpXMapDataHead[a,h,n,ho,ht,nt] => (fieldNumber: FieldNumber) => {
-        val headF = kvpGroup(op.xmapData.from)(fieldNumber)
-        val tailF = kvpGroup(op.tail)(fieldNumber)
+        val headF = kvpHList(op.xmapData.from)(fieldNumber)
+        val tailF = kvpHList(op.tail)(fieldNumber)
         (input: ho) => {
           val cast = input.asInstanceOf[a :: h]
           val headGroup = op.xmapData.fba(cast.head)
@@ -97,8 +97,8 @@ object ProtobufSequentialOutputInterpreter {
         }
       }
 
-      case op: OptionalKvpGroup[h,hl] => (fieldNumber: FieldNumber) =>
-        val kvpGroupF = kvpGroup(op.kvpGroup)(fieldNumber)
+      case op: OptionalKvpHList[h,hl] => (fieldNumber: FieldNumber) =>
+        val kvpGroupF = kvpHList(op.kvpHList)(fieldNumber)
         (input: Option[h] :: HNil) => {
           input.head match {
             case None => (
@@ -186,11 +186,11 @@ object ProtobufSequentialOutputInterpreter {
           val a = st.fba(out)
           enc(a)
         }
-      case kvp: KvpGroupData[h, hl] => (fieldNumber: FieldNumber) =>
-        val enc = kvpGroup(kvp.kvpGroup)(0)
+      case kvp: KvpHListData[h, hl] => (fieldNumber: FieldNumber) =>
+        val enc = kvpHList(kvp.kvpHList)(0)
         (h: h) => enc(h)
       case x: XMapData[h,hl,a] => (fieldNumber: FieldNumber) =>
-        val group = kvpGroup(x.from).apply(0)
+        val group = kvpHList(x.from).apply(0)
         (a: A) => {
           val hlist = x.fba(a)
           val (fSize, fEncode) = group(hlist)
@@ -202,7 +202,7 @@ object ProtobufSequentialOutputInterpreter {
           (fSize, encodeF)
         }
 
-//        val dc = kvpGroup(kvp.from)(0)
+//        val dc = kvpHList(kvp.from)(0)
 //        (a: A) => {
 //          val hlist = kvp.fba(a)
 //          val (childSizeF, childEncodeF) = dc(hlist)

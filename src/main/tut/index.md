@@ -58,7 +58,7 @@ same interpreter can be used across services and the only change would be the sc
 
 I other words, if services perform similar behavior, 
 such as write to Kafka, S3, a Database or an external services, the boilerplate code can be reduced by using GADTs.
-This project is to provide a common vocabulary, and reasonable API, for any CRUD service.  See below for the list of interpreters.
+This project is to provide a common vocabulary, and reasonable API, for any CRUD service.  See below for the kvpHList of interpreters.
 
 This example uses the Scala http4s.
 
