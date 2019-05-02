@@ -16,7 +16,7 @@ object FindInterpreter {
 
 object TableName {
   def getTableName[B](dc: BonesSchema[B]): String = dc match {
-    case t: XMapData[a, al, b] => camelToSnake(t.manifestOfA.runtimeClass.getSimpleName)
+    case t: HListConvert[a, al, b] => camelToSnake(t.manifestOfA.runtimeClass.getSimpleName)
   }
 }
 
@@ -26,7 +26,7 @@ object FieldNames {
 
   def fromSchema[A](dc: BonesSchema[A]): List[String] =
     dc match {
-      case t: XMapData[a, al, b] => kvpHList(t.from)
+      case t: HListConvert[a, al, b] => kvpHList(t.from)
     }
 
   def kvpHList[H<:HList,HL<:Nat](group: KvpHList[H,HL]): List[String] =
@@ -55,7 +55,7 @@ object FieldNames {
       case esd: EnumerationStringData[a] => List.empty
       case st: SumTypeData[a,b] => valueDefinition(st.from)
       case kvp: KvpHListValue[h,hl] => kvpHList(kvp.kvpHList)
-      case x: XMapData[_,_,_] => kvpHList(x.from)
+      case x: HListConvert[_,_,_] => kvpHList(x.from)
     }
 
 }

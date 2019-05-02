@@ -1,14 +1,14 @@
 package com.bones.crud
 
 import com.bones.data.KeyValueDefinition
-import com.bones.data.Value.{BonesSchema, KvpNil, XMapData}
+import com.bones.data.Value.{BonesSchema, KvpNil, HListConvert}
 import shapeless.{HNil, Nat, Succ, ::}
 
 object WithId {
-  def entityWithId[ID:Manifest,A](id: KeyValueDefinition[ID], entity: BonesSchema[A]): XMapData[ID :: A :: HNil, Succ[Succ[Nat._0]], WithId[ID,A]] =
+  def entityWithId[ID:Manifest,A](id: KeyValueDefinition[ID], entity: BonesSchema[A]): HListConvert[ID :: A :: HNil, Succ[Succ[Nat._0]], WithId[ID,A]] =
     entity match {
-      case op: XMapData[a,al,A] =>
-        implicit val x = op.manifestOfA
+      case op: HListConvert[a,al,A] =>
+        implicit val x: Manifest[A] = op.manifestOfA
         ( id ::
           op :><:
           KvpNil

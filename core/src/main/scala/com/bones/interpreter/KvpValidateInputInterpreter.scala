@@ -44,7 +44,7 @@ trait KvpValidateInputInterpreter[IN] {
   protected def invalidValue[T](in: IN, expected: Class[T], path: List[String]): Left[NonEmptyList[ExtractionError], Nothing]
 
   def fromSchema[A](schema: BonesSchema[A]) : (IN, List[String]) => Either[NonEmptyList[ExtractionError],A] = schema match {
-    case x: XMapData[_,_,A] => (in, path)  => valueDefinition(x).apply(Some(in), path)
+    case x: HListConvert[_,_,A] => (in, path)  => valueDefinition(x).apply(Some(in), path)
   }
 
   def required[A](
@@ -235,7 +235,7 @@ trait KvpValidateInputInterpreter[IN] {
           }
         }
       }
-      case x: XMapData[a, al, A] => {
+      case x: HListConvert[a, al, A] => {
         val kvp = kvpHList(x.from)
         (jOpt: Option[IN], path: List[String]) =>
           jOpt match {

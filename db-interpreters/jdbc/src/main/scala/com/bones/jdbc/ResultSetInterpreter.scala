@@ -99,7 +99,7 @@ object ResultSetInterpreter {
         (path, _) => //Ignore fieldName here
           groupF(path).andThen(_.map(_.asInstanceOf[A]))
 
-      case x: XMapData[a,al,b] =>
+      case x: HListConvert[a,al,b] =>
         val groupF = kvpHList(x.from)
         (path, _) =>
           groupF(path).andThen(_.map(x.fab))

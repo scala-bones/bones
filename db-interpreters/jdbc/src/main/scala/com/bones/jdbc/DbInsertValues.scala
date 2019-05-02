@@ -41,7 +41,7 @@ object DbInsertValues {
 
   def insertQueryWithConnection[A](bonesSchema: BonesSchema[A]): A => Connection => Either[SystemError, WithId[Long,A] ] =
     bonesSchema match {
-      case x: XMapData[h,n,b] => {
+      case x: HListConvert[h,n,b] => {
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
         val updates = valueDefinition(x)
         a: A => {
@@ -153,7 +153,7 @@ object DbInsertValues {
             groupF(index,a.asInstanceOf[h])
           }
         }
-      case x: XMapData[a,al,b] =>
+      case x: HListConvert[a,al,b] =>
         val groupF = kvpHList(x.from)
         k => {
           (index, h) => {

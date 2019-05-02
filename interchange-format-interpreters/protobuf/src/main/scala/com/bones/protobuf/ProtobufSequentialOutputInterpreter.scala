@@ -27,7 +27,7 @@ object ProtobufSequentialOutputInterpreter {
   type EncodeHListToProto[H<:HList] = LastFieldNumber => H =>  (ComputeSize, Encode)
 
   def encodeToBytes[A](dc: BonesSchema[A]): A => Array[Byte] = dc match {
-    case x: XMapData[_,_,A] => {
+    case x: HListConvert[_,_,A] => {
       val group = kvpHList(x.from).apply(0)
       (a: A) => {
         val hlist = x.fba(a)
@@ -172,7 +172,7 @@ object ProtobufSequentialOutputInterpreter {
       case kvp: KvpHListValue[h, hl] => (fieldNumber: FieldNumber) =>
         val enc = kvpHList(kvp.kvpHList)(0)
         (h: h) => enc(h)
-      case x: XMapData[h,hl,a] => (fieldNumber: FieldNumber) =>
+      case x: HListConvert[h,hl,a] => (fieldNumber: FieldNumber) =>
         val group = kvpHList(x.from).apply(0)
         (a: A) => {
           val hlist = x.fba(a)
