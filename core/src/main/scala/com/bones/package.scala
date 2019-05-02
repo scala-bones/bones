@@ -1,7 +1,11 @@
 package com
 
 import com.bones.data.{KeyValueDefinitionSugar, Sugar}
-import com.bones.validation.ValidationDefinition.{BigDecimalValidation, LongValidation, StringValidation}
+import com.bones.validation.ValidationDefinition.{
+  BigDecimalValidation,
+  LongValidation,
+  StringValidation
+}
 
 package object bones {
 
@@ -13,10 +17,9 @@ package object bones {
 
     /** lv = Long validation */
     val lv = LongValidation
-    
+
     /** bdv = Big Decimal Validation */
     val bdv = BigDecimalValidation
   }
-
 
 }

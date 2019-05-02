@@ -16,7 +16,8 @@ trait KeyValueDefinitionSugar {
   def kvp[A](key: String, valueDefinitionOp: ValueDefinitionOp[A]) =
     KeyValueDefinition(key, valueDefinitionOp)
 
-  def kvpHList[H <: HList :Manifest, HL <: Nat](key: String, kvpHList: KvpHList[H, HL]) =
+  def kvpHList[H <: HList: Manifest, HL <: Nat](key: String,
+                                                kvpHList: KvpHList[H, HL]) =
     KeyValueDefinition(key, KvpHListValue(kvpHList, List.empty))
 
 }
@@ -46,8 +47,8 @@ trait Sugar {
     * @tparam T The type of each element.  Can be an EitherFieldDefinition if more than one type is expected in the list.
     * @return
     */
-  def list[T:Manifest](dataDefinitionOp: ValueDefinitionOp[T],
-              v: ValidationOp[List[T]]*) =
+  def list[T: Manifest](dataDefinitionOp: ValueDefinitionOp[T],
+                        v: ValidationOp[List[T]]*) =
     ListData(dataDefinitionOp, v.toList)
 
   /** Indicates that the data tied to this key is an boolean type that must pass the specified validations. */
@@ -74,8 +75,8 @@ trait Sugar {
   val bigDecimal: BigDecimalData = bigDecimal()
 
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
-  def either[A:Manifest, B:Manifest](definitionA: ValueDefinitionOp[A],
-                   definitionB: ValueDefinitionOp[B]) =
+  def either[A: Manifest, B: Manifest](definitionA: ValueDefinitionOp[A],
+                                       definitionB: ValueDefinitionOp[B]) =
     EitherData(definitionA, definitionB)
 
   /** Expecting a string that is in the format of an iso date time */
@@ -106,8 +107,8 @@ trait Sugar {
   def enumeration[A: Manifest](e: Enumeration): EnumerationStringData[A] =
     EnumerationStringData[A](e, List.empty)
 
-  def kvpHList[H <: HList:Manifest, HL <: Nat](kvpHList: KvpHList[H, HL],
-                                               v: ValidationOp[H]*) =
+  def kvpHList[H <: HList: Manifest, HL <: Nat](kvpHList: KvpHList[H, HL],
+                                                v: ValidationOp[H]*) =
     KvpHListValue(kvpHList, v.toList)
 
 }

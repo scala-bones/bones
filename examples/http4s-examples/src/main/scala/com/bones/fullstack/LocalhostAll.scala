@@ -32,7 +32,7 @@ object LocalhostAllIOApp {
     new HikariDataSource(config)
   }
 
-  def dbSchemaEndpoint(serviceOps: ServiceOps[_,_,_,_,_,_,_,_,_,_]): HttpRoutes[IO] = {
+  def dbSchemaEndpoint(serviceOps: ServiceOps[_, _, _, _, _, _, _, _, _, _]): HttpRoutes[IO] = {
     serviceOps.createOperation.map(op => {
       val dbSchema = DbColumnInterpreter.tableDefinition(op.inputSchema)
       HttpRoutes.of[IO] {
@@ -50,9 +50,9 @@ object LocalhostAllIOApp {
   }
 
   def serviceRoutesWithCrudMiddleware[CI, CO, CE, RO, RE, UI, UO, UE, DO, DE](
-    serviceOp: ServiceOps[CI, CI, DbError, RO, DbError, UI, UI, DbError, DO, DbError],
-    ds: DataSource
-  ): HttpRoutes[IO] = {
+                                                                               serviceOp: ServiceOps[CI, CI, DbError, RO, DbError, UI, UI, DbError, DO, DbError],
+                                                                               ds: DataSource
+                                                                             ): HttpRoutes[IO] = {
     val createOperationWitId = serviceOp.createOperation.map(c => c.copy(successSchema = WithId.entityWithId(DbUtil.longIdKeyValueDef, c.successSchema)))
     val readOperationWithId = serviceOp.readOperation.map(r => r.copy(successSchemaForRead = WithId.entityWithId(DbUtil.longIdKeyValueDef, r.successSchemaForRead)))
     val updateOperationWithId = serviceOp.updateOperation.map(u => u.copy(successSchema = WithId.entityWithId(DbUtil.longIdKeyValueDef, u.successSchema)))
@@ -63,7 +63,7 @@ object LocalhostAllIOApp {
     val middleware = CrudDbDefinitions(serviceOp, ds)
 
 
-    val interpreterRoutes = HttpInterpreter().forService[CI, WithId[Long,CI], DbError, WithId[Long,RO], DbError, UI, WithId[Long,UI], DbError, WithId[Long,DO], DbError](
+    val interpreterRoutes = HttpInterpreter().forService[CI, WithId[Long, CI], DbError, WithId[Long, RO], DbError, UI, WithId[Long, UI], DbError, WithId[Long, DO], DbError](
       serviceOpWithId,
       middleware.createF,
       middleware.readF,
