@@ -186,7 +186,7 @@ object ProtobufSequentialOutputInterpreter {
           val a = st.fba(out)
           enc(a)
         }
-      case kvp: KvpHListData[h, hl] => (fieldNumber: FieldNumber) =>
+      case kvp: KvpHListValue[h, hl] => (fieldNumber: FieldNumber) =>
         val enc = kvpHList(kvp.kvpHList)(0)
         (h: h) => enc(h)
       case x: XMapData[h,hl,a] => (fieldNumber: FieldNumber) =>

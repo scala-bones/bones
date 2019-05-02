@@ -116,7 +116,7 @@ object FormInterpreter {
       case esd: EnumStringData[a] =>
         val values: List[(Value, DisplayValue)] = esd.enums.map(v => (keyToName(v.toString), v.toString)).sortBy(_._1)
         key => ( ReactFormValue( key, false, SelectInput(values)), List.empty )
-      case kvp: KvpHListData[h,hl] =>
+      case kvp: KvpHListValue[h,hl] =>
         val (childForms, childComponents) = kvpHList(kvp.kvpHList)
         key => {
           val newComponent = ReactValueContainer(key, childForms, List.empty)

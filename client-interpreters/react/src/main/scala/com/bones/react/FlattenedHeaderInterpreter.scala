@@ -53,7 +53,7 @@ object FlattenedHeaderInterpreter {
       case ba: ByteArrayData => keyToName
       case esd: EnumerationStringData[a] => keyToName
       case esd: EnumStringData[a] => keyToName
-      case kvp: KvpHListData[h,hl] => {
+      case kvp: KvpHListValue[h,hl] => {
         _ => kvpHList(kvp.kvpHList)
       }
       case x: XMapData[a,al,b] =>

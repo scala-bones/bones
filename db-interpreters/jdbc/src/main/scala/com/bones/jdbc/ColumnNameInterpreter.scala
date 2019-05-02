@@ -43,7 +43,7 @@ object ColumnNameInterpreter {
       case ed: EitherData[a,b] => ???
       case esd: EnumerationStringData[a] => keyToColumNames
       case esd: EnumStringData[a] => keyToColumNames
-      case kvp: KvpHListData[h,hl] =>
+      case kvp: KvpHListValue[h,hl] =>
         _ => kvpHList(kvp.kvpHList)
       case x: XMapData[a,al,b] =>
         _ => kvpHList(x.from)

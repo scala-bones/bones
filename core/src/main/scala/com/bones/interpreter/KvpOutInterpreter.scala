@@ -107,7 +107,7 @@ trait KvpOutputInterpreter[OUT] {
         }
       case e: EnumerationStringData[a] => enumerationToOut(e)
       case e: EnumStringData[a] => enumToOut(e)
-      case gd: KvpHListData[h,hl] => {
+      case gd: KvpHListValue[h,hl] => {
         val fh = kvpHList(gd.kvpHList)
         input: A => fh(input.asInstanceOf[h])
       }
