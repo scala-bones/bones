@@ -16,7 +16,7 @@ object DbColumnInterpreter {
   def tableDefinition[A](bonesSchema: BonesSchema[A]): String = {
     def nullableString(nullable: Boolean) = if (nullable) "" else " not null"
     bonesSchema match {
-      case x: XMapData[h,n,b] =>
+      case x: HListConvert[h,n,b] =>
         val result = valueDefinition(x)("")
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
         val columnsWithId = Column("id", "SERIAL", false) :: result
@@ -63,7 +63,7 @@ object DbColumnInterpreter {
       case esd: EnumerationStringData[a] => nameToColumn("text")
       case kvp: KvpHListValue[h,hl] =>
         _ => kvpHList(kvp.kvpHList)
-      case x: XMapData[a,al,b] =>
+      case x: HListConvert[a,al,b] =>
         _ => kvpHList(x.from)
       case m: SumTypeData[a,b] =>
         key => valueDefinition(m.from)(key)

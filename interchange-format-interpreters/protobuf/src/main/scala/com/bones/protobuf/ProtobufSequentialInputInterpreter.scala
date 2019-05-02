@@ -26,7 +26,7 @@ object ProtobufSequentialInputInterpreter {
   type ExtractHListFromProto[H<:HList] = (LastFieldNumber, Path) => (LastFieldNumber, CodedInputStream => Either[NonEmptyList[ExtractionError],H])
 
   def fromBytes[A](dc: BonesSchema[A]): Array[Byte] => Either[NonEmptyList[ExtractionError], A] =  dc match {
-    case x: XMapData[_,_,A] => {
+    case x: HListConvert[_,_,A] => {
       val kvp = kvpHList(x.from)
       (bytes: Array[Byte]) => {
         val kvpResult = kvp(0, List.empty)
@@ -282,7 +282,7 @@ object ProtobufSequentialInputInterpreter {
           })
         }
       }
-      case kvp: XMapData[a, al, b] => {
+      case kvp: HListConvert[a, al, b] => {
         val groupExtract = kvpHList(kvp.from)
         (last: LastFieldNumber, path: Path) => {
           val thisField = (last + 1) << 3 | LENGTH_DELIMITED

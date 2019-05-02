@@ -36,7 +36,7 @@ object DbUpdateValues {
 
   def updateQueryWithConnection[A](bonesSchema: BonesSchema[A]): (Long, A) => Connection => Either[NonEmptyList[SystemError], WithId[Long,A]] =
     bonesSchema match {
-      case x: XMapData[h,n,b] => {
+      case x: HListConvert[h,n,b] => {
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
         val updates = valueDefinition(x)(1,tableName)
         (id: Long, a: A) => {
@@ -159,7 +159,7 @@ object DbUpdateValues {
           DefinitionResult(result.lastIndex, result.predefineUpdateStatements, fa)
         }
       }
-      case x: XMapData[a,al,b] =>
+      case x: HListConvert[a,al,b] =>
         val groupF = kvpHList(x.from)
         (i,k) => {
           val result = groupF(i)

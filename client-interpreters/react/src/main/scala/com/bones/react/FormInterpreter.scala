@@ -42,7 +42,7 @@ object FormInterpreter {
 
   def createComponents[A](bonesSchema: BonesSchema[A]): List[ReactValueContainer] = {
     bonesSchema match {
-      case x: XMapData[a,al,b] => {
+      case x: HListConvert[a,al,b] => {
         val simpleName = x.manifestOfA.runtimeClass.getSimpleName
         val componentKey = Character.toLowerCase(simpleName.charAt(0)) + simpleName.substring(1)
 
@@ -118,7 +118,7 @@ object FormInterpreter {
           val newComponent = ReactValueContainer(key, childForms, List.empty)
           (ReactFormValue( key, false, ReactComponentReference(key)), newComponent :: childComponents)
         }
-      case t: XMapData[a, al, b] =>
+      case t: HListConvert[a, al, b] =>
         val (childForms, childComponents) = kvpHList(t.from)
         key => {
           val newComponent = ReactValueContainer( key, childForms, List.empty)

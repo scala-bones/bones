@@ -18,7 +18,7 @@ object SwaggerCoreInterpreter {
   }
 
   def apply[A](gd: BonesSchema[A]): Schema[_] = gd match {
-    case x: XMapData[_,_,A] => fromValueDef(x).apply(new Schema())
+    case x: HListConvert[_,_,A] => fromValueDef(x).apply(new Schema())
   }
 
   protected def fromKvpHList[H<:HList,HL<:Nat](group: KvpHList[H,HL]) : Schema[_] => Schema[_] = {
@@ -123,7 +123,7 @@ object SwaggerCoreInterpreter {
       case gd: KvpHListValue[h,hl] =>
         val obj = fromKvpHList(gd.kvpHList)
         schema => obj(schema)
-      case x: XMapData[_,_,a] =>
+      case x: HListConvert[_,_,a] =>
         val fromF = fromKvpHList(x.from)
         schema => {
           fromF(schema)

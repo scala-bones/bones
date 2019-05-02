@@ -17,7 +17,7 @@ object ReactDataInterpreter {
 
   def fromSchema(schema: BonesSchema[_]): List[ReactComponentData] = {
     schema match {
-      case x: XMapData[a,al,b] => valueDefinition(x)(None)
+      case x: HListConvert[a,al,b] => valueDefinition(x)(None)
     }
   }
 
@@ -64,7 +64,7 @@ object ReactDataInterpreter {
             ReactComponentData(realTypes, defaultState, List(KeyHierarchy(key, groupData.flatMap(_.keyValues))))
           }).toList
         }
-      case x: XMapData[a,al,b] =>
+      case x: HListConvert[a,al,b] =>
         val groupData = kvpHList(x.from)
         keyOpt => {
           keyOpt match {

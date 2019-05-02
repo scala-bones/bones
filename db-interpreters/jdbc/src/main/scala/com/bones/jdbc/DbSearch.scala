@@ -4,7 +4,7 @@ import java.sql.{Connection, ResultSet, SQLException}
 
 import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionError, SystemError}
-import com.bones.data.Value.{BonesSchema, XMapData}
+import com.bones.data.Value.{BonesSchema, HListConvert}
 import com.bones.jdbc.DbUtil.{camelToSnake, withStatement}
 
 import scala.util.control.NonFatal
@@ -38,7 +38,7 @@ object DbSearch {
 
   def searchEntityWithConnection[A](schema: BonesSchema[A]): Connection => Stream[IO, Either[NonEmptyList[ExtractionError], WithId[Long,A]]] = {
     schema match {
-      case x: XMapData[h,n,b] =>
+      case x: HListConvert[h,n,b] =>
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
         val withId = WithId.entityWithId(DbUtil.longIdKeyValueDef, x)
         val resultSetF: ResultSet => Either[NonEmptyList[ExtractionError],WithId[Long,A]] =

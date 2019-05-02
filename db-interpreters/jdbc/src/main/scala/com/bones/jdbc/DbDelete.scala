@@ -6,7 +6,7 @@ import cats.data.NonEmptyList
 import com.bones.crud.WithId
 import com.bones.data.Error.{ExtractionError, SystemError}
 import com.bones.data.KeyValueDefinition
-import com.bones.data.Value.{BonesSchema, XMapData}
+import com.bones.data.Value.{BonesSchema, HListConvert}
 import com.bones.jdbc.DbInsertValues.ID
 import com.bones.jdbc.DbUtil.{camelToSnake, withDataSource, withStatement}
 import javax.sql.DataSource
@@ -23,7 +23,7 @@ object DbDelete {
 
   def deleteWithConnect[A](schema: BonesSchema[A]): ID => Connection => Either[NonEmptyList[ExtractionError], WithId[Long,A]] = {
     schema match {
-      case x: XMapData[_,_,_] => {
+      case x: HListConvert[_,_,_] => {
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
         val sql = s"delete from ${tableName} where id = ?"
         val getEntity = DbGet.getEntityWithConnection(schema)

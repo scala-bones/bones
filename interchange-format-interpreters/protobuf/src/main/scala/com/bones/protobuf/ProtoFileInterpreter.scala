@@ -90,7 +90,7 @@ object ProtoFileInterpreter {
 
   def fromSchema[A](dc: BonesSchema[A]): Message = {
     dc match {
-      case t: XMapData[a, al, b] =>
+      case t: HListConvert[a, al, b] =>
         val (messageFields, nestedTypes, lastIndex) = kvpHList(t.from)(0)
         Message(t.manifestOfA.runtimeClass.getSimpleName, messageFields, nestedTypes)
     }
@@ -139,7 +139,7 @@ object ProtoFileInterpreter {
         val result = kvpHList(kvp.kvpHList)(0)
         val nested = NestedMessage(name, result._1)
         (MessageField(NestedDataType(name), true, false, name, index), Vector(nested))
-      case t: XMapData[h,hl,a] =>
+      case t: HListConvert[h,hl,a] =>
         val (messageFields, _, _) = kvpHList(t.from)(0)
         val nested = NestedMessage(name, messageFields)
         (MessageField(NestedDataType(name), true, false, name, index), Vector(nested))

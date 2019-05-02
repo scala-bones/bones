@@ -32,7 +32,7 @@ trait KvpOutputInterpreter[OUT] {
   def enumerationToOut[A](op: EnumerationStringData[A]): A => OUT
 
   def fromSchema[A](bonesSchema: BonesSchema[A]): A => OUT = bonesSchema match {
-    case x: XMapData[_,_,A] => valueDefinition(x)
+    case x: HListConvert[_,_,A] => valueDefinition(x)
   }
 
 
@@ -99,20 +99,17 @@ trait KvpOutputInterpreter[OUT] {
           }
         }
       case e: EnumerationStringData[a] => enumerationToOut(e)
-      case gd: KvpHListValue[h,hl] => {
+      case gd: KvpHListValue[h,hl] =>
         val fh = kvpHList(gd.kvpHList)
         input: A => fh(input.asInstanceOf[h])
-      }
-      case x: XMapData[h,hl,A] => {
+      case x: HListConvert[h,hl,A] =>
         val fh = kvpHList(x.from)
         input: A => {
           fh(x.fba(input))
         }
-      }
-      case s: SumTypeData[a,b] => {
+      case s: SumTypeData[a,b] =>
         val fh = valueDefinition(s.from)
         input: A => fh(s.fba(input))
-      }
     }
 
 }
