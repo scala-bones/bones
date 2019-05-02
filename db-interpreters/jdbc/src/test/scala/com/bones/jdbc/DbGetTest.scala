@@ -17,7 +17,7 @@ class DbGetTest extends FunSuite {
 
     val result = DbGet.getEntityWithConnection(Schemas.creditCardSchema)(2)(conn)
 
-//    println(result)
+    //    println(result)
 
   }
 

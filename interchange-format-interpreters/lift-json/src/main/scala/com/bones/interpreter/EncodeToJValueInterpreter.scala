@@ -7,7 +7,6 @@ import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
 import net.liftweb.json.JsonAST._
 
-
 object EncodeToJValueInterpreter extends KvpOutputInterpreter[JValue] {
   type EncodeToJValue[A] = A => JValue
 
@@ -17,8 +16,8 @@ object EncodeToJValueInterpreter extends KvpOutputInterpreter[JValue] {
 
   override def combine(prefix: JValue, postfix: JValue): JValue =
     (prefix, postfix) match {
-      case ( JObject(fields), JObject(fields2) ) => JObject(fields ::: fields2)
-      case (_,_) => JObject()
+      case (JObject(fields), JObject(fields2)) => JObject(fields ::: fields2)
+      case (_, _)                              => JObject()
     }
 
   override def toObj[A](kvDef: KeyValueDefinition[A], value: JValue): JValue =
@@ -48,6 +47,4 @@ object EncodeToJValueInterpreter extends KvpOutputInterpreter[JValue] {
   override def enumerationToOut[A](op: EnumerationStringData[A]): A => JValue =
     input => JString(input.toString)
 
-
 }
-

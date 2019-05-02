@@ -16,12 +16,11 @@ object EncodeToCirceInterpreter extends KvpOutputInterpreter[Json] {
   override def combine(prefix: Json, postfix: Json): Json = {
     val v1 = prefix.asObject.toList.flatMap(_.toList)
     val v2 = postfix.asObject.toList.flatMap(_.toList)
-    Json.obj( v1 ::: v2 :_*)
+    Json.obj(v1 ::: v2: _*)
   }
 
-
   override def toObj[A](kvDef: KeyValueDefinition[A], value: Json): Json =
-    Json.obj( (kvDef.key, value) )
+    Json.obj((kvDef.key, value))
 
   override def booleanToOut[A](op: BooleanData): Boolean => Json =
     input => Json.fromBoolean(input)
@@ -42,10 +41,9 @@ object EncodeToCirceInterpreter extends KvpOutputInterpreter[Json] {
     input => Json.fromBigDecimal(input)
 
   override def listDataToOut[A, T](op: ListData[T]): A => Json =
-    input => Json.arr(input.asInstanceOf[List[Json]] :_*)
+    input => Json.arr(input.asInstanceOf[List[Json]]: _*)
 
   override def enumerationToOut[A](op: EnumerationStringData[A]): A => Json =
     input => Json.fromString(input.toString)
-
 
 }

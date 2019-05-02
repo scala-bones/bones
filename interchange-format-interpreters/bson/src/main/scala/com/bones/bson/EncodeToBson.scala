@@ -7,28 +7,38 @@ import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
 import com.bones.interpreter.KvpOutputInterpreter
 import reactivemongo.bson.buffer.ArrayBSONBuffer
-import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDecimal, BSONDocument, BSONElement, BSONLong, BSONNull, BSONString, BSONValue}
-
-
+import reactivemongo.bson.{
+  BSONArray,
+  BSONBoolean,
+  BSONDateTime,
+  BSONDecimal,
+  BSONDocument,
+  BSONElement,
+  BSONLong,
+  BSONNull,
+  BSONString,
+  BSONValue
+}
 
 object EncodeToBson extends KvpOutputInterpreter[BSONValue] {
 
-  def bsonResultToBytes(bsonValue: BSONValue) : Array[Byte] = {
+  def bsonResultToBytes(bsonValue: BSONValue): Array[Byte] = {
     val buffer = new ArrayBSONBuffer()
     BSONDocument.write(bsonValue.asInstanceOf[BSONDocument], buffer)
     buffer.array
   }
-
-
   @inline
   val none: BSONValue = BSONNull
   @inline
   val empty: BSONValue = BSONDocument.empty
+
   @inline
-  def combine(pre: BSONValue, post: BSONValue) : BSONValue = {
+  def combine(pre: BSONValue, post: BSONValue): BSONValue = {
     (pre, post) match {
-      case (BSONDocument(preElement), BSONDocument(postElements)) => BSONDocument(preElement.append(postElements))
-      case _ => throw new RuntimeException("pre and post must be BSONDocument options")
+      case (BSONDocument(preElement), BSONDocument(postElements)) =>
+        BSONDocument(preElement.append(postElements))
+      case _ =>
+        throw new RuntimeException("pre and post must be BSONDocument options")
     }
   }
 
@@ -54,18 +64,20 @@ object EncodeToBson extends KvpOutputInterpreter[BSONValue] {
 
   @inline
   override def bigDecimalToOut[A](op: BigDecimalData): BigDecimal => BSONValue =
-    input => BSONDecimal.fromBigDecimal(input).getOrElse(BSONString(input.toString))
+    input =>
+      BSONDecimal.fromBigDecimal(input).getOrElse(BSONString(input.toString))
 
   @inline
   override def listDataToOut[A, T](op: ListData[T]): A => BSONValue = {
     val f = valueDefinition(op.tDefinition)
-    (input: A) => {
-      BSONArray(input.asInstanceOf[List[T]].map(i => f(i)))
-    }
+    (input: A) =>
+      {
+        BSONArray(input.asInstanceOf[List[T]].map(i => f(i)))
+      }
   }
 
-
-  override def enumerationToOut[A](op: EnumerationStringData[A]): A => BSONValue =
+  override def enumerationToOut[A](
+      op: EnumerationStringData[A]): A => BSONValue =
     input => BSONString(input.toString)
 
   def toObj[A](kvDef: KeyValueDefinition[A], value: BSONValue): BSONValue =

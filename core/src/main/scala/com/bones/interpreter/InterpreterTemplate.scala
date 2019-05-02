@@ -1,6 +1,5 @@
 package com.bones.interpreter
 
-
 import com.bones.data.Value._
 import shapeless.{HList, Nat}
 
@@ -9,31 +8,31 @@ import shapeless.{HList, Nat}
   */
 class InterpreterTemplate {
 
-  def kvpHList[H<:HList,HL<:Nat](group: KvpHList[H,HL]): Unit = {
+  def kvpHList[H <: HList, HL <: Nat](group: KvpHList[H, HL]): Unit = {
     group match {
-      case KvpNil => ???
-      case op: KvpSingleValueHead[h, t, tl, a] => ???
-      case op: KvpHListHead[a, al, h, hl, t, tl] => ???
-      case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] => ???
+      case KvpNil                                      => ???
+      case op: KvpSingleValueHead[h, t, tl, a]         => ???
+      case op: KvpHListHead[a, al, h, hl, t, tl]       => ???
+      case op: KvpXMapDataHead[a, ht, nt, ho, xl, xll] => ???
     }
   }
 
   def valueDefinition[A](fgo: ValueDefinitionOp[A]): Unit =
     fgo match {
       case op: OptionalValueDefinition[a] => ???
-      case ob: BooleanData => ???
-      case rs: StringData => ???
-      case ri: LongData => ???
-      case uu: UuidData => ???
-      case dd: DateTimeData => ???
-      case bd: BigDecimalData => ???
-      case ld: ListData[t] => ???
-      case ed: EitherData[a,b] => ???
-      case ba: ByteArrayData => ???
-      case esd: EnumerationStringData[a] => ???
-      case kvp: KvpHListValue[h,hl] => ???
-      case x: HListConvert[a,al,b] => ???
-      case s: SumTypeData[a,b] => ???
+      case ob: BooleanData                => ???
+      case rs: StringData                 => ???
+      case ri: LongData                   => ???
+      case uu: UuidData                   => ???
+      case dd: DateTimeData               => ???
+      case bd: BigDecimalData             => ???
+      case ld: ListData[t]                => ???
+      case ed: EitherData[a, b]           => ???
+      case ba: ByteArrayData              => ???
+      case esd: EnumerationStringData[a]  => ???
+      case kvp: KvpHListValue[h, hl]      => ???
+      case x: HListConvert[a, al, b]      => ???
+      case s: SumTypeData[a, b]           => ???
     }
 
 }

@@ -11,7 +11,6 @@ import shapeless.ops.hlist.{Length, Prepend, Split}
 import shapeless.{::, Generic, HList, HNil, Nat, Succ}
 import java.time.format.DateTimeFormatter
 
-
 /** The Value in Key-Value Pair */
 object Value {
 
@@ -27,11 +26,11 @@ object Value {
     * This can be one of the pre-defined primitive 'Bones' types or a product type,
     * one of KvpHList, SumType or
     * */
-  sealed abstract class ValueDefinitionOp[A:Manifest] {
+  sealed abstract class ValueDefinitionOp[A: Manifest] {
 
     val manifestOfA: Manifest[A] = manifest[A]
 
-    def asSumType[B:Manifest](
+    def asSumType[B: Manifest](
         description: String,
         fab: (A, List[String]) => Either[CanNotConvert[A, B], B],
         fba: B => A,
@@ -45,7 +44,8 @@ object Value {
   type ValueDefinition[A] = FreeApplicative[ValueDefinitionOp, A]
 
   /** Wraps a data definition to mark the field optional */
-  case class OptionalValueDefinition[B:Manifest](valueDefinitionOp: ValueDefinitionOp[B])
+  case class OptionalValueDefinition[B: Manifest](
+      valueDefinitionOp: ValueDefinitionOp[B])
       extends ValueDefinitionOp[Option[B]] {}
 
   /** Syntactic sugar to wrap the data definition in an Optional type. */
@@ -64,15 +64,17 @@ object Value {
   final case class BooleanData(validations: List[ValidationOp[Boolean]])
       extends ValueDefinitionOp[Boolean]
       with ToOptionalData[Boolean]
-  final case class EitherData[A:Manifest, B:Manifest](definitionA: ValueDefinitionOp[A],
-                                    definitionB: ValueDefinitionOp[B])
+  final case class EitherData[A: Manifest, B: Manifest](
+      definitionA: ValueDefinitionOp[A],
+      definitionB: ValueDefinitionOp[B])
       extends ValueDefinitionOp[Either[A, B]]
       with ToOptionalData[Either[A, B]] {}
   final case class LongData(validations: List[ValidationOp[Long]])
       extends ValueDefinitionOp[Long]
       with ToOptionalData[Long]
-  final case class ListData[T:Manifest](tDefinition: ValueDefinitionOp[T],
-                               validations: List[ValidationOp[List[T]]])
+  final case class ListData[T: Manifest](
+      tDefinition: ValueDefinitionOp[T],
+      validations: List[ValidationOp[List[T]]])
       extends ValueDefinitionOp[List[T]]
       with ToOptionalData[List[T]]
 
@@ -102,12 +104,11 @@ object Value {
       enumeration: Enumeration,
       validations: List[ValidationOp[A]])
       extends ValueDefinitionOp[A]
-      with ToOptionalData[A] {
-  }
+      with ToOptionalData[A] {}
 
-  final case class KvpHListValue[H <: HList : Manifest, HL <: Nat](
-                                                                   kvpHList: KvpHList[H, HL],
-                                                                   validations: List[ValidationOp[H]])
+  final case class KvpHListValue[H <: HList: Manifest, HL <: Nat](
+      kvpHList: KvpHList[H, HL],
+      validations: List[ValidationOp[H]])
       extends ValueDefinitionOp[H]
       with ToOptionalData[H] {
 
@@ -120,14 +121,16 @@ object Value {
     val manifestOfA: Manifest[A]
   }
   final case class HListConvert[A <: HList, AL <: Nat, B: Manifest](
-                                                                 from: KvpHList[A, AL],
-                                                                 fab: A => B,
-                                                                 fba: B => A,
-                                                                 validations: List[ValidationOp[B]])
-    extends ValueDefinitionOp[B] with ToOptionalData[B] with ToListData[B] with BonesSchema[B]{
-  }
+      from: KvpHList[A, AL],
+      fab: A => B,
+      fba: B => A,
+      validations: List[ValidationOp[B]])
+      extends ValueDefinitionOp[B]
+      with ToOptionalData[B]
+      with ToListData[B]
+      with BonesSchema[B] {}
 
-  final case class SumTypeData[A, B:Manifest](
+  final case class SumTypeData[A, B: Manifest](
       from: ValueDefinitionOp[A],
       fab: (A, List[String]) => Either[CanNotConvert[A, B], B],
       fba: B => A,
@@ -164,12 +167,11 @@ object Value {
     def ::[A](v: KeyValueDefinition[A]): KvpSingleValueHead[A, H, N, A :: H]
 
     /* The ability to prefix an HListConvert (case class) to a KvpHList */
-    def :><:[OUT2 <: HList, OUT2L <: Nat, A: Manifest,HX<:HList, NX<:Nat](dc: HListConvert[HX, NX, A]):
-    KvpXMapDataHead[A, H, N, A :: H,HX,NX] =
-      KvpXMapDataHead[A,H,N,A::H,HX,NX](dc, List.empty, this)
+    def :><:[OUT2 <: HList, OUT2L <: Nat, A: Manifest, HX <: HList, NX <: Nat](
+        dc: HListConvert[HX, NX, A]): KvpXMapDataHead[A, H, N, A :: H, HX, NX] =
+      KvpXMapDataHead[A, H, N, A :: H, HX, NX](dc, List.empty, this)
 
   }
-
 
   /**
     */
@@ -195,14 +197,15 @@ object Value {
 
   /** This allows the HListConvert to be attached to a KvpHList */
   final case class KvpXMapDataHead[A: Manifest,
-                                    HT <: HList,
-                                    NT <: Nat,
-                                    HO <: A :: HT,
-                                    XL <:HList,
-                                    XLL <: Nat](xmapData: HListConvert[XL,XLL,A],
-                                                validations: List[ValidationOp[HO]],
-                                                tail: KvpHList[HT, NT]
-  ) extends KvpHList[HO, Succ[NT]] {
+                                   HT <: HList,
+                                   NT <: Nat,
+                                   HO <: A :: HT,
+                                   XL <: HList,
+                                   XLL <: Nat](
+      xmapData: HListConvert[XL, XLL, A],
+      validations: List[ValidationOp[HO]],
+      tail: KvpHList[HT, NT])
+      extends KvpHList[HO, Succ[NT]] {
 
     val manifestOfA: Manifest[A] = manifest[A]
 
@@ -212,7 +215,11 @@ object Value {
         lengthP: Length.Aux[HP, NP],
         length: Length.Aux[HO2, NO2],
         split: Split.Aux[HO2, NP, HP, HO]): KvpHList[HO2, NO2] =
-      KvpHListHead[HO2,NO2,HP,NP,HO,Succ[NT]](kvp, this, prepend, split, List.empty)
+      KvpHListHead[HO2, NO2, HP, NP, HO, Succ[NT]](kvp,
+                                                   this,
+                                                   prepend,
+                                                   split,
+                                                   List.empty)
 
     override def ::[H](v: KeyValueDefinition[H])
       : KvpSingleValueHead[H, HO, Succ[NT], H :: HO] =
@@ -240,10 +247,10 @@ object Value {
         length: Length.Aux[HO2, NO2],
         split: Split.Aux[HO2, PL, P, OUT]): KvpHList[HO2, NO2] =
       KvpHListHead[HO2, NO2, P, PL, OUT, Succ[TL]](kvp,
-                                                      this,
-                                                      prepend,
-                                                      split,
-                                                      List.empty)
+                                                   this,
+                                                   prepend,
+                                                   split,
+                                                   List.empty)
 
     override def ::[A](v: KeyValueDefinition[A])
       : KvpSingleValueHead[A, OUT, Succ[TL], A :: OUT] =
@@ -260,11 +267,11 @@ object Value {
                                 HL <: Nat,
                                 T <: HList,
                                 TL <: Nat](
-                                            head: KvpHList[H, HL],
-                                            tail: KvpHList[T, TL],
-                                            prepend: Prepend.Aux[H, T, HO],
-                                            split: Split.Aux[HO, HL, H, T], // analogous: Split.Aux[prepend.OUT,HL,H,T] with lpLength: Length.Aux[H,HL],
-                                            validations: List[ValidationOp[HO]]
+      head: KvpHList[H, HL],
+      tail: KvpHList[T, TL],
+      prepend: Prepend.Aux[H, T, HO],
+      split: Split.Aux[HO, HL, H, T], // analogous: Split.Aux[prepend.OUT,HL,H,T] with lpLength: Length.Aux[H,HL],
+      validations: List[ValidationOp[HO]]
   ) extends KvpHList[HO, NO] {
 
     /**
@@ -283,13 +290,13 @@ object Value {
         split: Split.Aux[HO2, PL, P, HO]
     ): KvpHList[HO2, NO2] =
       KvpHListHead[HO2, NO2, P, PL, HO, NO](kvp,
-                                                  this,
-                                                  prepend,
-                                                  split,
-                                                  List.empty)
+                                            this,
+                                            prepend,
+                                            split,
+                                            List.empty)
 
-    override def ::[P](kvd: KeyValueDefinition[P])
-      : KvpSingleValueHead[P, HO, NO, P :: HO] =
+    override def ::[P](
+        kvd: KeyValueDefinition[P]): KvpSingleValueHead[P, HO, NO, P :: HO] =
       KvpSingleValueHead[P, HO, NO, P :: HO](kvd, List.empty, this)
 
     def validate(v: ValidationOp[HO]): KvpHListHead[HO, NO, H, HL, T, TL] =
