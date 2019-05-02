@@ -53,10 +53,10 @@ object LocalhostAllIOApp {
                                                                                serviceOp: ServiceOps[CI, CI, DbError, RO, DbError, UI, UI, DbError, DO, DbError],
                                                                                ds: DataSource
                                                                              ): HttpRoutes[IO] = {
-    val createOperationWitId = serviceOp.createOperation.map(c => c.copy(successSchema = WithId.entityWithId(DbUtil.longIdKeyValueDef, c.successSchema)))
-    val readOperationWithId = serviceOp.readOperation.map(r => r.copy(successSchemaForRead = WithId.entityWithId(DbUtil.longIdKeyValueDef, r.successSchemaForRead)))
-    val updateOperationWithId = serviceOp.updateOperation.map(u => u.copy(successSchema = WithId.entityWithId(DbUtil.longIdKeyValueDef, u.successSchema)))
-    val deleteOperationWithid = serviceOp.deleteOperation.map(d => d.copy(successSchema = WithId.entityWithId(DbUtil.longIdKeyValueDef, d.successSchema)))
+    val createOperationWitId = serviceOp.createOperation.map(c => c.copy(outputSchema = WithId.entityWithId(DbUtil.longIdKeyValueDef, c.outputSchema)))
+    val readOperationWithId = serviceOp.readOperation.map(r => r.copy(outputSchema = WithId.entityWithId(DbUtil.longIdKeyValueDef, r.outputSchema)))
+    val updateOperationWithId = serviceOp.updateOperation.map(u => u.copy(outputSchema = WithId.entityWithId(DbUtil.longIdKeyValueDef, u.outputSchema)))
+    val deleteOperationWithid = serviceOp.deleteOperation.map(d => d.copy(outputSchema = WithId.entityWithId(DbUtil.longIdKeyValueDef, d.outputSchema)))
     val serviceOpWithId =
       ServiceOps(serviceOp.path, createOperationWitId, readOperationWithId, updateOperationWithId, deleteOperationWithid)
 

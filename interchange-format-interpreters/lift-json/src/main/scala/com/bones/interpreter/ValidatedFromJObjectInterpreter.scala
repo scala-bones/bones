@@ -16,15 +16,15 @@ object ValidatedFromJObjectInterpreter
     extends KvpValidateInputInterpreter[JValue] {
 
   override def headValue[A](
-      in: JValue,
-      kv: KeyValueDefinition[A],
-      headInterpreter: (
+                             in: JValue,
+                             kv: KeyValueDefinition[A],
+                             headInterpreterF: (
           Option[JValue],
           List[String]) => Either[NonEmptyList[ExtractionError], A],
-      path: List[String]): Either[NonEmptyList[ExtractionError], A] = {
+                             path: List[String]): Either[NonEmptyList[ExtractionError], A] = {
     in match {
       case obj: JObject =>
-        headInterpreter(obj.obj.find(_.name == kv.key).map(_.value), path)
+        headInterpreterF(obj.obj.find(_.name == kv.key).map(_.value), path)
       case _ =>
         Left(
           NonEmptyList.one(WrongTypeError(path, classOf[Object], in.getClass)))

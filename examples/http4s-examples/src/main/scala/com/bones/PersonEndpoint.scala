@@ -25,11 +25,11 @@ object Definitions {
 
   val errorDef = (kvp("error", string) :: KvpNil).convert[DbError]
 
-  val personService = ServiceOps.withPath("person")
-    .withCreate(personSchema, personSchema, errorDef)
-    .withRead(personSchema, errorDef)
-    .withUpdate(personSchema, personSchema, errorDef)
-    .withDelete(personSchema, errorDef)
+  val personService = ServiceOps.havingPath("person")
+    .providingCreate(personSchema, personSchema, errorDef)
+    .providingRead(personSchema, errorDef)
+    .providingUpdate(personSchema, personSchema, errorDef)
+    .providingDelete(personSchema, errorDef)
 
   //Above is the description.
   //below interpreters the description into runnable code.

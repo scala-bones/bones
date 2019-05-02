@@ -64,8 +64,8 @@ object FormInterpreter {
         val (headFormValues, headComponents) = kvpHList(op.head)
         val (tailFormValues, tailComponents) = kvpHList(op.tail)
         (headFormValues ::: tailFormValues, headComponents ::: tailComponents)
-      case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] =>
-        val (headFormValues, headComponents) = kvpHList(op.xmapData.from)
+      case op: KvpConcreteTypeHead[a,ht,nt,ho,xl,xll] =>
+        val (headFormValues, headComponents) = kvpHList(op.hListConvert.from)
         val (tailFormValues, tailComponents) = kvpHList(op.tail)
         (headFormValues ::: tailFormValues, headComponents ::: tailComponents)
     }

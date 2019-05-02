@@ -36,6 +36,7 @@ trait KvpOutputInterpreter[OUT] {
     case x: HListConvert[_, _, A] => valueDefinition(x)
   }
 
+  /** Interpreter for the KvpHList type. */
   protected def kvpHList[H <: HList, HL <: Nat](
       group: KvpHList[H, HL]): H => OUT =
     group match {
@@ -62,14 +63,14 @@ trait KvpOutputInterpreter[OUT] {
             val tail = kvpHList(op.tail)(cast.tail)
             combine(toObj(op.fieldDefinition, val1), tail)
           }
-      case op: KvpXMapDataHead[a, ht, nt, ho, xl, xll] => {
-        val headF = kvpHList(op.xmapData.from)
+      case op: KvpConcreteTypeHead[a, ht, nt, ho, xl, xll] => {
+        val headF = kvpHList(op.hListConvert.from)
         val tailF = kvpHList(op.tail)
         (input: H) =>
           {
             import shapeless.::
             val cast = input.asInstanceOf[a :: ht]
-            val head = headF(op.xmapData.fba(cast.head))
+            val head = headF(op.hListConvert.fba(cast.head))
             val tail = kvpHList(op.tail)(cast.tail)
             combine(head, tail)
           }

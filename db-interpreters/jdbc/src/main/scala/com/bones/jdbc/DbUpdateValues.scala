@@ -48,7 +48,7 @@ object DbUpdateValues {
             val sql =
               s"""update ${tableName} set ${updates.predefineUpdateStatements
                 .map(_._1)
-                .mkString(",")} where id = ?"""
+                .mkString(",")} where idDefinition = ?"""
             (con: Connection) =>
               {
                 val statement = con.prepareCall(sql)
@@ -95,8 +95,8 @@ object DbUpdateValues {
               f)
           }
       }
-      case op: KvpXMapDataHead[a, ht, nt, ho, xl, xll] => {
-        val headF = kvpHList(op.xmapData.from)
+      case op: KvpConcreteTypeHead[a, ht, nt, ho, xl, xll] => {
+        val headF = kvpHList(op.hListConvert.from)
         val tailF = kvpHList(op.tail)
         (i: Index) =>
           {
@@ -104,7 +104,7 @@ object DbUpdateValues {
             val tailResult = tailF(headResult.lastIndex)
             val f = (input: H) => {
               val headList = headResult.actionableUpdateStatements(
-                op.xmapData.fba(input.head))
+                op.hListConvert.fba(input.head))
               val tailList = tailResult.actionableUpdateStatements(input.tail)
               (headList ::: tailList)
             }

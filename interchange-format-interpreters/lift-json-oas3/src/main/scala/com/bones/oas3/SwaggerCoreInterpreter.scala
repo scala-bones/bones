@@ -54,8 +54,8 @@ object SwaggerCoreInterpreter {
             }
             tailSchema
           }
-      case op: KvpXMapDataHead[a, ht, nt, ho, xh, xl] =>
-        val valueF = fromValueDef(op.xmapData)
+      case op: KvpConcreteTypeHead[a, ht, nt, ho, xh, xl] =>
+        val valueF = fromValueDef(op.hListConvert)
         schema =>
           {
             valueF(schema)
