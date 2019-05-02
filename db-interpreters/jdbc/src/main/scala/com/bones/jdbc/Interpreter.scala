@@ -57,7 +57,7 @@ object FieldNames {
       case esd: EnumerationStringData[a] => List.empty
       case esd: EnumStringData[a] => List.empty
       case st: SumTypeData[a,b] => valueDefinition(st.from)
-      case kvp: KvpHListData[h,hl] => kvpHList(kvp.kvpHList)
+      case kvp: KvpHListValue[h,hl] => kvpHList(kvp.kvpHList)
       case x: XMapData[_,_,_] => kvpHList(x.from)
     }
 

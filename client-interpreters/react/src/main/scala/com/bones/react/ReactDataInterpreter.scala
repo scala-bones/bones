@@ -61,7 +61,7 @@ object ReactDataInterpreter {
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'enumeration'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
       case esd: EnumStringData[a] =>
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'enumeration'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
-      case kvp: KvpHListData[h,hl] =>
+      case kvp: KvpHListValue[h,hl] =>
         val groupData = kvpHList(kvp.kvpHList)
         keyOpt => {
           keyOpt.map(key => {

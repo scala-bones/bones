@@ -100,7 +100,7 @@ object ResultSetInterpreter {
           r <- catchSql(rs.getString(fieldName), path, esd)
           e <- stringToEnum(r, path, esd.enums)
         } yield e.asInstanceOf[A]
-      case kvp: KvpHListData[h,hl] =>
+      case kvp: KvpHListValue[h,hl] =>
         val groupF = kvpHList(kvp.kvpHList)
         (path, _) => //Ignore fieldName here
           groupF(path).andThen(_.map(_.asInstanceOf[A]))

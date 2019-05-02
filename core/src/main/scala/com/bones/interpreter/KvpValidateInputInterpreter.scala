@@ -232,7 +232,7 @@ trait KvpValidateInputInterpreter[IN] {
         {
           valueF(in, path).flatMap(res => op.fab(res, path).left.map(NonEmptyList.one))
         }
-      case op: KvpHListData[h, hl] => {
+      case op: KvpHListValue[h, hl] => {
         val fg = kvpHList(op.kvpHList)
         (jsonOpt: Option[IN], path: List[String]) =>
         {

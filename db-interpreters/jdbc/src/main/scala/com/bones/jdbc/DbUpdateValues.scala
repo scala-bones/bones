@@ -153,7 +153,7 @@ object DbUpdateValues {
       case ed: EitherData[a,b] => ???
       case esd: EnumerationStringData[a] => psF(i => (ps,a) => ps.setString(i,a.toString), Types.VARCHAR)
       case esd: EnumStringData[a] => psF(i => (ps,a) => ps.setString(i,a.toString), Types.VARCHAR)
-      case kvp: KvpHListData[h,hl] => {
+      case kvp: KvpHListValue[h,hl] => {
         val groupF = kvpHList(kvp.kvpHList)
         (i,k) => {
           val result = groupF(i)

@@ -33,7 +33,7 @@ class InterpreterTemplate {
       case ba: ByteArrayData => ???
       case esd: EnumerationStringData[a] => ???
       case esd: EnumStringData[a] => ???
-      case kvp: KvpHListData[h,hl] => ???
+      case kvp: KvpHListValue[h,hl] => ???
       case x: XMapData[a,al,b] => ???
       case s: SumTypeData[a,b] => ???
     }

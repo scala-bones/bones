@@ -63,7 +63,7 @@ object DbColumnInterpreter {
       case ed: EitherData[a,b] => ???
       case esd: EnumerationStringData[a] => nameToColumn("text")
       case esd: EnumStringData[a] => nameToColumn("text")
-      case kvp: KvpHListData[h,hl] =>
+      case kvp: KvpHListValue[h,hl] =>
         _ => kvpHList(kvp.kvpHList)
       case x: XMapData[a,al,b] =>
         _ => kvpHList(x.from)

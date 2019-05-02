@@ -19,7 +19,7 @@ trait KeyValueDefinitionSugar {
     KeyValueDefinition(key, valueDefinitionOp)
 
   def kvpHList[H <: HList :Manifest, HL <: Nat](key: String, kvpHList: KvpHList[H, HL]) =
-    KeyValueDefinition(key, KvpHListData(kvpHList, List.empty))
+    KeyValueDefinition(key, KvpHListValue(kvpHList, List.empty))
 
 }
 
@@ -120,6 +120,6 @@ trait Sugar {
 
   def kvpHList[H <: HList:Manifest, HL <: Nat](kvpHList: KvpHList[H, HL],
                                                v: ValidationOp[H]*) =
-    KvpHListData(kvpHList, v.toList)
+    KvpHListValue(kvpHList, v.toList)
 
 }
