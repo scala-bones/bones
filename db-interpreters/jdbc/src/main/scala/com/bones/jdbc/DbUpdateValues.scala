@@ -103,7 +103,6 @@ object DbUpdateValues {
           DefinitionResult[H](tailResult.lastIndex, headResult.predefineUpdateStatements ::: tailResult.predefineUpdateStatements, f)
         }
       }
-      case op: OptionalKvpHList[h,hl] => ???
     }
   }
 
@@ -152,7 +151,6 @@ object DbUpdateValues {
       case ld: ListData[t] => ???
       case ed: EitherData[a,b] => ???
       case esd: EnumerationStringData[a] => psF(i => (ps,a) => ps.setString(i,a.toString), Types.VARCHAR)
-      case esd: EnumStringData[a] => psF(i => (ps,a) => ps.setString(i,a.toString), Types.VARCHAR)
       case kvp: KvpHListValue[h,hl] => {
         val groupF = kvpHList(kvp.kvpHList)
         (i,k) => {

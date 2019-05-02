@@ -37,8 +37,6 @@ object FieldNames {
         kvpHList(op.xmapData.from) ::: kvpHList(op.tail)
       case op: KvpHListHead[a, al, h, hl, t, tl] =>
         kvpHList(op.head) ::: kvpHList(op.tail)
-      case op: OptionalKvpHList[h,hl] =>
-        kvpHList(op.kvpHList)
     }
 
 
@@ -55,7 +53,6 @@ object FieldNames {
       case ld: ListData[t] => List.empty
       case ed: EitherData[a,b] => List.empty
       case esd: EnumerationStringData[a] => List.empty
-      case esd: EnumStringData[a] => List.empty
       case st: SumTypeData[a,b] => valueDefinition(st.from)
       case kvp: KvpHListValue[h,hl] => kvpHList(kvp.kvpHList)
       case x: XMapData[_,_,_] => kvpHList(x.from)

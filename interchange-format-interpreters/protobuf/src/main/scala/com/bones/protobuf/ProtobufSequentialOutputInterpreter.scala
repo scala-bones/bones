@@ -96,18 +96,6 @@ object ProtobufSequentialOutputInterpreter {
           (fCompute, fEncode)
         }
       }
-
-      case op: OptionalKvpHList[h,hl] => (fieldNumber: FieldNumber) =>
-        val kvpGroupF = kvpHList(op.kvpHList)(fieldNumber)
-        (input: Option[h] :: HNil) => {
-          input.head match {
-            case None => (
-              () => 0,
-              (outputStream: CodedOutputStream) => Right(outputStream)
-            )
-            case Some(h) => kvpGroupF(h)
-          }
-        }
     }
   }
 
@@ -172,11 +160,6 @@ object ProtobufSequentialOutputInterpreter {
       case ed: EitherData[a, b] => ??? // use oneOf
       case esd: EnumerationStringData[a] => (fieldNumber: FieldNumber) =>
         (a: A) => (
-          () => CodedOutputStream.computeStringSize(fieldNumber, a.toString),
-          write(_.writeString(fieldNumber, a.toString))
-        )
-      case esd: EnumStringData[a] => (fieldNumber: FieldNumber) =>
-        (a: a) => (
           () => CodedOutputStream.computeStringSize(fieldNumber, a.toString),
           write(_.writeString(fieldNumber, a.toString))
         )

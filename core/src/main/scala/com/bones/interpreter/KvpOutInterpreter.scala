@@ -30,7 +30,6 @@ trait KvpOutputInterpreter[OUT] {
   def bigDecimalToOut[A](op: BigDecimalData): BigDecimal => OUT
   def listDataToOut[A,T](op: ListData[T]): A => OUT
   def enumerationToOut[A](op: EnumerationStringData[A]): A => OUT
-  def enumToOut[A](op: EnumStringData[_]): A => OUT
 
   def fromSchema[A](bonesSchema: BonesSchema[A]): A => OUT = bonesSchema match {
     case x: XMapData[_,_,A] => valueDefinition(x)
@@ -69,12 +68,6 @@ trait KvpOutputInterpreter[OUT] {
           combine(head, tail)
         }
       }
-      case op: OptionalKvpHList[h,hl] =>
-        val oF = kvpHList(op.kvpHList)
-        input: H => input.head match {
-          case Some(kvp) => oF(kvp)
-          case None => none
-        }
     }
 
   protected def valueDefinition[A](fgo: ValueDefinitionOp[A]): A => OUT =
@@ -106,7 +99,6 @@ trait KvpOutputInterpreter[OUT] {
           }
         }
       case e: EnumerationStringData[a] => enumerationToOut(e)
-      case e: EnumStringData[a] => enumToOut(e)
       case gd: KvpHListValue[h,hl] => {
         val fh = kvpHList(gd.kvpHList)
         input: A => fh(input.asInstanceOf[h])

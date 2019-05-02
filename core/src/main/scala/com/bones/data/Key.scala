@@ -8,12 +8,10 @@ import com.bones.data.Value._
 import com.bones.validation.ValidationDefinition.ValidationOp
 import shapeless.{HList, Nat}
 
-/**
-  * A field definition is essentially a key value pair and a list of validations to be applied to the value.
-  * @tparam A The type this field definition is describing.
-  */
+/** A String key and it's value description where A is the type the value. */
 case class KeyValueDefinition[A](key: String, op: ValueDefinitionOp[A])
 
+/** Useful DSL builder */
 trait KeyValueDefinitionSugar {
   def kvp[A](key: String, valueDefinitionOp: ValueDefinitionOp[A]) =
     KeyValueDefinition(key, valueDefinitionOp)
@@ -23,7 +21,7 @@ trait KeyValueDefinitionSugar {
 
 }
 
-/** Starting point for obtaining a value is to define a key */
+/** Starting point for obtaining a value definition. */
 trait Sugar {
 
   /** Indicates that the data tied to this key is a String type that must pass the specified validations */
@@ -72,7 +70,7 @@ trait Sugar {
   /** Indicates that the data tied to this key is a BigDecimal that must pass the specified validations. */
   def bigDecimal(v: ValidationOp[BigDecimal]*) = BigDecimalData(v.toList)
 
-  /** Alais for bigDecimal without validations */
+  /** Alias for bigDecimal without validations */
   val bigDecimal: BigDecimalData = bigDecimal()
 
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
@@ -103,20 +101,10 @@ trait Sugar {
   /** Expecting the type to be a Scala style enumeration
     *
     * @param e The base enumeration type.
-    * @tparam A
-    * @return
+    * @tparam A The "Value" from the enumeration, eg: EnumerationObject.Value
     */
   def enumeration[A: Manifest](e: Enumeration): EnumerationStringData[A] =
     EnumerationStringData[A](e, List.empty)
-
-  /** Expecting the type to be a Java style enumeration. */
-  def enum[A <: Enum[A]: Manifest](enums: List[A],
-                                   v: ValidationOp[A]*): EnumStringData[A] =
-    EnumStringData[A](enums, v.toList)
-
-  /** Alias for enum without validations */
-  def enum[A <: Enum[A]: Manifest](enums: List[A]): EnumStringData[A] =
-    EnumStringData[A](enums, List.empty)
 
   def kvpHList[H <: HList:Manifest, HL <: Nat](kvpHList: KvpHList[H, HL],
                                                v: ValidationOp[H]*) =
