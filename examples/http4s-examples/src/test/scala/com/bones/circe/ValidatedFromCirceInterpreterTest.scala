@@ -10,7 +10,7 @@ class ValidatedFromCirceInterpreterTest extends FunSuite {
 
   val json: String = """
   {
-    "id": "c730433b-082c-4984-9d66-855c243266f0",
+    "idDefinition": "c730433b-082c-4984-9d66-855c243266f0",
     "name": "Foo",
     "counts": [1, 2, 3],
     "values": {

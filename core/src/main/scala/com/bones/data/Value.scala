@@ -168,12 +168,12 @@ object Value {
 
     /* The ability to prefix an HListConvert (case class) to a KvpHList */
     def :><:[OUT2 <: HList, OUT2L <: Nat, A: Manifest, HX <: HList, NX <: Nat](
-        dc: HListConvert[HX, NX, A]): KvpXMapDataHead[A, H, N, A :: H, HX, NX] =
-      KvpXMapDataHead[A, H, N, A :: H, HX, NX](dc, List.empty, this)
+        dc: HListConvert[HX, NX, A]): KvpConcreteTypeHead[A, H, N, A :: H, HX, NX] =
+      KvpConcreteTypeHead[A, H, N, A :: H, HX, NX](dc, List.empty, this)
 
   }
 
-  /**
+  /** The Nil as in an empty HList.
     */
   object KvpNil extends KvpHList[HNil, Nat._0] {
 
@@ -196,13 +196,13 @@ object Value {
   }
 
   /** This allows the HListConvert to be attached to a KvpHList */
-  final case class KvpXMapDataHead[A: Manifest,
+  final case class KvpConcreteTypeHead[A: Manifest,
                                    HT <: HList,
                                    NT <: Nat,
                                    HO <: A :: HT,
                                    XL <: HList,
                                    XLL <: Nat](
-      xmapData: HListConvert[XL, XLL, A],
+      hListConvert: HListConvert[XL, XLL, A],
       validations: List[ValidationOp[HO]],
       tail: KvpHList[HT, NT])
       extends KvpHList[HO, Succ[NT]] {
@@ -226,6 +226,7 @@ object Value {
       KvpSingleValueHead(v, List.empty, this)
   }
 
+  /** The head of the HList has a known KeyValueDefinition. */
   final case class KvpSingleValueHead[H, T <: HList, TL <: Nat, OUT <: H :: T](
       fieldDefinition: KeyValueDefinition[H],
       validations: List[ValidationOp[OUT]],

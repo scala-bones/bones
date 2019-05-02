@@ -38,23 +38,23 @@ case class HttpInterpreter(
 
   /**
     * Creates an Http4s Routs for the given input.
-    * @param serviceOps
-    * @param searchF
-    * @param createF
-    * @param readF
-    * @param updateF
-    * @param deleteF
+    * @param serviceOps Defines what crud operations are available.
+    * @param searchF Business logic function for search.
+    * @param createF Business logic function for create.
+    * @param readF Business logic functions for read.
+    * @param updateF Business logic function for update.
+    * @param deleteF Business logic function for a delete.
     * @tparam CI Create Input Type (Usually without an ID)
     * @tparam CO Create Output Type (Usually with an ID)
     * @tparam CE Create Error type.
     * @tparam RO Read Input Type ( Usually with an ID, probably the same as CO)
-    * @tparam RE
-    * @tparam UI
-    * @tparam UO
-    * @tparam UE
-    * @tparam DO
-    * @tparam DE
-    * @return
+    * @tparam RE Read Error
+    * @tparam UI Update Input
+    * @tparam UO Update Output
+    * @tparam UE Update Error
+    * @tparam DO Delete Output
+    * @tparam DE Delete Error
+    * @return HttpRoutes which can be fed to Http4s.
     */
   def forService[CI, CO, CE, RO, RE, UI, UO, UE, DO, DE](
       serviceOps: ServiceOps[CI, CO, CE, RO, RE, UI, UO, UE, DO, DE],
@@ -70,7 +70,7 @@ case class HttpInterpreter(
       serviceOps.updateOperation.toList.flatMap(update => {
         val inputF =
           ValidatedFromCirceInterpreter.fromSchema(update.inputSchema)
-        val outputF = EncodeToCirceInterpreter.fromSchema(update.successSchema)
+        val outputF = EncodeToCirceInterpreter.fromSchema(update.outputSchema)
         val errorF = EncodeToCirceInterpreter.fromSchema(update.failureSchema)
 
         val json = PutPostInterpreterGroup[UI, UO, UE](
@@ -85,7 +85,7 @@ case class HttpInterpreter(
 
         val bInputF =
           ValidatedFromBsonInterpreter.fromSchema(update.inputSchema)
-        val bOutputF = EncodeToBson.fromSchema(update.successSchema)
+        val bOutputF = EncodeToBson.fromSchema(update.outputSchema)
         val bErrorF = EncodeToBson.fromSchema(update.failureSchema)
 
         val bson = PutPostInterpreterGroup[UI, UO, UE](
@@ -101,7 +101,7 @@ case class HttpInterpreter(
         val pInputF =
           ProtobufSequentialInputInterpreter.fromBytes(update.inputSchema)
         val pOutputF = ProtobufSequentialOutputInterpreter.encodeToBytes(
-          update.successSchema)
+          update.outputSchema)
         val pErrorF = ProtobufSequentialOutputInterpreter.encodeToBytes(
           update.failureSchema)
 
@@ -121,7 +121,7 @@ case class HttpInterpreter(
 
     val readHttpService = serviceOps.readOperation.toList.flatMap(read => {
       val outputF =
-        EncodeToCirceInterpreter.fromSchema(read.successSchemaForRead)
+        EncodeToCirceInterpreter.fromSchema(read.outputSchema)
       val errorF = EncodeToCirceInterpreter.fromSchema(read.errorSchema)
       val json = GetInterpreterGroup[RO, RE](
         "application/json",
@@ -129,7 +129,7 @@ case class HttpInterpreter(
         re => errorF(re).spaces2.getBytes(charset)
       )
 
-      val bOutputF = EncodeToBson.fromSchema(read.successSchemaForRead)
+      val bOutputF = EncodeToBson.fromSchema(read.outputSchema)
       val bErrorF = EncodeToBson.fromSchema(read.errorSchema)
       val bson = GetInterpreterGroup[RO, RE](
         "application/ubjson",
@@ -138,7 +138,7 @@ case class HttpInterpreter(
       )
 
       val pOutputF = ProtobufSequentialOutputInterpreter.encodeToBytes(
-        read.successSchemaForRead)
+        read.outputSchema)
       val pErrorF =
         ProtobufSequentialOutputInterpreter.encodeToBytes(read.errorSchema)
       val protoBuf = GetInterpreterGroup[RO, RE](
@@ -168,7 +168,7 @@ case class HttpInterpreter(
       serviceOps.createOperation.toList.flatMap(create => {
         val inputF =
           ValidatedFromCirceInterpreter.fromSchema(create.inputSchema)
-        val outputF = EncodeToCirceInterpreter.fromSchema(create.successSchema)
+        val outputF = EncodeToCirceInterpreter.fromSchema(create.outputSchema)
         val errorF = EncodeToCirceInterpreter.fromSchema(create.errorSchema)
 
         val json = PutPostInterpreterGroup[CI, CO, CE](
@@ -183,7 +183,7 @@ case class HttpInterpreter(
 
         val bInputF =
           ValidatedFromBsonInterpreter.fromSchema(create.inputSchema)
-        val bOutputF = EncodeToBson.fromSchema(create.successSchema)
+        val bOutputF = EncodeToBson.fromSchema(create.outputSchema)
         val bErrorF = EncodeToBson.fromSchema(create.errorSchema)
 
         val bson = PutPostInterpreterGroup[CI, CO, CE](
@@ -199,7 +199,7 @@ case class HttpInterpreter(
         val pInputF =
           ProtobufSequentialInputInterpreter.fromBytes(create.inputSchema)
         val pOutputF = ProtobufSequentialOutputInterpreter.encodeToBytes(
-          create.successSchema)
+          create.outputSchema)
         val pErrorF =
           ProtobufSequentialOutputInterpreter.encodeToBytes(create.errorSchema)
         val protoBuf = PutPostInterpreterGroup[CI, CO, CE](
@@ -218,7 +218,7 @@ case class HttpInterpreter(
 
     val deleteHttpService =
       serviceOps.deleteOperation.toList.flatMap(del => {
-        val outputF = EncodeToCirceInterpreter.fromSchema(del.successSchema)
+        val outputF = EncodeToCirceInterpreter.fromSchema(del.outputSchema)
         val errorF = EncodeToCirceInterpreter.fromSchema(del.errorSchema)
         val json = DeleteInterpreterGroup[DO, DE](
           "application/json",
@@ -226,7 +226,7 @@ case class HttpInterpreter(
           de => errorF(de).spaces2.getBytes(charset)
         )
 
-        val bOutputF = EncodeToBson.fromSchema(del.successSchema)
+        val bOutputF = EncodeToBson.fromSchema(del.outputSchema)
         val bErrorF = EncodeToBson.fromSchema(del.errorSchema)
         val bson = DeleteInterpreterGroup[DO, DE](
           "application/ubjson",
@@ -235,7 +235,7 @@ case class HttpInterpreter(
         )
 
         val pOutputF =
-          ProtobufSequentialOutputInterpreter.encodeToBytes(del.successSchema)
+          ProtobufSequentialOutputInterpreter.encodeToBytes(del.outputSchema)
         val pErrorF =
           ProtobufSequentialOutputInterpreter.encodeToBytes(del.errorSchema)
         val protobuf = DeleteInterpreterGroup[DO, DE](
@@ -267,6 +267,7 @@ case class HttpInterpreter(
 
 object HttpInterpreter {
 
+  /** Collection of items used to to create a Post endpoint in this HttpInterpreter. */
   case class PutPostInterpreterGroup[UI, UO, UE](
       contentType: String,
       inInterpreter: Array[Byte] => Either[NonEmptyList[ExtractionError], UI],
@@ -274,36 +275,31 @@ object HttpInterpreter {
       errorInterpreter: UE => Array[Byte]
   )
 
+  /** Collection of items used to to get a Post endpoint in this HttpInterpreter. */
   case class GetInterpreterGroup[RO, RE](
       contentType: String,
       outInterpreter: RO => Array[Byte],
       errorInterpreter: RE => Array[Byte]
   )
 
+  /** Collection of items used to to create a Delete endpoint in this HttpInterpreter. */
   case class DeleteInterpreterGroup[DO, DE](
       contentType: String,
       outInterpreter: DO => Array[Byte],
       errorInterpreter: DE => Array[Byte]
   )
 
+  /** Collection of items used to to create a Search endpoint in this HttpInterpreter. */
   case class SearchInterpreterGroup[SO](
       contentType: String,
       outInterpreter: Stream[IO, SO] => Stream[IO, Array[Byte]]
   )
 
-  def extractionErrorToOut(pf: ParsingFailure): IO[Response[IO]] = {
-    val errors = List(s"Could not parse json ${pf.message}")
-    BadRequest(Json.obj(("success", "false".asJson), ("errors", errors.asJson)))
-  }
   def eeToOut(ee: NonEmptyList[ExtractionError]): IO[Response[IO]] = {
     val errors = ee.map(_.toString)
     BadRequest(Json.obj(("success", "false".asJson), ("errors", errors.asJson)))
   }
-  def missingIdToJson(id: Long): IO[Response[IO]] = {
-    val errors = List(s"Could find entity with id  ${id}")
-    BadRequest(Json.obj(("success", "false".asJson), ("errors", errors.asJson)))
-  }
-
+  /** Create an endpoint to display the swagger doc for for this type.  Endpoitn is /swagger/'entityName' */
   def swaggerDoc(
       contentTypes: List[String],
       serviceOps: ServiceOps[_, _, _, _, _, _, _, _, _, _]): HttpRoutes[IO] = {
@@ -318,6 +314,7 @@ object HttpInterpreter {
     }
   }
 
+  /** Create an endpoint to dispaly the protobuf schema for each endpoint */
   def protoBuff(
       serviceOps: ServiceOps[_, _, _, _, _, _, _, _, _, _]): HttpRoutes[IO] = {
     def toFile[A] =
@@ -330,7 +327,7 @@ object HttpInterpreter {
           | ${toFile(algebra.inputSchema)}
           |
           | // Create Successful Output Message
-          | ${toFile(algebra.successSchema)}
+          | ${toFile(algebra.outputSchema)}
           |
           | // Create Error Output Message
           | ${toFile(algebra.errorSchema)}
@@ -344,7 +341,7 @@ object HttpInterpreter {
         s"""
          |
          | // Read Successful Output Message
-         | ${toFile(algebra.successSchemaForRead)}
+         | ${toFile(algebra.outputSchema)}
          |
          | // Read Error Output Message
          | ${toFile(algebra.errorSchema)}
@@ -360,7 +357,7 @@ object HttpInterpreter {
          | ${toFile(algebra.inputSchema)}
          |
          | // Update Successful Output Message
-         | ${toFile(algebra.successSchema)}
+         | ${toFile(algebra.outputSchema)}
          |
          | // Update Error Output Message
          | ${toFile(algebra.failureSchema)}
@@ -373,7 +370,7 @@ object HttpInterpreter {
       .map(algebra => {
         s"""
          | // Delete Successful Output Message
-         | ${toFile(algebra.successSchema)}
+         | ${toFile(algebra.outputSchema)}
          |
          | // Delete Error Output Message
          | ${toFile(algebra.errorSchema)}
@@ -391,6 +388,7 @@ object HttpInterpreter {
 
   }
 
+  /** Crate delete routes from interpreter group */
   def delete[DO, DE](
       path: String,
       interpreterGroup: DeleteInterpreterGroup[DO, DE],
@@ -414,11 +412,13 @@ object HttpInterpreter {
     }
   }
 
+  /** Get content type from the Request Headers if it exists */
   def contentType(req: Request[IO]): Option[String] =
     req.headers
       .find(header => header.name == CaseInsensitiveString("Content-Type"))
       .map(_.value)
 
+  /** Create search endpoints form the Interpreter Group */
   def search[CO](
       path: String,
       interpreterGroup: SearchInterpreterGroup[CO],
@@ -435,6 +435,7 @@ object HttpInterpreter {
     }
   }
 
+  /** Crate the post endpoint from the Interpreter Group */
   def post[CI, CO, CE](
       path: String,
       interpreterGroup: PutPostInterpreterGroup[CI, CO, CE],
@@ -469,11 +470,6 @@ object HttpInterpreter {
 
   /**
     * Create a get endpoint.
-    * @param interpreterGroup
-    * @param readF
-    * @tparam RO
-    * @tparam RE
-    * @return
     */
   def get[RO, RE](path: String,
                   interpreterGroup: GetInterpreterGroup[RO, RE],

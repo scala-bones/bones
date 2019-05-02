@@ -28,8 +28,8 @@ object ReactDataInterpreter {
         valueDefinition(op.fieldDefinition.op)(Some(op.fieldDefinition.key)) ++ kvpHList(op.tail)
       case op: KvpHListHead[a, al, h, hl, t, tl] =>
         kvpHList(op.head) ++ kvpHList(op.tail)
-      case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] =>
-        kvpHList(op.xmapData.from) ++ kvpHList(op.tail)
+      case op: KvpConcreteTypeHead[a,ht,nt,ho,xl,xll] =>
+        kvpHList(op.hListConvert.from) ++ kvpHList(op.tail)
     }
   }
 

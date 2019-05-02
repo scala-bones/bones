@@ -13,14 +13,14 @@ object CrudDbDefinitions {
   //    entity match {
   //      case op: HListConvert[a,al,B] =>
   //        implicit val x = op.manifestOfA
-  //        (kvp("id", long(lv.min(0))) ::
+  //        (kvp("idDefinition", long(lv.min(0))) ::
   //          op :><:
   //          KvpNil
   //        ).convert[WithId[B]]
   //    }
 
 
-  //  case class WithId[A](id: Long, a: A)
+  //  case class WithId[A](idDefinition: Long, a: A)
   case class DbError(message: String)
 
 }
@@ -34,7 +34,7 @@ case class CrudDbDefinitions[CI, CO, RO, UI, UO, DO](
   // TODO: deal with error better
   val searchF: Stream[IO, WithId[Long, RO]] =
     schema.readOperation.map(op => {
-      DbSearch.getEntity(op.successSchemaForRead)(ds)
+      DbSearch.getEntity(op.outputSchema)(ds)
         .flatMap(out => {
           out match {
             case Left(errO) => Stream.empty
@@ -60,7 +60,7 @@ case class CrudDbDefinitions[CI, CO, RO, UI, UO, DO](
 
   val readF: Long => IO[Either[DbError, WithId[Long, RO]]] = {
     schema.readOperation.map(op => {
-      val readQuery = DbGet.getEntity(op.successSchemaForRead)(ds)
+      val readQuery = DbGet.getEntity(op.outputSchema)(ds)
       (id: Long) =>
         IO {
           readQuery(id)
@@ -86,7 +86,7 @@ case class CrudDbDefinitions[CI, CO, RO, UI, UO, DO](
 
   val deleteF: Long => IO[Either[DbError, WithId[Long, DO]]] = {
     schema.deleteOperation.map(op => {
-      val deleteQuery = DbDelete.delete(op.successSchema)(ds)
+      val deleteQuery = DbDelete.delete(op.outputSchema)(ds)
       (id: Long) =>
         IO {
           deleteQuery(id)

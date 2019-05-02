@@ -37,8 +37,8 @@ object ResultSetInterpreter {
                 })
               }
           }
-      case op: KvpXMapDataHead[a, ht, nt, ho, xl, xll] =>
-        val headF = kvpHList(op.xmapData.from)
+      case op: KvpConcreteTypeHead[a, ht, nt, ho, xl, xll] =>
+        val headF = kvpHList(op.hListConvert.from)
         val tailF = kvpHList(op.tail)
         import shapeless.::
         path =>
@@ -49,7 +49,7 @@ object ResultSetInterpreter {
               {
                 Util.eitherMap2(rsToHead(rs), rsToTail(rs))(
                   (l1: xl, l2: ht) => {
-                    (op.xmapData.fab(l1) :: l2).asInstanceOf[H]
+                    (op.hListConvert.fab(l1) :: l2).asInstanceOf[H]
                   })
               }
           }

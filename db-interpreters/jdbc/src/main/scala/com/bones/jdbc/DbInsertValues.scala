@@ -91,12 +91,12 @@ object DbInsertValues {
           (tailList._1, headList._2 ::: tailList._2)
         }
       }
-      case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] => {
-        val headF = kvpHList(op.xmapData.from)
+      case op: KvpConcreteTypeHead[a,ht,nt,ho,xl,xll] => {
+        val headF = kvpHList(op.hListConvert.from)
         val tailF = kvpHList(op.tail)
         (i:Index,h:H) => {
 //          val hSplit = op.split(h)
-          val headList = headF(i,op.xmapData.fba(h.head))
+          val headList = headF(i,op.hListConvert.fba(h.head))
           val tailList = tailF(headList._1, h.tail)
           (tailList._1, headList._2 ::: tailList._2)
         }

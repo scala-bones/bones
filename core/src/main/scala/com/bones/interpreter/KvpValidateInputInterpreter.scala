@@ -32,14 +32,33 @@ trait KvpValidateInputInterpreter[IN] {
 
   import Util._
 
-  def headValue[A](
-      in: IN,
-      kv: KeyValueDefinition[A],
-      headInterpreter: (
-          Option[IN],
-          List[String]) => Either[NonEmptyList[ExtractionError], A],
-      path: List[String]): Either[NonEmptyList[ExtractionError], A]
+  type Path = List[String]
 
+  /**
+    * Extend this to extract the value of type A from the input type IN
+    * @param in The input type, for instance a base Json type.
+    * @param kv The key and value definition describing this extraction.
+    * @param headInterpreterF we will pass the appropriate extractXXX type based on type A
+    * @param path The json path to the element such
+    * @tparam A The type being extracted.
+    * @return Either successful A or failure.  Should probably just return result from headInterpreterF.
+    */
+  def headValue[A](in: IN,
+                   kv: KeyValueDefinition[A],
+                   headInterpreterF: (
+                       Option[IN],
+                       Path) => Either[NonEmptyList[ExtractionError], A],
+                   path: List[String]): Either[NonEmptyList[ExtractionError], A]
+
+  /**
+    * Override this to provide the ability to extract a String from the IN type.
+    * @param op The string definition.
+    * @param clazz The resulting class we are tyring to extract.
+    * @param in The interchange format input type.
+    * @param path The path hierarchy.
+    * @tparam A The expected resulting type, eg String or Enumerated Type which we are trying to extract from a string.
+    * @return The extracted String or an Error
+    */
   def extractString[A](op: ValueDefinitionOp[A], clazz: Class[_])(
       in: IN,
       path: List[String]): Either[NonEmptyList[ExtractionError], String]
@@ -112,15 +131,15 @@ trait KvpValidateInputInterpreter[IN] {
           }
       }
 
-      case op: KvpXMapDataHead[a, ht, nt, ho, xl, xll] => {
-        val headInterpreter = kvpHList(op.xmapData.from)
+      case op: KvpConcreteTypeHead[a, ht, nt, ho, xl, xll] => {
+        val headInterpreter = kvpHList(op.hListConvert.from)
         val tailInterpreter = kvpHList(op.tail)
         (in: IN, path: List[String]) =>
           {
             Util
               .eitherMap2(headInterpreter(in, path), tailInterpreter(in, path))(
                 (l1: xl, l2: ht) => {
-                  op.xmapData.fab(l1) :: l2
+                  op.hListConvert.fab(l1) :: l2
                 })
               .flatMap { l =>
                 vu.validate[ho](op.validations)(l.asInstanceOf[ho], path)

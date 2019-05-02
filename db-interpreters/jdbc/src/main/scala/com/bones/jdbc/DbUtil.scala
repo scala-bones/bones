@@ -59,5 +59,5 @@ object DbUtil {
       con.close()
     }
 
-  val longIdKeyValueDef = kvp("id", long(lv.min(0)))
+  val longIdKeyValueDef = kvp("idDefinition", long(lv.min(0)))
 }

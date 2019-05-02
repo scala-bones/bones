@@ -74,9 +74,9 @@ val service =
 val http4Service: HttpRoutes[IO] = service.forService(
     personService,
     person => IO { Right(person) }, // create: a function from Person => IO[Either[Error,Person]] 
-    id => IO { Right(Person("Janis Ian", 30, None))}, //read: a function from long => IO[Either[Error,Person]]
-    (id, person) => IO { Right(person) }, //update: a function from (long,Person) => IO[Either[Error, Person]]
-    id => IO { Right(Person("Janis Ian", 30, None))} // delete: a function from (long) => IO[Either[Error, Person]]
+    idDefinition => IO { Right(Person("Janis Ian", 30, None))}, //read: a function from long => IO[Either[Error,Person]]
+    (idDefinition, person) => IO { Right(person) }, //update: a function from (long,Person) => IO[Either[Error, Person]]
+    idDefinition => IO { Right(Person("Janis Ian", 30, None))} // delete: a function from (long) => IO[Either[Error, Person]]
 )
 
 object PersonEndpoint extends IOApp {

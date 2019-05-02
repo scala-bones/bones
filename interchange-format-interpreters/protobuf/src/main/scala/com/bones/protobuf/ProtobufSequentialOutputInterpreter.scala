@@ -90,15 +90,15 @@ object ProtobufSequentialOutputInterpreter {
               (fCompute, fEncode)
             }
 
-      case op: KvpXMapDataHead[a, h, n, ho, ht, nt] =>
+      case op: KvpConcreteTypeHead[a, h, n, ho, ht, nt] =>
         (fieldNumber: FieldNumber) =>
           {
-            val headF = kvpHList(op.xmapData.from)(fieldNumber)
+            val headF = kvpHList(op.hListConvert.from)(fieldNumber)
             val tailF = kvpHList(op.tail)(fieldNumber)
             (input: ho) =>
               {
                 val cast = input.asInstanceOf[a :: h]
-                val headGroup = op.xmapData.fba(cast.head)
+                val headGroup = op.hListConvert.fba(cast.head)
                 val headResult = headF(headGroup)
                 val tailResult = tailF(cast.tail)
                 val fCompute: ComputeSize = () =>

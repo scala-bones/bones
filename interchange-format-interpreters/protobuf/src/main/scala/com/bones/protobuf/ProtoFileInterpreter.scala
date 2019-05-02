@@ -123,8 +123,8 @@ object ProtoFileInterpreter {
           kvpHList(op.tail)(thisIndex)
         (messageFields :+ r._1, r._2 ++ nestedTypes, lastUsedIndex)
       }
-      case op: KvpXMapDataHead[a, ht, nt, ho, hx, nx] =>
-        val head = kvpHList(op.xmapData.from)(lastIndex)
+      case op: KvpConcreteTypeHead[a, ht, nt, ho, hx, nx] =>
+        val head = kvpHList(op.hListConvert.from)(lastIndex)
         val tail = kvpHList(op.tail)(head._3)
         (head._1 ++ tail._1, head._2 ++ tail._2, tail._3)
       case op: KvpHListHead[a, al, h, hl, t, tl] =>

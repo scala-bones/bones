@@ -21,8 +21,8 @@ object ColumnNameInterpreter {
         headList ::: tailList
       case op: KvpHListHead[a, al, h, hl, t, tl] =>
         kvpHList(op.head) ::: kvpHList(op.tail)
-      case op: KvpXMapDataHead[a, ht, nt, ho, xl, xll] =>
-        valueDefinition(op.xmapData)("")
+      case op: KvpConcreteTypeHead[a, ht, nt, ho, xl, xll] =>
+        valueDefinition(op.hListConvert)("")
     }
   }
 
