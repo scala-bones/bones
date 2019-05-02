@@ -101,7 +101,6 @@ object DbInsertValues {
           (tailList._1, headList._2 ::: tailList._2)
         }
       }
-      case op: OptionalKvpHList[h,hl] => ???
     }
   }
 
@@ -147,8 +146,6 @@ object DbInsertValues {
       case ed: EitherData[a,b] => ???
       case esd: EnumerationStringData[a] =>
         psF[A]( (ps,i,a) => ps.setString(i,a.toString))
-      case esd: EnumStringData[a] =>
-        psF( (ps,i,a) => ps.setString(i,a.toString) )
       case kvp: KvpHListValue[h,hl] =>
         val groupF = kvpHList(kvp.kvpHList)
         k => {

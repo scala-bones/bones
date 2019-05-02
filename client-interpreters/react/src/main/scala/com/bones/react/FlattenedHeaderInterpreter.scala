@@ -20,7 +20,6 @@ object FlattenedHeaderInterpreter {
         valueDefinition(op.fieldDefinition.op)(Some(op.fieldDefinition.key)) ++ kvpHList(op.tail)
       case op: KvpHListHead[a, al, h, hl, t, tl] =>
         kvpHList(op.head) ++ kvpHList(op.tail)
-      case op: OptionalKvpHList[h,hl] => ???
       case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] =>
         kvpHList(op.xmapData.from) ++ kvpHList(op.tail)
     }
@@ -52,7 +51,6 @@ object FlattenedHeaderInterpreter {
       case ed: EitherData[a,b] => keyToName
       case ba: ByteArrayData => keyToName
       case esd: EnumerationStringData[a] => keyToName
-      case esd: EnumStringData[a] => keyToName
       case kvp: KvpHListValue[h,hl] => {
         _ => kvpHList(kvp.kvpHList)
       }

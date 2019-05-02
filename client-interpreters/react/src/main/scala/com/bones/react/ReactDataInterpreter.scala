@@ -21,8 +21,6 @@ object ReactDataInterpreter {
     }
   }
 
-
-
   def kvpHList[H<:HList,HL<:Nat](group: KvpHList[H,HL]): List[ReactComponentData] = {
     group match {
       case KvpNil => List.empty
@@ -30,8 +28,6 @@ object ReactDataInterpreter {
         valueDefinition(op.fieldDefinition.op)(Some(op.fieldDefinition.key)) ++ kvpHList(op.tail)
       case op: KvpHListHead[a, al, h, hl, t, tl] =>
         kvpHList(op.head) ++ kvpHList(op.tail)
-      case op: OptionalKvpHList[h,hl] =>
-        kvpHList(op.kvpHList)
       case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] =>
         kvpHList(op.xmapData.from) ++ kvpHList(op.tail)
     }
@@ -58,8 +54,6 @@ object ReactDataInterpreter {
       case ba: ByteArrayData =>
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'file'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
       case esd: EnumerationStringData[a] =>
-        keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'enumeration'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
-      case esd: EnumStringData[a] =>
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'enumeration'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
       case kvp: KvpHListValue[h,hl] =>
         val groupData = kvpHList(kvp.kvpHList)

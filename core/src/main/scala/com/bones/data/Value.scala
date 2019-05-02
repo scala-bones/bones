@@ -20,9 +20,6 @@ object Value {
       def enumeration[A: Manifest](
           enumeration: Enumeration): EnumerationStringData[A] =
         EnumerationStringData[A](enumeration, List.empty)
-
-      def enum[A <: Enum[A]: Manifest](enums: List[A]): EnumStringData[A] =
-        EnumStringData[A](enums, List.empty)
     }
   }
 
@@ -108,13 +105,6 @@ object Value {
       with ToOptionalData[A] {
   }
 
-  final case class EnumStringData[A <: Enum[A]: Manifest](
-      enums: List[A],
-      validations: List[ValidationOp[A]])
-      extends ValueDefinitionOp[A]
-      with ToOptionalData[A] {
-  }
-
   final case class KvpHListValue[H <: HList : Manifest, HL <: Nat](
                                                                    kvpHList: KvpHList[H, HL],
                                                                    validations: List[ValidationOp[H]])
@@ -185,27 +175,8 @@ object Value {
     KvpXMapDataHead[A, H, N, A :: H,HX,NX] =
       KvpXMapDataHead[A,H,N,A::H,HX,NX](dc, List.empty, this)
 
-    def optional: OptionalKvpHList[H, N] = OptionalKvpHList[H, N](this)
   }
 
-  final case class OptionalKvpHList[H <: HList, HL <: Nat](
-                                                            kvpHList: KvpHList[H, HL])
-      extends KvpHList[Option[H] :: HNil, Nat._1] {
-
-    override def :::[HO <: HList, NO <: Nat, HP <: HList, NP <: Nat](
-        kvp: KvpHList[HP, NP])(
-        implicit prepend: hlist.Prepend.Aux[HP, Option[H] :: HNil, HO],
-        lengthP: Length.Aux[HP, NP],
-        lengthO: Length.Aux[HO, NO],
-        split: Split.Aux[HO, NP, HP, Option[H] :: HNil]
-    ): KvpHList[HO, NO] = ???
-
-    override def ::[A](v: KeyValueDefinition[A])
-      : KvpSingleValueHead[A,
-                           Option[H] :: HNil,
-                           Nat._1,
-                           A :: Option[H] :: HNil] = ???
-  }
 
   /**
     */

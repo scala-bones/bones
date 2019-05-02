@@ -97,7 +97,6 @@ object ProtobufSequentialInputInterpreter {
             totalResult
           })
         }
-      case op: OptionalKvpHList[h,hl] => ???
     }
   }
 
@@ -251,12 +250,6 @@ object ProtobufSequentialInputInterpreter {
               .asInstanceOf[Either[NonEmptyList[ExtractionError],A]]
           )
         }
-      case esd: EnumStringData[a] =>
-        (fieldNumber: LastFieldNumber, path: Path) => {
-          val thisField = (fieldNumber + 1) << 3 | LENGTH_DELIMITED
-          (thisField, in => convert(in, classOf[String], path)(_.readString).flatMap(stringToEnum[a](_,path,esd.enums).asInstanceOf[Either[NonEmptyList[ExtractionError],A]]))
-        }
-
       case sum: SumTypeData[a,b] => {
         val f = valueDefinition(sum.from)
         (last: LastFieldNumber, path: Path) => {

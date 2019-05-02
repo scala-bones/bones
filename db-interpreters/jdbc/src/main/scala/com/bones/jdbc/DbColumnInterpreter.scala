@@ -41,7 +41,6 @@ object DbColumnInterpreter {
         val headResult = kvpHList(op.xmapData.from)
         val tailResult = kvpHList(op.tail)
         headResult ::: tailResult
-      case op: OptionalKvpHList[h,hl] => ???
     }
   }
 
@@ -62,7 +61,6 @@ object DbColumnInterpreter {
       case ld: ListData[t] => ???
       case ed: EitherData[a,b] => ???
       case esd: EnumerationStringData[a] => nameToColumn("text")
-      case esd: EnumStringData[a] => nameToColumn("text")
       case kvp: KvpHListValue[h,hl] =>
         _ => kvpHList(kvp.kvpHList)
       case x: XMapData[a,al,b] =>

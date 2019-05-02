@@ -113,8 +113,6 @@ object ProtoFileInterpreter {
         val head = kvpHList(op.head)(lastIndex)
         val tail = kvpHList(op.tail)(head._3)
         (head._1 ++ tail._1, head._2 ++ tail._2, tail._3)
-      case op: OptionalKvpHList[h,hl] =>
-        kvpHList(op.kvpHList)(lastIndex)
     }
   }
 
@@ -135,7 +133,6 @@ object ProtoFileInterpreter {
         (result._1.copy(repeated = true), result._2)
       case ed: EitherData[a,b] => ??? //use one of
       case esd: EnumerationStringData[a] => (MessageField(PbString, true, false, name, index), Vector.empty)
-      case esd: EnumStringData[a] => (MessageField(PbString, true, false, name, index), Vector.empty)
       case st: SumTypeData[a,b] =>
         (MessageField(PbString, true, false, name, index), Vector.empty)
       case kvp: KvpHListValue[h,hl] =>

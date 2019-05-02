@@ -48,8 +48,6 @@ object EncodeToJValueInterpreter extends KvpOutputInterpreter[JValue] {
   override def enumerationToOut[A](op: EnumerationStringData[A]): A => JValue =
     input => JString(input.toString)
 
-  override def enumToOut[A](op: EnumStringData[_]): A => JValue =
-    input => JString(input.toString)
 
 }
 

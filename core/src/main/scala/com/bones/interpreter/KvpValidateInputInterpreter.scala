@@ -67,8 +67,6 @@ trait KvpValidateInputInterpreter[IN] {
         (_: IN, _: List[String]) =>
           Right(HNil)
 
-      case op: OptionalKvpHList[h,hl] => ???
-
       case op: KvpHListHead[H, al, h, hl, t, tl] => {
         val headInterpreter = kvpHList(op.head)
         val tailInterpreter = kvpHList(op.tail)
@@ -217,14 +215,6 @@ trait KvpValidateInputInterpreter[IN] {
           str <- extractString(op, op.manifestOfA.runtimeClass)(in,path)
           enum <- stringToEnumeration(str, path, op.enumeration, op.manifestOfA)
         } yield enum
-
-      case op: EnumStringData[a] =>
-        (inOpt: Option[IN], path: List[String]) => for {
-          in <- inOpt.toRight[NonEmptyList[ExtractionError]](
-            NonEmptyList.one(RequiredData(path, op)))
-          str <- extractString(op, op.manifestOfA.runtimeClass)(in,path)
-          enum <- stringToEnum[a](str,path,op.enums)
-        } yield enum.asInstanceOf[A]
 
       case op: SumTypeData[a, A] =>
         val valueF = valueDefinition(op.from)

@@ -19,8 +19,6 @@ object ColumnNameInterpreter {
         headList ::: tailList
       case op: KvpHListHead[a, al, h, hl, t, tl] =>
         kvpHList(op.head) ::: kvpHList(op.tail)
-      case op: OptionalKvpHList[h,hl] =>
-        kvpHList(op.kvpHList)
       case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] =>
         valueDefinition(op.xmapData)("")
     }
@@ -42,7 +40,6 @@ object ColumnNameInterpreter {
       case ba: ByteArrayData => keyToColumNames
       case ed: EitherData[a,b] => ???
       case esd: EnumerationStringData[a] => keyToColumNames
-      case esd: EnumStringData[a] => keyToColumNames
       case kvp: KvpHListValue[h,hl] =>
         _ => kvpHList(kvp.kvpHList)
       case x: XMapData[a,al,b] =>
