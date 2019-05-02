@@ -47,6 +47,4 @@ object EncodeToArgonautInterpreter extends KvpOutputInterpreter[Json]{
   override def enumerationToOut[A](op: EnumerationStringData[A]): A => Json =
     input => Json.jString(input.toString)
 
-  override def enumToOut[A](op: EnumStringData[_]): A => Json =
-    input => Json.jString(input.toString)
 }

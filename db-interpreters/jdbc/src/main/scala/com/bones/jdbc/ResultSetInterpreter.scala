@@ -54,7 +54,6 @@ object ResultSetInterpreter {
           })
         }
       }
-    case op: OptionalKvpHList[h,hl] => ???
   }
 
   def valueDefinition[A](fgo: ValueDefinitionOp[A]): (Path, FieldName) => ResultSet => Either[NonEmptyList[ExtractionError], A] =
@@ -95,11 +94,6 @@ object ResultSetInterpreter {
             e <- stringToEnumeration(r, path, esd.enumeration, esd.manifestOfA)
           } yield e
         result.asInstanceOf[Either[NonEmptyList[com.bones.data.Error.ExtractionError],A]]
-      case esd: EnumStringData[a] =>
-        (path, fieldName) => rs => for {
-          r <- catchSql(rs.getString(fieldName), path, esd)
-          e <- stringToEnum(r, path, esd.enums)
-        } yield e.asInstanceOf[A]
       case kvp: KvpHListValue[h,hl] =>
         val groupF = kvpHList(kvp.kvpHList)
         (path, _) => //Ignore fieldName here

@@ -49,13 +49,6 @@ object SwaggerCoreInterpreter {
           valueF(schema)
           schema
         }
-      case op: OptionalKvpHList[h,hl] =>
-        val kvpF = fromKvpHList(op.kvpHList)
-        schema => {
-          kvpF.apply(schema)
-          schema.setNullable(false)
-          schema
-        }
     }
   }
 
@@ -120,15 +113,6 @@ object SwaggerCoreInterpreter {
         schema => {
           stringSchema.setName(schema.getName)
           esd.enumeration.values.foreach(v => stringSchema.addEnumItemObject(v.toString))
-          stringSchema
-        }
-
-      case esd: EnumStringData[a] =>
-        val stringSchema = new StringSchema()
-          .nullable(false).example(esd.enums.head.toString).asInstanceOf[StringSchema]
-        schema => {
-          stringSchema.setName(schema.getName)
-          esd.enums.foreach(v => stringSchema.addEnumItemObject(v.toString))
           stringSchema
         }
 

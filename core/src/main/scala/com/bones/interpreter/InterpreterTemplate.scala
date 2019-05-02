@@ -14,7 +14,6 @@ class InterpreterTemplate {
       case KvpNil => ???
       case op: KvpSingleValueHead[h, t, tl, a] => ???
       case op: KvpHListHead[a, al, h, hl, t, tl] => ???
-      case op: OptionalKvpHList[h,hl] => ???
       case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] => ???
     }
   }
@@ -32,7 +31,6 @@ class InterpreterTemplate {
       case ed: EitherData[a,b] => ???
       case ba: ByteArrayData => ???
       case esd: EnumerationStringData[a] => ???
-      case esd: EnumStringData[a] => ???
       case kvp: KvpHListValue[h,hl] => ???
       case x: XMapData[a,al,b] => ???
       case s: SumTypeData[a,b] => ???

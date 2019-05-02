@@ -168,7 +168,7 @@ class ValidationTest extends FunSuite {
 //    //tada!  We have can parse input from JsonExtract to CC using our dataDefinition.
 //    assert(btCc == Right(CC("12345", "4321", UUID.fromString("df15f08c-e6bd-11e7-aeb8-6003089f08b4"),
 //      UUID.fromString("e58e7dda-e6bd-11e7-b901-6003089f08b4"), CreditCardTypes.Mastercard, 11, 2022,
-//      "Lennart Augustsson", JavaCurrencyEnum.GBP, Currency.USD, None, UUID.fromString("4545d9da-e6be-11e7-86fb-6003089f08b4"),
+//      "Lennart Augustsson", Currency.USD, None, UUID.fromString("4545d9da-e6be-11e7-86fb-6003089f08b4"),
 //      BillingLocation("US", Some("80031"))
 //    )))
 //

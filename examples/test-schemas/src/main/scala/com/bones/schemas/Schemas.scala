@@ -45,7 +45,7 @@ object Schemas {
 
 
   case class CC(firstFive: String, lastFour: String, uuid: UUID, token: UUID, ccType: CreditCardType,
-                expMonth: Long, expYear: Long, cardholder: String, jce: JavaCurrencyEnum, currency: Currency.Value, deletedAt: Option[ZonedDateTime],
+                expMonth: Long, expYear: Long, cardholder: String, currency: Currency.Value, deletedAt: Option[ZonedDateTime],
                 lastModifiedRequest: UUID, billingLocation: Option[BillingLocation])
 
   val isoList = Vector("US", "CA", "MX")
@@ -98,7 +98,6 @@ object Schemas {
     KvpNil
   ) ::: ccExp ::: (
     kvp("cardHolder", string) ::
-      kvp("currencyEnum", enum(JavaCurrencyEnum.values.toList)) ::
       kvp("currencyIso", string.enumeration[Currency.Value](Currency)) ::
       kvp("deletedAt", isoDateTime.optional) ::
       kvp("lastModifiedRequest", uuid) ::

@@ -64,7 +64,6 @@ object FormInterpreter {
         val (headFormValues, headComponents) = kvpHList(op.head)
         val (tailFormValues, tailComponents) = kvpHList(op.tail)
         (headFormValues ::: tailFormValues, headComponents ::: tailComponents)
-      case op: OptionalKvpHList[h,hl] => ???
       case op: KvpXMapDataHead[a,ht,nt,ho,xl,xll] =>
         val (headFormValues, headComponents) = kvpHList(op.xmapData.from)
         val (tailFormValues, tailComponents) = kvpHList(op.tail)
@@ -112,9 +111,6 @@ object FormInterpreter {
       case ed: EitherData[a,b] => ???
       case esd: EnumerationStringData[a] =>
         val values: List[(Value, DisplayValue)] = esd.enumeration.values.map(v => (keyToName(v.toString), v.toString)).toList.sortBy(_._1)
-        key => ( ReactFormValue( key, false, SelectInput(values)), List.empty )
-      case esd: EnumStringData[a] =>
-        val values: List[(Value, DisplayValue)] = esd.enums.map(v => (keyToName(v.toString), v.toString)).sortBy(_._1)
         key => ( ReactFormValue( key, false, SelectInput(values)), List.empty )
       case kvp: KvpHListValue[h,hl] =>
         val (childForms, childComponents) = kvpHList(kvp.kvpHList)
