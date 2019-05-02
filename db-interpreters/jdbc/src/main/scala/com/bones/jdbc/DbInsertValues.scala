@@ -4,12 +4,12 @@ import java.sql._
 import java.time.ZonedDateTime
 import java.util.UUID
 
-import com.bones.data.Value._
-import shapeless.{::, HList, HNil, Nat}
-import DbUtil._
 import com.bones.crud.WithId
 import com.bones.data.Error.SystemError
+import com.bones.data.Value._
+import com.bones.jdbc.DbUtil._
 import javax.sql.DataSource
+import shapeless.{HList, Nat}
 
 object DbInsertValues {
 

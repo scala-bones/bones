@@ -9,8 +9,11 @@ object Algebra {
 
   object ServiceOps {
     def withPath(path: String) = ServiceOps(path, None, None, None, None)
-    def basicCrud[A,E](path: String, schema: BonesSchema[A], errorSchema: BonesSchema[E]) = {
-      ServiceOps.withPath(path)
+    def basicCrud[A, E](path: String,
+                        schema: BonesSchema[A],
+                        errorSchema: BonesSchema[E]) = {
+      ServiceOps
+        .withPath(path)
         .withCreate(schema, schema, errorSchema)
         .withRead(schema, errorSchema)
         .withUpdate(schema, schema, errorSchema)
@@ -26,9 +29,9 @@ object Algebra {
       deleteOperation: Option[Delete[DO, DE]]
   ) {
     def withCreate[I, O, E](
-                             inputSchema: BonesSchema[I],
-                             successSchema: BonesSchema[O],
-                             errorSchema: BonesSchema[E]
+        inputSchema: BonesSchema[I],
+        successSchema: BonesSchema[O],
+        errorSchema: BonesSchema[E]
     ): ServiceOps[I, O, E, RO, RE, UI, UO, UE, DO, DE] =
       withCreate(Create[I, O, E](inputSchema, successSchema, errorSchema))
 
@@ -36,7 +39,8 @@ object Algebra {
       : ServiceOps[I, O, E, RO, RE, UI, UO, UE, DO, DE] =
       copy(createOperation = Some(create))
 
-    def withRead[O, E](successSchema: BonesSchema[O], errorSchema: BonesSchema[E])
+    def withRead[O, E](successSchema: BonesSchema[O],
+                       errorSchema: BonesSchema[E])
       : ServiceOps[CI, CO, CE, O, E, UI, UO, UE, DO, DE] =
       withRead(Read(successSchema, errorSchema))
 
@@ -111,9 +115,9 @@ object Algebra {
   ): Delete[O, E] = Delete(outputSchema, errorSchema)
 
   case class Create[I, O, E](
-                              inputSchema: BonesSchema[I],
-                              successSchema: BonesSchema[O],
-                              errorSchema: BonesSchema[E]
+      inputSchema: BonesSchema[I],
+      successSchema: BonesSchema[O],
+      errorSchema: BonesSchema[E]
   )
 
   case class Read[O, E](successSchemaForRead: BonesSchema[O],

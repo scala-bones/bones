@@ -14,19 +14,19 @@ import cats.effect._
 import cats.implicits._
 
 
-
 object WaterfallDefinitions {
 
-//  case class Error(error: String)
+  //  case class Error(error: String)
   val errorDef = (kvp("error", string) :: KvpNil).convert[DbError]
 
 
   case class ImperialMeasurement(feet: Long, inches: Long)
+
   val imperialMeasurement = (
     kvp("feet", long(lv.min(0))) ::
-    kvp("inches", long(lv.between(0,12))) ::
-    KvpNil
-  ).convert[ImperialMeasurement]
+      kvp("inches", long(lv.between(0, 12))) ::
+      KvpNil
+    ).convert[ImperialMeasurement]
 
   object WaterVolume extends Enumeration {
     type WaterVolume = Value
@@ -37,6 +37,7 @@ object WaterfallDefinitions {
   case class Waterfall(name: String, latitude: BigDecimal, longitude: BigDecimal, cubicFeetPerMinute: Option[BigDecimal],
                        height: Option[ImperialMeasurement], waterValue: WaterVolume.Value, // discoveryDate: ZonedDateTime,
                        wantToVisit: Boolean)
+
   val waterfall = (
     kvp("name", string(sv.max(200))) ::
       kvp("latitude", bigDecimal(dv.min(-180), dv.max(180))) ::
@@ -44,7 +45,7 @@ object WaterfallDefinitions {
       kvp("cubicFeetPerMinute", bigDecimal(dv.positive).optional) ::
       kvp("height", imperialMeasurement.optional) ::
       kvp("waterVolume", enumeration[WaterVolume.Value](WaterVolume)) ::
-//      kvp("discoveryDate", isoDateTime()) ::
+      //      kvp("discoveryDate", isoDateTime()) ::
       kvp("wantToVisit", boolean) ::
       KvpNil
     ).convert[Waterfall]
@@ -53,11 +54,11 @@ object WaterfallDefinitions {
     ServiceOps.basicCrud("waterfall", waterfall, errorDef)
 
 
-
   case class WaterfallVisit(waterfallId: Long, waterVolume: WaterVolume.Value, notes: Option[String])
+
   val waterfallVisit = (
     kvp("waterfallId", long(lv.min(1))) ::
-//      kvp("visitDate", isoDate()) ::
+      //      kvp("visitDate", isoDate()) ::
       kvp("waterVolume", enumeration[WaterVolume.Value](WaterVolume)) ::
       kvp("notes", string.optional) ::
       KvpNil
@@ -81,7 +82,7 @@ object WaterfallApp extends LocalhostAllIOApp() {
 
   override def services: HttpRoutes[IO] = {
     serviceRoutesWithCrudMiddleware(waterfallService, ds) <+>
-//    serviceRoutesWithCrudMiddleware(waterfallVisitService, ds) <+>
+      //    serviceRoutesWithCrudMiddleware(waterfallVisitService, ds) <+>
       dbSchemaEndpoint(waterfallService) <+>
       dbSchemaEndpoint(waterfallVisitService) <+>
       reactEndpoints(List(waterfall, waterfallVisit))

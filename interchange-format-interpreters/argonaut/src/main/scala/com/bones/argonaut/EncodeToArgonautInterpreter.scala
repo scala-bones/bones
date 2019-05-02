@@ -8,7 +8,7 @@ import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
 import com.bones.interpreter.KvpOutputInterpreter
 
-object EncodeToArgonautInterpreter extends KvpOutputInterpreter[Json]{
+object EncodeToArgonautInterpreter extends KvpOutputInterpreter[Json] {
 
   override def none: Json = Json.jNull
 
@@ -17,11 +17,11 @@ object EncodeToArgonautInterpreter extends KvpOutputInterpreter[Json]{
   override def combine(prefix: Json, postfix: Json): Json = {
     val values1 = prefix.obj.toList.flatMap(_.toList)
     val values2 = postfix.obj.toList.flatMap(_.toList)
-    Json.obj( values1 ::: values2 :_*)
+    Json.obj(values1 ::: values2: _*)
   }
 
   override def toObj[A](kvDef: KeyValueDefinition[A], value: Json): Json =
-    Json.obj( (kvDef.key, value) )
+    Json.obj((kvDef.key, value))
 
   override def booleanToOut[A](op: BooleanData): Boolean => Json =
     input => Json.jBool(input)
@@ -42,7 +42,7 @@ object EncodeToArgonautInterpreter extends KvpOutputInterpreter[Json]{
     input => Json.jNumber(input)
 
   override def listDataToOut[A, T](op: ListData[T]): A => Json =
-    input => Json.array(input.asInstanceOf[List[Json]] :_*)
+    input => Json.array(input.asInstanceOf[List[Json]]: _*)
 
   override def enumerationToOut[A](op: EnumerationStringData[A]): A => Json =
     input => Json.jString(input.toString)

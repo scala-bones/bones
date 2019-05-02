@@ -12,14 +12,12 @@ import com.bones.validation.ValidationDefinition.{LongValidation => iv, StringVa
 import org.http4s.HttpRoutes
 
 
-
-
 object Definitions {
 
   case class Person(name: String, age: Long, gender: Option[String])
 
   val personSchema = (
-      kvp("name", string(sv.matchesRegex("^[a-zA-Z ]*$".r))) ::
+    kvp("name", string(sv.matchesRegex("^[a-zA-Z ]*$".r))) ::
       kvp("age", long(iv.min(0))) ::
       kvp("gender", string.optional) ::
       KvpNil
@@ -40,8 +38,6 @@ object Definitions {
 }
 
 
-
-
 object PersonDoc extends App {
   val info = new Info()
     .description("Test Person Endpoint")
@@ -50,10 +46,10 @@ object PersonDoc extends App {
 
   val openApi = new OpenAPI()
 
-//  CrudOasInterpreter.jsonApiForService(Definitions.personService).apply(openApi)
+  //  CrudOasInterpreter.jsonApiForService(Definitions.personService).apply(openApi)
 
 
-//  println(io.swagger.v3.core.util.Json.mapper().writeValueAsString(openApi))
+  //  println(io.swagger.v3.core.util.Json.mapper().writeValueAsString(openApi))
 }
 
 object PersonEndpoint extends LocalhostAllIOApp {

@@ -21,5 +21,4 @@ object Algebra {
     val contentType = "application/avro"
   }
 
-
 }
