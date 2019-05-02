@@ -5,15 +5,16 @@ import shapeless.{HList, Nat}
 
 /**
   * Just a template to be used as a starting point for a new interpreter.
+  * You can copy/paste this for a starting point for a new interpreter.
   */
 class InterpreterTemplate {
 
   def kvpHList[H <: HList, HL <: Nat](group: KvpHList[H, HL]): Unit = {
     group match {
-      case KvpNil                                      => ???
-      case op: KvpSingleValueHead[h, t, tl, a]         => ???
-      case op: KvpHListHead[a, al, h, hl, t, tl]       => ???
-      case op: KvpXMapDataHead[a, ht, nt, ho, xl, xll] => ???
+      case KvpNil                                          => ???
+      case op: KvpSingleValueHead[h, t, tl, a]             => ???
+      case op: KvpHListHead[a, al, h, hl, t, tl]           => ???
+      case op: KvpConcreteTypeHead[a, ht, nt, ho, xl, xll] => ???
     }
   }
 

@@ -28,7 +28,7 @@ object DbDelete {
     schema match {
       case x: HListConvert[_, _, _] => {
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
-        val sql = s"delete from ${tableName} where id = ?"
+        val sql = s"delete from ${tableName} where idDefinition = ?"
         val getEntity = DbGet.getEntityWithConnection(schema)
         id => con =>
           {

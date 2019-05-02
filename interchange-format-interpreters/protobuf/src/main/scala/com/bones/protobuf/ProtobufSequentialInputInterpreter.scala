@@ -82,8 +82,8 @@ object ProtobufSequentialInputInterpreter {
               result
             })
           }
-      case op: KvpXMapDataHead[a, ht, nt, ho, xl, xll] =>
-        val head = kvpHList(op.xmapData.from)
+      case op: KvpConcreteTypeHead[a, ht, nt, ho, xl, xll] =>
+        val head = kvpHList(op.hListConvert.from)
         val tail = kvpHList(op.tail)
         (lastFieldNumber, path) =>
           {
@@ -92,7 +92,7 @@ object ProtobufSequentialInputInterpreter {
             (tailResult._1, in => {
               val totalResult = Util
                 .eitherMap2(headResult._2(in), tailResult._2(in))(
-                  (l1: xl, l2: ht) => { op.xmapData.fab(l1) :: l2 }
+                  (l1: xl, l2: ht) => { op.hListConvert.fab(l1) :: l2 }
                 )
                 .flatMap { l =>
                   vu.validate[ho](op.validations)(l.asInstanceOf[ho], path)

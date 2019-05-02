@@ -19,7 +19,7 @@ object DbColumnInterpreter {
       case x: HListConvert[h, n, b] =>
         val result = valueDefinition(x)("")
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
-        val columnsWithId = Column("id", "SERIAL", false) :: result
+        val columnsWithId = Column("idDefinition", "SERIAL", false) :: result
         val columnString = columnsWithId
           .map(c =>
             s"${c.name} ${c.columnDefinition}${nullableString(c.nullable)}")
@@ -41,8 +41,8 @@ object DbColumnInterpreter {
         val headResult = kvpHList(op.head)
         val tailResult = kvpHList(op.tail)
         headResult ::: tailResult
-      case op: KvpXMapDataHead[a, ht, nt, ho, xl, xll] =>
-        val headResult = kvpHList(op.xmapData.from)
+      case op: KvpConcreteTypeHead[a, ht, nt, ho, xl, xll] =>
+        val headResult = kvpHList(op.hListConvert.from)
         val tailResult = kvpHList(op.tail)
         headResult ::: tailResult
     }

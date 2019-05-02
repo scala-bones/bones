@@ -33,8 +33,8 @@ object FieldNames {
       case KvpNil => List.empty
       case op: KvpSingleValueHead[h, t, tl, a] =>
         List(camelToSnake(op.fieldDefinition.key)) ::: kvpHList(op.tail)
-      case op: KvpXMapDataHead[a, ht, nt, ho, xl, xll] =>
-        kvpHList(op.xmapData.from) ::: kvpHList(op.tail)
+      case op: KvpConcreteTypeHead[a, ht, nt, ho, xl, xll] =>
+        kvpHList(op.hListConvert.from) ::: kvpHList(op.tail)
       case op: KvpHListHead[a, al, h, hl, t, tl] =>
         kvpHList(op.head) ::: kvpHList(op.tail)
     }

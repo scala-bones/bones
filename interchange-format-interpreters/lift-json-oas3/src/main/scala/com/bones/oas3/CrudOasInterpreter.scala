@@ -19,7 +19,7 @@ object CrudOasInterpreter {
       CrudOasInterpreter
         .post(
           (co.inputSchema, serviceOps.path),
-          (co.successSchema, serviceOps.path),
+          (co.outputSchema, serviceOps.path),
           (co.errorSchema, "Error"),
           s"/${serviceOps.path}",
           contentTypes
@@ -30,7 +30,7 @@ object CrudOasInterpreter {
     serviceOps.readOperation.map(
       read =>
         CrudOasInterpreter
-          .get((read.successSchemaForRead, serviceOps.path),
+          .get((read.outputSchema, serviceOps.path),
                s"/${serviceOps.path}")
           .apply(openApi))
 
@@ -39,7 +39,7 @@ object CrudOasInterpreter {
         CrudOasInterpreter
           .put(
             (update.inputSchema, serviceOps.path),
-            (update.successSchema, serviceOps.path),
+            (update.outputSchema, serviceOps.path),
             (update.failureSchema, "Error"),
             s"/${serviceOps.path}",
             contentTypes
@@ -49,7 +49,7 @@ object CrudOasInterpreter {
     serviceOps.deleteOperation.foreach(
       delete =>
         CrudOasInterpreter
-          .delete((delete.successSchema, serviceOps.path),
+          .delete((delete.outputSchema, serviceOps.path),
                   s"/${serviceOps.path}",
                   contentTypes)
           .apply(openApi))
@@ -108,10 +108,10 @@ object CrudOasInterpreter {
 
     val paramSchema = new IntegerSchema()
     val param = new Parameter()
-      .name("id")
+      .name("idDefinition")
       .in("path")
       .required(true)
-      .description(s"id of the ${outputEntityName} to retrieve")
+      .description(s"idDefinition of the ${outputEntityName} to retrieve")
       .schema(paramSchema)
 
     val operation = new Operation()
@@ -119,10 +119,10 @@ object CrudOasInterpreter {
       .parameters(java.util.Collections.singletonList(param))
       .tags(java.util.Collections.singletonList(outputEntityName))
       .summary(s"Find ${outputEntityName} by ID")
-      .description(s"Returns ${outputEntityName} by id")
+      .description(s"Returns ${outputEntityName} by idDefinition")
       .operationId(s"get${outputEntityName}ById")
 
-    upcertPath(openAPI, "/{id}", _.get(operation))
+    upcertPath(openAPI, "/{idDefinition}", _.get(operation))
 
     openAPI
   }
@@ -145,10 +145,10 @@ object CrudOasInterpreter {
 
     val paramSchema = new IntegerSchema()
     val param = new Parameter()
-      .name("id")
+      .name("idDefinition")
       .in("path")
       .required(true)
-      .description(s"id of the ${outputEntityName} to deleteOperation")
+      .description(s"idDefinition of the ${outputEntityName} to deleteOperation")
       .schema(paramSchema)
 
     val operation = new Operation()
@@ -156,10 +156,10 @@ object CrudOasInterpreter {
       .parameters(java.util.Collections.singletonList(param))
       .tags(java.util.Collections.singletonList(outputEntityName))
       .summary(s"Delete ${outputEntityName} by ID")
-      .description(s"Delete ${outputEntityName} by id")
+      .description(s"Delete ${outputEntityName} by idDefinition")
       .operationId(s"get${outputEntityName}ById")
 
-    upcertPath(openAPI, "/{id}", _.delete(operation))
+    upcertPath(openAPI, "/{idDefinition}", _.delete(operation))
     openAPI
   }
 
@@ -220,7 +220,7 @@ object CrudOasInterpreter {
       operation.setRequestBody(requestBody)
     })
 
-    upcertPath(openAPI, "/{id}", _.put(operation))
+    upcertPath(openAPI, "/{idDefinition}", _.put(operation))
 
     openAPI
 

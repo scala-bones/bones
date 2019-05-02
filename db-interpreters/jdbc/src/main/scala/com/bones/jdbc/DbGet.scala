@@ -40,7 +40,7 @@ object DbGet {
 
             val fields = ColumnNameInterpreter.valueDefinition(x)("")
             val sql =
-              s"""select ${fields.mkString(",")} from $tableName where id = ?"""
+              s"""select ${fields.mkString(",")} from $tableName where idDefinition = ?"""
             con =>
               {
                 try {

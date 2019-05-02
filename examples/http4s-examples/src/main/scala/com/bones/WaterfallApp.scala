@@ -51,7 +51,7 @@ object WaterfallDefinitions {
     ).convert[Waterfall]
 
   val waterfallService =
-    ServiceOps.basicCrud("waterfall", waterfall, errorDef)
+    ServiceOps.classicCrud("waterfall", waterfall, errorDef)
 
 
   case class WaterfallVisit(waterfallId: Long, waterVolume: WaterVolume.Value, notes: Option[String])
@@ -65,11 +65,11 @@ object WaterfallDefinitions {
     ).convert[WaterfallVisit]
 
   val waterfallVisitService =
-    ServiceOps.withPath("waterfallVisit")
-      .withCreate(waterfallVisit, waterfallVisit, errorDef)
-      .withRead(waterfallVisit, errorDef)
-      .withUpdate(waterfallVisit, waterfallVisit, errorDef)
-      .withDelete(waterfallVisit, errorDef)
+    ServiceOps.havingPath("waterfallVisit")
+      .providingCreate(waterfallVisit, waterfallVisit, errorDef)
+      .providingRead(waterfallVisit, errorDef)
+      .providingUpdate(waterfallVisit, waterfallVisit, errorDef)
+      .providingDelete(waterfallVisit, errorDef)
 
 }
 
