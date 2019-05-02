@@ -149,7 +149,7 @@ object DbInsertValues {
         psF[A]( (ps,i,a) => ps.setString(i,a.toString))
       case esd: EnumStringData[a] =>
         psF( (ps,i,a) => ps.setString(i,a.toString) )
-      case kvp: KvpHListData[h,hl] =>
+      case kvp: KvpHListValue[h,hl] =>
         val groupF = kvpHList(kvp.kvpHList)
         k => {
           (index, a) => {

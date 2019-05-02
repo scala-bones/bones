@@ -26,8 +26,10 @@ object Value {
     }
   }
 
-  /** ValueDefinitionOp is the base trait to describe a piece of data which may be
-    * a single value or an HList. */
+  /** ValueDefinitionOp is meant to be the 'value' of a key value pair.
+    * This can be one of the pre-defined primitive 'Bones' types or a product type,
+    * one of KvpHList, SumType or
+    * */
   sealed abstract class ValueDefinitionOp[A:Manifest] {
 
     val manifestOfA = manifest[A]
@@ -51,6 +53,7 @@ object Value {
 
   /** Syntactic sugar to wrap the data definition in an Optional type. */
   trait ToOptionalData[B] { self: ValueDefinitionOp[B] =>
+
     private implicit val manifestOfB = self.manifestOfA
     val optional: OptionalValueDefinition[B] = OptionalValueDefinition[B](self)
   }
@@ -112,7 +115,7 @@ object Value {
       with ToOptionalData[A] {
   }
 
-  final case class KvpHListData[H <: HList : Manifest, HL <: Nat](
+  final case class KvpHListValue[H <: HList : Manifest, HL <: Nat](
                                                                    kvpHList: KvpHList[H, HL],
                                                                    validations: List[ValidationOp[H]])
       extends ValueDefinitionOp[H]
@@ -144,11 +147,19 @@ object Value {
 
   /**
     * Base trait of a ValueDefinition where the value is a list of data.
-    * @tparam H
-    * @tparam N
+    * HList stands for Heterogeneous List.
+    * @tparam H The HList this value represents.
+    * @tparam N The length of this HList
     */
   sealed trait KvpHList[H <: HList, N <: Nat] {
 
+    /**
+      *
+      * @param validation
+      * @param gen
+      * @tparam A
+      * @return
+      */
     def convert[A: Manifest](validation: ValidationOp[A]*)(
         implicit gen: Generic.Aux[A, H]): XMapData[H, N, A] =
       XMapData(this, gen.from, gen.to, validation.toList)

@@ -138,7 +138,7 @@ object ProtoFileInterpreter {
       case esd: EnumStringData[a] => (MessageField(PbString, true, false, name, index), Vector.empty)
       case st: SumTypeData[a,b] =>
         (MessageField(PbString, true, false, name, index), Vector.empty)
-      case kvp: KvpHListData[h,hl] =>
+      case kvp: KvpHListValue[h,hl] =>
         val result = kvpHList(kvp.kvpHList)(0)
         val nested = NestedMessage(name, result._1)
         (MessageField(NestedDataType(name), true, false, name, index), Vector(nested))

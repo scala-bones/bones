@@ -267,7 +267,7 @@ object ProtobufSequentialInputInterpreter {
           (result._1, fCis)
         }
       }
-      case kvp: KvpHListData[h,hl] => {
+      case kvp: KvpHListValue[h,hl] => {
         val groupExtract = kvpHList(kvp.kvpHList)
         (last: LastFieldNumber, path: Path) => {
           val thisField = (last + 1) << 3 | LENGTH_DELIMITED

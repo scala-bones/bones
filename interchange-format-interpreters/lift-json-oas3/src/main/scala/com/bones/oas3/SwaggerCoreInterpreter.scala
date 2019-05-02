@@ -136,7 +136,7 @@ object SwaggerCoreInterpreter {
         val obj = fromValueDef(x.from)
         schema => obj(schema)
 
-      case gd: KvpHListData[h,hl] =>
+      case gd: KvpHListValue[h,hl] =>
         val obj = fromKvpHList(gd.kvpHList)
         schema => obj(schema)
       case x: XMapData[_,_,a] =>
