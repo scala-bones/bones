@@ -12,7 +12,7 @@ import shapeless.{::, Generic, HList, HNil, Nat, Succ}
 import java.time.format.DateTimeFormatter
 
 
-
+/** The Value in Key-Value Pair */
 object Value {
 
   object ValueDefinitionOp {
@@ -29,7 +29,7 @@ object Value {
     * */
   sealed abstract class ValueDefinitionOp[A:Manifest] {
 
-    val manifestOfA = manifest[A]
+    val manifestOfA: Manifest[A] = manifest[A]
 
     def asSumType[B:Manifest](
         description: String,
@@ -51,13 +51,13 @@ object Value {
   /** Syntactic sugar to wrap the data definition in an Optional type. */
   trait ToOptionalData[B] { self: ValueDefinitionOp[B] =>
 
-    private implicit val manifestOfB = self.manifestOfA
+    private implicit val manifestOfB: Manifest[B] = self.manifestOfA
     val optional: OptionalValueDefinition[B] = OptionalValueDefinition[B](self)
   }
 
   /** Syntactic sugar to wrap the definition in a List type. */
   trait ToListData[B] { self: ValueDefinitionOp[B] =>
-    private implicit val manifestOfB = self.manifestOfA
+    private implicit val manifestOfB: Manifest[B] = self.manifestOfA
     val list: ListData[B] = ListData[B](self, List.empty)
   }
 
@@ -112,14 +112,14 @@ object Value {
       with ToOptionalData[H] {
 
     def convert[Z: Manifest](validation: ValidationOp[Z]*)(
-        implicit gen: Generic.Aux[Z, H]): XMapData[H, HL, Z] =
-      XMapData(kvpHList, gen.from, gen.to, validation.toList)
+        implicit gen: Generic.Aux[Z, H]): HListConvert[H, HL, Z] =
+      HListConvert(kvpHList, gen.from, gen.to, validation.toList)
   }
 
   trait BonesSchema[A] {
     val manifestOfA: Manifest[A]
   }
-  final case class XMapData[A <: HList, AL <: Nat, B: Manifest](
+  final case class HListConvert[A <: HList, AL <: Nat, B: Manifest](
                                                                  from: KvpHList[A, AL],
                                                                  fab: A => B,
                                                                  fba: B => A,
@@ -143,22 +143,15 @@ object Value {
     */
   sealed trait KvpHList[H <: HList, N <: Nat] {
 
-    /**
-      *
-      * @param validation
-      * @param gen
-      * @tparam A
-      * @return
-      */
     def convert[A: Manifest](validation: ValidationOp[A]*)(
-        implicit gen: Generic.Aux[A, H]): XMapData[H, N, A] =
-      XMapData(this, gen.from, gen.to, validation.toList)
+        implicit gen: Generic.Aux[A, H]): HListConvert[H, N, A] =
+      HListConvert(this, gen.from, gen.to, validation.toList)
 
     def convert[A: Manifest](
-        implicit gen: Generic.Aux[A, H]): XMapData[H, N, A] = convert[A]()
+        implicit gen: Generic.Aux[A, H]): HListConvert[H, N, A] = convert[A]()
 
     def xmap[A: Manifest](f: H => A, g: A => H, validations: ValidationOp[A]*) =
-      XMapData(this, f, g, validations.toList)
+      HListConvert(this, f, g, validations.toList)
 
     def :::[HO <: HList, NO <: Nat, HP <: HList, NP <: Nat](
         kvp: KvpHList[HP, NP])(
@@ -170,8 +163,8 @@ object Value {
 
     def ::[A](v: KeyValueDefinition[A]): KvpSingleValueHead[A, H, N, A :: H]
 
-    /* The ability to prefix an XMapData (case class) to a KvpHList */
-    def :><:[OUT2 <: HList, OUT2L <: Nat, A: Manifest,HX<:HList, NX<:Nat](dc: XMapData[HX, NX, A]):
+    /* The ability to prefix an HListConvert (case class) to a KvpHList */
+    def :><:[OUT2 <: HList, OUT2L <: Nat, A: Manifest,HX<:HList, NX<:Nat](dc: HListConvert[HX, NX, A]):
     KvpXMapDataHead[A, H, N, A :: H,HX,NX] =
       KvpXMapDataHead[A,H,N,A::H,HX,NX](dc, List.empty, this)
 
@@ -200,13 +193,13 @@ object Value {
 
   }
 
-  /** This allows the XMapData to be attached to a KvpHList */
+  /** This allows the HListConvert to be attached to a KvpHList */
   final case class KvpXMapDataHead[A: Manifest,
                                     HT <: HList,
                                     NT <: Nat,
                                     HO <: A :: HT,
                                     XL <:HList,
-                                    XLL <: Nat](xmapData: XMapData[XL,XLL,A],
+                                    XLL <: Nat](xmapData: HListConvert[XL,XLL,A],
                                                 validations: List[ValidationOp[HO]],
                                                 tail: KvpHList[HT, NT]
   ) extends KvpHList[HO, Succ[NT]] {

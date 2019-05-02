@@ -9,7 +9,7 @@ object FlattenedHeaderInterpreter {
 
   def fromSchema(bonesSchema: BonesSchema[_]): List[String] = {
     bonesSchema match {
-      case x: XMapData[a,al,b] => valueDefinition(x)(None)
+      case x: HListConvert[a,al,b] => valueDefinition(x)(None)
     }
   }
 
@@ -54,7 +54,7 @@ object FlattenedHeaderInterpreter {
       case kvp: KvpHListValue[h,hl] => {
         _ => kvpHList(kvp.kvpHList)
       }
-      case x: XMapData[a,al,b] =>
+      case x: HListConvert[a,al,b] =>
         _ => kvpHList(x.from)
       case s: SumTypeData[a,b] =>
         _ => valueDefinition(s.from)(None)

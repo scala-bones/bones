@@ -11,7 +11,7 @@ object CrudDbDefinitions {
 
 //  def entityWithId[B](entity: BonesSchema[B]): BonesSchema[WithId[B]] =
 //    entity match {
-//      case op: XMapData[a,al,B] =>
+//      case op: HListConvert[a,al,B] =>
 //        implicit val x = op.manifestOfA
 //        (kvp("id", long(lv.min(0))) ::
 //          op :><:

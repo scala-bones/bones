@@ -6,7 +6,7 @@ import cats.data.NonEmptyList
 import com.bones.crud.WithId
 import com.bones.data.Error.{ExtractionError, NotFound, SystemError}
 import com.bones.data.KeyValueDefinition
-import com.bones.data.Value.{BonesSchema, XMapData}
+import com.bones.data.Value.{BonesSchema, HListConvert}
 import com.bones.jdbc.DbUtil.{camelToSnake, withStatement}
 import javax.sql.DataSource
 
@@ -26,7 +26,7 @@ object DbGet {
   def getEntityWithConnection[A](schema: BonesSchema[A]):
       Long => Connection => Either[NonEmptyList[ExtractionError], WithId[Long,A]] = {
           schema match {
-            case xMap: XMapData[a,al,b] => {
+            case xMap: HListConvert[a,al,b] => {
               val x = WithId.entityWithId[Long,A](DbUtil.longIdKeyValueDef, schema)
               id => {
                 val tableName = camelToSnake(xMap.manifestOfA.runtimeClass.getSimpleName)
