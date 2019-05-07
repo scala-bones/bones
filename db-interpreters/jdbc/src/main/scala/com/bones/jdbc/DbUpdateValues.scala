@@ -151,9 +151,9 @@ object DbUpdateValues {
     }
 
   def valueDefinition[A](
-      fgo: ValueDefinitionOp[A]): (Index, Key) => DefinitionResult[A] =
+      fgo: KvpValue[A]): (Index, Key) => DefinitionResult[A] =
     fgo match {
-      case op: OptionalValueDefinition[b] =>
+      case op: OptionalKvpValueDefinition[b] =>
         val valueF = valueDefinition(op.valueDefinitionOp)
         (i, k) =>
           val ops = valueF(i, k)

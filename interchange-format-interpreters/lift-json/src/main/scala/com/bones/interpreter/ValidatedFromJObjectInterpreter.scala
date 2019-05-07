@@ -31,7 +31,7 @@ object ValidatedFromJObjectInterpreter
     }
   }
 
-  override def extractString[A](op: Value.ValueDefinitionOp[A],
+  override def extractString[A](op: Value.KvpValue[A],
                                 clazz: Class[_])(
       in: JValue,
       path: List[String]): Either[NonEmptyList[ExtractionError], String] =

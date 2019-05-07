@@ -77,9 +77,9 @@ trait KvpOutputInterpreter[OUT] {
       }
     }
 
-  protected def valueDefinition[A](fgo: ValueDefinitionOp[A]): A => OUT =
+  protected def valueDefinition[A](fgo: KvpValue[A]): A => OUT =
     fgo match {
-      case op: OptionalValueDefinition[b] =>
+      case op: OptionalKvpValueDefinition[b] =>
         val valueF = valueDefinition(op.valueDefinitionOp)
         (input: A) =>
           {

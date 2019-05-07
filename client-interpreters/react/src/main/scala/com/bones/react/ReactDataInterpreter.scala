@@ -33,9 +33,9 @@ object ReactDataInterpreter {
     }
   }
 
-  def valueDefinition[A](fgo: ValueDefinitionOp[A]): Option[Key] => List[ReactComponentData] =
+  def valueDefinition[A](fgo: KvpValue[A]): Option[Key] => List[ReactComponentData] =
     fgo match {
-      case op: OptionalValueDefinition[a] =>
+      case op: OptionalKvpValueDefinition[a] =>
         valueDefinition(op.valueDefinitionOp)
       case ob: BooleanData =>
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'boolean'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList

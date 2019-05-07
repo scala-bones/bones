@@ -39,9 +39,9 @@ object FieldNames {
         kvpHList(op.head) ::: kvpHList(op.tail)
     }
 
-  def valueDefinition[A](fgo: ValueDefinitionOp[A]): List[String] =
+  def valueDefinition[A](fgo: KvpValue[A]): List[String] =
     fgo match {
-      case op: OptionalValueDefinition[a] =>
+      case op: OptionalKvpValueDefinition[a] =>
         valueDefinition(op.valueDefinitionOp)
       case ob: BooleanData               => List.empty
       case rs: StringData                => List.empty

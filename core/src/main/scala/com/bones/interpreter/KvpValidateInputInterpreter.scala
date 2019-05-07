@@ -59,7 +59,7 @@ trait KvpValidateInputInterpreter[IN] {
     * @tparam A The expected resulting type, eg String or Enumerated Type which we are trying to extract from a string.
     * @return The extracted String or an Error
     */
-  def extractString[A](op: ValueDefinitionOp[A], clazz: Class[_])(
+  def extractString[A](op: KvpValue[A], clazz: Class[_])(
       in: IN,
       path: List[String]): Either[NonEmptyList[ExtractionError], String]
   def extractLong(op: LongData)(
@@ -94,9 +94,9 @@ trait KvpValidateInputInterpreter[IN] {
     }
 
   def required[A](
-      op: ValueDefinitionOp[A],
-      validations: List[ValidationOp[A]],
-      f: (IN, List[String]) => Either[NonEmptyList[ExtractionError], A],
+                   op: KvpValue[A],
+                   validations: List[ValidationOp[A]],
+                   f: (IN, List[String]) => Either[NonEmptyList[ExtractionError], A],
   ): (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A] =
     (inOpt: Option[IN], path: List[String]) =>
       for {
@@ -174,12 +174,12 @@ trait KvpValidateInputInterpreter[IN] {
     }
   }
 
-  def valueDefinition[A](fgo: ValueDefinitionOp[A])
+  def valueDefinition[A](fgo: KvpValue[A])
     : (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A] = {
     val result
       : (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A] =
       fgo match {
-        case op: OptionalValueDefinition[a] =>
+        case op: OptionalKvpValueDefinition[a] =>
           val applied = valueDefinition(op.valueDefinitionOp)
           (in: Option[IN], path: List[String]) =>
             in match {

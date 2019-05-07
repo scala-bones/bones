@@ -14,19 +14,19 @@ import java.time.format.DateTimeFormatter
 /** The Value in Key-Value Pair */
 object Value {
 
-  object ValueDefinitionOp {
-    implicit class StringToEnum(op: ValueDefinitionOp[String]) {
+  object KvpValue {
+    implicit class StringToEnum(op: KvpValue[String]) {
       def enumeration[A: Manifest](
           enumeration: Enumeration): EnumerationStringData[A] =
         EnumerationStringData[A](enumeration, List.empty)
     }
   }
 
-  /** ValueDefinitionOp is meant to be the 'value' of a key value pair.
+  /** KvpValue is meant to be the 'value' of a key value pair.
     * This can be one of the pre-defined primitive 'Bones' types or a product type,
     * one of KvpHList, SumType or
-    * */
-  sealed abstract class ValueDefinitionOp[A: Manifest] {
+    **/
+  sealed abstract class KvpValue[A: Manifest] {
 
     val manifestOfA: Manifest[A] = manifest[A]
 
@@ -41,75 +41,75 @@ object Value {
     }
   }
 
-  type ValueDefinition[A] = FreeApplicative[ValueDefinitionOp, A]
+  type ValueDefinition[A] = FreeApplicative[KvpValue, A]
 
   /** Wraps a data definition to mark the field optional */
-  case class OptionalValueDefinition[B: Manifest](
-      valueDefinitionOp: ValueDefinitionOp[B])
-      extends ValueDefinitionOp[Option[B]] {}
+  case class OptionalKvpValueDefinition[B: Manifest](
+      valueDefinitionOp: KvpValue[B])
+      extends KvpValue[Option[B]] {}
 
   /** Syntactic sugar to wrap the data definition in an Optional type. */
-  trait ToOptionalData[B] { self: ValueDefinitionOp[B] =>
+  trait ToOptionalData[B] { self: KvpValue[B] =>
 
     private implicit val manifestOfB: Manifest[B] = self.manifestOfA
-    val optional: OptionalValueDefinition[B] = OptionalValueDefinition[B](self)
+    val optional: OptionalKvpValueDefinition[B] = OptionalKvpValueDefinition[B](self)
   }
 
   /** Syntactic sugar to wrap the definition in a List type. */
-  trait ToListData[B] { self: ValueDefinitionOp[B] =>
+  trait ToListData[B] { self: KvpValue[B] =>
     private implicit val manifestOfB: Manifest[B] = self.manifestOfA
     val list: ListData[B] = ListData[B](self, List.empty)
   }
 
   final case class BooleanData(validations: List[ValidationOp[Boolean]])
-      extends ValueDefinitionOp[Boolean]
+      extends KvpValue[Boolean]
       with ToOptionalData[Boolean]
   final case class EitherData[A: Manifest, B: Manifest](
-      definitionA: ValueDefinitionOp[A],
-      definitionB: ValueDefinitionOp[B])
-      extends ValueDefinitionOp[Either[A, B]]
+                                                         definitionA: KvpValue[A],
+                                                         definitionB: KvpValue[B])
+      extends KvpValue[Either[A, B]]
       with ToOptionalData[Either[A, B]] {}
   final case class LongData(validations: List[ValidationOp[Long]])
-      extends ValueDefinitionOp[Long]
+      extends KvpValue[Long]
       with ToOptionalData[Long]
   final case class ListData[T: Manifest](
-      tDefinition: ValueDefinitionOp[T],
-      validations: List[ValidationOp[List[T]]])
-      extends ValueDefinitionOp[List[T]]
+                                          tDefinition: KvpValue[T],
+                                          validations: List[ValidationOp[List[T]]])
+      extends KvpValue[List[T]]
       with ToOptionalData[List[T]]
 
   final case class StringData(validations: List[ValidationOp[String]])
-      extends ValueDefinitionOp[String]
+      extends KvpValue[String]
       with ToOptionalData[String]
   final case class BigDecimalData(validations: List[ValidationOp[BigDecimal]])
-      extends ValueDefinitionOp[BigDecimal]
+      extends KvpValue[BigDecimal]
       with ToOptionalData[BigDecimal]
   // base64-encoded characters, for example, U3dhZ2dlciByb2Nrcw==
   final case class ByteArrayData(
-      validations: List[ValueDefinitionOp[Array[Byte]]])
-      extends ValueDefinitionOp[Array[Byte]]
+      validations: List[KvpValue[Array[Byte]]])
+      extends KvpValue[Array[Byte]]
       with ToOptionalData[Array[Byte]]
 
   final case class DateTimeData(dateFormat: DateTimeFormatter,
                                 formatDescription: String,
                                 validations: List[ValidationOp[ZonedDateTime]])
-      extends ValueDefinitionOp[ZonedDateTime]
+      extends KvpValue[ZonedDateTime]
       with ToOptionalData[ZonedDateTime]
 
   final case class UuidData(validations: List[ValidationOp[UUID]])
-      extends ValueDefinitionOp[UUID]
+      extends KvpValue[UUID]
       with ToOptionalData[UUID]
 
   final case class EnumerationStringData[A: Manifest](
       enumeration: Enumeration,
       validations: List[ValidationOp[A]])
-      extends ValueDefinitionOp[A]
+      extends KvpValue[A]
       with ToOptionalData[A] {}
 
   final case class KvpHListValue[H <: HList: Manifest, HL <: Nat](
       kvpHList: KvpHList[H, HL],
       validations: List[ValidationOp[H]])
-      extends ValueDefinitionOp[H]
+      extends KvpValue[H]
       with ToOptionalData[H] {
 
     def convert[Z: Manifest](validation: ValidationOp[Z]*)(
@@ -125,18 +125,18 @@ object Value {
       fab: A => B,
       fba: B => A,
       validations: List[ValidationOp[B]])
-      extends ValueDefinitionOp[B]
+      extends KvpValue[B]
       with ToOptionalData[B]
       with ToListData[B]
       with BonesSchema[B] {}
 
   final case class SumTypeData[A, B: Manifest](
-      from: ValueDefinitionOp[A],
-      fab: (A, List[String]) => Either[CanNotConvert[A, B], B],
-      fba: B => A,
-      keys: List[A],
-      validations: List[ValidationOp[B]]
-  ) extends ValueDefinitionOp[B] {}
+                                                from: KvpValue[A],
+                                                fab: (A, List[String]) => Either[CanNotConvert[A, B], B],
+                                                fba: B => A,
+                                                keys: List[A],
+                                                validations: List[ValidationOp[B]]
+  ) extends KvpValue[B] {}
 
   /**
     * Base trait of a ValueDefinition where the value is a list of data.
@@ -144,7 +144,7 @@ object Value {
     * @tparam H The HList this value represents.
     * @tparam N The length of this HList
     */
-  sealed trait KvpHList[H <: HList, N <: Nat] {
+  sealed abstract class KvpHList[H <: HList, N <: Nat] {
 
     def convert[A: Manifest](validation: ValidationOp[A]*)(
         implicit gen: Generic.Aux[A, H]): HListConvert[H, N, A] =

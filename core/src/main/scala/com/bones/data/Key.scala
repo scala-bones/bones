@@ -9,11 +9,11 @@ import com.bones.validation.ValidationDefinition.ValidationOp
 import shapeless.{HList, Nat}
 
 /** A String key and it's value description where A is the type the value. */
-case class KeyValueDefinition[A](key: String, op: ValueDefinitionOp[A])
+case class KeyValueDefinition[A](key: String, op: KvpValue[A])
 
 /** Useful DSL builder */
 trait KeyValueDefinitionSugar {
-  def kvp[A](key: String, valueDefinitionOp: ValueDefinitionOp[A]) =
+  def kvp[A](key: String, valueDefinitionOp: KvpValue[A]) =
     KeyValueDefinition(key, valueDefinitionOp)
 
   def kvpHList[H <: HList: Manifest, HL <: Nat](key: String,
@@ -42,12 +42,12 @@ trait Sugar {
     * Indicates that the data tied to this key is a list (JSON Array) type.  All values are type
     * T and all values must pass the list of validations.
     *
-    * @param dataDefinitionOp - One of the supported ValueDefinitionOp types.
+    * @param dataDefinitionOp - One of the supported KvpValue types.
     * @param v List of validations each element of the list must pass to be valid.
     * @tparam T The type of each element.  Can be an EitherFieldDefinition if more than one type is expected in the list.
     * @return
     */
-  def list[T: Manifest](dataDefinitionOp: ValueDefinitionOp[T],
+  def list[T: Manifest](dataDefinitionOp: KvpValue[T],
                         v: ValidationOp[List[T]]*) =
     ListData(dataDefinitionOp, v.toList)
 
@@ -75,8 +75,8 @@ trait Sugar {
   val bigDecimal: BigDecimalData = bigDecimal()
 
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
-  def either[A: Manifest, B: Manifest](definitionA: ValueDefinitionOp[A],
-                                       definitionB: ValueDefinitionOp[B]) =
+  def either[A: Manifest, B: Manifest](definitionA: KvpValue[A],
+                                       definitionB: KvpValue[B]) =
     EitherData(definitionA, definitionB)
 
   /** Expecting a string that is in the format of an iso date time */

@@ -1,7 +1,7 @@
 package com.bones.data
 
 import cats.data.NonEmptyList
-import com.bones.data.Value.ValueDefinitionOp
+import com.bones.data.Value.KvpValue
 import com.bones.validation.ValidationDefinition.ValidationOp
 
 object Error {
@@ -31,7 +31,7 @@ object Error {
       extends ExtractionError
 
   case class RequiredData[A](path: List[String],
-                             valueDefinitionOp: ValueDefinitionOp[A])
+                             valueDefinitionOp: KvpValue[A])
       extends ExtractionError
 
   case class FieldError[A](path: List[String],

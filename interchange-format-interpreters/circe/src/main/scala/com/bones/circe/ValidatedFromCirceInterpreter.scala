@@ -45,10 +45,10 @@ object ValidatedFromCirceInterpreter extends KvpValidateInputInterpreter[Json] {
   }
 
   protected def determineError[A](
-      in: Json,
-      op: ValueDefinitionOp[A],
-      expectedType: Class[_],
-      path: List[String]): NonEmptyList[ExtractionError] = {
+                                   in: Json,
+                                   op: KvpValue[A],
+                                   expectedType: Class[_],
+                                   path: List[String]): NonEmptyList[ExtractionError] = {
     val error =
       if (in.isNull) RequiredData(path, op)
       else WrongTypeError(path, expectedType, in.getClass)
@@ -71,7 +71,7 @@ object ValidatedFromCirceInterpreter extends KvpValidateInputInterpreter[Json] {
           NonEmptyList.one(WrongTypeError(path, classOf[Object], in.getClass)))
     }
 
-  override def extractString[A](op: ValueDefinitionOp[A], clazz: Class[_])(
+  override def extractString[A](op: KvpValue[A], clazz: Class[_])(
       in: Json,
       path: List[String]): Either[NonEmptyList[ExtractionError], String] =
     in.asString.toRight(determineError(in, op, clazz, path))

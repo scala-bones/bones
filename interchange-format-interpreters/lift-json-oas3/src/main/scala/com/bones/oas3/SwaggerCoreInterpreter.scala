@@ -69,9 +69,9 @@ object SwaggerCoreInterpreter {
     * @param vd The DataClass definition to convert to a Schema
     **/
   protected def fromValueDef[A](
-      vd: ValueDefinitionOp[A]): Schema[_] => Schema[_] = {
+      vd: KvpValue[A]): Schema[_] => Schema[_] = {
     vd match {
-      case op: OptionalValueDefinition[b] =>
+      case op: OptionalKvpValueDefinition[b] =>
         val oasSchema = fromValueDef(op.valueDefinitionOp)
         schema =>
           oasSchema(schema).nullable(true)
