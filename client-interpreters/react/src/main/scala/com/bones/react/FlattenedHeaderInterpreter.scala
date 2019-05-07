@@ -37,9 +37,9 @@ object FlattenedHeaderInterpreter {
         " "
       )}).toList
 
-  def valueDefinition[A](fgo: ValueDefinitionOp[A]): Option[Key] => List[String] =
+  def valueDefinition[A](fgo: KvpValue[A]): Option[Key] => List[String] =
     fgo match {
-      case op: OptionalValueDefinition[a] =>
+      case op: OptionalKvpValueDefinition[a] =>
         valueDefinition(op)
       case ob: BooleanData => keyToName
       case rs: StringData => keyToName

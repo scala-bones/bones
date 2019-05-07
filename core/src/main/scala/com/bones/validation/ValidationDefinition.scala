@@ -78,6 +78,17 @@ object ValidationDefinition {
       override def description: String = s"alphanumeric"
     }
 
+    val lettersWithSpaceRegex = "^[a-zA-Z\\s]*$".r
+    object LettersWithSpaces extends ValidationOp[String] {
+
+      val isValid: String => Boolean =
+        lettersWithSpaceRegex.findFirstMatchIn(_).isDefined
+
+      override def defaultError(t: String): String = s"$t contains characters other than letters and spaces"
+
+      override def description: String = s"letters with space"
+    }
+
     case class MinLength(min: Int) extends ValidationOp[String] {
       val isValid: String => Boolean = _.length >= min
 

@@ -113,7 +113,7 @@ object Schemas {
 
   val creditCardSchema = ccObj.convert[CC]
 
-  //final type is basically ValueDefinitionOp[CC]
+  //final type is basically KvpValue[CC]
 
   //Here is our input
   val cc =

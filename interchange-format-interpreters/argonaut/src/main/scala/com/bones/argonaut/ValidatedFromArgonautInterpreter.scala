@@ -35,16 +35,16 @@ object ValidatedFromArgonautInterpreter
           List[String]) => Either[NonEmptyList[ExtractionError], A],
       path: List[String]): Either[NonEmptyList[ExtractionError], A] = {
 
-    in.array
+    in.obj
       .toRight[NonEmptyList[ExtractionError]](
         NonEmptyList.one(WrongTypeError(path, classOf[Array[_]], in.getClass)))
       .flatMap(
-        _.find(j => j.name === kv.key).toRight[NonEmptyList[ExtractionError]](
+        _.toList.find(f => f._1 === kv.key).toRight[NonEmptyList[ExtractionError]](
           NonEmptyList.one(RequiredData(path, kv.op))))
-      .flatMap(j => headInterpreter.apply(Some(j), path))
+      .flatMap(j => headInterpreter.apply(Some(j._2), path))
   }
 
-  override def extractString[A](op: ValueDefinitionOp[A], clazz: Class[_])(
+  override def extractString[A](op: KvpValue[A], clazz: Class[_])(
       in: Json,
       path: List[String]): Either[NonEmptyList[ExtractionError], String] =
     in.string.toRight(

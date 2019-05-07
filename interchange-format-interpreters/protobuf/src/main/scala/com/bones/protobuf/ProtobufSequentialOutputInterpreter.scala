@@ -117,9 +117,9 @@ object ProtobufSequentialOutputInterpreter {
     }
   }
 
-  def valueDefinition[A](fgo: ValueDefinitionOp[A]): EncodeToProto[A] = {
+  def valueDefinition[A](fgo: KvpValue[A]): EncodeToProto[A] = {
     val result = fgo match {
-      case op: OptionalValueDefinition[a] =>
+      case op: OptionalKvpValueDefinition[a] =>
         (fieldNumber: FieldNumber) =>
           val fa = valueDefinition(op.valueDefinitionOp)(fieldNumber)
           (opt: Option[a]) =>

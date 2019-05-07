@@ -18,9 +18,9 @@ class InterpreterTemplate {
     }
   }
 
-  def valueDefinition[A](fgo: ValueDefinitionOp[A]): Unit =
+  def valueDefinition[A](fgo: KvpValue[A]): Unit =
     fgo match {
-      case op: OptionalValueDefinition[a] => ???
+      case op: OptionalKvpValueDefinition[a] => ???
       case ob: BooleanData                => ???
       case rs: StringData                 => ???
       case ri: LongData                   => ???

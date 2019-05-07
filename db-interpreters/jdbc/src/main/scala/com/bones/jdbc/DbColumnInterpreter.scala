@@ -51,9 +51,9 @@ object DbColumnInterpreter {
   private def nameToColumn[A](columnDefinition: String): ToColumns =
     name => List(Column(DbUtil.camelToSnake(name), columnDefinition, false))
 
-  private def valueDefinition[A](fgo: ValueDefinitionOp[A]): ToColumns =
+  private def valueDefinition[A](fgo: KvpValue[A]): ToColumns =
     fgo match {
-      case op: OptionalValueDefinition[b] =>
+      case op: OptionalKvpValueDefinition[b] =>
         key =>
           valueDefinition(op.valueDefinitionOp)(key)
             .map(_.copy(nullable = true))

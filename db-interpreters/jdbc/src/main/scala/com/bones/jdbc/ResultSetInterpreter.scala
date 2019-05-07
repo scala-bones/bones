@@ -69,11 +69,11 @@ object ResultSetInterpreter {
           }
     }
 
-  def valueDefinition[A](fgo: ValueDefinitionOp[A]): (
+  def valueDefinition[A](fgo: KvpValue[A]): (
       Path,
       FieldName) => ResultSet => Either[NonEmptyList[ExtractionError], A] =
     fgo match {
-      case op: OptionalValueDefinition[a] =>
+      case op: OptionalKvpValueDefinition[a] =>
         (path, fieldName) =>
           val child = valueDefinition(op.valueDefinitionOp)(path, fieldName)
           rs =>
@@ -147,7 +147,7 @@ object ResultSetInterpreter {
   private def catchSql[A](
       f: => A,
       path: Path,
-      op: ValueDefinitionOp[_]): Either[NonEmptyList[ExtractionError], A] =
+      op: KvpValue[_]): Either[NonEmptyList[ExtractionError], A] =
     try {
       val result = f
       if (result == null) {
