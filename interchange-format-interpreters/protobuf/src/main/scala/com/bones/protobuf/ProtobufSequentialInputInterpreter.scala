@@ -130,9 +130,9 @@ object ProtobufSequentialInputInterpreter {
   private val BIT32 = 5 // 32-bit	fixed32, sfixed32, float
 
   private def valueDefinition[A](
-      fgo: ValueDefinitionOp[A]): ExtractFromProto[A] =
+      fgo: KvpValue[A]): ExtractFromProto[A] =
     fgo match {
-      case op: OptionalValueDefinition[a] =>
+      case op: OptionalKvpValueDefinition[a] =>
         val vd = valueDefinition(op.valueDefinitionOp)
         (fieldNumber: LastFieldNumber, path: Path) =>
           {

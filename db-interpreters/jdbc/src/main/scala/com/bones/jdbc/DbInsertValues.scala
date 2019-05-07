@@ -116,9 +116,9 @@ object DbInsertValues {
       }
     }
 
-  def valueDefinition[A](fgo: ValueDefinitionOp[A]): InsertPair[A] =
+  def valueDefinition[A](fgo: KvpValue[A]): InsertPair[A] =
     fgo match {
-      case op: OptionalValueDefinition[b] =>
+      case op: OptionalKvpValueDefinition[b] =>
         val valueF = valueDefinition(op.valueDefinitionOp)
         key => {
           (index: Index, a: A) => {

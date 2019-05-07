@@ -73,9 +73,9 @@ object FormInterpreter {
 
   private def keyToName(key: String) : String = key
 
-  def valueDefinition[A](fgo: ValueDefinitionOp[A]): Key => (ReactFormValue, List[ReactValueContainer]) =
+  def valueDefinition[A](fgo: KvpValue[A]): Key => (ReactFormValue, List[ReactValueContainer]) =
     fgo match {
-      case op: OptionalValueDefinition[a] =>
+      case op: OptionalKvpValueDefinition[a] =>
         val child = valueDefinition(op.valueDefinitionOp)
         key => {
           val (form, component) = child(key)

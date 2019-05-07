@@ -29,9 +29,9 @@ object ColumnNameInterpreter {
   private val keyToColumNames: Key => List[ColumnName] = key =>
     List(camelToSnake(key))
 
-  def valueDefinition[A](fgo: ValueDefinitionOp[A]): Key => List[ColumnName] =
+  def valueDefinition[A](fgo: KvpValue[A]): Key => List[ColumnName] =
     fgo match {
-      case op: OptionalValueDefinition[a] =>
+      case op: OptionalKvpValueDefinition[a] =>
         valueDefinition(op.valueDefinitionOp)
       case ob: BooleanData               => keyToColumNames
       case rs: StringData                => keyToColumNames

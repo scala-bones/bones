@@ -134,11 +134,11 @@ object ProtoFileInterpreter {
     }
   }
 
-  def valueDefinition[A](fgo: ValueDefinitionOp[A])
+  def valueDefinition[A](fgo: KvpValue[A])
     : (Name, Int) => (MessageField, Vector[NestedType]) =
     (name, index) =>
       fgo match {
-        case op: OptionalValueDefinition[a] =>
+        case op: OptionalKvpValueDefinition[a] =>
           val result = valueDefinition(op.valueDefinitionOp)(name, index)
           (result._1.copy(required = false), result._2)
         case ob: BooleanData =>
