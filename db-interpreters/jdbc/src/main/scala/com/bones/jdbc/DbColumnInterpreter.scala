@@ -59,13 +59,19 @@ object DbColumnInterpreter {
             .map(_.copy(nullable = true))
       case ob: BooleanData               => nameToColumn("bool")
       case rs: StringData                => nameToColumn("text")
+      case i:  IntData                   => nameToColumn("integer")
       case ri: LongData                  => nameToColumn("int8")
       case uu: UuidData                  => nameToColumn("text")
       case dd: DateTimeData              => nameToColumn("timestamp")
+      case fd: FloatData                 => nameToColumn("real")
+      case dd: DoubleData                => nameToColumn("double precision")
       case bd: BigDecimalData            => nameToColumn("numeric")
       case bd: ByteArrayData             => nameToColumn("bytea")
       case ld: ListData[t]               => ???
-      case ed: EitherData[a, b]          => ???
+      case ed: EitherData[a, b]          =>
+        name => {
+          valueDefinition(ed.definitionA)(name) ::: valueDefinition(ed.definitionB)(name)
+        }
       case esd: EnumerationStringData[a] => nameToColumn("text")
       case kvp: KvpHListValue[h, hl] =>
         _ =>

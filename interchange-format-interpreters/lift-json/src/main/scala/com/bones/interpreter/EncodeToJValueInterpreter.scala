@@ -1,7 +1,7 @@
 package com.bones.interpreter
 
 import java.time.ZonedDateTime
-import java.util.UUID
+import java.util.{Base64, UUID}
 
 import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
@@ -23,22 +23,34 @@ object EncodeToJValueInterpreter extends KvpOutputInterpreter[JValue] {
   override def toObj[A](kvDef: KeyValueDefinition[A], value: JValue): JValue =
     JObject(JField(kvDef.key, value))
 
-  override def booleanToOut[A](op: BooleanData): Boolean => JValue =
+  override def booleanToOut(op: BooleanData): Boolean => JValue =
     input => JBool(input)
 
-  override def stringToOut[A](op: StringData): String => JValue =
+  override def stringToOut(op: StringData): String => JValue =
     input => JString(input)
 
-  override def longToOut[A](op: LongData): Long => JValue =
+  override def intToOut(op: IntData): Int => JValue =
     input => JInt(BigInt(input))
 
-  override def uuidToOut[A](op: UuidData): UUID => JValue =
+  override def floatToOut(op: FloatData): Float => JValue =
+    input => JDouble(input.toDouble)
+
+  override def doubleToOut(op: DoubleData): Double => JValue =
+    input => JDouble(input)
+
+  override def byteArrayToOut(ba: ByteArrayData): Array[Byte] => JValue =
+    input => JString(Base64.getEncoder.encodeToString(input))
+
+  override def longToOut(op: LongData): Long => JValue =
+    input => JInt(BigInt(input))
+
+  override def uuidToOut(op: UuidData): UUID => JValue =
     input => JString(input.toString)
 
-  override def dateTimeToOut[A](op: DateTimeData): ZonedDateTime => JValue =
+  override def dateTimeToOut(op: DateTimeData): ZonedDateTime => JValue =
     input => JString(op.dateFormat.format(input))
 
-  override def bigDecimalToOut[A](op: BigDecimalData): BigDecimal => JValue =
+  override def bigDecimalToOut(op: BigDecimalData): BigDecimal => JValue =
     input => JString(input.toString())
 
   override def listDataToOut[A, T](op: ListData[T]): A => JValue =

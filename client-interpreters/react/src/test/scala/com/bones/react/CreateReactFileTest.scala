@@ -7,7 +7,7 @@ class CreateReactFileTest extends FunSuite {
 
 
   test("createFile") {
-    println(CreateReactFile.convert(Schemas.creditCardSchema))
+//    println(CreateReactFile.convert(Schemas.creditCardSchema))
   }
 
 }

@@ -36,7 +36,7 @@ object LocalhostAllIOApp {
     serviceOps.createOperation.map(op => {
       val dbSchema = DbColumnInterpreter.tableDefinition(op.inputSchema)
       HttpRoutes.of[IO] {
-        case GET -> Root / "dbSchema" / serviceOps.path => Ok(dbSchema, Header("Content-Type", "text/html"))
+        case GET -> Root / "dbSchema" / serviceOps.path => Ok(dbSchema, Header("Content-Type", "text/plain"))
       }
     }).getOrElse(HttpRoutes.empty)
   }
@@ -63,7 +63,7 @@ object LocalhostAllIOApp {
     val middleware = CrudDbDefinitions(serviceOp, ds)
 
 
-    val interpreterRoutes = HttpInterpreter().forService[CI, WithId[Long, CI], DbError, WithId[Long, RO], DbError, UI, WithId[Long, UI], DbError, WithId[Long, DO], DbError](
+    val interpreterRoutes = HttpInterpreter().forService[IO, CI, WithId[Long, CI], DbError, WithId[Long, RO], DbError, UI, WithId[Long, UI], DbError, WithId[Long, DO], DbError](
       serviceOpWithId,
       middleware.createF,
       middleware.readF,

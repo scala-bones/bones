@@ -7,7 +7,7 @@ import java.util.Date
 import cats.data.NonEmptyList
 import com.bones.Util
 import com.bones.Util.{stringToEnum, stringToEnumeration, stringToUuid}
-import com.bones.data.Error.{ExtractionError, RequiredData, SystemError}
+import com.bones.data.Error.{ExtractionError, RequiredData, SystemError, WrongTypeError}
 import com.bones.data.Value._
 import DbUtil.camelToSnake
 import FindInterpreter.{FieldName, Path, utcCalendar}
@@ -97,6 +97,9 @@ object ResultSetInterpreter {
       case sd: StringData =>
         (path, fieldName) => rs =>
           catchSql(rs.getString(fieldName), path, sd)
+      case id: IntData =>
+        (path, fieldName) => rs =>
+          catchSql(rs.getInt(fieldName), path, id)
       case ri: LongData =>
         (path, fieldName) => rs =>
           catchSql(rs.getLong(fieldName), path, ri)
@@ -111,6 +114,12 @@ object ResultSetInterpreter {
               date =>
                 ZonedDateTime.ofInstant(new Date(date.getTime).toInstant,
                                         ZoneId.of("UTC")))
+      case fd: FloatData =>
+        (path, fieldName) => rs =>
+          catchSql(rs.getFloat(fieldName), path, fd)
+      case dd: DoubleData =>
+        (path, fieldName) => rs =>
+          catchSql(rs.getDouble(fieldName), path, dd)
       case bd: BigDecimalData =>
         (path, fieldName) => rs =>
           catchSql(rs.getBigDecimal(fieldName), path, bd).map(bd =>
@@ -119,7 +128,26 @@ object ResultSetInterpreter {
         (path, fieldName) => rs =>
           catchSql(rs.getBytes(fieldName), path, ba)
       case ld: ListData[t]      => ???
-      case ed: EitherData[a, b] => ???
+      case ed: EitherData[a, b] =>
+        (path, fieldName) => rs => {
+          val result = valueDefinition(ed.definitionA)(path, "left_" + fieldName)(rs) match {
+            //if the error is that the left is required, we will check the right.
+            case Left(nel) =>
+              if (nel.length == 1) {
+                nel.head match {
+                  case RequiredData(path, op) if op == ed.definitionA => {
+                    valueDefinition(ed.definitionB)(path, "right_" + fieldName)(rs).map(Right(_))
+                  }
+                  case _ => Left(nel)
+                }
+              } else {
+                Left(nel)
+              }
+            case Right(v) => Right(Left(v))
+          }
+          result
+        }
+
       case esd: EnumerationStringData[a] =>
         (path, fieldName) => rs =>
           val result = for {
