@@ -30,6 +30,12 @@ object ProtoFileInterpreter {
   case object Int64 extends DataType {
     val name = "int64"
   }
+  case object FloatType extends DataType {
+    val name = "float"
+  }
+  case object DoubleType extends DataType {
+    val name = "double"
+  }
   case object PbString extends DataType {
     val name = "string"
   }
@@ -146,12 +152,18 @@ object ProtoFileInterpreter {
         case rs: StringData =>
           (MessageField(StringRequireUtf8, true, false, name, index),
            Vector.empty)
+        case id: IntData =>
+          (MessageField(Int32, true, false, name, index), Vector.empty)
         case ri: LongData =>
           (MessageField(Int64, true, false, name, index), Vector.empty)
         case uu: UuidData =>
           (MessageField(PbString, true, false, name, index), Vector.empty)
         case dd: DateTimeData =>
           (MessageField(PbString, true, false, name, index), Vector.empty)
+        case fd: FloatData =>
+          (MessageField(FloatType, true, false, name, index), Vector.empty)
+        case fd: DoubleData =>
+          (MessageField(DoubleType, true, false, name, index), Vector.empty)
         case bd: BigDecimalData =>
           (MessageField(PbString, true, false, name, index), Vector.empty)
         case ba: ByteArrayData =>

@@ -21,14 +21,20 @@ trait KvpOutputInterpreter[OUT] {
 
   def none: OUT
   def empty: OUT
+
+  /** Combine two groups of values */
   def combine(prefix: OUT, postfix: OUT): OUT
   def toObj[A](kvDef: KeyValueDefinition[A], value: OUT): OUT
-  def booleanToOut[A](op: BooleanData): Boolean => OUT
-  def stringToOut[A](op: StringData): String => OUT
-  def longToOut[A](op: LongData): Long => OUT
-  def uuidToOut[A](op: UuidData): UUID => OUT
-  def dateTimeToOut[A](op: DateTimeData): ZonedDateTime => OUT
-  def bigDecimalToOut[A](op: BigDecimalData): BigDecimal => OUT
+  def booleanToOut(op: BooleanData): Boolean => OUT
+  def stringToOut(op: StringData): String => OUT
+  def intToOut(op: IntData): Int => OUT
+  def longToOut(op: LongData): Long => OUT
+  def uuidToOut(op: UuidData): UUID => OUT
+  def dateTimeToOut(op: DateTimeData): ZonedDateTime => OUT
+  def floatToOut(op: FloatData): Float => OUT
+  def doubleToOut(op: DoubleData): Double => OUT
+  def bigDecimalToOut(op: BigDecimalData): BigDecimal => OUT
+  def byteArrayToOut(ba: ByteArrayData): Array[Byte] => OUT
   def listDataToOut[A, T](op: ListData[T]): A => OUT
   def enumerationToOut[A](op: EnumerationStringData[A]): A => OUT
 
@@ -55,12 +61,12 @@ trait KvpOutputInterpreter[OUT] {
           }
       case op: KvpSingleValueHead[h, t, tl, H] =>
         val valueF = valueDefinition(op.fieldDefinition.op)
+        val tailF = kvpHList(op.tail)
+        implicit val hCons = op.isHCons
         (input: H) =>
           {
-            import shapeless.::
-            val cast = input.asInstanceOf[h :: t]
-            val val1 = valueF.apply(cast.head)
-            val tail = kvpHList(op.tail)(cast.tail)
+            val val1 = valueF(input.head)
+            val tail = tailF(input.tail)
             combine(toObj(op.fieldDefinition, val1), tail)
           }
       case op: KvpConcreteTypeHead[a, ht, nt, ho, xl, xll] => {
@@ -90,13 +96,15 @@ trait KvpOutputInterpreter[OUT] {
           }
       case ob: BooleanData    => booleanToOut(ob)
       case rs: StringData     => stringToOut(rs)
+      case id: IntData        => intToOut(id)
       case ri: LongData       => longToOut(ri)
       case uu: UuidData       => uuidToOut(uu)
       case dd: DateTimeData   => dateTimeToOut(dd)
+      case fd: FloatData      => floatToOut(fd)
+      case dd: DoubleData     => doubleToOut(dd)
       case bd: BigDecimalData => bigDecimalToOut(bd)
-      case ba: ByteArrayData  => ???
+      case ba: ByteArrayData  => byteArrayToOut(ba)
       case ld: ListData[t]    => listDataToOut(ld)
-//      case ListData(vDefinition, _) => listDataToOut(vDefinition)
       case EitherData(aDefinition, bDefinition) =>
         val aF = valueDefinition(aDefinition)
         val bF = valueDefinition(bDefinition)

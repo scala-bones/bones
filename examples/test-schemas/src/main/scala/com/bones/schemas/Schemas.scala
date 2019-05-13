@@ -44,7 +44,7 @@ object Schemas {
 
 
 
-  case class CC(firstFive: String, lastFour: String, uuid: UUID, token: UUID, ccType: CreditCardType,
+  case class CC(firstSix: String, lastFour: String, uuid: UUID, token: UUID, ccType: CreditCardType,
                 expMonth: Long, expYear: Long, cardholder: String, currency: Currency.Value, deletedAt: Option[ZonedDateTime],
                 lastModifiedRequest: UUID, billingLocation: Option[BillingLocation])
 
@@ -90,20 +90,20 @@ object Schemas {
 
   // Here we are defining our expected input data.  This definition will drive the interpreters.
   val ccObj = (
-    kvp("firstFive", string(sv.length(5), sv.matchesRegex("[0-9]{5}".r))) ::
+    kvp("firstSix", string(sv.length(6), sv.matchesRegex("[0-9]{6}".r))) ::
     kvp("lastFour", string(sv.length(4), sv.matchesRegex("[0-9]{4}".r))) ::
     kvp("uuid", uuid) ::
     kvp("token", uuid) ::
     kvp("ccType", ccTypeValue) ::
     KvpNil
   ) ::: ccExp ::: (
-    kvp("cardHolder", string) ::
-      kvp("currencyIso", string.enumeration[Currency.Value](Currency)) ::
+    kvp("cardHolder", string(sv.words)) ::
+      kvp("currencyIso", enumeration[Currency.Value](Currency)) ::
       kvp("deletedAt", isoDateTime.optional) ::
       kvp("lastModifiedRequest", uuid) ::
       kvp("billingLocation", (
         kvp("countryIso", string(sv.validVector(isoList))) ::
-        kvp("zipCode", string().optional) ::
+        kvp("zipCode", string(sv.max(10)).optional) ::
         KvpNil
       ).convert[BillingLocation].optional) :: //TODO: Optional
     KvpNil
@@ -119,7 +119,7 @@ object Schemas {
   val cc =
     """
       |{
-      |  "firstFive" : "12345",
+      |  "firstSix" : "123456",
       |  "lastFour" : "4321",
       |  "uuid" : "df15f08c-e6bd-11e7-aeb8-6003089f08b4",
       |  "token" : "e58e7dda-e6bd-11e7-b901-6003089f08b4",
@@ -140,7 +140,7 @@ object Schemas {
   val ccBadBilling =
     """
       |{
-      |  "firstFive" : "12345",
+      |  "firstSix" : "123456",
       |  "lastFour" : "4321",
       |  "uuid" : "df15f08c-e6bd-11e7-aeb8-6003089f08b4",
       |  "token" : "e58e7dda-e6bd-11e7-b901-6003089f08b4",
@@ -157,5 +157,8 @@ object Schemas {
       |  }
       |}
     """.stripMargin
+
+  val exampleCreditCard = CC("12345", "7890", UUID.randomUUID(), UUID.randomUUID(), CreditCardTypes.Mastercard, 8, 2020, "Kurt Vonnegut", Currency.CAD, None, UUID.randomUUID(), Some(BillingLocation("US", None)))
+
 
 }

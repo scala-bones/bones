@@ -32,6 +32,12 @@ trait Sugar {
   /** Alias for string without validations. */
   val string: StringData = string()
 
+  /** Indicates the data tied to this Value is an Int */
+  def int(f: ValidationOp[Int]*) = IntData(f.toList)
+
+  /** Alias for int without any validations */
+  val int: IntData = int()
+
   /** Indicates that the data tied to this key is an Int type that must pass the specified validations */
   def long(f: ValidationOp[Long]*) = LongData(f.toList)
 
@@ -110,5 +116,7 @@ trait Sugar {
   def kvpHList[H <: HList: Manifest, HL <: Nat](kvpHList: KvpHList[H, HL],
                                                 v: ValidationOp[H]*) =
     KvpHListValue(kvpHList, v.toList)
+
+  val kvpNil = KvpNil
 
 }

@@ -173,6 +173,7 @@ object DbUpdateValues {
         psF(i => (ps, a) => ps.setBoolean(i, a), Types.BOOLEAN)
       case rs: StringData =>
         psF(i => (ps, a) => ps.setString(i, a), Types.LONGVARCHAR)
+      case ri: IntData => psF(i => (ps, a) => ps.setInt(i, a), Types.INTEGER)
       case ri: LongData => psF(i => (ps, a) => ps.setLong(i, a), Types.BIGINT)
       case uu: UuidData =>
         psF(i => (ps, a) => ps.setString(i, a.toString), Types.VARCHAR)
@@ -181,6 +182,8 @@ object DbUpdateValues {
               (ps: PreparedStatement, a: ZonedDateTime) =>
                 ps.setDate(i, new java.sql.Date(a.toInstant.toEpochMilli)),
             Types.DATE)
+      case fd: FloatData => psF(i => (ps, a) => ps.setFloat(i, a), Types.FLOAT)
+      case fd: DoubleData => psF(i => (ps, a) => ps.setDouble(i, a), Types.DOUBLE)
       case bd: BigDecimalData =>
         psF[BigDecimal](i => (ps, a) => ps.setBigDecimal(i, a.underlying),
                         Types.NUMERIC)

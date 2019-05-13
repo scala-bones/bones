@@ -88,6 +88,12 @@ object SwaggerCoreInterpreter {
           .nullable(false)
         schema =>
           stringSchema.name(schema.getName)
+      case IntData(_) =>
+        val intSchema = new IntegerSchema()
+          .nullable(false)
+          .example(123)
+          .format("int32")
+        schema => intSchema.name(schema.getName)
       case _: LongData =>
         val intSchema = new IntegerSchema()
           .nullable(false)
@@ -104,6 +110,18 @@ object SwaggerCoreInterpreter {
       case dd: DateTimeData =>
         val stringSchema = new StringSchema()
           .example(dd.dateFormat.format(LocalDateTime.now()))
+          .nullable(false)
+        schema =>
+          stringSchema.name(schema.getName)
+      case DoubleData(_) =>
+        val stringSchema = new NumberSchema()
+          .example("3.14")
+          .nullable(false)
+        schema =>
+          stringSchema.name(schema.getName)
+      case FloatData(_) =>
+        val stringSchema = new NumberSchema()
+          .example("3.14")
           .nullable(false)
         schema =>
           stringSchema.name(schema.getName)

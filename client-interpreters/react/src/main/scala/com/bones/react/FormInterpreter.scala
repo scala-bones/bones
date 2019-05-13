@@ -6,9 +6,6 @@ import com.bones.data.Value._
 import com.bones.validation.ValidationDefinition.StringValidation.MaxLength
 import shapeless.{HList, Nat}
 
-object ValidationInterpreter {
-
-}
 object FormInterpreter {
 
   object InputType2 extends Enumeration {
@@ -96,6 +93,9 @@ object FormInterpreter {
             case None => TextArea(Int.MaxValue)
           }
           ( ReactFormValue( key, false, inputType), List.empty )
+      case id: IntData =>
+        key =>
+          ( ReactFormValue( key, false, LongInput(20)), List.empty )
       case ri: LongData =>
         key =>
           ( ReactFormValue( key, false, LongInput(20)), List.empty )
@@ -103,6 +103,10 @@ object FormInterpreter {
         key => ( ReactFormValue( key, false, StringInput(36)), List.empty )
       case dd: DateTimeData =>
         key => ( ReactFormValue( key, false, DateInput), List.empty )
+      case fd: FloatData =>
+        key => ( ReactFormValue( key, false, BigDecimalInput), List.empty )
+      case dd: DoubleData =>
+        key => ( ReactFormValue( key, false, BigDecimalInput), List.empty )
       case bd: BigDecimalData =>
         key => ( ReactFormValue( key, false, BigDecimalInput), List.empty )
       case ba: ByteArrayData =>

@@ -131,6 +131,9 @@ object Algebra {
                     errorSchema: BonesSchema[E]
                   ): Delete[O, E] = Delete(outputSchema, errorSchema)
 
+
+  abstract class CrudLayer[I,O]
+
   /**
     * Create describes an operation which takes the input I and creates the value O or reporting E if in error.
     *
@@ -145,7 +148,7 @@ object Algebra {
                               inputSchema: BonesSchema[I],
                               outputSchema: BonesSchema[O],
                               errorSchema: BonesSchema[E]
-                            )
+                            ) extends CrudLayer[I,Either[E,O]]
 
   /**
     * Read describes an operation where O is generated or E is reported as an error
@@ -156,7 +159,7 @@ object Algebra {
     * @tparam E Error Type
     */
   case class Read[O, E](outputSchema: BonesSchema[O],
-                        errorSchema: BonesSchema[E])
+                        errorSchema: BonesSchema[E]) extends CrudLayer[Long,Either[E,O]]
 
   /** Update describes an operation to update an entity where I is the input type,
     * O is the output type and E is reported in error.
@@ -172,13 +175,13 @@ object Algebra {
                               inputSchema: BonesSchema[I],
                               outputSchema: BonesSchema[O],
                               failureSchema: BonesSchema[E]
-                            )
+                            ) extends CrudLayer[I,Either[E,O]]
 
   case class Delete[O, E](
                            outputSchema: BonesSchema[O],
                            errorSchema: BonesSchema[E]
-                         )
+                         ) extends CrudLayer[Long,Either[E,O]]
 
-  case class Search[O](outputSchema: BonesSchema[O])
+  case class Search[I,O](i: I, outputSchema: BonesSchema[O]) extends CrudLayer[I,Seq[O]]
 
 }

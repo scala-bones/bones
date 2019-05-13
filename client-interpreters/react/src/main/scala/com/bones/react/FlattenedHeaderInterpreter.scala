@@ -43,9 +43,12 @@ object FlattenedHeaderInterpreter {
         valueDefinition(op)
       case ob: BooleanData => keyToName
       case rs: StringData => keyToName
+      case id: IntData => keyToName
       case ri: LongData => keyToName
       case uu: UuidData => keyToName
       case dd: DateTimeData => keyToName
+      case fd: FloatData => keyToName
+      case dd: DoubleData => keyToName
       case bd: BigDecimalData => keyToName
       case ld: ListData[t] => keyToName
       case ed: EitherData[a,b] => keyToName

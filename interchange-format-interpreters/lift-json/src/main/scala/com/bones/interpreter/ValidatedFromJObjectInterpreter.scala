@@ -59,6 +59,23 @@ object ValidatedFromJObjectInterpreter
         Left(NonEmptyList.one(WrongTypeError(path, classOf[Long], in.getClass)))
     }
 
+
+  override def extractInt(op: Value.IntData)(in: JValue, path: List[String]): Either[NonEmptyList[ExtractionError], Int] =
+    in match {
+      case JInt(i) => Right(i.toInt)
+      case JDouble(d) => Right(d.toInt)
+      case _ => Left(NonEmptyList.one(WrongTypeError(path, classOf[Int], in.getClass)))
+    }
+
+  override def extractFloat(op: Value.FloatData)(in: JValue, path: List[String]): Either[NonEmptyList[ExtractionError], Float] =
+    in match {
+      case JInt(i) => Right(i.toFloat)
+      case JDouble(d) => Right(d.toFloat)
+      case _ => Left(NonEmptyList.one(WrongTypeError(path, classOf[Int], in.getClass)))
+    }
+
+  override def extractDouble(op: Value.DoubleData)(in: JValue, path: List[String]): Either[NonEmptyList[ExtractionError], Double] = ???
+
   override def extractBool(op: Value.BooleanData)(
       in: JValue,
       path: List[String]): Either[NonEmptyList[ExtractionError], Boolean] =

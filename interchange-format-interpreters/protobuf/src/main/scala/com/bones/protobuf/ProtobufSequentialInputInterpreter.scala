@@ -138,27 +138,24 @@ object ProtobufSequentialInputInterpreter {
           {
             val (tag, fa) = vd(fieldNumber, path)
             (tag, in => {
-              val result = if (in.getLastTag == tag) {
+              if (in.getLastTag == tag) {
                 fa(in).right.map(Some(_))
               } else {
                 Right(None)
               }
-              result.asInstanceOf[Either[NonEmptyList[ExtractionError], A]]
-            })
+            }:Either[NonEmptyList[ExtractionError], A])
           }
       case ob: BooleanData =>
         (fieldNumber: LastFieldNumber, path: Path) =>
           {
             val thisField = (fieldNumber + 1) << 3 | VARINT
             (thisField, in => {
-              val result = if (in.getLastTag == thisField) {
+              if (in.getLastTag == thisField) {
                 convert(in, classOf[Boolean], path)(_.readBool())
               } else {
                 Left(NonEmptyList.one(RequiredData(path, ob)))
               }
-              result
-                .asInstanceOf[Either[NonEmptyList[ExtractionError], Boolean]]
-            })
+            }:Either[NonEmptyList[ExtractionError], Boolean])
           }
       case rs: StringData =>
         (fieldNumber: LastFieldNumber, path: Path) =>
@@ -166,7 +163,7 @@ object ProtobufSequentialInputInterpreter {
             val thisField = (fieldNumber + 1) << 3 | LENGTH_DELIMITED
             (thisField, in => {
               val lastTag = in.getLastTag
-              val result = if (lastTag == thisField) {
+              if (lastTag == thisField) {
                 convert(in, classOf[String], path)(cis => {
                   val x = cis.readStringRequireUtf8()
                   x
@@ -174,44 +171,52 @@ object ProtobufSequentialInputInterpreter {
               } else {
                 Left(NonEmptyList.one(RequiredData(path, rs)))
               }
-              result.asInstanceOf[Either[NonEmptyList[ExtractionError], String]]
-            })
+            }:Either[NonEmptyList[ExtractionError], String])
           }
+      case id: IntData =>
+        (fieldNumber: LastFieldNumber, path: Path) =>
+        {
+          val thisField = (fieldNumber + 1) << 3 | VARINT
+          (thisField, in => {
+            if (in.getLastTag == thisField) {
+              convert(in, classOf[Int], path)(_.readInt32())
+                .asInstanceOf[Either[NonEmptyList[ExtractionError], A]]
+            } else {
+              Left(NonEmptyList.one(RequiredData(path, id)))
+            }
+          }:Either[NonEmptyList[ExtractionError], Int])
+        }
       case ri: LongData =>
         (fieldNumber: LastFieldNumber, path: Path) =>
           {
             val thisField = (fieldNumber + 1) << 3 | VARINT
             (thisField, in => {
-              val result = if (in.getLastTag == thisField) {
+              if (in.getLastTag == thisField) {
                 convert(in, classOf[Long], path)(_.readInt64())
-                  .asInstanceOf[Either[NonEmptyList[ExtractionError], A]]
               } else {
                 Left(NonEmptyList.one(RequiredData(path, ri)))
               }
-              result.asInstanceOf[Either[NonEmptyList[ExtractionError], Long]]
-            })
+            }:Either[NonEmptyList[ExtractionError], Long])
           }
       case ba: ByteArrayData =>
         (fieldNumber: LastFieldNumber, path: Path) =>
           {
             val thisField = (fieldNumber + 1) << 3 | LENGTH_DELIMITED
             (thisField, in => {
-              val result = if (in.getLastTag == thisField) {
+              if (in.getLastTag == thisField) {
                 convert(in, classOf[Array[Byte]], path)(_.readByteArray())
                   .asInstanceOf[Either[NonEmptyList[ExtractionError], A]]
               } else {
                 Left(NonEmptyList.one(RequiredData(path, ba)))
               }
-              result.asInstanceOf[
-                Either[NonEmptyList[ExtractionError], Array[Byte]]]
-            })
+            }:Either[NonEmptyList[ExtractionError], Array[Byte]])
           }
       case uu: UuidData =>
         (fieldNumber: LastFieldNumber, path: Path) =>
           {
             val thisField = (fieldNumber + 1) << 3 | LENGTH_DELIMITED
             (thisField, in => {
-              val result = if (in.getLastTag == thisField) {
+              if (in.getLastTag == thisField) {
                 convert(in, classOf[String], path)(cis => cis.readString())
                   .flatMap(str =>
                     try {
@@ -225,38 +230,57 @@ object ProtobufSequentialInputInterpreter {
               } else {
                 Left(NonEmptyList.one(RequiredData(path, uu)))
               }
-              result.asInstanceOf[Either[NonEmptyList[ExtractionError], UUID]]
-            })
+            }:Either[NonEmptyList[ExtractionError], UUID])
           }
       case dd: DateTimeData =>
         (fieldNumber: LastFieldNumber, path: Path) =>
           {
             val thisField = (fieldNumber + 1) << 3 | VARINT
             (thisField, in => {
-              val result = if (in.getLastTag == thisField) {
+              if (in.getLastTag == thisField) {
                 convert(in, classOf[String], path)(_.readString)
                   .flatMap(stringToZonedDateTime(_, dd.dateFormat, path))
               } else {
                 Left(NonEmptyList.one(RequiredData(path, dd)))
               }
-              result.asInstanceOf[
-                Either[NonEmptyList[ExtractionError], ZonedDateTime]]
-            })
+            }:Either[NonEmptyList[ExtractionError], ZonedDateTime])
           }
+      case fd: FloatData =>
+        (fieldNumber: LastFieldNumber, path: Path) =>
+        {
+          val thisField = (fieldNumber + 1) << 3 | BIT32
+          (thisField, in => {
+            if (in.getLastTag == thisField) {
+              convert[Float](in, classOf[Float], path)(_.readFloat())
+            } else {
+              Left(NonEmptyList.one(RequiredData(path, fd)))
+            }
+          }:Either[cats.data.NonEmptyList[com.bones.data.Error.ExtractionError],Float])
+        }
+      case dd: DoubleData =>
+        (fieldNumber: LastFieldNumber, path: Path) =>
+        {
+          val thisField = (fieldNumber + 1) << 3 | BIT64
+          (thisField, in => {
+            if (in.getLastTag == thisField) {
+              convert(in, classOf[Double], path)(_.readDouble())
+            } else {
+              Left(NonEmptyList.one(RequiredData(path, dd)))
+            }
+          }:Either[cats.data.NonEmptyList[com.bones.data.Error.ExtractionError],Double])
+        }
       case bd: BigDecimalData =>
         (fieldNumber: LastFieldNumber, path: Path) =>
           {
             val thisField = (fieldNumber + 1) << 3 | LENGTH_DELIMITED
             (thisField, in => {
-              val result = if (in.getLastTag == thisField) {
+              if (in.getLastTag == thisField) {
                 convert(in, classOf[String], path)(_.readString)
                   .flatMap(stringToBigDecimal(_, path))
               } else {
                 Left(NonEmptyList.one(RequiredData(path, bd)))
               }
-              result
-                .asInstanceOf[Either[NonEmptyList[ExtractionError], BigDecimal]]
-            })
+            }:Either[cats.data.NonEmptyList[com.bones.data.Error.ExtractionError],BigDecimal])
           }
       case ld: ListData[t] =>
         val child = valueDefinition(ld.tDefinition)
@@ -291,14 +315,14 @@ object ProtobufSequentialInputInterpreter {
 
             val thisField = (fieldNumber + 1) << 3 | LENGTH_DELIMITED
             (thisField,
-             in =>
+             in => {
                convert(in, classOf[String], path)(_.readString)
                  .flatMap(
                    stringToEnumeration(_,
-                                       path,
-                                       esd.enumeration,
-                                       esd.manifestOfA))
-                 .asInstanceOf[Either[NonEmptyList[ExtractionError], A]])
+                     path,
+                     esd.enumeration,
+                     esd.manifestOfA))
+             }:Either[NonEmptyList[ExtractionError], A])
           }
       case sum: SumTypeData[a, b] => {
         val f = valueDefinition(sum.from)
@@ -367,7 +391,7 @@ object ProtobufSequentialInputInterpreter {
       }
     }
 
-  private def convert[A, T](in: CodedInputStream,
+  private def convert[A](in: CodedInputStream,
                             clazz: Class[A],
                             path: List[String])(f: CodedInputStream => A)
     : Either[NonEmptyList[CanNotConvert[CodedInputStream, A]], A] =

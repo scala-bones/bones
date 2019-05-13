@@ -45,10 +45,13 @@ object FieldNames {
         valueDefinition(op.valueDefinitionOp)
       case ob: BooleanData               => List.empty
       case rs: StringData                => List.empty
+      case id: IntData  => List.empty
       case ri: LongData                  => List.empty
       case uu: UuidData                  => List.empty
       case dd: DateTimeData              => List.empty
       case bd: BigDecimalData            => List.empty
+      case fd: FloatData => List.empty
+      case dd: DoubleData => List.empty
       case ba: ByteArrayData             => List.empty
       case ld: ListData[t]               => List.empty
       case ed: EitherData[a, b]          => List.empty

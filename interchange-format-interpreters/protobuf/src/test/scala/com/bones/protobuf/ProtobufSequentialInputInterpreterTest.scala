@@ -63,7 +63,7 @@ class ProtobufSequentialInputInterpreterTest extends FunSuite with Checkers with
 
     val bytes = ProtobufSequentialOutputInterpreter.encodeToBytes(person)(monica)
 
-    print(convertBytesToHex(bytes))
+//    print(convertBytesToHex(bytes))
 
     val isItMonica = ProtobufSequentialInputInterpreter.fromBytes(person)(bytes)
 

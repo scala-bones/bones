@@ -62,6 +62,9 @@ trait KvpValidateInputInterpreter[IN] {
   def extractString[A](op: KvpValue[A], clazz: Class[_])(
       in: IN,
       path: List[String]): Either[NonEmptyList[ExtractionError], String]
+  def extractInt(op: IntData)(
+    in: IN,
+    path: List[String]): Either[NonEmptyList[ExtractionError], Int]
   def extractLong(op: LongData)(
       in: IN,
       path: List[String]): Either[NonEmptyList[ExtractionError], Long]
@@ -77,6 +80,12 @@ trait KvpValidateInputInterpreter[IN] {
   def extractArray[A](op: ListData[A])(
       in: IN,
       path: List[String]): Either[NonEmptyList[ExtractionError], Seq[IN]]
+  def extractFloat(op: FloatData)(
+      in: IN,
+      path: List[String]): Either[NonEmptyList[ExtractionError], Float]
+  def extractDouble(op: DoubleData)(
+      in: IN,
+      path: List[String]): Either[NonEmptyList[ExtractionError], Double]
   def extractBigDecimal(op: BigDecimalData)(
       in: IN,
       path: List[String]): Either[NonEmptyList[ExtractionError], BigDecimal]
@@ -188,6 +197,8 @@ trait KvpValidateInputInterpreter[IN] {
             }
         case op: StringData =>
           required(op, op.validations, extractString(op, classOf[String]))
+        case id: IntData =>
+          required(id, id.validations, extractInt(id))
         case op: LongData =>
           required(op, op.validations, extractLong(op))
         case op: BooleanData =>
@@ -268,6 +279,10 @@ trait KvpValidateInputInterpreter[IN] {
                 listOfIn <- traverseArray(arr, path)
               } yield listOfIn
             }
+        case fd: FloatData =>
+          required(fd, fd.validations, extractFloat(fd))
+        case dd: DoubleData =>
+          required(dd, dd.validations, extractDouble(dd))
         case op: BigDecimalData =>
           required(op, op.validations, extractBigDecimal(op))
         case op: EnumerationStringData[A] =>
