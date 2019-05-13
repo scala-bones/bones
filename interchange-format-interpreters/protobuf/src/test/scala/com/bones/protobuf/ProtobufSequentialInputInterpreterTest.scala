@@ -24,7 +24,7 @@ class ProtobufSequentialInputInterpreterTest extends FunSuite with Checkers with
   ).convert[Loc]
 
   val person = (
-    kvp("idDefinition", uuid) ::
+    kvp("id", uuid) ::
     kvp("name", string) ::
     kvp("age", long) ::
     kvp("location", loc) ::

@@ -48,7 +48,7 @@ object DbUpdateValues {
             val sql =
               s"""update ${tableName} set ${updates.predefineUpdateStatements
                 .map(_._1)
-                .mkString(",")} where idDefinition = ?"""
+                .mkString(",")} where id = ?"""
             (con: Connection) =>
               {
                 val statement = con.prepareCall(sql)
