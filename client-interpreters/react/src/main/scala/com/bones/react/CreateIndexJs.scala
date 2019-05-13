@@ -33,7 +33,7 @@ object CreateReactFiles {
 
   private def toIndexHtml(reactFile: List[ReactFile]): IndexHtml = {
 
-    val divs = reactFile.map(f => s"""<div idDefinition="${f.labelId}"></div>""").mkString
+    val divs = reactFile.map(f => s"""<div id="${f.labelId}"></div>""").mkString
 
     val menu = s"""<div class="ui top attached tabular menu">""" +
       reactFile.headOption.map(f => s"""<a class="active item" data-tab="${f.labelId}">${f.crudClassName}</a>""").getOrElse("") +
@@ -41,8 +41,8 @@ object CreateReactFiles {
       s"""</div>"""
 
     val contents =
-      reactFile.headOption.map(f => s"""<div class="ui bottom attached active tab segment" data-tab="${f.labelId}"><div idDefinition="${f.labelId}"></div></div>""").getOrElse("") +
-      reactFile.tail.map(f => s"""<div class="ui bottom attached tab segment" data-tab="${f.labelId}"><div idDefinition="${f.labelId}"></div></div>""").mkString("\n")
+      reactFile.headOption.map(f => s"""<div class="ui bottom attached active tab segment" data-tab="${f.labelId}"><div id="${f.labelId}"></div></div>""").getOrElse("") +
+      reactFile.tail.map(f => s"""<div class="ui bottom attached tab segment" data-tab="${f.labelId}"><div id="${f.labelId}"></div></div>""").mkString("\n")
 
     val readyFunction = "$(document).ready(function() { $('.menu .item').tab(); })"
 

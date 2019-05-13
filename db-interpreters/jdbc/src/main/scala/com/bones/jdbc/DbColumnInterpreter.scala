@@ -19,7 +19,7 @@ object DbColumnInterpreter {
       case x: HListConvert[h, n, b] =>
         val result = valueDefinition(x)("")
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
-        val columnsWithId = Column("idDefinition", "SERIAL", false) :: result
+        val columnsWithId = Column("id", "SERIAL", false) :: result
         val columnString = columnsWithId
           .map(c =>
             s"${c.name} ${c.columnDefinition}${nullableString(c.nullable)}")
