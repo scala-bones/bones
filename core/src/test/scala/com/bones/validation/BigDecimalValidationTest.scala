@@ -22,8 +22,8 @@ class BigDecimalValidationTest extends FunSuite with Checkers {
   test("Max description and default error are acceptable") {
     val max = Max(BigDecimal("7.83"))
     assert(
-      max.defaultError(BigDecimal("9.445")) === "9.445 is greater than the maximum 7.83")
-    assert(max.description === "maximum value of 7.83")
+      max.defaultError(BigDecimal("9.445")) === "9.445 is greater than 7.83")
+    assert(max.description === "maximum of 7.83")
   }
 
   test("Min is valid") {
@@ -41,8 +41,8 @@ class BigDecimalValidationTest extends FunSuite with Checkers {
   test("Min description and default error are acceptable") {
     val max = Min(BigDecimal("2.77"))
     assert(max
-      .defaultError(BigDecimal("1.83")) === "1.83 is less than the minimum 2.77")
-    assert(max.description === "minimum value of 2.77")
+      .defaultError(BigDecimal("1.83")) === "1.83 is less than 2.77")
+    assert(max.description === "minimum of 2.77")
   }
 
 }

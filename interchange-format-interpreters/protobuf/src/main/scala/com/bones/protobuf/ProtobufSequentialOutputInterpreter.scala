@@ -70,13 +70,14 @@ object ProtobufSequentialOutputInterpreter {
             }
       case op: KvpHListHead[a, al, h, hl, t, tl] =>
         (fieldNumber: FieldNumber) =>
+          implicit val split = op.split
           val headF = kvpHList(op.head)(fieldNumber)
           val tailF = kvpHList(op.tail)(fieldNumber)
           (input: H) =>
             {
-              val cast = input.asInstanceOf[h :: t]
-              val headResult = headF(cast.head)
-              val tailResult = tailF(cast.tail)
+              val (head,tail) = split(input)
+              val headResult = headF(head)
+              val tailResult = tailF(tail)
               val fCompute: ComputeSize = () =>
                 headResult._1() + tailResult._1()
               val fEncode = (outputStream: CodedOutputStream) => {
@@ -142,6 +143,12 @@ object ProtobufSequentialOutputInterpreter {
             () => CodedOutputStream.computeStringSize(fieldNumber, str),
             write(_.writeString(fieldNumber, str))
           )
+      case id: IntData =>
+        (fieldNumber: FieldNumber) => (l: Int) =>
+          (
+            () => CodedOutputStream.computeInt32Size(fieldNumber, l),
+            write(_.writeInt32(fieldNumber, l))
+          )
       case ri: LongData =>
         (fieldNumber: FieldNumber) => (l: Long) =>
           (
@@ -161,7 +168,20 @@ object ProtobufSequentialOutputInterpreter {
                                                 dd.dateFormat.format(d)),
             write(_.writeString(fieldNumber, dd.dateFormat.format(d)))
           )
-
+      case fd: FloatData =>
+        (fieldNumber: FieldNumber) => (f: Float) =>
+          (
+            () =>
+              CodedOutputStream.computeDoubleSize(fieldNumber, f),
+            write(_.writeDouble(fieldNumber, f))
+          )
+      case dd: DoubleData =>
+        (fieldNumber: FieldNumber) => (d: Double) =>
+          (
+            () =>
+              CodedOutputStream.computeDoubleSize(fieldNumber, d),
+            write(_.writeDouble(fieldNumber, d))
+          )
       case bd: BigDecimalData =>
         (fieldNumber: FieldNumber) => (d: BigDecimal) =>
           (

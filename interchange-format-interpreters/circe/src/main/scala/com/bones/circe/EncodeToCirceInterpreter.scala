@@ -1,7 +1,7 @@
 package com.bones.circe
 
 import java.time.ZonedDateTime
-import java.util.UUID
+import java.util.{Base64, UUID}
 
 import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
@@ -22,22 +22,34 @@ object EncodeToCirceInterpreter extends KvpOutputInterpreter[Json] {
   override def toObj[A](kvDef: KeyValueDefinition[A], value: Json): Json =
     Json.obj((kvDef.key, value))
 
-  override def booleanToOut[A](op: BooleanData): Boolean => Json =
+  override def booleanToOut(op: BooleanData): Boolean => Json =
     input => Json.fromBoolean(input)
 
-  override def stringToOut[A](op: StringData): String => Json =
+  override def stringToOut(op: StringData): String => Json =
     input => Json.fromString(input)
 
-  override def longToOut[A](op: LongData): Long => Json =
+  override def intToOut(op: IntData): Int => Json =
+    Json.fromInt
+
+  override def floatToOut(op: FloatData): Float => Json =
+    i => Json.fromFloatOrNull(i)
+
+  override def doubleToOut(op: DoubleData): Double => Json =
+    d => Json.fromDoubleOrNull(d)
+
+  override def byteArrayToOut(ba: ByteArrayData): Array[Byte] => Json =
+    input => Json.fromString(Base64.getEncoder.encodeToString(input))
+
+  override def longToOut(op: LongData): Long => Json =
     input => Json.fromLong(input)
 
-  override def uuidToOut[A](op: UuidData): UUID => Json =
+  override def uuidToOut(op: UuidData): UUID => Json =
     input => Json.fromString(input.toString)
 
-  override def dateTimeToOut[A](op: DateTimeData): ZonedDateTime => Json =
+  override def dateTimeToOut(op: DateTimeData): ZonedDateTime => Json =
     input => Json.fromString(op.dateFormat.format(input))
 
-  override def bigDecimalToOut[A](op: BigDecimalData): BigDecimal => Json =
+  override def bigDecimalToOut(op: BigDecimalData): BigDecimal => Json =
     input => Json.fromBigDecimal(input)
 
   override def listDataToOut[A, T](op: ListData[T]): A => Json =

@@ -41,12 +41,18 @@ object ReactDataInterpreter {
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'boolean'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
       case rs: StringData =>
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'string'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
+      case id: IntData =>
+        keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'integer'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
       case ri: LongData =>
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'integer'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
       case uu: UuidData =>
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'string'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
       case dd: DateTimeData =>
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'date'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
+      case dd: FloatData =>
+        keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'float'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
+      case dd: DoubleData =>
+        keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'float'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
       case bd: BigDecimalData =>
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'float'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
       case ld: ListData[t] => ???

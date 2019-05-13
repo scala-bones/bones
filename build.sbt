@@ -55,6 +55,22 @@ lazy val testSchemas = (project in file("examples/test-schemas"))
       "org.scalatest" %% "scalatest" % "3.0.7" % Test
     )
   ).dependsOn(core)
+lazy val scalacheck = (project in file("test-interpreters/scalacheck"))
+  .settings(
+    commonSettings,
+    name := "Scalacheck",
+    resolvers += "wolfendale" at "https://dl.bintray.com/wolfendale/maven/",
+    libraryDependencies ++= Seq(
+      //      "org.typelevel" %% "cats-core" % "1.6.0",
+      //      "org.typelevel" %% "cats-free" % "1.6.0",
+      //      "com.chuusai" %% "shapeless" % "2.3.3",
+      "org.scalacheck" %% "scalacheck" % "1.14.0",
+      "wolfendale" %% "scalacheck-gen-regexp" % "0.1.1",
+      "org.scalatest" %% "scalatest" % "3.0.7" % Test
+      //      "org.easymock" % "easymock" % "3.5.1" % Test
+    ),
+    description := "Interpreter to generate scalacheck proper generators"
+  ).dependsOn(core, testSchemas % "test")
 lazy val jsonOas3 = (project in file("interchange-format-interpreters/lift-json-oas3"))
   .settings(
     commonSettings,
@@ -88,6 +104,16 @@ lazy val jsonLift = (project in file("interchange-format-interpreters/lift-json"
     )
   )
   .dependsOn(core)
+lazy val stringJson = (project in file("interchange-format-interpreters/string-json"))
+  .settings(
+    commonSettings,
+    name := "Bones String Json",
+    libraryDependencies ++= Seq (
+      "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.0.7" % Test
+    )
+  )
+  .dependsOn(core, testSchemas % "test")
 lazy val circeVersion = "0.11.1"
 lazy val jsonCirce = (project in file("interchange-format-interpreters/circe"))
   .settings(
@@ -119,7 +145,7 @@ lazy val protobuf = (project in file("interchange-format-interpreters/protobuf")
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
       "org.scalatest" %% "scalatest" % "3.0.7" % Test
     )
-  ).dependsOn(core)
+  ).dependsOn(core, testSchemas % "test->compile", scalacheck % "test->compile")
 lazy val bson = (project in file("interchange-format-interpreters/bson"))
   .settings(
     commonSettings,
@@ -187,3 +213,6 @@ lazy val examples = (project in file("examples/http4s-examples"))
 testOptions in Test += Tests.Argument("-oF")
 
 resolvers += "tPoleCat" at "https://dl.bintray.com/tpolecat/maven/"
+resolvers += "wolfendale" at "https://dl.bintray.com/wolfendale/maven/"
+
+

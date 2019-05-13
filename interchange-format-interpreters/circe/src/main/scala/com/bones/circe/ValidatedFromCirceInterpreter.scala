@@ -76,6 +76,21 @@ object ValidatedFromCirceInterpreter extends KvpValidateInputInterpreter[Json] {
       path: List[String]): Either[NonEmptyList[ExtractionError], String] =
     in.asString.toRight(determineError(in, op, clazz, path))
 
+
+  override def extractInt(op: IntData)(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Int] =
+    in.asNumber.flatMap(_.toInt)
+    .toRight(NonEmptyList.one(WrongTypeError(path, classOf[Int], in.getClass)))
+
+  override def extractFloat(op: FloatData)(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Float] =
+    in.asNumber.map(_.toDouble.toFloat)
+      .toRight(NonEmptyList.one(WrongTypeError(path, classOf[Float], in.getClass)))
+
+
+  override def extractDouble(op: DoubleData)(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Double] =
+    in.asNumber.map(_.toDouble)
+      .toRight(NonEmptyList.one(WrongTypeError(path, classOf[Double], in.getClass)))
+
+
   override def extractLong(op: LongData)(
       in: Json,
       path: List[String]): Either[NonEmptyList[WrongTypeError[Long]], Long] =
