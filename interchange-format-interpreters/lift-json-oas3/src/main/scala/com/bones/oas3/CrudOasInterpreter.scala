@@ -108,10 +108,10 @@ object CrudOasInterpreter {
 
     val paramSchema = new IntegerSchema()
     val param = new Parameter()
-      .name("idDefinition")
+      .name("id")
       .in("path")
       .required(true)
-      .description(s"idDefinition of the ${outputEntityName} to retrieve")
+      .description(s"id of the ${outputEntityName} to retrieve")
       .schema(paramSchema)
 
     val operation = new Operation()
@@ -119,10 +119,10 @@ object CrudOasInterpreter {
       .parameters(java.util.Collections.singletonList(param))
       .tags(java.util.Collections.singletonList(outputEntityName))
       .summary(s"Find ${outputEntityName} by ID")
-      .description(s"Returns ${outputEntityName} by idDefinition")
+      .description(s"Returns ${outputEntityName} by id")
       .operationId(s"get${outputEntityName}ById")
 
-    upcertPath(openAPI, "/{idDefinition}", _.get(operation))
+    upcertPath(openAPI, "/{id}", _.get(operation))
 
     openAPI
   }
@@ -145,10 +145,10 @@ object CrudOasInterpreter {
 
     val paramSchema = new IntegerSchema()
     val param = new Parameter()
-      .name("idDefinition")
+      .name("id")
       .in("path")
       .required(true)
-      .description(s"idDefinition of the ${outputEntityName} to deleteOperation")
+      .description(s"id of the ${outputEntityName} to deleteOperation")
       .schema(paramSchema)
 
     val operation = new Operation()
@@ -156,10 +156,10 @@ object CrudOasInterpreter {
       .parameters(java.util.Collections.singletonList(param))
       .tags(java.util.Collections.singletonList(outputEntityName))
       .summary(s"Delete ${outputEntityName} by ID")
-      .description(s"Delete ${outputEntityName} by idDefinition")
+      .description(s"Delete ${outputEntityName} by id")
       .operationId(s"get${outputEntityName}ById")
 
-    upcertPath(openAPI, "/{idDefinition}", _.delete(operation))
+    upcertPath(openAPI, "/{id}", _.delete(operation))
     openAPI
   }
 
@@ -220,7 +220,7 @@ object CrudOasInterpreter {
       operation.setRequestBody(requestBody)
     })
 
-    upcertPath(openAPI, "/{idDefinition}", _.put(operation))
+    upcertPath(openAPI, "/{id}", _.put(operation))
 
     openAPI
 

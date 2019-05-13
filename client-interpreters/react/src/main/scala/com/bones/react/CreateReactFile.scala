@@ -90,8 +90,8 @@ object CreateReactFile {
        |    }).catch(err => console.log(JSON.stringify(err)))
        |  }
        |
-       |  deleteEntity(idDefinition) {
-       |    fetch(${crudManagerName}.baseUrl + "/" + idDefinition, {
+       |  deleteEntity(id) {
+       |    fetch(${crudManagerName}.baseUrl + "/" + id, {
        |      method: "DELETE", // *GET, POST, PUT, DELETE, etc.
        |      mode: 'cors',
        |      headers: {
@@ -105,8 +105,8 @@ object CreateReactFile {
        |    })
        |  }
        |
-       |  loadEntity(idDefinition) {
-       |    fetch(${crudManagerName}.baseUrl + "/" + idDefinition, {
+       |  loadEntity(id) {
+       |    fetch(${crudManagerName}.baseUrl + "/" + id, {
        |      method: "GET", // *GET, POST, PUT, DELETE, etc.
        |      mode: 'cors',
        |      headers: {
@@ -118,7 +118,7 @@ object CreateReactFile {
        |    .then(response => {
        |        console.log("loaded " + JSON.stringify(response));
        |        const reactified = ${crudManagerName}.addEmpty(response, ${crudManagerName}.realTypes, ${crudManagerName}.defaultState())
-       |        reactified['idDefinition'] = idDefinition;
+       |        reactified['id'] = id;
        |        console.log("reactified " + JSON.stringify(reactified));
        |        this.setState({${entityName}: reactified});
        |
@@ -175,8 +175,8 @@ object CreateReactFile {
        |    const prunedState = ${crudManagerName}.removeEmpty(this.state.${entityName}, ${crudManagerName}.realTypes);
        |    console.log("Pruned state: " + JSON.stringify(prunedState));
        |
-       |    if (typeof this.state.${entityName}.idDefinition  !== 'undefined') {
-       |      fetch(${crudManagerName}.baseUrl + "/" + this.state.${entityName}.idDefinition, {
+       |    if (typeof this.state.${entityName}.id  !== 'undefined') {
+       |      fetch(${crudManagerName}.baseUrl + "/" + this.state.${entityName}.id, {
        |        method: "PUT", // *GET, POST, PUT, DELETE, etc.
        |        mode: 'cors',
        |        headers: {
@@ -223,7 +223,7 @@ object CreateReactFile {
        |      <div>
        |        <div className="ui container">
        |          { this.state.${entityName}Id !== null ?
-       |            <div>Currently Editing Id: {this.state.${entityName}.idDefinition}</div> :
+       |            <div>Currently Editing Id: {this.state.${entityName}.id}</div> :
        |            <div>Creating New ${entityName.capitalize}</div>}
        |          <form onSubmit={this.handleSubmit}>
        |            <${entityName.capitalize}Edit ${entityName}={this.state.${entityName}} onUpdate={this.updateChildProperty('${entityName}')} />
@@ -236,7 +236,7 @@ object CreateReactFile {
        |          <${className}Header/>
        |          {this.state.${entityName}s.map( (entity) => {
        |            return (
-       |              <${entityName.capitalize}Display key={entity.idDefinition} ${entityName}={entity} onDelete={this.deleteEntity} onEdit={this.loadEntity}></${entityName.capitalize}Display>
+       |              <${entityName.capitalize}Display key={entity.id} ${entityName}={entity} onDelete={this.deleteEntity} onEdit={this.loadEntity}></${entityName.capitalize}Display>
        |            )
        |          })}
        |          </table>
@@ -284,7 +284,7 @@ object CreateReactFile {
        |
        |  static removeEmpty(obj, realTypes) {
        |    return Object.keys(obj)
-       |      .filter(k => obj[k] !== null && obj[k] !== undefined && (typeof obj[k] !== 'string' || obj[k].trim().length > 0) && k !== 'idDefinition')  // Remove undef. and null.
+       |      .filter(k => obj[k] !== null && obj[k] !== undefined && (typeof obj[k] !== 'string' || obj[k].trim().length > 0) && k !== 'id')  // Remove undef. and null.
        |      .reduce((newObj, k) => {
        |        if (obj[k] instanceof Date) {
        |          Object.assign(newObj, {[k]: obj[k].toISOString()})
@@ -351,9 +351,9 @@ object CreateReactFile {
        |    return (
        |      <tbody>
        |        <tr>
-       |          <td><button onClick={() => this.props.onDelete(this.props.${entityName}.idDefinition)} className="ui icon button">
+       |          <td><button onClick={() => this.props.onDelete(this.props.${entityName}.id)} className="ui icon button">
        |            <i className="trash icon"></i></button></td>
-       |          <td><button onClick={() => this.props.onEdit(this.props.${entityName}.idDefinition)} className="ui icon button">
+       |          <td><button onClick={() => this.props.onEdit(this.props.${entityName}.id)} className="ui icon button">
        |            <i className="edit icon"></i>
        |          </button></td>
        |          ${flattenKeys.map(key => s"<td>{this.props.${entityName}.${key}}</td>").mkString("")}
