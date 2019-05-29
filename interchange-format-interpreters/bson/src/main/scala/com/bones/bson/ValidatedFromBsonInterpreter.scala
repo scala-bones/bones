@@ -27,6 +27,9 @@ object ValidatedFromBsonInterpreter
     }.toEither.left.map(err => NonEmptyList.one(ParsingError(err.getMessage)))
   }
 
+
+  override def byteArrayFuncFromSchema[A](schema: Value.BonesSchema[A], charset: Charset): Array[Byte] => Either[NonEmptyList[ExtractionError], A] = ???
+
   type ValidatedFromJsonOption[A] =
     Option[BSONValue] => Either[NonEmptyList[ExtractionError], A]
   type ValidatedFromJson[A] =

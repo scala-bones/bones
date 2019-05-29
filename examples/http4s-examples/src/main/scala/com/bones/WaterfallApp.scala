@@ -22,6 +22,8 @@ object WaterfallDefinitions {
 
   case class ImperialMeasurement(feet: Long, inches: Long)
 
+  case class Location(latitude: BigDecimal, longitude: BigDecimal)
+
   val imperialMeasurement = (
     kvp("feet", long(lv.min(0))) ::
       kvp("inches", long(lv.between(0, 12))) ::

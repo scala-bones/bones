@@ -155,15 +155,15 @@ object SwaggerCoreInterpreter {
           composedSchema.name(schema.getName)
       case esd: EnumerationStringData[a] =>
         val stringSchema = new StringSchema()
-          .nullable(false)
+        esd.enumeration.values.foreach(v =>
+          stringSchema.addEnumItemObject(v.toString))
+
+        val schema = stringSchema.nullable(false)
           .example(esd.enumeration.values.head.toString)
-          .asInstanceOf[StringSchema]
         schema =>
           {
-            stringSchema.setName(schema.getName)
-            esd.enumeration.values.foreach(v =>
-              stringSchema.addEnumItemObject(v.toString))
-            stringSchema
+            schema.setName(schema.getName)
+            schema
           }
 
       case x: SumTypeData[a, b] =>
@@ -187,7 +187,7 @@ object SwaggerCoreInterpreter {
   /**
     * Responsible for adding validation specific details to the SwaggerCore files.
     * @param op The validation from we will add to the
-    * @tparam A
+    * @tparam A The type which is to be validated.
     * @return
     */
   def validation[A](op: ValidationOp[A]): Schema[_] => Schema[_] = {
@@ -214,7 +214,7 @@ object SwaggerCoreInterpreter {
             schema.setDescription(newDescription)
             schema
           }
-      case sv.IsAlphanum =>
+      case sv.IsAlphanumeric =>
         schema =>
           schema.pattern("^[:alnum:]+$"); schema
       case sv.MinLength(min) =>

@@ -33,7 +33,7 @@ object ResultSetInterpreter {
             rs =>
               {
                 Util.eitherMap2(rsToHead(rs), rsToTail(rs))((l1: h, l2: t) => {
-                  (l1 :: l2).asInstanceOf[a]
+                  op.isHCons.cons(l1,l2)
                 })
               }
           }
@@ -49,7 +49,7 @@ object ResultSetInterpreter {
               {
                 Util.eitherMap2(rsToHead(rs), rsToTail(rs))(
                   (l1: xl, l2: ht) => {
-                    (op.hListConvert.fab(l1) :: l2).asInstanceOf[H]
+                    op.isHCons.cons(op.hListConvert.fHtoA(l1), l2)
                   })
               }
           }
@@ -76,21 +76,18 @@ object ResultSetInterpreter {
       case op: OptionalKvpValueDefinition[a] =>
         (path, fieldName) =>
           val child = valueDefinition(op.valueDefinitionOp)(path, fieldName)
-          rs =>
-            val result = child(rs) match {
-              case Left(i) =>
-                if (i.length == 1) i.head match {
-                  case RequiredData(_, childOp)
-                      if childOp == op.valueDefinitionOp =>
-                    Right(None)
-                  case _ => Left(i)
+          rs => {
+            child(rs) match {
+              case Left(errs) =>
+                if (errs.length == 1) errs.head match {
+                  case RequiredData(_, childOp) if childOp == op.valueDefinitionOp => Right(None)
+                  case _ => Left(errs)
                 } else {
-                  Left(i)
+                  Left[NonEmptyList[ExtractionError], Option[a]](errs)
                 }
-              case x => x.map(s => Some(s))
+              case Right(a) => Right(Some(a))
             }
-            result
-              .asInstanceOf[Either[NonEmptyList[ExtractionError], Option[a]]]
+          }: Either[NonEmptyList[ExtractionError], Option[a]]
       case ob: BooleanData =>
         (path, fieldName) => rs =>
           catchSql(rs.getBoolean(fieldName), path, ob)
@@ -149,13 +146,12 @@ object ResultSetInterpreter {
         }
 
       case esd: EnumerationStringData[a] =>
-        (path, fieldName) => rs =>
-          val result = for {
+        (path, fieldName) => rs => {
+          for {
             r <- catchSql(rs.getString(fieldName), path, esd)
             e <- stringToEnumeration(r, path, esd.enumeration, esd.manifestOfA)
           } yield e
-          result.asInstanceOf[
-            Either[NonEmptyList[com.bones.data.Error.ExtractionError], A]]
+        }:Either[NonEmptyList[com.bones.data.Error.ExtractionError], A]
       case kvp: KvpHListValue[h, hl] =>
         val groupF = kvpHList(kvp.kvpHList)
         (path, _) => //Ignore fieldName here
@@ -164,7 +160,7 @@ object ResultSetInterpreter {
       case x: HListConvert[a, al, b] =>
         val groupF = kvpHList(x.from)
         (path, _) =>
-          groupF(path).andThen(_.map(x.fab))
+          groupF(path).andThen(_.map(x.fHtoA))
       case s: SumTypeData[a, b] =>
         val fromF = valueDefinition(s.from)
         (path, fieldName) =>

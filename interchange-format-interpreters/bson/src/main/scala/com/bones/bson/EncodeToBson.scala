@@ -59,13 +59,7 @@ object EncodeToBson extends KvpOutputInterpreter[BSONValue] {
     input =>
       BSONDecimal.fromBigDecimal(input).getOrElse(BSONString(input.toString))
 
-  override def listDataToOut[A, T](op: ListData[T]): A => BSONValue = {
-    val f = valueDefinition(op.tDefinition)
-    (input: A) =>
-      {
-        BSONArray(input.asInstanceOf[List[T]].map(i => f(i)))
-      }
-  }
+  override def toOutList(list: List[BSONValue]): BSONValue = BSONArray(list)
 
   override def byteArrayToOut(ba: ByteArrayData): Array[Byte] => BSONValue =
     input =>

@@ -126,17 +126,19 @@ object Value {
     val manifestOfA: Manifest[A]
   }
 
-  final case class HListConvert[A <: HList, AL <: Nat, B: Manifest](from: KvpHList[A, AL],
-                                                                    fab: A => B,
-                                                                    fba: B => A,
-                                                                    validations: List[ValidationOp[B]]
-                                                                   )
-    extends KvpValue[B]
-      with ToOptionalData[B]
-      with ToListData[B]
-      with BonesSchema[B] {}
+  final case class HListConvert[H <: HList, N <: Nat, A: Manifest]
+  (from: KvpHList[H, N],
+   fHtoA: H => A,
+   fAtoH: A => H,
+   validations: List[ValidationOp[A]]
+  )
+    extends KvpValue[A]
+      with ToOptionalData[A]
+      with ToListData[A]
+      with BonesSchema[A] {}
 
   type Path = List[String]
+
   final case class SumTypeData[A, B: Manifest](from: KvpValue[A],
                                                fab: (A, Path) => Either[CanNotConvert[A, B], B],
                                                fba: B => A,
@@ -172,9 +174,10 @@ object Value {
     def ::[A](v: KeyValueDefinition[A])(implicit isHCons: IsHCons.Aux[A :: H, A, H]): KvpSingleValueHead[A, H, N, A :: H]
 
     /* The ability to prefix an HListConvert (case class) to a KvpHList */
-    def :><:[OUT2 <: HList, OUT2L <: Nat, A: Manifest, HX <: HList, NX <: Nat](
-                                                                                dc: HListConvert[HX, NX, A]): KvpConcreteTypeHead[A, H, N, A :: H, HX, NX] =
-      KvpConcreteTypeHead[A, H, N, A :: H, HX, NX](dc, List.empty, this)
+    def :><:[OUT2 <: HList, OUT2L <: Nat, A: Manifest, HX <: HList, NX <: Nat]
+    (dc: HListConvert[HX, NX, A])
+    (implicit isHCons: IsHCons.Aux[A :: H, A, H]): KvpConcreteTypeHead[A, H, N, A :: H, HX, NX] =
+      KvpConcreteTypeHead[A, H, N, A :: H, HX, NX](dc, List.empty, this, isHCons)
 
   }
 
@@ -201,7 +204,19 @@ object Value {
 
   }
 
-  /** This allows the HListConvert to be attached to a KvpHList */
+  /**
+    * This allows the HListConvert to be attached to a KvpHList
+    * @param hListConvert provides functions to and from A/XL
+    * @param validations
+    * @param tail The tail of the HList which the A is prepended to.
+    * @param isHCons
+    * @tparam A The concrete class A which is at the head of the data structure.
+    * @tparam HT
+    * @tparam NT
+    * @tparam HO
+    * @tparam XL HList which can be converted to A using HListConvert functions
+    * @tparam XLL
+    */
   final case class KvpConcreteTypeHead[A: Manifest,
   HT <: HList,
   NT <: Nat,
@@ -210,22 +225,20 @@ object Value {
   XLL <: Nat](
                hListConvert: HListConvert[XL, XLL, A],
                validations: List[ValidationOp[HO]],
-               tail: KvpHList[HT, NT])
+               tail: KvpHList[HT, NT],
+               isHCons: IsHCons.Aux[HO, A, HT])
     extends KvpHList[HO, Succ[NT]] {
 
     val manifestOfA: Manifest[A] = manifest[A]
 
-    override def :::[HO2 <: HList, NO2 <: Nat, HP <: HList, NP <: Nat](
-                                                                        kvp: KvpHList[HP, NP])(
-                                                                        implicit prepend: Prepend.Aux[HP, HO, HO2],
-                                                                        lengthP: Length.Aux[HP, NP],
-                                                                        length: Length.Aux[HO2, NO2],
-                                                                        split: Split.Aux[HO2, NP, HP, HO]): KvpHList[HO2, NO2] =
-      KvpHListHead[HO2, NO2, HP, NP, HO, Succ[NT]](kvp,
-        this,
-        prepend,
-        split,
-        List.empty)
+    override def :::[HO2 <: HList, NO2 <: Nat, HP <: HList, NP <: Nat]
+    (kvp: KvpHList[HP, NP])
+    (implicit prepend: Prepend.Aux[HP, HO, HO2],
+     lengthP: Length.Aux[HP, NP],
+     length: Length.Aux[HO2, NO2],
+     split: Split.Aux[HO2, NP, HP, HO]
+    ): KvpHList[HO2, NO2] =
+      KvpHListHead[HO2, NO2, HP, NP, HO, Succ[NT]](kvp, this, prepend, split, List.empty)
 
 
     override def ::[B](v: KeyValueDefinition[B])(implicit isHCons: Aux[B :: HO, B, HO]):
@@ -297,7 +310,7 @@ object Value {
                                                                        lengthP: Length.Aux[P, PL],
                                                                        length: Length.Aux[HO2, NO2],
                                                                        split: Split.Aux[HO2, PL, P, HO]
-                                                                     ): KvpHList[HO2, NO2] =
+                                                                     ): KvpHListHead[HO2, NO2, P, PL, HO, NO] =
       KvpHListHead[HO2, NO2, P, PL, HO, NO](kvp,
         this,
         prepend,

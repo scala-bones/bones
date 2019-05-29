@@ -29,7 +29,7 @@ object ProtobufSequentialOutputInterpreter {
       val group = kvpHList(x.from).apply(0)
       (a: A) =>
         {
-          val hlist = x.fba(a)
+          val hlist = x.fAtoH(a)
           val (_, fEncode) = group(hlist)
           val os = new ByteArrayOutputStream()
           val cos: CodedOutputStream = CodedOutputStream.newInstance(os)
@@ -96,12 +96,12 @@ object ProtobufSequentialOutputInterpreter {
           {
             val headF = kvpHList(op.hListConvert.from)(fieldNumber)
             val tailF = kvpHList(op.tail)(fieldNumber)
+            implicit val hCons = op.isHCons
             (input: ho) =>
               {
-                val cast = input.asInstanceOf[a :: h]
-                val headGroup = op.hListConvert.fba(cast.head)
+                val headGroup = op.hListConvert.fAtoH(hCons.head(input))
                 val headResult = headF(headGroup)
-                val tailResult = tailF(cast.tail)
+                val tailResult = tailF(hCons.tail(input))
                 val fCompute: ComputeSize = () =>
                   headResult._1() + tailResult._1()
                 val fEncode = (outputStream: CodedOutputStream) => {
@@ -119,11 +119,11 @@ object ProtobufSequentialOutputInterpreter {
   }
 
   def valueDefinition[A](fgo: KvpValue[A]): EncodeToProto[A] = {
-    val result = fgo match {
+    fgo match {
       case op: OptionalKvpValueDefinition[a] =>
         (fieldNumber: FieldNumber) =>
           val fa = valueDefinition(op.valueDefinitionOp)(fieldNumber)
-          (opt: Option[a]) =>
+          (opt: Option[a]) => {
             val optB = opt.map(fa)
             (
               () => optB.fold(0)(_._1()),
@@ -131,6 +131,7 @@ object ProtobufSequentialOutputInterpreter {
                 optB.fold[Either[NonEmptyList[IOException], CodedOutputStream]](
                   Right(outputStream))(item => item._2(outputStream))
             )
+          }
       case ob: BooleanData =>
         (fieldNumber: FieldNumber) => (bool: Boolean) =>
           (
@@ -158,13 +159,13 @@ object ProtobufSequentialOutputInterpreter {
       case uu: UuidData =>
         (fieldNumber: FieldNumber) => (u: UUID) =>
           (
-            CodedOutputStream.computeStringSize(fieldNumber, u.toString),
+            () => CodedOutputStream.computeStringSize(fieldNumber, u.toString),
             write(_.writeString(fieldNumber, u.toString))
           )
       case dd: DateTimeData =>
         (fieldNumber: FieldNumber) => (d: ZonedDateTime) =>
           (
-            CodedOutputStream.computeStringSize(fieldNumber,
+            () => CodedOutputStream.computeStringSize(fieldNumber,
                                                 dd.dateFormat.format(d)),
             write(_.writeString(fieldNumber, dd.dateFormat.format(d)))
           )
@@ -192,7 +193,7 @@ object ProtobufSequentialOutputInterpreter {
       case ba: ByteArrayData =>
         (fieldNumber: FieldNumber) => (arr: Array[Byte]) =>
           (
-            CodedOutputStream.computeByteArraySize(fieldNumber, arr),
+            () => CodedOutputStream.computeByteArraySize(fieldNumber, arr),
             write(_.writeByteArray(fieldNumber, arr))
           )
       case ld: ListData[t] =>
@@ -202,9 +203,9 @@ object ProtobufSequentialOutputInterpreter {
             {
               val result = l.map(item => ft(item))
               (
-                () => result.map(_._1.apply()).sum,
-                (outputStream: CodedOutputStream) =>
-                  result.map(_._2(outputStream))
+                () => result.map(_._1()).sum,
+                write((outputStream: CodedOutputStream) =>
+                  result.foreach(_._2(outputStream)))
               )
             }
       case ed: EitherData[a, b] => ??? // use oneOf
@@ -225,14 +226,13 @@ object ProtobufSequentialOutputInterpreter {
       case kvp: KvpHListValue[h, hl] =>
         (fieldNumber: FieldNumber) =>
           val enc = kvpHList(kvp.kvpHList)(0)
-          (h: h) =>
-            enc(h)
+          (input: A) => enc(input.asInstanceOf[h])
       case x: HListConvert[h, hl, a] =>
         (fieldNumber: FieldNumber) =>
           val group = kvpHList(x.from).apply(0)
           (a: A) =>
             {
-              val hlist = x.fba(a)
+              val hlist = x.fAtoH(a)
               val (fSize, fEncode) = group(hlist)
               val encodeF: Encode = (outputStream: CodedOutputStream) => {
                 outputStream.writeTag(fieldNumber, 2)
@@ -244,7 +244,7 @@ object ProtobufSequentialOutputInterpreter {
 
 //        val dc = kvpHList(kvp.from)(0)
 //        (a: A) => {
-//          val hlist = kvp.fba(a)
+//          val hlist = kvp.fAtoH(a)
 //          val (childSizeF, childEncodeF) = dc(hlist)
 //          val size = childSizeF()
 //          val sizeF: ComputeSize = () => size
@@ -257,7 +257,6 @@ object ProtobufSequentialOutputInterpreter {
 //        }
 
     }
-    result.asInstanceOf[EncodeToProto[A]]
   }
 
   private def write(f: CodedOutputStream => Unit): Encode =

@@ -53,8 +53,8 @@ object EncodeToJValueInterpreter extends KvpOutputInterpreter[JValue] {
   override def bigDecimalToOut(op: BigDecimalData): BigDecimal => JValue =
     input => JString(input.toString())
 
-  override def listDataToOut[A, T](op: ListData[T]): A => JValue =
-    input => JArray(input.asInstanceOf[List[JValue]])
+
+  override def toOutList(list: List[JValue]): JValue = JArray(list)
 
   override def enumerationToOut[A](op: EnumerationStringData[A]): A => JValue =
     input => JString(input.toString)

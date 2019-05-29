@@ -39,7 +39,7 @@ object Error {
                            errors: NonEmptyList[ExtractionError])
       extends ExtractionError
 
-  case class ParsingError[A](message: String) extends ExtractionError {
+  case class ParsingError[A](message: String, exception: Option[Throwable] = None) extends ExtractionError {
     override def path: List[String] = List.empty
   }
 
