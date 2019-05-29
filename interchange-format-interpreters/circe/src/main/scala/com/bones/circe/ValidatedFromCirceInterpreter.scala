@@ -20,6 +20,15 @@ import io.circe.Json
 
 object ValidatedFromCirceInterpreter extends KvpValidateInputInterpreter[Json] {
 
+  def byteArrayFuncFromSchema[A](schema: BonesSchema[A], charset: Charset) :
+  Array[Byte] => Either[NonEmptyList[ExtractionError],A] = {
+    val f = fromSchema(schema)
+    bytes => {
+      fromByteArray(bytes, charset).flatMap(f(_,List.empty))
+    }
+  }
+
+
   def fromByteArray(arr: Array[Byte], charSet: Charset)
     : Either[NonEmptyList[ParsingError[Array[Byte]]], Json] = {
     val input = new String(arr, charSet)

@@ -47,13 +47,12 @@ object ProtobufSequentialInputInterpreter {
           val kvpResult = kvp(0, List.empty)
           val is = new ByteArrayInputStream(bytes)
           val cis: CodedInputStream = CodedInputStream.newInstance(is)
-          val b = kvpResult
+          kvpResult
             ._2(cis)
             .map(o => {
-              x.fab(o)
+              x.fHtoA(o)
             })
-          b.asInstanceOf[Either[NonEmptyList[ExtractionError], A]]
-        }
+        }:Either[NonEmptyList[ExtractionError], A]
     }
   }
 
@@ -75,9 +74,9 @@ object ProtobufSequentialInputInterpreter {
 
               val result = Util
                 .eitherMap2(headResult._2.apply(in), tailResult._2(in))(
-                  (l1: h, l2: t) => { l1 :: l2 })
+                  (l1: h, l2: t) => op.isHCons.cons(l1,l2))
                 .flatMap { l =>
-                  vu.validate(op.validations)(l.asInstanceOf[a], path)
+                  vu.validate(op.validations)(l, path)
                 }
               result
             })
@@ -92,10 +91,10 @@ object ProtobufSequentialInputInterpreter {
             (tailResult._1, in => {
               val totalResult = Util
                 .eitherMap2(headResult._2(in), tailResult._2(in))(
-                  (l1: xl, l2: ht) => { op.hListConvert.fab(l1) :: l2 }
+                  (l1: xl, l2: ht) => op.isHCons.cons(op.hListConvert.fHtoA(l1), l2)
                 )
                 .flatMap { l =>
-                  vu.validate[ho](op.validations)(l.asInstanceOf[ho], path)
+                  vu.validate[ho](op.validations)(l, path)
                 }
 
               totalResult
@@ -180,7 +179,6 @@ object ProtobufSequentialInputInterpreter {
           (thisField, in => {
             if (in.getLastTag == thisField) {
               convert(in, classOf[Int], path)(_.readInt32())
-                .asInstanceOf[Either[NonEmptyList[ExtractionError], A]]
             } else {
               Left(NonEmptyList.one(RequiredData(path, id)))
             }
@@ -205,7 +203,6 @@ object ProtobufSequentialInputInterpreter {
             (thisField, in => {
               if (in.getLastTag == thisField) {
                 convert(in, classOf[Array[Byte]], path)(_.readByteArray())
-                  .asInstanceOf[Either[NonEmptyList[ExtractionError], A]]
               } else {
                 Left(NonEmptyList.one(RequiredData(path, ba)))
               }
@@ -372,7 +369,7 @@ object ProtobufSequentialInputInterpreter {
             (thisField, (in: CodedInputStream) => {
               val length = in.readRawVarint32()
               val oldLimit = in.pushLimit(length)
-              val result = children._2(in).map(kvp.fab(_))
+              val result = children._2(in).map(kvp.fHtoA(_))
               try {
                 in.readTag()
                 in.checkLastTagWas(0)

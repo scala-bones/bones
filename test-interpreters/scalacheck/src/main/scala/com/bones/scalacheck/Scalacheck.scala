@@ -26,7 +26,7 @@ object Scalacheck {
           head <- headGen
           tail <- tailGen
         } yield {
-          (head :: tail).asInstanceOf[H]
+          op.isHCons.cons(head, tail)
         }
         result
       case op: KvpHListHead[a, al, h, hl, t, tl] =>
@@ -46,7 +46,7 @@ object Scalacheck {
           a <- headGen
           tail <- tailGen
         } yield {
-          (a :: tail).asInstanceOf[H]
+          op.isHCons.cons(a,tail)
         }
     }
   }
@@ -83,7 +83,7 @@ object Scalacheck {
       case kvp: KvpHListValue[h, hl] =>
         kvpHList(kvp.kvpHList).asInstanceOf[A]
       case x: HListConvert[a, al, b] =>
-        kvpHList(x.from).map(hList => x.fab(hList))
+        kvpHList(x.from).map(hList => x.fHtoA(hList))
       case s: SumTypeData[a, b] =>
         Gen.oneOf(s.keys).map(k => s.fab(k, List.empty).right.get)
     }
@@ -130,7 +130,7 @@ object Scalacheck {
             str <- Gen.listOfN(len, Gen.oneOf(loremIpsumWords))
           } yield str.mkString(" ")
           case Sentence => Gen.oneOf(loremIpsumSentences)
-          case IsAlphanum => Gen.alphaNumStr
+          case IsAlphanumeric => Gen.alphaNumStr
           case MatchesRegex(r) => RegexpGen.from(r.pattern.pattern())
           case Guid => Gen.uuid.map(_.toString)
           case Uppercase => Gen.alphaUpperStr

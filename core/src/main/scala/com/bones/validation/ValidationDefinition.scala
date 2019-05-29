@@ -65,11 +65,11 @@ object ValidationDefinition {
 
   object StringValidation extends BaseValidationOp[String] {
 
-    val alphanumRegexString = "^[a-zA-Z0-9]*$"
-    val alphanumRegex = alphanumRegexString.r
-    object IsAlphanum extends ValidationOp[String] {
+    val alphanumericRegexString = "^[a-zA-Z0-9]*$"
+    val alphanumericRegex: Regex = alphanumericRegexString.r
+    object IsAlphanumeric extends ValidationOp[String] {
       val isValid: String => Boolean =
-        alphanumRegex.findFirstMatchIn(_).isDefined
+        alphanumericRegex.findFirstMatchIn(_).isDefined
 
       override def defaultError(t: String): String = s"$t is not alphanumeric"
 
@@ -77,7 +77,7 @@ object ValidationDefinition {
     }
 
     val lettersWithSpaceRegexString = "^[a-zA-Z\\s]*$"
-    val lettersWithSpaceRegex = lettersWithSpaceRegexString.r
+    val lettersWithSpaceRegex: Regex = lettersWithSpaceRegexString.r
     object Words extends ValidationOp[String] {
 
       val isValid: String => Boolean =
@@ -89,7 +89,7 @@ object ValidationDefinition {
     }
 
     val sentenceRegexString = "^\\s+[A-Za-z,;'\"\\s]+[.?!]$"
-    val sentenceRegex = sentenceRegexString.r
+    val sentenceRegex: Regex = sentenceRegexString.r
     object Sentence extends ValidationOp[String] {
       val isValid: String => Boolean =
         sentenceRegex.findFirstMatchIn(_).isDefined
@@ -165,6 +165,14 @@ object ValidationDefinition {
       override def description: String = "uppercase"
     }
 
+    object Trimmed extends ValidationOp[String] {
+      val isValid: String => Boolean = str => str.trim == str
+
+      override def defaultError(t: String): String = s"'$t' must not have any leading or trailing whitespace"
+
+      override def description: String = "trimmed"
+    }
+
     object CreditCard extends ValidationOp[String] {
       override def isValid: String => Boolean =
         input => ValidationUtil.luhnCheck(10, input)
@@ -175,7 +183,7 @@ object ValidationDefinition {
       override def description: String = "valid credit card number"
     }
 
-    val tokenRegex = "^[a-zA-Z0-9_]*$".r
+    val tokenRegex: Regex = "^[a-zA-Z0-9_]*$".r
 
     object Token extends ValidationOp[String] {
       override def isValid: String => Boolean =
@@ -283,7 +291,13 @@ object ValidationDefinition {
     def matchesRegex(r: Regex): MatchesRegex = MatchesRegex(r)
 
     /** String must be alpha numeric */
-    val alphanum: IsAlphanum.type = IsAlphanum
+    val alphanumeric: IsAlphanumeric.type = IsAlphanumeric
+
+    /** String must be uppercase */
+    val uppercase: Uppercase.type = Uppercase
+
+    /** string must be trimmed (no leading or trailing whitespace). */
+    val trimmed: Trimmed.type = Trimmed
 
     /** */
     def custom(f: String => Boolean,

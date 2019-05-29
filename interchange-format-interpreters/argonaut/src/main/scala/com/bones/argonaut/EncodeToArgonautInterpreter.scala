@@ -53,8 +53,8 @@ object EncodeToArgonautInterpreter extends KvpOutputInterpreter[Json] {
   override def byteArrayToOut(ba: ByteArrayData): Array[Byte] => Json =
     input => Json.jString(Base64.getEncoder.encodeToString(input))
 
-  override def listDataToOut[A, T](op: ListData[T]): A => Json =
-    input => Json.array(input.asInstanceOf[List[Json]]: _*)
+  override def toOutList(list: List[Json]): Json =
+    Json.array(list :_*)
 
   override def enumerationToOut[A](op: EnumerationStringData[A]): A => Json =
     input => Json.jString(input.toString)

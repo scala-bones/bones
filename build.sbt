@@ -190,6 +190,16 @@ lazy val react = (project in file("client-interpreters/react"))
       "org.scalatest" %% "scalatest" % "3.0.7" % Test
     )
   ).dependsOn(core, testSchemas % "test")
+lazy val http4sClient = (project in file("client-interpreters/http4s-client"))
+  .settings(
+    commonSettings,
+    name := "Bones React",
+    libraryDependencies ++= Seq(
+      "org.http4s" %% "http4s-blaze-client" % http4sVersion,
+      "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.0.7" % Test
+    )
+  ).dependsOn(core, jsonCirce, testSchemas % "test")
 lazy val examples = (project in file("examples/http4s-examples"))
     .settings(
       commonSettings,

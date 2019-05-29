@@ -18,7 +18,7 @@ import com.bones.data.Error.{
 import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
 import com.bones.validation.ValidationDefinition.ValidationOp
-import shapeless.{HList, HNil, Nat}
+import shapeless.{HList, HNil, Nat,::}
 import com.bones.validation.{ValidationUtil => vu}
 
 import scala.util.Try
@@ -102,6 +102,9 @@ trait KvpValidateInputInterpreter[IN] {
           valueDefinition(x).apply(Some(in), path)
     }
 
+  def byteArrayFuncFromSchema[A](schema: BonesSchema[A], charset: Charset) :
+    Array[Byte] => Either[NonEmptyList[ExtractionError],A]
+
   def required[A](
                    op: KvpValue[A],
                    validations: List[ValidationOp[A]],
@@ -141,17 +144,17 @@ trait KvpValidateInputInterpreter[IN] {
       }
 
       case op: KvpConcreteTypeHead[a, ht, nt, ho, xl, xll] => {
-        val headInterpreter = kvpHList(op.hListConvert.from)
+        val headInterpreter: (IN, List[String]) => Either[NonEmptyList[ExtractionError], xl] = kvpHList(op.hListConvert.from)
         val tailInterpreter = kvpHList(op.tail)
         (in: IN, path: List[String]) =>
           {
             Util
-              .eitherMap2(headInterpreter(in, path), tailInterpreter(in, path))(
+              .eitherMap2[xl,ht,ho](headInterpreter(in, path), tailInterpreter(in, path))(
                 (l1: xl, l2: ht) => {
-                  op.hListConvert.fab(l1) :: l2
+                  op.isHCons.cons(op.hListConvert.fHtoA(l1), l2)
                 })
               .flatMap { l =>
-                vu.validate[ho](op.validations)(l.asInstanceOf[ho], path)
+                vu.validate[ho](op.validations)(l, path)
               }
           }
       }
@@ -172,12 +175,11 @@ trait KvpValidateInputInterpreter[IN] {
 
             Util
               .eitherMap2(head, tailValue)((l1, l2) => {
-                l1.asInstanceOf[h] :: l2.asInstanceOf[t]
+                op.isHCons.cons(l1, l2)
               })
               .flatMap { l =>
-                vu.validate(op.validations)(l.asInstanceOf[a], path)
+                vu.validate(op.validations)(l, path)
               }
-              .asInstanceOf[Either[NonEmptyList[ExtractionError], H]]
           }
       }
     }
@@ -305,13 +307,13 @@ trait KvpValidateInputInterpreter[IN] {
                 op.fab(res, path).left.map(NonEmptyList.one))
             }
         case op: KvpHListValue[h, hl] => {
-          val fg = kvpHList(op.kvpHList)
+          val fg: (IN, List[String]) => Either[NonEmptyList[ExtractionError], h] = kvpHList(op.kvpHList)
           (jsonOpt: Option[IN], path: List[String]) =>
             {
               jsonOpt match {
                 case Some(json) =>
                   fg(json, path)
-                    .flatMap(res => vu.validate(op.validations)(res, path))
+                    .flatMap(res => vu.validate[h](op.validations)(res, path))
                     .map(_.asInstanceOf[A])
                 case None => Left(NonEmptyList.one(RequiredData(path, op)))
               }
@@ -322,7 +324,7 @@ trait KvpValidateInputInterpreter[IN] {
           (jOpt: Option[IN], path: List[String]) =>
             jOpt match {
               case None    => Left(NonEmptyList.one(RequiredData(path, null)))
-              case Some(j) => kvp(j, path).right.map(x.fab(_))
+              case Some(j) => kvp(j, path).right.map(x.fHtoA(_))
             }
         }
       }

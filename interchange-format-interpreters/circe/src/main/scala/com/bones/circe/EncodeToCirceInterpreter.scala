@@ -52,8 +52,7 @@ object EncodeToCirceInterpreter extends KvpOutputInterpreter[Json] {
   override def bigDecimalToOut(op: BigDecimalData): BigDecimal => Json =
     input => Json.fromBigDecimal(input)
 
-  override def listDataToOut[A, T](op: ListData[T]): A => Json =
-    input => Json.arr(input.asInstanceOf[List[Json]]: _*)
+  override def toOutList(list: List[Json]): Json = Json.fromValues(list)
 
   override def enumerationToOut[A](op: EnumerationStringData[A]): A => Json =
     input => Json.fromString(input.toString)

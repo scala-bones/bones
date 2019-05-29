@@ -7,7 +7,7 @@ import cats.data.NonEmptyList
 import com.bones.data.Error.ExtractionError
 import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
-import shapeless.{HList, Nat}
+import shapeless.{HList, Nat, ::}
 
 object KvpOutInterpreter {
   type FOUT[OUT, A] = A => Either[NonEmptyList[ExtractionError], A]
@@ -35,7 +35,7 @@ trait KvpOutputInterpreter[OUT] {
   def doubleToOut(op: DoubleData): Double => OUT
   def bigDecimalToOut(op: BigDecimalData): BigDecimal => OUT
   def byteArrayToOut(ba: ByteArrayData): Array[Byte] => OUT
-  def listDataToOut[A, T](op: ListData[T]): A => OUT
+  def toOutList(list: List[OUT]): OUT
   def enumerationToOut[A](op: EnumerationStringData[A]): A => OUT
 
   def fromSchema[A](bonesSchema: BonesSchema[A]): A => OUT = bonesSchema match {
@@ -72,12 +72,11 @@ trait KvpOutputInterpreter[OUT] {
       case op: KvpConcreteTypeHead[a, ht, nt, ho, xl, xll] => {
         val headF = kvpHList(op.hListConvert.from)
         val tailF = kvpHList(op.tail)
-        (input: H) =>
+        implicit val hCons = op.isHCons
+        (input: a :: ht) =>
           {
-            import shapeless.::
-            val cast = input.asInstanceOf[a :: ht]
-            val head = headF(op.hListConvert.fba(cast.head))
-            val tail = kvpHList(op.tail)(cast.tail)
+            val head = headF(op.hListConvert.fAtoH(input.head))
+            val tail = tailF(input.tail)
             combine(head, tail)
           }
       }
@@ -104,7 +103,13 @@ trait KvpOutputInterpreter[OUT] {
       case dd: DoubleData     => doubleToOut(dd)
       case bd: BigDecimalData => bigDecimalToOut(bd)
       case ba: ByteArrayData  => byteArrayToOut(ba)
-      case ld: ListData[t]    => listDataToOut(ld)
+      case ld: ListData[t]    => {
+        val itemToOut = valueDefinition(ld.tDefinition)
+        (input: List[t]) => {
+          val listOfJson = input.map(itemToOut)
+          toOutList(listOfJson)
+        }
+      }
       case EitherData(aDefinition, bDefinition) =>
         val aF = valueDefinition(aDefinition)
         val bF = valueDefinition(bDefinition)
@@ -118,13 +123,12 @@ trait KvpOutputInterpreter[OUT] {
       case e: EnumerationStringData[a] => enumerationToOut(e)
       case gd: KvpHListValue[h, hl] =>
         val fh = kvpHList(gd.kvpHList)
-        input: A =>
-          fh(input.asInstanceOf[h])
+        (input: A) => fh(input.asInstanceOf[h])
       case x: HListConvert[h, hl, A] =>
         val fh = kvpHList(x.from)
         input: A =>
           {
-            fh(x.fba(input))
+            fh(x.fAtoH(input))
           }
       case s: SumTypeData[a, b] =>
         val fh = valueDefinition(s.from)
