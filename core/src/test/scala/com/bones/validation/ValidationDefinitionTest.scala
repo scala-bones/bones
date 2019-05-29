@@ -33,11 +33,11 @@ class ValidationDefinitionTest extends FunSuite with Checkers {
   test("string validation") {
 
     List("abc", "a1v2s3", "1a2v3s").foreach(i => {
-      assert(alphanum.isValid(i) === true)
+      assert(alphanumeric.isValid(i) === true)
     })
 
     List("a?a", "8*8", "(0)").foreach(i => {
-      assert(alphanum.isValid(i) === false)
+      assert(alphanumeric.isValid(i) === false)
     })
 
   }

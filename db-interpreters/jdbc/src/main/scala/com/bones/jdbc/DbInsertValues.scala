@@ -96,7 +96,7 @@ object DbInsertValues {
         val tailF = kvpHList(op.tail)
         (i:Index,h:H) => {
 //          val hSplit = op.split(h)
-          val headList = headF(i,op.hListConvert.fba(h.head))
+          val headList = headF(i,op.hListConvert.fAtoH(h.head))
           val tailList = tailF(headList._1, h.tail)
           (tailList._1, headList._2 ::: tailList._2)
         }
@@ -163,7 +163,7 @@ object DbInsertValues {
         val groupF = kvpHList(x.from)
         k => {
           (index, h) => {
-            groupF(index,x.fba(h))
+            groupF(index,x.fAtoH(h))
           }
         }
       case s: SumTypeData[a,b] =>

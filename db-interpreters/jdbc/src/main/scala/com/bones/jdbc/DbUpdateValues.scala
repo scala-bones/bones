@@ -104,7 +104,7 @@ object DbUpdateValues {
             val tailResult = tailF(headResult.lastIndex)
             val f = (input: H) => {
               val headList = headResult.actionableUpdateStatements(
-                op.hListConvert.fba(input.head))
+                op.hListConvert.fAtoH(input.head))
               val tailList = tailResult.actionableUpdateStatements(input.tail)
               (headList ::: tailList)
             }
@@ -211,7 +211,7 @@ object DbUpdateValues {
           {
             val result = groupF(i)
             val fa = (input: A) =>
-              result.actionableUpdateStatements(x.fba(input))
+              result.actionableUpdateStatements(x.fAtoH(input))
             DefinitionResult(result.lastIndex,
                              result.predefineUpdateStatements,
                              fa)

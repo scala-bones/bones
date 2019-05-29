@@ -15,10 +15,26 @@ import com.bones.data.Value._
 import com.bones.interpreter.KvpValidateInputInterpreter
 import com.bones.Util._
 
-import scala.util.Try
+import scala.util.control.NonFatal
 
 object ValidatedFromArgonautInterpreter
   extends KvpValidateInputInterpreter[Json] {
+
+
+  override def byteArrayFuncFromSchema[A](schema: BonesSchema[A], charset: Charset):
+  Array[Byte] => Either[NonEmptyList[ExtractionError], A] = {
+    val fromSchemaFunction = fromSchema(schema)
+    bytes => {
+      try {
+        val str = new String(bytes, charset)
+        Parse.parse(str)
+          .left.map(str => NonEmptyList.one(ParsingError(str)))
+          .flatMap(fromSchemaFunction(_, List.empty))
+      } catch {
+        case NonFatal(ex) => Left(NonEmptyList.one(ParsingError(ex.getMessage, Some(ex))))
+      }
+    }
+  }
 
   def fromByteArray(arr: Array[Byte],
                     charset: Charset): Either[ExtractionError, Json] =
