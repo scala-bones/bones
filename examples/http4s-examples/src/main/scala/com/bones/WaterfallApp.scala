@@ -38,7 +38,7 @@ object WaterfallDefinitions {
 
   case class Waterfall(name: String, latitude: BigDecimal, longitude: BigDecimal, cubicFeetPerMinute: Option[BigDecimal],
                        height: Option[ImperialMeasurement], waterValue: WaterVolume.Value, // discoveryDate: ZonedDateTime,
-                       wantToVisit: Boolean)
+                       wantToVisit: Boolean, description: String)
 
   val waterfall = (
     kvp("name", string(sv.max(200))) ::
@@ -49,6 +49,7 @@ object WaterfallDefinitions {
       kvp("waterVolume", enumeration[WaterVolume.Value](WaterVolume)) ::
       //      kvp("discoveryDate", isoDateTime()) ::
       kvp("wantToVisit", boolean) ::
+      kvp("description", string(sv.max(500))) ::
       KvpNil
     ).convert[Waterfall]
 
