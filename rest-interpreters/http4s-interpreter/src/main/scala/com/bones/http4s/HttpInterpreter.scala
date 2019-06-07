@@ -144,7 +144,7 @@ case class HttpInterpreter(
       val pErrorF =
         ProtobufSequentialOutputInterpreter.encodeToBytes(read.errorSchema)
       val protoBuf = GetInterpreterGroup[RO, RE](
-        contentType = "appliation/protobuf",
+        contentType = "application/protobuf",
         pOutputF,
         pErrorF
       )

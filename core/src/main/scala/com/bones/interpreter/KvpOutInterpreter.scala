@@ -55,8 +55,8 @@ trait KvpOutputInterpreter[OUT] {
         (input: H) =>
           {
             val l = op.split(input)
-            val headOut = headF.apply(l._1)
-            val tailOut = tailF.apply(l._2)
+            val headOut = headF(l._1)
+            val tailOut = tailF(l._2)
             combine(headOut, tailOut)
           }
       case op: KvpSingleValueHead[h, t, tl, H] =>
@@ -123,7 +123,7 @@ trait KvpOutputInterpreter[OUT] {
       case e: EnumerationStringData[a] => enumerationToOut(e)
       case gd: KvpHListValue[h, hl] =>
         val fh = kvpHList(gd.kvpHList)
-        (input: A) => fh(input.asInstanceOf[h])
+        input => fh(input.asInstanceOf[h])
       case x: HListConvert[h, hl, A] =>
         val fh = kvpHList(x.from)
         input: A =>

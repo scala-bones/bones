@@ -80,6 +80,9 @@ trait Sugar {
   /** Alias for bigDecimal without validations */
   val bigDecimal: BigDecimalData = bigDecimal()
 
+  /** */
+//  def double: Double = DoubleData()
+
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
   def either[A: Manifest, B: Manifest](definitionA: KvpValue[A],
                                        definitionB: KvpValue[B]) =
