@@ -1,6 +1,6 @@
 lazy val commonSettings = Seq(
   organization := "com.github.oletraveler",
-  scalaVersion := "2.12.7", //TODO: cross compile 2.11 and 2.12
+  scalaVersion := "2.12.7", //TODO: cross compile 2.12 and 2.13
   version      := "0.5.0-SNAPSHOT",
   homepage := Some(url("https://github.com/oletraveler/bones")),
   startYear := Some(2018),
@@ -49,7 +49,7 @@ lazy val core = (project in file("core"))
 lazy val testSchemas = (project in file("examples/test-schemas"))
   .settings(
     commonSettings,
-    name := "Test Schemas",
+    name := "Bones Test Schemas",
     libraryDependencies ++= Seq(
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
       "org.scalatest" %% "scalatest" % "3.0.7" % Test
@@ -58,7 +58,7 @@ lazy val testSchemas = (project in file("examples/test-schemas"))
 lazy val scalacheck = (project in file("test-interpreters/scalacheck"))
   .settings(
     commonSettings,
-    name := "Scalacheck",
+    name := "Bones Scalacheck",
     resolvers += "wolfendale" at "https://dl.bintray.com/wolfendale/maven/",
     libraryDependencies ++= Seq(
       //      "org.typelevel" %% "cats-core" % "1.6.0",
@@ -74,7 +74,7 @@ lazy val scalacheck = (project in file("test-interpreters/scalacheck"))
 lazy val jsonOas3 = (project in file("interchange-format-interpreters/lift-json-oas3"))
   .settings(
     commonSettings,
-    name := "DataDefinition to OAS3 Interpreter",
+    name := "Bones DataDefinition to OAS3 Interpreter",
     libraryDependencies ++= Seq(
       "io.swagger.core.v3" % "swagger-core" % "2.0.7",
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
@@ -193,7 +193,7 @@ lazy val react = (project in file("client-interpreters/react"))
 lazy val http4sClient = (project in file("client-interpreters/http4s-client"))
   .settings(
     commonSettings,
-    name := "Bones React",
+    name := "Bones Http4s Client",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-blaze-client" % http4sVersion,
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
@@ -214,7 +214,7 @@ lazy val examples = (project in file("examples/http4s-examples"))
         "org.scalatest" %% "scalatest" % "3.0.7" % Test
 //        "org.easymock" % "easymock" % "3.5.1" % Test
       )
-    ).dependsOn(core, jsonOas3, dbJdbc, restHttp4s, jsonOas3, protobuf, react, testSchemas % "test")
+    ).dependsOn(core, jsonOas3, dbJdbc, restHttp4s, jsonOas3, protobuf, react, testSchemas % "test", scalacheck % "test")
 
 
 

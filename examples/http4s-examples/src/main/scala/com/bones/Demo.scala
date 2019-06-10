@@ -59,10 +59,6 @@ object DemoApp extends LocalhostAllIOApp() {
   }
 }
 
-//  object WaterVolume extends Enumeration {
-//    type WaterVolume = Value
-//    val Low, Average, High = Value
-//  }
 
 
 
