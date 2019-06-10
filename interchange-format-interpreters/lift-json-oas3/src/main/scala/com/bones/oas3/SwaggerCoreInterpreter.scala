@@ -28,7 +28,7 @@ object SwaggerCoreInterpreter {
     case x: HListConvert[_, _, A] => fromValueDef(x).apply(new Schema())
   }
 
-  protected def fromKvpHList[H <: HList, HL <: Nat](
+  def fromKvpHList[H <: HList, HL <: Nat](
       group: KvpHList[H, HL]): Schema[_] => Schema[_] = {
     group match {
       case KvpNil =>
@@ -68,8 +68,7 @@ object SwaggerCoreInterpreter {
     * Recursive method which builds up a Swagger Core Schema object from the DataClass definition.
     * @param vd The DataClass definition to convert to a Schema
     **/
-  protected def fromValueDef[A](
-      vd: KvpValue[A]): Schema[_] => Schema[_] = {
+  def fromValueDef[A](vd: KvpValue[A]): Schema[_] => Schema[_] = {
     vd match {
       case op: OptionalKvpValueDefinition[b] =>
         val oasSchema = fromValueDef(op.valueDefinitionOp)
