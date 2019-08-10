@@ -1,6 +1,5 @@
 package com.bones.oas3
 
-import java.time.LocalDateTime
 import java.util.UUID
 
 import com.bones.data.Value._
@@ -17,6 +16,19 @@ import io.swagger.v3.oas.models.media._
 import shapeless.{HList, Nat}
 
 object SwaggerCoreInterpreter {
+
+
+  def apply[A](gd: BonesSchema[A]): Schema[_] = new SwaggerCoreInterpreter {
+    override def dateFormatterExample: String = "TODO: Date Format Example"
+
+    override def localDateFormatterExample: String = "TODO: Local Date Example"
+  }.apply(gd)
+}
+
+trait SwaggerCoreInterpreter {
+
+  def dateFormatterExample: String
+  def localDateFormatterExample: String
 
   private def copySchema(head: Schema[_], tail: Schema[_]): Schema[_] = {
     tail.getProperties.putAll(head.getProperties)
@@ -106,9 +118,15 @@ object SwaggerCoreInterpreter {
           .nullable(false)
         schema =>
           stringSchema.name(schema.getName)
-      case dd: DateTimeData =>
+      case _: DateTimeData =>
         val stringSchema = new StringSchema()
-          .example(dd.dateFormat.format(LocalDateTime.now()))
+          .example(dateFormatterExample)
+          .nullable(false)
+        schema =>
+          stringSchema.name(schema.getName)
+      case _: LocalDateData =>
+        val stringSchema = new StringSchema()
+          .example(dateFormatterExample)
           .nullable(false)
         schema =>
           stringSchema.name(schema.getName)
@@ -136,7 +154,7 @@ object SwaggerCoreInterpreter {
           .nullable(false)
         schema =>
           baSchema.name(schema.getName)
-      case ListData(definition, validations) =>
+      case ListData(definition, _) =>
         val items = fromValueDef(definition)
         val arraySchema = new ArraySchema()
         val itemSchema = items(new Schema())
@@ -157,12 +175,13 @@ object SwaggerCoreInterpreter {
         esd.enumeration.values.foreach(v =>
           stringSchema.addEnumItemObject(v.toString))
 
-        val schema = stringSchema.nullable(false)
+        val nullableStringSchema = stringSchema.nullable(false)
           .example(esd.enumeration.values.head.toString)
+
         schema =>
           {
-            schema.setName(schema.getName)
-            schema
+            nullableStringSchema.setName(schema.getName)
+            nullableStringSchema
           }
 
       case x: SumTypeData[a, b] =>

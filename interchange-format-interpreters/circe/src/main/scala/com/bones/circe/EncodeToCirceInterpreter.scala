@@ -1,6 +1,7 @@
 package com.bones.circe
 
-import java.time.ZonedDateTime
+import java.time.{LocalDate, LocalDateTime}
+import java.time.format.DateTimeFormatter
 import java.util.{Base64, UUID}
 
 import com.bones.data.KeyValueDefinition
@@ -8,11 +9,23 @@ import com.bones.data.Value._
 import com.bones.interpreter.KvpOutputInterpreter
 import io.circe._
 
-object EncodeToCirceInterpreter extends KvpOutputInterpreter[Json] {
+object EncodeToCirceInterpreter {
+  val isoInterpreter = new EncodeToCirceInterpreter {
+    override def dateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+  }
+}
+
+trait EncodeToCirceInterpreter extends KvpOutputInterpreter[Json] {
+
+  def dateFormatter: DateTimeFormatter
+  def localDateFormatter: DateTimeFormatter
+
   override def none: Json = Json.Null
 
   override def empty: Json = Json.obj()
 
+  /** Assumes prefix and postfix are JSON objects and combines the key/value pairs into a single object. */
   override def combine(prefix: Json, postfix: Json): Json = {
     val v1 = prefix.asObject.toList.flatMap(_.toList)
     val v2 = postfix.asObject.toList.flatMap(_.toList)
@@ -46,8 +59,11 @@ object EncodeToCirceInterpreter extends KvpOutputInterpreter[Json] {
   override def uuidToOut(op: UuidData): UUID => Json =
     input => Json.fromString(input.toString)
 
-  override def dateTimeToOut(op: DateTimeData): ZonedDateTime => Json =
-    input => Json.fromString(op.dateFormat.format(input))
+  override def dateTimeToOut(op: DateTimeData): LocalDateTime => Json =
+    input => Json.fromString(dateFormatter.format(input))
+
+  override def localDateToOut(op: LocalDateData): LocalDate => Json =
+    input => Json.fromString(localDateFormatter.format(input))
 
   override def bigDecimalToOut(op: BigDecimalData): BigDecimal => Json =
     input => Json.fromBigDecimal(input)

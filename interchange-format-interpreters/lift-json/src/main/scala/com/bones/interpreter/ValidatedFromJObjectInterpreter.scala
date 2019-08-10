@@ -1,7 +1,7 @@
 package com.bones.interpreter
 
 import java.nio.charset.Charset
-import java.time.ZonedDateTime
+import java.time.{LocalDate, LocalDateTime}
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
@@ -14,10 +14,21 @@ import net.liftweb.json.JsonParser.ParseException
 
 import scala.util.Try
 
-object ValidatedFromJObjectInterpreter
+object ValidatedFromJObjectInterpreter {
+  def isoDates = new ValidatedFromJObjectInterpreter {
+    override def dateFormat: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+  }
+}
+
+trait ValidatedFromJObjectInterpreter
     extends KvpValidateInputInterpreter[JValue] {
 
-  override def byteArrayFuncFromSchema[A](schema: Value.BonesSchema[A],
+  def dateFormat: DateTimeFormatter
+  def localDateFormatter: DateTimeFormatter
+
+
+  def byteArrayFuncFromSchema[A](schema: Value.BonesSchema[A],
                                           charset: Charset)
     : Array[Byte] => Either[NonEmptyList[ExtractionError], A] = {
     val unmarshallFunction = fromSchema(schema)
@@ -62,17 +73,15 @@ object ValidatedFromJObjectInterpreter
       in: JValue,
       path: List[String]): Either[NonEmptyList[ExtractionError], Long] =
     in match {
-      case JInt(i) => {
+      case JInt(i) =>
         if (i.isValidLong) Right(i.toLong)
         else
           Left(
             NonEmptyList.one(WrongTypeError(path, classOf[Long], in.getClass)))
-      }
-      case JString(s) => {
-        Try { Right(s.toLong) } getOrElse (Left(
+      case JString(s) =>
+        Try { Right(s.toLong) } getOrElse { Left(
           NonEmptyList.one(
-            WrongTypeError(path, classOf[Long], classOf[String]))))
-      }
+            WrongTypeError(path, classOf[Long], classOf[String])))}
       case _ =>
         Left(NonEmptyList.one(WrongTypeError(path, classOf[Long], in.getClass)))
     }
@@ -99,7 +108,13 @@ object ValidatedFromJObjectInterpreter
 
   override def extractDouble(op: Value.DoubleData)(
       in: JValue,
-      path: List[String]): Either[NonEmptyList[ExtractionError], Double] = ???
+      path: List[String]): Either[NonEmptyList[ExtractionError], Double] =
+    in match {
+      case JDouble(num) => Right(num)
+      case JInt(i) => Right(i.toDouble)
+      case _ =>
+        Left(NonEmptyList.one(WrongTypeError(path, classOf[Double], in.getClass)))
+    }
 
   override def extractBool(op: Value.BooleanData)(
       in: JValue,
@@ -121,15 +136,24 @@ object ValidatedFromJObjectInterpreter
           NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass)))
     }
 
-  override def extractZonedDateTime(
-      dateFormat: DateTimeFormatter,
+  override def extractLocalDateTime(
       op: Value.DateTimeData)(in: JValue, path: List[String])
-    : Either[NonEmptyList[ExtractionError], ZonedDateTime] =
+    : Either[NonEmptyList[ExtractionError], LocalDateTime] =
     in match {
-      case JString(s) => stringToZonedDateTime(s, dateFormat, path)
+      case JString(s) => stringToLocalDateTime(s, dateFormat, path)
       case _ =>
         Left(
           NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass)))
+    }
+
+
+  override def extractLocalDate(
+      op: Value.LocalDateData)(in: JValue, path: List[String])
+    : Either[NonEmptyList[ExtractionError], LocalDate] =
+    in match {
+      case JString(s) => stringToLocalDate(s, dateFormat, path)
+      case _ =>
+        Left(NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass)))
     }
 
   override def extractArray[A](op: Value.ListData[A])(
@@ -149,11 +173,10 @@ object ValidatedFromJObjectInterpreter
     in match {
       case JInt(i)    => Right(BigDecimal(i))
       case JDouble(d) => Right(BigDecimal(d))
-      case JString(s) => {
+      case JString(s) =>
         Try { Right(BigDecimal(s)) } getOrElse Left(
           NonEmptyList.one(
             WrongTypeError(path, classOf[Long], classOf[String])))
-      }
       case _ =>
         Left(NonEmptyList.one(WrongTypeError(path, classOf[Long], in.getClass)))
     }

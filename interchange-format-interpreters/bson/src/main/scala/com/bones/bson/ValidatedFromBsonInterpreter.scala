@@ -1,8 +1,6 @@
 package com.bones.bson
 
-import java.nio.charset.Charset
-import java.time.format.DateTimeFormatter
-import java.time.{Instant, ZoneOffset, ZonedDateTime}
+import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
 import java.util.UUID
 
 import cats.data.NonEmptyList
@@ -12,7 +10,7 @@ import com.bones.data.{KeyValueDefinition, Value}
 import com.bones.interpreter.KvpValidateInputInterpreter
 import com.bones.Util._
 import reactivemongo.bson.buffer.ArrayReadableBuffer
-import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDecimal, BSONDocument, BSONDouble, BSONInteger, BSONLong, BSONString, BSONTimestamp, BSONValue}
+import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDecimal, BSONDocument, BSONDouble, BSONInteger, BSONLong, BSONString, BSONValue}
 
 import scala.util.Try
 
@@ -26,9 +24,6 @@ object ValidatedFromBsonInterpreter
       BSONDocument.read(buffer)
     }.toEither.left.map(err => NonEmptyList.one(ParsingError(err.getMessage)))
   }
-
-
-  override def byteArrayFuncFromSchema[A](schema: Value.BonesSchema[A], charset: Charset): Array[Byte] => Either[NonEmptyList[ExtractionError], A] = ???
 
   type ValidatedFromJsonOption[A] =
     Option[BSONValue] => Either[NonEmptyList[ExtractionError], A]
@@ -111,19 +106,22 @@ object ValidatedFromBsonInterpreter
       case x => invalidValue(x, classOf[UUID], path)
     }
 
-  override def extractZonedDateTime(
-                                     dateFormat: DateTimeFormatter,
-                                     op: Value.DateTimeData)(in: BSONValue, path: List[String])
-  : Either[NonEmptyList[ExtractionError], ZonedDateTime] =
+  override def extractLocalDateTime(op: Value.DateTimeData)(in: BSONValue, path: List[String])
+  : Either[NonEmptyList[ExtractionError], LocalDateTime] =
     in match {
       case BSONDateTime(date) =>
         val i = Instant.ofEpochSecond(date)
-        Right(ZonedDateTime.ofInstant(i, ZoneOffset.UTC))
-      case BSONTimestamp(date) =>
-        val i = Instant.ofEpochSecond(date)
-        Right(ZonedDateTime.ofInstant(i, ZoneOffset.UTC))
+        Right(LocalDateTime.ofInstant(i, ZoneOffset.UTC))
+      case x => invalidValue(x, classOf[BSONDateTime], path)
+    }
 
-      case x => invalidValue(x, classOf[ZonedDateTime], path)
+
+  override def extractLocalDate(op: Value.LocalDateData)(in: BSONValue, path: List[String])
+  : Either[NonEmptyList[ExtractionError], LocalDate] =
+    in match {
+      case BSONDateTime(date) =>
+        Right(LocalDate.ofEpochDay(date))
+      case x => invalidValue(x, classOf[BSONDateTime], path)
     }
 
   override def extractArray[A](op: Value.ListData[A])(in: BSONValue,
@@ -131,12 +129,11 @@ object ValidatedFromBsonInterpreter
   : Either[NonEmptyList[ExtractionError], Seq[BSONValue]] =
     in match {
       case BSONArray(arr) =>
-        (arr.toList
+        arr.toList
           .map(_.toEither.leftMap(NonEmptyList.one).toValidated)
-          .sequence)
-          .toEither match {
+          .sequence.toEither match {
           case Right(s) => Right(s)
-          case Left(err) =>
+          case Left(_) =>
             Left(NonEmptyList.one(CanNotConvert(path, arr, classOf[Seq[_]])))
         }
       case x => invalidValue(x, classOf[Array[_]], path)
@@ -149,11 +146,10 @@ object ValidatedFromBsonInterpreter
       case BSONDouble(d) =>
         Try({d.toFloat})
           .toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Float], classOf[Double])))
-      case dec:BSONDecimal => {
+      case dec:BSONDecimal =>
         BSONDecimal.toBigDecimal(dec)
-          .flatMap((d => Try({d.toFloat})))
+          .flatMap(d => Try {d.toFloat} )
           .toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Float], classOf[BSONDecimal])))
-      }
       case BSONInteger(i) =>
         Try({i.toFloat})
           .toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Float], classOf[Int])))
@@ -168,11 +164,10 @@ object ValidatedFromBsonInterpreter
     in match {
       case BSONDouble(d) =>
         Right(d)
-      case dec:BSONDecimal => {
+      case dec:BSONDecimal =>
         BSONDecimal.toBigDecimal(dec)
-          .flatMap((d => Try({d.toDouble})))
+          .flatMap(d => Try {d.toDouble} )
           .toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Float], classOf[BSONDecimal])))
-      }
       case BSONInteger(i) =>
         Try({i.toDouble})
           .toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Double], classOf[Int])))

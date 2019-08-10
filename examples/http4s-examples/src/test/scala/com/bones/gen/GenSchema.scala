@@ -15,7 +15,7 @@ class GenSchema extends FunSuite with Checkers {
   implicit val hListValueGen: Gen[KvpHListValue[_<:HList,_<:Nat]] = GenGadt.genHListValue()
 
   implicit val schema: Gen[Schema[Object]] = hListValueGen.map(hListValue => {
-    SwaggerCoreInterpreter.fromValueDef(hListValue).apply( (new ObjectSchema())).asInstanceOf[Schema[Object]]
+    SwaggerCoreInterpreter.isoInterpreter.fromValueDef(hListValue).apply( (new ObjectSchema())).asInstanceOf[Schema[Object]]
   })
   implicit val arbitrary: Arbitrary[Schema[Object]] = Arbitrary(schema)
 

@@ -1,28 +1,24 @@
 package com.bones.interpreter
 
-import java.nio.charset.{Charset, StandardCharsets}
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import java.util.{Base64, Date, UUID}
+import java.time.{LocalDate, LocalDateTime}
+import java.util.{Base64, UUID}
 
-import cats.Applicative
-import cats.data.{NonEmptyList, Validated}
+import cats.data.NonEmptyList
 import cats.implicits._
 import com.bones.Util
-import com.bones.data.Error.{
-  CanNotConvert,
-  ExtractionError,
-  RequiredData,
-  WrongTypeError
-}
+import com.bones.data.Error.{CanNotConvert, ExtractionError, RequiredData, WrongTypeError}
 import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
 import com.bones.validation.ValidationDefinition.ValidationOp
-import shapeless.{HList, HNil, Nat,::}
 import com.bones.validation.{ValidationUtil => vu}
+import shapeless.{HList, HNil, Nat}
 
 import scala.util.Try
-import scala.util.control.NonFatal
+
+object KvpValidateInputInterpreter {
+  type Path = List[String]
+
+}
 
 /**
   * Base trait for converting from an interchange format such as JSON to an HList or Case class.
@@ -31,8 +27,8 @@ import scala.util.control.NonFatal
 trait KvpValidateInputInterpreter[IN] {
 
   import Util._
+  import KvpValidateInputInterpreter._
 
-  type Path = List[String]
 
   /**
     * Extend this to extract the value of type A from the input type IN
@@ -48,7 +44,7 @@ trait KvpValidateInputInterpreter[IN] {
                    headInterpreterF: (
                        Option[IN],
                        Path) => Either[NonEmptyList[ExtractionError], A],
-                   path: List[String]): Either[NonEmptyList[ExtractionError], A]
+                   path: Path): Either[NonEmptyList[ExtractionError], A]
 
   /**
     * Override this to provide the ability to extract a String from the IN type.
@@ -61,38 +57,41 @@ trait KvpValidateInputInterpreter[IN] {
     */
   def extractString[A](op: KvpValue[A], clazz: Class[_])(
       in: IN,
-      path: List[String]): Either[NonEmptyList[ExtractionError], String]
+      path: Path): Either[NonEmptyList[ExtractionError], String]
   def extractInt(op: IntData)(
     in: IN,
-    path: List[String]): Either[NonEmptyList[ExtractionError], Int]
+    path: Path): Either[NonEmptyList[ExtractionError], Int]
   def extractLong(op: LongData)(
       in: IN,
-      path: List[String]): Either[NonEmptyList[ExtractionError], Long]
+      path: Path): Either[NonEmptyList[ExtractionError], Long]
   def extractBool(op: BooleanData)(
       in: IN,
-      path: List[String]): Either[NonEmptyList[ExtractionError], Boolean]
+      path: Path): Either[NonEmptyList[ExtractionError], Boolean]
   def extractUuid(op: UuidData)(
       in: IN,
-      path: List[String]): Either[NonEmptyList[ExtractionError], UUID]
-  def extractZonedDateTime(dateFormat: DateTimeFormatter, op: DateTimeData)(
+      path: Path): Either[NonEmptyList[ExtractionError], UUID]
+  def extractLocalDateTime(op: DateTimeData)(
       in: IN,
-      path: List[String]): Either[NonEmptyList[ExtractionError], ZonedDateTime]
+      path: Path): Either[NonEmptyList[ExtractionError], LocalDateTime]
+  def extractLocalDate(op: LocalDateData)(
+      in: IN,
+      path: Path): Either[NonEmptyList[ExtractionError], LocalDate]
   def extractArray[A](op: ListData[A])(
       in: IN,
-      path: List[String]): Either[NonEmptyList[ExtractionError], Seq[IN]]
+      path: Path): Either[NonEmptyList[ExtractionError], Seq[IN]]
   def extractFloat(op: FloatData)(
       in: IN,
-      path: List[String]): Either[NonEmptyList[ExtractionError], Float]
+      path: Path): Either[NonEmptyList[ExtractionError], Float]
   def extractDouble(op: DoubleData)(
       in: IN,
-      path: List[String]): Either[NonEmptyList[ExtractionError], Double]
+      path: Path): Either[NonEmptyList[ExtractionError], Double]
   def extractBigDecimal(op: BigDecimalData)(
       in: IN,
-      path: List[String]): Either[NonEmptyList[ExtractionError], BigDecimal]
+      path: Path): Either[NonEmptyList[ExtractionError], BigDecimal]
   protected def invalidValue[T](
       in: IN,
       expected: Class[T],
-      path: List[String]): Left[NonEmptyList[ExtractionError], Nothing]
+      path: Path): Left[NonEmptyList[ExtractionError], Nothing]
 
   def fromSchema[A](schema: BonesSchema[A])
     : (IN, List[String]) => Either[NonEmptyList[ExtractionError], A] =
@@ -102,15 +101,12 @@ trait KvpValidateInputInterpreter[IN] {
           valueDefinition(x).apply(Some(in), path)
     }
 
-  def byteArrayFuncFromSchema[A](schema: BonesSchema[A], charset: Charset) :
-    Array[Byte] => Either[NonEmptyList[ExtractionError],A]
-
   def required[A](
                    op: KvpValue[A],
                    validations: List[ValidationOp[A]],
                    f: (IN, List[String]) => Either[NonEmptyList[ExtractionError], A],
   ): (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A] =
-    (inOpt: Option[IN], path: List[String]) =>
+    (inOpt: Option[IN], path: Path) =>
       for {
         json <- inOpt
           .toRight(NonEmptyList.one(RequiredData(path, op)))
@@ -129,7 +125,7 @@ trait KvpValidateInputInterpreter[IN] {
         val headInterpreter = kvpHList(op.head)
         val tailInterpreter = kvpHList(op.tail)
 
-        (in: IN, path: List[String]) =>
+        (in: IN, path: Path) =>
           {
 
             Util
@@ -146,7 +142,7 @@ trait KvpValidateInputInterpreter[IN] {
       case op: KvpConcreteTypeHead[a, ht, nt, ho, xl, xll] => {
         val headInterpreter: (IN, List[String]) => Either[NonEmptyList[ExtractionError], xl] = kvpHList(op.hListConvert.from)
         val tailInterpreter = kvpHList(op.tail)
-        (in: IN, path: List[String]) =>
+        (in: IN, path: Path) =>
           {
             Util
               .eitherMap2[xl,ht,ho](headInterpreter(in, path), tailInterpreter(in, path))(
@@ -164,7 +160,7 @@ trait KvpValidateInputInterpreter[IN] {
         val headInterpreter = valueDefinition(op.fieldDefinition.op)
         val tailInterpreter = kvpHList(op.tail)
 
-        (in: IN, path: List[String]) =>
+        (in: IN, path: Path) =>
           {
 
             val headPath = path :+ op.fieldDefinition.key
@@ -192,7 +188,7 @@ trait KvpValidateInputInterpreter[IN] {
       fgo match {
         case op: OptionalKvpValueDefinition[a] =>
           val applied = valueDefinition(op.valueDefinitionOp)
-          (in: Option[IN], path: List[String]) =>
+          (in: Option[IN], path: Path) =>
             in match {
               case None              => Right(None)
               case some @ Some(json) => applied(some, path).map(Some(_))
@@ -207,11 +203,13 @@ trait KvpValidateInputInterpreter[IN] {
           required(op, op.validations, extractBool(op))
         case op: UuidData =>
           required(op, op.validations, extractUuid(op))
-        case op @ DateTimeData(dateFormat, _, _) =>
-          required(op, op.validations, extractZonedDateTime(dateFormat, op))
+        case op @ DateTimeData(validations) =>
+          required(op, validations, extractLocalDateTime(op))
+        case op @ LocalDateData(validations) =>
+          required(op, validations, extractLocalDate(op))
         case op @ ByteArrayData(validations) =>
           val decoder = Base64.getDecoder
-          (inOpt: Option[IN], path: List[String]) =>
+          (inOpt: Option[IN], path: Path) =>
             for {
               in <- inOpt.toRight[NonEmptyList[ExtractionError]](
                 NonEmptyList.one(RequiredData(path, op)))
@@ -224,7 +222,7 @@ trait KvpValidateInputInterpreter[IN] {
         case ed: EitherData[a, b] =>
           val optionalA = valueDefinition(ed.definitionA)
           val optionalB = valueDefinition(ed.definitionB)
-          (in: Option[IN], path: List[String]) =>
+          (in: Option[IN], path: Path) =>
             {
               optionalA(in, path) match {
                 case Left(err) =>
@@ -249,7 +247,7 @@ trait KvpValidateInputInterpreter[IN] {
             }
         case op: ListData[t] =>
           val valueF = valueDefinition(op.tDefinition)
-          def appendArrayInex(path: List[String], index: Int): List[String] = {
+          def appendArrayInex(path: Path, index: Int): List[String] = {
             val size = path.length
             if (path.length == 0) path
             else
@@ -257,7 +255,7 @@ trait KvpValidateInputInterpreter[IN] {
                            path(path.length - 1) + s"[${index}]")
           }
 
-          def traverseArray(arr: Seq[IN], path: List[String])
+          def traverseArray(arr: Seq[IN], path: Path)
             : Either[NonEmptyList[ExtractionError], List[t]] = {
             val arrayApplied: Seq[Either[NonEmptyList[ExtractionError], t]] =
               arr.zipWithIndex.map(jValue =>
@@ -273,7 +271,7 @@ trait KvpValidateInputInterpreter[IN] {
                   case (_, Left(x))         => Left(x)
               })
           }
-          (inOpt: Option[IN], path: List[String]) =>
+          (inOpt: Option[IN], path: Path) =>
             {
               for {
                 in <- inOpt.toRight(NonEmptyList.one(RequiredData(path, op)))
@@ -288,7 +286,7 @@ trait KvpValidateInputInterpreter[IN] {
         case op: BigDecimalData =>
           required(op, op.validations, extractBigDecimal(op))
         case op: EnumerationStringData[A] =>
-          (inOpt: Option[IN], path: List[String]) =>
+          (inOpt: Option[IN], path: Path) =>
             for {
               in <- inOpt.toRight[NonEmptyList[ExtractionError]](
                 NonEmptyList.one(RequiredData(path, op)))
@@ -301,14 +299,14 @@ trait KvpValidateInputInterpreter[IN] {
 
         case op: SumTypeData[a, A] =>
           val valueF = valueDefinition(op.from)
-          (in: Option[IN], path: List[String]) =>
+          (in: Option[IN], path: Path) =>
             {
               valueF(in, path).flatMap(res =>
                 op.fab(res, path).left.map(NonEmptyList.one))
             }
         case op: KvpHListValue[h, hl] => {
           val fg: (IN, List[String]) => Either[NonEmptyList[ExtractionError], h] = kvpHList(op.kvpHList)
-          (jsonOpt: Option[IN], path: List[String]) =>
+          (jsonOpt: Option[IN], path: Path) =>
             {
               jsonOpt match {
                 case Some(json) =>
@@ -321,7 +319,7 @@ trait KvpValidateInputInterpreter[IN] {
         }
         case x: HListConvert[a, al, A] => {
           val kvp = kvpHList(x.from)
-          (jOpt: Option[IN], path: List[String]) =>
+          (jOpt: Option[IN], path: Path) =>
             jOpt match {
               case None    => Left(NonEmptyList.one(RequiredData(path, null)))
               case Some(j) => kvp(j, path).right.map(x.fHtoA(_))

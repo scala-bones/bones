@@ -1,14 +1,22 @@
 package com.bones.interpreter
 
-import java.time.ZonedDateTime
+import java.time.{LocalDate, LocalDateTime}
+import java.time.format.DateTimeFormatter
 import java.util.{Base64, UUID}
 
 import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
 import net.liftweb.json.JsonAST._
 
-object EncodeToJValueInterpreter extends KvpOutputInterpreter[JValue] {
+object EncodeToJValueInterpreter {
   type EncodeToJValue[A] = A => JValue
+
+}
+
+trait EncodeToJValueInterpreter extends KvpOutputInterpreter[JValue] {
+
+  def dateFormatter: DateTimeFormatter
+  def localDateFormatter: DateTimeFormatter
 
   override def none: JValue = JNull
 
@@ -47,12 +55,14 @@ object EncodeToJValueInterpreter extends KvpOutputInterpreter[JValue] {
   override def uuidToOut(op: UuidData): UUID => JValue =
     input => JString(input.toString)
 
-  override def dateTimeToOut(op: DateTimeData): ZonedDateTime => JValue =
-    input => JString(op.dateFormat.format(input))
+  override def dateTimeToOut(op: DateTimeData): LocalDateTime => JValue =
+    input => JString(dateFormatter.format(input))
+
+  override def localDateToOut(op: LocalDateData): LocalDate => JValue =
+    input => JString(localDateFormatter.format(input))
 
   override def bigDecimalToOut(op: BigDecimalData): BigDecimal => JValue =
     input => JString(input.toString())
-
 
   override def toOutList(list: List[JValue]): JValue = JArray(list)
 

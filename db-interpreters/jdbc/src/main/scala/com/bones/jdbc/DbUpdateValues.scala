@@ -1,7 +1,7 @@
 package com.bones.jdbc
 
 import java.sql.{Connection, PreparedStatement, SQLException, Types}
-import java.time.ZonedDateTime
+import java.time.{LocalDate, LocalDateTime, ZoneOffset}
 
 import cats.data.NonEmptyList
 import com.bones.crud.WithId
@@ -179,9 +179,14 @@ object DbUpdateValues {
         psF(i => (ps, a) => ps.setString(i, a.toString), Types.VARCHAR)
       case dd: DateTimeData =>
         psF((i: Index) =>
-              (ps: PreparedStatement, a: ZonedDateTime) =>
-                ps.setDate(i, new java.sql.Date(a.toInstant.toEpochMilli)),
+              (ps: PreparedStatement, a: LocalDateTime) =>
+                ps.setDate(i, new java.sql.Date(a.toInstant(ZoneOffset.UTC).toEpochMilli)),
             Types.DATE)
+      case ld: LocalDateData =>
+        psF((i: Index) =>
+          (ps:PreparedStatement, a: LocalDate) =>
+            ps.setDate(i, new java.sql.Date(a.atStartOfDay.toInstant(ZoneOffset.UTC).toEpochMilli)),
+          Types.DATE)
       case fd: FloatData => psF(i => (ps, a) => ps.setFloat(i, a), Types.FLOAT)
       case fd: DoubleData => psF(i => (ps, a) => ps.setDouble(i, a), Types.DOUBLE)
       case bd: BigDecimalData =>

@@ -1,6 +1,6 @@
 package com.bones.schemas
 
-import java.time.{LocalDateTime, ZonedDateTime}
+import java.time.LocalDateTime
 import java.util.UUID
 
 import com.bones.data.Error.CanNotConvert
@@ -45,7 +45,7 @@ object Schemas {
 
 
   case class CC(firstSix: String, lastFour: String, uuid: UUID, token: UUID, ccType: CreditCardType,
-                expMonth: Long, expYear: Long, cardholder: String, currency: Currency.Value, deletedAt: Option[ZonedDateTime],
+                expMonth: Long, expYear: Long, cardholder: String, currency: Currency.Value, deletedAt: Option[LocalDateTime],
                 lastModifiedRequest: UUID, billingLocation: Option[BillingLocation])
 
   val isoList = Vector("US", "CA", "MX")
@@ -99,7 +99,7 @@ object Schemas {
   ) ::: ccExp ::: (
     kvp("cardHolder", string(sv.words)) ::
       kvp("currencyIso", enumeration[Currency.Value](Currency)) ::
-      kvp("deletedAt", isoDateTime.optional) ::
+      kvp("deletedAt", localDateTime.optional) ::
       kvp("lastModifiedRequest", uuid) ::
       kvp("billingLocation", (
         kvp("countryIso", string(sv.validVector(isoList))) ::
