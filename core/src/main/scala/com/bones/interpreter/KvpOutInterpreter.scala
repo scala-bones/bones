@@ -1,13 +1,13 @@
 package com.bones.interpreter
 
-import java.time.ZonedDateTime
+import java.time.{LocalDate, LocalDateTime}
 import java.util.UUID
 
 import cats.data.NonEmptyList
 import com.bones.data.Error.ExtractionError
 import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
-import shapeless.{HList, Nat, ::}
+import shapeless.{::, HList, Nat}
 
 object KvpOutInterpreter {
   type FOUT[OUT, A] = A => Either[NonEmptyList[ExtractionError], A]
@@ -22,15 +22,33 @@ trait KvpOutputInterpreter[OUT] {
   def none: OUT
   def empty: OUT
 
-  /** Combine two groups of values */
+  /** Combine two groups of values, for instance two JSON objects into a single JSON object */
   def combine(prefix: OUT, postfix: OUT): OUT
+
+  /** Takes a value definition and the actual value and create
+    * a key value pair wrapped in the OUT type.  Analogous to
+    * wrapping a key value pair in a JSON Object.
+    * */
   def toObj[A](kvDef: KeyValueDefinition[A], value: OUT): OUT
+
+  /** Create a function which converts a boolean into the specific OUT type */
   def booleanToOut(op: BooleanData): Boolean => OUT
+
+  /** Create a function which converts a String into the specific OUT type */
   def stringToOut(op: StringData): String => OUT
+
+  /** Create a function which converts an Int into the specific OUT type */
   def intToOut(op: IntData): Int => OUT
+
+  /** Create a function which converts a Long into the specific OUT type */
   def longToOut(op: LongData): Long => OUT
+
+  /** Create a function which converts a UUID into the specific OUT type */
   def uuidToOut(op: UuidData): UUID => OUT
-  def dateTimeToOut(op: DateTimeData): ZonedDateTime => OUT
+
+  /** Create a function which converts a LocalDateTime into the specific OUT type */
+  def dateTimeToOut(op: DateTimeData): LocalDateTime => OUT
+  def localDateToOut(op: LocalDateData): LocalDate => OUT
   def floatToOut(op: FloatData): Float => OUT
   def doubleToOut(op: DoubleData): Double => OUT
   def bigDecimalToOut(op: BigDecimalData): BigDecimal => OUT
@@ -38,6 +56,16 @@ trait KvpOutputInterpreter[OUT] {
   def toOutList(list: List[OUT]): OUT
   def enumerationToOut[A](op: EnumerationStringData[A]): A => OUT
 
+  /** This is the main entry point whose purpose is to convert
+    * a schema into a function which expects the Type described by the schema (for example a case class)
+    * and converts it into an interchange format library's data structure (such as Circe JSON).
+    * This interpreter assumes the data has already been
+    * validated and is only responsible for the data conversion.
+    *
+    * @param bonesSchema
+    * @tparam A
+    * @return
+    */
   def fromSchema[A](bonesSchema: BonesSchema[A]): A => OUT = bonesSchema match {
     case x: HListConvert[_, _, A] => valueDefinition(x)
   }
@@ -99,6 +127,7 @@ trait KvpOutputInterpreter[OUT] {
       case ri: LongData       => longToOut(ri)
       case uu: UuidData       => uuidToOut(uu)
       case dd: DateTimeData   => dateTimeToOut(dd)
+      case ld: LocalDateData  => localDateToOut(ld)
       case fd: FloatData      => floatToOut(fd)
       case dd: DoubleData     => doubleToOut(dd)
       case bd: BigDecimalData => bigDecimalToOut(bd)

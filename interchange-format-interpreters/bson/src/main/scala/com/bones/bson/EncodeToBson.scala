@@ -1,6 +1,6 @@
 package com.bones.bson
 
-import java.time.ZonedDateTime
+import java.time.{LocalDate, LocalDateTime, ZoneOffset}
 import java.util.{Base64, UUID}
 
 import com.bones.data.KeyValueDefinition
@@ -44,9 +44,11 @@ object EncodeToBson extends KvpOutputInterpreter[BSONValue] {
   override def uuidToOut(op: UuidData): UUID => BSONValue =
     input => BSONString(input.toString)
 
-  override def dateTimeToOut(op: DateTimeData): ZonedDateTime => BSONValue =
-    input => BSONDateTime(input.toEpochSecond)
+  override def dateTimeToOut(op: DateTimeData): LocalDateTime => BSONValue =
+    input => BSONDateTime(input.toEpochSecond(ZoneOffset.UTC))
 
+  override def localDateToOut(op: LocalDateData): LocalDate => BSONValue =
+    input => BSONDateTime(input.toEpochDay)
 
   override def floatToOut(op: FloatData): Float => BSONValue =
     input => BSONDecimal.fromBigDecimal(BigDecimal(input)).getOrElse(BSONString(input.toString))

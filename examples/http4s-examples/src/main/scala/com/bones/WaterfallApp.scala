@@ -1,7 +1,5 @@
 package com.bones
 
-import java.time.{LocalDateTime, ZonedDateTime}
-
 import cats.effect.IO
 import com.bones.crud.Algebra.ServiceOps
 import com.bones.data.Value.KvpNil
@@ -37,7 +35,7 @@ object WaterfallDefinitions {
 
 
   case class Waterfall(name: String, latitude: BigDecimal, longitude: BigDecimal, cubicFeetPerMinute: Option[BigDecimal],
-                       height: Option[ImperialMeasurement], waterValue: WaterVolume.Value, // discoveryDate: ZonedDateTime,
+                       height: Option[ImperialMeasurement], waterValue: WaterVolume.Value, // discoveryDate: LocalDateTime,
                        wantToVisit: Boolean, description: String)
 
   val waterfall = (

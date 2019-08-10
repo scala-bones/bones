@@ -1,6 +1,7 @@
 package com.bones.argonaut
 
-import java.time.ZonedDateTime
+import java.time.{LocalDate, LocalDateTime}
+import java.time.format.DateTimeFormatter
 import java.util.{Base64, UUID}
 
 import argonaut._
@@ -8,7 +9,13 @@ import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
 import com.bones.interpreter.KvpOutputInterpreter
 
-object EncodeToArgonautInterpreter extends KvpOutputInterpreter[Json] {
+/**
+  * Module responsible for converting data to Argonaut JSON
+  */
+trait EncodeToArgonautInterpreter extends KvpOutputInterpreter[Json] {
+
+  def dateFormat: DateTimeFormatter
+  def localDateFormatter: DateTimeFormatter
 
   override def none: Json = Json.jNull
 
@@ -29,7 +36,7 @@ object EncodeToArgonautInterpreter extends KvpOutputInterpreter[Json] {
   override def stringToOut(op: StringData): String => Json =
     input => Json.jString(input)
 
-  override def intToOut(op: IntData): Int => Json = ???
+  override def intToOut(op: IntData): Int => Json = Json.jNumber
 
   override def longToOut(op: LongData): Long => Json =
     input => Json.jNumber(input)
@@ -37,9 +44,11 @@ object EncodeToArgonautInterpreter extends KvpOutputInterpreter[Json] {
   override def uuidToOut(op: UuidData): UUID => Json =
     input => Json.jString(input.toString)
 
-  override def dateTimeToOut(op: DateTimeData): ZonedDateTime => Json =
-    input => Json.jString(op.dateFormat.format(input))
+  override def dateTimeToOut(op: DateTimeData): LocalDateTime => Json =
+    input => Json.jString(dateFormat.format(input))
 
+  override def localDateToOut(op: LocalDateData): LocalDate => Json =
+    input => Json.jString(localDateFormatter.format(input))
 
   override def floatToOut(op: FloatData): Float => Json =
     input => Json.jNumber(input.toDouble)

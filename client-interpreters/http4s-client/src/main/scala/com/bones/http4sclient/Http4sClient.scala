@@ -19,7 +19,7 @@ object Http4sClient {
 
 
   def getF[O,E](path: String, read: Read[O,E]) : Client[IO] => ID => IO[Either[Error[E],O]] = {
-    val f = ValidatedFromCirceInterpreter.byteArrayFuncFromSchema(read.outputSchema, Charset.forName("utf-8"))
+    val f = ValidatedFromCirceInterpreter.isoInterpreter.byteArrayFuncFromSchema(read.outputSchema, Charset.forName("utf-8"))
 
     httpClient => id => {
 //      httpClient.fetch[Array[Byte]](s"http://localhost:8080/$path/$id")

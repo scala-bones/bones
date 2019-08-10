@@ -1,7 +1,6 @@
 package com.bones.data
 
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
+import java.time.{LocalDate, LocalDateTime}
 import java.util.UUID
 
 import com.bones.data.Value._
@@ -66,13 +65,16 @@ trait Sugar {
   def uuid(v: ValidationOp[UUID]*) = UuidData(v.toList)
 
   /** Alias for UUID without validations */
-  val uuid: UuidData = uuid()
+  val uuid: UuidData = UuidData(List.empty)
 
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
-  def date(dateFormat: DateTimeFormatter,
-           formatDescription: String,
-           v: ValidationOp[ZonedDateTime]*) =
-    DateTimeData(dateFormat, formatDescription, v.toList)
+  def localDateTime(v: ValidationOp[LocalDateTime]*) = DateTimeData(v.toList)
+
+  val localDateTime = DateTimeData(List.empty)
+
+  def localDate(v: ValidationOp[LocalDate]*) = LocalDateData(v.toList)
+
+  val localDate: LocalDateData = LocalDateData(List.empty)
 
   /** Indicates that the data tied to this key is a BigDecimal that must pass the specified validations. */
   def bigDecimal(v: ValidationOp[BigDecimal]*) = BigDecimalData(v.toList)
@@ -80,33 +82,10 @@ trait Sugar {
   /** Alias for bigDecimal without validations */
   val bigDecimal: BigDecimalData = bigDecimal()
 
-  /** */
-//  def double: Double = DoubleData()
-
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
   def either[A: Manifest, B: Manifest](definitionA: KvpValue[A],
                                        definitionB: KvpValue[B]) =
     EitherData(definitionA, definitionB)
-
-  /** Expecting a string that is in the format of an iso date time */
-  def isoDateTime(v: ValidationOp[ZonedDateTime]*) =
-    DateTimeData(
-      DateTimeFormatter.ISO_DATE_TIME,
-      "ISO date-time format with the offset and zone if available, such as '2011-12-03T10:15:30', '2011-12-03T10:15:30+01:00' or '2011-12-03T10:15:30+01:00[Europe/Paris]'",
-      v.toList
-    )
-
-  /** Alias for isDateTime without validations */
-  val isoDateTime: DateTimeData = isoDateTime()
-
-  /** Expecting a string that is in the format of an iso date */
-  def isoDate(v: ValidationOp[ZonedDateTime]*) =
-    DateTimeData(
-      DateTimeFormatter.ISO_LOCAL_DATE,
-      "ISO date format with the offset if available, such as '2011-12-03' or '2011-12-03+01:00'",
-      v.toList
-    )
-  val isoDate: DateTimeData = isoDate()
 
   /** Expecting the type to be a Scala style enumeration
     *
@@ -116,10 +95,11 @@ trait Sugar {
   def enumeration[A: Manifest](e: Enumeration): EnumerationStringData[A] =
     EnumerationStringData[A](e, List.empty)
 
+  /** Indicates that the data is a list of Key Value pairs */
   def kvpHList[H <: HList: Manifest, HL <: Nat](kvpHList: KvpHList[H, HL],
                                                 v: ValidationOp[H]*) =
     KvpHListValue(kvpHList, v.toList)
 
-  val kvpNil = KvpNil
+  val kvpNil: KvpNil.type = KvpNil
 
 }

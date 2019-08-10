@@ -1,6 +1,6 @@
 package com.bones.scalacheck
 
-import java.time.{ZoneId, ZonedDateTime}
+import java.time.{LocalDateTime, ZoneId}
 import java.util.{Date, UUID}
 
 import com.bones.data.Value._
@@ -65,7 +65,7 @@ object Scalacheck {
       case id: IntData => validationConstraints[Int](id.validations, IntValidation, _ + 1, Int.MinValue, Int.MaxValue)
       case ri: LongData => validationConstraints[Long](ri.validations, LongValidation, _ + 1, Long.MinValue, Long.MaxValue)
       case uu: UuidData => arbitrary[UUID]
-      case dd: DateTimeData => arbitrary[Date].map(d => ZonedDateTime.ofInstant(d.toInstant, ZoneId.systemDefault()))
+      case dd: DateTimeData => arbitrary[Date].map(d => LocalDateTime.ofInstant(d.toInstant, ZoneId.systemDefault()))
       case fd: FloatData => validationConstraints[Float](fd.validations, FloatValidation, _ + .0001f, Float.MinValue, Float.MaxValue)
       case id: DoubleData => validationConstraints[Double](id.validations, DoubleValidation, _ + .00001, Double.MinValue, Double.MaxValue)
       case bd: BigDecimalData => arbitrary[Double].map(d => BigDecimal(d))

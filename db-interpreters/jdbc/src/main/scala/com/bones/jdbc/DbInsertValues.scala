@@ -1,7 +1,7 @@
 package com.bones.jdbc
 
 import java.sql._
-import java.time.ZonedDateTime
+import java.time.{LocalDate, LocalDateTime, ZoneOffset}
 import java.util.UUID
 
 import com.bones.crud.WithId
@@ -139,7 +139,9 @@ object DbInsertValues {
       case uu: UuidData =>
         psF[UUID]( (ps,i,a) => ps.setString(i,a.toString))
       case dd: DateTimeData =>
-        psF[ZonedDateTime]( (ps, i ,a) => ps.setDate(i, new java.sql.Date(a.toInstant.toEpochMilli)))
+        psF[LocalDateTime]( (ps, i ,a) => ps.setDate(i, new java.sql.Date(a.toInstant(ZoneOffset.UTC).toEpochMilli)))
+      case ld: LocalDateData =>
+        psF[LocalDate]( (ps, i ,a) => ps.setDate(i, new java.sql.Date(a.atStartOfDay().toEpochSecond(ZoneOffset.UTC))))
       case bd: BigDecimalData =>
         psF[BigDecimal]( (ps,i, a) => ps.setBigDecimal(i,a.underlying))
       case fd: FloatData =>
