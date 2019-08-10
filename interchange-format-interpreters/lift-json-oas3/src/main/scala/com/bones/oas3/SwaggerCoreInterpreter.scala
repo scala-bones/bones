@@ -17,12 +17,13 @@ import shapeless.{HList, Nat}
 
 object SwaggerCoreInterpreter {
 
-
-  def apply[A](gd: BonesSchema[A]): Schema[_] = new SwaggerCoreInterpreter {
+  def isoInterpreter = new SwaggerCoreInterpreter {
     override def dateFormatterExample: String = "TODO: Date Format Example"
 
     override def localDateFormatterExample: String = "TODO: Local Date Example"
-  }.apply(gd)
+  }
+
+  def apply[A](gd: BonesSchema[A]): Schema[_] = isoInterpreter.apply(gd)
 }
 
 trait SwaggerCoreInterpreter {
