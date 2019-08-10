@@ -1,8 +1,8 @@
 package com.bones
 
-import java.time.ZonedDateTime
+import java.time.{LocalDate, LocalDateTime}
 import java.time.format.{DateTimeFormatter, DateTimeParseException}
-import java.util.{Date, UUID}
+import java.util.UUID
 
 import cats.data.NonEmptyList
 import com.bones.data.Error.{CanNotConvert, ExtractionError}
@@ -19,15 +19,26 @@ object Util {
         Left(NonEmptyList.one(CanNotConvert(path, uuidString, classOf[UUID])))
     }
 
-  def stringToZonedDateTime(input: String,
-                            dateFormat: DateTimeFormatter,
-                            path: List[String])
-    : Either[NonEmptyList[ExtractionError], ZonedDateTime] =
+  def stringToLocalDate(input: String,
+                        dateFormat: DateTimeFormatter,
+                        path: List[String])
+  : Either[NonEmptyList[ExtractionError], LocalDate] =
     try {
-      Right(ZonedDateTime.parse(input, dateFormat))
+      Right(LocalDate.parse(input, dateFormat))
     } catch {
       case _: DateTimeParseException =>
-        Left(NonEmptyList.one(CanNotConvert(path, input, classOf[Date])))
+        Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDate])))
+    }
+
+  def stringToLocalDateTime(input: String,
+                            dateFormat: DateTimeFormatter,
+                            path: List[String])
+    : Either[NonEmptyList[ExtractionError], LocalDateTime] =
+    try {
+      Right(LocalDateTime.parse(input, dateFormat))
+    } catch {
+      case _: DateTimeParseException =>
+        Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDateTime])))
     }
 
   def stringToBigDecimal(

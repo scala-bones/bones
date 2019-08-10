@@ -1,24 +1,29 @@
 package com.bones.circe
 
 import java.nio.charset.Charset
-import java.time.ZonedDateTime
+import java.time.{LocalDate, LocalDateTime}
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 import cats.data.NonEmptyList
 import com.bones.Util._
-import com.bones.data.Error.{
-  ExtractionError,
-  ParsingError,
-  RequiredData,
-  WrongTypeError
-}
+import com.bones.data.Error.{ExtractionError, ParsingError, RequiredData, WrongTypeError}
 import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
 import com.bones.interpreter.KvpValidateInputInterpreter
 import io.circe.Json
 
-object ValidatedFromCirceInterpreter extends KvpValidateInputInterpreter[Json] {
+object ValidatedFromCirceInterpreter {
+  val isoInterpreter = new ValidatedFromCirceInterpreter {
+    override def dateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_ZONED_DATE_TIME
+    override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+  }
+}
+
+trait ValidatedFromCirceInterpreter extends KvpValidateInputInterpreter[Json] {
+
+  def dateFormatter: DateTimeFormatter
+  def localDateFormatter: DateTimeFormatter
 
   def byteArrayFuncFromSchema[A](schema: BonesSchema[A], charset: Charset) :
   Array[Byte] => Either[NonEmptyList[ExtractionError],A] = {
@@ -120,13 +125,19 @@ object ValidatedFromCirceInterpreter extends KvpValidateInputInterpreter[Json] {
       .toRight(determineError(in, op, classOf[UUID], path))
       .flatMap(stringToUuid(_, path))
 
-  override def extractZonedDateTime(
-      dateFormat: DateTimeFormatter,
+  override def extractLocalDateTime(
       op: DateTimeData)(in: Json, path: List[String])
-    : Either[NonEmptyList[ExtractionError], ZonedDateTime] =
+    : Either[NonEmptyList[ExtractionError], LocalDateTime] =
     in.asString
-      .toRight(determineError(in, op, classOf[ZonedDateTime], path))
-      .flatMap(stringToZonedDateTime(_, dateFormat, path))
+      .toRight(determineError(in, op, classOf[LocalDateTime], path))
+      .flatMap(stringToLocalDateTime(_, dateFormatter, path))
+
+  override def extractLocalDate(
+      op: LocalDateData)(in: Json, path: List[String])
+    : Either[NonEmptyList[ExtractionError], LocalDate] =
+    in.asString
+    .toRight(determineError(in, op, classOf[LocalDate], path))
+    .flatMap(stringToLocalDate(_, localDateFormatter, path))
 
   override def extractArray[A](op: ListData[A])(
       in: Json,

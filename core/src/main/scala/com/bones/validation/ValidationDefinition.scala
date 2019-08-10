@@ -2,7 +2,7 @@ package com.bones.validation
 
 import java.net.URI
 import java.text.Format
-import java.time.ZonedDateTime
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
@@ -477,21 +477,21 @@ object ValidationDefinition {
         formatDescription.getOrElse(s"Is a Date with format ${format.toString}")
     }
 
-    case class Min(minDate: ZonedDateTime, format: DateTimeFormatter)
-        extends ValidationOp[ZonedDateTime] {
-      override def isValid: ZonedDateTime => Boolean = _.isAfter(minDate)
+    case class Min(minDate: LocalDateTime, format: DateTimeFormatter)
+        extends ValidationOp[LocalDateTime] {
+      override def isValid: LocalDateTime => Boolean = _.isAfter(minDate)
 
-      override def defaultError(t: ZonedDateTime): String =
+      override def defaultError(t: LocalDateTime): String =
         s"specified date ${format.format(t)} must be after ${format.format(minDate)}"
 
       override def description: String = s"after ${format.format(minDate)}"
     }
 
-    case class Max(maxDate: ZonedDateTime, format: DateTimeFormatter)
-        extends ValidationOp[ZonedDateTime] {
-      override def isValid: ZonedDateTime => Boolean = _.isBefore(maxDate)
+    case class Max(maxDate: LocalDateTime, format: DateTimeFormatter)
+        extends ValidationOp[LocalDateTime] {
+      override def isValid: LocalDateTime => Boolean = _.isBefore(maxDate)
 
-      override def defaultError(t: ZonedDateTime): String =
+      override def defaultError(t: LocalDateTime): String =
         s"specified date ${format.format(t)} must be before ${format.format(maxDate)}"
 
       override def description: String = s"before ${format.format(maxDate)}"

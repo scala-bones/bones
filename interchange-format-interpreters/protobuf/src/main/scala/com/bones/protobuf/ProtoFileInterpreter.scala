@@ -159,7 +159,9 @@ object ProtoFileInterpreter {
         case uu: UuidData =>
           (MessageField(PbString, true, false, name, index), Vector.empty)
         case dd: DateTimeData =>
-          (MessageField(PbString, true, false, name, index), Vector.empty)
+          (MessageField(Int64, true, false, name, index), Vector.empty)
+        case dt: LocalDateData =>
+          (MessageField(Int64, true, false, name, index), Vector.empty)
         case fd: FloatData =>
           (MessageField(FloatType, true, false, name, index), Vector.empty)
         case fd: DoubleData =>

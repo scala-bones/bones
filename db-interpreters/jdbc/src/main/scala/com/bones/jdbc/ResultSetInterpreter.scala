@@ -1,13 +1,13 @@
 package com.bones.jdbc
 
 import java.sql.{ResultSet, SQLException}
-import java.time.{ZoneId, ZonedDateTime}
+import java.time.{LocalDate, LocalDateTime, ZoneId}
 import java.util.Date
 
 import cats.data.NonEmptyList
 import com.bones.Util
-import com.bones.Util.{stringToEnum, stringToEnumeration, stringToUuid}
-import com.bones.data.Error.{ExtractionError, RequiredData, SystemError, WrongTypeError}
+import com.bones.Util.{stringToEnumeration, stringToUuid}
+import com.bones.data.Error.{ExtractionError, RequiredData, SystemError}
 import com.bones.data.Value._
 import DbUtil.camelToSnake
 import FindInterpreter.{FieldName, Path, utcCalendar}
@@ -109,8 +109,13 @@ object ResultSetInterpreter {
           catchSql(rs.getDate(fieldName, utcCalendar), path, dd)
             .map(
               date =>
-                ZonedDateTime.ofInstant(new Date(date.getTime).toInstant,
+                LocalDateTime.ofInstant(new Date(date.getTime).toInstant,
                                         ZoneId.of("UTC")))
+      case ld: LocalDateData =>
+        (path, fieldName) => rs =>
+          catchSql(rs.getDate(fieldName, utcCalendar), path, ld)
+            .map(
+              date => date.toLocalDate)
       case fd: FloatData =>
         (path, fieldName) => rs =>
           catchSql(rs.getFloat(fieldName), path, fd)

@@ -1,16 +1,11 @@
 package com.bones.protobuf
 
 import java.io.{ByteArrayInputStream, IOException}
-import java.time.{LocalDateTime, ZonedDateTime}
+import java.time.{LocalDate, LocalDateTime, ZoneOffset}
 import java.util.UUID
 
 import cats.data.NonEmptyList
-import com.bones.data.Error.{
-  CanNotConvert,
-  ExtractionError,
-  RequiredData,
-  WrongTypeError
-}
+import com.bones.data.Error.{CanNotConvert, ExtractionError, RequiredData, WrongTypeError}
 import com.bones.data.Value._
 import com.google.protobuf.{CodedInputStream, InvalidProtocolBufferException}
 import shapeless.{HList, HNil, Nat}
@@ -235,13 +230,26 @@ object ProtobufSequentialInputInterpreter {
             val thisField = (fieldNumber + 1) << 3 | VARINT
             (thisField, in => {
               if (in.getLastTag == thisField) {
-                convert(in, classOf[String], path)(_.readString)
-                  .flatMap(stringToZonedDateTime(_, dd.dateFormat, path))
+                convert(in, classOf[Long], path)(_.readInt64())
+                  .map(LocalDateTime.ofEpochSecond(_,0,ZoneOffset.UTC))
               } else {
                 Left(NonEmptyList.one(RequiredData(path, dd)))
               }
-            }:Either[NonEmptyList[ExtractionError], ZonedDateTime])
+            }:Either[NonEmptyList[ExtractionError], LocalDateTime])
           }
+      case dt: LocalDateData =>
+        (fieldNumber: LastFieldNumber, path: Path) =>
+        {
+          val thisField = (fieldNumber + 1) << 3 | VARINT
+          (thisField, in => {
+            if (in.getLastTag == thisField) {
+              convert(in, classOf[Long], path)(_.readInt64())
+                .map(LocalDate.ofEpochDay(_))
+            } else {
+              Left(NonEmptyList.one(RequiredData(path, dt)))
+            }
+          }:Either[NonEmptyList[ExtractionError], LocalDate])
+        }
       case fd: FloatData =>
         (fieldNumber: LastFieldNumber, path: Path) =>
         {
@@ -302,7 +310,7 @@ object ProtobufSequentialInputInterpreter {
             val (field, f) = child.apply(fieldNumber, path)
             (field, in => loop(field, in, path, f).sequence)
           }
-      case ed: EitherData[a, b] => ??? // use one of, punting on this for a bit
+      case ed: EitherData[a, b] => ??? // TODO: use one of, punting on this for a bit
 //        val a = valueDefinition(ed.definitionA)
 //        val b = valueDefinition(ed.definitionB)
 //        (false, EitherType(a._2,b._2), (in, path) => ???)

@@ -30,6 +30,9 @@ case class HttpInterpreter(
 
   import HttpInterpreter._
 
+  val encodeToCirceInterpreter = EncodeToCirceInterpreter.isoInterpreter
+  val validatedFromCirceInterpreter = ValidatedFromCirceInterpreter.isoInterpreter
+
   case class DataTransformation[I, O, E](description: String,
                                          f: I => Either[E, O])
 
@@ -71,14 +74,14 @@ case class HttpInterpreter(
     val updateHttpService =
       serviceOps.updateOperation.toList.flatMap(update => {
         val inputF =
-          ValidatedFromCirceInterpreter.fromSchema(update.inputSchema)
-        val outputF = EncodeToCirceInterpreter.fromSchema(update.outputSchema)
-        val errorF = EncodeToCirceInterpreter.fromSchema(update.failureSchema)
+          validatedFromCirceInterpreter.fromSchema(update.inputSchema)
+        val outputF = encodeToCirceInterpreter.fromSchema(update.outputSchema)
+        val errorF = encodeToCirceInterpreter.fromSchema(update.failureSchema)
 
         val json = PutPostInterpreterGroup[UI, UO, UE](
           "application/json",
           bytes =>
-            ValidatedFromCirceInterpreter
+            validatedFromCirceInterpreter
               .fromByteArray(bytes, charset)
               .flatMap(json => inputF(json, List.empty)),
           uo => outputF(uo).spaces2.getBytes(charset),
@@ -123,8 +126,8 @@ case class HttpInterpreter(
 
     val readHttpService = serviceOps.readOperation.toList.flatMap(read => {
       val outputF =
-        EncodeToCirceInterpreter.fromSchema(read.outputSchema)
-      val errorF = EncodeToCirceInterpreter.fromSchema(read.errorSchema)
+        encodeToCirceInterpreter.fromSchema(read.outputSchema)
+      val errorF = encodeToCirceInterpreter.fromSchema(read.errorSchema)
       val json = GetInterpreterGroup[RO, RE](
         "application/json",
         ro => outputF(ro).spaces2.getBytes(charset),
@@ -169,14 +172,14 @@ case class HttpInterpreter(
     val createHttpService =
       serviceOps.createOperation.toList.flatMap(create => {
         val inputF =
-          ValidatedFromCirceInterpreter.fromSchema(create.inputSchema)
-        val outputF = EncodeToCirceInterpreter.fromSchema(create.outputSchema)
-        val errorF = EncodeToCirceInterpreter.fromSchema(create.errorSchema)
+          validatedFromCirceInterpreter.fromSchema(create.inputSchema)
+        val outputF = encodeToCirceInterpreter.fromSchema(create.outputSchema)
+        val errorF = encodeToCirceInterpreter.fromSchema(create.errorSchema)
 
         val json = PutPostInterpreterGroup[CI, CO, CE](
           "application/json",
           bytes =>
-            ValidatedFromCirceInterpreter
+            validatedFromCirceInterpreter
               .fromByteArray(bytes, charset)
               .flatMap(json => inputF(json, List.empty)),
           uo => outputF(uo).spaces2.getBytes(charset),
@@ -220,8 +223,8 @@ case class HttpInterpreter(
 
     val deleteHttpService =
       serviceOps.deleteOperation.toList.flatMap(del => {
-        val outputF = EncodeToCirceInterpreter.fromSchema(del.outputSchema)
-        val errorF = EncodeToCirceInterpreter.fromSchema(del.errorSchema)
+        val outputF = encodeToCirceInterpreter.fromSchema(del.outputSchema)
+        val errorF = encodeToCirceInterpreter.fromSchema(del.errorSchema)
         val json = DeleteInterpreterGroup[DO, DE](
           "application/json",
           dout => outputF(dout).spaces2.getBytes(charset),

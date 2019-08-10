@@ -1,7 +1,7 @@
 package com.bones.protobuf
 
 import java.io.{ByteArrayOutputStream, IOException}
-import java.time.ZonedDateTime
+import java.time.{LocalDate, LocalDateTime, ZoneOffset}
 import java.util.UUID
 
 import cats.Applicative
@@ -9,7 +9,8 @@ import cats.data.{NonEmptyList, Validated}
 import com.bones.data.Error.ExtractionError
 import com.bones.data.Value._
 import com.google.protobuf.CodedOutputStream
-import shapeless._, ops.hlist.IsHCons
+import shapeless._
+import ops.hlist.IsHCons
 import cats.implicits._
 
 object ProtobufSequentialOutputInterpreter {
@@ -163,11 +164,16 @@ object ProtobufSequentialOutputInterpreter {
             write(_.writeString(fieldNumber, u.toString))
           )
       case dd: DateTimeData =>
-        (fieldNumber: FieldNumber) => (d: ZonedDateTime) =>
+        (fieldNumber: FieldNumber) => (d: LocalDateTime) =>
           (
-            () => CodedOutputStream.computeStringSize(fieldNumber,
-                                                dd.dateFormat.format(d)),
-            write(_.writeString(fieldNumber, dd.dateFormat.format(d)))
+            () => CodedOutputStream.computeInt64Size(fieldNumber,d.toEpochSecond(ZoneOffset.UTC)),
+            write(_.writeInt64(fieldNumber, d.toEpochSecond(ZoneOffset.UTC)))
+          )
+      case dt: LocalDateData =>
+        (fieldNumber: FieldNumber) => (d: LocalDate) =>
+          (
+            () => CodedOutputStream.computeInt64Size(fieldNumber, d.toEpochDay),
+            write(_.writeInt64(fieldNumber, d.toEpochDay))
           )
       case fd: FloatData =>
         (fieldNumber: FieldNumber) => (f: Float) =>

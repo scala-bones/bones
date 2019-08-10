@@ -12,6 +12,8 @@ import org.http4s.HttpRoutes
 
 case class HttpCrudInterpreter() {
 
+  val encodeToCirceInterpreter = EncodeToCirceInterpreter.isoInterpreter
+
   type ID = Long
 
   val charset: java.nio.charset.Charset = StandardCharsets.UTF_8
@@ -22,8 +24,8 @@ case class HttpCrudInterpreter() {
     op match {
       case get: Read[o,e] =>
         val outputF =
-          EncodeToCirceInterpreter.fromSchema(get.outputSchema)
-        val errorF = EncodeToCirceInterpreter.fromSchema(get.errorSchema)
+          encodeToCirceInterpreter.fromSchema(get.outputSchema)
+        val errorF = encodeToCirceInterpreter.fromSchema(get.errorSchema)
         val json = GetInterpreterGroup[o, e](
           "application/json",
           ro => outputF(ro).spaces2.getBytes(charset),

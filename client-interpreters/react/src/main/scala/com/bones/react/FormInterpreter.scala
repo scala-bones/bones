@@ -1,6 +1,6 @@
 package com.bones.react
 
-import java.time.ZonedDateTime
+import java.time.LocalDateTime
 
 import com.bones.data.Value._
 import com.bones.validation.ValidationDefinition.StringValidation.MaxLength
@@ -23,7 +23,7 @@ object FormInterpreter {
   case object Checkbox extends InputType[Boolean]
   case class LongInput(maxLength: Int) extends InputType[Long]
   case object BigDecimalInput extends InputType[BigDecimal]
-  case object DateInput extends InputType[ZonedDateTime]
+  case object DateInput extends InputType[LocalDateTime]
   case class TextArea(maxLength: Int) extends InputType[String]
   case class File() extends InputType[Array[Byte]]
   case class ReactComponentReference(childLabel: String) extends InputType[HList]

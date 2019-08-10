@@ -1,7 +1,6 @@
 package com.bones.data
 
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
+import java.time.{LocalDate, LocalDateTime}
 import java.util.UUID
 
 import cats.free.FreeApplicative
@@ -97,11 +96,13 @@ object Value {
     extends KvpValue[Array[Byte]]
       with ToOptionalData[Array[Byte]]
 
-  final case class DateTimeData(dateFormat: DateTimeFormatter,
-                                formatDescription: String,
-                                validations: List[ValidationOp[ZonedDateTime]])
-    extends KvpValue[ZonedDateTime]
-      with ToOptionalData[ZonedDateTime]
+  final case class DateTimeData(validations: List[ValidationOp[LocalDateTime]])
+    extends KvpValue[LocalDateTime]
+      with ToOptionalData[LocalDateTime]
+
+  final case class LocalDateData(validations: List[ValidationOp[LocalDate]])
+    extends KvpValue[LocalDate]
+      with ToOptionalData[LocalDate]
 
   final case class UuidData(validations: List[ValidationOp[UUID]])
     extends KvpValue[UUID]
