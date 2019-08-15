@@ -46,14 +46,14 @@ object FlattenedHeaderInterpreter {
       case id: IntData => keyToName
       case ri: LongData => keyToName
       case uu: UuidData => keyToName
-      case dd: DateTimeData => keyToName
+      case dd: LocalDateTimeData => keyToName
       case fd: FloatData => keyToName
       case dd: DoubleData => keyToName
       case bd: BigDecimalData => keyToName
       case ld: ListData[t] => keyToName
       case ed: EitherData[a,b] => keyToName
       case ba: ByteArrayData => keyToName
-      case esd: EnumerationStringData[a] => keyToName
+      case esd: EnumerationData[a] => keyToName
       case kvp: KvpHListValue[h,hl] => {
         _ => kvpHList(kvp.kvpHList)
       }

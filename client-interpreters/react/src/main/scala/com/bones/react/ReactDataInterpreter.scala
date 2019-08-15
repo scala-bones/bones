@@ -47,7 +47,7 @@ object ReactDataInterpreter {
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'integer'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
       case uu: UuidData =>
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'string'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
-      case dd: DateTimeData =>
+      case dd: LocalDateTimeData =>
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'date'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
       case dd: FloatData =>
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'float'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
@@ -59,7 +59,7 @@ object ReactDataInterpreter {
       case ed: EitherData[a,b] => ???
       case ba: ByteArrayData =>
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'file'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
-      case esd: EnumerationStringData[a] =>
+      case esd: EnumerationData[a] =>
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'enumeration'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
       case kvp: KvpHListValue[h,hl] =>
         val groupData = kvpHList(kvp.kvpHList)

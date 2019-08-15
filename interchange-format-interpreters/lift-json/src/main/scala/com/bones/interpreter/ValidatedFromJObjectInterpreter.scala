@@ -137,7 +137,7 @@ trait ValidatedFromJObjectInterpreter
     }
 
   override def extractLocalDateTime(
-      op: Value.DateTimeData)(in: JValue, path: List[String])
+      op: Value.LocalDateTimeData)(in: JValue, path: List[String])
     : Either[NonEmptyList[ExtractionError], LocalDateTime] =
     in match {
       case JString(s) => stringToLocalDateTime(s, dateFormat, path)

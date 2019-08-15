@@ -31,6 +31,24 @@ trait Sugar {
   /** Alias for string without validations. */
   val string: StringData = string()
 
+  /* Indicates that the data tied to this value is a Float */
+  def float(f: ValidationOp[Float]*) = FloatData(f.toList)
+
+  /** Alias for float without validations. */
+  val float: FloatData = float()
+
+  /** Indicates that the data tied to this value is a short */
+  def short(f: ValidationOp[Short]*) = ShortData(f.toList)
+
+  /** Alias for short without validations */
+  val short: ShortData = short()
+
+  /** Indicates that the data tied to this value is a double */
+  def double(f: ValidationOp[Double]*) = DoubleData(f.toList)
+
+  /** Alias for double without validations */
+  val double: DoubleData = double()
+
   /** Indicates the data tied to this Value is an Int */
   def int(f: ValidationOp[Int]*) = IntData(f.toList)
 
@@ -68,9 +86,9 @@ trait Sugar {
   val uuid: UuidData = UuidData(List.empty)
 
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
-  def localDateTime(v: ValidationOp[LocalDateTime]*) = DateTimeData(v.toList)
+  def localDateTime(v: ValidationOp[LocalDateTime]*) = LocalDateTimeData(v.toList)
 
-  val localDateTime = DateTimeData(List.empty)
+  val localDateTime = LocalDateTimeData(List.empty)
 
   def localDate(v: ValidationOp[LocalDate]*) = LocalDateData(v.toList)
 
@@ -92,8 +110,8 @@ trait Sugar {
     * @param e The base enumeration type.
     * @tparam A The "Value" from the enumeration, eg: EnumerationObject.Value
     */
-  def enumeration[A: Manifest](e: Enumeration): EnumerationStringData[A] =
-    EnumerationStringData[A](e, List.empty)
+  def enumeration[A: Manifest](e: Enumeration): EnumerationData[A] =
+    EnumerationData[A](e, List.empty)
 
   /** Indicates that the data is a list of Key Value pairs */
   def kvpHList[H <: HList: Manifest, HL <: Nat](kvpHList: KvpHList[H, HL],
@@ -101,5 +119,11 @@ trait Sugar {
     KvpHListValue(kvpHList, v.toList)
 
   val kvpNil: KvpNil.type = KvpNil
+
+  /** Indicates that the data tied to the value is an Array of Bytes */
+  def byteArray(v: ValidationOp[Array[Byte]]*): ByteArrayData = ByteArrayData(v.toList)
+
+  /** Alias for byte array without validations */
+  val byteArray: ByteArrayData = byteArray()
 
 }

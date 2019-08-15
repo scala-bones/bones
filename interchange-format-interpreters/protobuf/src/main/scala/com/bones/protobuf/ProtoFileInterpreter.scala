@@ -158,7 +158,7 @@ object ProtoFileInterpreter {
           (MessageField(Int64, true, false, name, index), Vector.empty)
         case uu: UuidData =>
           (MessageField(PbString, true, false, name, index), Vector.empty)
-        case dd: DateTimeData =>
+        case dd: LocalDateTimeData =>
           (MessageField(Int64, true, false, name, index), Vector.empty)
         case dt: LocalDateData =>
           (MessageField(Int64, true, false, name, index), Vector.empty)
@@ -174,7 +174,7 @@ object ProtoFileInterpreter {
           val result = valueDefinition(ld.tDefinition)(name, index)
           (result._1.copy(repeated = true), result._2)
         case ed: EitherData[a, b] => ??? //use one of
-        case esd: EnumerationStringData[a] =>
+        case esd: EnumerationData[a] =>
           (MessageField(PbString, true, false, name, index), Vector.empty)
         case st: SumTypeData[a, b] =>
           (MessageField(PbString, true, false, name, index), Vector.empty)

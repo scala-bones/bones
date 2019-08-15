@@ -65,7 +65,7 @@ object Scalacheck {
       case id: IntData => validationConstraints[Int](id.validations, IntValidation, _ + 1, Int.MinValue, Int.MaxValue)
       case ri: LongData => validationConstraints[Long](ri.validations, LongValidation, _ + 1, Long.MinValue, Long.MaxValue)
       case uu: UuidData => arbitrary[UUID]
-      case dd: DateTimeData => arbitrary[Date].map(d => LocalDateTime.ofInstant(d.toInstant, ZoneId.systemDefault()))
+      case dd: LocalDateTimeData => arbitrary[Date].map(d => LocalDateTime.ofInstant(d.toInstant, ZoneId.systemDefault()))
       case fd: FloatData => validationConstraints[Float](fd.validations, FloatValidation, _ + .0001f, Float.MinValue, Float.MaxValue)
       case id: DoubleData => validationConstraints[Double](id.validations, DoubleValidation, _ + .00001, Double.MinValue, Double.MaxValue)
       case bd: BigDecimalData => arbitrary[Double].map(d => BigDecimal(d))
@@ -77,7 +77,7 @@ object Scalacheck {
         Gen.frequency((1, left), (1, right))
       }
       case ba: ByteArrayData => arbitrary[Array[Byte]]
-      case esd: EnumerationStringData[a] => {
+      case esd: EnumerationData[a] => {
         Gen.oneOf(esd.enumeration.values.toSeq.map(_.asInstanceOf[A]))
       }
       case kvp: KvpHListValue[h, hl] =>

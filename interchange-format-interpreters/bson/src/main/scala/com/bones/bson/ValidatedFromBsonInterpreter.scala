@@ -106,7 +106,7 @@ object ValidatedFromBsonInterpreter
       case x => invalidValue(x, classOf[UUID], path)
     }
 
-  override def extractLocalDateTime(op: Value.DateTimeData)(in: BSONValue, path: List[String])
+  override def extractLocalDateTime(op: Value.LocalDateTimeData)(in: BSONValue, path: List[String])
   : Either[NonEmptyList[ExtractionError], LocalDateTime] =
     in match {
       case BSONDateTime(date) =>

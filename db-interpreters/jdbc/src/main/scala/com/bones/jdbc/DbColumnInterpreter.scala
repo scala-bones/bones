@@ -62,7 +62,7 @@ object DbColumnInterpreter {
       case i:  IntData                   => nameToColumn("integer")
       case ri: LongData                  => nameToColumn("int8")
       case uu: UuidData                  => nameToColumn("text")
-      case dd: DateTimeData              => nameToColumn("timestamp")
+      case dd: LocalDateTimeData              => nameToColumn("timestamp")
       case fd: FloatData                 => nameToColumn("real")
       case dd: DoubleData                => nameToColumn("double precision")
       case bd: BigDecimalData            => nameToColumn("numeric")
@@ -72,7 +72,7 @@ object DbColumnInterpreter {
         name => {
           valueDefinition(ed.definitionA)(name) ::: valueDefinition(ed.definitionB)(name)
         }
-      case esd: EnumerationStringData[a] => nameToColumn("text")
+      case esd: EnumerationData[a] => nameToColumn("text")
       case kvp: KvpHListValue[h, hl] =>
         _ =>
           kvpHList(kvp.kvpHList)

@@ -75,6 +75,10 @@ object Value {
     extends KvpValue[List[T]]
       with ToOptionalData[List[T]]
 
+  final case class ShortData(validations: List[ValidationOp[Short]])
+    extends KvpValue[Short]
+      with ToOptionalData[Short]
+
   final case class StringData(validations: List[ValidationOp[String]])
     extends KvpValue[String]
       with ToOptionalData[String]
@@ -92,11 +96,11 @@ object Value {
       with ToOptionalData[BigDecimal]
 
   // base64-encoded characters, for example, U3dhZ2dlciByb2Nrcw==
-  final case class ByteArrayData(validations: List[KvpValue[Array[Byte]]])
+  final case class ByteArrayData(validations: List[ValidationOp[Array[Byte]]])
     extends KvpValue[Array[Byte]]
       with ToOptionalData[Array[Byte]]
 
-  final case class DateTimeData(validations: List[ValidationOp[LocalDateTime]])
+  final case class LocalDateTimeData(validations: List[ValidationOp[LocalDateTime]])
     extends KvpValue[LocalDateTime]
       with ToOptionalData[LocalDateTime]
 
@@ -108,8 +112,8 @@ object Value {
     extends KvpValue[UUID]
       with ToOptionalData[UUID]
 
-  final case class EnumerationStringData[A: Manifest](enumeration: Enumeration,
-                                                      validations: List[ValidationOp[A]])
+  final case class EnumerationData[A: Manifest](enumeration: Enumeration,
+                                                validations: List[ValidationOp[A]])
     extends KvpValue[A]
       with ToOptionalData[A] {}
 

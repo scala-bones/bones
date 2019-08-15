@@ -44,7 +44,7 @@ object EncodeToBson extends KvpOutputInterpreter[BSONValue] {
   override def uuidToOut(op: UuidData): UUID => BSONValue =
     input => BSONString(input.toString)
 
-  override def dateTimeToOut(op: DateTimeData): LocalDateTime => BSONValue =
+  override def dateTimeToOut(op: LocalDateTimeData): LocalDateTime => BSONValue =
     input => BSONDateTime(input.toEpochSecond(ZoneOffset.UTC))
 
   override def localDateToOut(op: LocalDateData): LocalDate => BSONValue =
@@ -68,7 +68,7 @@ object EncodeToBson extends KvpOutputInterpreter[BSONValue] {
       BSONString(Base64.getEncoder.encodeToString(input))
 
   override def enumerationToOut[A](
-      op: EnumerationStringData[A]): A => BSONValue =
+      op: EnumerationData[A]): A => BSONValue =
     input => BSONString(input.toString)
 
   def toObj[A](kvDef: KeyValueDefinition[A], value: BSONValue): BSONValue =
