@@ -118,7 +118,7 @@ trait SwaggerCoreInterpreter {
           .nullable(false)
         schema =>
           stringSchema.name(schema.getName)
-      case _: DateTimeData =>
+      case _: LocalDateTimeData =>
         val stringSchema = new StringSchema()
           .example(dateFormatterExample)
           .nullable(false)
@@ -170,7 +170,7 @@ trait SwaggerCoreInterpreter {
           .nullable(false)
         schema =>
           composedSchema.name(schema.getName)
-      case esd: EnumerationStringData[a] =>
+      case esd: EnumerationData[a] =>
         val stringSchema = new StringSchema()
         esd.enumeration.values.foreach(v =>
           stringSchema.addEnumItemObject(v.toString))

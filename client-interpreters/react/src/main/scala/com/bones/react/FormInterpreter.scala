@@ -101,7 +101,7 @@ object FormInterpreter {
           ( ReactFormValue( key, false, LongInput(20)), List.empty )
       case uu: UuidData =>
         key => ( ReactFormValue( key, false, StringInput(36)), List.empty )
-      case dd: DateTimeData =>
+      case dd: LocalDateTimeData =>
         key => ( ReactFormValue( key, false, DateInput), List.empty )
       case fd: FloatData =>
         key => ( ReactFormValue( key, false, BigDecimalInput), List.empty )
@@ -113,7 +113,7 @@ object FormInterpreter {
         key => ( ReactFormValue( key, false, File()), List.empty)
       case ld: ListData[t] => ???
       case ed: EitherData[a,b] => ???
-      case esd: EnumerationStringData[a] =>
+      case esd: EnumerationData[a] =>
         val values: List[(Value, DisplayValue)] = esd.enumeration.values.map(v => (keyToName(v.toString), v.toString)).toList.sortBy(_._1)
         key => ( ReactFormValue( key, false, SelectInput(values)), List.empty )
       case kvp: KvpHListValue[h,hl] =>

@@ -104,7 +104,7 @@ object ResultSetInterpreter {
         (path, fieldName) => rs =>
           catchSql[String](rs.getString(fieldName), path, uu)
             .flatMap(str => stringToUuid(str, path))
-      case dd: DateTimeData =>
+      case dd: LocalDateTimeData =>
         (path, fieldName) => rs =>
           catchSql(rs.getDate(fieldName, utcCalendar), path, dd)
             .map(
@@ -150,7 +150,7 @@ object ResultSetInterpreter {
           result
         }
 
-      case esd: EnumerationStringData[a] =>
+      case esd: EnumerationData[a] =>
         (path, fieldName) => rs => {
           for {
             r <- catchSql(rs.getString(fieldName), path, esd)

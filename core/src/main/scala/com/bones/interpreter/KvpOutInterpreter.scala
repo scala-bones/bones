@@ -47,14 +47,14 @@ trait KvpOutputInterpreter[OUT] {
   def uuidToOut(op: UuidData): UUID => OUT
 
   /** Create a function which converts a LocalDateTime into the specific OUT type */
-  def dateTimeToOut(op: DateTimeData): LocalDateTime => OUT
+  def dateTimeToOut(op: LocalDateTimeData): LocalDateTime => OUT
   def localDateToOut(op: LocalDateData): LocalDate => OUT
   def floatToOut(op: FloatData): Float => OUT
   def doubleToOut(op: DoubleData): Double => OUT
   def bigDecimalToOut(op: BigDecimalData): BigDecimal => OUT
   def byteArrayToOut(ba: ByteArrayData): Array[Byte] => OUT
   def toOutList(list: List[OUT]): OUT
-  def enumerationToOut[A](op: EnumerationStringData[A]): A => OUT
+  def enumerationToOut[A](op: EnumerationData[A]): A => OUT
 
   /** This is the main entry point whose purpose is to convert
     * a schema into a function which expects the Type described by the schema (for example a case class)
@@ -126,7 +126,7 @@ trait KvpOutputInterpreter[OUT] {
       case id: IntData        => intToOut(id)
       case ri: LongData       => longToOut(ri)
       case uu: UuidData       => uuidToOut(uu)
-      case dd: DateTimeData   => dateTimeToOut(dd)
+      case dd: LocalDateTimeData   => dateTimeToOut(dd)
       case ld: LocalDateData  => localDateToOut(ld)
       case fd: FloatData      => floatToOut(fd)
       case dd: DoubleData     => doubleToOut(dd)
@@ -149,7 +149,7 @@ trait KvpOutputInterpreter[OUT] {
               case Right(bInput) => bF(bInput)
             }
           }
-      case e: EnumerationStringData[a] => enumerationToOut(e)
+      case e: EnumerationData[a] => enumerationToOut(e)
       case gd: KvpHListValue[h, hl] =>
         val fh = kvpHList(gd.kvpHList)
         input => fh(input.asInstanceOf[h])

@@ -29,12 +29,12 @@ object StringOutInterpreter {
       case rs: StringData                 => ???
       case ri: LongData                   => ???
       case uu: UuidData                   => ???
-      case dd: DateTimeData               => ???
+      case dd: LocalDateTimeData               => ???
       case bd: BigDecimalData             => ???
       case ld: ListData[t]                => ???
       case ed: EitherData[a, b]           => ???
       case ba: ByteArrayData              => ???
-      case esd: EnumerationStringData[a]  => ???
+      case esd: EnumerationData[a]  => ???
       case kvp: KvpHListValue[h, hl]      => ???
       case x: HListConvert[a, al, b]      => ???
       case s: SumTypeData[a, b]           => ???

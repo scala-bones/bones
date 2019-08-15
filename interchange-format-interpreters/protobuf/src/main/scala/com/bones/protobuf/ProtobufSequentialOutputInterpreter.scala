@@ -163,7 +163,7 @@ object ProtobufSequentialOutputInterpreter {
             () => CodedOutputStream.computeStringSize(fieldNumber, u.toString),
             write(_.writeString(fieldNumber, u.toString))
           )
-      case dd: DateTimeData =>
+      case dd: LocalDateTimeData =>
         (fieldNumber: FieldNumber) => (d: LocalDateTime) =>
           (
             () => CodedOutputStream.computeInt64Size(fieldNumber,d.toEpochSecond(ZoneOffset.UTC)),
@@ -215,7 +215,7 @@ object ProtobufSequentialOutputInterpreter {
               )
             }
       case ed: EitherData[a, b] => ??? // use oneOf
-      case esd: EnumerationStringData[a] =>
+      case esd: EnumerationData[a] =>
         (fieldNumber: FieldNumber) => (a: A) =>
           (
             () => CodedOutputStream.computeStringSize(fieldNumber, a.toString),
