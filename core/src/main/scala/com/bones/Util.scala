@@ -9,6 +9,8 @@ import com.bones.data.Error.{CanNotConvert, ExtractionError}
 
 object Util {
 
+  /** Convert a String to a UUID returning Left[NoneEmptyList[ExtractionError]]
+   * if there is a failure in conversion */
   def stringToUuid(
       uuidString: String,
       path: List[String]): Either[NonEmptyList[ExtractionError], UUID] =
@@ -19,6 +21,9 @@ object Util {
         Left(NonEmptyList.one(CanNotConvert(path, uuidString, classOf[UUID])))
     }
 
+    /** Convert the String to a LocalDate returning Left[NonEmptyList[ExtractionError]] 
+     * if there is an parse error.
+     */
   def stringToLocalDate(input: String,
                         dateFormat: DateTimeFormatter,
                         path: List[String])
@@ -30,7 +35,10 @@ object Util {
         Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDate])))
     }
 
-  def stringToLocalDateTime(input: String,
+    /** Convert the String to a LocalDateTime returning Left[NonEmptyList[ExtractionError]] 
+     * if there is an parse error.
+     */
+    def stringToLocalDateTime(input: String,
                             dateFormat: DateTimeFormatter,
                             path: List[String])
     : Either[NonEmptyList[ExtractionError], LocalDateTime] =
@@ -41,7 +49,10 @@ object Util {
         Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDateTime])))
     }
 
-  def stringToBigDecimal(
+    /** Convert the String to a BigDecimal returning Left[NonEmptyList[ExtractionError]] 
+     * if there is an parse error.
+     */
+    def stringToBigDecimal(
       input: String,
       path: List[String]): Either[NonEmptyList[ExtractionError], BigDecimal] =
     try {
@@ -51,7 +62,10 @@ object Util {
         Left(NonEmptyList.one(CanNotConvert(path, input, classOf[BigDecimal])))
     }
 
-  def stringToEnumeration[A](str: String,
+    /** Convert the String to an Enumeration using [[Enumeration.withName]] returning Left[NonEmptyList[ExtractionError]] 
+     * if there is an parse error.
+     */
+    def stringToEnumeration[A](str: String,
                              path: List[String],
                              enumeration: Enumeration,
                              manifest: Manifest[A])
@@ -64,7 +78,10 @@ object Util {
         Left(NonEmptyList.one(CanNotConvert(path, str, classOf[Object])))
     }
 
-  def stringToEnum[A <: Enum[A]](
+    /** Convert the string to an Enum using [[Enumeration.withName]] returning Left[NonEmptyList[ExtractionError]] 
+     * if there is an parse error.
+     */
+    def stringToEnum[A <: Enum[A]](
       str: String,
       path: List[String],
       enums: List[A]): Either[NonEmptyList[CanNotConvert[String, Object]], A] =
@@ -72,6 +89,10 @@ object Util {
       .find(_.toString == str)
       .toRight(NonEmptyList.one(CanNotConvert(path, str, classOf[Object])))
 
+  /**
+   * Accumulates error on the left or combines success on the right, just
+   * like Applicative.map2 if Either was a Validation.
+   */     
   def eitherMap2[A, B, Z](e1: Either[NonEmptyList[ExtractionError], A],
                           e2: Either[NonEmptyList[ExtractionError], B])(
       f: (A, B) => Z): Either[NonEmptyList[ExtractionError], Z] = {

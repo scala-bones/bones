@@ -5,7 +5,6 @@ import java.util.UUID
 import com.bones.data.Value._
 import com.bones.validation.ValidationDefinition.{
   InvalidValue,
-  OptionalValidation,
   ValidValue,
   ValidationOp,
   BigDecimalValidation => bdv,
@@ -211,9 +210,6 @@ trait SwaggerCoreInterpreter {
     */
   def validation[A](op: ValidationOp[A]): Schema[_] => Schema[_] = {
     op match {
-      case OptionalValidation(_) =>
-        schema =>
-          schema.setNullable(true); schema
       case ValidValue(values) =>
         schema =>
           {

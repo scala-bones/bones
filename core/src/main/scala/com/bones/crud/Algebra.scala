@@ -58,8 +58,7 @@ object Algebra {
     : ServiceOps[CI, CO, CE, O, E, UI, UO, UE, DO, DE] =
       providingRead(Read(outputSchema, errorSchema))
 
-    def providingRead[O, E](
-                             read: Read[O, E]): ServiceOps[CI, CO, CE, O, E, UI, UO, UE, DO, DE] =
+    def providingRead[O, E](read: Read[O, E]): ServiceOps[CI, CO, CE, O, E, UI, UO, UE, DO, DE] =
       copy(readOperation = Some(read))
 
     def providingUpdate[I, O, E](
