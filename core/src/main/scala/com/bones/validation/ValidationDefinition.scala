@@ -11,29 +11,18 @@ import cats.implicits._
 import scala.math.Ordering.{BigDecimalOrdering, ByteOrdering, CharOrdering, DoubleOrdering, FloatOrdering, IntOrdering, LongOrdering, ShortOrdering}
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
+import java.time.LocalDate
 
 object ValidationDefinition {
 
   /** Represents a validations operation */
   trait ValidationOp[T] {
+    /** Returns true if T passes the validation */
     def isValid: T => Boolean
+    /** If t is not valid, this will return the error message in English. */
     def defaultError(t: T): String
+    /** Gives an English text description of the validation. */
     def description: String
-  }
-
-  /** The input is optional */
-  case class OptionalValidation[T](op: ValidationOp[T])
-      extends ValidationOp[Option[T]] {
-    override def isValid: Option[T] => Boolean = {
-      case None    => true
-      case Some(i) => op.isValid(i)
-    }
-
-    override def defaultError(t: Option[T]): String =
-      t.map(op.defaultError).getOrElse("N/A")
-
-    override def description: String = op.description
-
   }
 
   /** Input must be one of the specified validValues. */
@@ -61,12 +50,15 @@ object ValidationDefinition {
     def invalidVector(invalidValues: Vector[T]) = InvalidValue(invalidValues)
     def invalid(t: T*): InvalidValue[T] = invalidVector(t.toVector)
   }
-
-
+  
+  /**
+   * A collection of ValidationOp[String] objects.
+   */
   object StringValidation extends BaseValidationOp[String] {
 
     val alphanumericRegexString = "^[a-zA-Z0-9]*$"
     val alphanumericRegex: Regex = alphanumericRegexString.r
+    /** Uses regex to determine if the string is Alphanumeric */
     object IsAlphanumeric extends ValidationOp[String] {
       val isValid: String => Boolean =
         alphanumericRegex.findFirstMatchIn(_).isDefined
@@ -78,6 +70,7 @@ object ValidationDefinition {
 
     val lettersWithSpaceRegexString = "^[a-zA-Z\\s]*$"
     val lettersWithSpaceRegex: Regex = lettersWithSpaceRegexString.r
+    /** Uses regex to determine if the string only contains words and whitespace */
     object Words extends ValidationOp[String] {
 
       val isValid: String => Boolean =
@@ -88,7 +81,7 @@ object ValidationDefinition {
       override def description: String = s"letters with space"
     }
 
-    val sentenceRegexString = "^\\s+[A-Za-z,;'\"\\s]+[.?!]$"
+    val sentenceRegexString = "^[A-Za-z,;'\"\\s]+[.?!]$"
     val sentenceRegex: Regex = sentenceRegexString.r
     object Sentence extends ValidationOp[String] {
       val isValid: String => Boolean =
@@ -99,6 +92,10 @@ object ValidationDefinition {
       override def description: String = s"sentence"
     }
 
+    /**
+     * Defines min as the minimum length the string can be.
+     * @param min The minimum length the string can be.
+     */
     case class MinLength(min: Int) extends ValidationOp[String] {
       val isValid: String => Boolean = _.length >= min
 
@@ -134,6 +131,9 @@ object ValidationDefinition {
       override def description: String = s"lengthO of $length"
     }
 
+    /** A Custom validation for the stirng type. 
+     * Follow the values defined in [[ValidationOp]]
+     */
     case class Custom(f: String => Boolean,
                       defaultErrorF: String => String,
                       description: String)
@@ -143,6 +143,9 @@ object ValidationDefinition {
       override def defaultError(t: String): String = defaultErrorF(t)
     }
 
+    /** Guid is a Globally unique identifier.  String is a Valid GUID if 
+     * it is parsable using [[java.util.UUID.fromString]]
+     */
     object Guid extends ValidationOp[String] {
       val isValid: String => Boolean = str =>
         Try {
@@ -336,8 +339,14 @@ object ValidationDefinition {
     val creditCard: CreditCard.type = CreditCard
   }
 
+  /**
+   * Base trait for any type which has an ordering.  Must be extented with specific type.
+   * NOTE: Tried to just user context bound for each case class, however because of erasure,
+   * we can not match and know the type of the N.   
+   **/
   trait OrderingValidation[N] extends Ordering[N]{
 
+    /** What is the zero Value of N.  Used for positive and negative comparisons */
     val zero: N
 
     case class Between(min: N, max: N) extends ValidationOp[N] {
@@ -386,7 +395,7 @@ object ValidationDefinition {
     }
 
     object Positive extends ValidationOp[N] {
-      override def isValid: N => Boolean = _ >= zero
+      override def isValid: N => Boolean = _ > zero
 
       override def defaultError(t: N): String = s"$t is not positive"
 
@@ -394,25 +403,32 @@ object ValidationDefinition {
     }
 
     object Negative extends ValidationOp[N] {
-      override def isValid: N => Boolean = _ <= zero
+      override def isValid: N => Boolean = _ < zero
 
       override def defaultError(t: N): String = s"$t is not negative"
 
       override def description: String = s"negative"
     }
 
+    /** Ensure an instance of type N is inclusively between min and max */
     def between(min: N, max: N): Between = Between(min, max)
 
+    /** Ensure the max value of an instance of type N is maxValue */
     def max(maxValue: N): Max = Max(maxValue)
 
+    /** Ensure the minimum value of an instance of type N is minValue */
     def min(minValue: N): Min = Min(minValue)
 
+    /** Ensure an instance of type N is greater than (exclusive) value */
     def greater(value: N): Greater = Greater(value)
 
+    /** Ensure an instance of type N is less than (exclusive) value */
     def less(value: N): Less = Less(value)
 
+    /** Ensure an instance of type N is positive */
     def positive: Positive.type = Positive
 
+    /** Ensure an instance of type N is negative */
     def negative: Negative.type = Negative
 
   }
@@ -470,12 +486,7 @@ object ValidationDefinition {
     val zero = BigDecimal(0)
   }
 
-  object DateValidationInstances {
-
-    case class IsDate(format: Format, formatDescription: Option[String]) {
-      def description: String =
-        formatDescription.getOrElse(s"Is a Date with format ${format.toString}")
-    }
+  object LocalDateTimeValidationInstances {
 
     case class Min(minDate: LocalDateTime, format: DateTimeFormatter)
         extends ValidationOp[LocalDateTime] {
@@ -497,6 +508,42 @@ object ValidationDefinition {
       override def description: String = s"before ${format.format(maxDate)}"
     }
 
+    def min(minDate: LocalDateTime, format: DateTimeFormatter) = Min(minDate, format)
+    def min(minDate: LocalDateTime) = Min(minDate, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+
+    def max(maxDate: LocalDateTime, format: DateTimeFormatter) = Max(maxDate, format)
+    def max(maxDate: LocalDateTime) = Max(maxDate, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
   }
+
+  object LocalDateValidationInstances {
+
+    case class Min(minDate: LocalDate, format: DateTimeFormatter)
+        extends ValidationOp[LocalDate] {
+      override def isValid: LocalDate => Boolean = _.isAfter(minDate)
+
+      override def defaultError(t: LocalDate): String =
+        s"specified date ${format.format(t)} must be after ${format.format(minDate)}"
+
+      override def description: String = s"after ${format.format(minDate)}"
+    }
+
+    case class Max(maxDate: LocalDate, format: DateTimeFormatter)
+        extends ValidationOp[LocalDate] {
+      override def isValid: LocalDate => Boolean = _.isBefore(maxDate)
+
+      override def defaultError(t: LocalDate): String =
+        s"specified date ${format.format(t)} must be before ${format.format(maxDate)}"
+
+      override def description: String = s"before ${format.format(maxDate)}"
+    }
+
+    def min(minDate: LocalDate, format: DateTimeFormatter) = Min(minDate, format)
+    def min(minDate: LocalDate) = Min(minDate, DateTimeFormatter.ISO_LOCAL_DATE)
+
+    def max(maxDate: LocalDate, format: DateTimeFormatter) = Max(maxDate, format)
+    def max(maxDate: LocalDate) = Max(maxDate, DateTimeFormatter.ISO_LOCAL_DATE)
+
+
+  }  
 
 }
