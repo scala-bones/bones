@@ -55,7 +55,7 @@ trait EncodeToJValueInterpreter extends KvpOutputInterpreter[JValue] {
   override def uuidToOut(op: UuidData): UUID => JValue =
     input => JString(input.toString)
 
-  override def dateTimeToOut(op: DateTimeData): LocalDateTime => JValue =
+  override def dateTimeToOut(op: LocalDateTimeData): LocalDateTime => JValue =
     input => JString(dateFormatter.format(input))
 
   override def localDateToOut(op: LocalDateData): LocalDate => JValue =
@@ -66,7 +66,7 @@ trait EncodeToJValueInterpreter extends KvpOutputInterpreter[JValue] {
 
   override def toOutList(list: List[JValue]): JValue = JArray(list)
 
-  override def enumerationToOut[A](op: EnumerationStringData[A]): A => JValue =
+  override def enumerationToOut[A](op: EnumerationData[A]): A => JValue =
     input => JString(input.toString)
 
 }

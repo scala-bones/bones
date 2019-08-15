@@ -224,7 +224,7 @@ object ProtobufSequentialInputInterpreter {
               }
             }:Either[NonEmptyList[ExtractionError], UUID])
           }
-      case dd: DateTimeData =>
+      case dd: LocalDateTimeData =>
         (fieldNumber: LastFieldNumber, path: Path) =>
           {
             val thisField = (fieldNumber + 1) << 3 | VARINT
@@ -314,7 +314,7 @@ object ProtobufSequentialInputInterpreter {
 //        val a = valueDefinition(ed.definitionA)
 //        val b = valueDefinition(ed.definitionB)
 //        (false, EitherType(a._2,b._2), (in, path) => ???)
-      case esd: EnumerationStringData[a] =>
+      case esd: EnumerationData[a] =>
         (fieldNumber: LastFieldNumber, path: Path) =>
           {
 

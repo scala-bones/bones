@@ -38,7 +38,7 @@ object ColumnNameInterpreter {
       case id: IntData                   => keyToColumNames
       case ri: LongData                  => keyToColumNames
       case uu: UuidData                  => keyToColumNames
-      case dd: DateTimeData              => keyToColumNames
+      case dd: LocalDateTimeData              => keyToColumNames
       case fd: FloatData                 => keyToColumNames
       case dd: DoubleData                => keyToColumNames
       case bd: BigDecimalData            => keyToColumNames
@@ -49,7 +49,7 @@ object ColumnNameInterpreter {
           val baseName = camelToSnake(key)
           List("left_" + baseName, "right_"+baseName)
         }
-      case esd: EnumerationStringData[a] => keyToColumNames
+      case esd: EnumerationData[a] => keyToColumNames
       case kvp: KvpHListValue[h, hl] =>
         _ =>
           kvpHList(kvp.kvpHList)

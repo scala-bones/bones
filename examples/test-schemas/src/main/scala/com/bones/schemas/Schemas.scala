@@ -7,6 +7,8 @@ import com.bones.data.Error.CanNotConvert
 import com.bones.data.Value.KvpNil
 import com.bones.validation.ValidationDefinition.ValidationOp
 import shapeless.HNil
+import com.bones.syntax._
+
 
 object Schemas {
 
@@ -71,7 +73,6 @@ object Schemas {
 
     override def description: String = "Credit Card Expiration Date must be in the future"
   }
-  import com.bones.syntax._
 
   val ccExp = (
     kvp("expMonth", long(lv.between(1,12))) ::
@@ -159,6 +160,25 @@ object Schemas {
     """.stripMargin
 
   val exampleCreditCard = CC("12345", "7890", UUID.randomUUID(), UUID.randomUUID(), CreditCardTypes.Mastercard, 8, 2020, "Kurt Vonnegut", Currency.CAD, None, UUID.randomUUID(), Some(BillingLocation("US", None)))
+
+
+  val miscObj = 
+        kvp("boolean", boolean) ::
+        kvp("int", int(iv.between(0,10))) ::
+        kvp("long", long(lv.min(0))) ::
+        kvp("listOfString", list(string)) ::
+        kvp("string", string(sv.min(0))) ::
+        kvp("float", float(fv.max(100))) ::
+        kvp("short", short(shv.max(100))) ::
+        kvp("double", double(dv.min(0))) ::
+        kvp("byteArray", byteArray) ::
+        kvp("localDate", localDate) ::
+        kvp("localDateTime", localDateTime) ::
+        kvp("uuid", uuid) ::
+        // kvp("enumeration", enumeration(Currency)) ::
+        kvp("bigDecimal", bigDecimal(bdv.max(BigDecimal(100)))) ::
+        kvp("either", either(string, int)) ::
+        KvpNil
 
 
 }

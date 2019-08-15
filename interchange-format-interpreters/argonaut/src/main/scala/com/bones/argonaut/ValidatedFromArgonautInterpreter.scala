@@ -109,7 +109,7 @@ trait ValidatedFromArgonautInterpreter extends KvpValidateInputInterpreter[Json]
       .flatMap(stringToUuid(_, path))
 
   override def extractLocalDateTime(
-      op: DateTimeData)(in: Json, path: List[String])
+      op: LocalDateTimeData)(in: Json, path: List[String])
     : Either[NonEmptyList[ExtractionError], LocalDateTime] =
     in.string
       .toRight(

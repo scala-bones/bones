@@ -138,7 +138,7 @@ object DbInsertValues {
         psF[Long]( (ps,i,a) => ps.setLong(i,a))
       case uu: UuidData =>
         psF[UUID]( (ps,i,a) => ps.setString(i,a.toString))
-      case dd: DateTimeData =>
+      case dd: LocalDateTimeData =>
         psF[LocalDateTime]( (ps, i ,a) => ps.setDate(i, new java.sql.Date(a.toInstant(ZoneOffset.UTC).toEpochMilli)))
       case ld: LocalDateData =>
         psF[LocalDate]( (ps, i ,a) => ps.setDate(i, new java.sql.Date(a.atStartOfDay().toEpochSecond(ZoneOffset.UTC))))
@@ -152,7 +152,7 @@ object DbInsertValues {
         psF[scala.Array[Byte]]( (ps,i,a) => ps.setBytes(i, a))
       case ld: ListData[t] => ???
       case ed: EitherData[a,b] => ???
-      case esd: EnumerationStringData[a] =>
+      case esd: EnumerationData[a] =>
         psF[A]( (ps,i,a) => ps.setString(i,a.toString))
       case kvp: KvpHListValue[h,hl] =>
         val groupF = kvpHList(kvp.kvpHList)

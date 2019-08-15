@@ -44,7 +44,7 @@ trait EncodeToArgonautInterpreter extends KvpOutputInterpreter[Json] {
   override def uuidToOut(op: UuidData): UUID => Json =
     input => Json.jString(input.toString)
 
-  override def dateTimeToOut(op: DateTimeData): LocalDateTime => Json =
+  override def dateTimeToOut(op: LocalDateTimeData): LocalDateTime => Json =
     input => Json.jString(dateFormat.format(input))
 
   override def localDateToOut(op: LocalDateData): LocalDate => Json =
@@ -65,7 +65,7 @@ trait EncodeToArgonautInterpreter extends KvpOutputInterpreter[Json] {
   override def toOutList(list: List[Json]): Json =
     Json.array(list :_*)
 
-  override def enumerationToOut[A](op: EnumerationStringData[A]): A => Json =
+  override def enumerationToOut[A](op: EnumerationData[A]): A => Json =
     input => Json.jString(input.toString)
 
 }

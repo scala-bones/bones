@@ -177,7 +177,7 @@ object DbUpdateValues {
       case ri: LongData => psF(i => (ps, a) => ps.setLong(i, a), Types.BIGINT)
       case uu: UuidData =>
         psF(i => (ps, a) => ps.setString(i, a.toString), Types.VARCHAR)
-      case dd: DateTimeData =>
+      case dd: LocalDateTimeData =>
         psF((i: Index) =>
               (ps: PreparedStatement, a: LocalDateTime) =>
                 ps.setDate(i, new java.sql.Date(a.toInstant(ZoneOffset.UTC).toEpochMilli)),
@@ -196,7 +196,7 @@ object DbUpdateValues {
         psF[Array[Byte]](i => (ps, a) => ps.setBytes(i, a), Types.BINARY)
       case ld: ListData[t]      => ???
       case ed: EitherData[a, b] => ???
-      case esd: EnumerationStringData[a] =>
+      case esd: EnumerationData[a] =>
         psF(i => (ps, a) => ps.setString(i, a.toString), Types.VARCHAR)
       case kvp: KvpHListValue[h, hl] => {
         val groupF = kvpHList(kvp.kvpHList)

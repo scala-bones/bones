@@ -48,14 +48,14 @@ object FieldNames {
       case id: IntData  => List.empty
       case ri: LongData                  => List.empty
       case uu: UuidData                  => List.empty
-      case dd: DateTimeData              => List.empty
+      case dd: LocalDateTimeData              => List.empty
       case bd: BigDecimalData            => List.empty
       case fd: FloatData => List.empty
       case dd: DoubleData => List.empty
       case ba: ByteArrayData             => List.empty
       case ld: ListData[t]               => List.empty
       case ed: EitherData[a, b]          => List.empty
-      case esd: EnumerationStringData[a] => List.empty
+      case esd: EnumerationData[a] => List.empty
       case st: SumTypeData[a, b]         => valueDefinition(st.from)
       case kvp: KvpHListValue[h, hl]     => kvpHList(kvp.kvpHList)
       case x: HListConvert[_, _, _]      => kvpHList(x.from)

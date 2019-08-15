@@ -70,7 +70,7 @@ trait KvpValidateInputInterpreter[IN] {
   def extractUuid(op: UuidData)(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], UUID]
-  def extractLocalDateTime(op: DateTimeData)(
+  def extractLocalDateTime(op: LocalDateTimeData)(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], LocalDateTime]
   def extractLocalDate(op: LocalDateData)(
@@ -203,7 +203,7 @@ trait KvpValidateInputInterpreter[IN] {
           required(op, op.validations, extractBool(op))
         case op: UuidData =>
           required(op, op.validations, extractUuid(op))
-        case op @ DateTimeData(validations) =>
+        case op @ LocalDateTimeData(validations) =>
           required(op, validations, extractLocalDateTime(op))
         case op @ LocalDateData(validations) =>
           required(op, validations, extractLocalDate(op))
@@ -285,7 +285,7 @@ trait KvpValidateInputInterpreter[IN] {
           required(dd, dd.validations, extractDouble(dd))
         case op: BigDecimalData =>
           required(op, op.validations, extractBigDecimal(op))
-        case op: EnumerationStringData[A] =>
+        case op: EnumerationData[A] =>
           (inOpt: Option[IN], path: Path) =>
             for {
               in <- inOpt.toRight[NonEmptyList[ExtractionError]](
