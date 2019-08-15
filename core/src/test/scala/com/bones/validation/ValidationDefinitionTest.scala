@@ -127,4 +127,15 @@ class ValidationDefinitionTest extends FunSuite with Checkers {
     assert(v.isValid("5454545454545454") === true)
     assert(v.isValid("the quick") === false)
   }
+
+  test("words") {
+    val w = words
+    assert(w.isValid("the quick brown fox") === true)
+    assert(w.isValid("jump43245") === false)
+  }
+
+  test("sentences") {
+    assert(sentence.isValid("The quick brown fox jumps over the lazy dog.") === true)
+    assert(sentence.isValid("ljdlfjas0808934@#$F") === false)
+  }
 }
