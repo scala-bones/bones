@@ -1,7 +1,7 @@
 package com.bones.scalacheck
 
-import java.time.{LocalDateTime, ZoneId}
-import java.util.{Date, UUID}
+import java.time.{LocalDate, LocalDateTime, ZoneId}
+import java.util.{Calendar, Date, UUID}
 
 import com.bones.data.Value._
 import com.bones.validation.ValidationDefinition.StringValidation._
@@ -62,9 +62,15 @@ object Scalacheck {
       }
       case ob: BooleanData => arbitrary[Boolean]
       case rs: StringData => stringConstraints(rs.validations)
+      case sd: ShortData => {
+        val one: Short = 1
+        validationConstraints[Short](sd.validations, ShortValidation, s => (s + 1).toShort, Short.MinValue, Short.MaxValue)
+      }
       case id: IntData => validationConstraints[Int](id.validations, IntValidation, _ + 1, Int.MinValue, Int.MaxValue)
       case ri: LongData => validationConstraints[Long](ri.validations, LongValidation, _ + 1, Long.MinValue, Long.MaxValue)
       case uu: UuidData => arbitrary[UUID]
+      case dd: LocalDateData => arbitrary[Calendar]
+        .map(d => LocalDate.of(d.get(Calendar.YEAR), (d.get(Calendar.MONTH) + 1), d.get(Calendar.DAY_OF_MONTH)))
       case dd: LocalDateTimeData => arbitrary[Date].map(d => LocalDateTime.ofInstant(d.toInstant, ZoneId.systemDefault()))
       case fd: FloatData => validationConstraints[Float](fd.validations, FloatValidation, _ + .0001f, Float.MinValue, Float.MaxValue)
       case id: DoubleData => validationConstraints[Double](id.validations, DoubleValidation, _ + .00001, Double.MinValue, Double.MaxValue)
@@ -77,7 +83,7 @@ object Scalacheck {
         Gen.frequency((1, left), (1, right))
       }
       case ba: ByteArrayData => arbitrary[Array[Byte]]
-      case esd: EnumerationData[a] => {
+      case esd: EnumerationData[e,a] => {
         Gen.oneOf(esd.enumeration.values.toSeq.map(_.asInstanceOf[A]))
       }
       case kvp: KvpHListValue[h, hl] =>

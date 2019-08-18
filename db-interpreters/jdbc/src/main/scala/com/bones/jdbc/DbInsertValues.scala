@@ -132,6 +132,8 @@ object DbInsertValues {
         psF[Boolean]( (ps,i,a) => ps.setBoolean(i,a))
       case rs: StringData =>
         psF[String]( (ps,i,a) => ps.setString(i,a))
+      case id: ShortData =>
+        psF[Short]( (ps,i,a) => ps.setShort(i,a))
       case id: IntData =>
         psF[Int]( (ps,i,a) => ps.setInt(i,a))
       case ri: LongData =>
@@ -152,7 +154,7 @@ object DbInsertValues {
         psF[scala.Array[Byte]]( (ps,i,a) => ps.setBytes(i, a))
       case ld: ListData[t] => ???
       case ed: EitherData[a,b] => ???
-      case esd: EnumerationData[a] =>
+      case esd: EnumerationData[e,a] =>
         psF[A]( (ps,i,a) => ps.setString(i,a.toString))
       case kvp: KvpHListValue[h,hl] =>
         val groupF = kvpHList(kvp.kvpHList)

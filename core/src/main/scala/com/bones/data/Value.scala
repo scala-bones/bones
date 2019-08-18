@@ -112,10 +112,10 @@ object Value {
     extends KvpValue[UUID]
       with ToOptionalData[UUID]
 
-  final case class EnumerationData[A: Manifest](enumeration: Enumeration,
-                                                validations: List[ValidationOp[A]])
-    extends KvpValue[A]
-      with ToOptionalData[A] {}
+  final case class EnumerationData[E<: Enumeration, V:Manifest](enumeration: E,
+    validations: List[ValidationOp[V]])
+    extends KvpValue[V]
+      with ToOptionalData[V] {}
 
   final case class KvpHListValue[H <: HList : Manifest, HL <: Nat](kvpHList: KvpHList[H, HL],
                                                                    validations: List[ValidationOp[H]])

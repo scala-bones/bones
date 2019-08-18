@@ -78,6 +78,14 @@ trait ValidatedFromArgonautInterpreter extends KvpValidateInputInterpreter[Json]
     in.string.toRight(
       NonEmptyList.one(WrongTypeError(path, clazz, in.getClass)))
 
+
+  override def extractShort(op: ShortData)(in: Json, path: Path):
+      Either[NonEmptyList[ExtractionError], Short] =
+    in.number
+    .flatMap(n => n.toShort)
+      .toRight(
+        NonEmptyList.one(WrongTypeError(path, classOf[Short], in.getClass)))
+
   override def extractInt(op: IntData)(
       in: Json,
       path: List[String]): Either[NonEmptyList[ExtractionError], Int] =

@@ -41,22 +41,23 @@ object FlattenedHeaderInterpreter {
     fgo match {
       case op: OptionalKvpValueDefinition[a] =>
         valueDefinition(op)
-      case ob: BooleanData => keyToName
-      case rs: StringData => keyToName
-      case id: IntData => keyToName
-      case ri: LongData => keyToName
-      case uu: UuidData => keyToName
-      case dd: LocalDateTimeData => keyToName
-      case fd: FloatData => keyToName
-      case dd: DoubleData => keyToName
-      case bd: BigDecimalData => keyToName
-      case ld: ListData[t] => keyToName
-      case ed: EitherData[a,b] => keyToName
-      case ba: ByteArrayData => keyToName
-      case esd: EnumerationData[a] => keyToName
-      case kvp: KvpHListValue[h,hl] => {
+      case BooleanData(_) => keyToName
+      case StringData(_) => keyToName
+      case ShortData(_) => keyToName
+      case IntData(_) => keyToName
+      case LongData(_) => keyToName
+      case UuidData(_) => keyToName
+      case LocalDateData(_) => keyToName
+      case LocalDateTimeData(_) => keyToName
+      case FloatData(_) => keyToName
+      case DoubleData(_) => keyToName
+      case BigDecimalData(_) => keyToName
+      case ListData(_,_) => keyToName
+      case EitherData(_,_) => keyToName
+      case ByteArrayData(_) => keyToName
+      case EnumerationData(_,_) => keyToName
+      case kvp: KvpHListValue[h,hl] =>
         _ => kvpHList(kvp.kvpHList)
-      }
       case x: HListConvert[a,al,b] =>
         _ => kvpHList(x.from)
       case s: SumTypeData[a,b] =>
