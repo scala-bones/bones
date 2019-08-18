@@ -10,6 +10,7 @@ import com.bones.data.Error._
 import com.bones.data.{KeyValueDefinition, Value}
 import net.liftweb.json.JsonAST._
 import com.bones.Util._
+import com.bones.interpreter.KvpValidateInputInterpreter.Path
 import net.liftweb.json.JsonParser.ParseException
 
 import scala.util.Try
@@ -84,6 +85,15 @@ trait ValidatedFromJObjectInterpreter
             WrongTypeError(path, classOf[Long], classOf[String])))}
       case _ =>
         Left(NonEmptyList.one(WrongTypeError(path, classOf[Long], in.getClass)))
+    }
+
+
+  override def extractShort(op: Value.ShortData)(in: JValue, path: Path): Either[NonEmptyList[ExtractionError], Short] =
+    in match {
+      case JInt(i)    => Right(i.toShort)
+      case JDouble(i) => Right(i.toShort)
+      case _ =>
+        Left(NonEmptyList.one(WrongTypeError(path, classOf[Int], in.getClass)))
     }
 
   override def extractInt(op: Value.IntData)(

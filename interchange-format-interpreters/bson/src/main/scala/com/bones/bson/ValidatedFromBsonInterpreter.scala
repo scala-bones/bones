@@ -9,6 +9,7 @@ import com.bones.data.Error._
 import com.bones.data.{KeyValueDefinition, Value}
 import com.bones.interpreter.KvpValidateInputInterpreter
 import com.bones.Util._
+import com.bones.interpreter.KvpValidateInputInterpreter.Path
 import reactivemongo.bson.buffer.ArrayReadableBuffer
 import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDecimal, BSONDocument, BSONDouble, BSONInteger, BSONLong, BSONString, BSONValue}
 
@@ -68,6 +69,20 @@ object ValidatedFromBsonInterpreter
     in match {
       case BSONString(str) => Right(str)
       case x => invalidValue(x, clazz, path)
+    }
+
+
+  override def extractShort(op: Value.ShortData)(in: BSONValue, path: Path): Either[NonEmptyList[ExtractionError], Short] =
+    in match {
+      case BSONInteger(i) =>
+        Try({
+          i.toShort
+        }).toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Short], classOf[Integer])))
+      case BSONLong(l) =>
+        Try({
+          l.toShort
+        }).toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Short], classOf[Long])))
+      case x => invalidValue(x, classOf[Long], path)
     }
 
   override def extractInt(op: Value.IntData)(in: BSONValue, path: List[String]): Either[NonEmptyList[ExtractionError], Int] =

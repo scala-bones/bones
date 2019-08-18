@@ -65,7 +65,11 @@ trait EncodeToArgonautInterpreter extends KvpOutputInterpreter[Json] {
   override def toOutList(list: List[Json]): Json =
     Json.array(list :_*)
 
-  override def enumerationToOut[A](op: EnumerationData[A]): A => Json =
-    input => Json.jString(input.toString)
+  override def shortToOut(sd: ShortData): Short => Json =
+    input => Json.jNumber(input.toInt)
+
+  override def enumerationToOut[E <: Enumeration, V: Manifest](op: EnumerationData[E, V]):
+    op.enumeration.Value => Json = input => Json.jString(input.toString)
+
 
 }

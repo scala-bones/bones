@@ -99,6 +99,14 @@ trait SwaggerCoreInterpreter {
           .nullable(false)
         schema =>
           stringSchema.name(schema.getName)
+      case ShortData(_) =>
+        val shortSchema = new IntegerSchema()
+          .nullable(false)
+          .example(123)
+          .format("int32")
+          .maximum(java.math.BigDecimal.valueOf(Short.MaxValue.toLong))
+          .minimum(java.math.BigDecimal.valueOf(Short.MinValue.toLong))
+        schema => shortSchema.name(schema.getName)
       case IntData(_) =>
         val intSchema = new IntegerSchema()
           .nullable(false)
@@ -170,7 +178,7 @@ trait SwaggerCoreInterpreter {
           .nullable(false)
         schema =>
           composedSchema.name(schema.getName)
-      case esd: EnumerationData[a] =>
+      case esd: EnumerationData[e,a] =>
         val stringSchema = new StringSchema()
         esd.enumeration.values.foreach(v =>
           stringSchema.addEnumItemObject(v.toString))

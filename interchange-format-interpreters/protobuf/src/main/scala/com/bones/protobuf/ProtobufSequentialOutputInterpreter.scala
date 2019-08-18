@@ -145,6 +145,12 @@ object ProtobufSequentialOutputInterpreter {
             () => CodedOutputStream.computeStringSize(fieldNumber, str),
             write(_.writeString(fieldNumber, str))
           )
+      case id: ShortData =>
+        (fieldNumber: FieldNumber) => (s: Short) =>
+          (
+            () => CodedOutputStream.computeInt32Size(fieldNumber, s),
+            write(_.writeInt32(fieldNumber, s))
+          )
       case id: IntData =>
         (fieldNumber: FieldNumber) => (l: Int) =>
           (
@@ -215,7 +221,7 @@ object ProtobufSequentialOutputInterpreter {
               )
             }
       case ed: EitherData[a, b] => ??? // use oneOf
-      case esd: EnumerationData[a] =>
+      case esd: EnumerationData[e,a] =>
         (fieldNumber: FieldNumber) => (a: A) =>
           (
             () => CodedOutputStream.computeStringSize(fieldNumber, a.toString),

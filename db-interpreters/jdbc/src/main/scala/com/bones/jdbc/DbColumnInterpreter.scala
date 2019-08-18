@@ -59,9 +59,11 @@ object DbColumnInterpreter {
             .map(_.copy(nullable = true))
       case ob: BooleanData               => nameToColumn("bool")
       case rs: StringData                => nameToColumn("text")
+      case i:  ShortData                   => nameToColumn("int2")
       case i:  IntData                   => nameToColumn("integer")
       case ri: LongData                  => nameToColumn("int8")
       case uu: UuidData                  => nameToColumn("text")
+      case dd: LocalDateData              => nameToColumn("date")
       case dd: LocalDateTimeData              => nameToColumn("timestamp")
       case fd: FloatData                 => nameToColumn("real")
       case dd: DoubleData                => nameToColumn("double precision")
@@ -72,7 +74,7 @@ object DbColumnInterpreter {
         name => {
           valueDefinition(ed.definitionA)(name) ::: valueDefinition(ed.definitionB)(name)
         }
-      case esd: EnumerationData[a] => nameToColumn("text")
+      case esd: EnumerationData[e,a] => nameToColumn("text")
       case kvp: KvpHListValue[h, hl] =>
         _ =>
           kvpHList(kvp.kvpHList)

@@ -174,6 +174,7 @@ object DbUpdateValues {
       case rs: StringData =>
         psF(i => (ps, a) => ps.setString(i, a), Types.LONGVARCHAR)
       case ri: IntData => psF(i => (ps, a) => ps.setInt(i, a), Types.INTEGER)
+      case ri: ShortData => psF(i => (ps, a) => ps.setShort(i, a), Types.SMALLINT)
       case ri: LongData => psF(i => (ps, a) => ps.setLong(i, a), Types.BIGINT)
       case uu: UuidData =>
         psF(i => (ps, a) => ps.setString(i, a.toString), Types.VARCHAR)
@@ -196,7 +197,7 @@ object DbUpdateValues {
         psF[Array[Byte]](i => (ps, a) => ps.setBytes(i, a), Types.BINARY)
       case ld: ListData[t]      => ???
       case ed: EitherData[a, b] => ???
-      case esd: EnumerationData[a] =>
+      case esd: EnumerationData[e,a] =>
         psF(i => (ps, a) => ps.setString(i, a.toString), Types.VARCHAR)
       case kvp: KvpHListValue[h, hl] => {
         val groupF = kvpHList(kvp.kvpHList)

@@ -44,7 +44,7 @@ object WaterfallDefinitions {
       kvp("longitude", bigDecimal(dv.min(-180), dv.max(180))) ::
       kvp("cubicFeetPerMinute", bigDecimal(dv.positive).optional) ::
       kvp("height", imperialMeasurement.optional) ::
-      kvp("waterVolume", enumeration[WaterVolume.Value](WaterVolume)) ::
+      kvp("waterVolume", enumeration[WaterVolume.type, WaterVolume.Value](WaterVolume)) ::
       //      kvp("discoveryDate", isoDateTime()) ::
       kvp("wantToVisit", boolean) ::
       kvp("description", string(sv.max(500))) ::
@@ -60,7 +60,7 @@ object WaterfallDefinitions {
   val waterfallVisit = (
     kvp("waterfallId", long(lv.min(1))) ::
       //      kvp("visitDate", isoDate()) ::
-      kvp("waterVolume", enumeration[WaterVolume.Value](WaterVolume)) ::
+      kvp("waterVolume", enumeration[WaterVolume.type, WaterVolume.Value](WaterVolume)) ::
       kvp("notes", string.optional) ::
       KvpNil
     ).convert[WaterfallVisit]

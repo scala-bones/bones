@@ -1,6 +1,6 @@
 package com.bones.react
 
-import java.time.LocalDateTime
+import java.time.{LocalDate, LocalDateTime}
 
 import com.bones.data.Value._
 import com.bones.validation.ValidationDefinition.StringValidation.MaxLength
@@ -23,6 +23,7 @@ object FormInterpreter {
   case object Checkbox extends InputType[Boolean]
   case class LongInput(maxLength: Int) extends InputType[Long]
   case object BigDecimalInput extends InputType[BigDecimal]
+  case object LocalDateInput extends InputType[LocalDate]
   case object DateInput extends InputType[LocalDateTime]
   case class TextArea(maxLength: Int) extends InputType[String]
   case class File() extends InputType[Array[Byte]]
@@ -96,6 +97,9 @@ object FormInterpreter {
       case id: IntData =>
         key =>
           ( ReactFormValue( key, false, LongInput(20)), List.empty )
+      case sd: ShortData =>
+        key =>
+          ( ReactFormValue( key, false, LongInput(20)), List.empty)
       case ri: LongData =>
         key =>
           ( ReactFormValue( key, false, LongInput(20)), List.empty )
@@ -103,6 +107,8 @@ object FormInterpreter {
         key => ( ReactFormValue( key, false, StringInput(36)), List.empty )
       case dd: LocalDateTimeData =>
         key => ( ReactFormValue( key, false, DateInput), List.empty )
+      case ld: LocalDateData =>
+        key => ( ReactFormValue( key, false, LocalDateInput), List.empty)
       case fd: FloatData =>
         key => ( ReactFormValue( key, false, BigDecimalInput), List.empty )
       case dd: DoubleData =>
@@ -113,7 +119,7 @@ object FormInterpreter {
         key => ( ReactFormValue( key, false, File()), List.empty)
       case ld: ListData[t] => ???
       case ed: EitherData[a,b] => ???
-      case esd: EnumerationData[a] =>
+      case esd: EnumerationData[e,a] =>
         val values: List[(Value, DisplayValue)] = esd.enumeration.values.map(v => (keyToName(v.toString), v.toString)).toList.sortBy(_._1)
         key => ( ReactFormValue( key, false, SelectInput(values)), List.empty )
       case kvp: KvpHListValue[h,hl] =>

@@ -10,7 +10,7 @@ import com.bones.interpreter.KvpOutputInterpreter
 import io.circe._
 
 object EncodeToCirceInterpreter {
-  val isoInterpreter = new EncodeToCirceInterpreter {
+  val isoInterpreter: EncodeToCirceInterpreter = new EncodeToCirceInterpreter {
     override def dateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
     override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
   }
@@ -56,6 +56,9 @@ trait EncodeToCirceInterpreter extends KvpOutputInterpreter[Json] {
   override def longToOut(op: LongData): Long => Json =
     input => Json.fromLong(input)
 
+  override def shortToOut(sd: ShortData): Short => Json =
+    input => Json.fromInt(input.toInt)
+
   override def uuidToOut(op: UuidData): UUID => Json =
     input => Json.fromString(input.toString)
 
@@ -70,7 +73,8 @@ trait EncodeToCirceInterpreter extends KvpOutputInterpreter[Json] {
 
   override def toOutList(list: List[Json]): Json = Json.fromValues(list)
 
-  override def enumerationToOut[A](op: EnumerationData[A]): A => Json =
+  override def enumerationToOut[E <: Enumeration, V: Manifest](op: EnumerationData[E, V]):
+    op.enumeration.Value => Json =
     input => Json.fromString(input.toString)
 
 }
