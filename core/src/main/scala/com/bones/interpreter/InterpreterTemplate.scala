@@ -29,12 +29,13 @@ class InterpreterTemplate {
       case dd: LocalDateTimeData => ???
       case ld: LocalDateData => ???
       case fd: FloatData => ???
+      case sd: ShortData => ???
       case id: DoubleData => ???
       case bd: BigDecimalData => ???
       case ld: ListData[t] => ???
       case ed: EitherData[a, b] => ???
       case ba: ByteArrayData => ???
-      case esd: EnumerationData[a] => ???
+      case esd: EnumerationData[a,b] => ???
       case kvp: KvpHListValue[h, hl] => ???
       case x: HListConvert[a, al, b] => ???
       case s: SumTypeData[a, b] => ???

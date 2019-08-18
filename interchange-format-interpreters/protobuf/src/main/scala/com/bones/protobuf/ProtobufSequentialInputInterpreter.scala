@@ -167,6 +167,18 @@ object ProtobufSequentialInputInterpreter {
               }
             }:Either[NonEmptyList[ExtractionError], String])
           }
+      case sd: ShortData =>
+        (fieldNumber: LastFieldNumber, path: Path) =>
+        {
+          val thisField = (fieldNumber + 1) << 3 | VARINT
+          (thisField, in => {
+            if (in.getLastTag == thisField) {
+              convert(in, classOf[Short], path)(_.readInt32().toShort)
+            } else {
+              Left(NonEmptyList.one(RequiredData(path, sd)))
+            }
+          }:Either[NonEmptyList[ExtractionError], Short])
+        }
       case id: IntData =>
         (fieldNumber: LastFieldNumber, path: Path) =>
         {
@@ -314,7 +326,7 @@ object ProtobufSequentialInputInterpreter {
 //        val a = valueDefinition(ed.definitionA)
 //        val b = valueDefinition(ed.definitionB)
 //        (false, EitherType(a._2,b._2), (in, path) => ???)
-      case esd: EnumerationData[a] =>
+      case esd: EnumerationData[e,a] =>
         (fieldNumber: LastFieldNumber, path: Path) =>
           {
 
@@ -323,11 +335,13 @@ object ProtobufSequentialInputInterpreter {
              in => {
                convert(in, classOf[String], path)(_.readString)
                  .flatMap(
-                   stringToEnumeration(_,
+                   stringToEnumeration[e,a](_,
                      path,
-                     esd.enumeration,
+                     esd.enumeration)(
                      esd.manifestOfA))
-             }:Either[NonEmptyList[ExtractionError], A])
+                 .map(_.asInstanceOf[A])
+             }
+            )
           }
       case sum: SumTypeData[a, b] => {
         val f = valueDefinition(sum.from)

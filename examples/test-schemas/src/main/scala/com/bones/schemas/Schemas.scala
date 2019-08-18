@@ -99,7 +99,7 @@ object Schemas {
     KvpNil
   ) ::: ccExp ::: (
     kvp("cardHolder", string(sv.words)) ::
-      kvp("currencyIso", enumeration[Currency.Value](Currency)) ::
+      kvp("currencyIso", enumeration[Currency.type, Currency.Value](Currency)) ::
       kvp("deletedAt", localDateTime.optional) ::
       kvp("lastModifiedRequest", uuid) ::
       kvp("billingLocation", (
@@ -162,7 +162,7 @@ object Schemas {
   val exampleCreditCard = CC("12345", "7890", UUID.randomUUID(), UUID.randomUUID(), CreditCardTypes.Mastercard, 8, 2020, "Kurt Vonnegut", Currency.CAD, None, UUID.randomUUID(), Some(BillingLocation("US", None)))
 
 
-  val miscObj = 
+  val allSupportedSchema =
         kvp("boolean", boolean) ::
         kvp("int", int(iv.between(0,10))) ::
         kvp("long", long(lv.min(0))) ::
@@ -175,7 +175,7 @@ object Schemas {
         kvp("localDate", localDate) ::
         kvp("localDateTime", localDateTime) ::
         kvp("uuid", uuid) ::
-        // kvp("enumeration", enumeration(Currency)) ::
+        kvp("enumeration", enumeration[Currency.type, Currency.Value](Currency)) ::
         kvp("bigDecimal", bigDecimal(bdv.max(BigDecimal(100)))) ::
         kvp("either", either(string, int)) ::
         KvpNil

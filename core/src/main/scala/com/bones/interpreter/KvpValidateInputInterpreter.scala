@@ -85,6 +85,9 @@ trait KvpValidateInputInterpreter[IN] {
   def extractDouble(op: DoubleData)(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], Double]
+  def extractShort(op: ShortData)(
+    in: IN,
+    path: Path): Either[NonEmptyList[ExtractionError], Short]
   def extractBigDecimal(op: BigDecimalData)(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], BigDecimal]
@@ -283,19 +286,21 @@ trait KvpValidateInputInterpreter[IN] {
           required(fd, fd.validations, extractFloat(fd))
         case dd: DoubleData =>
           required(dd, dd.validations, extractDouble(dd))
+        case sd: ShortData =>
+          required(sd, sd.validations, extractShort(sd))
         case op: BigDecimalData =>
           required(op, op.validations, extractBigDecimal(op))
-        case op: EnumerationData[A] =>
+        case op: EnumerationData[e,A] =>
           (inOpt: Option[IN], path: Path) =>
             for {
               in <- inOpt.toRight[NonEmptyList[ExtractionError]](
                 NonEmptyList.one(RequiredData(path, op)))
               str <- extractString(op, op.manifestOfA.runtimeClass)(in, path)
-              enum <- stringToEnumeration(str,
+              enum <- stringToEnumeration[e, A](str,
                                           path,
-                                          op.enumeration,
+                                          op.enumeration.asInstanceOf[e])(
                                           op.manifestOfA)
-            } yield enum
+            } yield enum.asInstanceOf[A]
 
         case op: SumTypeData[a, A] =>
           val valueF = valueDefinition(op.from)

@@ -49,6 +49,9 @@ trait EncodeToJValueInterpreter extends KvpOutputInterpreter[JValue] {
   override def byteArrayToOut(ba: ByteArrayData): Array[Byte] => JValue =
     input => JString(Base64.getEncoder.encodeToString(input))
 
+  override def shortToOut(sd: ShortData): Short => JValue =
+    input => JInt(BigInt(input))
+
   override def longToOut(op: LongData): Long => JValue =
     input => JInt(BigInt(input))
 
@@ -66,7 +69,9 @@ trait EncodeToJValueInterpreter extends KvpOutputInterpreter[JValue] {
 
   override def toOutList(list: List[JValue]): JValue = JArray(list)
 
-  override def enumerationToOut[A](op: EnumerationData[A]): A => JValue =
+  override def enumerationToOut[E <: Enumeration, V: Manifest](op: EnumerationData[E, V]):
+    op.enumeration.Value => JValue =
     input => JString(input.toString)
+
 
 }

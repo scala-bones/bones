@@ -113,6 +113,12 @@ trait ValidatedFromCirceInterpreter extends KvpValidateInputInterpreter[Json] {
       .toRight(
         NonEmptyList.one(WrongTypeError(path, classOf[Long], in.getClass)))
 
+
+  override def extractShort(op: ShortData)(in: Json, path: Path): Either[NonEmptyList[ExtractionError], Short] =
+    in.asNumber.flatMap(_.toShort)
+    .toRight(
+      NonEmptyList.one(WrongTypeError(path, classOf[Short], in.getClass)))
+
   override def extractBool(op: BooleanData)(
       in: Json,
       path: List[String]): Either[NonEmptyList[ExtractionError], Boolean] =

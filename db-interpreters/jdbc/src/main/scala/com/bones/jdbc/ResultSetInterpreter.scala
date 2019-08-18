@@ -94,6 +94,9 @@ object ResultSetInterpreter {
       case sd: StringData =>
         (path, fieldName) => rs =>
           catchSql(rs.getString(fieldName), path, sd)
+      case id: ShortData =>
+        (path, fieldName) => rs =>
+          catchSql(rs.getShort(fieldName), path, id)
       case id: IntData =>
         (path, fieldName) => rs =>
           catchSql(rs.getInt(fieldName), path, id)
@@ -150,12 +153,12 @@ object ResultSetInterpreter {
           result
         }
 
-      case esd: EnumerationData[a] =>
+      case esd: EnumerationData[e,a] =>
         (path, fieldName) => rs => {
           for {
             r <- catchSql(rs.getString(fieldName), path, esd)
-            e <- stringToEnumeration(r, path, esd.enumeration, esd.manifestOfA)
-          } yield e
+            e <- stringToEnumeration[e,a](r, path, esd.enumeration)(esd.manifestOfA)
+          } yield e.asInstanceOf[A]
         }:Either[NonEmptyList[com.bones.data.Error.ExtractionError], A]
       case kvp: KvpHListValue[h, hl] =>
         val groupF = kvpHList(kvp.kvpHList)

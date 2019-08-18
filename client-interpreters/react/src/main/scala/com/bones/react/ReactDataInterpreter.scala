@@ -41,12 +41,16 @@ object ReactDataInterpreter {
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'boolean'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
       case rs: StringData =>
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'string'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
+      case sd: ShortData =>
+        keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'integer'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
       case id: IntData =>
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'integer'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
       case ri: LongData =>
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'integer'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
       case uu: UuidData =>
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'string'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
+      case dd: LocalDateData =>
+        keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'date'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
       case dd: LocalDateTimeData =>
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'date'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
       case dd: FloatData =>
@@ -59,7 +63,7 @@ object ReactDataInterpreter {
       case ed: EitherData[a,b] => ???
       case ba: ByteArrayData =>
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'file'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
-      case esd: EnumerationData[a] =>
+      case esd: EnumerationData[e,a] =>
         keyOpt => keyOpt.map(key => ReactComponentData(s"${key}:'enumeration'", s"${key}:''", List(KeyHierarchy(key, List.empty)))).toList
       case kvp: KvpHListValue[h,hl] =>
         val groupData = kvpHList(kvp.kvpHList)

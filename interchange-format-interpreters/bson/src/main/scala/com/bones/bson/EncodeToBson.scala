@@ -35,6 +35,10 @@ object EncodeToBson extends KvpOutputInterpreter[BSONValue] {
   override def stringToOut(op: StringData): String => BSONValue =
     input => BSONString(input)
 
+
+  override def shortToOut(sd: ShortData): Short => BSONValue =
+    input => BSONInteger(input.toInt)
+
   override def intToOut(op: IntData): Int => BSONValue =
     input => BSONInteger(input)
 
@@ -67,8 +71,8 @@ object EncodeToBson extends KvpOutputInterpreter[BSONValue] {
     input =>
       BSONString(Base64.getEncoder.encodeToString(input))
 
-  override def enumerationToOut[A](
-      op: EnumerationData[A]): A => BSONValue =
+  override def enumerationToOut[E <: Enumeration, V: Manifest](op: EnumerationData[E, V]):
+    op.enumeration.Value => BSONValue =
     input => BSONString(input.toString)
 
   def toObj[A](kvDef: KeyValueDefinition[A], value: BSONValue): BSONValue =
