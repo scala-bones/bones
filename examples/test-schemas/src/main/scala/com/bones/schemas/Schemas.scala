@@ -1,12 +1,12 @@
 package com.bones.schemas
 
-import java.time.LocalDateTime
+import java.time.{LocalDate, LocalDateTime}
 import java.util.UUID
 
 import com.bones.data.Error.CanNotConvert
 import com.bones.data.Value.KvpNil
 import com.bones.validation.ValidationDefinition.ValidationOp
-import shapeless.HNil
+import shapeless.{HNil, Poly1}
 import com.bones.syntax._
 
 
@@ -162,12 +162,48 @@ object Schemas {
   val exampleCreditCard = CC("12345", "7890", UUID.randomUUID(), UUID.randomUUID(), CreditCardTypes.Mastercard, 8, 2020, "Kurt Vonnegut", Currency.CAD, None, UUID.randomUUID(), Some(BillingLocation("US", None)))
 
 
+
+  val allSupportedOptionalSchema = kvp("boolean", boolean.optional) ::
+    kvp("int", int(iv.between(0,10)).optional) ::
+    kvp("long", long(lv.min(0)).optional) ::
+    kvp("listOfInt", list(int).optional) ::
+    kvp("string", string(sv.min(0), sv.words).optional) ::
+    kvp("float", float(fv.max(100)).optional) ::
+    kvp("short", short(shv.max(100)).optional) ::
+    kvp("double", double(dv.min(0)).optional) ::
+    kvp("byteArray", byteArray.optional) ::
+    kvp("localDate", localDate.optional) ::
+    kvp("localDateTime", localDateTime.optional) ::
+    kvp("uuid", uuid.optional) ::
+    kvp("enumeration", enumeration[Currency.type, Currency.Value](Currency).optional) ::
+    kvp("bigDecimal", bigDecimal(bdv.max(BigDecimal(100))).optional) ::
+    kvp("either", either(string(sv.words), int).optional) ::
+    kvpNil
+
+  case class AllSupportedOptional(
+                                   b: Option[Boolean],
+                                   i: Option[Int],
+                                   l: Option[Long],
+                                   ls: Option[List[Int]],
+                                   str: Option[String],
+                                   f: Option[Float],
+                                   s: Option[Short],
+                                   d: Option[Double],
+                                   ba: Option[Array[Byte]],
+                                   ld: Option[LocalDate],
+                                   ldt: Option[LocalDateTime],
+                                   uuid: Option[UUID],
+                                   currency: Option[Currency.Value],
+                                   bd: Option[BigDecimal],
+                                   e: Option[Either[String,Int]]
+                                 )
+
   val allSupportedSchema =
         kvp("boolean", boolean) ::
         kvp("int", int(iv.between(0,10))) ::
         kvp("long", long(lv.min(0))) ::
-        kvp("listOfString", list(string)) ::
-        kvp("string", string(sv.min(0))) ::
+        kvp("listOfInt", list(int)) ::
+        kvp("string", string(sv.min(0), sv.words)) ::
         kvp("float", float(fv.max(100))) ::
         kvp("short", short(shv.max(100))) ::
         kvp("double", double(dv.min(0))) ::
@@ -177,8 +213,34 @@ object Schemas {
         kvp("uuid", uuid) ::
         kvp("enumeration", enumeration[Currency.type, Currency.Value](Currency)) ::
         kvp("bigDecimal", bigDecimal(bdv.max(BigDecimal(100)))) ::
-        kvp("either", either(string, int)) ::
+        kvp("either", either(string(sv.words), int)) ::
+        kvp("child", allSupportedOptionalSchema.convert[AllSupportedOptional]) ::
         KvpNil
+
+
+
+  case class AllSupported(
+                         b: Boolean,
+                         i: Int,
+                         l: Long,
+                         ls: List[Int],
+                         str: String,
+                         f: Float,
+                         s: Short,
+                         d: Double,
+                         ba: Array[Byte],
+                         ld: LocalDate,
+                         ldt: LocalDateTime,
+                         uuid: UUID,
+                         currency: Currency.Value,
+                         bd: BigDecimal,
+                         either: Either[String,Int],
+                         child: AllSupportedOptional
+                         )
+
+
+  val allSupportCaseClass = allSupportedSchema.convert[AllSupported]
+
 
 
 }

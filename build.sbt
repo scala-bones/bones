@@ -110,7 +110,7 @@ lazy val stringJson = (project in file("interchange-format-interpreters/string-j
       "org.scalatest" %% "scalatest" % "3.0.8" % Test
     )
   )
-  .dependsOn(core, testSchemas % "test")
+  .dependsOn(core, testSchemas % "test", scalacheck % "test")
 lazy val circeVersion = "0.11.1"
 lazy val jsonCirce = (project in file("interchange-format-interpreters/circe"))
   .settings(
