@@ -2,7 +2,7 @@ package com.bones.scalacheck
 
 import com.bones.data.Value.KvpNil
 import com.bones.schemas.Schemas
-import com.bones.schemas.Schemas.CC
+import com.bones.schemas.Schemas.{AllSupported, CC}
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.FunSuite
 import org.scalatestplus.scalacheck.Checkers
@@ -20,6 +20,16 @@ class ScalacheckTest extends FunSuite with Checkers {
     implicit val gen: Gen[CC] = Scalacheck.valueDefinition(Schemas.creditCardSchema)
     implicit val arb = Arbitrary(gen)
     check( (cc: CC) => { true } )
+  }
+
+
+  /** Check we gen all supported types */
+  test("all supported") {
+    implicit val allSupportedGen = Scalacheck.valueDefinition(Schemas.allSupportCaseClass)
+    implicit val arb = Arbitrary(allSupportedGen)
+
+
+    check( (a: AllSupported) => { true })
   }
 
 

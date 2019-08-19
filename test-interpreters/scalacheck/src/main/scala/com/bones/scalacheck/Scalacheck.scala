@@ -76,7 +76,12 @@ object Scalacheck {
       case id: DoubleData => validationConstraints[Double](id.validations, DoubleValidation, _ + .00001, Double.MinValue, Double.MaxValue)
       case bd: BigDecimalData => arbitrary[Double].map(d => BigDecimal(d))
         // validationConstraints[BigDecimal](bd.validations, BigDecimalValidation, _ + BigDecimal(".00000001"), BigDecimal(Double.MinValue), BigDecimal(Double.MaxValue))
-      case ld: ListData[t] => ???
+      case ld: ListData[t] =>
+        implicit val elemGenerator = valueDefinition(ld.tDefinition)
+        for {
+          numElems <- Gen.choose(0,500)
+          elem <- Gen.listOfN(numElems, elemGenerator)
+        } yield elem
       case ed: EitherData[a, b] => {
         val left = valueDefinition(ed.definitionA).map(Left(_))
         val right = valueDefinition(ed.definitionB).map(Right(_))
@@ -114,6 +119,9 @@ object Scalacheck {
         case vop.Greater(min) => nc.copy(min = Some(min), minIsInclusive = false)
         case vop.Less(max) => nc.copy(max = Some(max), maxIsInclusive = false)
         case vop.Positive => nc.copy(min = Some(vop.zero), minIsInclusive = false)
+        case vop.Max(max) => nc.copy(max = Some(max), maxIsInclusive = true)
+        case vop.Min(min) => nc.copy(min = Some(min), minIsInclusive = true)
+        case vop.Negative => nc.copy(max = Some(vop.zero), maxIsInclusive = false)
       }
     }
 
