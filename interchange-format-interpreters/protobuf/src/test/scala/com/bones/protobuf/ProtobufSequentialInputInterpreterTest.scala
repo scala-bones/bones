@@ -2,7 +2,7 @@ package com.bones.protobuf
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, OutputStream}
 import java.nio.ByteBuffer
-import java.util.UUID
+import java.util.{Base64, UUID}
 
 import com.bones.data.Value.KvpNil
 import org.scalatest.{FunSuite, MustMatchers}
@@ -33,7 +33,7 @@ class ProtobufSequentialInputInterpreterTest extends FunSuite with Checkers with
     KvpNil
   ).convert[Person]
 
-  test("single items") {
+  ignore("single items") {
 
     val denver = Loc("Denver", "CO")
     val bytes = ProtobufSequentialOutputInterpreter.encodeToBytes(loc)(denver)
@@ -52,7 +52,7 @@ class ProtobufSequentialInputInterpreterTest extends FunSuite with Checkers with
 
   }
 
-  test("Person") {
+  ignore("Person") {
 
     val os = new ByteArrayOutputStream()
     val cos: CodedOutputStream = CodedOutputStream.newInstance(os)
@@ -63,7 +63,7 @@ class ProtobufSequentialInputInterpreterTest extends FunSuite with Checkers with
 
     val bytes = ProtobufSequentialOutputInterpreter.encodeToBytes(person)(monica)
 
-//    print(convertBytesToHex(bytes))
+    println("result:" + Base64.getEncoder.encodeToString(bytes))
 
     val isItMonica = ProtobufSequentialInputInterpreter.fromBytes(person)(bytes)
 

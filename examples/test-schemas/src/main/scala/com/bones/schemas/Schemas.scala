@@ -1,6 +1,6 @@
 package com.bones.schemas
 
-import java.time.{LocalDate, LocalDateTime}
+import java.time.{LocalDate, LocalDateTime, Month}
 import java.util.UUID
 
 import com.bones.data.Error.CanNotConvert
@@ -172,8 +172,8 @@ object Schemas {
     kvp("short", short(shv.max(100)).optional) ::
     kvp("double", double(dv.min(0)).optional) ::
     kvp("byteArray", byteArray.optional) ::
-    kvp("localDate", localDate.optional) ::
-    kvp("localDateTime", localDateTime.optional) ::
+    kvp("localDate", localDate(ldv.min(LocalDate.of(1800,1,1))).optional) ::
+    kvp("localDateTime", localDateTime(ldtv.min(LocalDateTime.of(1800,Month.JANUARY,1, 0, 0))).optional) ::
     kvp("uuid", uuid.optional) ::
     kvp("enumeration", enumeration[Currency.type, Currency.Value](Currency).optional) ::
     kvp("bigDecimal", bigDecimal(bdv.max(BigDecimal(100))).optional) ::
@@ -208,13 +208,14 @@ object Schemas {
         kvp("short", short(shv.max(100))) ::
         kvp("double", double(dv.min(0))) ::
         kvp("byteArray", byteArray) ::
-        kvp("localDate", localDate) ::
-        kvp("localDateTime", localDateTime) ::
+        kvp("localDate", localDate(ldv.min(LocalDate.of(1800,1,1)))) ::
+        kvp("localDateTime", localDateTime(ldtv.min(LocalDateTime.of(1800,Month.JANUARY,1, 0, 0)))) ::
         kvp("uuid", uuid) ::
         kvp("enumeration", enumeration[Currency.type, Currency.Value](Currency)) ::
         kvp("bigDecimal", bigDecimal(bdv.max(BigDecimal(100)))) ::
         kvp("either", either(string(sv.words), int)) ::
         kvp("child", allSupportedOptionalSchema.convert[AllSupportedOptional]) ::
+        kvp("int2", int(iv.between(Int.MinValue, Int.MinValue))) ::
         KvpNil
 
 
@@ -235,7 +236,8 @@ object Schemas {
                          currency: Currency.Value,
                          bd: BigDecimal,
                          either: Either[String,Int],
-                         child: AllSupportedOptional
+                         child: AllSupportedOptional,
+                         int2: Int
                          )
 
 

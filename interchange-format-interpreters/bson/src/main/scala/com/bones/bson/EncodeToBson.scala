@@ -49,7 +49,7 @@ object EncodeToBson extends KvpOutputInterpreter[BSONValue] {
     input => BSONString(input.toString)
 
   override def dateTimeToOut(op: LocalDateTimeData): LocalDateTime => BSONValue =
-    input => BSONDateTime(input.toEpochSecond(ZoneOffset.UTC))
+    input => BSONDateTime(input.toInstant(ZoneOffset.UTC).toEpochMilli)
 
   override def localDateToOut(op: LocalDateData): LocalDate => BSONValue =
     input => BSONDateTime(input.toEpochDay)

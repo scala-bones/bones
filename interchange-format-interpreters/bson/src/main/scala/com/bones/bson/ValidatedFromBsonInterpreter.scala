@@ -11,7 +11,7 @@ import com.bones.interpreter.KvpValidateInputInterpreter
 import com.bones.Util._
 import com.bones.interpreter.KvpValidateInputInterpreter.Path
 import reactivemongo.bson.buffer.ArrayReadableBuffer
-import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDecimal, BSONDocument, BSONDouble, BSONInteger, BSONLong, BSONString, BSONValue}
+import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDecimal, BSONDocument, BSONDouble, BSONInteger, BSONLong, BSONNull, BSONString, BSONValue}
 
 import scala.util.Try
 
@@ -24,6 +24,12 @@ object ValidatedFromBsonInterpreter
     Try {
       BSONDocument.read(buffer)
     }.toEither.left.map(err => NonEmptyList.one(ParsingError(err.getMessage)))
+  }
+
+
+  override def isEmpty(json: BSONValue): Boolean = json match {
+    case BSONNull => true
+    case _ => false
   }
 
   type ValidatedFromJsonOption[A] =
@@ -125,7 +131,7 @@ object ValidatedFromBsonInterpreter
   : Either[NonEmptyList[ExtractionError], LocalDateTime] =
     in match {
       case BSONDateTime(date) =>
-        val i = Instant.ofEpochSecond(date)
+        val i = Instant.ofEpochMilli(date)
         Right(LocalDateTime.ofInstant(i, ZoneOffset.UTC))
       case x => invalidValue(x, classOf[BSONDateTime], path)
     }

@@ -35,6 +35,12 @@ package object bones {
     /** dv = double validation */
     val dv = DoubleValidation
 
+    /** ldtv = LocalDateTimeValidationInstances */
+    val ldtv = LocalDateTimeValidationInstances
+
+    /** ldv = LocalDateValidationInstances */
+    val ldv = LocalDateValidationInstances
+
   }
 
 }

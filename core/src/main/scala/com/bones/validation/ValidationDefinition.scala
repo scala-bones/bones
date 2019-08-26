@@ -339,15 +339,40 @@ object ValidationDefinition {
     val creditCard: CreditCard.type = CreditCard
   }
 
+  trait ZeroValidations[N] extends Ordering[N] {
+    /** What is the zero Value of N.  Used for positive and negative comparisons */
+    val zero: N
+
+    object Positive extends ValidationOp[N] {
+      override def isValid: N => Boolean = _ > zero
+
+      override def defaultError(t: N): String = s"$t is not positive"
+
+      override def description: String = s"positive"
+    }
+
+    object Negative extends ValidationOp[N] {
+      override def isValid: N => Boolean = _ < zero
+
+      override def defaultError(t: N): String = s"$t is not negative"
+
+      override def description: String = s"negative"
+    }
+
+    /** Ensure an instance of type N is positive */
+    def positive: Positive.type = Positive
+
+    /** Ensure an instance of type N is negative */
+    def negative: Negative.type = Negative
+
+  }
+
   /**
    * Base trait for any type which has an ordering.  Must be extented with specific type.
    * NOTE: Tried to just user context bound for each case class, however because of erasure,
-   * we can not match and know the type of the N.   
+   * we can not match and know the type of the N.
    **/
   trait OrderingValidation[N] extends Ordering[N]{
-
-    /** What is the zero Value of N.  Used for positive and negative comparisons */
-    val zero: N
 
     case class Between(min: N, max: N) extends ValidationOp[N] {
       val isValid: N => Boolean = input => input >= min && input <= max
@@ -394,22 +419,6 @@ object ValidationDefinition {
       override def description: String = s"less than $lessThan"
     }
 
-    object Positive extends ValidationOp[N] {
-      override def isValid: N => Boolean = _ > zero
-
-      override def defaultError(t: N): String = s"$t is not positive"
-
-      override def description: String = s"positive"
-    }
-
-    object Negative extends ValidationOp[N] {
-      override def isValid: N => Boolean = _ < zero
-
-      override def defaultError(t: N): String = s"$t is not negative"
-
-      override def description: String = s"negative"
-    }
-
     /** Ensure an instance of type N is inclusively between min and max */
     def between(min: N, max: N): Between = Between(min, max)
 
@@ -425,15 +434,9 @@ object ValidationDefinition {
     /** Ensure an instance of type N is less than (exclusive) value */
     def less(value: N): Less = Less(value)
 
-    /** Ensure an instance of type N is positive */
-    def positive: Positive.type = Positive
-
-    /** Ensure an instance of type N is negative */
-    def negative: Negative.type = Negative
-
   }
 
-  trait Modulo[N] extends OrderingValidation[N] {
+  trait Modulo[N] extends ZeroValidations[N] {
 
     val modulo: (N,N) => N
 
@@ -449,7 +452,7 @@ object ValidationDefinition {
     def multiple(n: N) = Multiple(n)
   }
 
-  object CharValidation extends BaseValidationOp[Char] with OrderingValidation[Char] with CharOrdering {
+  object CharValidation extends BaseValidationOp[Char] with OrderingValidation[Char] with ZeroValidations[Char] with CharOrdering {
     override val zero: Char = 0
   }
 
@@ -473,16 +476,15 @@ object ValidationDefinition {
     val zero = 0l
   }
 
-  object DoubleValidation extends BaseValidationOp[Double] with OrderingValidation[Double] with DoubleOrdering {
+  object DoubleValidation extends BaseValidationOp[Double] with OrderingValidation[Double] with ZeroValidations[Double] with DoubleOrdering {
     override val zero: Double = 0
   }
 
-  object FloatValidation extends BaseValidationOp[Float] with OrderingValidation[Float] with FloatOrdering {
+  object FloatValidation extends BaseValidationOp[Float] with OrderingValidation[Float] with ZeroValidations[Float] with FloatOrdering {
     override val zero: Float = 0
   }
 
-
-  object BigDecimalValidation extends BaseValidationOp[BigDecimal] with OrderingValidation[BigDecimal] with BigDecimalOrdering {
+  object BigDecimalValidation extends BaseValidationOp[BigDecimal] with OrderingValidation[BigDecimal] with ZeroValidations[BigDecimal] with BigDecimalOrdering {
     val zero = BigDecimal(0)
   }
 
