@@ -184,6 +184,8 @@ trait KvpValidateInputInterpreter[IN] {
     }
   }
 
+  def isEmpty(json: IN): Boolean
+
   def valueDefinition[A](fgo: KvpValue[A])
     : (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A] = {
     val result
@@ -194,6 +196,7 @@ trait KvpValidateInputInterpreter[IN] {
           (in: Option[IN], path: Path) =>
             in match {
               case None              => Right(None)
+              case Some(n) if isEmpty(n) => Right(None)
               case some @ Some(json) => applied(some, path).map(Some(_))
             }
         case op: StringData =>

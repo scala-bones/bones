@@ -19,15 +19,18 @@ import scala.util.control.NonFatal
 
 object ValidatedFromArgonautInterpreter {
   val isoInterpreter = new ValidatedFromArgonautInterpreter {
-    override def dateFormat: DateTimeFormatter = DateTimeFormatter.ISO_ZONED_DATE_TIME
-
     override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+
+    override def localDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
   }
 }
 
 trait ValidatedFromArgonautInterpreter extends KvpValidateInputInterpreter[Json]{
-  def dateFormat: DateTimeFormatter
   def localDateFormatter: DateTimeFormatter
+  def localDateTimeFormatter: DateTimeFormatter
+
+
+  override def isEmpty(json: Json): JsonBoolean = json.isNull
 
   def byteArrayFuncFromSchema[A](schema: BonesSchema[A],
                                           charset: Charset)
@@ -122,7 +125,7 @@ trait ValidatedFromArgonautInterpreter extends KvpValidateInputInterpreter[Json]
     in.string
       .toRight(
         NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass)))
-      .flatMap(stringToLocalDateTime(_, dateFormat, path))
+      .flatMap(stringToLocalDateTime(_, localDateTimeFormatter, path))
 
   def extractLocalDate(dataData: LocalDateData)(in: Json, path: List[String])
     : Either[NonEmptyList[ExtractionError], LocalDate] =

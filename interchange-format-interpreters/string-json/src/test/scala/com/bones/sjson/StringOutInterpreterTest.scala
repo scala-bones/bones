@@ -5,7 +5,7 @@ import java.time.format.DateTimeFormatter
 import com.bones.scalacheck.Scalacheck
 import org.scalatestplus.scalacheck.Checkers
 
-import com.bones.schemas.Schemas.{AllSupported, allSupportCaseClass, exampleCreditCard}
+import com.bones.schemas.Schemas.{AllSupported, allSupportCaseClass}
 import org.scalacheck.Arbitrary
 import org.scalatest.FunSuite
 
@@ -26,8 +26,10 @@ class StringOutInterpreterTest extends FunSuite with Checkers {
 
     check((cc: AllSupported) => {
       val json = ccF(cc)
-//      println("============")
-//      println(json)
+      json match {
+        case Some(v) => succeed
+        case None => fail("expected success")
+      }
       true
     })
   }

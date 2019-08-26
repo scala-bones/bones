@@ -16,8 +16,8 @@ import net.liftweb.json.JsonParser.ParseException
 import scala.util.Try
 
 object ValidatedFromJObjectInterpreter {
-  def isoDates = new ValidatedFromJObjectInterpreter {
-    override def dateFormat: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+  def isoInterpreter = new ValidatedFromJObjectInterpreter {
+    override def localDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
     override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
   }
 }
@@ -25,8 +25,15 @@ object ValidatedFromJObjectInterpreter {
 trait ValidatedFromJObjectInterpreter
     extends KvpValidateInputInterpreter[JValue] {
 
-  def dateFormat: DateTimeFormatter
+  def localDateTimeFormatter: DateTimeFormatter
   def localDateFormatter: DateTimeFormatter
+
+
+  override def isEmpty(json: JValue): Boolean = json match {
+    case JNull => true
+    case JNothing => true
+    case _ => false
+  }
 
 
   def byteArrayFuncFromSchema[A](schema: Value.BonesSchema[A],
@@ -150,7 +157,7 @@ trait ValidatedFromJObjectInterpreter
       op: Value.LocalDateTimeData)(in: JValue, path: List[String])
     : Either[NonEmptyList[ExtractionError], LocalDateTime] =
     in match {
-      case JString(s) => stringToLocalDateTime(s, dateFormat, path)
+      case JString(s) => stringToLocalDateTime(s, localDateTimeFormatter, path)
       case _ =>
         Left(
           NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass)))
@@ -161,7 +168,7 @@ trait ValidatedFromJObjectInterpreter
       op: Value.LocalDateData)(in: JValue, path: List[String])
     : Either[NonEmptyList[ExtractionError], LocalDate] =
     in match {
-      case JString(s) => stringToLocalDate(s, dateFormat, path)
+      case JString(s) => stringToLocalDate(s, localDateFormatter, path)
       case _ =>
         Left(NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass)))
     }
