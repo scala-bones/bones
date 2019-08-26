@@ -15,7 +15,7 @@ import io.circe.Json
 
 object ValidatedFromCirceInterpreter {
   val isoInterpreter = new ValidatedFromCirceInterpreter {
-    override def dateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_ZONED_DATE_TIME
+    override def dateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
     override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
   }
 }
@@ -24,6 +24,9 @@ trait ValidatedFromCirceInterpreter extends KvpValidateInputInterpreter[Json] {
 
   def dateFormatter: DateTimeFormatter
   def localDateFormatter: DateTimeFormatter
+
+
+  override def isEmpty(json: Json): Boolean = json.isNull
 
   def byteArrayFuncFromSchema[A](schema: BonesSchema[A], charset: Charset) :
   Array[Byte] => Either[NonEmptyList[ExtractionError],A] = {

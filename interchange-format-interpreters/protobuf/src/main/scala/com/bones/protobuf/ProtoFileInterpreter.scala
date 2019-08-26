@@ -1,7 +1,6 @@
 package com.bones.protobuf
 
 import com.bones.data.Value._
-import shapeless.ops.hlist.Repeat
 import shapeless.{HList, Nat}
 
 /**

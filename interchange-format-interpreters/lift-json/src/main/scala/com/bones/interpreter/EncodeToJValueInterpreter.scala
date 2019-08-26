@@ -11,11 +11,17 @@ import net.liftweb.json.JsonAST._
 object EncodeToJValueInterpreter {
   type EncodeToJValue[A] = A => JValue
 
+  val isoInterpreter = new EncodeToJValueInterpreter {
+    override def localDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+
+    override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+  }
+
 }
 
 trait EncodeToJValueInterpreter extends KvpOutputInterpreter[JValue] {
 
-  def dateFormatter: DateTimeFormatter
+  def localDateTimeFormatter: DateTimeFormatter
   def localDateFormatter: DateTimeFormatter
 
   override def none: JValue = JNull
@@ -59,7 +65,7 @@ trait EncodeToJValueInterpreter extends KvpOutputInterpreter[JValue] {
     input => JString(input.toString)
 
   override def dateTimeToOut(op: LocalDateTimeData): LocalDateTime => JValue =
-    input => JString(dateFormatter.format(input))
+    input => JString(localDateTimeFormatter.format(input))
 
   override def localDateToOut(op: LocalDateData): LocalDate => JValue =
     input => JString(localDateFormatter.format(input))

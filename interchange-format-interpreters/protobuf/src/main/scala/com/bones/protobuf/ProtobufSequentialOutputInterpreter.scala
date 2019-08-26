@@ -12,6 +12,7 @@ import com.google.protobuf.CodedOutputStream
 import shapeless._
 import ops.hlist.IsHCons
 import cats.implicits._
+import com.bones.protobuf.ProtobufSequentialOutputInterpreter.{ComputeSize, Encode}
 
 object ProtobufSequentialOutputInterpreter {
 
@@ -21,13 +22,14 @@ object ProtobufSequentialOutputInterpreter {
   type ComputeSize = () => Int
   type Encode =
     CodedOutputStream => Either[NonEmptyList[IOException], CodedOutputStream]
-  type EncodeToProto[A] = FieldNumber => A => (ComputeSize, Encode)
+  type ComputeEncode[A] = A => (ComputeSize, Encode)
+  type EncodeToProto[A] = FieldNumber => (LastFieldNumber, ComputeEncode[A])
   type EncodeHListToProto[H <: HList] =
-    LastFieldNumber => H => (ComputeSize, Encode)
+    LastFieldNumber => (LastFieldNumber, ComputeEncode[H])
 
   def encodeToBytes[A](dc: BonesSchema[A]): A => Array[Byte] = dc match {
     case x: HListConvert[_, _, A] => {
-      val group = kvpHList(x.from).apply(0)
+      val (_, group) = kvpHList(x.from).apply(1)
       (a: A) =>
         {
           val hlist = x.fAtoH(a)
@@ -47,62 +49,46 @@ object ProtobufSequentialOutputInterpreter {
       group: KvpHList[H, HL]): EncodeHListToProto[H] = {
     group match {
       case KvpNil =>
-        (fieldNumber: FieldNumber) => (_: HNil) =>
-          (() => 0, (os: CodedOutputStream) => Right(os))
+        (fieldNumber: FieldNumber) => (
+          fieldNumber,
+            (_: HNil) =>
+            (() => 0, (os: CodedOutputStream) => Right(os))
+          )
       case op: KvpSingleValueHead[h, t, tl, o] =>
         (fieldNumber: FieldNumber) =>
-          val headF = valueDefinition(op.fieldDefinition.op)(fieldNumber + 1)
-          val tailF = kvpHList(op.tail)(fieldNumber + 1)
-          (input: o) =>
-            {
-              val headResult = headF(input.head)
-              val tailResult = tailF(input.tail)
-              val fCompute: ComputeSize = () =>
-                headResult._1() + tailResult._1()
-              val fEncode: Encode = (outputStream: CodedOutputStream) => {
-                Applicative[Either[NonEmptyList[IOException], ?]]
-                  .map2(headResult._2(outputStream),
-                        tailResult._2(outputStream))(
-                    (l1: CodedOutputStream, l2: CodedOutputStream) => {
-                      l2
-                    })
+          val (nextFieldHead, headF) = valueDefinition(op.fieldDefinition.op)(fieldNumber)
+          val (nextFieldTail, tailF) = kvpHList(op.tail)(nextFieldHead)
+          (
+            nextFieldTail,
+            (input: o) =>
+              {
+                val headResult = headF(input.head)
+                val tailResult = tailF(input.tail)
+                val fCompute: ComputeSize = () =>
+                  headResult._1() + tailResult._1()
+                val fEncode: Encode = (outputStream: CodedOutputStream) => {
+                  Applicative[Either[NonEmptyList[IOException], ?]]
+                    .map2(headResult._2(outputStream),
+                          tailResult._2(outputStream))(
+                      (l1: CodedOutputStream, l2: CodedOutputStream) => {
+                        l2
+                      })
+                }
+                (fCompute, fEncode)
               }
-              (fCompute, fEncode)
-            }
+          )
       case op: KvpHListHead[a, al, h, hl, t, tl] =>
         (fieldNumber: FieldNumber) =>
           implicit val split = op.split
-          val headF = kvpHList(op.head)(fieldNumber)
-          val tailF = kvpHList(op.tail)(fieldNumber)
-          (input: H) =>
-            {
-              val (head,tail) = split(input)
-              val headResult = headF(head)
-              val tailResult = tailF(tail)
-              val fCompute: ComputeSize = () =>
-                headResult._1() + tailResult._1()
-              val fEncode = (outputStream: CodedOutputStream) => {
-                Applicative[Either[NonEmptyList[IOException], ?]]
-                  .map2(headResult._2(outputStream),
-                        tailResult._2(outputStream))(
-                    (l1: CodedOutputStream, l2: CodedOutputStream) => {
-                      l2
-                    })
-              }
-              (fCompute, fEncode)
-            }
-
-      case op: KvpConcreteTypeHead[a, h, n, ho, ht, nt] =>
-        (fieldNumber: FieldNumber) =>
-          {
-            val headF = kvpHList(op.hListConvert.from)(fieldNumber)
-            val tailF = kvpHList(op.tail)(fieldNumber)
-            implicit val hCons = op.isHCons
-            (input: ho) =>
+          val (nextFieldHead, headF) = kvpHList(op.head)(fieldNumber)
+          val (nextFieldTail, tailF) = kvpHList(op.tail)(nextFieldHead)
+          (
+            nextFieldTail,
+            (input: H) =>
               {
-                val headGroup = op.hListConvert.fAtoH(hCons.head(input))
-                val headResult = headF(headGroup)
-                val tailResult = tailF(hCons.tail(input))
+                val (head,tail) = split(input)
+                val headResult = headF(head)
+                val tailResult = tailF(tail)
                 val fCompute: ComputeSize = () =>
                   headResult._1() + tailResult._1()
                 val fEncode = (outputStream: CodedOutputStream) => {
@@ -115,7 +101,34 @@ object ProtobufSequentialOutputInterpreter {
                 }
                 (fCompute, fEncode)
               }
-          }
+          )
+
+      case op: KvpConcreteTypeHead[a, h, n, ho, ht, nt] =>
+        (fieldNumber: FieldNumber) =>
+          {
+            val (nextFieldHead, headF) = kvpHList(op.hListConvert.from)(fieldNumber)
+            val (nextFieldTail, tailF) = kvpHList(op.tail)(nextFieldHead)
+            implicit val hCons = op.isHCons
+            (
+              nextFieldTail,
+              (input: ho) => {
+              val headGroup = op.hListConvert.fAtoH(hCons.head(input))
+              val headResult = headF(headGroup)
+              val tailResult = tailF(hCons.tail(input))
+              val fCompute: ComputeSize = () =>
+                headResult._1() + tailResult._1()
+              val fEncode = (outputStream: CodedOutputStream) => {
+                Applicative[Either[NonEmptyList[IOException], ?]]
+                  .map2(headResult._2(outputStream),
+                    tailResult._2(outputStream))(
+                    (l1: CodedOutputStream, l2: CodedOutputStream) => {
+                      l2
+                    })
+              }
+              (fCompute, fEncode)
+            }
+          )
+        }
     }
   }
 
@@ -123,96 +136,149 @@ object ProtobufSequentialOutputInterpreter {
     fgo match {
       case op: OptionalKvpValueDefinition[a] =>
         (fieldNumber: FieldNumber) =>
-          val fa = valueDefinition(op.valueDefinitionOp)(fieldNumber)
-          (opt: Option[a]) => {
-            val optB = opt.map(fa)
-            (
-              () => optB.fold(0)(_._1()),
-              (outputStream: CodedOutputStream) =>
-                optB.fold[Either[NonEmptyList[IOException], CodedOutputStream]](
-                  Right(outputStream))(item => item._2(outputStream))
-            )
-          }
+          val (lastFieldNumber, fa) = valueDefinition(op.valueDefinitionOp)(fieldNumber)
+          (lastFieldNumber,
+            (opt: Option[a]) => {
+              val optB = opt.map(fa)
+              (
+                () => optB.fold(0)(_._1()),
+                (outputStream: CodedOutputStream) =>
+                  optB.fold[Either[NonEmptyList[IOException], CodedOutputStream]](
+                    Right(outputStream))(item => item._2(outputStream))
+              )
+            }
+          )
       case ob: BooleanData =>
-        (fieldNumber: FieldNumber) => (bool: Boolean) =>
+        (fieldNumber: FieldNumber) => (
+          fieldNumber + 1,
+          (bool: Boolean) =>
           (
             () => CodedOutputStream.computeBoolSize(fieldNumber, bool),
             write(_.writeBool(fieldNumber, bool))
           )
+        )
       case rs: StringData =>
-        (fieldNumber: FieldNumber) => (str: String) =>
+        (fieldNumber: FieldNumber) => (
+          fieldNumber + 1,
+          (str: String) =>
           (
             () => CodedOutputStream.computeStringSize(fieldNumber, str),
             write(_.writeString(fieldNumber, str))
           )
-      case id: ShortData =>
-        (fieldNumber: FieldNumber) => (s: Short) =>
-          (
-            () => CodedOutputStream.computeInt32Size(fieldNumber, s),
-            write(_.writeInt32(fieldNumber, s))
           )
+      case id: ShortData =>
+        (fieldNumber: FieldNumber) => (
+          (fieldNumber + 1,
+            (s: Short) => {
+              val intValue = s.toInt
+              (
+                () => CodedOutputStream.computeInt32Size(fieldNumber, intValue),
+                write(_.writeInt32(fieldNumber, intValue))
+              )
+            }
+          )
+        )
       case id: IntData =>
-        (fieldNumber: FieldNumber) => (l: Int) =>
-          (
-            () => CodedOutputStream.computeInt32Size(fieldNumber, l),
-            write(_.writeInt32(fieldNumber, l))
+        (fieldNumber: FieldNumber) =>
+          (fieldNumber + 1,
+            (l: Int) =>
+            (
+              () => CodedOutputStream.computeInt32Size(fieldNumber, l),
+              write(_.writeInt32(fieldNumber, l))
+            )
           )
       case ri: LongData =>
-        (fieldNumber: FieldNumber) => (l: Long) =>
+        (fieldNumber: FieldNumber) =>
           (
-            () => CodedOutputStream.computeInt64Size(fieldNumber, l),
-            write(_.writeInt64(fieldNumber, l))
+            fieldNumber + 1,
+            (l: Long) =>
+            (
+              () => CodedOutputStream.computeInt64Size(fieldNumber, l),
+              write(_.writeInt64(fieldNumber, l))
+            )
           )
       case uu: UuidData =>
-        (fieldNumber: FieldNumber) => (u: UUID) =>
+        (fieldNumber: FieldNumber) =>
           (
-            () => CodedOutputStream.computeStringSize(fieldNumber, u.toString),
-            write(_.writeString(fieldNumber, u.toString))
+            fieldNumber + 1,
+            (u: UUID) =>
+              (
+                () => CodedOutputStream.computeStringSize(fieldNumber, u.toString),
+                write(_.writeString(fieldNumber, u.toString))
+              )
           )
       case dd: LocalDateTimeData =>
-        (fieldNumber: FieldNumber) => (d: LocalDateTime) =>
+        (fieldNumber: FieldNumber) =>
           (
-            () => CodedOutputStream.computeInt64Size(fieldNumber,d.toEpochSecond(ZoneOffset.UTC)),
-            write(_.writeInt64(fieldNumber, d.toEpochSecond(ZoneOffset.UTC)))
+            fieldNumber + 2,
+            (d: LocalDateTime) =>
+              (
+                () => {
+                  CodedOutputStream.computeInt64Size(fieldNumber,d.toEpochSecond(ZoneOffset.UTC)) +
+                  CodedOutputStream.computeInt32Size(fieldNumber + 1, d.getNano)
+                },
+                write(out => {
+                  out.writeInt64(fieldNumber, d.toEpochSecond(ZoneOffset.UTC))
+                  out.writeInt32(fieldNumber + 1, d.getNano)
+                })
+              )
           )
       case dt: LocalDateData =>
-        (fieldNumber: FieldNumber) => (d: LocalDate) =>
+        (fieldNumber: FieldNumber) =>
           (
-            () => CodedOutputStream.computeInt64Size(fieldNumber, d.toEpochDay),
-            write(_.writeInt64(fieldNumber, d.toEpochDay))
+            fieldNumber + 1,
+            (d: LocalDate) =>
+            (
+              () => CodedOutputStream.computeInt64Size(fieldNumber, d.toEpochDay),
+              write(_.writeInt64(fieldNumber, d.toEpochDay))
+            )
           )
       case fd: FloatData =>
-        (fieldNumber: FieldNumber) => (f: Float) =>
+        (fieldNumber: FieldNumber) =>
           (
-            () =>
-              CodedOutputStream.computeDoubleSize(fieldNumber, f),
-            write(_.writeDouble(fieldNumber, f))
+            fieldNumber + 1,
+            (f: Float) =>
+            (
+              () =>
+                CodedOutputStream.computeFloatSize(fieldNumber, f),
+              write(_.writeFloat(fieldNumber, f))
+            )
           )
       case dd: DoubleData =>
-        (fieldNumber: FieldNumber) => (d: Double) =>
+        (fieldNumber: FieldNumber) =>
           (
-            () =>
-              CodedOutputStream.computeDoubleSize(fieldNumber, d),
-            write(_.writeDouble(fieldNumber, d))
+            fieldNumber + 1,
+            (d: Double) =>
+            (
+              () => CodedOutputStream.computeDoubleSize(fieldNumber, d),
+              write(_.writeDouble(fieldNumber, d))
+            )
           )
       case bd: BigDecimalData =>
-        (fieldNumber: FieldNumber) => (d: BigDecimal) =>
+        (fieldNumber: FieldNumber) =>
           (
-            () =>
-              CodedOutputStream.computeStringSize(fieldNumber, d.toString()),
-            write(_.writeString(fieldNumber, d.toString))
+            fieldNumber + 1,
+            (d: BigDecimal) =>
+              (
+                () => CodedOutputStream.computeStringSize(fieldNumber, d.toString()),
+                write(_.writeString(fieldNumber, d.toString))
+              )
           )
       case ba: ByteArrayData =>
-        (fieldNumber: FieldNumber) => (arr: Array[Byte]) =>
+        (fieldNumber: FieldNumber) => (
+          fieldNumber + 1,
+          (arr: Array[Byte]) =>
           (
             () => CodedOutputStream.computeByteArraySize(fieldNumber, arr),
             write(_.writeByteArray(fieldNumber, arr))
           )
+        )
       case ld: ListData[t] =>
-        (fieldNumber: FieldNumber) =>
-          val ft = valueDefinition(ld.tDefinition)(fieldNumber)
-          (l: List[t]) =>
-            {
+        (fieldNumber: FieldNumber) => {
+          val (lastFieldNumber, ft) = valueDefinition(ld.tDefinition)(fieldNumber)
+          (
+            lastFieldNumber,
+            (l: List[t]) => {
               val result = l.map(item => ft(item))
               (
                 () => result.map(_._1()).sum,
@@ -220,39 +286,75 @@ object ProtobufSequentialOutputInterpreter {
                   result.foreach(_._2(outputStream)))
               )
             }
-      case ed: EitherData[a, b] => ??? // use oneOf
-      case esd: EnumerationData[e,a] =>
-        (fieldNumber: FieldNumber) => (a: A) =>
+          )
+        }
+      case ed: EitherData[a, b] =>
+        val encodeToProtobufA: EncodeToProto[a] = valueDefinition(ed.definitionA)
+        val encodeToProtobufB: EncodeToProto[b] = valueDefinition(ed.definitionB)
+
+
+        (fieldNumber: FieldNumber) =>
+          val (lastFieldNumberA, withFieldNumberA): (LastFieldNumber, a => (ComputeSize, Encode)) =
+            encodeToProtobufA(fieldNumber)
+          val (lastFieldNumberB, withFieldNumberB): (LastFieldNumber, b => (ComputeSize, Encode)) =
+            encodeToProtobufB(lastFieldNumberA)
+
           (
-            () => CodedOutputStream.computeStringSize(fieldNumber, a.toString),
-            write(_.writeString(fieldNumber, a.toString))
+            lastFieldNumberB,
+            (output: A) =>
+              output match {
+                case Left(aInput) => withFieldNumberA(aInput)
+                case Right(bInput) => withFieldNumberB(bInput)
+              }
+          )
+      case esd: EnumerationData[e,a] =>
+        (fieldNumber: FieldNumber) =>
+          (
+            fieldNumber + 1,
+            (a: A) =>
+              (
+                () => CodedOutputStream.computeStringSize(fieldNumber, a.toString),
+                write(_.writeString(fieldNumber, a.toString))
+              )
           )
       case st: SumTypeData[a, b] =>
-        (fieldNumber: FieldNumber) =>
-          val enc = valueDefinition(st.from)(fieldNumber)
-          (out: A) =>
-            {
-              val a = st.fba(out)
-              enc(a)
-            }
+        (fieldNumber: FieldNumber) => {
+          val (nextFieldNumber, enc) = valueDefinition(st.from)(fieldNumber)
+          (
+            nextFieldNumber,
+            (out: A) =>
+              {
+                val a = st.fba(out)
+                enc(a)
+              }
+          )
+        }
       case kvp: KvpHListValue[h, hl] =>
         (fieldNumber: FieldNumber) =>
-          val enc = kvpHList(kvp.kvpHList)(0)
-          (input: A) => enc(input.asInstanceOf[h])
+          val (nextFieldNumber, enc) = kvpHList(kvp.kvpHList)(1)
+          (
+            nextFieldNumber,
+            (input: A) => enc(input.asInstanceOf[h])
+          )
       case x: HListConvert[h, hl, a] =>
         (fieldNumber: FieldNumber) =>
-          val group = kvpHList(x.from).apply(0)
-          (a: A) =>
-            {
-              val hlist = x.fAtoH(a)
-              val (fSize, fEncode) = group(hlist)
-              val encodeF: Encode = (outputStream: CodedOutputStream) => {
-                outputStream.writeTag(fieldNumber, 2)
-                outputStream.writeUInt32NoTag(fSize())
-                fEncode(outputStream)
+          val (_, group) = kvpHList(x.from)(1)
+          (
+            fieldNumber + 1,
+            (a: A) =>
+              {
+                val hlist = x.fAtoH(a)
+                val (fSize, fEncode) = group(hlist)
+                val groupSize = fSize()
+                val encodeF: Encode = (outputStream: CodedOutputStream) => {
+                  outputStream.writeTag(fieldNumber, 2)
+                  outputStream.writeUInt32NoTag(groupSize)
+                  fEncode(outputStream)
+                }
+                val allSize = () => { groupSize + 1 + CodedOutputStream.computeUInt32SizeNoTag(groupSize) }
+                (allSize, encodeF)
               }
-              (fSize, encodeF)
-            }
+          )
 
 //        val dc = kvpHList(kvp.from)(0)
 //        (a: A) => {

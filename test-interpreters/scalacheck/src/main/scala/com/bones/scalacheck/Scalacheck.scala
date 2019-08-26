@@ -1,6 +1,6 @@
 package com.bones.scalacheck
 
-import java.time.{LocalDate, LocalDateTime, ZoneId}
+import java.time.{LocalDate, LocalDateTime, Year, ZoneId}
 import java.util.{Calendar, Date, UUID}
 
 import com.bones.data.Value._
@@ -8,6 +8,7 @@ import com.bones.validation.ValidationDefinition.StringValidation._
 import com.bones.validation.ValidationDefinition._
 import com.bones.validation.ValidationUtil
 import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen.Choose
 import org.scalacheck._
 import shapeless.{HList, HNil, Nat}
 import wolfendale.scalacheck.regexp.RegexpGen
@@ -64,18 +65,37 @@ object Scalacheck {
       case rs: StringData => stringConstraints(rs.validations)
       case sd: ShortData => {
         val one: Short = 1
-        validationConstraints[Short](sd.validations, ShortValidation, s => (s + 1).toShort, Short.MinValue, Short.MaxValue)
+        validationConstraints[Short](sd.validations, ShortValidation, s => (s + 1).toShort, s => (s - 1).toShort, Short.MinValue, Short.MaxValue)
       }
-      case id: IntData => validationConstraints[Int](id.validations, IntValidation, _ + 1, Int.MinValue, Int.MaxValue)
-      case ri: LongData => validationConstraints[Long](ri.validations, LongValidation, _ + 1, Long.MinValue, Long.MaxValue)
+      case id: IntData => validationConstraints[Int](id.validations, IntValidation, _ + 1, _ - 1, Int.MinValue, Int.MaxValue)
+      case ri: LongData => validationConstraints[Long](ri.validations, LongValidation, _ + 1, _ + 1, Long.MinValue, Long.MaxValue)
       case uu: UuidData => arbitrary[UUID]
-      case dd: LocalDateData => arbitrary[Calendar]
-        .map(d => LocalDate.of(d.get(Calendar.YEAR), (d.get(Calendar.MONTH) + 1), d.get(Calendar.DAY_OF_MONTH)))
-      case dd: LocalDateTimeData => arbitrary[Date].map(d => LocalDateTime.ofInstant(d.toInstant, ZoneId.systemDefault()))
-      case fd: FloatData => validationConstraints[Float](fd.validations, FloatValidation, _ + .0001f, Float.MinValue, Float.MaxValue)
-      case id: DoubleData => validationConstraints[Double](id.validations, DoubleValidation, _ + .00001, Double.MinValue, Double.MaxValue)
-      case bd: BigDecimalData => arbitrary[Double].map(d => BigDecimal(d))
-        // validationConstraints[BigDecimal](bd.validations, BigDecimalValidation, _ + BigDecimal(".00000001"), BigDecimal(Double.MinValue), BigDecimal(Double.MaxValue))
+      case dd: LocalDateData =>
+        // Using calendar results in invalid leap years, so we'll use Int instead
+        val min = dd.validations.collect({
+          case LocalDateValidationInstances.Min(min, _) => min.toEpochDay
+        }).headOption.getOrElse(LocalDate.of(Year.MIN_VALUE, 1, 1).toEpochDay)
+        val max = dd.validations.collect({
+          case LocalDateValidationInstances.Max(max, _) => max.toEpochDay
+        }).headOption.getOrElse(LocalDate.of(Year.MAX_VALUE, 12, 31).toEpochDay)
+        arbitrary[Long].retryUntil(d => min < d && max > d)
+            .map(LocalDate.ofEpochDay(_))
+      case dd: LocalDateTimeData =>
+        val min = dd.validations.collect({
+          case LocalDateTimeValidationInstances.Min(min, _) => min
+        }).headOption.getOrElse(LocalDateTime.MIN)
+        val max = dd.validations.collect({
+          case LocalDateTimeValidationInstances.Max(max, _) => max
+        }).headOption.getOrElse(LocalDateTime.MAX)
+        arbitrary[Date].map(d => LocalDateTime.ofInstant(d.toInstant, ZoneId.systemDefault()))
+          .retryUntil(ldt => min.isBefore(ldt) && max.isAfter(ldt))
+
+      case fd: FloatData => validationConstraints[Float](fd.validations, FloatValidation, _ + .0001f, _ - 0001f, Float.MinValue, Float.MaxValue)
+      case id: DoubleData => validationConstraints[Double](id.validations, DoubleValidation, _ + .00001, _ - .00001, Double.MinValue, Double.MaxValue)
+      case bd: BigDecimalData =>
+        validationConstraints[BigDecimal](bd.validations, BigDecimalValidation, _ + BigDecimal(".00000001"), _ - BigDecimal(".00000001"), BigDecimal(Double.MinValue), BigDecimal(Double.MaxValue))(
+          Choose.xmap[Double,BigDecimal](d => BigDecimal(d), _.toDouble)
+        )
       case ld: ListData[t] =>
         implicit val elemGenerator = valueDefinition(ld.tDefinition)
         for {
@@ -109,8 +129,9 @@ object Scalacheck {
 
   /** Uses known Bones validations to create a Number which passes validation */
   def validationConstraints[A](ops: List[ValidationOp[A]],
-                               vop: BaseValidationOp[A] with OrderingValidation[A],
+                               vop: BaseValidationOp[A] with OrderingValidation[A] with ZeroValidations[A],
                                incrementF: A => A,
+                               decrementF: A => A,
                                min: A,
                                max: A)(implicit c: Gen.Choose[A]): Gen[A] = {
     val constraints = ops.foldLeft(NumberConstraints[A](None, None, None, true, None, true)){ (nc,op)  =>
@@ -128,8 +149,9 @@ object Scalacheck {
     constraints.valid.map(v => Gen.oneOf(v))
       .getOrElse({
         val minValue = constraints.min.map(i => if (constraints.minIsInclusive) i else incrementF(i)).getOrElse(min)
-        val maxValue = constraints.max.map(i => if (constraints.maxIsInclusive) i else incrementF(i)).getOrElse(max)
-        Gen.choose[A](minValue, maxValue)
+        val maxValue = constraints.max.map(i => if (constraints.maxIsInclusive) i else decrementF(i)).getOrElse(max)
+        c.choose(minValue, maxValue)
+//        Gen.choose[A](minValue, maxValue)
       }).suchThat(i => ValidationUtil.validate(ops)(i, List.empty).isRight)
 
   }
@@ -209,7 +231,7 @@ object Scalacheck {
        |Consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus
      """.stripMargin
 
-  val loremIpsumWords = loremIpsumString.split(' ').map(_.trim).toSeq
+  val loremIpsumWords = loremIpsumString.split(' ').map(_.trim.replaceAll("[,.]", "")).toSeq
   val loremIpsumSentences = loremIpsumString.split('.').map(_.trim).toSeq
 
 }

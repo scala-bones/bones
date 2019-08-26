@@ -9,13 +9,19 @@ import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
 import com.bones.interpreter.KvpOutputInterpreter
 
+object EncodeToArgonautInterpreter {
+  val isoInterpreter = new EncodeToArgonautInterpreter {
+    override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+    override def localDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+  }
+}
 /**
   * Module responsible for converting data to Argonaut JSON
   */
 trait EncodeToArgonautInterpreter extends KvpOutputInterpreter[Json] {
 
-  def dateFormat: DateTimeFormatter
   def localDateFormatter: DateTimeFormatter
+  def localDateTimeFormatter: DateTimeFormatter
 
   override def none: Json = Json.jNull
 
@@ -45,7 +51,7 @@ trait EncodeToArgonautInterpreter extends KvpOutputInterpreter[Json] {
     input => Json.jString(input.toString)
 
   override def dateTimeToOut(op: LocalDateTimeData): LocalDateTime => Json =
-    input => Json.jString(dateFormat.format(input))
+    input => Json.jString(localDateTimeFormatter.format(input))
 
   override def localDateToOut(op: LocalDateData): LocalDate => Json =
     input => Json.jString(localDateFormatter.format(input))

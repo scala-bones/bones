@@ -100,7 +100,7 @@ lazy val jsonLift = (project in file("interchange-format-interpreters/lift-json"
       "org.scalatest" %% "scalatest" % "3.0.8" % Test
     )
   )
-  .dependsOn(core)
+  .dependsOn(core, testSchemas % "test", scalacheck % "test")
 lazy val stringJson = (project in file("interchange-format-interpreters/string-json"))
   .settings(
     commonSettings,
@@ -122,7 +122,7 @@ lazy val jsonCirce = (project in file("interchange-format-interpreters/circe"))
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
       "org.scalatest" %% "scalatest" % "3.0.8" % Test
     )
-  ).dependsOn(core)
+  ).dependsOn(core, testSchemas % "test", scalacheck % "test")
 lazy val jsonArgonaut = (project in file("interchange-format-interpreters/argonaut"))
   .settings(
     commonSettings,
@@ -132,7 +132,7 @@ lazy val jsonArgonaut = (project in file("interchange-format-interpreters/argona
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
       "org.scalatest" %% "scalatest" % "3.0.8" % Test
     )
-  ).dependsOn(core)
+  ).dependsOn(core, testSchemas % "test", scalacheck % "test")
 lazy val protobuf = (project in file("interchange-format-interpreters/protobuf"))
   .settings(
     commonSettings,
@@ -148,9 +148,12 @@ lazy val bson = (project in file("interchange-format-interpreters/bson"))
     commonSettings,
     name := "Bones Bson",
     libraryDependencies ++= Seq (
-      "org.reactivemongo" %% "reactivemongo-bson" % "0.18.3"
+      "org.reactivemongo" %% "reactivemongo-bson" % "0.18.4",
+      "org.reactivemongo" %% "reactivemongo" % "0.18.4",
+      "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.0.8" % Test
     )
-  ).dependsOn(core)
+  ).dependsOn(core, testSchemas % "test", scalacheck % "test")
 lazy val dbJdbc = (project in file("db-interpreters/jdbc"))
   .settings(
     commonSettings,
