@@ -99,7 +99,7 @@ object Scalacheck {
       case ld: ListData[t] =>
         implicit val elemGenerator = valueDefinition(ld.tDefinition)
         for {
-          numElems <- Gen.choose(0,500)
+          numElems <- Gen.choose(1,500)
           elem <- Gen.listOfN(numElems, elemGenerator)
         } yield elem
       case ed: EitherData[a, b] => {

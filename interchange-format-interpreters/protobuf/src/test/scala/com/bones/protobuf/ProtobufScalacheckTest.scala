@@ -16,7 +16,7 @@ class ProtobufScalacheckTest extends FunSuite with Checkers {
   val decode = ProtobufSequentialInputInterpreter.fromBytes(Schemas.allSupportCaseClass)
 
 //  implicit override val generatorDrivenConfig =
-//    PropertyCheckConfiguration(minSuccessful = 100, workers = 5)
+//    PropertyCheckConfiguration(minSuccessful = 10000, workers = 5)
 
   implicit val arb = Arbitrary(Scalacheck.valueDefinition(allSupportCaseClass))
 
@@ -42,10 +42,20 @@ class ProtobufScalacheckTest extends FunSuite with Checkers {
           val newCc2NoBa = newCc2.copy(ba = nullBa).copy(child = newCc2.child.copy(ba = None))
           val ccNoBA = cc.copy(ba = nullBa).copy(child = cc.child.copy(ba = None))
 
+          if (! (newCc2NoBa == ccNoBA && java.util.Arrays.equals(newCc2.ba, cc.ba))) {
+            println(cc)
+            println(newCc2)
+          }
+
           newCc2NoBa == ccNoBA && java.util.Arrays.equals(newCc2.ba, cc.ba)
       }
     })
 
+  }
+
+  test("protofile") {
+    val message = ProtoFileInterpreter.fromSchema(allSupportCaseClass)
+    print(ProtoFileInterpreter.messageToProtoFile(message))
   }
 
 

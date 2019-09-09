@@ -44,6 +44,11 @@ object ProtoFileInterpreter {
   case class NestedDataType(messageName: String) extends DataType {
     val name = messageName.capitalize
   }
+  case class OneOfDataType(name: String) extends DataType
+
+//  case class OneOf(l: MessageField, r: MessageField) extends DataType {
+//
+//  }
 
   case class MessageField(dataType: DataType,
                           required: Boolean,
@@ -60,6 +65,7 @@ object ProtoFileInterpreter {
                      messageFields: Vector[MessageField],
                      nestedTypes: Vector[NestedType])
       extends NestedType
+  case class OneOf(name: String, messageFields: Vector[MessageField]) extends NestedType
 
   def messageFieldsToProtoFile(
       fields: Vector[ProtoFileInterpreter.MessageField],
@@ -80,6 +86,7 @@ object ProtoFileInterpreter {
       types: Vector[ProtoFileInterpreter.NestedType]): String = {
     types.map {
       case n: NestedMessage => nestedMessageToProtoFile(n)
+      case o: OneOf => oneOfToProtoFile(o)
       case e: NestedEnum    => ???
     } mkString ("\n")
   }
@@ -103,6 +110,14 @@ object ProtoFileInterpreter {
        |
        |${nestedTypeToProtoFile(message.nestedTypes)}
        |}
+     """.stripMargin
+  }
+
+  def oneOfToProtoFile(oneOf: OneOf): String = {
+    s"""
+       |  oneof ${oneOf.name} {
+       |${messageFieldsToProtoFile(oneOf.messageFields, "    ")}
+       |  }
      """.stripMargin
   }
 
@@ -159,8 +174,18 @@ object ProtoFileInterpreter {
           (MessageField(Int64, true, false, name, index), Vector.empty)
         case uu: UuidData =>
           (MessageField(PbString, true, false, name, index), Vector.empty)
-        case dd: LocalDateTimeData =>
-          (MessageField(Int64, true, false, name, index), Vector.empty)
+        case dd: LocalDateTimeData => {
+          val messageFields: Vector[NestedMessage] =
+            Vector(
+              NestedMessage("Timestamp",
+                Vector(
+                  MessageField(Int64, true, false, "seconds", 1),
+                  MessageField(Int64, true, false, "nanos", 2)
+                )
+              )
+            )
+          (MessageField(NestedDataType("Timestamp"), true, false, name, index), messageFields)
+        }
         case dt: LocalDateData =>
           (MessageField(Int64, true, false, name, index), Vector.empty)
         case fd: FloatData =>
@@ -174,7 +199,11 @@ object ProtoFileInterpreter {
         case ld: ListData[t] =>
           val result = valueDefinition(ld.tDefinition)(name, index)
           (result._1.copy(repeated = true), result._2)
-        case ed: EitherData[a, b] => ??? //use one of
+        case ed: EitherData[a, b] =>
+          val (messageFieldA, nestedTypesA) = valueDefinition(ed.definitionA)(s"${name}Left", index)
+          val (messageFieldB, nestedTypesB) = valueDefinition(ed.definitionB)(s"${name}Right", index)
+          val oneOfName = toSnake(name.capitalize)
+          (MessageField(OneOfDataType(oneOfName), false, false, name, index), Vector(OneOf(oneOfName, Vector(messageFieldA, messageFieldB))))
         case esd: EnumerationData[e,a] =>
           (MessageField(PbString, true, false, name, index), Vector.empty)
         case st: SumTypeData[a, b] =>
@@ -191,5 +220,9 @@ object ProtoFileInterpreter {
            Vector(nested))
 
     }
+
+  def toSnake(str: String) = {
+    str.replaceAll("([A-Z]+)([A-Z][a-z])", "$1_$2").replaceAll("([a-z\\d])([A-Z])", "$1_$2").toLowerCase
+  }
 
 }

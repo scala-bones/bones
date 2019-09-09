@@ -139,6 +139,7 @@ lazy val protobuf = (project in file("interchange-format-interpreters/protobuf")
     name := "Bones Protobuf",
     libraryDependencies ++= Seq (
       "com.google.protobuf" % "protobuf-java" % "3.9.1",
+      "com.google.protobuf" % "protobuf-java-util" % "3.9.1",
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
       "org.scalatest" %% "scalatest" % "3.0.8" % Test
     )

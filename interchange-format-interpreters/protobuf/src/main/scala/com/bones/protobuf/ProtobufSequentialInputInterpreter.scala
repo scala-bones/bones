@@ -7,7 +7,7 @@ import java.util.UUID
 import cats.data.NonEmptyList
 import com.bones.data.Error.{CanNotConvert, ExtractionError, RequiredData, WrongTypeError}
 import com.bones.data.Value._
-import com.google.protobuf.{CodedInputStream, InvalidProtocolBufferException}
+import com.google.protobuf.{CodedInputStream, InvalidProtocolBufferException, Timestamp}
 import shapeless.{HList, HNil, Nat}
 import cats.implicits._
 import com.bones.Util
@@ -19,6 +19,8 @@ import scala.annotation.tailrec
   * Creates a function from Array[Byte]
   */
 object ProtobufSequentialInputInterpreter {
+
+  val zoneOffset = ZoneOffset.UTC
 
   import com.bones.Util._
 
@@ -260,27 +262,29 @@ object ProtobufSequentialInputInterpreter {
       case dd: LocalDateTimeData =>
         (fieldNumber: LastFieldNumber, path: Path) =>
           {
-            val thisTag = fieldNumber << 3 | VARINT
-            val nanoTag = fieldNumber + 1 << 3 | VARINT
-            (List(thisTag), fieldNumber + 2, (canReadTag, in) => {
-              if (in.getLastTag == thisTag) {
-                val dateResult = convert(in, classOf[Long], path)(_.readInt64())
-                in.readTag()
-                val nanoResult =
-                  if (in.getLastTag == nanoTag) {
-                    convert(in, classOf[Int], path)(_.readInt32())
-                  } else {
-                    Left(NonEmptyList.one(RequiredData(path, dd)))
-                  }
-                val dateTimeResult = eitherMap2(dateResult, nanoResult)( (date, nano) => {
-                  LocalDateTime.ofEpochSecond(date,nano,ZoneOffset.UTC)
-                })
+            val thisTag = fieldNumber  << 3 | LENGTH_DELIMITED
+            (List(thisTag), fieldNumber + 1, (canReadTag: CanReadTag, in: CodedInputStream) => {
+              val length = in.readRawVarint32()
+              val oldLimit = in.pushLimit(length)
+              val dateTimeResult = convert(in, classOf[Timestamp], path)(cis => Timestamp.parseFrom(cis))
+                .map(timestamp => LocalDateTime.ofEpochSecond(timestamp.getSeconds, timestamp.getNanos, zoneOffset))
+              try {
+                in.readTag()  //should be 0
+                in.checkLastTagWas(0)
+                in.popLimit(oldLimit)
                 (true, dateTimeResult)
-              } else {
-                (canReadTag, Left(NonEmptyList.one(RequiredData(path, dd))))
+              } catch {
+                case ex: InvalidProtocolBufferException => {
+                  ex.printStackTrace()
+                  in.getLastTag
+                  (canReadTag, Left(
+                    NonEmptyList.one(
+                      WrongTypeError(path, classOf[HList], classOf[Any]))))
+                }
               }
             }:(CanReadTag, Either[NonEmptyList[ExtractionError], LocalDateTime]))
           }
+
       case dt: LocalDateData =>
         (fieldNumber: LastFieldNumber, path: Path) =>
         {
