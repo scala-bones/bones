@@ -213,7 +213,7 @@ object Schemas {
         kvp("uuid", uuid) ::
         kvp("enumeration", enumeration[Currency.type, Currency.Value](Currency)) ::
         kvp("bigDecimal", bigDecimal(bdv.max(BigDecimal(100)))) ::
-        kvp("either", either(string(sv.words), int)) ::
+        kvp("eitherField", either(string(sv.words), int)) ::
         kvp("child", allSupportedOptionalSchema.convert[AllSupportedOptional]) ::
         kvp("int2", int(iv.between(Int.MinValue, Int.MinValue))) ::
         KvpNil
