@@ -5,15 +5,17 @@ import java.time.{LocalDate, LocalDateTime, ZoneOffset}
 import java.util.UUID
 
 import cats.Applicative
-import cats.data.{NonEmptyList, Validated}
-import com.bones.data.Error.ExtractionError
-import com.bones.data.Value._
-import com.google.protobuf.CodedOutputStream
-import shapeless._
-import ops.hlist.IsHCons
+import cats.data.NonEmptyList
 import cats.implicits._
-import com.bones.protobuf.ProtobufSequentialOutputInterpreter.{ComputeSize, Encode}
+import com.bones.data.Value._
+import com.google.protobuf.{CodedOutputStream, Timestamp}
+import shapeless._
 
+/**
+  * Notes:
+  * An Option[List] where the data is a some of empty list: Some(List()) becomes a None when using ProtobufSequentialInputInterpreter.
+  *
+  */
 object ProtobufSequentialOutputInterpreter {
 
   type Path = Vector[String]
@@ -210,18 +212,30 @@ object ProtobufSequentialOutputInterpreter {
       case dd: LocalDateTimeData =>
         (fieldNumber: FieldNumber) =>
           (
-            fieldNumber + 2,
+            fieldNumber + 1,
             (d: LocalDateTime) =>
-              (
-                () => {
-                  CodedOutputStream.computeInt64Size(fieldNumber,d.toEpochSecond(ZoneOffset.UTC)) +
-                  CodedOutputStream.computeInt32Size(fieldNumber + 1, d.getNano)
-                },
-                write(out => {
-                  out.writeInt64(fieldNumber, d.toEpochSecond(ZoneOffset.UTC))
-                  out.writeInt32(fieldNumber + 1, d.getNano)
-                })
-              )
+            {
+              val timestamp = Timestamp.newBuilder()
+                .setSeconds(d.toEpochSecond(ZoneOffset.UTC))
+                .setNanos(d.getNano)
+                .build()
+              val groupSize = timestamp.getSerializedSize
+
+              val encodeF: Encode = (outputStream: CodedOutputStream) => {
+                try {
+                  outputStream.writeTag(fieldNumber, 2)
+                  outputStream.writeUInt32NoTag(groupSize)
+                  timestamp.writeTo(outputStream)
+                  Right(outputStream)
+                } catch {
+                  case ex: IOException => Left(NonEmptyList.one(ex))
+                }
+              }
+              val allSize = () => {
+                groupSize + 1 + CodedOutputStream.computeUInt32SizeNoTag(groupSize)
+              }
+              (allSize, encodeF)
+            }
           )
       case dt: LocalDateData =>
         (fieldNumber: FieldNumber) =>
