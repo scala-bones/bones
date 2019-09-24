@@ -44,10 +44,10 @@ object ProtoFileInterpreter {
   case class NestedDataType(messageName: String) extends DataType {
     val name = messageName.capitalize
   }
-  case class OneOfDataType(name: String) extends DataType
+  case class EitherDataType(name: String, l: MessageField, r: MessageField) extends DataType
 
 //  case class OneOf(l: MessageField, r: MessageField) extends DataType {
-//
+
 //  }
 
   case class MessageField(dataType: DataType,
@@ -65,19 +65,32 @@ object ProtoFileInterpreter {
                      messageFields: Vector[MessageField],
                      nestedTypes: Vector[NestedType])
       extends NestedType
-  case class OneOf(name: String, messageFields: Vector[MessageField]) extends NestedType
+//  case class OneOf(name: String, messageFields: Vector[MessageField]) extends NestedType
 
   def messageFieldsToProtoFile(
       fields: Vector[ProtoFileInterpreter.MessageField],
-      indent: String): String = {
+      indent: String,
+      allowRequired: Boolean): String = {
     fields
       .sortBy(_.index)
       .map(field => {
-        val repeatedRequired =
-          if (field.repeated) "repeated"
-          else if (field.required) "required"
-          else "optional"
-        s"${indent}${repeatedRequired} ${field.dataType.name} ${field.name} = ${field.index};"
+        field.dataType match {
+          case EitherDataType(name, left, right) =>
+            s"""
+               | ${indent}oneof ${name} {
+               |   ${indent}  ${left.dataType.name} ${left.name} = ${left.index};
+               |   ${indent}  ${right.dataType.name} ${right.name} = ${right.index};
+               | ${indent}}
+               | """.stripMargin('|')
+          case _ => {
+            val repeatedRequired =
+              if (field.repeated) "repeated"
+              else if (!allowRequired) ""
+              else if (field.required) "required"
+              else "optional"
+            s"${indent}${repeatedRequired} ${field.dataType.name} ${field.name} = ${field.index};"
+          }
+        }
       })
       .mkString("\n")
   }
@@ -86,7 +99,6 @@ object ProtoFileInterpreter {
       types: Vector[ProtoFileInterpreter.NestedType]): String = {
     types.map {
       case n: NestedMessage => nestedMessageToProtoFile(n)
-      case o: OneOf => oneOfToProtoFile(o)
       case e: NestedEnum    => ???
     } mkString ("\n")
   }
@@ -94,7 +106,7 @@ object ProtoFileInterpreter {
   def nestedMessageToProtoFile(message: NestedMessage): String = {
     s"""
        |  message ${message.name.capitalize} {
-       |${messageFieldsToProtoFile(message.dataTypes, "    ")}
+       |${messageFieldsToProtoFile(message.dataTypes, "    ", true)}
        |  }
        """.stripMargin
 
@@ -106,20 +118,20 @@ object ProtoFileInterpreter {
   def messageToProtoFile(message: Message): String = {
     s"""
        |message ${message.name} {
-       |${messageFieldsToProtoFile(message.messageFields, "  ")}
+       |${messageFieldsToProtoFile(message.messageFields, "  ", true)}
        |
        |${nestedTypeToProtoFile(message.nestedTypes)}
        |}
      """.stripMargin
   }
 
-  def oneOfToProtoFile(oneOf: OneOf): String = {
-    s"""
-       |  oneof ${oneOf.name} {
-       |${messageFieldsToProtoFile(oneOf.messageFields, "    ")}
-       |  }
-     """.stripMargin
-  }
+//  def oneOfToProtoFile(oneOf: One): String = {
+//    s"""
+//       |  oneof ${oneOf.name} {
+//       |${messageFieldsToProtoFile(oneOf.messageFields, "    ", false)}
+//       |  }
+//     """.stripMargin
+//  }
 
   def fromSchema[A](dc: BonesSchema[A]): Message = {
     dc match {
@@ -140,7 +152,7 @@ object ProtoFileInterpreter {
         val r = valueDefinition(op.fieldDefinition.op)(op.fieldDefinition.key,
                                                        thisIndex)
         val (messageFields, nestedTypes, lastUsedIndex) =
-          kvpHList(op.tail)(thisIndex)
+          kvpHList(op.tail)(r._3)
         (messageFields :+ r._1, r._2 ++ nestedTypes, lastUsedIndex)
       }
       case op: KvpConcreteTypeHead[a, ht, nt, ho, hx, nx] =>
@@ -155,25 +167,25 @@ object ProtoFileInterpreter {
   }
 
   def valueDefinition[A](fgo: KvpValue[A])
-    : (Name, Int) => (MessageField, Vector[NestedType]) =
+    : (Name, Int) => (MessageField, Vector[NestedType], Int) =
     (name, index) =>
       fgo match {
         case op: OptionalKvpValueDefinition[a] =>
           val result = valueDefinition(op.valueDefinitionOp)(name, index)
-          (result._1.copy(required = false), result._2)
+          (result._1.copy(required = false), result._2, index)
         case ob: BooleanData =>
-          (MessageField(Bool, true, false, name, index), Vector.empty)
+          (MessageField(Bool, true, false, name, index), Vector.empty, index)
         case rs: StringData =>
           (MessageField(StringRequireUtf8, true, false, name, index),
-           Vector.empty)
+           Vector.empty, index)
         case df: ShortData =>
-          (MessageField(Int32, true, false, name, index), Vector.empty)
+          (MessageField(Int32, true, false, name, index), Vector.empty, index)
         case id: IntData =>
-          (MessageField(Int32, true, false, name, index), Vector.empty)
+          (MessageField(Int32, true, false, name, index), Vector.empty, index)
         case ri: LongData =>
-          (MessageField(Int64, true, false, name, index), Vector.empty)
+          (MessageField(Int64, true, false, name, index), Vector.empty, index)
         case uu: UuidData =>
-          (MessageField(PbString, true, false, name, index), Vector.empty)
+          (MessageField(PbString, true, false, name, index), Vector.empty, index)
         case dd: LocalDateTimeData => {
           val messageFields: Vector[NestedMessage] =
             Vector(
@@ -184,40 +196,40 @@ object ProtoFileInterpreter {
                 )
               )
             )
-          (MessageField(NestedDataType("Timestamp"), true, false, name, index), messageFields)
+          (MessageField(NestedDataType("Timestamp"), true, false, name, index), messageFields, index)
         }
         case dt: LocalDateData =>
-          (MessageField(Int64, true, false, name, index), Vector.empty)
+          (MessageField(Int64, true, false, name, index), Vector.empty, index)
         case fd: FloatData =>
-          (MessageField(FloatType, true, false, name, index), Vector.empty)
+          (MessageField(FloatType, true, false, name, index), Vector.empty, index)
         case fd: DoubleData =>
-          (MessageField(DoubleType, true, false, name, index), Vector.empty)
+          (MessageField(DoubleType, true, false, name, index), Vector.empty, index)
         case bd: BigDecimalData =>
-          (MessageField(PbString, true, false, name, index), Vector.empty)
+          (MessageField(PbString, true, false, name, index), Vector.empty, index)
         case ba: ByteArrayData =>
-          (MessageField(Bytes, true, false, name, index), Vector.empty)
+          (MessageField(Bytes, true, false, name, index), Vector.empty, index)
         case ld: ListData[t] =>
           val result = valueDefinition(ld.tDefinition)(name, index)
-          (result._1.copy(repeated = true), result._2)
+          (result._1.copy(repeated = true), result._2, index)
         case ed: EitherData[a, b] =>
-          val (messageFieldA, nestedTypesA) = valueDefinition(ed.definitionA)(s"${name}Left", index)
-          val (messageFieldB, nestedTypesB) = valueDefinition(ed.definitionB)(s"${name}Right", index)
+          val (messageFieldA, nestedTypesA, nextIndex) = valueDefinition(ed.definitionA)(s"${name}Left", index)
+          val (messageFieldB, nestedTypesB, lastIndex) = valueDefinition(ed.definitionB)(s"${name}Right", nextIndex + 1)
           val oneOfName = toSnake(name.capitalize)
-          (MessageField(OneOfDataType(oneOfName), false, false, name, index), Vector(OneOf(oneOfName, Vector(messageFieldA, messageFieldB))))
+          (MessageField(EitherDataType(oneOfName, messageFieldA, messageFieldB), false, false, name, index), Vector.empty, lastIndex)
         case esd: EnumerationData[e,a] =>
-          (MessageField(PbString, true, false, name, index), Vector.empty)
+          (MessageField(PbString, true, false, name, index), Vector.empty, index)
         case st: SumTypeData[a, b] =>
-          (MessageField(PbString, true, false, name, index), Vector.empty)
+          (MessageField(PbString, true, false, name, index), Vector.empty, index)
         case kvp: KvpHListValue[h, hl] =>
           val result = kvpHList(kvp.kvpHList)(0)
           val nested = NestedMessage(name, result._1)
           (MessageField(NestedDataType(name), true, false, name, index),
-           Vector(nested))
+           Vector(nested), index)
         case t: HListConvert[h, hl, a] =>
           val (messageFields, _, _) = kvpHList(t.from)(0)
           val nested = NestedMessage(name, messageFields)
           (MessageField(NestedDataType(name), true, false, name, index),
-           Vector(nested))
+           Vector(nested), index)
 
     }
 
