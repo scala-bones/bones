@@ -216,6 +216,16 @@ lazy val examples = (project in file("examples/http4s-examples"))
 //        "org.easymock" % "easymock" % "3.5.1" % Test
       )
     ).dependsOn(core, jsonOas3, dbJdbc, restHttp4s, jsonOas3, protobuf, react, testSchemas % "test", scalacheck % "test")
+lazy val protobufInegrationTest = (project in file("interchange-format-interpreters/javapb-integration-test"))
+    .settings(
+      commonSettings,
+      name := "Bones JavaPB Integration Test",
+      libraryDependencies ++= Seq(
+        "com.google.protobuf" % "protobuf-java" % "3.9.1",
+        "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
+        "org.scalatest" %% "scalatest" % "3.0.8" % Test
+      )     
+   ).dependsOn(protobuf % "test", testSchemas % "test")
 
 
 
