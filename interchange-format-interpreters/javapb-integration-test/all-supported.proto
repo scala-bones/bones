@@ -1,0 +1,55 @@
+message AllSupported {
+  required bool boolean = 1;
+  required int32 int = 2;
+  required int64 long = 3;
+  repeated int32 listOfInt = 4;
+  required string string = 5;
+  required float float = 6;
+  required int32 short = 7;
+  required double double = 8;
+  required bytes byteArray = 9;
+  required int64 localDate = 10;
+  required Timestamp localDateTime = 11;
+  required string uuid = 12;
+  required string enumeration = 13;
+  required string bigDecimal = 14;
+
+   oneof either_field {
+       string eitherFieldLeft = 15;
+       int32 eitherFieldRight = 16;
+   }
+ 
+  required Child child = 17;
+  required int32 int2 = 18;
+
+
+  message Timestamp {
+    required int64 seconds = 1;
+    required int64 nanos = 2;
+  }
+       
+
+  message Child {
+    optional bool boolean = 1;
+    optional int32 int = 2;
+    optional int64 long = 3;
+    repeated int32 listOfInt = 4;
+    optional string string = 5;
+    optional float float = 6;
+    optional int32 short = 7;
+    optional double double = 8;
+    optional bytes byteArray = 9;
+    optional int64 localDate = 10;
+    optional Timestamp localDateTime = 11;
+    optional string uuid = 12;
+    optional string enumeration = 13;
+    optional string bigDecimal = 14;
+
+     oneof either {
+         string eitherLeft = 15;
+         int32 eitherRight = 16;
+     }
+ 
+  }
+       
+}
