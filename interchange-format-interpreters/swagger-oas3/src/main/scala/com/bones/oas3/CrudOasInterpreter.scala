@@ -3,6 +3,7 @@ package com.bones.oas3
 import com.bones.crud.Algebra._
 import com.bones.data.Value.BonesSchema
 import io.swagger.v3.oas.models._
+import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.media._
 import io.swagger.v3.oas.models.parameters.{Parameter, RequestBody}
 import io.swagger.v3.oas.models.responses.{ApiResponse, ApiResponses}
@@ -12,6 +13,8 @@ import scala.collection.JavaConverters._
 object CrudOasInterpreter {
 
   def jsonApiForService[CI, CO, CE, RO, RE, UI, UO, UE, DO, DE](
+                                                                 title: String,
+                                                                 version: String,
       contentTypes: List[String],
       serviceOps: ServiceOps[CI, CO, CE, RO, RE, UI, UO, UE, DO, DE]
   ): OpenAPI => OpenAPI = { openApi =>
@@ -20,7 +23,7 @@ object CrudOasInterpreter {
         .post(
           (co.inputSchema, serviceOps.path),
           (co.outputSchema, serviceOps.path),
-          (co.errorSchema, "Error"),
+          (co.errorSchema, "error"),
           s"/${serviceOps.path}",
           contentTypes
         )
@@ -40,7 +43,7 @@ object CrudOasInterpreter {
           .put(
             (update.inputSchema, serviceOps.path),
             (update.outputSchema, serviceOps.path),
-            (update.failureSchema, "Error"),
+            (update.failureSchema, "error"),
             s"/${serviceOps.path}",
             contentTypes
           )
@@ -54,7 +57,10 @@ object CrudOasInterpreter {
                   contentTypes)
           .apply(openApi))
 
-    openApi
+    val info = new Info()
+    info.title(title)
+    info.version(version)
+    openApi.info(info)
   }
 
   private def upsertComponent[A](openApi: OpenAPI,
@@ -120,7 +126,7 @@ object CrudOasInterpreter {
       .tags(java.util.Collections.singletonList(outputEntityName))
       .summary(s"Find ${outputEntityName} by ID")
       .description(s"Returns ${outputEntityName} by id")
-      .operationId(s"get${outputEntityName}ById")
+      .operationId(s"get${outputEntityName.capitalize}ById")
 
     upcertPath(openAPI, "/{id}", _.get(operation))
 
@@ -148,7 +154,7 @@ object CrudOasInterpreter {
       .name("id")
       .in("path")
       .required(true)
-      .description(s"id of the ${outputEntityName} to deleteOperation")
+      .description(s"id of the ${outputEntityName} to delete")
       .schema(paramSchema)
 
     val operation = new Operation()
@@ -157,7 +163,7 @@ object CrudOasInterpreter {
       .tags(java.util.Collections.singletonList(outputEntityName))
       .summary(s"Delete ${outputEntityName} by ID")
       .description(s"Delete ${outputEntityName} by id")
-      .operationId(s"get${outputEntityName}ById")
+      .operationId(s"delete${outputEntityName.capitalize}ById")
 
     upcertPath(openAPI, "/{id}", _.delete(operation))
     openAPI
@@ -196,12 +202,23 @@ object CrudOasInterpreter {
     val inputOasSchema = new Schema()
       .$ref(inputComponentRef)
 
+    val paramSchema = new IntegerSchema()
+    val param = new Parameter()
+      .name("id")
+      .in("path")
+      .required(true)
+      .description(s"id of the ${outputEntityName} to update")
+      .schema(paramSchema)
+
     val operation = new Operation()
       .responses(apiResponses)
+      .parameters(java.util.Collections.singletonList(param))
       .tags(java.util.Collections.singletonList(outputEntityName))
       .summary(s"Update ${inputEntityName}, returning ${outputEntityName}")
       .description(s"Update and return the updated ${outputEntityName}")
-      .operationId(s"put${inputEntityName}")
+      .operationId(s"put${inputEntityName.capitalize}ById")
+
+    val content = new Content()
 
     contentTypes.foreach(contentType => {
       val encoding = new Encoding().contentType(contentType)
@@ -210,11 +227,10 @@ object CrudOasInterpreter {
         .schema(inputOasSchema)
         .encoding(encodings.asJava)
 
-      val content = new Content()
+      content
         .addMediaType(contentType, mediaType)
 
       val requestBody = new RequestBody()
-        .$ref(inputComponentRef)
         .content(content)
 
       operation.setRequestBody(requestBody)
@@ -265,24 +281,25 @@ object CrudOasInterpreter {
         .description(s"Create and return the newly created ${outputEntityName}")
         .operationId(s"post${inputEntityName}")
 
+      val content = new Content()
+
       contentTypes.foreach(contentType => {
         val encoding = new Encoding().contentType(contentType)
         val encodings = Map((contentType, encoding))
         val mediaType = new MediaType()
           .schema(inputOasSchema)
           .encoding(encodings.asJava)
-
-        val content = new Content()
+        content
           .addMediaType(contentType, mediaType)
 
-        val requestBody = new RequestBody()
-          .$ref(inputComponentRef)
-          .content(content)
 
-        operation.setRequestBody(requestBody)
       })
+      val requestBody = new RequestBody()
+        .content(content)
 
-      upcertPath(openAPI, "", _.post(operation))
+      operation.setRequestBody(requestBody)
+
+      upcertPath(openAPI, "/", _.post(operation))
 
       openAPI
 

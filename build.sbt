@@ -68,28 +68,17 @@ lazy val scalacheck = (project in file("test-interpreters/scalacheck"))
     ),
     description := "Interpreter to generate scalacheck proper generators"
   ).dependsOn(core, testSchemas % "test")
-lazy val jsonOas3 = (project in file("interchange-format-interpreters/lift-json-oas3"))
+lazy val swaggerOas3 = (project in file("interchange-format-interpreters/swagger-oas3"))
   .settings(
     commonSettings,
     name := "Bones DataDefinition to OAS3 Interpreter",
     libraryDependencies ++= Seq(
-      "io.swagger.core.v3" % "swagger-core" % "2.0.8",
+      "io.swagger.core.v3" % "swagger-core" % "2.0.9",
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
       "org.scalatest" %% "scalatest" % "3.0.8" % Test
     )
   ).dependsOn(core)
 lazy val doobieVersion = "0.6.0"
-lazy val restUnfiltered = (project in file("rest-interpreters/unfiltered"))
-  .settings(
-    commonSettings,
-    name := "Bones Rest Unfiltered",
-    libraryDependencies ++= Seq(
-      "javax.servlet" % "javax.servlet-api" % "3.0.1",
-      "ws.unfiltered" %% "unfiltered-filter" % "0.9.1",
-      "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
-      "org.scalatest" %% "scalatest" % "3.0.8" % Test
-    )
-  ).dependsOn(core, jsonLift)
 lazy val jsonLift = (project in file("interchange-format-interpreters/lift-json"))
   .settings(
     commonSettings,
@@ -180,7 +169,7 @@ lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
       "org.scalatest" %% "scalatest" % "3.0.8" % Test
     )
-  ).dependsOn(core, jsonCirce, jsonOas3, protobuf, bson)
+  ).dependsOn(core, jsonCirce, swaggerOas3, protobuf, bson)
 lazy val react = (project in file("client-interpreters/react"))
   .settings(
     commonSettings,
@@ -215,7 +204,7 @@ lazy val examples = (project in file("examples/http4s-examples"))
         "org.scalatest" %% "scalatest" % "3.0.8" % Test
 //        "org.easymock" % "easymock" % "3.5.1" % Test
       )
-    ).dependsOn(core, jsonOas3, dbJdbc, restHttp4s, jsonOas3, protobuf, react, testSchemas % "test", scalacheck % "test")
+    ).dependsOn(core, swaggerOas3, dbJdbc, restHttp4s, swaggerOas3, protobuf, react, testSchemas % "test", scalacheck % "test")
 lazy val protobufInegrationTest = (project in file("interchange-format-interpreters/javapb-integration-test"))
     .settings(
       commonSettings,
