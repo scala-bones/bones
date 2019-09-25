@@ -314,8 +314,9 @@ trait HttpInterpreterF[F[_]] extends Http4sDsl[F] {
   def swaggerDoc(
                   contentTypes: List[String],
                   serviceOps: ServiceOps[_, _, _, _, _, _, _, _, _, _])(implicit F: Sync[F]): HttpRoutes[F] = {
+
     val openApi =
-      CrudOasInterpreter.jsonApiForService(contentTypes, serviceOps)(
+      CrudOasInterpreter.jsonApiForService("Rest Service", "1.0", contentTypes, serviceOps)(
         new OpenAPI())
     val html = io.swagger.v3.core.util.Json.mapper().writeValueAsString(openApi)
 

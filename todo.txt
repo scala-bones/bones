@@ -1,4 +1,2 @@
-1. Redo Objects as Nvp (Name Value Pairs) with a head and a tail, like Spiewak's talk: https://vimeo.com/28793245
-2. Redo Array as OrderedList.
-3. Port lift-jason to Argonaut
-4. Improve Jetty interface.
+1. Finish Swagger Implementation for data algebra
+2. remove crud algebra - move to interpreter specific

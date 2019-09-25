@@ -60,7 +60,7 @@ object ProtoFileInterpreter {
   trait NestedType
   case class NestedMessage(name: String, dataTypes: Vector[MessageField])
       extends NestedType
-  case class NestedEnum(name: String, value: (String, Int)) extends NestedType
+//  case class NestedEnum(name: String, value: (String, Int)) extends NestedType
   case class Message(name: String,
                      messageFields: Vector[MessageField],
                      nestedTypes: Vector[NestedType])
@@ -99,7 +99,7 @@ object ProtoFileInterpreter {
       types: Vector[ProtoFileInterpreter.NestedType]): String = {
     types.map {
       case n: NestedMessage => nestedMessageToProtoFile(n)
-      case e: NestedEnum    => ???
+//      case e: NestedEnum    => ???
     } mkString ("\n")
   }
 
