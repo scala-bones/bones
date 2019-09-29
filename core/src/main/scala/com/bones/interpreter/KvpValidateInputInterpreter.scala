@@ -195,9 +195,9 @@ trait KvpValidateInputInterpreter[IN] {
           val applied = valueDefinition(op.valueDefinitionOp)
           (in: Option[IN], path: Path) =>
             in match {
-              case None              => Right(None)
+              case None => Right(None)
               case Some(n) if isEmpty(n) => Right(None)
-              case some @ Some(json) => applied(some, path).map(Some(_))
+              case some@Some(json) => applied(some, path).map(Some(_))
             }
         case op: StringData =>
           required(op, op.validations, extractString(op, classOf[String]))
@@ -209,18 +209,20 @@ trait KvpValidateInputInterpreter[IN] {
           required(op, op.validations, extractBool(op))
         case op: UuidData =>
           required(op, op.validations, extractUuid(op))
-        case op @ LocalDateTimeData(validations) =>
+        case op@LocalDateTimeData(validations) =>
           required(op, validations, extractLocalDateTime(op))
-        case op @ LocalDateData(validations) =>
+        case op@LocalDateData(validations) =>
           required(op, validations, extractLocalDate(op))
-        case op @ ByteArrayData(validations) =>
+        case op@ByteArrayData(validations) =>
           val decoder = Base64.getDecoder
           (inOpt: Option[IN], path: Path) =>
             for {
               in <- inOpt.toRight[NonEmptyList[ExtractionError]](
                 NonEmptyList.one(RequiredData(path, op)))
               str <- extractString(op, classOf[Array[Byte]])(in, path)
-              arr <- Try { decoder.decode(str) }.toEither.left.map(thr =>
+              arr <- Try {
+                decoder.decode(str)
+              }.toEither.left.map(thr =>
                 NonEmptyList.one(
                   CanNotConvert(path, str, classOf[Array[Byte]])))
             } yield arr
@@ -228,63 +230,63 @@ trait KvpValidateInputInterpreter[IN] {
         case ed: EitherData[a, b] =>
           val optionalA = valueDefinition(ed.definitionA)
           val optionalB = valueDefinition(ed.definitionB)
-          (in: Option[IN], path: Path) =>
-            {
-              optionalA(in, path) match {
-                case Left(err) =>
-                  val nonWrongTypeError = err.toList.filter {
-                    case WrongTypeError(_, _, _) => false
-                    case RequiredData(_, _)      => false
-                    case CanNotConvert(_, _, _)  => false
-                    case _                       => true
-                  }
-                  if (nonWrongTypeError.isEmpty) {
-                    optionalB(in, path) match {
-                      case Right(b) => Right(Right(b))
-                      case Left(err) => {
-                        Left(NonEmptyList.one(RequiredData(path, ed)))
-                      }
+          (in: Option[IN], path: Path) => {
+            optionalA(in, path) match {
+              case Left(err) =>
+                val nonWrongTypeError = err.toList.filter {
+                  case WrongTypeError(_, _, _) => false
+                  case RequiredData(_, _) => false
+                  case CanNotConvert(_, _, _) => false
+                  case _ => true
+                }
+                if (nonWrongTypeError.isEmpty) {
+                  optionalB(in, path) match {
+                    case Right(b) => Right(Right(b))
+                    case Left(err) => {
+                      Left(NonEmptyList.one(RequiredData(path, ed)))
                     }
-                  } else {
-                    Left(err)
                   }
-                case Right(a) => Right(Left(a))
-              }
+                } else {
+                  Left(err)
+                }
+              case Right(a) => Right(Left(a))
             }
+          }
         case op: ListData[t] =>
           val valueF = valueDefinition(op.tDefinition)
+
           def appendArrayInex(path: Path, index: Int): List[String] = {
             val size = path.length
             if (path.length == 0) path
             else
               path.updated(path.length - 1,
-                           path(path.length - 1) + s"[${index}]")
+                path(path.length - 1) + s"[${index}]")
           }
 
           def traverseArray(arr: Seq[IN], path: Path)
-            : Either[NonEmptyList[ExtractionError], List[t]] = {
+          : Either[NonEmptyList[ExtractionError], List[t]] = {
             val arrayApplied: Seq[Either[NonEmptyList[ExtractionError], t]] =
               arr.zipWithIndex.map(jValue =>
                 valueF(Some(jValue._1), appendArrayInex(path, jValue._2)))
 
             arrayApplied
               .foldLeft[Either[NonEmptyList[ExtractionError], List[t]]](
-                Right(List.empty))((b, v) =>
-                (b, v) match {
-                  case (Right(a), Right(i)) => Right(a :+ i)
-                  case (Left(a), Left(b))   => Left(a ::: b)
-                  case (Left(x), _)         => Left(x)
-                  case (_, Left(x))         => Left(x)
+              Right(List.empty))((b, v) =>
+              (b, v) match {
+                case (Right(a), Right(i)) => Right(a :+ i)
+                case (Left(a), Left(b)) => Left(a ::: b)
+                case (Left(x), _) => Left(x)
+                case (_, Left(x)) => Left(x)
               })
           }
-          (inOpt: Option[IN], path: Path) =>
-            {
-              for {
-                in <- inOpt.toRight(NonEmptyList.one(RequiredData(path, op)))
-                arr <- extractArray(op)(in, path)
-                listOfIn <- traverseArray(arr, path)
-              } yield listOfIn
-            }
+
+          (inOpt: Option[IN], path: Path) => {
+            for {
+              in <- inOpt.toRight(NonEmptyList.one(RequiredData(path, op)))
+              arr <- extractArray(op)(in, path)
+              listOfIn <- traverseArray(arr, path)
+            } yield listOfIn
+          }
         case fd: FloatData =>
           required(fd, fd.validations, extractFloat(fd))
         case dd: DoubleData =>
@@ -293,43 +295,41 @@ trait KvpValidateInputInterpreter[IN] {
           required(sd, sd.validations, extractShort(sd))
         case op: BigDecimalData =>
           required(op, op.validations, extractBigDecimal(op))
-        case op: EnumerationData[e,A] =>
+        case op: EnumerationData[e, A] =>
           (inOpt: Option[IN], path: Path) =>
             for {
               in <- inOpt.toRight[NonEmptyList[ExtractionError]](
                 NonEmptyList.one(RequiredData(path, op)))
               str <- extractString(op, op.manifestOfA.runtimeClass)(in, path)
               enum <- stringToEnumeration[e, A](str,
-                                          path,
-                                          op.enumeration.asInstanceOf[e])(
-                                          op.manifestOfA)
+                path,
+                op.enumeration.asInstanceOf[e])(
+                op.manifestOfA)
             } yield enum.asInstanceOf[A]
 
         case op: SumTypeData[a, A] =>
           val valueF = valueDefinition(op.from)
-          (in: Option[IN], path: Path) =>
-            {
-              valueF(in, path).flatMap(res =>
-                op.fab(res, path).left.map(NonEmptyList.one))
-            }
+          (in: Option[IN], path: Path) => {
+            valueF(in, path).flatMap(res =>
+              op.fab(res, path).left.map(NonEmptyList.one))
+          }
         case op: KvpHListValue[h, hl] => {
           val fg: (IN, List[String]) => Either[NonEmptyList[ExtractionError], h] = kvpHList(op.kvpHList)
-          (jsonOpt: Option[IN], path: Path) =>
-            {
-              jsonOpt match {
-                case Some(json) =>
-                  fg(json, path)
-                    .flatMap(res => vu.validate[h](op.validations)(res, path))
-                    .map(_.asInstanceOf[A])
-                case None => Left(NonEmptyList.one(RequiredData(path, op)))
-              }
+          (jsonOpt: Option[IN], path: Path) => {
+            jsonOpt match {
+              case Some(json) =>
+                fg(json, path)
+                  .flatMap(res => vu.validate[h](op.validations)(res, path))
+                  .map(_.asInstanceOf[A])
+              case None => Left(NonEmptyList.one(RequiredData(path, op)))
             }
+          }
         }
         case x: HListConvert[a, al, A] => {
           val kvp = kvpHList(x.from)
           (jOpt: Option[IN], path: Path) =>
             jOpt match {
-              case None    => Left(NonEmptyList.one(RequiredData(path, null)))
+              case None => Left(NonEmptyList.one(RequiredData(path, null)))
               case Some(j) => kvp(j, path).right.map(x.fHtoA(_))
             }
         }

@@ -2,9 +2,7 @@ package com.bones.jdbc
 
 import java.sql.{Connection, PreparedStatement, SQLException, Types}
 import java.time.{LocalDate, LocalDateTime, ZoneOffset}
-
 import cats.data.NonEmptyList
-import com.bones.crud.WithId
 import com.bones.data.Error.{ExtractionError, SystemError}
 import com.bones.data.Value._
 import com.bones.jdbc.DbUtil._
@@ -30,15 +28,15 @@ object DbUpdateValues {
 
   def updateQuery[A](bonesSchema: BonesSchema[A]): DataSource => (
       Long,
-      A) => Either[NonEmptyList[ExtractionError], WithId[Long, A]] = {
+      A) => Either[NonEmptyList[ExtractionError], (Long,A)] = {
     val uq = updateQueryWithConnection(bonesSchema)
     ds => (id, a) =>
-      withDataSource[WithId[Long, A]](ds)(con => uq(id, a)(con))
+      withDataSource[(Long,A)](ds)(con => uq(id, a)(con))
   }
 
   def updateQueryWithConnection[A](bonesSchema: BonesSchema[A])
     : (Long,
-       A) => Connection => Either[NonEmptyList[SystemError], WithId[Long, A]] =
+       A) => Connection => Either[NonEmptyList[SystemError], (Long,A)] =
     bonesSchema match {
       case x: HListConvert[h, n, b] => {
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
@@ -58,7 +56,7 @@ object DbUpdateValues {
                     .foreach(f => f(statement))
                   statement.setLong(updates.lastIndex, id)
                   statement.execute()
-                  Right(WithId(id, a))
+                  Right( (id, a) )
                 } catch {
                   case e: SQLException =>
                     Left(

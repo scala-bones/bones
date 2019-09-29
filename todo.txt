@@ -1,2 +1,1 @@
-1. Finish Swagger Implementation for data algebra
-2. remove crud algebra - move to interpreter specific
+1. remove crud algebra - move to interpreter specific

@@ -1,6 +1,5 @@
 package com.bones.oas3
 
-import com.bones.crud.Algebra._
 import com.bones.data.Value.BonesSchema
 import io.swagger.v3.oas.models._
 import io.swagger.v3.oas.models.info.Info
@@ -12,50 +11,55 @@ import scala.collection.JavaConverters._
 
 object CrudOasInterpreter {
 
-  def jsonApiForService[CI, CO, CE, RO, RE, UI, UO, UE, DO, DE](
-                                                                 title: String,
-                                                                 version: String,
+  def jsonApiForService[A, E, ID](
+      path: String,
+      title: String,
+      version: String,
       contentTypes: List[String],
-      serviceOps: ServiceOps[CI, CO, CE, RO, RE, UI, UO, UE, DO, DE]
+      schema: BonesSchema[A],
+      schemaWithId: BonesSchema[(ID,A)],
+      errorSchema: BonesSchema[E],
+      withCreate: Boolean,
+      withRead: Boolean,
+      withUpdate: Boolean,
+      withDelete: Boolean,
+      withSearch: Boolean
   ): OpenAPI => OpenAPI = { openApi =>
-    serviceOps.createOperation.map(co => {
+    if (withCreate) {
       CrudOasInterpreter
         .post(
-          (co.inputSchema, serviceOps.path),
-          (co.outputSchema, serviceOps.path),
-          (co.errorSchema, "error"),
-          s"/${serviceOps.path}",
+          (schema, path),
+          (schemaWithId, path),
+          (errorSchema, "error"),
+          s"/${path}",
           contentTypes
         )
         .apply(openApi)
-    })
+    }
 
-    serviceOps.readOperation.map(
-      read =>
-        CrudOasInterpreter
-          .get((read.outputSchema, serviceOps.path),
-               s"/${serviceOps.path}")
-          .apply(openApi))
+    if (withRead) {
+      CrudOasInterpreter
+        .get((schemaWithId, path), s"/${path}")
+        .apply(openApi)
+    }
 
-    serviceOps.updateOperation.foreach(
-      update =>
-        CrudOasInterpreter
-          .put(
-            (update.inputSchema, serviceOps.path),
-            (update.outputSchema, serviceOps.path),
-            (update.failureSchema, "error"),
-            s"/${serviceOps.path}",
-            contentTypes
-          )
-          .apply(openApi))
+    if (withUpdate) {
+      CrudOasInterpreter
+        .put(
+          (schemaWithId, path),
+          (schemaWithId, path),
+          (errorSchema, "error"),
+          s"/${path}",
+          contentTypes
+        )
+        .apply(openApi)
+    }
 
-    serviceOps.deleteOperation.foreach(
-      delete =>
-        CrudOasInterpreter
-          .delete((delete.outputSchema, serviceOps.path),
-                  s"/${serviceOps.path}",
-                  contentTypes)
-          .apply(openApi))
+    if (withDelete) {
+      CrudOasInterpreter
+        .delete((schemaWithId, path), s"/${path}", contentTypes)
+        .apply(openApi)
+    }
 
     val info = new Info()
     info.title(title)
@@ -291,7 +295,6 @@ object CrudOasInterpreter {
           .encoding(encodings.asJava)
         content
           .addMediaType(contentType, mediaType)
-
 
       })
       val requestBody = new RequestBody()

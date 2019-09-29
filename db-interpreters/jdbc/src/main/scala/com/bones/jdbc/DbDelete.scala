@@ -3,7 +3,6 @@ package com.bones.jdbc
 import java.sql.Connection
 
 import cats.data.NonEmptyList
-import com.bones.crud.WithId
 import com.bones.data.Error.{ExtractionError, SystemError}
 import com.bones.data.Value.{BonesSchema, HListConvert}
 import com.bones.jdbc.DbInsertValues.ID
@@ -16,7 +15,7 @@ object DbDelete {
 
   def delete[A](schema: BonesSchema[A])
     : DataSource => ID => Either[NonEmptyList[ExtractionError],
-                                 WithId[Long, A]] = {
+                                 (Long, A)] = {
     val withConnection = deleteWithConnect(schema)
     ds => id =>
       withDataSource(ds)(con => withConnection(id)(con))
@@ -24,7 +23,7 @@ object DbDelete {
 
   def deleteWithConnect[A](schema: BonesSchema[A])
     : ID => Connection => Either[NonEmptyList[ExtractionError],
-                                 WithId[Long, A]] = {
+                                 (Long, A)] = {
     schema match {
       case x: HListConvert[_, _, _] => {
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
