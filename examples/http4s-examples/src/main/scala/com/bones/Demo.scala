@@ -1,12 +1,10 @@
 package com.bones
 
 import cats.effect.IO
-import com.bones.crud.Algebra.ServiceOps
 import com.bones.data.Value.KvpNil
-import com.bones.fullstack.CrudDbDefinitions.DbError
 import com.bones.fullstack.LocalhostAllIOApp
 import com.bones.syntax._
-import com.bones.validation.ValidationDefinition.{BigDecimalValidation => dv, LongValidation => lv, StringValidation => sv}
+import com.bones.validation.ValidationDefinition.{BigDecimalValidation => dv, StringValidation => sv}
 import org.http4s.HttpRoutes
 import cats.effect._
 import cats.implicits._
@@ -14,9 +12,6 @@ import cats.implicits._
 
 
 object Demo {
-
-  //  case class Error(error: String)
-  val errorSchema = (kvp("error", string) :: KvpNil).convert[DbError]
 
   case class Location(latitude: BigDecimal, longitude: BigDecimal)
 
@@ -35,26 +30,18 @@ object Demo {
       KvpNil
     ).convert[Waterfall]
 
-  val waterfallService =
-    ServiceOps
-      .havingPath("waterfall")
-      .providingCreate(waterfallSchema, waterfallSchema, errorSchema)
-      .providingRead(waterfallSchema, errorSchema)
-      .providingUpdate(waterfallSchema, waterfallSchema, errorSchema)
-      .providingDelete(waterfallSchema, errorSchema)
-
 }
 
 object DemoApp extends LocalhostAllIOApp() {
 
-  import LocalhostAllIOApp._
   import Demo._
+  import LocalhostAllIOApp._
 
   val ds = localhostDataSource
 
   override def services: HttpRoutes[IO] = {
-    serviceRoutesWithCrudMiddleware(waterfallService, ds) <+>
-      dbSchemaEndpoint(waterfallService) <+>
+    serviceRoutesWithCrudMiddleware("waterfall", waterfallSchema, ds) <+>
+      dbSchemaEndpoint("waterfall", waterfallSchema) <+>
       reactEndpoints(List(waterfallSchema))
   }
 }

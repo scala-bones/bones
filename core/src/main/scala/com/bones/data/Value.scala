@@ -8,7 +8,7 @@ import com.bones.data.Error.CanNotConvert
 import com.bones.validation.ValidationDefinition.ValidationOp
 import shapeless.ops.hlist
 import shapeless.ops.hlist.IsHCons.Aux
-import shapeless.ops.hlist.{IsHCons, Length, Prepend, Split}
+import shapeless.ops.hlist.{IsHCons, Length, Prepend, Split, Tupler}
 import shapeless.{::, Generic, HList, HNil, Nat, Succ}
 
 /** The Value in Key-Value Pair */
@@ -117,20 +117,29 @@ object Value {
     extends KvpValue[V]
       with ToOptionalData[V] {}
 
+
   final case class KvpHListValue[H <: HList : Manifest, HL <: Nat](kvpHList: KvpHList[H, HL],
                                                                    validations: List[ValidationOp[H]])
     extends KvpValue[H]
       with ToOptionalData[H] {
 
-    def convert[Z: Manifest](validation: ValidationOp[Z]*)(
+    def convert[Z: Manifest](convertValidation: ValidationOp[Z]*)(
       implicit gen: Generic.Aux[Z, H]): HListConvert[H, HL, Z] =
-      HListConvert(kvpHList, gen.from, gen.to, validation.toList)
+      HListConvert(kvpHList, gen.from, gen.to, convertValidation.toList)
+
+    def tupled[Tup<:Product:Manifest](tupleValidations: ValidationOp[Tup]*)(
+      implicit tupler: Tupler.Aux[H,Tup],
+      gen: Generic[Tup]
+    ): HListConvert[H,HL,Tup] =
+      HListConvert[H,HL,Tup](kvpHList, (h: H) => tupler.apply(h), (t: Tup) => gen.to(t).asInstanceOf[H], tupleValidations.toList)
+
   }
 
   trait BonesSchema[A] {
     val manifestOfA: Manifest[A]
   }
 
+  /** Specifies a conversion to and from an HList to an A (where A is most likely a Case class) */
   final case class HListConvert[H <: HList, N <: Nat, A: Manifest]
   (from: KvpHList[H, N],
    fHtoA: H => A,
@@ -165,6 +174,18 @@ object Value {
       HListConvert(this, gen.from, gen.to, validation.toList)
 
     def convert[A: Manifest](implicit gen: Generic.Aux[A, H]): HListConvert[H, N, A] = convert[A]()
+
+    def tupled[Tup<:Product:Manifest](
+                                       implicit tupler: Tupler.Aux[H,Tup],
+                                       gen: Generic[Tup]
+                                     ): HListConvert[H,N,Tup] = tupled[Tup]()
+
+    def tupled[Tup<:Product:Manifest](tupledValidations: ValidationOp[Tup]*)(
+      implicit tupler: Tupler.Aux[H,Tup],
+      gen: Generic[Tup]
+    ) =
+      HListConvert[H,N,Tup](this, (h: H) => tupler.apply(h), (t: Tup) => gen.to(t).asInstanceOf[H], tupledValidations.toList)
+
 
     def xmap[A: Manifest](f: H => A, g: A => H, validations: ValidationOp[A]*) =
       HListConvert(this, f, g, validations.toList)

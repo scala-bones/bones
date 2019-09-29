@@ -4,7 +4,6 @@ import java.sql.{Connection, ResultSet}
 
 import cats.data.NonEmptyList
 import cats.effect.IO
-import com.bones.crud.WithId
 import com.bones.data.Error.ExtractionError
 import com.bones.data.Value.{BonesSchema, HListConvert}
 import com.bones.jdbc.DbUtil.camelToSnake
@@ -16,7 +15,7 @@ object DbSearch {
 
   def getEntity[A](schema: BonesSchema[A]): DataSource => Stream[
     IO,
-    Either[NonEmptyList[ExtractionError], WithId[Long, A]]] = {
+    Either[NonEmptyList[ExtractionError], (Long,A)]] = {
     val withConnection = searchEntityWithConnection[A](schema)
     ds =>
       {
@@ -28,8 +27,8 @@ object DbSearch {
   private def extractToStream[A](
       rs: ResultSet,
       resultSetF: ResultSet => Either[NonEmptyList[ExtractionError],
-                                      WithId[Long, A]])
-    : Stream[IO, Either[NonEmptyList[ExtractionError], WithId[Long, A]]] = {
+                                      (Long,A)])
+    : Stream[IO, Either[NonEmptyList[ExtractionError], (Long,A)]] = {
     if (rs.next()) {
       val next = resultSetF(rs)
       Stream(next) ++ extractToStream(rs, resultSetF)
@@ -41,16 +40,21 @@ object DbSearch {
   def searchEntityWithConnection[A](
       schema: BonesSchema[A]): Connection => Stream[
     IO,
-    Either[NonEmptyList[ExtractionError], WithId[Long, A]]] = {
+    Either[NonEmptyList[ExtractionError], (Long,A)]] = {
     schema match {
       case x: HListConvert[h, n, b] =>
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
-        val withId = WithId.entityWithId(DbUtil.longIdKeyValueDef, x)
-        val resultSetF: ResultSet => Either[NonEmptyList[ExtractionError],
-                                            WithId[Long, A]] =
-          ResultSetInterpreter.valueDefinition(withId)(List.empty, "")
+        val schemaWithId = schema match {
+          case h: HListConvert[_,_,A] =>
+            implicit val manifest: Manifest[A] = h.manifestOfA
+            (DbUtil.longIdKeyValueDef :: h :><: com.bones.syntax.kvpNil).tupled[(Long,A)]
+        }
 
-        val fields = ColumnNameInterpreter.valueDefinition(withId)("")
+        val resultSetF: ResultSet => Either[NonEmptyList[ExtractionError],
+                                            (Long,A)] =
+          ResultSetInterpreter.valueDefinition(schemaWithId)(List.empty, "")
+
+        val fields = ColumnNameInterpreter.valueDefinition(schemaWithId)("")
         val sql = s"""select ${fields.mkString(",")} from $tableName limit 50"""
         con =>
           {
