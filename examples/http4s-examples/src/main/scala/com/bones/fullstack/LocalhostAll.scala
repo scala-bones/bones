@@ -1,13 +1,14 @@
 package com.bones.fullstack
 
 
+import java.nio.charset.StandardCharsets
+
+import cats.data.{Kleisli, NonEmptyList}
 import cats.effect._
 import cats.implicits._
-import com.bones.crud.Algebra.ServiceOps
-import com.bones.crud.WithId
-import com.bones.data.Value.BonesSchema
-import com.bones.fullstack.CrudDbDefinitions.DbError
-import com.bones.http4s.HttpInterpreter
+import com.bones.data.Error.ExtractionError
+import com.bones.data.Value.{BonesSchema, KvpNil}
+import com.bones.http4s.ClassicCrudInterpreter
 import com.bones.jdbc.{DbColumnInterpreter, DbUtil}
 import com.bones.react.{CreateReactFile, CreateReactFiles}
 import com.bones.syntax.{kvp, long, lv}
@@ -18,7 +19,21 @@ import org.http4s.server.blaze._
 import org.http4s.server.middleware.CORS
 import org.http4s.{Header, HttpRoutes}
 
+import scala.util.Try
+
 object LocalhostAllIOApp {
+
+  case class BasicError(message: String)
+  private val basicErrorSchema =
+    (kvp("message", com.bones.syntax.string) :: KvpNil).convert[BasicError]
+
+  def extractionErrorToBasicError(extractionError: ExtractionError) : BasicError = {
+    BasicError(extractionError.toString)
+  }
+  def extractionErrorsToBasicError(extractionErrors: NonEmptyList[ExtractionError]): BasicError = {
+    BasicError(extractionErrors.toList.mkString("."))
+  }
+
 
   def localhostDataSource: HikariDataSource = {
     val config = new HikariConfig
@@ -32,13 +47,11 @@ object LocalhostAllIOApp {
     new HikariDataSource(config)
   }
 
-  def dbSchemaEndpoint(serviceOps: ServiceOps[_, _, _, _, _, _, _, _, _, _]): HttpRoutes[IO] = {
-    serviceOps.createOperation.map(op => {
-      val dbSchema = DbColumnInterpreter.tableDefinition(op.inputSchema)
+  def dbSchemaEndpoint[A](path: String, schema: BonesSchema[A]): HttpRoutes[IO] = {
+      val dbSchema = DbColumnInterpreter.tableDefinition(schema)
       HttpRoutes.of[IO] {
-        case GET -> Root / "dbSchema" / serviceOps.path => Ok(dbSchema, Header("Content-Type", "text/plain"))
+        case GET -> Root / "dbSchema" / path => Ok(dbSchema, Header("Content-Type", "text/plain"))
       }
-    }).getOrElse(HttpRoutes.empty)
   }
 
   def reactEndpoints(schemas: List[BonesSchema[_]]): HttpRoutes[IO] = {
@@ -49,31 +62,30 @@ object LocalhostAllIOApp {
     }
   }
 
-  def serviceRoutesWithCrudMiddleware[CI, CO, CE, RO, RE, UI, UO, UE, DO, DE](
-                                                                               serviceOp: ServiceOps[CI, CI, DbError, RO, DbError, UI, UI, DbError, DO, DbError],
-                                                                               ds: DataSource
+  def serviceRoutesWithCrudMiddleware[A](path: String, schema: BonesSchema[A],ds: DataSource
                                                                              ): HttpRoutes[IO] = {
-    val createOperationWitId = serviceOp.createOperation.map(c => c.copy(outputSchema = WithId.entityWithId(DbUtil.longIdKeyValueDef, c.outputSchema)))
-    val readOperationWithId = serviceOp.readOperation.map(r => r.copy(outputSchema = WithId.entityWithId(DbUtil.longIdKeyValueDef, r.outputSchema)))
-    val updateOperationWithId = serviceOp.updateOperation.map(u => u.copy(outputSchema = WithId.entityWithId(DbUtil.longIdKeyValueDef, u.outputSchema)))
-    val deleteOperationWithid = serviceOp.deleteOperation.map(d => d.copy(outputSchema = WithId.entityWithId(DbUtil.longIdKeyValueDef, d.outputSchema)))
-    val serviceOpWithId =
-      ServiceOps(serviceOp.path, createOperationWitId, readOperationWithId, updateOperationWithId, deleteOperationWithid)
-
-    val middleware = CrudDbDefinitions(serviceOp, ds)
 
 
-    val interpreterRoutes = HttpInterpreter().forService[IO, CI, WithId[Long, CI], DbError, WithId[Long, RO], DbError, UI, WithId[Long, UI], DbError, WithId[Long, DO], DbError](
-      serviceOpWithId,
-      middleware.createF,
-      middleware.readF,
-      middleware.searchF,
-      middleware.updateF,
-      middleware.deleteF
+    val middleware = CrudDbDefinitions(schema, ds)
+
+
+    val interpreter = ClassicCrudInterpreter.allVerbs[A,BasicError,IO,Long](
+      path,
+      StandardCharsets.UTF_8,
+      schema,
+      kvp("id", long(lv.min(1))),
+      str => Try(str.toLong).toEither.left.map(ex => BasicError("Could not convert parameter to a Long value")),
+      basicErrorSchema,
+      Kleisli(middleware.createF).map(_.left.map(e => extractionErrorToBasicError(e))).run,
+      Kleisli(middleware.readF).map(_.left.map(e => extractionErrorsToBasicError(e))).run,
+      Function.untupled(Kleisli(middleware.updateF.tupled).map(_.left.map(e => extractionErrorsToBasicError(e))).run),
+      Kleisli(middleware.deleteF).map(_.left.map(e => extractionErrorsToBasicError(e))).run,
+      () => middleware.searchF
     )
-    val dbRoutes = dbSchemaEndpoint(serviceOp)
 
-    interpreterRoutes <+> dbRoutes
+    val dbRoutes = dbSchemaEndpoint(path, schema)
+
+    interpreter.createRoutes <+> dbRoutes
 
   }
 }

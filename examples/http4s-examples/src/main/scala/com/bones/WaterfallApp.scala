@@ -1,9 +1,7 @@
 package com.bones
 
 import cats.effect.IO
-import com.bones.crud.Algebra.ServiceOps
 import com.bones.data.Value.KvpNil
-import com.bones.fullstack.CrudDbDefinitions.DbError
 import com.bones.fullstack.LocalhostAllIOApp
 import com.bones.syntax._
 import com.bones.validation.ValidationDefinition.{BigDecimalValidation => dv, LongValidation => lv, StringValidation => sv}
@@ -13,10 +11,6 @@ import cats.implicits._
 
 
 object WaterfallDefinitions {
-
-  //  case class Error(error: String)
-  val errorDef = (kvp("error", string) :: KvpNil).convert[DbError]
-
 
   case class ImperialMeasurement(feet: Long, inches: Long)
 
@@ -36,9 +30,9 @@ object WaterfallDefinitions {
 
   case class Waterfall(name: String, latitude: BigDecimal, longitude: BigDecimal, cubicFeetPerMinute: Option[BigDecimal],
                        height: Option[ImperialMeasurement], waterValue: WaterVolume.Value, // discoveryDate: LocalDateTime,
-                       wantToVisit: Boolean, description: String)
+                       /*wantToVisit: Boolean, description: String*/)
 
-  val waterfall = (
+  val waterfallSchema = (
     kvp("name", string(sv.max(200))) ::
       kvp("latitude", bigDecimal(dv.min(-180), dv.max(180))) ::
       kvp("longitude", bigDecimal(dv.min(-180), dv.max(180))) ::
@@ -46,31 +40,21 @@ object WaterfallDefinitions {
       kvp("height", imperialMeasurement.optional) ::
       kvp("waterVolume", enumeration[WaterVolume.type, WaterVolume.Value](WaterVolume)) ::
       //      kvp("discoveryDate", isoDateTime()) ::
-      kvp("wantToVisit", boolean) ::
-      kvp("description", string(sv.max(500))) ::
+//      kvp("wantToVisit", boolean) ::
+//      kvp("description", string(sv.max(500))) ::
       KvpNil
     ).convert[Waterfall]
-
-  val waterfallService =
-    ServiceOps.classicCrud("waterfall", waterfall, errorDef)
 
 
   case class WaterfallVisit(waterfallId: Long, waterVolume: WaterVolume.Value, notes: Option[String])
 
-  val waterfallVisit = (
+  val waterfallVisitSchema = (
     kvp("waterfallId", long(lv.min(1))) ::
       //      kvp("visitDate", isoDate()) ::
       kvp("waterVolume", enumeration[WaterVolume.type, WaterVolume.Value](WaterVolume)) ::
       kvp("notes", string.optional) ::
       KvpNil
     ).convert[WaterfallVisit]
-
-  val waterfallVisitService =
-    ServiceOps.havingPath("waterfallVisit")
-      .providingCreate(waterfallVisit, waterfallVisit, errorDef)
-      .providingRead(waterfallVisit, errorDef)
-      .providingUpdate(waterfallVisit, waterfallVisit, errorDef)
-      .providingDelete(waterfallVisit, errorDef)
 
 }
 
@@ -82,10 +66,10 @@ object WaterfallApp extends LocalhostAllIOApp() {
   val ds = localhostDataSource
 
   override def services: HttpRoutes[IO] = {
-    serviceRoutesWithCrudMiddleware(waterfallService, ds) <+>
+    serviceRoutesWithCrudMiddleware("waterfall", waterfallSchema, ds) <+>
       //    serviceRoutesWithCrudMiddleware(waterfallVisitService, ds) <+>
-      dbSchemaEndpoint(waterfallService) <+>
-      dbSchemaEndpoint(waterfallVisitService) <+>
-      reactEndpoints(List(waterfall, waterfallVisit))
+      dbSchemaEndpoint("waterfall", waterfallSchema) <+>
+      dbSchemaEndpoint("waterfallVisit", waterfallVisitSchema) <+>
+      reactEndpoints(List(waterfallSchema, waterfallVisitSchema))
   }
 }

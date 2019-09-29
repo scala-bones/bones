@@ -1,100 +1,66 @@
 package com.bones.fullstack
 
+import cats.data.NonEmptyList
 import cats.effect.IO
-import com.bones.crud.Algebra.ServiceOps
-import com.bones.crud.WithId
+import com.bones.data.Error.{ExtractionError, SystemError}
+import com.bones.data.Value.BonesSchema
 import com.bones.jdbc._
 import fs2.Stream
 import javax.sql.DataSource
 
-object CrudDbDefinitions {
-
-  //  def entityWithId[B](entity: BonesSchema[B]): BonesSchema[WithId[B]] =
-  //    entity match {
-  //      case op: HListConvert[a,al,B] =>
-  //        implicit val x = op.manifestOfA
-  //        (kvp("idDefinition", long(lv.min(0))) ::
-  //          op :><:
-  //          KvpNil
-  //        ).convert[WithId[B]]
-  //    }
-
-
-  //  case class WithId[A](idDefinition: Long, a: A)
-  case class DbError(message: String)
-
-}
-
-case class CrudDbDefinitions[CI, CO, RO, UI, UO, DO](
-                                                      schema: ServiceOps[CI, CO, _, RO, _, UI, UO, _, DO, _],
-                                                      ds: DataSource) {
+/**
+  * For a given schema, this class provides the basic CRUD operations
+  * for manipulating data in a Database.
+  * @param schema
+  * @param ds
+  * @tparam A
+  */
+case class CrudDbDefinitions[A](schema: BonesSchema[A], ds: DataSource) {
 
   import CrudDbDefinitions._
 
   // TODO: deal with error better
-  val searchF: Stream[IO, WithId[Long, RO]] =
-    schema.readOperation.map(op => {
-      DbSearch.getEntity(op.outputSchema)(ds)
-        .flatMap(out => {
-          out match {
-            case Left(errO) => Stream.empty
-            case Right(ro) => Stream {
+  val searchF: Stream[IO, (Long, A)] =
+    DbSearch
+      .getEntity(schema)(ds)
+      .flatMap({
+          case Left(errO) => Stream.empty
+          case Right(ro) =>
+            Stream {
               ro
             }
-          }
-        })
-    }).getOrElse(Stream.empty)
+      })
 
-  def createF: CI => IO[Either[DbError, WithId[Long, CI]]] = {
-    schema.createOperation.map(op => {
-      val insertQuery = DbInsertValues.insertQuery(op.inputSchema)(ds)
-      (input: CI) =>
-        IO {
-          insertQuery(input)
-            .left.map(ex => DbError(ex.toString))
-        }
-    }).getOrElse((input: CI) => IO {
-      Left(DbError("Create Not Supported"))
-    })
+  def createF: A => IO[Either[ExtractionError, (Long, A)]] = {
+    val insertQuery = DbInsertValues.insertQuery(schema)(ds)
+    input: A =>
+      IO {
+        insertQuery(input)
+      }
   }
 
-  val readF: Long => IO[Either[DbError, WithId[Long, RO]]] = {
-    schema.readOperation.map(op => {
-      val readQuery = DbGet.getEntity(op.outputSchema)(ds)
-      (id: Long) =>
-        IO {
-          readQuery(id)
-            .left.map(ex => DbError(ex.toString()))
-        }
-    }).getOrElse((id: Long) => IO {
-      Left(DbError("Read Not Supported"))
-    })
+  val readF: Long => IO[Either[NonEmptyList[ExtractionError], (Long, A)]] = {
+    val readQuery = DbGet.getEntity(schema)(ds)
+    id: Long =>
+      IO {
+        readQuery(id)
+      }
   }
 
-  val updateF: (Long, UI) => IO[Either[DbError, WithId[Long, UI]]] = {
-    schema.updateOperation.map(op => {
-      val updateQuery = DbUpdateValues.updateQuery(op.inputSchema)(ds)
-      (id: Long, input: UI) =>
-        IO {
-          updateQuery(id, input)
-            .left.map(ex => DbError(ex.toString()))
-        }
-    }).getOrElse((id: Long, input: UI) => IO {
-      Left(DbError("Update not supported"))
-    })
+  val updateF: (Long, A) => IO[Either[NonEmptyList[ExtractionError], (Long, A)]] = {
+    val updateQuery = DbUpdateValues.updateQuery(schema)(ds)
+    (id: Long, input: A) =>
+      IO {
+        updateQuery(id, input)
+      }
   }
 
-  val deleteF: Long => IO[Either[DbError, WithId[Long, DO]]] = {
-    schema.deleteOperation.map(op => {
-      val deleteQuery = DbDelete.delete(op.outputSchema)(ds)
-      (id: Long) =>
-        IO {
-          deleteQuery(id)
-            .left.map(ex => DbError(ex.toString()))
-        }
-    }).getOrElse((id: Long) => IO {
-      Left(DbError("Delete not supported "))
-    })
+  val deleteF: Long => IO[Either[NonEmptyList[ExtractionError], (Long, A)]] = {
+    val deleteQuery = DbDelete.delete(schema)(ds)
+    id: Long =>
+      IO {
+        deleteQuery(id)
+      }
   }
 
 }
