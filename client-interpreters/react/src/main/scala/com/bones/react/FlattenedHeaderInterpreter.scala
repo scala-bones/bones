@@ -3,6 +3,10 @@ package com.bones.react
 import com.bones.data.Value._
 import shapeless.{HList, Nat}
 
+/**
+  * Responsible for converting Keys into Human Readable names.
+  * This is currently not used.
+  */
 object FlattenedHeaderInterpreter {
 
   type Key = String

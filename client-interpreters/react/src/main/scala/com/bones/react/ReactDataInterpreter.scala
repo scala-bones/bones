@@ -3,9 +3,12 @@ package com.bones.react
 import java.time.format.DateTimeFormatter
 
 import com.bones.data.Value._
-import com.bones.react.FormInterpreter._
 import shapeless.{HList, Nat}
 
+/**
+  * Responsible for generating a list of [ReactComponentData] which is used by this react component
+  * generate to send, retrieve and display fields in a component.
+  */
 object ReactDataInterpreter {
 
   case class KeyHierarchy(key: String, children: List[KeyHierarchy])

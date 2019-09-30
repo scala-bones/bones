@@ -58,7 +58,7 @@ object DbInsertValues {
                 generatedKeys.close()
               }
             } catch {
-              case e: SQLException => Left(SystemError(List.empty, e,Some("SQL Statement: " + sql)))
+              case e: SQLException => Left(SystemError(e, Some("SQL Statement: " + sql)))
             } finally {
               statement.close()
             }

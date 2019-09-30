@@ -7,6 +7,9 @@ import com.bones.validation.ValidationDefinition.ValidationOp
 
 import scala.annotation.tailrec
 
+/**
+  * A collection of helper functions useful for dealing with validation.
+  */
 object ValidationUtil {
 
   /** Validate the input with all specified validations.  If any failed then Left, else Right(input) */

@@ -3,6 +3,9 @@ package com
 import com.bones.data.{KeyValueDefinitionSugar, Sugar}
 import com.bones.validation.ValidationDefinition._
 
+/**
+  * Collect all functionality here so one only needs to specify one import statement: 'com.bones.syntax._'
+  */
 package object bones {
 
   /** So we can just import com.bones.syntax._ */

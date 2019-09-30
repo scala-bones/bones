@@ -6,7 +6,7 @@ import io.circe.{Json => CJson}
 import org.scalatest.FunSuite
 import io.circe.parser.parse
 
-class ValidatedFromCirceInterpreterTest extends FunSuite {
+class CirceValidatorInterpreterTest extends FunSuite {
 
   val json: String = """
   {
@@ -30,7 +30,7 @@ class ValidatedFromCirceInterpreterTest extends FunSuite {
   test("kvp String") {
     val str = kvp("name", string(sv.length(3))) :: KvpNil
 
-    ValidatedFromCirceInterpreter.isoInterpreter.kvpHList(str).apply(circeDoc, List.empty) match {
+    CirceValidatorInterpreter.isoInterpreter.kvpHList(str).apply(circeDoc, List.empty) match {
       case Left(err) => fail(s"expected success, received: ${err}")
       case Right(r) => assert(r.head === "Foo")
     }
@@ -40,7 +40,7 @@ class ValidatedFromCirceInterpreterTest extends FunSuite {
   test( "kvp String fail validation") {
     val str = kvp("name", string(sv.length(2))) :: KvpNil
 
-    ValidatedFromCirceInterpreter.isoInterpreter.kvpHList(str).apply(circeDoc, List.empty) match {
+    CirceValidatorInterpreter.isoInterpreter.kvpHList(str).apply(circeDoc, List.empty) match {
       case Left(err) => succeed
       case Right(r) => fail(s"expected validation failure, received: ${r}")
     }
@@ -52,7 +52,7 @@ class ValidatedFromCirceInterpreterTest extends FunSuite {
       kvpHList("values", kvp("baz", bigDecimal(bdv.Min(BigDecimal(0)))) :: KvpNil ) ::
       KvpNil
 
-    ValidatedFromCirceInterpreter.isoInterpreter.kvpHList(bd).apply(circeDoc, List.empty) match {
+    CirceValidatorInterpreter.isoInterpreter.kvpHList(bd).apply(circeDoc, List.empty) match {
       case Left(err) => fail(s"expected success, received: ${err}")
       case Right(r) => assert(r.head.head == BigDecimal(100.001))
     }

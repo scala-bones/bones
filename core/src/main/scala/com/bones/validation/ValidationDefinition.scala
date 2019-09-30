@@ -1,7 +1,6 @@
 package com.bones.validation
 
 import java.net.URI
-import java.text.Format
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
@@ -13,6 +12,9 @@ import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
 import java.time.LocalDate
 
+/**
+  * A collection of validation definition natively supported by Bones.
+  */
 object ValidationDefinition {
 
   /** Represents a validations operation */

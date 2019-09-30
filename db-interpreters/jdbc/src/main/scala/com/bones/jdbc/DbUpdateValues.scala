@@ -60,7 +60,7 @@ object DbUpdateValues {
                 } catch {
                   case e: SQLException =>
                     Left(
-                      NonEmptyList.one(SystemError(List.empty, e, Some(sql))))
+                      NonEmptyList.one(SystemError(e, Some(sql))))
                 } finally {
                   statement.close()
                 }

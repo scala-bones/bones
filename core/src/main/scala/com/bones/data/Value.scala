@@ -3,7 +3,6 @@ package com.bones.data
 import java.time.{LocalDate, LocalDateTime}
 import java.util.UUID
 
-import cats.free.FreeApplicative
 import com.bones.data.Error.CanNotConvert
 import com.bones.validation.ValidationDefinition.ValidationOp
 import shapeless.ops.hlist
@@ -15,9 +14,9 @@ import shapeless.{::, Generic, HList, HNil, Nat, Succ}
 object Value {
 
   /** KvpValue is meant to be the 'value' of a key value pair.
-    * This can be one of the pre-defined primitive 'Bones' types or a product type,
+    * This can be one of the pre-defined primitive 'Bones' types or a product type (to be implemented),
     * one of KvpHList, SumType or
-    * */
+    */
   sealed abstract class KvpValue[A: Manifest] {
 
     val manifestOfA: Manifest[A] = manifest[A]
@@ -32,27 +31,23 @@ object Value {
     }
   }
 
-  type ValueDefinition[A] = FreeApplicative[KvpValue, A]
-
   /** Wraps a data definition to mark the field optional */
   case class OptionalKvpValueDefinition[B: Manifest](valueDefinitionOp: KvpValue[B])
     extends KvpValue[Option[B]] {}
 
   /** Syntactic sugar to wrap the data definition to allow 'optional' syntax on a KvpValue. */
-  trait ToOptionalData[B] {
-    self: KvpValue[B] =>
-
+  trait ToOptionalData[B] { self: KvpValue[B] =>
     private implicit val manifestOfB: Manifest[B] = self.manifestOfA
     val optional: OptionalKvpValueDefinition[B] = OptionalKvpValueDefinition[B](self)
   }
 
   /** Syntactic sugar to wrap the definition in a List type. */
-  trait ToListData[B] {
-    self: KvpValue[B] =>
+  trait ToListData[B] { self: KvpValue[B] =>
     private implicit val manifestOfB: Manifest[B] = self.manifestOfA
     val list: ListData[B] = ListData[B](self, List.empty)
   }
 
+  /** Schema type for Boolean Data */
   final case class BooleanData(validations: List[ValidationOp[Boolean]])
     extends KvpValue[Boolean]
       with ToOptionalData[Boolean]
@@ -95,7 +90,9 @@ object Value {
     extends KvpValue[BigDecimal]
       with ToOptionalData[BigDecimal]
 
-  // base64-encoded characters, for example, U3dhZ2dlciByb2Nrcw==
+  /** base64-encoded characters, for example,
+    * @example "U3dhZ2dlciByb2Nrcw=="
+    * */
   final case class ByteArrayData(validations: List[ValidationOp[Array[Byte]]])
     extends KvpValue[Array[Byte]]
       with ToOptionalData[Array[Byte]]
@@ -183,7 +180,7 @@ object Value {
     def tupled[Tup<:Product:Manifest](tupledValidations: ValidationOp[Tup]*)(
       implicit tupler: Tupler.Aux[H,Tup],
       gen: Generic[Tup]
-    ) =
+    ): HListConvert[H,N,Tup] =
       HListConvert[H,N,Tup](this, (h: H) => tupler.apply(h), (t: Tup) => gen.to(t).asInstanceOf[H], tupledValidations.toList)
 
 
@@ -231,17 +228,18 @@ object Value {
   }
 
   /**
-    * This allows the HListConvert to be attached to a KvpHList
+    * This allows the HListConvert to be attached to a KvpHList.  For example,
+    * at a type level, we can combine a Case class and a generic type.
     * @param hListConvert provides functions to and from A/XL
-    * @param validations
+    * @param validations The list of validations tied to the entire data structure.
     * @param tail The tail of the HList which the A is prepended to.
-    * @param isHCons
+    * @param isHCons Provides the ability to join A :: HT and Split HO
     * @tparam A The concrete class A which is at the head of the data structure.
-    * @tparam HT
-    * @tparam NT
-    * @tparam HO
+    * @tparam HT HList Tail
+    * @tparam NT Nat length of tail
+    * @tparam HO The full HList generic representation this instance represents.
     * @tparam XL HList which can be converted to A using HListConvert functions
-    * @tparam XLL
+    * @tparam XLL The Nat length of the generic type this instance represents.
     */
   final case class KvpConcreteTypeHead[A: Manifest,
   HT <: HList,
@@ -324,7 +322,7 @@ object Value {
 
     /**
       *
-      * When we combine groups, we want to keep the validations separete, but we want to combine the result.
+      * When we combine groups, we want to keep the validations separate, but we want to combine the result.
       *
       * @param kvp The KvpHList to append to this group.
       * @tparam HO2 New HList which combines L (from this) and P (from others)

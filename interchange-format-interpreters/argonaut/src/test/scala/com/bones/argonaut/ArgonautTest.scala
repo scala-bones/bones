@@ -14,10 +14,10 @@ class ArgonautTest extends FunSuite with Checkers with MustMatchers {
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)
 
-  val validateFromCirce = ValidatedFromArgonautInterpreter.isoInterpreter
+  val validateFromCirce = ArgonautValidatorInterpreter.isoInterpreter
 
   val jsonToCc = validateFromCirce.byteArrayFuncFromSchema(allSupportCaseClass, Charset.forName("UTF8"))
-  val ccToJson = EncodeToArgonautInterpreter.isoInterpreter.fromSchema(allSupportCaseClass)
+  val ccToJson = ArgonautEncoderInterpreter.isoInterpreter.fromSchema(allSupportCaseClass)
 
   implicit val arb = Arbitrary(Scalacheck.valueDefinition(allSupportCaseClass))
   val utf8 = Charset.forName("UTF8")

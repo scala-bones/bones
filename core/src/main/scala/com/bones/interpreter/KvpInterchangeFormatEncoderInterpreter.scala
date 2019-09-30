@@ -9,7 +9,7 @@ import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
 import shapeless.{::, HList, Nat}
 
-object KvpOutInterpreter {
+object KvpInterchangeFormatEncoderInterpreter {
   type FOUT[OUT, A] = A => Either[NonEmptyList[ExtractionError], A]
 }
 
@@ -17,7 +17,21 @@ object KvpOutInterpreter {
   * Base trait for converting from HList or Case class to an interchange format such as JSON.
   * @tparam OUT The interchange format.
   */
-trait KvpOutputInterpreter[OUT] {
+trait KvpInterchangeFormatEncoderInterpreter[OUT] {
+
+  /** This is the main entry point whose purpose is to convert
+    * a schema into a function which expects the Type described by the schema (for example a case class)
+    * and converts it into an interchange format library's data structure (such as Circe JSON).
+    * This interpreter assumes the data has already been
+    * validated and is only responsible for the data conversion.
+    *
+    * @param bonesSchema
+    * @tparam A
+    * @return
+    */
+  def fromSchema[A](bonesSchema: BonesSchema[A]): A => OUT = bonesSchema match {
+    case x: HListConvert[_, _, A] => valueDefinition(x)
+  }
 
   def none: OUT
   def empty: OUT
@@ -56,20 +70,6 @@ trait KvpOutputInterpreter[OUT] {
   def byteArrayToOut(ba: ByteArrayData): Array[Byte] => OUT
   def toOutList(list: List[OUT]): OUT
   def enumerationToOut[E<:Enumeration, V:Manifest](op: EnumerationData[E, V]): op.enumeration.Value => OUT
-
-  /** This is the main entry point whose purpose is to convert
-    * a schema into a function which expects the Type described by the schema (for example a case class)
-    * and converts it into an interchange format library's data structure (such as Circe JSON).
-    * This interpreter assumes the data has already been
-    * validated and is only responsible for the data conversion.
-    *
-    * @param bonesSchema
-    * @tparam A
-    * @return
-    */
-  def fromSchema[A](bonesSchema: BonesSchema[A]): A => OUT = bonesSchema match {
-    case x: HListConvert[_, _, A] => valueDefinition(x)
-  }
 
   /** Interpreter for the KvpHList type. */
   protected def kvpHList[H <: HList, HL <: Nat](

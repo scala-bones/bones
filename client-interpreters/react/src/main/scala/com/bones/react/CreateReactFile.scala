@@ -1,13 +1,12 @@
 package com.bones.react
 
-import java.time.format.DateTimeFormatter
-
 import com.bones.data.Value.BonesSchema
 import com.bones.react.FormInterpreter._
 import com.bones.react.ReactDataInterpreter.{KeyHierarchy, ReactComponentData}
 
-import scala.annotation.tailrec
-
+/**
+  * Responsible for creating the React Components.
+  */
 object CreateReactFile {
 
   case class ReactFile(crudClassName: String, labelId: String, contents: String)

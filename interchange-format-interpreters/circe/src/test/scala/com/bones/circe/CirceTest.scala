@@ -16,10 +16,10 @@ class CirceTest extends FunSuite with Checkers with MustMatchers {
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)
 
-  val validateFromCirce = ValidatedFromCirceInterpreter.isoInterpreter
+  val validateFromCirce = CirceValidatorInterpreter.isoInterpreter
 
   val jsonToCc = validateFromCirce.byteArrayFuncFromSchema(allSupportCaseClass, Charset.forName("UTF8"))
-  val ccToJson = EncodeToCirceInterpreter.isoInterpreter.fromSchema(allSupportCaseClass)
+  val ccToJson = CirceEncoderInterpreter.isoInterpreter.fromSchema(allSupportCaseClass)
 
   implicit val arb = Arbitrary(Scalacheck.valueDefinition(allSupportCaseClass))
   val utf8 = Charset.forName("UTF8")

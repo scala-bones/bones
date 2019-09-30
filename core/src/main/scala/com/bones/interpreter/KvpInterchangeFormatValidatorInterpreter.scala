@@ -15,19 +15,36 @@ import shapeless.{HList, HNil, Nat}
 
 import scala.util.Try
 
-object KvpValidateInputInterpreter {
+object KvpInterchangeFormatValidatorInterpreter {
+  /** Represents a path to an element, such as List("someClass", "someMember", "someField") */
   type Path = List[String]
-
 }
 
 /**
   * Base trait for converting from an interchange format such as JSON to an HList or Case class.
-  * @tparam IN
+  * @tparam IN The base data type of the interchange format, such as io.circe.Json
   */
-trait KvpValidateInputInterpreter[IN] {
+trait KvpInterchangeFormatValidatorInterpreter[IN] {
 
   import Util._
-  import KvpValidateInputInterpreter._
+  import KvpInterchangeFormatValidatorInterpreter._
+
+  /** Entry point for this class to convert a Schema into a function where
+    * the function takes an interchange format, validates it and if successful, spits out
+    * the resulting data..
+    * @param schema The schema used to validate and decode this input data.
+    * @tparam A The final data type returned by the resulting function.
+    * @return A function which takes the IN data and returns an Either[ExtractionError,A]
+    */
+  def fromSchema[A](schema: BonesSchema[A])
+  : (IN, List[String]) => Either[NonEmptyList[ExtractionError], A] =
+    schema match {
+      case x: HListConvert[_, _, A] =>
+        (in, path) =>
+          valueDefinition(x).apply(Some(in), path)
+    }
+
+
 
 
   /**
@@ -95,14 +112,6 @@ trait KvpValidateInputInterpreter[IN] {
       in: IN,
       expected: Class[T],
       path: Path): Left[NonEmptyList[ExtractionError], Nothing]
-
-  def fromSchema[A](schema: BonesSchema[A])
-    : (IN, List[String]) => Either[NonEmptyList[ExtractionError], A] =
-    schema match {
-      case x: HListConvert[_, _, A] =>
-        (in, path) =>
-          valueDefinition(x).apply(Some(in), path)
-    }
 
   def required[A](
                    op: KvpValue[A],

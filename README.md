@@ -4,11 +4,30 @@
 
 ## Purpose
 
-The purpose of this library is to remove as much boilerplate as possible out of a CRUD/REST application.  
-Some REST services (including Swagger doc) can be written in as little as 5 expressions.  
- * Define the input and output and error schema -- Using a declarative syntax, describe the expected data.
- * Define the allowable CRUD actions for a schema type. 
- * Pass the items to an interpreter.
+The purpose of this library is to remove as much boilerplate as possible out of a CRUD/REST application.
+There are 3 steps to create a new CRUD application.
+ * Define the input and output and error schema
+ * Pass the schemas to an interpreter
+ * Provide methods for to create/read/update/delete data from a data store.
+ 
+ 
+## Data Types.
+
+Bones currently supports the following data types natively.
+
+```
+String, Int, Boolean, Either, Long, List, Short, Float, Double, BigDecimal, Byte Array, LocalDateTime,
+LocalDate, UUID, Enumeration
+```
+
+Product Types (Tuples) and Sum Types (traits/case classes) are also support.
+
+Note: *Custom user defined types are currently not supported.*  For instance, something like 
+the java.io.File type can not be represented.  TODO: The goal of the next version (0.6.0) is to 
+make the interpreters coproduct aware, in order to support custom user defined types.  
+ 
+ 
+ 
  
  
 
@@ -19,13 +38,12 @@ Using the DSL will result in creating a Generalized Algebraic Data Type (GADT) d
 The GADT structure describes the data, validation and available Create/Read/Update/Delete (CRUD) actions.
  
 As an example, we will describe a Person CRUD application.  For a complete running service writing to the Database,
-refer to the [Example](https://github.com/OleTraveler/bones/blob/master/examples/src/main/scala/com/bones/PersonEndpoint.scala
+refer to the [Example](https://github.com/OleTraveler/bones/blob/master/examples/http4s-examples/src/main/scala/com/bones/PersonEndpoint.scala
 )
 
 ```$scala
 
 import com.bones.syntax._
-import com.bones.validation.ValidationDefinition.{IntValidation => iv, StringValidation => sv}
 
 case class Person(name: String, age: Int)
 
@@ -37,77 +55,68 @@ val personSchema = (
 
 case class Error(error: String)
   
-val errorDef = (kvp("error", string) :: KvpNil).convert[Error]
-
-val personService = ServiceOps.withPath("person")
-    .withCreate(personSchema, personWithId, errorDef)
-    .withRead(personWithId, errorDef)
-    .withUpdate(personSchema, personWithId, errorDef)
-    .withDelete(personWithId, errorDef)
-
 ```
 
 
 ### Interpreters
 
-The power in creating a GADT structure, is that we can provide different interpretations of the defined Schema.
-Once the basic description of the service is created, many different programs can interpret not only 
-the data structure 
-in different contexts, but also define implied behavior.  If implied behavior is similar between systems, then the exact
-same interpreter can be used across services and the only change would be the schema and service description as described above.
+The power in creating a GADT structure, is that we can provide different interpreters for the defined Schema.
+Once the basic functionality of the interpreter is created, we can reuse the interpreter passing in different schemas
+to create common functionality.
 
 I other words, if services perform similar behavior, 
 such as write to Kafka, S3, a Database or an external services, the boilerplate code can be reduced by using GADTs.
-This project is to provide a common vocabulary, and reasonable API, for any CRUD service.  See below for the kvpHList of interpreters.
-
-This example uses the Scala http4s.
-
-```$scala
-val service =
-  HttpInterpreter("/person")
-    .withContentType(jsonFormat)
-    // .withContentType(protobufFormat) Not implemented yet.
-
-// The generated endpoint will take care of unmarshalling JSON and validating against the schema defined above.
-// If successfull, will pass the Person case class to the specified function.
-// Also responsible for marshalling the Error or Successful Results.
-val http4Service: HttpRoutes[IO] = service.forService(
-    personService,
-    person => IO { Right(person) }, // create: a function from Person => IO[Either[Error,Person]] 
-    idDefinition => IO { Right(Person("Janis Ian", 30, None))}, //read: a function from long => IO[Either[Error,Person]]
-    (idDefinition, person) => IO { Right(person) }, //update: a function from (long,Person) => IO[Either[Error, Person]]
-    idDefinition => IO { Right(Person("Janis Ian", 30, None))} // delete: a function from (long) => IO[Either[Error, Person]]
-)
-
-object PersonEndpoint extends IOApp {
-
-  override def run(args: List[String]): IO[ExitCode] = {
-
-    BlazeBuilder[IO].bindHttp(8080, "localhost").mountService(http4Service, "/")
-        .serve
-        .compile.drain.as(ExitCode.Success)
-    }
-}
-
-
-```
-
-We can use the same schema to generate Swagger compliant doc.  This will eventually be integrated in the
-http4s interpreter.
-
-```$scala
-val openApi = new OpenAPI()
-
-CrudOasInterpreter.jsonApiForService(Definitions.personService).apply(openApi)
-
-println(io.swagger.v3.core.util.Json.mapper().writeValueAsString(openApi))
-```
+This project is to provide a common vocabulary for any service, however this project is currently focused on 
+REST CRUD apps.
  
+This example uses the Scala http4s with schema defined above and for less than 40 LINES OF CODE, provides full CRUD functionality writing to 
+a JDBC datasource.  It provides 3 interchange formats: JSON, BSON and Protobuf (yes, protobuf!), 
+a protofile describing the data and OAS3 compliant Schema.
+
+
+```$scala
+object PersonEndpoint extends LocalhostAllIOApp {
+
+  import LocalhostAllIOApp._
+
+  val ds: HikariDataSource = localhostDataSource
+  
+  case class BasicError(message: String)
+  private val basicErrorSchema =
+    (kvp("message", com.bones.syntax.string) :: KvpNil).convert[BasicError]  
+
+  override def services: HttpRoutes[IO] = {
+    val path = "person"
+    
+    
+    val middleware = CrudDbDefinitions(schema, ds)
+
+
+    val interpreter = ClassicCrudInterpreter.allVerbs[A,BasicError,IO,Long](
+      path,
+      StandardCharsets.UTF_8,
+      personSchema,
+      kvp("id", long(lv.min(1))),
+      str => Try(str.toLong).toEither.left.map(ex => BasicError("Could not convert parameter to a Long value")),
+      basicErrorSchema,
+      Kleisli(middleware.createF).map(_.left.map(e => extractionErrorToBasicError(e))).run,
+      Kleisli(middleware.readF).map(_.left.map(e => extractionErrorsToBasicError(e))).run,
+      Function.untupled(Kleisli(middleware.updateF.tupled).map(_.left.map(e => extractionErrorsToBasicError(e))).run),
+      Kleisli(middleware.deleteF).map(_.left.map(e => extractionErrorsToBasicError(e))).run,
+      () => middleware.searchF
+    )
+
+    val dbRoutes = dbSchemaEndpoint(path, schema)
+
+    interpreter.createRoutes <+> dbRoutes  
+  }
+    
+}
 
 
 ## Download
 
-Version 0.5.0-SNAPSHOT includes validation, CRUD and the http4s REST Interpreter.
+Version 0.5.0 includes validation, CRUD and the http4s REST Interpreter.
 
 
 #### Http4s Circe Interpreter (currently the only interpreter)

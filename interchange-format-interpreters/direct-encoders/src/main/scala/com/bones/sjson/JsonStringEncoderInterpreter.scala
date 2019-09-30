@@ -1,16 +1,28 @@
 package com.bones.sjson
 
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.{Base64, UUID}
+import java.util.Base64
 
-import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
-import com.bones.interpreter.KvpOutputInterpreter
-import shapeless.{HList, Nat, ::}
+import shapeless.{::, HList, Nat}
+import org.apache.commons.text.StringEscapeUtils.escapeJson
 
+object JsonStringEncoderInterpreter {
 
-trait StringOutInterpreter {
+  /**
+    * Implementation of the JsonStringEncoderInterpreter assuming dates are String with Iso format.
+    */
+  val isoEncoder = new JsonStringEncoderInterpreter {
+    override val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_DATE_TIME
+    override val dateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_DATE
+  }
+}
+
+/**
+  * Encoder used to write a value directly to a String encoded JSON without a 3rd party library.
+  * The string will be in compact form.
+  */
+trait JsonStringEncoderInterpreter {
 
   val dateTimeFormatter: DateTimeFormatter
   val dateFormatter: DateTimeFormatter
@@ -76,11 +88,11 @@ trait StringOutInterpreter {
           case None => None
         }
       case ob: BooleanData                => b => if (b) Some("true") else Some("false")
-      case rs: StringData                 => s => Some("\"" + s + "\"")
+      case rs: StringData                 => s => Some("\"" + escapeJson(s) + "\"")
       case ri: LongData                   => l => Some(l.toString)
       case uu: UuidData                   => u => Some("\"" + u.toString + "\"")
-      case ld: LocalDateData              => d => Some("\"" + dateFormatter.format(d) + "\"")
-      case dd: LocalDateTimeData          =>  d => Some("\"" + dateTimeFormatter.format(d) + "\"")
+      case ld: LocalDateData              => d => Some("\"" + escapeJson(dateFormatter.format(d)) + "\"")
+      case dd: LocalDateTimeData          =>  d => Some("\"" + escapeJson(dateTimeFormatter.format(d)) + "\"")
       case bd: BigDecimalData             => bd => Some(bd.toString)
       case ld: ListData[t]                =>
         l =>
@@ -98,8 +110,8 @@ trait StringOutInterpreter {
           case Right(r) => bDef(r)
         }
       case ba: ByteArrayData              =>
-        (input: Array[Byte]) => Some("\"" + Base64.getEncoder.encodeToString(input) + "\"")
-      case esd: EnumerationData[e,a]  => e => Some("\"" + e.toString + "\"")
+        (input: Array[Byte]) => Some("\"" + escapeJson(Base64.getEncoder.encodeToString(input)) + "\"")
+      case esd: EnumerationData[e,a]  => e => Some("\"" + escapeJson(e.toString) + "\"")
       case kvp: KvpHListValue[h, hl]      =>
         val hListDef = kvpHList(kvp.kvpHList)
         (input: A) => hListDef(input.asInstanceOf[h]).map("{" + _ + "}")
@@ -111,6 +123,7 @@ trait StringOutInterpreter {
         input: A =>
           fh(s.fba(input)).map("{" + _ + "}")
     }
+
 
 
 

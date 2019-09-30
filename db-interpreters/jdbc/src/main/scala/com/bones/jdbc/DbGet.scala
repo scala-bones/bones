@@ -61,9 +61,7 @@ object DbGet {
               case NonFatal(th) =>
                 Left(
                   NonEmptyList.one(
-                    SystemError(List.empty,
-                      th,
-                      Some(s"SQL Statement: $sql"))))
+                    SystemError(th, Some(s"SQL Statement: $sql"))))
             }
           }
         }

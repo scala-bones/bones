@@ -45,7 +45,7 @@ object DbDelete {
               case NonFatal(ex) =>
                 Left(
                   NonEmptyList.one(
-                    SystemError(List.empty, ex, Some("Error deleting entity"))))
+                    SystemError(ex, Some("Error deleting entity"))))
             }
           }
       }

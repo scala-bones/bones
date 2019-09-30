@@ -17,9 +17,9 @@ class BsonTest extends FunSuite with Checkers with MustMatchers {
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)
 
-  val bsonToCc = ValidatedFromBsonInterpreter.fromSchema(allSupportCaseClass)
+  val bsonToCc = BsonValidatorInterpreter.fromSchema(allSupportCaseClass)
 
-  val ccToBson = EncodeToBson.fromSchema(allSupportCaseClass)
+  val ccToBson = BsonEncoderInterpreter.fromSchema(allSupportCaseClass)
 
   implicit val arb = Arbitrary(Scalacheck.valueDefinition(allSupportCaseClass))
 
