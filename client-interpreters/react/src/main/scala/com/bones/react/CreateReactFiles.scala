@@ -3,12 +3,17 @@ package com.bones.react
 import com.bones.data.Value.BonesSchema
 import com.bones.react.CreateReactFile.ReactFile
 
+/**
+  * This is the entry point for creating Strings which can be used as files for the react component.
+  * See the [fromSchemas] method.
+  */
 object CreateReactFiles {
 
   type IndexJs = String
   type IndexHtml = String
   type ReactComponent = String
 
+  /** Create the index.js, index.html and ReactComponent.js files for the specified schemas. */
   def fromSchemas(bonesSchemas: List[BonesSchema[_]]): (IndexJs, IndexHtml, ReactComponent) = {
     val components = bonesSchemas.map(CreateReactFile.convert)
 

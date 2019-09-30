@@ -9,10 +9,10 @@ import com.bones.schemas.Schemas.{AllSupported, allSupportCaseClass}
 import org.scalacheck.Arbitrary
 import org.scalatest.FunSuite
 
-class StringOutInterpreterTest extends FunSuite with Checkers {
+class JsonStringEncoderInterpreterTest extends FunSuite with Checkers {
 
 
-  val interpreter = new StringOutInterpreter {
+  val interpreter = new JsonStringEncoderInterpreter {
     override val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
     override val dateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
   }

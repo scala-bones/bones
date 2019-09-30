@@ -33,10 +33,6 @@ object ProtobufSequentialInputInterpreter {
       Path) => (List[Tag],
                 LastFieldNumber,
                 (CanReadTag, CodedInputStream) => (CanReadTag, Either[NonEmptyList[ExtractionError], A]))
-//  type ExtractDataClassFromProto[A] = (
-//      LastFieldNumber,
-//      Path) => (LastFieldNumber,
-//                CodedInputStream => Either[NonEmptyList[ExtractionError], A])
   type ExtractHListFromProto[H <: HList] = (
       LastFieldNumber,
       Path) => (LastFieldNumber,

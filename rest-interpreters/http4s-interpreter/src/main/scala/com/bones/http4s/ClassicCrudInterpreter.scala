@@ -5,8 +5,8 @@ import java.nio.charset.StandardCharsets
 import cats.data.{EitherT, NonEmptyList}
 import cats.effect._
 import cats.implicits._
-import com.bones.bson.{EncodeToBson, ValidatedFromBsonInterpreter}
-import com.bones.circe.{EncodeToCirceInterpreter, ValidatedFromCirceInterpreter}
+import com.bones.bson.{BsonEncoderInterpreter, BsonValidatorInterpreter}
+import com.bones.circe.{CirceEncoderInterpreter, CirceValidatorInterpreter}
 import com.bones.data.Error.ExtractionError
 import com.bones.data.KeyValueDefinition
 import com.bones.data.Value.{BonesSchema, HListConvert}
@@ -25,6 +25,14 @@ import org.http4s._
 import org.http4s.util.CaseInsensitiveString
 
 object ClassicCrudInterpreter {
+
+  /** Creates a CRUD definition, but no user defined functions, so no actual endpoints.
+    * To be used with the [ClassicCrudInterpreter.withCreate], [ClassicCrudInterpreter.withRead],
+    *   [ClassicCrudInterpreter.withUpdate], [ClassicCrudInterpreter.withDelete] and [ClassicCrudInterpreter.withSearch].  Use
+    *   this method if not all CRUD endpoints should be implemented.
+    *   Use the [allVerbs] method if all CRUD endpoints should be implemented.
+    *   See [ClassicCrudInterpreter] for details on the parameters.
+    */
   def empty[A,E,F[_],ID:Manifest](
     path: String,
     charset: java.nio.charset.Charset = StandardCharsets.UTF_8,
@@ -36,6 +44,11 @@ object ClassicCrudInterpreter {
     implicit F: Sync[F]
   ): ClassicCrudInterpreter[A,E,F,ID] = ClassicCrudInterpreter(path, charset, schema, idDefinition, pathStringToId, errorSchema, None, None, None, None, None)
 
+  /**
+    * Creates a CRUD definition so that all CRUD verbs (GET, POST, PUT, DELETE) are supported.  If only a sub-set of Verbs
+    * are desired, see [empty].
+    *   See [ClassicCrudInterpreter] for details on the parameters.
+    */
   def allVerbs[A,E,F[_],ID:Manifest](
      path: String,
      charset: java.nio.charset.Charset = StandardCharsets.UTF_8,
@@ -53,6 +66,33 @@ object ClassicCrudInterpreter {
    ) = ClassicCrudInterpreter(path, charset, schema, idDefinition, pathStringToId, errorSchema, Some(createF), Some(readF), Some(updateF), Some(deleteF), Some(searchF))
 }
 
+/**
+  * Builds out CREATE, READ, UPDATE and DELETE endpoints given a bones Schema and some other metadata.
+  * @param path The http path to this API
+  * @param charset UTF_* is a good choice here.
+  * @param schema The bones schema describing the data that is available at this REST endpoint.
+  * @param idDefinition The id definition to be used (probably one representing a long, uuid or int)
+  * @param pathStringToId Need to be able to convert the path/id from a String to the ID type.  For
+  *                       instance, url path GET /object/1 where 1 is the ID to convert.  This comes in as a string.
+  * @param errorSchema Used to describe how we want to display System Error data.
+  * @param createF User defined function which is called after validating the input value.
+  *                Probably used to create the data in data store.
+  *                If None, no create endpoint will be created.
+  * @param readF User defined function which is called to look up an entity in a data store by id.
+  *              if None, no read endpoint will be created
+  * @param updateF User defined function which is called after validating the input value to update the data in a data store.
+  *                If None, no udpdate endpoint will be created.
+  * @param deleteF User defined function to delete data in a data store.
+  *                If None, no delete endpoint will be created.
+  * @param searchF user defined function to return all entities in a data store.
+  *                If None, no search (get all) endpoint will be created.
+  *                This needs to be improved to provide search by parameters.
+  * @param F Should be an implementation of Sync, IO is a good default choice.
+  * @tparam A The class Value of the endpoint defined by the bones Schema.
+  * @tparam E The error type of user defined functions.
+  * @tparam F An subclass of the Sync typeclass
+  * @tparam ID The ID type.
+  */
 case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
                                                  path: String,
                                                  charset: java.nio.charset.Charset = StandardCharsets.UTF_8,
@@ -69,6 +109,47 @@ case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
                               implicit F: Sync[F]
                             ) {
 
+  /** Add or overwrite the existing user defined function to create. Adding a create function
+    * will ensure the creation of a Create(PUT) endpoint.
+    * @param create The function which is to be called during Create input.
+    * @return Copy of ClassicCrudInterpreter with the new create function.
+    */
+  def withCreate(create: A => F[Either[E, (ID,A)]]) : ClassicCrudInterpreter[A,E,F,ID] =
+    this.copy(createF = Some(create))
+
+  /** Add or overwrite the existing user defined function to find data in a data store.  Adding
+    * a read function will ensure the create of a GET endpoint.
+    * @param read The function to be called to look up an entity in a data store.
+    * @return Copy of the ClassicCrudInterpreter with the new create function
+    */
+  def withRead(read: ID => F[Either[E,(ID,A)]]) : ClassicCrudInterpreter[A,E,F,ID] =
+    this.copy(readF = Some(read))
+
+  /** Add or overwrite the existing user defined function to update data in a data store.  Adding
+    * a update function will ensure the create of a POST endpoint.
+    * @param update The function to be called to update an entity in a data store.
+    * @return Copy of the ClassicCrudInterpreter with the new update function
+    */
+  def withRead(update: (ID,A) => F[Either[E,(ID,A)]]) : ClassicCrudInterpreter[A,E,F,ID] =
+    this.copy(updateF = Some(update))
+
+  /** Add or overwrite the existing user defined function to delete data in a data store.  Adding
+    * a delete function will ensure the create of a POST endpoint.
+    * @param delete The function to be called to delete an entity in a data store.
+    * @return Copy of the ClassicCrudInterpreter with the new delete function
+    */
+  def withDelete(delete: ID => F[Either[E,(ID,A)]]) : ClassicCrudInterpreter[A,E,F,ID] =
+    this.copy(deleteF = Some(delete))
+
+  /** Add or overwrite the existing user defined function to search for data in a data store.  Adding
+    * a search function will ensure the create of a GET endpoint to return all entities.
+    * @param search The function to be called to search for all entities in a data store.
+    * @return Copy of the ClassicCrudInterpreter with the new delete function
+    */
+  def withSearch(search: () => Stream[F, (ID,A)]) : ClassicCrudInterpreter[A,E,F,ID] =
+    this.copy(searchF = Some(search))
+
+
   import ClassicCrudInterpreterDescription._
   val schemaWithId = schema match {
     case h: HListConvert[_,_,A] => {
@@ -76,8 +157,8 @@ case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
       (idDefinition :: h :><: com.bones.syntax.kvpNil).tupled[(ID,A)]
     }
   }
-  val encodeToCirceInterpreter = EncodeToCirceInterpreter.isoInterpreter
-  val validatedFromCirceInterpreter = ValidatedFromCirceInterpreter.isoInterpreter
+  val encodeToCirceInterpreter = CirceEncoderInterpreter.isoInterpreter
+  val validatedFromCirceInterpreter = CirceValidatorInterpreter.isoInterpreter
 
   case class DataTransformation[I, O, E](description: String,
                                          f: I => Either[E, O])
@@ -105,18 +186,18 @@ case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
         )
 
         val bInputValidation =
-          ValidatedFromBsonInterpreter.fromSchema(schemaWithId)
-        val bOutputEncoder = EncodeToBson.fromSchema(schemaWithId)
-        val bErrorEncoder = EncodeToBson.fromSchema(errorSchema)
+          BsonValidatorInterpreter.fromSchema(schemaWithId)
+        val bOutputEncoder = BsonEncoderInterpreter.fromSchema(schemaWithId)
+        val bErrorEncoder = BsonEncoderInterpreter.fromSchema(errorSchema)
 
         val bson = PutPostInterpreterGroup[(ID,A), (ID,A), E](
           "application/ubjson",
           byte =>
-            ValidatedFromBsonInterpreter
+            BsonValidatorInterpreter
               .fromByteArray(byte)
               .flatMap(bjson => bInputValidation(bjson, List.empty)),
-          uo => EncodeToBson.bsonResultToBytes(bOutputEncoder(uo)),
-          ue => EncodeToBson.bsonResultToBytes(bErrorEncoder(ue))
+          uo => BsonEncoderInterpreter.bsonResultToBytes(bOutputEncoder(uo)),
+          ue => BsonEncoderInterpreter.bsonResultToBytes(bErrorEncoder(ue))
         )
 
         val pInputInterpreter =
@@ -149,12 +230,12 @@ case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
         re => errorF(re).spaces2.getBytes(charset)
       )
 
-      val bOutputF = EncodeToBson.fromSchema(schemaWithId)
-      val bErrorF = EncodeToBson.fromSchema(errorSchema)
+      val bOutputF = BsonEncoderInterpreter.fromSchema(schemaWithId)
+      val bErrorF = BsonEncoderInterpreter.fromSchema(errorSchema)
       val bson = GetInterpreterGroup[(ID,A), E](
         "application/ubjson",
-        ro => EncodeToBson.bsonResultToBytes(bOutputF(ro)),
-        re => EncodeToBson.bsonResultToBytes(bErrorF(re))
+        ro => BsonEncoderInterpreter.bsonResultToBytes(bOutputF(ro)),
+        re => BsonEncoderInterpreter.bsonResultToBytes(bErrorF(re))
       )
 
       val pOutputF = ProtobufSequentialOutputInterpreter.encodeToBytes(schemaWithId)
@@ -209,18 +290,18 @@ case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
         )
 
         val bInputF =
-          ValidatedFromBsonInterpreter.fromSchema(schema)
-        val bOutputF = EncodeToBson.fromSchema(schemaWithId)
-        val bErrorF = EncodeToBson.fromSchema(errorSchema)
+          BsonValidatorInterpreter.fromSchema(schema)
+        val bOutputF = BsonEncoderInterpreter.fromSchema(schemaWithId)
+        val bErrorF = BsonEncoderInterpreter.fromSchema(errorSchema)
 
         val bson = PutPostInterpreterGroup[A, (ID,A), E](
           "application/ubjson",
           byte =>
-            ValidatedFromBsonInterpreter
+            BsonValidatorInterpreter
               .fromByteArray(byte)
               .flatMap(bjson => bInputF(bjson, List.empty)),
-          co => EncodeToBson.bsonResultToBytes(bOutputF(co)),
-          ce => EncodeToBson.bsonResultToBytes(bErrorF(ce))
+          co => BsonEncoderInterpreter.bsonResultToBytes(bOutputF(co)),
+          ce => BsonEncoderInterpreter.bsonResultToBytes(bErrorF(ce))
         )
 
         val pInputF =
@@ -253,12 +334,12 @@ case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
           de => errorF(de).spaces2.getBytes(charset)
         )
 
-        val bOutputF = EncodeToBson.fromSchema(schemaWithId)
-        val bErrorF = EncodeToBson.fromSchema(errorSchema)
+        val bOutputF = BsonEncoderInterpreter.fromSchema(schemaWithId)
+        val bErrorF = BsonEncoderInterpreter.fromSchema(errorSchema)
         val bson = DeleteInterpreterGroup[(ID,A), E](
           "application/ubjson",
-          dout => EncodeToBson.bsonResultToBytes(bOutputF(dout)),
-          de => EncodeToBson.bsonResultToBytes(bErrorF(de))
+          dout => BsonEncoderInterpreter.bsonResultToBytes(bOutputF(dout)),
+          de => BsonEncoderInterpreter.bsonResultToBytes(bErrorF(de))
         )
 
         val pOutputF =

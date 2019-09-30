@@ -7,16 +7,19 @@ import cats.data.NonEmptyList
 import cats.implicits._
 import com.bones.data.Error._
 import com.bones.data.{KeyValueDefinition, Value}
-import com.bones.interpreter.KvpValidateInputInterpreter
+import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
 import com.bones.Util._
-import com.bones.interpreter.KvpValidateInputInterpreter.Path
+import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.Path
 import reactivemongo.bson.buffer.ArrayReadableBuffer
 import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDecimal, BSONDocument, BSONDouble, BSONInteger, BSONLong, BSONNull, BSONString, BSONValue}
 
 import scala.util.Try
 
-object ValidatedFromBsonInterpreter
-  extends KvpValidateInputInterpreter[BSONValue] {
+/**
+  * Module responsible for validating data from BSON and convering to Values.
+  */
+object BsonValidatorInterpreter
+  extends KvpInterchangeFormatValidatorInterpreter[BSONValue] {
 
   def fromByteArray(
                      arr: Array[Byte]): Either[NonEmptyList[ExtractionError], BSONValue] = {

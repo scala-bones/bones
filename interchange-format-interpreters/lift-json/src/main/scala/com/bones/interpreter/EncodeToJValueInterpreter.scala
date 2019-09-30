@@ -19,7 +19,7 @@ object EncodeToJValueInterpreter {
 
 }
 
-trait EncodeToJValueInterpreter extends KvpOutputInterpreter[JValue] {
+trait EncodeToJValueInterpreter extends KvpInterchangeFormatEncoderInterpreter[JValue] {
 
   def localDateTimeFormatter: DateTimeFormatter
   def localDateFormatter: DateTimeFormatter

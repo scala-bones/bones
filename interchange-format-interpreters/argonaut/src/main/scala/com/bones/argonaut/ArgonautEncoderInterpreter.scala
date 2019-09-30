@@ -7,18 +7,19 @@ import java.util.{Base64, UUID}
 import argonaut._
 import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
-import com.bones.interpreter.KvpOutputInterpreter
+import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
 
-object EncodeToArgonautInterpreter {
-  val isoInterpreter = new EncodeToArgonautInterpreter {
+object ArgonautEncoderInterpreter {
+  val isoInterpreter = new ArgonautEncoderInterpreter {
     override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
     override def localDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
   }
 }
 /**
-  * Module responsible for converting data to Argonaut JSON
+  * Module responsible for converting values to Argonaut JSON without validation.
+  * The entry point for this class is [KvpInterchangeFormatEncoderInterpreter.fromSchema].
   */
-trait EncodeToArgonautInterpreter extends KvpOutputInterpreter[Json] {
+trait ArgonautEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[Json] {
 
   def localDateFormatter: DateTimeFormatter
   def localDateTimeFormatter: DateTimeFormatter

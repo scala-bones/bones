@@ -6,17 +6,25 @@ import java.util.{Base64, UUID}
 
 import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
-import com.bones.interpreter.KvpOutputInterpreter
+import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
 import io.circe._
 
-object EncodeToCirceInterpreter {
-  val isoInterpreter: EncodeToCirceInterpreter = new EncodeToCirceInterpreter {
+object CirceEncoderInterpreter {
+
+  /**
+    * Implementation of the [CirceEncoderInterpreter] specifying ISO String formatter for date and datetime.
+    */
+  val isoInterpreter: CirceEncoderInterpreter = new CirceEncoderInterpreter {
     override def dateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
     override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
   }
 }
 
-trait EncodeToCirceInterpreter extends KvpOutputInterpreter[Json] {
+/**
+  * Module responsible for converting values to Circe JSON without validation.
+  * The entry point for this class is [KvpInterchangeFormatEncoderInterpreter.fromSchema].
+  */
+trait CirceEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[Json] {
 
   def dateFormatter: DateTimeFormatter
   def localDateFormatter: DateTimeFormatter

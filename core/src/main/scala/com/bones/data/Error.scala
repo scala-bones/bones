@@ -1,9 +1,11 @@
 package com.bones.data
 
-import cats.data.NonEmptyList
 import com.bones.data.Value.KvpValue
 import com.bones.validation.ValidationDefinition.ValidationOp
 
+/**
+  * Various Errors for use in Bones interpreters.
+  */
 object Error {
 
   /** Error Case */
@@ -17,37 +19,70 @@ object Error {
     * @param input The input, if available.
     * @tparam T Type that was validated.
     */
-  case class ValidationError[T](path: List[String],
-                                failurePoint: ValidationOp[T],
-                                input: T)
+  case class ValidationError[T](path: List[String], failurePoint: ValidationOp[T], input: T)
       extends ExtractionError
 
-  case class WrongTypeError[T](path: List[String],
-                               expectedType: Class[T],
-                               providedType: Class[_])
+  /** Used when we receive a type that doesn't match the expected type.
+    * For instance if we are expecting an Int, but we receive a String.
+    * @param path The path within the schema to the offending definition
+    * @param expectedType The expected type.
+    * @param providedType What was actually provided.
+    * @tparam T The expected type
+    */
+  case class WrongTypeError[T](path: List[String], expectedType: Class[T], providedType: Class[_])
       extends ExtractionError
 
+  /**
+    * Used when we can not convert an input type to the type defined in the schema.
+    * For instance, in JSON we use a String to represent an Enumeration.  However, if the
+    * string does not map to a known enumeration, this error would be specified.
+    * @param path The path within the schema to the offending definition
+    * @param input The input type being converted
+    * @param toType The type we are attempting to convert to.
+    * @tparam A Input type
+    * @tparam T Type to convert to
+    */
   case class CanNotConvert[A, T](path: List[String], input: A, toType: Class[T])
       extends ExtractionError
 
-  case class RequiredData[A](path: List[String],
-                             valueDefinitionOp: KvpValue[A])
+  /** Used when a required piece of data is missing
+    * @param path The path within the schema to the offending definition
+    * @param valueDefinitionOp The definition of the required value
+    * @tparam A The type of the required value
+    */
+  case class RequiredData[A](path: List[String], valueDefinitionOp: KvpValue[A])
       extends ExtractionError
 
-  case class FieldError[A](path: List[String],
-                           key: String,
-                           errors: NonEmptyList[ExtractionError])
-      extends ExtractionError
-
-  case class ParsingError[A](message: String, exception: Option[Throwable] = None) extends ExtractionError {
+  /**
+    * Used when we can not parse the input to its expected format -- for instance, an invalid JSON document.
+    * @param message Message from the parser.
+    * @param throwable Exception from the parser.
+    */
+  case class ParsingError(message: String, throwable: Option[Throwable] = None) extends ExtractionError {
     override def path: List[String] = List.empty
   }
 
-  case class SystemError(path: List[String],
-                         th: Throwable,
-                         message: Option[String])
-      extends ExtractionError
+  /**
+    * Used when an exception is thrown in processing the request in the business logic.
+    * This is a reasonable exception to use as starting point for Exceptions reported in the integration layer.
+    * @param th The Exception.
+    * @param message Context specific message about the exception.
+    */
+  case class SystemError(path: List[String], th: Throwable, message: Option[String])
+      extends ExtractionError {
+  }
+  object SystemError {
+    /** Alias for SystemError without a path */
+    def apply(th: Throwable, message: Option[String]): SystemError = SystemError(List.empty, th, message)
+  }
 
+  /**
+    * Used when the ID is not present in the integration layer.
+    * @param id The id of the entity.
+    * @param entityName The name of the entity.
+    * @param path The path to the entity
+    * @tparam ID The type of the ID (such as Long or UUID)
+    */
   case class NotFound[ID](id: ID, entityName: String, path: List[String])
       extends ExtractionError
 

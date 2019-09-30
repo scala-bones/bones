@@ -10,17 +10,25 @@ import com.bones.Util._
 import com.bones.data.Error.{ExtractionError, ParsingError, RequiredData, WrongTypeError}
 import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
-import com.bones.interpreter.KvpValidateInputInterpreter
+import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
 import io.circe.Json
 
-object ValidatedFromCirceInterpreter {
-  val isoInterpreter = new ValidatedFromCirceInterpreter {
+object CirceValidatorInterpreter {
+
+  /**
+    * An implementation of the [CirceValidatorInterpreter] assuming date/datetime formats are in iso format.
+    */
+  val isoInterpreter: CirceValidatorInterpreter = new CirceValidatorInterpreter {
     override def dateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
     override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
   }
 }
 
-trait ValidatedFromCirceInterpreter extends KvpValidateInputInterpreter[Json] {
+/**
+  * Module responsible for converting circe JSON input into values with validation checks.
+  * See [KvpInterchangeFormatValidatorInterpreter.fromSchema] for the entry point.
+  */
+trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter[Json] {
 
   def dateFormatter: DateTimeFormatter
   def localDateFormatter: DateTimeFormatter
@@ -38,7 +46,7 @@ trait ValidatedFromCirceInterpreter extends KvpValidateInputInterpreter[Json] {
 
 
   def fromByteArray(arr: Array[Byte], charSet: Charset)
-    : Either[NonEmptyList[ParsingError[Array[Byte]]], Json] = {
+    : Either[NonEmptyList[ParsingError], Json] = {
     val input = new String(arr, charSet)
     io.circe.parser
       .parse(input)

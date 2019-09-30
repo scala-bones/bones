@@ -54,7 +54,7 @@ object DbUtil {
       case NonFatal(th) =>
         Left(
           NonEmptyList.one(
-            SystemError(List.empty, th, Some("Error with CallableStatement"))))
+            SystemError(th, Some("Error executing CallableStatement"))))
     } finally {
       con.close()
     }
