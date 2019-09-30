@@ -4,7 +4,7 @@ import java.util.UUID
 
 import cats.data.NonEmptyList
 import cats.data.Validated.Valid
-import com.bones.circe.ValidatedFromCirceInterpreter
+import com.bones.circe.CirceValidatorInterpreter
 import com.bones.data.Value.KvpNil
 //import com.bones.interpreter.{EncodeToJValueInterpreter, ValidatedFromJObjectInterpreter}
 import com.bones.oas3.SwaggerCoreInterpreter
@@ -138,7 +138,7 @@ class ValidationTest extends FunSuite {
 
     //createOperation the program that is responsible for converting JSON into a CC.
   //    val jsonToCCProgram = creditCardSchema.lift.foldMap[ValidatedFromJObjectOpt](ValidatedFromJObjectInterpreter())
-    val jsonToCCProgram = ValidatedFromCirceInterpreter.isoInterpreter.fromSchema(creditCardSchema)
+    val jsonToCCProgram = CirceValidatorInterpreter.isoInterpreter.fromSchema(creditCardSchema)
 
     //here, we will test that just the validations step is working
     val btCc = jsonToCCProgram.apply(parsed, List.empty)

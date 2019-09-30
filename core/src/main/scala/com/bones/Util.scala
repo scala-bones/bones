@@ -7,6 +7,9 @@ import java.util.UUID
 import cats.data.NonEmptyList
 import com.bones.data.Error.{CanNotConvert, ExtractionError}
 
+/**
+  * A collection of helper functions used by Bones.
+  */
 object Util {
 
   /** Convert a String to a UUID returning Left[NoneEmptyList[ExtractionError]]

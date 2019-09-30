@@ -5,11 +5,16 @@ import java.util.{Base64, UUID}
 
 import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
-import com.bones.interpreter.KvpOutputInterpreter
+import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
 import reactivemongo.bson.buffer.ArrayBSONBuffer
 import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDecimal, BSONDocument, BSONElement, BSONInteger, BSONLong, BSONNull, BSONString, BSONValue}
 
-object EncodeToBson extends KvpOutputInterpreter[BSONValue] {
+/**
+  * Responsible for creating functions to encode values to BSON data.
+  * See [KvpInterchangeFormatEncoderInterpreter.fromSchema] for the entry point into this
+  * module.
+  */
+object BsonEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[BSONValue] {
 
   def bsonResultToBytes(bsonValue: BSONValue): Array[Byte] = {
     val buffer = new ArrayBSONBuffer()

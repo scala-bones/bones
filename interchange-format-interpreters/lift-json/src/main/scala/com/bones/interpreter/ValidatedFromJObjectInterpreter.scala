@@ -10,7 +10,7 @@ import com.bones.data.Error._
 import com.bones.data.{KeyValueDefinition, Value}
 import net.liftweb.json.JsonAST._
 import com.bones.Util._
-import com.bones.interpreter.KvpValidateInputInterpreter.Path
+import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.Path
 import net.liftweb.json.JsonParser.ParseException
 
 import scala.util.Try
@@ -23,7 +23,7 @@ object ValidatedFromJObjectInterpreter {
 }
 
 trait ValidatedFromJObjectInterpreter
-    extends KvpValidateInputInterpreter[JValue] {
+    extends KvpInterchangeFormatValidatorInterpreter[JValue] {
 
   def localDateTimeFormatter: DateTimeFormatter
   def localDateFormatter: DateTimeFormatter

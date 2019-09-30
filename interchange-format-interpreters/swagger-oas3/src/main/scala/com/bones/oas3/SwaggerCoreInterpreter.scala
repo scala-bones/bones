@@ -16,10 +16,14 @@ import shapeless.{HList, Nat}
 
 object SwaggerCoreInterpreter {
 
-  def isoInterpreter = new SwaggerCoreInterpreter {
-    override def dateFormatterExample: String = "TODO: Date Format Example"
+  /**
+    * An implementation of the SwaggerCoreInterpreter using
+    * ISO date as the default date interpreter.
+    */
+  def isoInterpreter: SwaggerCoreInterpreter = new SwaggerCoreInterpreter {
+    override def dateFormatterExample: String = "'2011-12-03'"
 
-    override def localDateFormatterExample: String = "TODO: Local Date Example"
+    override def localDateFormatterExample: String = "2011-12-03T10:15:30"
   }
 
   def apply[A](gd: BonesSchema[A]): Schema[_] = isoInterpreter.apply(gd)

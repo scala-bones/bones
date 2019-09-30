@@ -6,6 +6,9 @@ import com.bones.data.Value._
 import com.bones.validation.ValidationDefinition.StringValidation.MaxLength
 import shapeless.{HList, Nat}
 
+/**
+  * Responsible for creating a data structure representing an HTML form.
+  */
 object FormInterpreter {
 
   object InputType2 extends Enumeration {

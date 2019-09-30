@@ -12,28 +12,35 @@ import cats.implicits._
 import com.bones.data.Error.{ExtractionError, ParsingError, RequiredData, WrongTypeError}
 import com.bones.data.KeyValueDefinition
 import com.bones.data.Value._
-import com.bones.interpreter.KvpValidateInputInterpreter
+import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
 import com.bones.Util._
 
 import scala.util.control.NonFatal
 
-object ValidatedFromArgonautInterpreter {
-  val isoInterpreter = new ValidatedFromArgonautInterpreter {
+object ArgonautValidatorInterpreter {
+
+  /**
+    * An implementation of the ArgonautValidatorInterpreter where the date formats are ISO dates.
+    */
+  val isoInterpreter = new ArgonautValidatorInterpreter {
     override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
 
     override def localDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
   }
 }
 
-trait ValidatedFromArgonautInterpreter extends KvpValidateInputInterpreter[Json]{
+/**
+  * Module responsible for converting argonaut JSON input into values with validation checks.
+  * See [KvpInterchangeFormatValidatorInterpreter.fromSchema] for the entry point.
+  */
+trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter[Json]{
   def localDateFormatter: DateTimeFormatter
   def localDateTimeFormatter: DateTimeFormatter
 
 
   override def isEmpty(json: Json): JsonBoolean = json.isNull
 
-  def byteArrayFuncFromSchema[A](schema: BonesSchema[A],
-                                          charset: Charset)
+  def byteArrayFuncFromSchema[A](schema: BonesSchema[A], charset: Charset)
     : Array[Byte] => Either[NonEmptyList[ExtractionError], A] = {
     val fromSchemaFunction = fromSchema(schema)
     bytes =>

@@ -53,7 +53,8 @@ class ProtobufScalacheckTest extends FunSuite with Checkers {
 
   }
 
-  test("protofile") {
+  // Print the file, to be used with the protobufIntegrationTest
+  ignore("print protofile") {
     val message = ProtoFileInterpreter.fromSchema(allSupportCaseClass)
     print(ProtoFileInterpreter.messageToProtoFile(message))
   }
