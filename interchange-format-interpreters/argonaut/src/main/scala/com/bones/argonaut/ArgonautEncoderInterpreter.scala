@@ -78,5 +78,7 @@ trait ArgonautEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[
   override def enumerationToOut[E <: Enumeration, V: Manifest](op: EnumerationData[E, V]):
     op.enumeration.Value => Json = input => Json.jString(input.toString)
 
+  override def addStringField(element: Json, name: String, value: String): Json =
+    Json.obj((name, Json.jString(value)) :: element.obj.toList.flatMap(_.toList) :_*)
 
 }

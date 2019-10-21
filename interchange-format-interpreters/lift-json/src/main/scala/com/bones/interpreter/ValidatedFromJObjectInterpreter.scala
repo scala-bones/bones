@@ -214,4 +214,11 @@ trait ValidatedFromJObjectInterpreter
     Left(NonEmptyList.one(WrongTypeError(path, expected, invalid)))
   }
 
+  override def stringValue(in: JValue, elementName: String): Option[String] =
+    in match {
+      case o: JObject => o.obj.find(_.name == elementName).map(_.value).flatMap {
+        case JString(s) => Some(s)
+        case _ => None
+      }
+    }
 }

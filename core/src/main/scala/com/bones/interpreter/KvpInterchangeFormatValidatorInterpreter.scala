@@ -6,18 +6,20 @@ import java.util.{Base64, UUID}
 import cats.data.NonEmptyList
 import cats.implicits._
 import com.bones.Util
-import com.bones.data.Error.{CanNotConvert, ExtractionError, RequiredData, WrongTypeError}
-import com.bones.data.KeyValueDefinition
+import com.bones.data.Error._
+import com.bones.data.{KeyValueDefinition, KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
 import com.bones.data.Value._
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.{ValidationUtil => vu}
-import shapeless.{HList, HNil, Nat}
+import shapeless.{CNil, Coproduct, HList, HNil, Inl, Inr, Nat}
 
 import scala.util.Try
 
 object KvpInterchangeFormatValidatorInterpreter {
   /** Represents a path to an element, such as List("someClass", "someMember", "someField") */
   type Path = List[String]
+  type CoproductType = String
+  val coproductTypeKey = "type"
 }
 
 /**
@@ -108,6 +110,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
   def extractBigDecimal(op: BigDecimalData)(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], BigDecimal]
+  def stringValue(in: IN, elementName: String): Option[String]
   protected def invalidValue[T](
       in: IN,
       expected: Class[T],
@@ -125,6 +128,23 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
         a <- f(json, path)
         v <- vu.validate(validations)(a, path)
       } yield a
+
+
+  def kvpCoproduct[C<:Coproduct](co: KvpCoproduct[C]):
+    (IN, Path, CoproductType) => Either[NonEmptyList[ExtractionError], C] = {
+    co match {
+      case KvpCoNil => (_:IN, path:List[String], coType: CoproductType) =>
+        Left(NonEmptyList.one(SumTypeError(path, s"Unexpected type value: ${coType}")))
+      case co: KvpSingleValueLeft[l,r] => {
+        val fValue = valueDefinition(co.kvpValue)
+        val fTail = kvpCoproduct(co.kvpTail)
+        (in, path, coType) => {
+          if (coType == co.manifestH.runtimeClass.getSimpleName) fValue(Some(in),path).map(Inl(_))
+          else fTail(in,path,coType).map(Inr(_))
+        }
+      }
+    }
+  }
 
   def kvpHList[H <: HList, HL <: Nat](group: KvpHList[H, HL])
     : (IN, List[String]) => Either[NonEmptyList[ExtractionError], H] = {
@@ -331,6 +351,21 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
                   .flatMap(res => vu.validate[h](op.validations)(res, path))
                   .map(_.asInstanceOf[A])
               case None => Left(NonEmptyList.one(RequiredData(path, op)))
+            }
+          }
+        }
+        case co: KvpCoproductValue[c] => {
+          val fCo = kvpCoproduct(co.kvpCoproduct)
+          (jsonOpt: Option[IN], path: Path) => {
+            jsonOpt match {
+              case Some(json) => {
+                stringValue(json, coproductTypeKey) match {
+                  case Some(coType) => fCo(json,path, coType).map(_.asInstanceOf[A])
+                  case None => Left(NonEmptyList.one(SumTypeError(path, s"Missing parameter ${coproductTypeKey}")))
+                }
+
+              }
+              case None => Left(NonEmptyList.one(RequiredData(path, co)))
             }
           }
         }

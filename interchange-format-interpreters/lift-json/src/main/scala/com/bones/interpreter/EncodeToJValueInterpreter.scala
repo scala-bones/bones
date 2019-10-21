@@ -13,8 +13,8 @@ object EncodeToJValueInterpreter {
 
   val isoInterpreter = new EncodeToJValueInterpreter {
     override def localDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-
     override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+
   }
 
 }
@@ -79,5 +79,9 @@ trait EncodeToJValueInterpreter extends KvpInterchangeFormatEncoderInterpreter[J
     op.enumeration.Value => JValue =
     input => JString(input.toString)
 
-
+  override def addStringField(element: JValue, name: String, value: String): JValue =
+    element match {
+      case o: JObject => JObject(JField(name, JString(value)) :: o.obj)
+      case _ => element
+    }
 }

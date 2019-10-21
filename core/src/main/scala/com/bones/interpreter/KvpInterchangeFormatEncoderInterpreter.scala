@@ -5,9 +5,11 @@ import java.util.UUID
 
 import cats.data.NonEmptyList
 import com.bones.data.Error.ExtractionError
-import com.bones.data.KeyValueDefinition
+import com.bones.data.{KeyValueDefinition, KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
 import com.bones.data.Value._
-import shapeless.{::, HList, Nat}
+import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.CoproductType
+import shapeless.{::, Coproduct, HList, Inl, Inr, Nat}
+import KvpInterchangeFormatValidatorInterpreter.coproductTypeKey
 
 object KvpInterchangeFormatEncoderInterpreter {
   type FOUT[OUT, A] = A => Either[NonEmptyList[ExtractionError], A]
@@ -70,6 +72,22 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
   def byteArrayToOut(ba: ByteArrayData): Array[Byte] => OUT
   def toOutList(list: List[OUT]): OUT
   def enumerationToOut[E<:Enumeration, V:Manifest](op: EnumerationData[E, V]): op.enumeration.Value => OUT
+  def addStringField(element: OUT, name: String, value: String): OUT
+
+  protected def kvpCoproduct[C <: Coproduct](kvpCo: KvpCoproduct[C]): C => (CoproductType, OUT) = {
+    kvpCo match {
+      case KvpCoNil =>
+        (input: C) => ("", empty)
+      case co: KvpSingleValueLeft[l,r] =>
+        val fl = valueDefinition(co.kvpValue)
+        val fr = kvpCoproduct(co.kvpTail)
+        (input: C) =>
+          input match {
+            case Inl(l) => (co.manifestH.runtimeClass.getSimpleName, fl(l))
+            case Inr(r) => fr(r)
+        }
+    }
+  }
 
   /** Interpreter for the KvpHList type. */
   protected def kvpHList[H <: HList, HL <: Nat](
@@ -164,10 +182,17 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
           {
             fh(x.fAtoH(input))
           }
-      case s: SumTypeData[a, b] =>
-        val fh = valueDefinition(s.from)
-        input: A =>
-          fh(s.fba(input))
+      case c: KvpCoproductValue[c] =>
+        val fc = kvpCoproduct(c.kvpCoproduct)
+        input =>
+          val (name, out) = fc.apply(input.asInstanceOf[c])
+          addStringField(out, coproductTypeKey, name)
+
+      case s: SumTypeData[a,b] =>
+        input: A => ???
+//          val fh = s.typeToConversion(input)
+//          val out = valueDefinition(fh).apply(input)
+//          addStringField(out, "type", fh.manifestOfA.runtimeClass.getSimpleName)
     }
 
 }

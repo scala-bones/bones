@@ -218,4 +218,13 @@ object BsonValidatorInterpreter
       case BSONLong(l) => Right(BigDecimal(l))
       case x => invalidValue(x, classOf[BigDecimal], path)
     }
+
+  override def stringValue(in: BSONValue, elementName: String): Option[String] =
+    in match {
+      case doc: BSONDocument => doc.elements.find(e => e.name == elementName).map(_.value).flatMap {
+        case BSONString(str) => Some(str)
+        case _ => None
+      }
+      case _ => None
+    }
 }

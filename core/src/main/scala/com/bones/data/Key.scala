@@ -5,7 +5,7 @@ import java.util.UUID
 
 import com.bones.data.Value._
 import com.bones.validation.ValidationDefinition.ValidationOp
-import shapeless.{HList, Nat}
+import shapeless.{Coproduct, HList, Nat}
 
 /** A String key and it's value description where A is the type the value. */
 case class KeyValueDefinition[A](key: String, op: KvpValue[A])
@@ -18,6 +18,10 @@ trait KeyValueDefinitionSugar {
   def kvpHList[H <: HList: Manifest, HL <: Nat](key: String,
                                                 kvpHList: KvpHList[H, HL]) =
     KeyValueDefinition(key, KvpHListValue(kvpHList, List.empty))
+
+  def kvpCoproduct[C<:Coproduct:Manifest](key: String,
+                                 kvpCoproduct: KvpCoproduct[C]) =
+    KeyValueDefinition(key, KvpCoproductValue(kvpCoproduct))
 
 }
 
@@ -122,10 +126,16 @@ trait Sugar {
 
   val kvpNil: KvpNil.type = KvpNil
 
+  def kvpCoNil: KvpCoNil.type = KvpCoNil
+
   /** Indicates that the data tied to the value is an Array of Bytes */
   def byteArray(v: ValidationOp[Array[Byte]]*): ByteArrayData = ByteArrayData(v.toList)
 
   /** Alias for byte array without validations */
   val byteArray: ByteArrayData = byteArray()
+
+//  def sumType[A:Manifest](subclassSchemas: List[HListConvert[_,_,A]], typeToConversion: A => HListConvert[_,_,A]): SumTypeData[A] = SumTypeData[A](subclassSchemas, typeToConversion)
+
+//  def sumType[A](subclassSchemas: HListConvert[_,_,A]*)(validationOp: ValidationOp[A]*) = SumType(subclassSchemas.toList, validationOp.toList)
 
 }
