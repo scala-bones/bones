@@ -53,6 +53,9 @@ object Error {
   case class RequiredData[A](path: List[String], valueDefinitionOp: KvpValue[A])
       extends ExtractionError
 
+  case class SumTypeError(path: List[String], problem: String)
+    extends ExtractionError
+
   /**
     * Used when we can not parse the input to its expected format -- for instance, an invalid JSON document.
     * @param message Message from the parser.

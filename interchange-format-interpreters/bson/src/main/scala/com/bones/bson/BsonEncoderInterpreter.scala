@@ -83,4 +83,9 @@ object BsonEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[BSO
   def toObj[A](kvDef: KeyValueDefinition[A], value: BSONValue): BSONValue =
     BSONDocument(BSONElement(kvDef.key, value))
 
+  override def addStringField(element: BSONValue, name: String, value: String): BSONValue =
+    element match {
+      case doc: BSONDocument => combine(doc, BSONDocument(BSONElement(name, BSONString(value))))
+      case _ => element
+    }
 }

@@ -8,7 +8,7 @@ import com.bones.validation.ValidationDefinition.ValidationOp
 import shapeless.ops.hlist
 import shapeless.ops.hlist.IsHCons.Aux
 import shapeless.ops.hlist.{IsHCons, Length, Prepend, Split, Tupler}
-import shapeless.{::, Generic, HList, HNil, Nat, Succ}
+import shapeless.{::, Coproduct, Generic, HList, HNil, Nat, Succ}
 
 /** The Value in Key-Value Pair */
 object Value {
@@ -21,14 +21,14 @@ object Value {
 
     val manifestOfA: Manifest[A] = manifest[A]
 
-    def asSumType[B: Manifest](description: String,
-                               fab: (A, Value.Path) => Either[CanNotConvert[A, B], B],
-                               fba: B => A,
-                               keys: List[A],
-                               validations: List[ValidationOp[B]]
-                              ): SumTypeData[A, B] = {
-      SumTypeData[A, B](this, fab, fba, keys, validations)
-    }
+//    def asSumType[B: Manifest](description: String,
+//                               fab: (A, Value.Path) => Either[CanNotConvert[A, B], B],
+//                               fba: B => A,
+//                               keys: List[A],
+//                               validations: List[ValidationOp[B]]
+//                              ): SumTypeData[A, B] = {
+//      SumTypeData[A, B](this, fab, fba, keys, validations)
+//    }
   }
 
   /** Wraps a data definition to mark the field optional */
@@ -135,6 +135,13 @@ object Value {
   trait BonesSchema[A] {
     val manifestOfA: Manifest[A]
   }
+
+  final case class KvpCoproductValue[C <: Coproduct: Manifest](kvpCoproduct: KvpCoproduct[C])
+    extends KvpValue[C]
+      with ToOptionalData[C]
+      with ToListData[C]
+      with BonesSchema[C]
+  {}
 
   /** Specifies a conversion to and from an HList to an A (where A is most likely a Case class) */
   final case class HListConvert[H <: HList, N <: Nat, A: Manifest]

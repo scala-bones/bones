@@ -3,6 +3,7 @@ package com.bones.scalacheck
 import java.time.{LocalDate, LocalDateTime, Year, ZoneId}
 import java.util.{Calendar, Date, UUID}
 
+import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
 import com.bones.data.Value._
 import com.bones.validation.ValidationDefinition.StringValidation._
 import com.bones.validation.ValidationDefinition._
@@ -10,10 +11,19 @@ import com.bones.validation.ValidationUtil
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen.Choose
 import org.scalacheck._
-import shapeless.{HList, HNil, Nat}
+import shapeless.{CNil, Coproduct, HList, HNil, Inl, Inr, Nat}
 import wolfendale.scalacheck.regexp.RegexpGen
 
 object Scalacheck {
+
+
+  def kvpCoproduct[C<:Coproduct](co: KvpCoproduct[C]): Gen[C] = {
+    co match {
+      case KvpCoNil => sys.error("Not expected to get here")
+      case co: KvpSingleValueLeft[l,r] =>
+        valueDefinition(co.kvpValue).map(Inl(_)) //TODO: How can we do more than just taking the first value?
+    }
+  }
 
 
   def kvpHList[H <: HList, HL <: Nat](group: KvpHList[H, HL]): Gen[H] = {
@@ -113,6 +123,8 @@ object Scalacheck {
       }
       case kvp: KvpHListValue[h, hl] =>
         kvpHList(kvp.kvpHList).asInstanceOf[A]
+      case co: KvpCoproductValue[c] =>
+        kvpCoproduct(co.kvpCoproduct).asInstanceOf[A]
       case x: HListConvert[a, al, b] =>
         kvpHList(x.from).map(hList => x.fHtoA(hList))
       case s: SumTypeData[a, b] =>

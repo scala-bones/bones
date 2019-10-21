@@ -1,7 +1,8 @@
 package com.bones.interpreter
 
+import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
 import com.bones.data.Value._
-import shapeless.{HList, Nat}
+import shapeless.{Coproduct, HList, Nat}
 
 /**
   * Just a template to be used as a starting point for a new interpreter.
@@ -15,6 +16,13 @@ class InterpreterTemplate {
       case op: KvpSingleValueHead[h, t, tl, a] => ???
       case op: KvpHListHead[a, al, h, hl, t, tl] => ???
       case op: KvpConcreteTypeHead[a, ht, nt, ho, xl, xll] => ???
+    }
+  }
+
+  def kvpCoproduct[C<:Coproduct](co: KvpCoproduct[C]): Unit = {
+    co match {
+      case KvpCoNil => ???
+      case co: KvpSingleValueLeft[l,r] => ???
     }
   }
 
@@ -37,8 +45,9 @@ class InterpreterTemplate {
       case ba: ByteArrayData => ???
       case esd: EnumerationData[a,b] => ???
       case kvp: KvpHListValue[h, hl] => ???
+      case co: KvpCoproductValue[c] => ???
       case x: HListConvert[a, al, b] => ???
-      case s: SumTypeData[a, b] => ???
+      case s: SumTypeData[a,b] => ???
     }
 
 }
