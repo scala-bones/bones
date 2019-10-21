@@ -3,15 +3,16 @@ package com.bones.jdbc
 import java.util.{Properties, UUID}
 
 import com.bones.schemas.Schemas
-import com.bones.schemas.Schemas.{BillingLocation, CC, CreditCardTypes, Currency}
+import com.bones.schemas.Schemas._
 import org.scalatest.FunSuite
+import shapeless.{Inl, Inr}
 
 class DbInsertValuesTest extends FunSuite {
 
 
   ignore("Insert into db test") {
 
-    val cc = CC("12345", "7890", UUID.randomUUID(), UUID.randomUUID(), CreditCardTypes.Mastercard, 8, 2020, "Kurt Vonnegut", Currency.CAD, None, UUID.randomUUID(), Some(BillingLocation("US", None)))
+    val cc = CC("12345", "7890", UUID.randomUUID(), UUID.randomUUID(), CreditCardType.Mastercard, 8, 2020, "Kurt Vonnegut", Currency.CAD, None, UUID.randomUUID(), Some(BillingLocation("US", None)))
 
     val result = DbInsertValues.insertQueryWithConnection(Schemas.creditCardSchema)(cc)
 

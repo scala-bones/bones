@@ -22,7 +22,7 @@ object ArgonautValidatorInterpreter {
   /**
     * An implementation of the ArgonautValidatorInterpreter where the date formats are ISO dates.
     */
-  val isoInterpreter = new ArgonautValidatorInterpreter {
+  val isoInterpreter: ArgonautValidatorInterpreter = new ArgonautValidatorInterpreter {
     override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
 
     override def localDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -185,4 +185,12 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
     )
     Left(NonEmptyList.one(WrongTypeError(path, expected, invalid)))
   }
+
+  override def stringValue(in: Json, elementName: String): Option[String] =
+    for {
+      obj <- in.obj
+      element <- obj.toList.find(_._1 == elementName)
+      value <- element._2.string
+    } yield value
+
 }

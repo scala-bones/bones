@@ -263,7 +263,7 @@ trait SwaggerCoreInterpreter {
             .minLength(36)
             .maxLength(36)
             .pattern(
-              "(^([0-9A-Fa-f]{8}[-][0-9A-Fa-f]{4}[-][0-9A-Fa-f]{4}[-][0-9A-Fa-f]{4}[-][0-9A-Fa-f]{12})$)")
+              "(^([0-9A-Fa-typeToConversion]{8}[-][0-9A-Fa-typeToConversion]{4}[-][0-9A-Fa-typeToConversion]{4}[-][0-9A-Fa-typeToConversion]{4}[-][0-9A-Fa-typeToConversion]{12})$)")
             .format("guid")
       case sv.Uppercase  => identity
       case sv.CreditCard => identity

@@ -169,4 +169,11 @@ trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
       .flatMap(_.toBigDecimal)
       .toRight(determineError(in, op, classOf[BigDecimal], path))
 
+  override def stringValue(in: Json, elementName: String): Option[String] =
+    for {
+      obj <- in.asObject
+      element <- obj.toList.find(_._1 == elementName)
+      value <- element._2.asString
+    } yield value
+
 }

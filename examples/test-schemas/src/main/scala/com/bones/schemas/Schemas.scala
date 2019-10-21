@@ -5,6 +5,7 @@ import java.util.UUID
 
 import com.bones.data.Error.CanNotConvert
 import com.bones.data.Value.KvpNil
+import com.bones.schemas.SumTypeExample.MusicMedium
 import com.bones.validation.ValidationDefinition.ValidationOp
 import shapeless.{HNil, Poly1}
 import com.bones.syntax._
@@ -12,26 +13,10 @@ import com.bones.syntax._
 
 object Schemas {
 
-  /** This is a product type example */
-  sealed abstract class CreditCardType(val abbrev: String)
+  object CreditCardType extends Enumeration {
+    type CreditCardTypes = Value
+    val Visa, Mastercard, Amex, Discover = Value
 
-  object CreditCardTypes {
-    case object Visa extends CreditCardType("Visa")
-    case object Mastercard extends CreditCardType("Mastercard")
-    case object Amex extends CreditCardType("Amex")
-    case object Discover extends CreditCardType("Discover")
-
-    def keys = List(Visa, Mastercard, Amex, Discover).map(_.toString)
-
-    def toCreditCardType(input: String, path: List[String]):  Either[CanNotConvert[String, CreditCardType], CreditCardType] = {
-      input.toLowerCase match {
-        case "visa" => Right(CreditCardTypes.Visa)
-        case "mastercard" => Right(CreditCardTypes.Mastercard)
-        case "amex" => Right(CreditCardTypes.Amex)
-        case "discover" => Right(CreditCardTypes.Discover)
-        case x => Left(CanNotConvert(path, x, classOf[CreditCardType]))
-      }
-    }
   }
 
 
@@ -46,7 +31,7 @@ object Schemas {
 
 
 
-  case class CC(firstSix: String, lastFour: String, uuid: UUID, token: UUID, ccType: CreditCardType,
+  case class CC(firstSix: String, lastFour: String, uuid: UUID, token: UUID, ccType: CreditCardType.Value,
                 expMonth: Long, expYear: Long, cardholder: String, currency: Currency.Value, deletedAt: Option[LocalDateTime],
                 lastModifiedRequest: UUID, billingLocation: Option[BillingLocation])
 
@@ -80,14 +65,8 @@ object Schemas {
     KvpNil
   ).validate(HasNotExpired)
 
-  val ccTypeValue =
-    string().asSumType[CreditCardType](
-      "CreditCardType",
-        CreditCardTypes.toCreditCardType(_,_),
-        (cct: CreditCardType) => cct.abbrev,
-        CreditCardTypes.keys,
-        List.empty
-      )
+  val ccTypeValue = enumeration[CreditCardType.type, CreditCardType.Value](CreditCardType)
+
 
   // Here we are defining our expected input data.  This definition will drive the interpreters.
   val ccObj = (
@@ -145,7 +124,7 @@ object Schemas {
       |  "lastFour" : "4321",
       |  "uuid" : "df15f08c-e6bd-11e7-aeb8-6003089f08b4",
       |  "token" : "e58e7dda-e6bd-11e7-b901-6003089f08b4",
-      |  "ccType" : "mastercard",
+      |  "ccType" : "Mastercard",
       |  "expMonth" : 11,
       |  "expYear" : 2022,
       |  "cardHolder" : "Lennart Augustsson",
@@ -159,7 +138,7 @@ object Schemas {
       |}
     """.stripMargin
 
-  val exampleCreditCard = CC("12345", "7890", UUID.randomUUID(), UUID.randomUUID(), CreditCardTypes.Mastercard, 8, 2020, "Kurt Vonnegut", Currency.CAD, None, UUID.randomUUID(), Some(BillingLocation("US", None)))
+  val exampleCreditCard = CC("12345", "7890", UUID.randomUUID(), UUID.randomUUID(), CreditCardType.Mastercard, 8, 2020, "Kurt Vonnegut", Currency.CAD, None, UUID.randomUUID(), Some(BillingLocation("US", None)))
 
 
 
@@ -215,29 +194,31 @@ object Schemas {
         kvp("bigDecimal", bigDecimal(bdv.max(BigDecimal(100)))) ::
         kvp("eitherField", either(string(sv.words), int)) ::
         kvp("child", allSupportedOptionalSchema.convert[AllSupportedOptional]) ::
+        kvpCoproduct("media", MusicMedium.bonesSchema) ::
         kvp("int2", int(iv.between(Int.MinValue, Int.MinValue))) ::
         KvpNil
 
 
 
   case class AllSupported(
-                         b: Boolean,
-                         i: Int,
-                         l: Long,
-                         ls: List[Int],
-                         str: String,
-                         f: Float,
-                         s: Short,
-                         d: Double,
-                         ba: Array[Byte],
-                         ld: LocalDate,
-                         ldt: LocalDateTime,
-                         uuid: UUID,
-                         currency: Currency.Value,
-                         bd: BigDecimal,
-                         either: Either[String,Int],
-                         child: AllSupportedOptional,
-                         int2: Int
+                           b: Boolean,
+                           i: Int,
+                           l: Long,
+                           ls: List[Int],
+                           str: String,
+                           f: Float,
+                           s: Short,
+                           d: Double,
+                           ba: Array[Byte],
+                           ld: LocalDate,
+                           ldt: LocalDateTime,
+                           uuid: UUID,
+                           currency: Currency.Value,
+                           bd: BigDecimal,
+                           either: Either[String,Int],
+                           child: AllSupportedOptional,
+                           media: MusicMedium.MusicMedium,
+                           int2: Int
                          )
 
 
