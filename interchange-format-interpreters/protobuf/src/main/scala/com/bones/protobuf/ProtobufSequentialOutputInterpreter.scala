@@ -7,6 +7,7 @@ import java.util.UUID
 import cats.Applicative
 import cats.data.NonEmptyList
 import cats.implicits._
+import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
 import com.bones.data.Value._
 import com.google.protobuf.{CodedOutputStream, Timestamp}
 import shapeless._
@@ -28,6 +29,8 @@ object ProtobufSequentialOutputInterpreter {
   type EncodeToProto[A] = FieldNumber => (LastFieldNumber, ComputeEncode[A])
   type EncodeHListToProto[H <: HList] =
     LastFieldNumber => (LastFieldNumber, ComputeEncode[H])
+  type EncodeCoproductToProto[C<:Coproduct] =
+    LastFieldNumber => (LastFieldNumber, ComputeEncode[C])
 
   def encodeToBytes[A](dc: BonesSchema[A]): A => Array[Byte] = dc match {
     case x: HListConvert[_, _, A] => {
@@ -44,6 +47,32 @@ object ProtobufSequentialOutputInterpreter {
           os.close()
           os.toByteArray
         }
+    }
+  }
+
+  protected def kvpCoproduct[C<:Coproduct](co: KvpCoproduct[C]): EncodeCoproductToProto[C] = {
+    co match {
+      case KvpCoNil =>
+        (fieldNumber: FieldNumber) => (
+          fieldNumber,
+          (_:CNil) =>
+            (() => 0, (os: CodedOutputStream) => Right(os))
+        )
+      case kvp: KvpSingleValueLeft[l,r] => {
+        (fieldNumber: FieldNumber) =>
+          val (nextFieldLeft, leftF) = valueDefinition(kvp.kvpValue)(fieldNumber)
+          val (nextFieldTail, tailF) = kvpCoproduct(kvp.kvpTail)(nextFieldLeft)
+          (
+            nextFieldTail,
+            (input: l:+:r) =>
+              {
+                input match {
+                  case Inl(head) => leftF(head)
+                  case Inr(tail) => tailF(tail)
+                }
+              }
+          )
+      }
     }
   }
 
@@ -349,6 +378,13 @@ object ProtobufSequentialOutputInterpreter {
           (
             nextFieldNumber,
             (input: A) => enc(input.asInstanceOf[h])
+          )
+      case kvp: KvpCoproductValue[c] =>
+        (fieldNumber: FieldNumber) =>
+          val (nextFieldNumber, enc) = kvpCoproduct(kvp.kvpCoproduct)(fieldNumber)
+          (
+           nextFieldNumber,
+            (input: A) => enc(input.asInstanceOf[c])
           )
       case x: HListConvert[h, hl, a] =>
         (fieldNumber: FieldNumber) =>

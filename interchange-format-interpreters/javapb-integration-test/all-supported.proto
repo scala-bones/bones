@@ -14,20 +14,28 @@ message AllSupported {
   required string enumeration = 13;
   required string bigDecimal = 14;
 
-   oneof either_field {
-       string eitherFieldLeft = 15;
-       int32 eitherFieldRight = 16;
-   }
- 
+  oneof either_field {
+    string eitherFieldLeft = 15;
+    int32 eitherFieldRight = 16;
+  }
+
   required Child child = 17;
-  required int32 int2 = 18;
+
+  oneof Digital_oneof {
+    Digital digital = 18;
+    CompactDisc compact_disc = 19;
+    Album album = 20;
+
+  }
+
+  required int32 int2 = 21;
 
 
   message Timestamp {
     required int64 seconds = 1;
     required int64 nanos = 2;
   }
-       
+
 
   message Child {
     optional bool boolean = 1;
@@ -45,11 +53,31 @@ message AllSupported {
     optional string enumeration = 13;
     optional string bigDecimal = 14;
 
-     oneof either {
-         string eitherLeft = 15;
-         int32 eitherRight = 16;
-     }
- 
+    oneof either {
+      string eitherLeft = 15;
+      int32 eitherRight = 16;
+    }
+
   }
-       
+
+
+  message Digital {
+    required string name = 1;
+    required string format = 2;
+  }
+
+
+  message CompactDisc {
+    required string name = 1;
+    required string cdQuality = 2;
+    required string caseQuality = 3;
+  }
+
+
+  message Album {
+    required string name = 1;
+    required string albumQuality = 2;
+    required string coverQuality = 3;
+  }
+
 }

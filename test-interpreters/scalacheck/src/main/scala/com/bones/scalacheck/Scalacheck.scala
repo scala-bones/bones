@@ -17,11 +17,13 @@ import wolfendale.scalacheck.regexp.RegexpGen
 object Scalacheck {
 
 
-  def kvpCoproduct[C<:Coproduct](co: KvpCoproduct[C]): Gen[C] = {
+  def kvpCoproduct[C<:Coproduct](co: KvpCoproduct[C]): List[Gen[C]] = {
     co match {
-      case KvpCoNil => sys.error("Not expected to get here")
+      case KvpCoNil => List.empty
       case co: KvpSingleValueLeft[l,r] =>
-        valueDefinition(co.kvpValue).map(Inl(_)) //TODO: How can we do more than just taking the first value?
+        val head = valueDefinition(co.kvpValue).map(Inl(_))
+        val tail = kvpCoproduct(co.kvpTail).map(gen => gen.map(Inr(_)))
+        head :: tail
     }
   }
 
@@ -122,9 +124,11 @@ object Scalacheck {
         Gen.oneOf(esd.enumeration.values.toSeq.map(_.asInstanceOf[A]))
       }
       case kvp: KvpHListValue[h, hl] =>
-        kvpHList(kvp.kvpHList).asInstanceOf[A]
+        kvpHList(kvp.kvpHList).map(_.asInstanceOf[A])
       case co: KvpCoproductValue[c] =>
-        kvpCoproduct(co.kvpCoproduct).asInstanceOf[A]
+        // Get a list of coproduct and gen them with equal frequency (1)
+        val gens = kvpCoproduct(co.kvpCoproduct).map(_.map(_.asInstanceOf[A])).map( (1,_))
+        Gen.frequency(gens:_*)
       case x: HListConvert[a, al, b] =>
         kvpHList(x.from).map(hList => x.fHtoA(hList))
       case s: SumTypeData[a, b] =>
