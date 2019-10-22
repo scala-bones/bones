@@ -3,8 +3,9 @@ package com.bones.sjson
 import java.time.format.DateTimeFormatter
 import java.util.Base64
 
+import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
 import com.bones.data.Value._
-import shapeless.{::, HList, Nat}
+import shapeless.{::, Coproduct, HList, Inl, Inr, Nat}
 import org.apache.commons.text.StringEscapeUtils.escapeJson
 
 object JsonStringEncoderInterpreter {
@@ -28,6 +29,21 @@ trait JsonStringEncoderInterpreter {
   val dateFormatter: DateTimeFormatter
 
 
+  def kvpCoproduct[C<:Coproduct](kvp: KvpCoproduct[C]): C => Option[String] = {
+    kvp match {
+      case KvpCoNil => _ => None
+      case op: KvpSingleValueLeft[l,r] =>
+        val valueF = valueDefinition(op.kvpValue)
+        val valueT = kvpCoproduct(op.kvpTail)
+        (input: C) =>
+        {
+          input match {
+            case Inl(left) => valueF(left)
+            case Inr(right) => valueT(right)
+          }
+        }
+    }
+  }
   def kvpHList[H <: HList, HL <: Nat](group: KvpHList[H, HL]): H => Option[String] = {
     group match {
       case KvpNil                                          => _ => None
@@ -44,9 +60,7 @@ trait JsonStringEncoderInterpreter {
             case (None, _) => tail
             case (_,None) => val1
           }
-
         }
-
       case op: KvpHListHead[a, al, h, hl, t, tl]           =>
         val headF = kvpHList(op.head)
         val tailF = kvpHList[t, tl](op.tail)
@@ -115,6 +129,9 @@ trait JsonStringEncoderInterpreter {
       case kvp: KvpHListValue[h, hl]      =>
         val hListDef = kvpHList(kvp.kvpHList)
         (input: A) => hListDef(input.asInstanceOf[h]).map("{" + _ + "}")
+      case kvp: KvpCoproductValue[c] =>
+        val coproductDef = kvpCoproduct(kvp.kvpCoproduct)
+        (input: A) => coproductDef(input.asInstanceOf[c]).map("{" + _ + "}")
       case x: HListConvert[a, al, b]      =>
         val fromDef = kvpHList(x.from)
         (input: A) => fromDef(x.fAtoH(input)).map("{" + _ + "}")

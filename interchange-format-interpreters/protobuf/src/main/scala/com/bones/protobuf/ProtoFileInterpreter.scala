@@ -1,7 +1,8 @@
 package com.bones.protobuf
 
+import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
 import com.bones.data.Value._
-import shapeless.{HList, Nat}
+import shapeless.{Coproduct, HList, Nat}
 
 /**
   * Create a Protobuf file descriptor based on the Kvp.
@@ -46,9 +47,9 @@ object ProtoFileInterpreter {
   }
   case class EitherDataType(name: String, l: MessageField, r: MessageField) extends DataType
 
-//  case class OneOf(l: MessageField, r: MessageField) extends DataType {
-
-//  }
+  case class OneOf(messageName: String, fields: List[MessageField]) extends DataType {
+    val name = messageName.capitalize
+  }
 
   case class MessageField(dataType: DataType,
                           required: Boolean,
@@ -57,7 +58,9 @@ object ProtoFileInterpreter {
                           index: Int)
 
   /** Definitions which can be embedded in the Message */
-  trait NestedType
+  trait NestedType {
+    def name: String
+  }
   case class NestedMessage(name: String, dataTypes: Vector[MessageField])
       extends NestedType
 //  case class NestedEnum(name: String, value: (String, Int)) extends NestedType
@@ -82,6 +85,13 @@ object ProtoFileInterpreter {
                |   ${indent}  ${right.dataType.name} ${right.name} = ${right.index};
                | ${indent}}
                | """.stripMargin('|')
+          case OneOf(name, messages) =>
+            val messageString = messages.map(m => s"   ${indent}  ${m.dataType.name} ${toSnake(m.name)} = ${m.index};\n               |").mkString
+            s"""
+               |${indent}oneof ${name} {
+               |${messageString}
+               |${indent}}
+             """.stripMargin
           case _ => {
             val repeatedRequired =
               if (field.repeated) "repeated"
@@ -140,6 +150,18 @@ object ProtoFileInterpreter {
         Message(t.manifestOfA.runtimeClass.getSimpleName,
                 messageFields,
                 nestedTypes)
+    }
+  }
+
+  def kvpCoproduct[C<:Coproduct](co: KvpCoproduct[C]):
+    Int => (Vector[MessageField], Vector[NestedType], Int) = lastIndex => {
+    co match{
+      case KvpCoNil => (Vector.empty, Vector.empty, lastIndex)
+      case op: KvpSingleValueLeft[l,r] => {
+        val left = valueDefinition(op.kvpValue)(op.manifestH.runtimeClass.getSimpleName, lastIndex)
+        val right = kvpCoproduct(op.kvpTail)(left._3)
+        (left._1 +: right._1, left._2 ++ right._2, right._3)
+      }
     }
   }
 
@@ -220,6 +242,11 @@ object ProtoFileInterpreter {
           (MessageField(PbString, true, false, name, index), Vector.empty, index)
         case st: SumTypeData[a, b] =>
           (MessageField(PbString, true, false, name, index), Vector.empty, index)
+        case kvp: KvpCoproductValue[c] =>
+          val (fields, nestedTypes,nextIndex) = kvpCoproduct(kvp.kvpCoproduct)(index)
+          val nestedMessageFields: Vector[MessageField] = nestedTypes.zipWithIndex.map(nt => MessageField(NestedDataType(nt._1.name), false, false, nt._1.name, index + nt._2))
+          val name = nestedTypes.headOption.map(_.name).getOrElse("unknown")
+          (MessageField(OneOf(name + "_oneof", nestedMessageFields.toList), true, false, name, nextIndex), nestedTypes, index + nestedMessageFields.length - 1)
         case kvp: KvpHListValue[h, hl] =>
           val result = kvpHList(kvp.kvpHList)(0)
           val nested = NestedMessage(name, result._1)

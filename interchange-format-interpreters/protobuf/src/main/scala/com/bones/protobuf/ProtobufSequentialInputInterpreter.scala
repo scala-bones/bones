@@ -5,12 +5,13 @@ import java.time.{LocalDate, LocalDateTime, ZoneOffset}
 import java.util.UUID
 
 import cats.data.NonEmptyList
-import com.bones.data.Error.{CanNotConvert, ExtractionError, RequiredData, WrongTypeError}
+import com.bones.data.Error._
 import com.bones.data.Value._
 import com.google.protobuf.{CodedInputStream, InvalidProtocolBufferException, Timestamp}
-import shapeless.{HList, HNil, Nat}
+import shapeless.{:+:, CNil, Coproduct, HList, HNil, Inl, Inr, Nat}
 import cats.implicits._
 import com.bones.Util
+import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
 import com.bones.validation.{ValidationUtil => vu}
 
 import scala.annotation.tailrec
@@ -38,6 +39,14 @@ object ProtobufSequentialInputInterpreter {
       Path) => (LastFieldNumber,
                 (CanReadTag, CodedInputStream) => (CanReadTag, Either[NonEmptyList[ExtractionError], H]))
 
+  type ExtractProductFromProto[C<:Coproduct] = (
+    LastFieldNumber,
+      Path) => (List[Tag],
+                LastFieldNumber,
+                (CanReadTag, CodedInputStream) => (CanReadTag, Either[NonEmptyList[ExtractionError], C])
+    )
+
+
   def fromBytes[A](dc: BonesSchema[A])
     : Array[Byte] => Either[NonEmptyList[ExtractionError], A] = dc match {
     case x: HListConvert[_, _, A] => {
@@ -51,6 +60,29 @@ object ProtobufSequentialInputInterpreter {
             x.fHtoA(o)
           })
         }:Either[NonEmptyList[ExtractionError], A]
+    }
+  }
+
+  private def kvpCoproduct[C<:Coproduct, A<:Coproduct](kvp: KvpCoproduct[C], kvpCoproductValue: KvpCoproductValue[A]): ExtractProductFromProto[C] = {
+    kvp match {
+      case KvpCoNil => (lastFieldNumber, path) =>
+        (List.empty, lastFieldNumber, (canRead, _) => (canRead, Left(NonEmptyList.one(RequiredData(path, kvpCoproductValue)))))
+      case op: KvpSingleValueLeft[l,r] =>
+        val vd = valueDefinition(op.kvpValue)
+        (lastFieldNumber, path) =>
+          val (headTags, headFieldNumber, fHead) = vd(lastFieldNumber, path)
+          val (tailTags, tailFieldNumber, fTail) = kvpCoproduct(op.kvpTail, kvpCoproductValue)(headFieldNumber, path)
+          (headTags ::: tailTags, tailFieldNumber, (canReadTag, in) => {
+            if (canReadTag) in.readTag()
+
+            if (headTags.contains(in.getLastTag)) {
+              val (nextTag, f) = fHead(false, in)
+              (nextTag, f.map(Inl(_)))
+            } else {
+              val (nextTag, f) = fTail(false, in)
+              (nextTag, f.map(Inr(_)))
+            }
+          })
     }
   }
 
@@ -415,6 +447,19 @@ object ProtobufSequentialInputInterpreter {
             }
             (tags, lastFieldNumber, fCis)
           }
+      }
+      case kvp: KvpCoproductValue[c] => {
+        val group = kvpCoproduct(kvp.kvpCoproduct, kvp)
+        (last: LastFieldNumber, path: Path) =>
+          {
+            val (tags, lastFieldNumber, coproductF) = group(last, path)
+            val f = (canReadInput: CanReadTag, in: CodedInputStream) => {
+              val (canRead, result) = coproductF(canReadInput, in)
+              (canRead, result.map(_.asInstanceOf[A]))
+            }
+            (tags, lastFieldNumber, f)
+          }
+
       }
       case kvp: KvpHListValue[h, hl] => {
         val groupExtract = kvpHList(kvp.kvpHList)

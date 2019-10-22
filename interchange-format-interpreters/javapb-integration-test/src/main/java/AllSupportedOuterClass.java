@@ -207,15 +207,56 @@ public final class AllSupportedOuterClass {
     AllSupportedOuterClass.AllSupported.ChildOrBuilder getChildOrBuilder();
 
     /**
-     * <code>required int32 int2 = 18;</code>
+     * <code>optional .AllSupported.Digital digital = 18;</code>
+     */
+    boolean hasDigital();
+    /**
+     * <code>optional .AllSupported.Digital digital = 18;</code>
+     */
+    AllSupportedOuterClass.AllSupported.Digital getDigital();
+    /**
+     * <code>optional .AllSupported.Digital digital = 18;</code>
+     */
+    AllSupportedOuterClass.AllSupported.DigitalOrBuilder getDigitalOrBuilder();
+
+    /**
+     * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+     */
+    boolean hasCompactDisc();
+    /**
+     * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+     */
+    AllSupportedOuterClass.AllSupported.CompactDisc getCompactDisc();
+    /**
+     * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+     */
+    AllSupportedOuterClass.AllSupported.CompactDiscOrBuilder getCompactDiscOrBuilder();
+
+    /**
+     * <code>optional .AllSupported.Album album = 20;</code>
+     */
+    boolean hasAlbum();
+    /**
+     * <code>optional .AllSupported.Album album = 20;</code>
+     */
+    AllSupportedOuterClass.AllSupported.Album getAlbum();
+    /**
+     * <code>optional .AllSupported.Album album = 20;</code>
+     */
+    AllSupportedOuterClass.AllSupported.AlbumOrBuilder getAlbumOrBuilder();
+
+    /**
+     * <code>required int32 int2 = 21;</code>
      */
     boolean hasInt2();
     /**
-     * <code>required int32 int2 = 18;</code>
+     * <code>required int32 int2 = 21;</code>
      */
     int getInt2();
 
     public AllSupportedOuterClass.AllSupported.EitherFieldCase getEitherFieldCase();
+
+    public AllSupportedOuterClass.AllSupported.DigitalOneofCase getDigitalOneofCase();
   }
   /**
    * Protobuf type {@code AllSupported}
@@ -392,8 +433,50 @@ public final class AllSupportedOuterClass {
               bitField0_ |= 0x00008000;
               break;
             }
-            case 144: {
-              bitField0_ |= 0x00010000;
+            case 146: {
+              AllSupportedOuterClass.AllSupported.Digital.Builder subBuilder = null;
+              if (digitalOneofCase_ == 18) {
+                subBuilder = ((AllSupportedOuterClass.AllSupported.Digital) digitalOneof_).toBuilder();
+              }
+              digitalOneof_ =
+                  input.readMessage(AllSupportedOuterClass.AllSupported.Digital.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom((AllSupportedOuterClass.AllSupported.Digital) digitalOneof_);
+                digitalOneof_ = subBuilder.buildPartial();
+              }
+              digitalOneofCase_ = 18;
+              break;
+            }
+            case 154: {
+              AllSupportedOuterClass.AllSupported.CompactDisc.Builder subBuilder = null;
+              if (digitalOneofCase_ == 19) {
+                subBuilder = ((AllSupportedOuterClass.AllSupported.CompactDisc) digitalOneof_).toBuilder();
+              }
+              digitalOneof_ =
+                  input.readMessage(AllSupportedOuterClass.AllSupported.CompactDisc.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom((AllSupportedOuterClass.AllSupported.CompactDisc) digitalOneof_);
+                digitalOneof_ = subBuilder.buildPartial();
+              }
+              digitalOneofCase_ = 19;
+              break;
+            }
+            case 162: {
+              AllSupportedOuterClass.AllSupported.Album.Builder subBuilder = null;
+              if (digitalOneofCase_ == 20) {
+                subBuilder = ((AllSupportedOuterClass.AllSupported.Album) digitalOneof_).toBuilder();
+              }
+              digitalOneof_ =
+                  input.readMessage(AllSupportedOuterClass.AllSupported.Album.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom((AllSupportedOuterClass.AllSupported.Album) digitalOneof_);
+                digitalOneof_ = subBuilder.buildPartial();
+              }
+              digitalOneofCase_ = 20;
+              break;
+            }
+            case 168: {
+              bitField0_ |= 0x00080000;
               int2_ = input.readInt32();
               break;
             }
@@ -3541,6 +3624,2636 @@ public final class AllSupportedOuterClass {
 
     }
 
+    public interface DigitalOrBuilder extends
+        // @@protoc_insertion_point(interface_extends:AllSupported.Digital)
+        com.google.protobuf.MessageOrBuilder {
+
+      /**
+       * <code>required string name = 1;</code>
+       */
+      boolean hasName();
+      /**
+       * <code>required string name = 1;</code>
+       */
+      java.lang.String getName();
+      /**
+       * <code>required string name = 1;</code>
+       */
+      com.google.protobuf.ByteString
+          getNameBytes();
+
+      /**
+       * <code>required string format = 2;</code>
+       */
+      boolean hasFormat();
+      /**
+       * <code>required string format = 2;</code>
+       */
+      java.lang.String getFormat();
+      /**
+       * <code>required string format = 2;</code>
+       */
+      com.google.protobuf.ByteString
+          getFormatBytes();
+    }
+    /**
+     * Protobuf type {@code AllSupported.Digital}
+     */
+    public  static final class Digital extends
+        com.google.protobuf.GeneratedMessageV3 implements
+        // @@protoc_insertion_point(message_implements:AllSupported.Digital)
+        DigitalOrBuilder {
+    private static final long serialVersionUID = 0L;
+      // Use Digital.newBuilder() to construct.
+      private Digital(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
+        super(builder);
+      }
+      private Digital() {
+        name_ = "";
+        format_ = "";
+      }
+
+      @java.lang.Override
+      public final com.google.protobuf.UnknownFieldSet
+      getUnknownFields() {
+        return this.unknownFields;
+      }
+      private Digital(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        this();
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
+        int mutable_bitField0_ = 0;
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+            com.google.protobuf.UnknownFieldSet.newBuilder();
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 10: {
+                com.google.protobuf.ByteString bs = input.readBytes();
+                bitField0_ |= 0x00000001;
+                name_ = bs;
+                break;
+              }
+              case 18: {
+                com.google.protobuf.ByteString bs = input.readBytes();
+                bitField0_ |= 0x00000002;
+                format_ = bs;
+                break;
+              }
+              default: {
+                if (!parseUnknownField(
+                    input, unknownFields, extensionRegistry, tag)) {
+                  done = true;
+                }
+                break;
+              }
+            }
+          }
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(this);
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(
+              e).setUnfinishedMessage(this);
+        } finally {
+          this.unknownFields = unknownFields.build();
+          makeExtensionsImmutable();
+        }
+      }
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return AllSupportedOuterClass.internal_static_AllSupported_Digital_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return AllSupportedOuterClass.internal_static_AllSupported_Digital_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                AllSupportedOuterClass.AllSupported.Digital.class, AllSupportedOuterClass.AllSupported.Digital.Builder.class);
+      }
+
+      private int bitField0_;
+      public static final int NAME_FIELD_NUMBER = 1;
+      private volatile java.lang.Object name_;
+      /**
+       * <code>required string name = 1;</code>
+       */
+      public boolean hasName() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required string name = 1;</code>
+       */
+      public java.lang.String getName() {
+        java.lang.Object ref = name_;
+        if (ref instanceof java.lang.String) {
+          return (java.lang.String) ref;
+        } else {
+          com.google.protobuf.ByteString bs = 
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            name_ = s;
+          }
+          return s;
+        }
+      }
+      /**
+       * <code>required string name = 1;</code>
+       */
+      public com.google.protobuf.ByteString
+          getNameBytes() {
+        java.lang.Object ref = name_;
+        if (ref instanceof java.lang.String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          name_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+
+      public static final int FORMAT_FIELD_NUMBER = 2;
+      private volatile java.lang.Object format_;
+      /**
+       * <code>required string format = 2;</code>
+       */
+      public boolean hasFormat() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>required string format = 2;</code>
+       */
+      public java.lang.String getFormat() {
+        java.lang.Object ref = format_;
+        if (ref instanceof java.lang.String) {
+          return (java.lang.String) ref;
+        } else {
+          com.google.protobuf.ByteString bs = 
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            format_ = s;
+          }
+          return s;
+        }
+      }
+      /**
+       * <code>required string format = 2;</code>
+       */
+      public com.google.protobuf.ByteString
+          getFormatBytes() {
+        java.lang.Object ref = format_;
+        if (ref instanceof java.lang.String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          format_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+
+      private byte memoizedIsInitialized = -1;
+      @java.lang.Override
+      public final boolean isInitialized() {
+        byte isInitialized = memoizedIsInitialized;
+        if (isInitialized == 1) return true;
+        if (isInitialized == 0) return false;
+
+        if (!hasName()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+        if (!hasFormat()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+        memoizedIsInitialized = 1;
+        return true;
+      }
+
+      @java.lang.Override
+      public void writeTo(com.google.protobuf.CodedOutputStream output)
+                          throws java.io.IOException {
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+          com.google.protobuf.GeneratedMessageV3.writeString(output, 1, name_);
+        }
+        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+          com.google.protobuf.GeneratedMessageV3.writeString(output, 2, format_);
+        }
+        unknownFields.writeTo(output);
+      }
+
+      @java.lang.Override
+      public int getSerializedSize() {
+        int size = memoizedSize;
+        if (size != -1) return size;
+
+        size = 0;
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+          size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, name_);
+        }
+        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+          size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, format_);
+        }
+        size += unknownFields.getSerializedSize();
+        memoizedSize = size;
+        return size;
+      }
+
+      @java.lang.Override
+      public boolean equals(final java.lang.Object obj) {
+        if (obj == this) {
+         return true;
+        }
+        if (!(obj instanceof AllSupportedOuterClass.AllSupported.Digital)) {
+          return super.equals(obj);
+        }
+        AllSupportedOuterClass.AllSupported.Digital other = (AllSupportedOuterClass.AllSupported.Digital) obj;
+
+        boolean result = true;
+        result = result && (hasName() == other.hasName());
+        if (hasName()) {
+          result = result && getName()
+              .equals(other.getName());
+        }
+        result = result && (hasFormat() == other.hasFormat());
+        if (hasFormat()) {
+          result = result && getFormat()
+              .equals(other.getFormat());
+        }
+        result = result && unknownFields.equals(other.unknownFields);
+        return result;
+      }
+
+      @java.lang.Override
+      public int hashCode() {
+        if (memoizedHashCode != 0) {
+          return memoizedHashCode;
+        }
+        int hash = 41;
+        hash = (19 * hash) + getDescriptor().hashCode();
+        if (hasName()) {
+          hash = (37 * hash) + NAME_FIELD_NUMBER;
+          hash = (53 * hash) + getName().hashCode();
+        }
+        if (hasFormat()) {
+          hash = (37 * hash) + FORMAT_FIELD_NUMBER;
+          hash = (53 * hash) + getFormat().hashCode();
+        }
+        hash = (29 * hash) + unknownFields.hashCode();
+        memoizedHashCode = hash;
+        return hash;
+      }
+
+      public static AllSupportedOuterClass.AllSupported.Digital parseFrom(
+          java.nio.ByteBuffer data)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data);
+      }
+      public static AllSupportedOuterClass.AllSupported.Digital parseFrom(
+          java.nio.ByteBuffer data,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data, extensionRegistry);
+      }
+      public static AllSupportedOuterClass.AllSupported.Digital parseFrom(
+          com.google.protobuf.ByteString data)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data);
+      }
+      public static AllSupportedOuterClass.AllSupported.Digital parseFrom(
+          com.google.protobuf.ByteString data,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data, extensionRegistry);
+      }
+      public static AllSupportedOuterClass.AllSupported.Digital parseFrom(byte[] data)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data);
+      }
+      public static AllSupportedOuterClass.AllSupported.Digital parseFrom(
+          byte[] data,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data, extensionRegistry);
+      }
+      public static AllSupportedOuterClass.AllSupported.Digital parseFrom(java.io.InputStream input)
+          throws java.io.IOException {
+        return com.google.protobuf.GeneratedMessageV3
+            .parseWithIOException(PARSER, input);
+      }
+      public static AllSupportedOuterClass.AllSupported.Digital parseFrom(
+          java.io.InputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        return com.google.protobuf.GeneratedMessageV3
+            .parseWithIOException(PARSER, input, extensionRegistry);
+      }
+      public static AllSupportedOuterClass.AllSupported.Digital parseDelimitedFrom(java.io.InputStream input)
+          throws java.io.IOException {
+        return com.google.protobuf.GeneratedMessageV3
+            .parseDelimitedWithIOException(PARSER, input);
+      }
+      public static AllSupportedOuterClass.AllSupported.Digital parseDelimitedFrom(
+          java.io.InputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        return com.google.protobuf.GeneratedMessageV3
+            .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+      }
+      public static AllSupportedOuterClass.AllSupported.Digital parseFrom(
+          com.google.protobuf.CodedInputStream input)
+          throws java.io.IOException {
+        return com.google.protobuf.GeneratedMessageV3
+            .parseWithIOException(PARSER, input);
+      }
+      public static AllSupportedOuterClass.AllSupported.Digital parseFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        return com.google.protobuf.GeneratedMessageV3
+            .parseWithIOException(PARSER, input, extensionRegistry);
+      }
+
+      @java.lang.Override
+      public Builder newBuilderForType() { return newBuilder(); }
+      public static Builder newBuilder() {
+        return DEFAULT_INSTANCE.toBuilder();
+      }
+      public static Builder newBuilder(AllSupportedOuterClass.AllSupported.Digital prototype) {
+        return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+      }
+      @java.lang.Override
+      public Builder toBuilder() {
+        return this == DEFAULT_INSTANCE
+            ? new Builder() : new Builder().mergeFrom(this);
+      }
+
+      @java.lang.Override
+      protected Builder newBuilderForType(
+          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+        Builder builder = new Builder(parent);
+        return builder;
+      }
+      /**
+       * Protobuf type {@code AllSupported.Digital}
+       */
+      public static final class Builder extends
+          com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+          // @@protoc_insertion_point(builder_implements:AllSupported.Digital)
+          AllSupportedOuterClass.AllSupported.DigitalOrBuilder {
+        public static final com.google.protobuf.Descriptors.Descriptor
+            getDescriptor() {
+          return AllSupportedOuterClass.internal_static_AllSupported_Digital_descriptor;
+        }
+
+        @java.lang.Override
+        protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+            internalGetFieldAccessorTable() {
+          return AllSupportedOuterClass.internal_static_AllSupported_Digital_fieldAccessorTable
+              .ensureFieldAccessorsInitialized(
+                  AllSupportedOuterClass.AllSupported.Digital.class, AllSupportedOuterClass.AllSupported.Digital.Builder.class);
+        }
+
+        // Construct using AllSupportedOuterClass.AllSupported.Digital.newBuilder()
+        private Builder() {
+          maybeForceBuilderInitialization();
+        }
+
+        private Builder(
+            com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+          super(parent);
+          maybeForceBuilderInitialization();
+        }
+        private void maybeForceBuilderInitialization() {
+          if (com.google.protobuf.GeneratedMessageV3
+                  .alwaysUseFieldBuilders) {
+          }
+        }
+        @java.lang.Override
+        public Builder clear() {
+          super.clear();
+          name_ = "";
+          bitField0_ = (bitField0_ & ~0x00000001);
+          format_ = "";
+          bitField0_ = (bitField0_ & ~0x00000002);
+          return this;
+        }
+
+        @java.lang.Override
+        public com.google.protobuf.Descriptors.Descriptor
+            getDescriptorForType() {
+          return AllSupportedOuterClass.internal_static_AllSupported_Digital_descriptor;
+        }
+
+        @java.lang.Override
+        public AllSupportedOuterClass.AllSupported.Digital getDefaultInstanceForType() {
+          return AllSupportedOuterClass.AllSupported.Digital.getDefaultInstance();
+        }
+
+        @java.lang.Override
+        public AllSupportedOuterClass.AllSupported.Digital build() {
+          AllSupportedOuterClass.AllSupported.Digital result = buildPartial();
+          if (!result.isInitialized()) {
+            throw newUninitializedMessageException(result);
+          }
+          return result;
+        }
+
+        @java.lang.Override
+        public AllSupportedOuterClass.AllSupported.Digital buildPartial() {
+          AllSupportedOuterClass.AllSupported.Digital result = new AllSupportedOuterClass.AllSupported.Digital(this);
+          int from_bitField0_ = bitField0_;
+          int to_bitField0_ = 0;
+          if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+            to_bitField0_ |= 0x00000001;
+          }
+          result.name_ = name_;
+          if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+            to_bitField0_ |= 0x00000002;
+          }
+          result.format_ = format_;
+          result.bitField0_ = to_bitField0_;
+          onBuilt();
+          return result;
+        }
+
+        @java.lang.Override
+        public Builder clone() {
+          return (Builder) super.clone();
+        }
+        @java.lang.Override
+        public Builder setField(
+            com.google.protobuf.Descriptors.FieldDescriptor field,
+            java.lang.Object value) {
+          return (Builder) super.setField(field, value);
+        }
+        @java.lang.Override
+        public Builder clearField(
+            com.google.protobuf.Descriptors.FieldDescriptor field) {
+          return (Builder) super.clearField(field);
+        }
+        @java.lang.Override
+        public Builder clearOneof(
+            com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+          return (Builder) super.clearOneof(oneof);
+        }
+        @java.lang.Override
+        public Builder setRepeatedField(
+            com.google.protobuf.Descriptors.FieldDescriptor field,
+            int index, java.lang.Object value) {
+          return (Builder) super.setRepeatedField(field, index, value);
+        }
+        @java.lang.Override
+        public Builder addRepeatedField(
+            com.google.protobuf.Descriptors.FieldDescriptor field,
+            java.lang.Object value) {
+          return (Builder) super.addRepeatedField(field, value);
+        }
+        @java.lang.Override
+        public Builder mergeFrom(com.google.protobuf.Message other) {
+          if (other instanceof AllSupportedOuterClass.AllSupported.Digital) {
+            return mergeFrom((AllSupportedOuterClass.AllSupported.Digital)other);
+          } else {
+            super.mergeFrom(other);
+            return this;
+          }
+        }
+
+        public Builder mergeFrom(AllSupportedOuterClass.AllSupported.Digital other) {
+          if (other == AllSupportedOuterClass.AllSupported.Digital.getDefaultInstance()) return this;
+          if (other.hasName()) {
+            bitField0_ |= 0x00000001;
+            name_ = other.name_;
+            onChanged();
+          }
+          if (other.hasFormat()) {
+            bitField0_ |= 0x00000002;
+            format_ = other.format_;
+            onChanged();
+          }
+          this.mergeUnknownFields(other.unknownFields);
+          onChanged();
+          return this;
+        }
+
+        @java.lang.Override
+        public final boolean isInitialized() {
+          if (!hasName()) {
+            return false;
+          }
+          if (!hasFormat()) {
+            return false;
+          }
+          return true;
+        }
+
+        @java.lang.Override
+        public Builder mergeFrom(
+            com.google.protobuf.CodedInputStream input,
+            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+            throws java.io.IOException {
+          AllSupportedOuterClass.AllSupported.Digital parsedMessage = null;
+          try {
+            parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+          } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+            parsedMessage = (AllSupportedOuterClass.AllSupported.Digital) e.getUnfinishedMessage();
+            throw e.unwrapIOException();
+          } finally {
+            if (parsedMessage != null) {
+              mergeFrom(parsedMessage);
+            }
+          }
+          return this;
+        }
+        private int bitField0_;
+
+        private java.lang.Object name_ = "";
+        /**
+         * <code>required string name = 1;</code>
+         */
+        public boolean hasName() {
+          return ((bitField0_ & 0x00000001) == 0x00000001);
+        }
+        /**
+         * <code>required string name = 1;</code>
+         */
+        public java.lang.String getName() {
+          java.lang.Object ref = name_;
+          if (!(ref instanceof java.lang.String)) {
+            com.google.protobuf.ByteString bs =
+                (com.google.protobuf.ByteString) ref;
+            java.lang.String s = bs.toStringUtf8();
+            if (bs.isValidUtf8()) {
+              name_ = s;
+            }
+            return s;
+          } else {
+            return (java.lang.String) ref;
+          }
+        }
+        /**
+         * <code>required string name = 1;</code>
+         */
+        public com.google.protobuf.ByteString
+            getNameBytes() {
+          java.lang.Object ref = name_;
+          if (ref instanceof String) {
+            com.google.protobuf.ByteString b = 
+                com.google.protobuf.ByteString.copyFromUtf8(
+                    (java.lang.String) ref);
+            name_ = b;
+            return b;
+          } else {
+            return (com.google.protobuf.ByteString) ref;
+          }
+        }
+        /**
+         * <code>required string name = 1;</code>
+         */
+        public Builder setName(
+            java.lang.String value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+          name_ = value;
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>required string name = 1;</code>
+         */
+        public Builder clearName() {
+          bitField0_ = (bitField0_ & ~0x00000001);
+          name_ = getDefaultInstance().getName();
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>required string name = 1;</code>
+         */
+        public Builder setNameBytes(
+            com.google.protobuf.ByteString value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+          name_ = value;
+          onChanged();
+          return this;
+        }
+
+        private java.lang.Object format_ = "";
+        /**
+         * <code>required string format = 2;</code>
+         */
+        public boolean hasFormat() {
+          return ((bitField0_ & 0x00000002) == 0x00000002);
+        }
+        /**
+         * <code>required string format = 2;</code>
+         */
+        public java.lang.String getFormat() {
+          java.lang.Object ref = format_;
+          if (!(ref instanceof java.lang.String)) {
+            com.google.protobuf.ByteString bs =
+                (com.google.protobuf.ByteString) ref;
+            java.lang.String s = bs.toStringUtf8();
+            if (bs.isValidUtf8()) {
+              format_ = s;
+            }
+            return s;
+          } else {
+            return (java.lang.String) ref;
+          }
+        }
+        /**
+         * <code>required string format = 2;</code>
+         */
+        public com.google.protobuf.ByteString
+            getFormatBytes() {
+          java.lang.Object ref = format_;
+          if (ref instanceof String) {
+            com.google.protobuf.ByteString b = 
+                com.google.protobuf.ByteString.copyFromUtf8(
+                    (java.lang.String) ref);
+            format_ = b;
+            return b;
+          } else {
+            return (com.google.protobuf.ByteString) ref;
+          }
+        }
+        /**
+         * <code>required string format = 2;</code>
+         */
+        public Builder setFormat(
+            java.lang.String value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+          format_ = value;
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>required string format = 2;</code>
+         */
+        public Builder clearFormat() {
+          bitField0_ = (bitField0_ & ~0x00000002);
+          format_ = getDefaultInstance().getFormat();
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>required string format = 2;</code>
+         */
+        public Builder setFormatBytes(
+            com.google.protobuf.ByteString value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+          format_ = value;
+          onChanged();
+          return this;
+        }
+        @java.lang.Override
+        public final Builder setUnknownFields(
+            final com.google.protobuf.UnknownFieldSet unknownFields) {
+          return super.setUnknownFields(unknownFields);
+        }
+
+        @java.lang.Override
+        public final Builder mergeUnknownFields(
+            final com.google.protobuf.UnknownFieldSet unknownFields) {
+          return super.mergeUnknownFields(unknownFields);
+        }
+
+
+        // @@protoc_insertion_point(builder_scope:AllSupported.Digital)
+      }
+
+      // @@protoc_insertion_point(class_scope:AllSupported.Digital)
+      private static final AllSupportedOuterClass.AllSupported.Digital DEFAULT_INSTANCE;
+      static {
+        DEFAULT_INSTANCE = new AllSupportedOuterClass.AllSupported.Digital();
+      }
+
+      public static AllSupportedOuterClass.AllSupported.Digital getDefaultInstance() {
+        return DEFAULT_INSTANCE;
+      }
+
+      @java.lang.Deprecated public static final com.google.protobuf.Parser<Digital>
+          PARSER = new com.google.protobuf.AbstractParser<Digital>() {
+        @java.lang.Override
+        public Digital parsePartialFrom(
+            com.google.protobuf.CodedInputStream input,
+            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+            throws com.google.protobuf.InvalidProtocolBufferException {
+          return new Digital(input, extensionRegistry);
+        }
+      };
+
+      public static com.google.protobuf.Parser<Digital> parser() {
+        return PARSER;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Parser<Digital> getParserForType() {
+        return PARSER;
+      }
+
+      @java.lang.Override
+      public AllSupportedOuterClass.AllSupported.Digital getDefaultInstanceForType() {
+        return DEFAULT_INSTANCE;
+      }
+
+    }
+
+    public interface CompactDiscOrBuilder extends
+        // @@protoc_insertion_point(interface_extends:AllSupported.CompactDisc)
+        com.google.protobuf.MessageOrBuilder {
+
+      /**
+       * <code>required string name = 1;</code>
+       */
+      boolean hasName();
+      /**
+       * <code>required string name = 1;</code>
+       */
+      java.lang.String getName();
+      /**
+       * <code>required string name = 1;</code>
+       */
+      com.google.protobuf.ByteString
+          getNameBytes();
+
+      /**
+       * <code>required string cdQuality = 2;</code>
+       */
+      boolean hasCdQuality();
+      /**
+       * <code>required string cdQuality = 2;</code>
+       */
+      java.lang.String getCdQuality();
+      /**
+       * <code>required string cdQuality = 2;</code>
+       */
+      com.google.protobuf.ByteString
+          getCdQualityBytes();
+
+      /**
+       * <code>required string caseQuality = 3;</code>
+       */
+      boolean hasCaseQuality();
+      /**
+       * <code>required string caseQuality = 3;</code>
+       */
+      java.lang.String getCaseQuality();
+      /**
+       * <code>required string caseQuality = 3;</code>
+       */
+      com.google.protobuf.ByteString
+          getCaseQualityBytes();
+    }
+    /**
+     * Protobuf type {@code AllSupported.CompactDisc}
+     */
+    public  static final class CompactDisc extends
+        com.google.protobuf.GeneratedMessageV3 implements
+        // @@protoc_insertion_point(message_implements:AllSupported.CompactDisc)
+        CompactDiscOrBuilder {
+    private static final long serialVersionUID = 0L;
+      // Use CompactDisc.newBuilder() to construct.
+      private CompactDisc(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
+        super(builder);
+      }
+      private CompactDisc() {
+        name_ = "";
+        cdQuality_ = "";
+        caseQuality_ = "";
+      }
+
+      @java.lang.Override
+      public final com.google.protobuf.UnknownFieldSet
+      getUnknownFields() {
+        return this.unknownFields;
+      }
+      private CompactDisc(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        this();
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
+        int mutable_bitField0_ = 0;
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+            com.google.protobuf.UnknownFieldSet.newBuilder();
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 10: {
+                com.google.protobuf.ByteString bs = input.readBytes();
+                bitField0_ |= 0x00000001;
+                name_ = bs;
+                break;
+              }
+              case 18: {
+                com.google.protobuf.ByteString bs = input.readBytes();
+                bitField0_ |= 0x00000002;
+                cdQuality_ = bs;
+                break;
+              }
+              case 26: {
+                com.google.protobuf.ByteString bs = input.readBytes();
+                bitField0_ |= 0x00000004;
+                caseQuality_ = bs;
+                break;
+              }
+              default: {
+                if (!parseUnknownField(
+                    input, unknownFields, extensionRegistry, tag)) {
+                  done = true;
+                }
+                break;
+              }
+            }
+          }
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(this);
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(
+              e).setUnfinishedMessage(this);
+        } finally {
+          this.unknownFields = unknownFields.build();
+          makeExtensionsImmutable();
+        }
+      }
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return AllSupportedOuterClass.internal_static_AllSupported_CompactDisc_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return AllSupportedOuterClass.internal_static_AllSupported_CompactDisc_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                AllSupportedOuterClass.AllSupported.CompactDisc.class, AllSupportedOuterClass.AllSupported.CompactDisc.Builder.class);
+      }
+
+      private int bitField0_;
+      public static final int NAME_FIELD_NUMBER = 1;
+      private volatile java.lang.Object name_;
+      /**
+       * <code>required string name = 1;</code>
+       */
+      public boolean hasName() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required string name = 1;</code>
+       */
+      public java.lang.String getName() {
+        java.lang.Object ref = name_;
+        if (ref instanceof java.lang.String) {
+          return (java.lang.String) ref;
+        } else {
+          com.google.protobuf.ByteString bs = 
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            name_ = s;
+          }
+          return s;
+        }
+      }
+      /**
+       * <code>required string name = 1;</code>
+       */
+      public com.google.protobuf.ByteString
+          getNameBytes() {
+        java.lang.Object ref = name_;
+        if (ref instanceof java.lang.String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          name_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+
+      public static final int CDQUALITY_FIELD_NUMBER = 2;
+      private volatile java.lang.Object cdQuality_;
+      /**
+       * <code>required string cdQuality = 2;</code>
+       */
+      public boolean hasCdQuality() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>required string cdQuality = 2;</code>
+       */
+      public java.lang.String getCdQuality() {
+        java.lang.Object ref = cdQuality_;
+        if (ref instanceof java.lang.String) {
+          return (java.lang.String) ref;
+        } else {
+          com.google.protobuf.ByteString bs = 
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            cdQuality_ = s;
+          }
+          return s;
+        }
+      }
+      /**
+       * <code>required string cdQuality = 2;</code>
+       */
+      public com.google.protobuf.ByteString
+          getCdQualityBytes() {
+        java.lang.Object ref = cdQuality_;
+        if (ref instanceof java.lang.String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          cdQuality_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+
+      public static final int CASEQUALITY_FIELD_NUMBER = 3;
+      private volatile java.lang.Object caseQuality_;
+      /**
+       * <code>required string caseQuality = 3;</code>
+       */
+      public boolean hasCaseQuality() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>required string caseQuality = 3;</code>
+       */
+      public java.lang.String getCaseQuality() {
+        java.lang.Object ref = caseQuality_;
+        if (ref instanceof java.lang.String) {
+          return (java.lang.String) ref;
+        } else {
+          com.google.protobuf.ByteString bs = 
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            caseQuality_ = s;
+          }
+          return s;
+        }
+      }
+      /**
+       * <code>required string caseQuality = 3;</code>
+       */
+      public com.google.protobuf.ByteString
+          getCaseQualityBytes() {
+        java.lang.Object ref = caseQuality_;
+        if (ref instanceof java.lang.String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          caseQuality_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+
+      private byte memoizedIsInitialized = -1;
+      @java.lang.Override
+      public final boolean isInitialized() {
+        byte isInitialized = memoizedIsInitialized;
+        if (isInitialized == 1) return true;
+        if (isInitialized == 0) return false;
+
+        if (!hasName()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+        if (!hasCdQuality()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+        if (!hasCaseQuality()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+        memoizedIsInitialized = 1;
+        return true;
+      }
+
+      @java.lang.Override
+      public void writeTo(com.google.protobuf.CodedOutputStream output)
+                          throws java.io.IOException {
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+          com.google.protobuf.GeneratedMessageV3.writeString(output, 1, name_);
+        }
+        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+          com.google.protobuf.GeneratedMessageV3.writeString(output, 2, cdQuality_);
+        }
+        if (((bitField0_ & 0x00000004) == 0x00000004)) {
+          com.google.protobuf.GeneratedMessageV3.writeString(output, 3, caseQuality_);
+        }
+        unknownFields.writeTo(output);
+      }
+
+      @java.lang.Override
+      public int getSerializedSize() {
+        int size = memoizedSize;
+        if (size != -1) return size;
+
+        size = 0;
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+          size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, name_);
+        }
+        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+          size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, cdQuality_);
+        }
+        if (((bitField0_ & 0x00000004) == 0x00000004)) {
+          size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, caseQuality_);
+        }
+        size += unknownFields.getSerializedSize();
+        memoizedSize = size;
+        return size;
+      }
+
+      @java.lang.Override
+      public boolean equals(final java.lang.Object obj) {
+        if (obj == this) {
+         return true;
+        }
+        if (!(obj instanceof AllSupportedOuterClass.AllSupported.CompactDisc)) {
+          return super.equals(obj);
+        }
+        AllSupportedOuterClass.AllSupported.CompactDisc other = (AllSupportedOuterClass.AllSupported.CompactDisc) obj;
+
+        boolean result = true;
+        result = result && (hasName() == other.hasName());
+        if (hasName()) {
+          result = result && getName()
+              .equals(other.getName());
+        }
+        result = result && (hasCdQuality() == other.hasCdQuality());
+        if (hasCdQuality()) {
+          result = result && getCdQuality()
+              .equals(other.getCdQuality());
+        }
+        result = result && (hasCaseQuality() == other.hasCaseQuality());
+        if (hasCaseQuality()) {
+          result = result && getCaseQuality()
+              .equals(other.getCaseQuality());
+        }
+        result = result && unknownFields.equals(other.unknownFields);
+        return result;
+      }
+
+      @java.lang.Override
+      public int hashCode() {
+        if (memoizedHashCode != 0) {
+          return memoizedHashCode;
+        }
+        int hash = 41;
+        hash = (19 * hash) + getDescriptor().hashCode();
+        if (hasName()) {
+          hash = (37 * hash) + NAME_FIELD_NUMBER;
+          hash = (53 * hash) + getName().hashCode();
+        }
+        if (hasCdQuality()) {
+          hash = (37 * hash) + CDQUALITY_FIELD_NUMBER;
+          hash = (53 * hash) + getCdQuality().hashCode();
+        }
+        if (hasCaseQuality()) {
+          hash = (37 * hash) + CASEQUALITY_FIELD_NUMBER;
+          hash = (53 * hash) + getCaseQuality().hashCode();
+        }
+        hash = (29 * hash) + unknownFields.hashCode();
+        memoizedHashCode = hash;
+        return hash;
+      }
+
+      public static AllSupportedOuterClass.AllSupported.CompactDisc parseFrom(
+          java.nio.ByteBuffer data)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data);
+      }
+      public static AllSupportedOuterClass.AllSupported.CompactDisc parseFrom(
+          java.nio.ByteBuffer data,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data, extensionRegistry);
+      }
+      public static AllSupportedOuterClass.AllSupported.CompactDisc parseFrom(
+          com.google.protobuf.ByteString data)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data);
+      }
+      public static AllSupportedOuterClass.AllSupported.CompactDisc parseFrom(
+          com.google.protobuf.ByteString data,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data, extensionRegistry);
+      }
+      public static AllSupportedOuterClass.AllSupported.CompactDisc parseFrom(byte[] data)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data);
+      }
+      public static AllSupportedOuterClass.AllSupported.CompactDisc parseFrom(
+          byte[] data,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data, extensionRegistry);
+      }
+      public static AllSupportedOuterClass.AllSupported.CompactDisc parseFrom(java.io.InputStream input)
+          throws java.io.IOException {
+        return com.google.protobuf.GeneratedMessageV3
+            .parseWithIOException(PARSER, input);
+      }
+      public static AllSupportedOuterClass.AllSupported.CompactDisc parseFrom(
+          java.io.InputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        return com.google.protobuf.GeneratedMessageV3
+            .parseWithIOException(PARSER, input, extensionRegistry);
+      }
+      public static AllSupportedOuterClass.AllSupported.CompactDisc parseDelimitedFrom(java.io.InputStream input)
+          throws java.io.IOException {
+        return com.google.protobuf.GeneratedMessageV3
+            .parseDelimitedWithIOException(PARSER, input);
+      }
+      public static AllSupportedOuterClass.AllSupported.CompactDisc parseDelimitedFrom(
+          java.io.InputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        return com.google.protobuf.GeneratedMessageV3
+            .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+      }
+      public static AllSupportedOuterClass.AllSupported.CompactDisc parseFrom(
+          com.google.protobuf.CodedInputStream input)
+          throws java.io.IOException {
+        return com.google.protobuf.GeneratedMessageV3
+            .parseWithIOException(PARSER, input);
+      }
+      public static AllSupportedOuterClass.AllSupported.CompactDisc parseFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        return com.google.protobuf.GeneratedMessageV3
+            .parseWithIOException(PARSER, input, extensionRegistry);
+      }
+
+      @java.lang.Override
+      public Builder newBuilderForType() { return newBuilder(); }
+      public static Builder newBuilder() {
+        return DEFAULT_INSTANCE.toBuilder();
+      }
+      public static Builder newBuilder(AllSupportedOuterClass.AllSupported.CompactDisc prototype) {
+        return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+      }
+      @java.lang.Override
+      public Builder toBuilder() {
+        return this == DEFAULT_INSTANCE
+            ? new Builder() : new Builder().mergeFrom(this);
+      }
+
+      @java.lang.Override
+      protected Builder newBuilderForType(
+          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+        Builder builder = new Builder(parent);
+        return builder;
+      }
+      /**
+       * Protobuf type {@code AllSupported.CompactDisc}
+       */
+      public static final class Builder extends
+          com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+          // @@protoc_insertion_point(builder_implements:AllSupported.CompactDisc)
+          AllSupportedOuterClass.AllSupported.CompactDiscOrBuilder {
+        public static final com.google.protobuf.Descriptors.Descriptor
+            getDescriptor() {
+          return AllSupportedOuterClass.internal_static_AllSupported_CompactDisc_descriptor;
+        }
+
+        @java.lang.Override
+        protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+            internalGetFieldAccessorTable() {
+          return AllSupportedOuterClass.internal_static_AllSupported_CompactDisc_fieldAccessorTable
+              .ensureFieldAccessorsInitialized(
+                  AllSupportedOuterClass.AllSupported.CompactDisc.class, AllSupportedOuterClass.AllSupported.CompactDisc.Builder.class);
+        }
+
+        // Construct using AllSupportedOuterClass.AllSupported.CompactDisc.newBuilder()
+        private Builder() {
+          maybeForceBuilderInitialization();
+        }
+
+        private Builder(
+            com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+          super(parent);
+          maybeForceBuilderInitialization();
+        }
+        private void maybeForceBuilderInitialization() {
+          if (com.google.protobuf.GeneratedMessageV3
+                  .alwaysUseFieldBuilders) {
+          }
+        }
+        @java.lang.Override
+        public Builder clear() {
+          super.clear();
+          name_ = "";
+          bitField0_ = (bitField0_ & ~0x00000001);
+          cdQuality_ = "";
+          bitField0_ = (bitField0_ & ~0x00000002);
+          caseQuality_ = "";
+          bitField0_ = (bitField0_ & ~0x00000004);
+          return this;
+        }
+
+        @java.lang.Override
+        public com.google.protobuf.Descriptors.Descriptor
+            getDescriptorForType() {
+          return AllSupportedOuterClass.internal_static_AllSupported_CompactDisc_descriptor;
+        }
+
+        @java.lang.Override
+        public AllSupportedOuterClass.AllSupported.CompactDisc getDefaultInstanceForType() {
+          return AllSupportedOuterClass.AllSupported.CompactDisc.getDefaultInstance();
+        }
+
+        @java.lang.Override
+        public AllSupportedOuterClass.AllSupported.CompactDisc build() {
+          AllSupportedOuterClass.AllSupported.CompactDisc result = buildPartial();
+          if (!result.isInitialized()) {
+            throw newUninitializedMessageException(result);
+          }
+          return result;
+        }
+
+        @java.lang.Override
+        public AllSupportedOuterClass.AllSupported.CompactDisc buildPartial() {
+          AllSupportedOuterClass.AllSupported.CompactDisc result = new AllSupportedOuterClass.AllSupported.CompactDisc(this);
+          int from_bitField0_ = bitField0_;
+          int to_bitField0_ = 0;
+          if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+            to_bitField0_ |= 0x00000001;
+          }
+          result.name_ = name_;
+          if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+            to_bitField0_ |= 0x00000002;
+          }
+          result.cdQuality_ = cdQuality_;
+          if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+            to_bitField0_ |= 0x00000004;
+          }
+          result.caseQuality_ = caseQuality_;
+          result.bitField0_ = to_bitField0_;
+          onBuilt();
+          return result;
+        }
+
+        @java.lang.Override
+        public Builder clone() {
+          return (Builder) super.clone();
+        }
+        @java.lang.Override
+        public Builder setField(
+            com.google.protobuf.Descriptors.FieldDescriptor field,
+            java.lang.Object value) {
+          return (Builder) super.setField(field, value);
+        }
+        @java.lang.Override
+        public Builder clearField(
+            com.google.protobuf.Descriptors.FieldDescriptor field) {
+          return (Builder) super.clearField(field);
+        }
+        @java.lang.Override
+        public Builder clearOneof(
+            com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+          return (Builder) super.clearOneof(oneof);
+        }
+        @java.lang.Override
+        public Builder setRepeatedField(
+            com.google.protobuf.Descriptors.FieldDescriptor field,
+            int index, java.lang.Object value) {
+          return (Builder) super.setRepeatedField(field, index, value);
+        }
+        @java.lang.Override
+        public Builder addRepeatedField(
+            com.google.protobuf.Descriptors.FieldDescriptor field,
+            java.lang.Object value) {
+          return (Builder) super.addRepeatedField(field, value);
+        }
+        @java.lang.Override
+        public Builder mergeFrom(com.google.protobuf.Message other) {
+          if (other instanceof AllSupportedOuterClass.AllSupported.CompactDisc) {
+            return mergeFrom((AllSupportedOuterClass.AllSupported.CompactDisc)other);
+          } else {
+            super.mergeFrom(other);
+            return this;
+          }
+        }
+
+        public Builder mergeFrom(AllSupportedOuterClass.AllSupported.CompactDisc other) {
+          if (other == AllSupportedOuterClass.AllSupported.CompactDisc.getDefaultInstance()) return this;
+          if (other.hasName()) {
+            bitField0_ |= 0x00000001;
+            name_ = other.name_;
+            onChanged();
+          }
+          if (other.hasCdQuality()) {
+            bitField0_ |= 0x00000002;
+            cdQuality_ = other.cdQuality_;
+            onChanged();
+          }
+          if (other.hasCaseQuality()) {
+            bitField0_ |= 0x00000004;
+            caseQuality_ = other.caseQuality_;
+            onChanged();
+          }
+          this.mergeUnknownFields(other.unknownFields);
+          onChanged();
+          return this;
+        }
+
+        @java.lang.Override
+        public final boolean isInitialized() {
+          if (!hasName()) {
+            return false;
+          }
+          if (!hasCdQuality()) {
+            return false;
+          }
+          if (!hasCaseQuality()) {
+            return false;
+          }
+          return true;
+        }
+
+        @java.lang.Override
+        public Builder mergeFrom(
+            com.google.protobuf.CodedInputStream input,
+            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+            throws java.io.IOException {
+          AllSupportedOuterClass.AllSupported.CompactDisc parsedMessage = null;
+          try {
+            parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+          } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+            parsedMessage = (AllSupportedOuterClass.AllSupported.CompactDisc) e.getUnfinishedMessage();
+            throw e.unwrapIOException();
+          } finally {
+            if (parsedMessage != null) {
+              mergeFrom(parsedMessage);
+            }
+          }
+          return this;
+        }
+        private int bitField0_;
+
+        private java.lang.Object name_ = "";
+        /**
+         * <code>required string name = 1;</code>
+         */
+        public boolean hasName() {
+          return ((bitField0_ & 0x00000001) == 0x00000001);
+        }
+        /**
+         * <code>required string name = 1;</code>
+         */
+        public java.lang.String getName() {
+          java.lang.Object ref = name_;
+          if (!(ref instanceof java.lang.String)) {
+            com.google.protobuf.ByteString bs =
+                (com.google.protobuf.ByteString) ref;
+            java.lang.String s = bs.toStringUtf8();
+            if (bs.isValidUtf8()) {
+              name_ = s;
+            }
+            return s;
+          } else {
+            return (java.lang.String) ref;
+          }
+        }
+        /**
+         * <code>required string name = 1;</code>
+         */
+        public com.google.protobuf.ByteString
+            getNameBytes() {
+          java.lang.Object ref = name_;
+          if (ref instanceof String) {
+            com.google.protobuf.ByteString b = 
+                com.google.protobuf.ByteString.copyFromUtf8(
+                    (java.lang.String) ref);
+            name_ = b;
+            return b;
+          } else {
+            return (com.google.protobuf.ByteString) ref;
+          }
+        }
+        /**
+         * <code>required string name = 1;</code>
+         */
+        public Builder setName(
+            java.lang.String value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+          name_ = value;
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>required string name = 1;</code>
+         */
+        public Builder clearName() {
+          bitField0_ = (bitField0_ & ~0x00000001);
+          name_ = getDefaultInstance().getName();
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>required string name = 1;</code>
+         */
+        public Builder setNameBytes(
+            com.google.protobuf.ByteString value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+          name_ = value;
+          onChanged();
+          return this;
+        }
+
+        private java.lang.Object cdQuality_ = "";
+        /**
+         * <code>required string cdQuality = 2;</code>
+         */
+        public boolean hasCdQuality() {
+          return ((bitField0_ & 0x00000002) == 0x00000002);
+        }
+        /**
+         * <code>required string cdQuality = 2;</code>
+         */
+        public java.lang.String getCdQuality() {
+          java.lang.Object ref = cdQuality_;
+          if (!(ref instanceof java.lang.String)) {
+            com.google.protobuf.ByteString bs =
+                (com.google.protobuf.ByteString) ref;
+            java.lang.String s = bs.toStringUtf8();
+            if (bs.isValidUtf8()) {
+              cdQuality_ = s;
+            }
+            return s;
+          } else {
+            return (java.lang.String) ref;
+          }
+        }
+        /**
+         * <code>required string cdQuality = 2;</code>
+         */
+        public com.google.protobuf.ByteString
+            getCdQualityBytes() {
+          java.lang.Object ref = cdQuality_;
+          if (ref instanceof String) {
+            com.google.protobuf.ByteString b = 
+                com.google.protobuf.ByteString.copyFromUtf8(
+                    (java.lang.String) ref);
+            cdQuality_ = b;
+            return b;
+          } else {
+            return (com.google.protobuf.ByteString) ref;
+          }
+        }
+        /**
+         * <code>required string cdQuality = 2;</code>
+         */
+        public Builder setCdQuality(
+            java.lang.String value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+          cdQuality_ = value;
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>required string cdQuality = 2;</code>
+         */
+        public Builder clearCdQuality() {
+          bitField0_ = (bitField0_ & ~0x00000002);
+          cdQuality_ = getDefaultInstance().getCdQuality();
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>required string cdQuality = 2;</code>
+         */
+        public Builder setCdQualityBytes(
+            com.google.protobuf.ByteString value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+          cdQuality_ = value;
+          onChanged();
+          return this;
+        }
+
+        private java.lang.Object caseQuality_ = "";
+        /**
+         * <code>required string caseQuality = 3;</code>
+         */
+        public boolean hasCaseQuality() {
+          return ((bitField0_ & 0x00000004) == 0x00000004);
+        }
+        /**
+         * <code>required string caseQuality = 3;</code>
+         */
+        public java.lang.String getCaseQuality() {
+          java.lang.Object ref = caseQuality_;
+          if (!(ref instanceof java.lang.String)) {
+            com.google.protobuf.ByteString bs =
+                (com.google.protobuf.ByteString) ref;
+            java.lang.String s = bs.toStringUtf8();
+            if (bs.isValidUtf8()) {
+              caseQuality_ = s;
+            }
+            return s;
+          } else {
+            return (java.lang.String) ref;
+          }
+        }
+        /**
+         * <code>required string caseQuality = 3;</code>
+         */
+        public com.google.protobuf.ByteString
+            getCaseQualityBytes() {
+          java.lang.Object ref = caseQuality_;
+          if (ref instanceof String) {
+            com.google.protobuf.ByteString b = 
+                com.google.protobuf.ByteString.copyFromUtf8(
+                    (java.lang.String) ref);
+            caseQuality_ = b;
+            return b;
+          } else {
+            return (com.google.protobuf.ByteString) ref;
+          }
+        }
+        /**
+         * <code>required string caseQuality = 3;</code>
+         */
+        public Builder setCaseQuality(
+            java.lang.String value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+          caseQuality_ = value;
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>required string caseQuality = 3;</code>
+         */
+        public Builder clearCaseQuality() {
+          bitField0_ = (bitField0_ & ~0x00000004);
+          caseQuality_ = getDefaultInstance().getCaseQuality();
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>required string caseQuality = 3;</code>
+         */
+        public Builder setCaseQualityBytes(
+            com.google.protobuf.ByteString value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+          caseQuality_ = value;
+          onChanged();
+          return this;
+        }
+        @java.lang.Override
+        public final Builder setUnknownFields(
+            final com.google.protobuf.UnknownFieldSet unknownFields) {
+          return super.setUnknownFields(unknownFields);
+        }
+
+        @java.lang.Override
+        public final Builder mergeUnknownFields(
+            final com.google.protobuf.UnknownFieldSet unknownFields) {
+          return super.mergeUnknownFields(unknownFields);
+        }
+
+
+        // @@protoc_insertion_point(builder_scope:AllSupported.CompactDisc)
+      }
+
+      // @@protoc_insertion_point(class_scope:AllSupported.CompactDisc)
+      private static final AllSupportedOuterClass.AllSupported.CompactDisc DEFAULT_INSTANCE;
+      static {
+        DEFAULT_INSTANCE = new AllSupportedOuterClass.AllSupported.CompactDisc();
+      }
+
+      public static AllSupportedOuterClass.AllSupported.CompactDisc getDefaultInstance() {
+        return DEFAULT_INSTANCE;
+      }
+
+      @java.lang.Deprecated public static final com.google.protobuf.Parser<CompactDisc>
+          PARSER = new com.google.protobuf.AbstractParser<CompactDisc>() {
+        @java.lang.Override
+        public CompactDisc parsePartialFrom(
+            com.google.protobuf.CodedInputStream input,
+            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+            throws com.google.protobuf.InvalidProtocolBufferException {
+          return new CompactDisc(input, extensionRegistry);
+        }
+      };
+
+      public static com.google.protobuf.Parser<CompactDisc> parser() {
+        return PARSER;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Parser<CompactDisc> getParserForType() {
+        return PARSER;
+      }
+
+      @java.lang.Override
+      public AllSupportedOuterClass.AllSupported.CompactDisc getDefaultInstanceForType() {
+        return DEFAULT_INSTANCE;
+      }
+
+    }
+
+    public interface AlbumOrBuilder extends
+        // @@protoc_insertion_point(interface_extends:AllSupported.Album)
+        com.google.protobuf.MessageOrBuilder {
+
+      /**
+       * <code>required string name = 1;</code>
+       */
+      boolean hasName();
+      /**
+       * <code>required string name = 1;</code>
+       */
+      java.lang.String getName();
+      /**
+       * <code>required string name = 1;</code>
+       */
+      com.google.protobuf.ByteString
+          getNameBytes();
+
+      /**
+       * <code>required string albumQuality = 2;</code>
+       */
+      boolean hasAlbumQuality();
+      /**
+       * <code>required string albumQuality = 2;</code>
+       */
+      java.lang.String getAlbumQuality();
+      /**
+       * <code>required string albumQuality = 2;</code>
+       */
+      com.google.protobuf.ByteString
+          getAlbumQualityBytes();
+
+      /**
+       * <code>required string coverQuality = 3;</code>
+       */
+      boolean hasCoverQuality();
+      /**
+       * <code>required string coverQuality = 3;</code>
+       */
+      java.lang.String getCoverQuality();
+      /**
+       * <code>required string coverQuality = 3;</code>
+       */
+      com.google.protobuf.ByteString
+          getCoverQualityBytes();
+    }
+    /**
+     * Protobuf type {@code AllSupported.Album}
+     */
+    public  static final class Album extends
+        com.google.protobuf.GeneratedMessageV3 implements
+        // @@protoc_insertion_point(message_implements:AllSupported.Album)
+        AlbumOrBuilder {
+    private static final long serialVersionUID = 0L;
+      // Use Album.newBuilder() to construct.
+      private Album(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
+        super(builder);
+      }
+      private Album() {
+        name_ = "";
+        albumQuality_ = "";
+        coverQuality_ = "";
+      }
+
+      @java.lang.Override
+      public final com.google.protobuf.UnknownFieldSet
+      getUnknownFields() {
+        return this.unknownFields;
+      }
+      private Album(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        this();
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
+        int mutable_bitField0_ = 0;
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+            com.google.protobuf.UnknownFieldSet.newBuilder();
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 10: {
+                com.google.protobuf.ByteString bs = input.readBytes();
+                bitField0_ |= 0x00000001;
+                name_ = bs;
+                break;
+              }
+              case 18: {
+                com.google.protobuf.ByteString bs = input.readBytes();
+                bitField0_ |= 0x00000002;
+                albumQuality_ = bs;
+                break;
+              }
+              case 26: {
+                com.google.protobuf.ByteString bs = input.readBytes();
+                bitField0_ |= 0x00000004;
+                coverQuality_ = bs;
+                break;
+              }
+              default: {
+                if (!parseUnknownField(
+                    input, unknownFields, extensionRegistry, tag)) {
+                  done = true;
+                }
+                break;
+              }
+            }
+          }
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(this);
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(
+              e).setUnfinishedMessage(this);
+        } finally {
+          this.unknownFields = unknownFields.build();
+          makeExtensionsImmutable();
+        }
+      }
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return AllSupportedOuterClass.internal_static_AllSupported_Album_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return AllSupportedOuterClass.internal_static_AllSupported_Album_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                AllSupportedOuterClass.AllSupported.Album.class, AllSupportedOuterClass.AllSupported.Album.Builder.class);
+      }
+
+      private int bitField0_;
+      public static final int NAME_FIELD_NUMBER = 1;
+      private volatile java.lang.Object name_;
+      /**
+       * <code>required string name = 1;</code>
+       */
+      public boolean hasName() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required string name = 1;</code>
+       */
+      public java.lang.String getName() {
+        java.lang.Object ref = name_;
+        if (ref instanceof java.lang.String) {
+          return (java.lang.String) ref;
+        } else {
+          com.google.protobuf.ByteString bs = 
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            name_ = s;
+          }
+          return s;
+        }
+      }
+      /**
+       * <code>required string name = 1;</code>
+       */
+      public com.google.protobuf.ByteString
+          getNameBytes() {
+        java.lang.Object ref = name_;
+        if (ref instanceof java.lang.String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          name_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+
+      public static final int ALBUMQUALITY_FIELD_NUMBER = 2;
+      private volatile java.lang.Object albumQuality_;
+      /**
+       * <code>required string albumQuality = 2;</code>
+       */
+      public boolean hasAlbumQuality() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>required string albumQuality = 2;</code>
+       */
+      public java.lang.String getAlbumQuality() {
+        java.lang.Object ref = albumQuality_;
+        if (ref instanceof java.lang.String) {
+          return (java.lang.String) ref;
+        } else {
+          com.google.protobuf.ByteString bs = 
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            albumQuality_ = s;
+          }
+          return s;
+        }
+      }
+      /**
+       * <code>required string albumQuality = 2;</code>
+       */
+      public com.google.protobuf.ByteString
+          getAlbumQualityBytes() {
+        java.lang.Object ref = albumQuality_;
+        if (ref instanceof java.lang.String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          albumQuality_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+
+      public static final int COVERQUALITY_FIELD_NUMBER = 3;
+      private volatile java.lang.Object coverQuality_;
+      /**
+       * <code>required string coverQuality = 3;</code>
+       */
+      public boolean hasCoverQuality() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>required string coverQuality = 3;</code>
+       */
+      public java.lang.String getCoverQuality() {
+        java.lang.Object ref = coverQuality_;
+        if (ref instanceof java.lang.String) {
+          return (java.lang.String) ref;
+        } else {
+          com.google.protobuf.ByteString bs = 
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            coverQuality_ = s;
+          }
+          return s;
+        }
+      }
+      /**
+       * <code>required string coverQuality = 3;</code>
+       */
+      public com.google.protobuf.ByteString
+          getCoverQualityBytes() {
+        java.lang.Object ref = coverQuality_;
+        if (ref instanceof java.lang.String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          coverQuality_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+
+      private byte memoizedIsInitialized = -1;
+      @java.lang.Override
+      public final boolean isInitialized() {
+        byte isInitialized = memoizedIsInitialized;
+        if (isInitialized == 1) return true;
+        if (isInitialized == 0) return false;
+
+        if (!hasName()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+        if (!hasAlbumQuality()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+        if (!hasCoverQuality()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+        memoizedIsInitialized = 1;
+        return true;
+      }
+
+      @java.lang.Override
+      public void writeTo(com.google.protobuf.CodedOutputStream output)
+                          throws java.io.IOException {
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+          com.google.protobuf.GeneratedMessageV3.writeString(output, 1, name_);
+        }
+        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+          com.google.protobuf.GeneratedMessageV3.writeString(output, 2, albumQuality_);
+        }
+        if (((bitField0_ & 0x00000004) == 0x00000004)) {
+          com.google.protobuf.GeneratedMessageV3.writeString(output, 3, coverQuality_);
+        }
+        unknownFields.writeTo(output);
+      }
+
+      @java.lang.Override
+      public int getSerializedSize() {
+        int size = memoizedSize;
+        if (size != -1) return size;
+
+        size = 0;
+        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+          size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, name_);
+        }
+        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+          size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, albumQuality_);
+        }
+        if (((bitField0_ & 0x00000004) == 0x00000004)) {
+          size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, coverQuality_);
+        }
+        size += unknownFields.getSerializedSize();
+        memoizedSize = size;
+        return size;
+      }
+
+      @java.lang.Override
+      public boolean equals(final java.lang.Object obj) {
+        if (obj == this) {
+         return true;
+        }
+        if (!(obj instanceof AllSupportedOuterClass.AllSupported.Album)) {
+          return super.equals(obj);
+        }
+        AllSupportedOuterClass.AllSupported.Album other = (AllSupportedOuterClass.AllSupported.Album) obj;
+
+        boolean result = true;
+        result = result && (hasName() == other.hasName());
+        if (hasName()) {
+          result = result && getName()
+              .equals(other.getName());
+        }
+        result = result && (hasAlbumQuality() == other.hasAlbumQuality());
+        if (hasAlbumQuality()) {
+          result = result && getAlbumQuality()
+              .equals(other.getAlbumQuality());
+        }
+        result = result && (hasCoverQuality() == other.hasCoverQuality());
+        if (hasCoverQuality()) {
+          result = result && getCoverQuality()
+              .equals(other.getCoverQuality());
+        }
+        result = result && unknownFields.equals(other.unknownFields);
+        return result;
+      }
+
+      @java.lang.Override
+      public int hashCode() {
+        if (memoizedHashCode != 0) {
+          return memoizedHashCode;
+        }
+        int hash = 41;
+        hash = (19 * hash) + getDescriptor().hashCode();
+        if (hasName()) {
+          hash = (37 * hash) + NAME_FIELD_NUMBER;
+          hash = (53 * hash) + getName().hashCode();
+        }
+        if (hasAlbumQuality()) {
+          hash = (37 * hash) + ALBUMQUALITY_FIELD_NUMBER;
+          hash = (53 * hash) + getAlbumQuality().hashCode();
+        }
+        if (hasCoverQuality()) {
+          hash = (37 * hash) + COVERQUALITY_FIELD_NUMBER;
+          hash = (53 * hash) + getCoverQuality().hashCode();
+        }
+        hash = (29 * hash) + unknownFields.hashCode();
+        memoizedHashCode = hash;
+        return hash;
+      }
+
+      public static AllSupportedOuterClass.AllSupported.Album parseFrom(
+          java.nio.ByteBuffer data)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data);
+      }
+      public static AllSupportedOuterClass.AllSupported.Album parseFrom(
+          java.nio.ByteBuffer data,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data, extensionRegistry);
+      }
+      public static AllSupportedOuterClass.AllSupported.Album parseFrom(
+          com.google.protobuf.ByteString data)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data);
+      }
+      public static AllSupportedOuterClass.AllSupported.Album parseFrom(
+          com.google.protobuf.ByteString data,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data, extensionRegistry);
+      }
+      public static AllSupportedOuterClass.AllSupported.Album parseFrom(byte[] data)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data);
+      }
+      public static AllSupportedOuterClass.AllSupported.Album parseFrom(
+          byte[] data,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return PARSER.parseFrom(data, extensionRegistry);
+      }
+      public static AllSupportedOuterClass.AllSupported.Album parseFrom(java.io.InputStream input)
+          throws java.io.IOException {
+        return com.google.protobuf.GeneratedMessageV3
+            .parseWithIOException(PARSER, input);
+      }
+      public static AllSupportedOuterClass.AllSupported.Album parseFrom(
+          java.io.InputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        return com.google.protobuf.GeneratedMessageV3
+            .parseWithIOException(PARSER, input, extensionRegistry);
+      }
+      public static AllSupportedOuterClass.AllSupported.Album parseDelimitedFrom(java.io.InputStream input)
+          throws java.io.IOException {
+        return com.google.protobuf.GeneratedMessageV3
+            .parseDelimitedWithIOException(PARSER, input);
+      }
+      public static AllSupportedOuterClass.AllSupported.Album parseDelimitedFrom(
+          java.io.InputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        return com.google.protobuf.GeneratedMessageV3
+            .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+      }
+      public static AllSupportedOuterClass.AllSupported.Album parseFrom(
+          com.google.protobuf.CodedInputStream input)
+          throws java.io.IOException {
+        return com.google.protobuf.GeneratedMessageV3
+            .parseWithIOException(PARSER, input);
+      }
+      public static AllSupportedOuterClass.AllSupported.Album parseFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        return com.google.protobuf.GeneratedMessageV3
+            .parseWithIOException(PARSER, input, extensionRegistry);
+      }
+
+      @java.lang.Override
+      public Builder newBuilderForType() { return newBuilder(); }
+      public static Builder newBuilder() {
+        return DEFAULT_INSTANCE.toBuilder();
+      }
+      public static Builder newBuilder(AllSupportedOuterClass.AllSupported.Album prototype) {
+        return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+      }
+      @java.lang.Override
+      public Builder toBuilder() {
+        return this == DEFAULT_INSTANCE
+            ? new Builder() : new Builder().mergeFrom(this);
+      }
+
+      @java.lang.Override
+      protected Builder newBuilderForType(
+          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+        Builder builder = new Builder(parent);
+        return builder;
+      }
+      /**
+       * Protobuf type {@code AllSupported.Album}
+       */
+      public static final class Builder extends
+          com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+          // @@protoc_insertion_point(builder_implements:AllSupported.Album)
+          AllSupportedOuterClass.AllSupported.AlbumOrBuilder {
+        public static final com.google.protobuf.Descriptors.Descriptor
+            getDescriptor() {
+          return AllSupportedOuterClass.internal_static_AllSupported_Album_descriptor;
+        }
+
+        @java.lang.Override
+        protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+            internalGetFieldAccessorTable() {
+          return AllSupportedOuterClass.internal_static_AllSupported_Album_fieldAccessorTable
+              .ensureFieldAccessorsInitialized(
+                  AllSupportedOuterClass.AllSupported.Album.class, AllSupportedOuterClass.AllSupported.Album.Builder.class);
+        }
+
+        // Construct using AllSupportedOuterClass.AllSupported.Album.newBuilder()
+        private Builder() {
+          maybeForceBuilderInitialization();
+        }
+
+        private Builder(
+            com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+          super(parent);
+          maybeForceBuilderInitialization();
+        }
+        private void maybeForceBuilderInitialization() {
+          if (com.google.protobuf.GeneratedMessageV3
+                  .alwaysUseFieldBuilders) {
+          }
+        }
+        @java.lang.Override
+        public Builder clear() {
+          super.clear();
+          name_ = "";
+          bitField0_ = (bitField0_ & ~0x00000001);
+          albumQuality_ = "";
+          bitField0_ = (bitField0_ & ~0x00000002);
+          coverQuality_ = "";
+          bitField0_ = (bitField0_ & ~0x00000004);
+          return this;
+        }
+
+        @java.lang.Override
+        public com.google.protobuf.Descriptors.Descriptor
+            getDescriptorForType() {
+          return AllSupportedOuterClass.internal_static_AllSupported_Album_descriptor;
+        }
+
+        @java.lang.Override
+        public AllSupportedOuterClass.AllSupported.Album getDefaultInstanceForType() {
+          return AllSupportedOuterClass.AllSupported.Album.getDefaultInstance();
+        }
+
+        @java.lang.Override
+        public AllSupportedOuterClass.AllSupported.Album build() {
+          AllSupportedOuterClass.AllSupported.Album result = buildPartial();
+          if (!result.isInitialized()) {
+            throw newUninitializedMessageException(result);
+          }
+          return result;
+        }
+
+        @java.lang.Override
+        public AllSupportedOuterClass.AllSupported.Album buildPartial() {
+          AllSupportedOuterClass.AllSupported.Album result = new AllSupportedOuterClass.AllSupported.Album(this);
+          int from_bitField0_ = bitField0_;
+          int to_bitField0_ = 0;
+          if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+            to_bitField0_ |= 0x00000001;
+          }
+          result.name_ = name_;
+          if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+            to_bitField0_ |= 0x00000002;
+          }
+          result.albumQuality_ = albumQuality_;
+          if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+            to_bitField0_ |= 0x00000004;
+          }
+          result.coverQuality_ = coverQuality_;
+          result.bitField0_ = to_bitField0_;
+          onBuilt();
+          return result;
+        }
+
+        @java.lang.Override
+        public Builder clone() {
+          return (Builder) super.clone();
+        }
+        @java.lang.Override
+        public Builder setField(
+            com.google.protobuf.Descriptors.FieldDescriptor field,
+            java.lang.Object value) {
+          return (Builder) super.setField(field, value);
+        }
+        @java.lang.Override
+        public Builder clearField(
+            com.google.protobuf.Descriptors.FieldDescriptor field) {
+          return (Builder) super.clearField(field);
+        }
+        @java.lang.Override
+        public Builder clearOneof(
+            com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+          return (Builder) super.clearOneof(oneof);
+        }
+        @java.lang.Override
+        public Builder setRepeatedField(
+            com.google.protobuf.Descriptors.FieldDescriptor field,
+            int index, java.lang.Object value) {
+          return (Builder) super.setRepeatedField(field, index, value);
+        }
+        @java.lang.Override
+        public Builder addRepeatedField(
+            com.google.protobuf.Descriptors.FieldDescriptor field,
+            java.lang.Object value) {
+          return (Builder) super.addRepeatedField(field, value);
+        }
+        @java.lang.Override
+        public Builder mergeFrom(com.google.protobuf.Message other) {
+          if (other instanceof AllSupportedOuterClass.AllSupported.Album) {
+            return mergeFrom((AllSupportedOuterClass.AllSupported.Album)other);
+          } else {
+            super.mergeFrom(other);
+            return this;
+          }
+        }
+
+        public Builder mergeFrom(AllSupportedOuterClass.AllSupported.Album other) {
+          if (other == AllSupportedOuterClass.AllSupported.Album.getDefaultInstance()) return this;
+          if (other.hasName()) {
+            bitField0_ |= 0x00000001;
+            name_ = other.name_;
+            onChanged();
+          }
+          if (other.hasAlbumQuality()) {
+            bitField0_ |= 0x00000002;
+            albumQuality_ = other.albumQuality_;
+            onChanged();
+          }
+          if (other.hasCoverQuality()) {
+            bitField0_ |= 0x00000004;
+            coverQuality_ = other.coverQuality_;
+            onChanged();
+          }
+          this.mergeUnknownFields(other.unknownFields);
+          onChanged();
+          return this;
+        }
+
+        @java.lang.Override
+        public final boolean isInitialized() {
+          if (!hasName()) {
+            return false;
+          }
+          if (!hasAlbumQuality()) {
+            return false;
+          }
+          if (!hasCoverQuality()) {
+            return false;
+          }
+          return true;
+        }
+
+        @java.lang.Override
+        public Builder mergeFrom(
+            com.google.protobuf.CodedInputStream input,
+            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+            throws java.io.IOException {
+          AllSupportedOuterClass.AllSupported.Album parsedMessage = null;
+          try {
+            parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+          } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+            parsedMessage = (AllSupportedOuterClass.AllSupported.Album) e.getUnfinishedMessage();
+            throw e.unwrapIOException();
+          } finally {
+            if (parsedMessage != null) {
+              mergeFrom(parsedMessage);
+            }
+          }
+          return this;
+        }
+        private int bitField0_;
+
+        private java.lang.Object name_ = "";
+        /**
+         * <code>required string name = 1;</code>
+         */
+        public boolean hasName() {
+          return ((bitField0_ & 0x00000001) == 0x00000001);
+        }
+        /**
+         * <code>required string name = 1;</code>
+         */
+        public java.lang.String getName() {
+          java.lang.Object ref = name_;
+          if (!(ref instanceof java.lang.String)) {
+            com.google.protobuf.ByteString bs =
+                (com.google.protobuf.ByteString) ref;
+            java.lang.String s = bs.toStringUtf8();
+            if (bs.isValidUtf8()) {
+              name_ = s;
+            }
+            return s;
+          } else {
+            return (java.lang.String) ref;
+          }
+        }
+        /**
+         * <code>required string name = 1;</code>
+         */
+        public com.google.protobuf.ByteString
+            getNameBytes() {
+          java.lang.Object ref = name_;
+          if (ref instanceof String) {
+            com.google.protobuf.ByteString b = 
+                com.google.protobuf.ByteString.copyFromUtf8(
+                    (java.lang.String) ref);
+            name_ = b;
+            return b;
+          } else {
+            return (com.google.protobuf.ByteString) ref;
+          }
+        }
+        /**
+         * <code>required string name = 1;</code>
+         */
+        public Builder setName(
+            java.lang.String value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+          name_ = value;
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>required string name = 1;</code>
+         */
+        public Builder clearName() {
+          bitField0_ = (bitField0_ & ~0x00000001);
+          name_ = getDefaultInstance().getName();
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>required string name = 1;</code>
+         */
+        public Builder setNameBytes(
+            com.google.protobuf.ByteString value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+          name_ = value;
+          onChanged();
+          return this;
+        }
+
+        private java.lang.Object albumQuality_ = "";
+        /**
+         * <code>required string albumQuality = 2;</code>
+         */
+        public boolean hasAlbumQuality() {
+          return ((bitField0_ & 0x00000002) == 0x00000002);
+        }
+        /**
+         * <code>required string albumQuality = 2;</code>
+         */
+        public java.lang.String getAlbumQuality() {
+          java.lang.Object ref = albumQuality_;
+          if (!(ref instanceof java.lang.String)) {
+            com.google.protobuf.ByteString bs =
+                (com.google.protobuf.ByteString) ref;
+            java.lang.String s = bs.toStringUtf8();
+            if (bs.isValidUtf8()) {
+              albumQuality_ = s;
+            }
+            return s;
+          } else {
+            return (java.lang.String) ref;
+          }
+        }
+        /**
+         * <code>required string albumQuality = 2;</code>
+         */
+        public com.google.protobuf.ByteString
+            getAlbumQualityBytes() {
+          java.lang.Object ref = albumQuality_;
+          if (ref instanceof String) {
+            com.google.protobuf.ByteString b = 
+                com.google.protobuf.ByteString.copyFromUtf8(
+                    (java.lang.String) ref);
+            albumQuality_ = b;
+            return b;
+          } else {
+            return (com.google.protobuf.ByteString) ref;
+          }
+        }
+        /**
+         * <code>required string albumQuality = 2;</code>
+         */
+        public Builder setAlbumQuality(
+            java.lang.String value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+          albumQuality_ = value;
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>required string albumQuality = 2;</code>
+         */
+        public Builder clearAlbumQuality() {
+          bitField0_ = (bitField0_ & ~0x00000002);
+          albumQuality_ = getDefaultInstance().getAlbumQuality();
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>required string albumQuality = 2;</code>
+         */
+        public Builder setAlbumQualityBytes(
+            com.google.protobuf.ByteString value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+          albumQuality_ = value;
+          onChanged();
+          return this;
+        }
+
+        private java.lang.Object coverQuality_ = "";
+        /**
+         * <code>required string coverQuality = 3;</code>
+         */
+        public boolean hasCoverQuality() {
+          return ((bitField0_ & 0x00000004) == 0x00000004);
+        }
+        /**
+         * <code>required string coverQuality = 3;</code>
+         */
+        public java.lang.String getCoverQuality() {
+          java.lang.Object ref = coverQuality_;
+          if (!(ref instanceof java.lang.String)) {
+            com.google.protobuf.ByteString bs =
+                (com.google.protobuf.ByteString) ref;
+            java.lang.String s = bs.toStringUtf8();
+            if (bs.isValidUtf8()) {
+              coverQuality_ = s;
+            }
+            return s;
+          } else {
+            return (java.lang.String) ref;
+          }
+        }
+        /**
+         * <code>required string coverQuality = 3;</code>
+         */
+        public com.google.protobuf.ByteString
+            getCoverQualityBytes() {
+          java.lang.Object ref = coverQuality_;
+          if (ref instanceof String) {
+            com.google.protobuf.ByteString b = 
+                com.google.protobuf.ByteString.copyFromUtf8(
+                    (java.lang.String) ref);
+            coverQuality_ = b;
+            return b;
+          } else {
+            return (com.google.protobuf.ByteString) ref;
+          }
+        }
+        /**
+         * <code>required string coverQuality = 3;</code>
+         */
+        public Builder setCoverQuality(
+            java.lang.String value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+          coverQuality_ = value;
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>required string coverQuality = 3;</code>
+         */
+        public Builder clearCoverQuality() {
+          bitField0_ = (bitField0_ & ~0x00000004);
+          coverQuality_ = getDefaultInstance().getCoverQuality();
+          onChanged();
+          return this;
+        }
+        /**
+         * <code>required string coverQuality = 3;</code>
+         */
+        public Builder setCoverQualityBytes(
+            com.google.protobuf.ByteString value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+          coverQuality_ = value;
+          onChanged();
+          return this;
+        }
+        @java.lang.Override
+        public final Builder setUnknownFields(
+            final com.google.protobuf.UnknownFieldSet unknownFields) {
+          return super.setUnknownFields(unknownFields);
+        }
+
+        @java.lang.Override
+        public final Builder mergeUnknownFields(
+            final com.google.protobuf.UnknownFieldSet unknownFields) {
+          return super.mergeUnknownFields(unknownFields);
+        }
+
+
+        // @@protoc_insertion_point(builder_scope:AllSupported.Album)
+      }
+
+      // @@protoc_insertion_point(class_scope:AllSupported.Album)
+      private static final AllSupportedOuterClass.AllSupported.Album DEFAULT_INSTANCE;
+      static {
+        DEFAULT_INSTANCE = new AllSupportedOuterClass.AllSupported.Album();
+      }
+
+      public static AllSupportedOuterClass.AllSupported.Album getDefaultInstance() {
+        return DEFAULT_INSTANCE;
+      }
+
+      @java.lang.Deprecated public static final com.google.protobuf.Parser<Album>
+          PARSER = new com.google.protobuf.AbstractParser<Album>() {
+        @java.lang.Override
+        public Album parsePartialFrom(
+            com.google.protobuf.CodedInputStream input,
+            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+            throws com.google.protobuf.InvalidProtocolBufferException {
+          return new Album(input, extensionRegistry);
+        }
+      };
+
+      public static com.google.protobuf.Parser<Album> parser() {
+        return PARSER;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Parser<Album> getParserForType() {
+        return PARSER;
+      }
+
+      @java.lang.Override
+      public AllSupportedOuterClass.AllSupported.Album getDefaultInstanceForType() {
+        return DEFAULT_INSTANCE;
+      }
+
+    }
+
     private int bitField0_;
     private int eitherFieldCase_ = 0;
     private java.lang.Object eitherField_;
@@ -3578,6 +6291,46 @@ public final class AllSupportedOuterClass {
     getEitherFieldCase() {
       return EitherFieldCase.forNumber(
           eitherFieldCase_);
+    }
+
+    private int digitalOneofCase_ = 0;
+    private java.lang.Object digitalOneof_;
+    public enum DigitalOneofCase
+        implements com.google.protobuf.Internal.EnumLite {
+      DIGITAL(18),
+      COMPACT_DISC(19),
+      ALBUM(20),
+      DIGITALONEOF_NOT_SET(0);
+      private final int value;
+      private DigitalOneofCase(int value) {
+        this.value = value;
+      }
+      /**
+       * @deprecated Use {@link #forNumber(int)} instead.
+       */
+      @java.lang.Deprecated
+      public static DigitalOneofCase valueOf(int value) {
+        return forNumber(value);
+      }
+
+      public static DigitalOneofCase forNumber(int value) {
+        switch (value) {
+          case 18: return DIGITAL;
+          case 19: return COMPACT_DISC;
+          case 20: return ALBUM;
+          case 0: return DIGITALONEOF_NOT_SET;
+          default: return null;
+        }
+      }
+      public int getNumber() {
+        return this.value;
+      }
+    };
+
+    public DigitalOneofCase
+    getDigitalOneofCase() {
+      return DigitalOneofCase.forNumber(
+          digitalOneofCase_);
     }
 
     public static final int BOOLEAN_FIELD_NUMBER = 1;
@@ -3998,16 +6751,94 @@ public final class AllSupportedOuterClass {
       return child_ == null ? AllSupportedOuterClass.AllSupported.Child.getDefaultInstance() : child_;
     }
 
-    public static final int INT2_FIELD_NUMBER = 18;
-    private int int2_;
+    public static final int DIGITAL_FIELD_NUMBER = 18;
     /**
-     * <code>required int32 int2 = 18;</code>
+     * <code>optional .AllSupported.Digital digital = 18;</code>
      */
-    public boolean hasInt2() {
-      return ((bitField0_ & 0x00010000) == 0x00010000);
+    public boolean hasDigital() {
+      return digitalOneofCase_ == 18;
     }
     /**
-     * <code>required int32 int2 = 18;</code>
+     * <code>optional .AllSupported.Digital digital = 18;</code>
+     */
+    public AllSupportedOuterClass.AllSupported.Digital getDigital() {
+      if (digitalOneofCase_ == 18) {
+         return (AllSupportedOuterClass.AllSupported.Digital) digitalOneof_;
+      }
+      return AllSupportedOuterClass.AllSupported.Digital.getDefaultInstance();
+    }
+    /**
+     * <code>optional .AllSupported.Digital digital = 18;</code>
+     */
+    public AllSupportedOuterClass.AllSupported.DigitalOrBuilder getDigitalOrBuilder() {
+      if (digitalOneofCase_ == 18) {
+         return (AllSupportedOuterClass.AllSupported.Digital) digitalOneof_;
+      }
+      return AllSupportedOuterClass.AllSupported.Digital.getDefaultInstance();
+    }
+
+    public static final int COMPACT_DISC_FIELD_NUMBER = 19;
+    /**
+     * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+     */
+    public boolean hasCompactDisc() {
+      return digitalOneofCase_ == 19;
+    }
+    /**
+     * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+     */
+    public AllSupportedOuterClass.AllSupported.CompactDisc getCompactDisc() {
+      if (digitalOneofCase_ == 19) {
+         return (AllSupportedOuterClass.AllSupported.CompactDisc) digitalOneof_;
+      }
+      return AllSupportedOuterClass.AllSupported.CompactDisc.getDefaultInstance();
+    }
+    /**
+     * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+     */
+    public AllSupportedOuterClass.AllSupported.CompactDiscOrBuilder getCompactDiscOrBuilder() {
+      if (digitalOneofCase_ == 19) {
+         return (AllSupportedOuterClass.AllSupported.CompactDisc) digitalOneof_;
+      }
+      return AllSupportedOuterClass.AllSupported.CompactDisc.getDefaultInstance();
+    }
+
+    public static final int ALBUM_FIELD_NUMBER = 20;
+    /**
+     * <code>optional .AllSupported.Album album = 20;</code>
+     */
+    public boolean hasAlbum() {
+      return digitalOneofCase_ == 20;
+    }
+    /**
+     * <code>optional .AllSupported.Album album = 20;</code>
+     */
+    public AllSupportedOuterClass.AllSupported.Album getAlbum() {
+      if (digitalOneofCase_ == 20) {
+         return (AllSupportedOuterClass.AllSupported.Album) digitalOneof_;
+      }
+      return AllSupportedOuterClass.AllSupported.Album.getDefaultInstance();
+    }
+    /**
+     * <code>optional .AllSupported.Album album = 20;</code>
+     */
+    public AllSupportedOuterClass.AllSupported.AlbumOrBuilder getAlbumOrBuilder() {
+      if (digitalOneofCase_ == 20) {
+         return (AllSupportedOuterClass.AllSupported.Album) digitalOneof_;
+      }
+      return AllSupportedOuterClass.AllSupported.Album.getDefaultInstance();
+    }
+
+    public static final int INT2_FIELD_NUMBER = 21;
+    private int int2_;
+    /**
+     * <code>required int32 int2 = 21;</code>
+     */
+    public boolean hasInt2() {
+      return ((bitField0_ & 0x00080000) == 0x00080000);
+    }
+    /**
+     * <code>required int32 int2 = 21;</code>
      */
     public int getInt2() {
       return int2_;
@@ -4088,6 +6919,24 @@ public final class AllSupportedOuterClass {
         memoizedIsInitialized = 0;
         return false;
       }
+      if (hasDigital()) {
+        if (!getDigital().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      if (hasCompactDisc()) {
+        if (!getCompactDisc().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      if (hasAlbum()) {
+        if (!getAlbum().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
       memoizedIsInitialized = 1;
       return true;
     }
@@ -4147,8 +6996,17 @@ public final class AllSupportedOuterClass {
       if (((bitField0_ & 0x00008000) == 0x00008000)) {
         output.writeMessage(17, getChild());
       }
-      if (((bitField0_ & 0x00010000) == 0x00010000)) {
-        output.writeInt32(18, int2_);
+      if (digitalOneofCase_ == 18) {
+        output.writeMessage(18, (AllSupportedOuterClass.AllSupported.Digital) digitalOneof_);
+      }
+      if (digitalOneofCase_ == 19) {
+        output.writeMessage(19, (AllSupportedOuterClass.AllSupported.CompactDisc) digitalOneof_);
+      }
+      if (digitalOneofCase_ == 20) {
+        output.writeMessage(20, (AllSupportedOuterClass.AllSupported.Album) digitalOneof_);
+      }
+      if (((bitField0_ & 0x00080000) == 0x00080000)) {
+        output.writeInt32(21, int2_);
       }
       unknownFields.writeTo(output);
     }
@@ -4228,9 +7086,21 @@ public final class AllSupportedOuterClass {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(17, getChild());
       }
-      if (((bitField0_ & 0x00010000) == 0x00010000)) {
+      if (digitalOneofCase_ == 18) {
         size += com.google.protobuf.CodedOutputStream
-          .computeInt32Size(18, int2_);
+          .computeMessageSize(18, (AllSupportedOuterClass.AllSupported.Digital) digitalOneof_);
+      }
+      if (digitalOneofCase_ == 19) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(19, (AllSupportedOuterClass.AllSupported.CompactDisc) digitalOneof_);
+      }
+      if (digitalOneofCase_ == 20) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(20, (AllSupportedOuterClass.AllSupported.Album) digitalOneof_);
+      }
+      if (((bitField0_ & 0x00080000) == 0x00080000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(21, int2_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -4344,6 +7214,25 @@ public final class AllSupportedOuterClass {
         case 0:
         default:
       }
+      result = result && getDigitalOneofCase().equals(
+          other.getDigitalOneofCase());
+      if (!result) return false;
+      switch (digitalOneofCase_) {
+        case 18:
+          result = result && getDigital()
+              .equals(other.getDigital());
+          break;
+        case 19:
+          result = result && getCompactDisc()
+              .equals(other.getCompactDisc());
+          break;
+        case 20:
+          result = result && getAlbum()
+              .equals(other.getAlbum());
+          break;
+        case 0:
+        default:
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -4432,6 +7321,22 @@ public final class AllSupportedOuterClass {
         case 16:
           hash = (37 * hash) + EITHERFIELDRIGHT_FIELD_NUMBER;
           hash = (53 * hash) + getEitherFieldRight();
+          break;
+        case 0:
+        default:
+      }
+      switch (digitalOneofCase_) {
+        case 18:
+          hash = (37 * hash) + DIGITAL_FIELD_NUMBER;
+          hash = (53 * hash) + getDigital().hashCode();
+          break;
+        case 19:
+          hash = (37 * hash) + COMPACT_DISC_FIELD_NUMBER;
+          hash = (53 * hash) + getCompactDisc().hashCode();
+          break;
+        case 20:
+          hash = (37 * hash) + ALBUM_FIELD_NUMBER;
+          hash = (53 * hash) + getAlbum().hashCode();
           break;
         case 0:
         default:
@@ -4610,9 +7515,11 @@ public final class AllSupportedOuterClass {
         }
         bitField0_ = (bitField0_ & ~0x00010000);
         int2_ = 0;
-        bitField0_ = (bitField0_ & ~0x00020000);
+        bitField0_ = (bitField0_ & ~0x00100000);
         eitherFieldCase_ = 0;
         eitherField_ = null;
+        digitalOneofCase_ = 0;
+        digitalOneof_ = null;
         return this;
       }
 
@@ -4716,12 +7623,34 @@ public final class AllSupportedOuterClass {
         } else {
           result.child_ = childBuilder_.build();
         }
-        if (((from_bitField0_ & 0x00020000) == 0x00020000)) {
-          to_bitField0_ |= 0x00010000;
+        if (digitalOneofCase_ == 18) {
+          if (digitalBuilder_ == null) {
+            result.digitalOneof_ = digitalOneof_;
+          } else {
+            result.digitalOneof_ = digitalBuilder_.build();
+          }
+        }
+        if (digitalOneofCase_ == 19) {
+          if (compactDiscBuilder_ == null) {
+            result.digitalOneof_ = digitalOneof_;
+          } else {
+            result.digitalOneof_ = compactDiscBuilder_.build();
+          }
+        }
+        if (digitalOneofCase_ == 20) {
+          if (albumBuilder_ == null) {
+            result.digitalOneof_ = digitalOneof_;
+          } else {
+            result.digitalOneof_ = albumBuilder_.build();
+          }
+        }
+        if (((from_bitField0_ & 0x00100000) == 0x00100000)) {
+          to_bitField0_ |= 0x00080000;
         }
         result.int2_ = int2_;
         result.bitField0_ = to_bitField0_;
         result.eitherFieldCase_ = eitherFieldCase_;
+        result.digitalOneofCase_ = digitalOneofCase_;
         onBuilt();
         return result;
       }
@@ -4848,6 +7777,23 @@ public final class AllSupportedOuterClass {
             break;
           }
         }
+        switch (other.getDigitalOneofCase()) {
+          case DIGITAL: {
+            mergeDigital(other.getDigital());
+            break;
+          }
+          case COMPACT_DISC: {
+            mergeCompactDisc(other.getCompactDisc());
+            break;
+          }
+          case ALBUM: {
+            mergeAlbum(other.getAlbum());
+            break;
+          }
+          case DIGITALONEOF_NOT_SET: {
+            break;
+          }
+        }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
@@ -4906,6 +7852,21 @@ public final class AllSupportedOuterClass {
         if (!getChild().isInitialized()) {
           return false;
         }
+        if (hasDigital()) {
+          if (!getDigital().isInitialized()) {
+            return false;
+          }
+        }
+        if (hasCompactDisc()) {
+          if (!getCompactDisc().isInitialized()) {
+            return false;
+          }
+        }
+        if (hasAlbum()) {
+          if (!getAlbum().isInitialized()) {
+            return false;
+          }
+        }
         return true;
       }
 
@@ -4938,6 +7899,21 @@ public final class AllSupportedOuterClass {
       public Builder clearEitherField() {
         eitherFieldCase_ = 0;
         eitherField_ = null;
+        onChanged();
+        return this;
+      }
+
+      private int digitalOneofCase_ = 0;
+      private java.lang.Object digitalOneof_;
+      public DigitalOneofCase
+          getDigitalOneofCase() {
+        return DigitalOneofCase.forNumber(
+            digitalOneofCase_);
+      }
+
+      public Builder clearDigitalOneof() {
+        digitalOneofCase_ = 0;
+        digitalOneof_ = null;
         onChanged();
         return this;
       }
@@ -5932,33 +8908,441 @@ public final class AllSupportedOuterClass {
         return childBuilder_;
       }
 
-      private int int2_ ;
+      private com.google.protobuf.SingleFieldBuilderV3<
+          AllSupportedOuterClass.AllSupported.Digital, AllSupportedOuterClass.AllSupported.Digital.Builder, AllSupportedOuterClass.AllSupported.DigitalOrBuilder> digitalBuilder_;
       /**
-       * <code>required int32 int2 = 18;</code>
+       * <code>optional .AllSupported.Digital digital = 18;</code>
        */
-      public boolean hasInt2() {
-        return ((bitField0_ & 0x00020000) == 0x00020000);
+      public boolean hasDigital() {
+        return digitalOneofCase_ == 18;
       }
       /**
-       * <code>required int32 int2 = 18;</code>
+       * <code>optional .AllSupported.Digital digital = 18;</code>
+       */
+      public AllSupportedOuterClass.AllSupported.Digital getDigital() {
+        if (digitalBuilder_ == null) {
+          if (digitalOneofCase_ == 18) {
+            return (AllSupportedOuterClass.AllSupported.Digital) digitalOneof_;
+          }
+          return AllSupportedOuterClass.AllSupported.Digital.getDefaultInstance();
+        } else {
+          if (digitalOneofCase_ == 18) {
+            return digitalBuilder_.getMessage();
+          }
+          return AllSupportedOuterClass.AllSupported.Digital.getDefaultInstance();
+        }
+      }
+      /**
+       * <code>optional .AllSupported.Digital digital = 18;</code>
+       */
+      public Builder setDigital(AllSupportedOuterClass.AllSupported.Digital value) {
+        if (digitalBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          digitalOneof_ = value;
+          onChanged();
+        } else {
+          digitalBuilder_.setMessage(value);
+        }
+        digitalOneofCase_ = 18;
+        return this;
+      }
+      /**
+       * <code>optional .AllSupported.Digital digital = 18;</code>
+       */
+      public Builder setDigital(
+          AllSupportedOuterClass.AllSupported.Digital.Builder builderForValue) {
+        if (digitalBuilder_ == null) {
+          digitalOneof_ = builderForValue.build();
+          onChanged();
+        } else {
+          digitalBuilder_.setMessage(builderForValue.build());
+        }
+        digitalOneofCase_ = 18;
+        return this;
+      }
+      /**
+       * <code>optional .AllSupported.Digital digital = 18;</code>
+       */
+      public Builder mergeDigital(AllSupportedOuterClass.AllSupported.Digital value) {
+        if (digitalBuilder_ == null) {
+          if (digitalOneofCase_ == 18 &&
+              digitalOneof_ != AllSupportedOuterClass.AllSupported.Digital.getDefaultInstance()) {
+            digitalOneof_ = AllSupportedOuterClass.AllSupported.Digital.newBuilder((AllSupportedOuterClass.AllSupported.Digital) digitalOneof_)
+                .mergeFrom(value).buildPartial();
+          } else {
+            digitalOneof_ = value;
+          }
+          onChanged();
+        } else {
+          if (digitalOneofCase_ == 18) {
+            digitalBuilder_.mergeFrom(value);
+          }
+          digitalBuilder_.setMessage(value);
+        }
+        digitalOneofCase_ = 18;
+        return this;
+      }
+      /**
+       * <code>optional .AllSupported.Digital digital = 18;</code>
+       */
+      public Builder clearDigital() {
+        if (digitalBuilder_ == null) {
+          if (digitalOneofCase_ == 18) {
+            digitalOneofCase_ = 0;
+            digitalOneof_ = null;
+            onChanged();
+          }
+        } else {
+          if (digitalOneofCase_ == 18) {
+            digitalOneofCase_ = 0;
+            digitalOneof_ = null;
+          }
+          digitalBuilder_.clear();
+        }
+        return this;
+      }
+      /**
+       * <code>optional .AllSupported.Digital digital = 18;</code>
+       */
+      public AllSupportedOuterClass.AllSupported.Digital.Builder getDigitalBuilder() {
+        return getDigitalFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>optional .AllSupported.Digital digital = 18;</code>
+       */
+      public AllSupportedOuterClass.AllSupported.DigitalOrBuilder getDigitalOrBuilder() {
+        if ((digitalOneofCase_ == 18) && (digitalBuilder_ != null)) {
+          return digitalBuilder_.getMessageOrBuilder();
+        } else {
+          if (digitalOneofCase_ == 18) {
+            return (AllSupportedOuterClass.AllSupported.Digital) digitalOneof_;
+          }
+          return AllSupportedOuterClass.AllSupported.Digital.getDefaultInstance();
+        }
+      }
+      /**
+       * <code>optional .AllSupported.Digital digital = 18;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilderV3<
+          AllSupportedOuterClass.AllSupported.Digital, AllSupportedOuterClass.AllSupported.Digital.Builder, AllSupportedOuterClass.AllSupported.DigitalOrBuilder> 
+          getDigitalFieldBuilder() {
+        if (digitalBuilder_ == null) {
+          if (!(digitalOneofCase_ == 18)) {
+            digitalOneof_ = AllSupportedOuterClass.AllSupported.Digital.getDefaultInstance();
+          }
+          digitalBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
+              AllSupportedOuterClass.AllSupported.Digital, AllSupportedOuterClass.AllSupported.Digital.Builder, AllSupportedOuterClass.AllSupported.DigitalOrBuilder>(
+                  (AllSupportedOuterClass.AllSupported.Digital) digitalOneof_,
+                  getParentForChildren(),
+                  isClean());
+          digitalOneof_ = null;
+        }
+        digitalOneofCase_ = 18;
+        onChanged();;
+        return digitalBuilder_;
+      }
+
+      private com.google.protobuf.SingleFieldBuilderV3<
+          AllSupportedOuterClass.AllSupported.CompactDisc, AllSupportedOuterClass.AllSupported.CompactDisc.Builder, AllSupportedOuterClass.AllSupported.CompactDiscOrBuilder> compactDiscBuilder_;
+      /**
+       * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+       */
+      public boolean hasCompactDisc() {
+        return digitalOneofCase_ == 19;
+      }
+      /**
+       * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+       */
+      public AllSupportedOuterClass.AllSupported.CompactDisc getCompactDisc() {
+        if (compactDiscBuilder_ == null) {
+          if (digitalOneofCase_ == 19) {
+            return (AllSupportedOuterClass.AllSupported.CompactDisc) digitalOneof_;
+          }
+          return AllSupportedOuterClass.AllSupported.CompactDisc.getDefaultInstance();
+        } else {
+          if (digitalOneofCase_ == 19) {
+            return compactDiscBuilder_.getMessage();
+          }
+          return AllSupportedOuterClass.AllSupported.CompactDisc.getDefaultInstance();
+        }
+      }
+      /**
+       * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+       */
+      public Builder setCompactDisc(AllSupportedOuterClass.AllSupported.CompactDisc value) {
+        if (compactDiscBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          digitalOneof_ = value;
+          onChanged();
+        } else {
+          compactDiscBuilder_.setMessage(value);
+        }
+        digitalOneofCase_ = 19;
+        return this;
+      }
+      /**
+       * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+       */
+      public Builder setCompactDisc(
+          AllSupportedOuterClass.AllSupported.CompactDisc.Builder builderForValue) {
+        if (compactDiscBuilder_ == null) {
+          digitalOneof_ = builderForValue.build();
+          onChanged();
+        } else {
+          compactDiscBuilder_.setMessage(builderForValue.build());
+        }
+        digitalOneofCase_ = 19;
+        return this;
+      }
+      /**
+       * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+       */
+      public Builder mergeCompactDisc(AllSupportedOuterClass.AllSupported.CompactDisc value) {
+        if (compactDiscBuilder_ == null) {
+          if (digitalOneofCase_ == 19 &&
+              digitalOneof_ != AllSupportedOuterClass.AllSupported.CompactDisc.getDefaultInstance()) {
+            digitalOneof_ = AllSupportedOuterClass.AllSupported.CompactDisc.newBuilder((AllSupportedOuterClass.AllSupported.CompactDisc) digitalOneof_)
+                .mergeFrom(value).buildPartial();
+          } else {
+            digitalOneof_ = value;
+          }
+          onChanged();
+        } else {
+          if (digitalOneofCase_ == 19) {
+            compactDiscBuilder_.mergeFrom(value);
+          }
+          compactDiscBuilder_.setMessage(value);
+        }
+        digitalOneofCase_ = 19;
+        return this;
+      }
+      /**
+       * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+       */
+      public Builder clearCompactDisc() {
+        if (compactDiscBuilder_ == null) {
+          if (digitalOneofCase_ == 19) {
+            digitalOneofCase_ = 0;
+            digitalOneof_ = null;
+            onChanged();
+          }
+        } else {
+          if (digitalOneofCase_ == 19) {
+            digitalOneofCase_ = 0;
+            digitalOneof_ = null;
+          }
+          compactDiscBuilder_.clear();
+        }
+        return this;
+      }
+      /**
+       * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+       */
+      public AllSupportedOuterClass.AllSupported.CompactDisc.Builder getCompactDiscBuilder() {
+        return getCompactDiscFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+       */
+      public AllSupportedOuterClass.AllSupported.CompactDiscOrBuilder getCompactDiscOrBuilder() {
+        if ((digitalOneofCase_ == 19) && (compactDiscBuilder_ != null)) {
+          return compactDiscBuilder_.getMessageOrBuilder();
+        } else {
+          if (digitalOneofCase_ == 19) {
+            return (AllSupportedOuterClass.AllSupported.CompactDisc) digitalOneof_;
+          }
+          return AllSupportedOuterClass.AllSupported.CompactDisc.getDefaultInstance();
+        }
+      }
+      /**
+       * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilderV3<
+          AllSupportedOuterClass.AllSupported.CompactDisc, AllSupportedOuterClass.AllSupported.CompactDisc.Builder, AllSupportedOuterClass.AllSupported.CompactDiscOrBuilder> 
+          getCompactDiscFieldBuilder() {
+        if (compactDiscBuilder_ == null) {
+          if (!(digitalOneofCase_ == 19)) {
+            digitalOneof_ = AllSupportedOuterClass.AllSupported.CompactDisc.getDefaultInstance();
+          }
+          compactDiscBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
+              AllSupportedOuterClass.AllSupported.CompactDisc, AllSupportedOuterClass.AllSupported.CompactDisc.Builder, AllSupportedOuterClass.AllSupported.CompactDiscOrBuilder>(
+                  (AllSupportedOuterClass.AllSupported.CompactDisc) digitalOneof_,
+                  getParentForChildren(),
+                  isClean());
+          digitalOneof_ = null;
+        }
+        digitalOneofCase_ = 19;
+        onChanged();;
+        return compactDiscBuilder_;
+      }
+
+      private com.google.protobuf.SingleFieldBuilderV3<
+          AllSupportedOuterClass.AllSupported.Album, AllSupportedOuterClass.AllSupported.Album.Builder, AllSupportedOuterClass.AllSupported.AlbumOrBuilder> albumBuilder_;
+      /**
+       * <code>optional .AllSupported.Album album = 20;</code>
+       */
+      public boolean hasAlbum() {
+        return digitalOneofCase_ == 20;
+      }
+      /**
+       * <code>optional .AllSupported.Album album = 20;</code>
+       */
+      public AllSupportedOuterClass.AllSupported.Album getAlbum() {
+        if (albumBuilder_ == null) {
+          if (digitalOneofCase_ == 20) {
+            return (AllSupportedOuterClass.AllSupported.Album) digitalOneof_;
+          }
+          return AllSupportedOuterClass.AllSupported.Album.getDefaultInstance();
+        } else {
+          if (digitalOneofCase_ == 20) {
+            return albumBuilder_.getMessage();
+          }
+          return AllSupportedOuterClass.AllSupported.Album.getDefaultInstance();
+        }
+      }
+      /**
+       * <code>optional .AllSupported.Album album = 20;</code>
+       */
+      public Builder setAlbum(AllSupportedOuterClass.AllSupported.Album value) {
+        if (albumBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          digitalOneof_ = value;
+          onChanged();
+        } else {
+          albumBuilder_.setMessage(value);
+        }
+        digitalOneofCase_ = 20;
+        return this;
+      }
+      /**
+       * <code>optional .AllSupported.Album album = 20;</code>
+       */
+      public Builder setAlbum(
+          AllSupportedOuterClass.AllSupported.Album.Builder builderForValue) {
+        if (albumBuilder_ == null) {
+          digitalOneof_ = builderForValue.build();
+          onChanged();
+        } else {
+          albumBuilder_.setMessage(builderForValue.build());
+        }
+        digitalOneofCase_ = 20;
+        return this;
+      }
+      /**
+       * <code>optional .AllSupported.Album album = 20;</code>
+       */
+      public Builder mergeAlbum(AllSupportedOuterClass.AllSupported.Album value) {
+        if (albumBuilder_ == null) {
+          if (digitalOneofCase_ == 20 &&
+              digitalOneof_ != AllSupportedOuterClass.AllSupported.Album.getDefaultInstance()) {
+            digitalOneof_ = AllSupportedOuterClass.AllSupported.Album.newBuilder((AllSupportedOuterClass.AllSupported.Album) digitalOneof_)
+                .mergeFrom(value).buildPartial();
+          } else {
+            digitalOneof_ = value;
+          }
+          onChanged();
+        } else {
+          if (digitalOneofCase_ == 20) {
+            albumBuilder_.mergeFrom(value);
+          }
+          albumBuilder_.setMessage(value);
+        }
+        digitalOneofCase_ = 20;
+        return this;
+      }
+      /**
+       * <code>optional .AllSupported.Album album = 20;</code>
+       */
+      public Builder clearAlbum() {
+        if (albumBuilder_ == null) {
+          if (digitalOneofCase_ == 20) {
+            digitalOneofCase_ = 0;
+            digitalOneof_ = null;
+            onChanged();
+          }
+        } else {
+          if (digitalOneofCase_ == 20) {
+            digitalOneofCase_ = 0;
+            digitalOneof_ = null;
+          }
+          albumBuilder_.clear();
+        }
+        return this;
+      }
+      /**
+       * <code>optional .AllSupported.Album album = 20;</code>
+       */
+      public AllSupportedOuterClass.AllSupported.Album.Builder getAlbumBuilder() {
+        return getAlbumFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>optional .AllSupported.Album album = 20;</code>
+       */
+      public AllSupportedOuterClass.AllSupported.AlbumOrBuilder getAlbumOrBuilder() {
+        if ((digitalOneofCase_ == 20) && (albumBuilder_ != null)) {
+          return albumBuilder_.getMessageOrBuilder();
+        } else {
+          if (digitalOneofCase_ == 20) {
+            return (AllSupportedOuterClass.AllSupported.Album) digitalOneof_;
+          }
+          return AllSupportedOuterClass.AllSupported.Album.getDefaultInstance();
+        }
+      }
+      /**
+       * <code>optional .AllSupported.Album album = 20;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilderV3<
+          AllSupportedOuterClass.AllSupported.Album, AllSupportedOuterClass.AllSupported.Album.Builder, AllSupportedOuterClass.AllSupported.AlbumOrBuilder> 
+          getAlbumFieldBuilder() {
+        if (albumBuilder_ == null) {
+          if (!(digitalOneofCase_ == 20)) {
+            digitalOneof_ = AllSupportedOuterClass.AllSupported.Album.getDefaultInstance();
+          }
+          albumBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
+              AllSupportedOuterClass.AllSupported.Album, AllSupportedOuterClass.AllSupported.Album.Builder, AllSupportedOuterClass.AllSupported.AlbumOrBuilder>(
+                  (AllSupportedOuterClass.AllSupported.Album) digitalOneof_,
+                  getParentForChildren(),
+                  isClean());
+          digitalOneof_ = null;
+        }
+        digitalOneofCase_ = 20;
+        onChanged();;
+        return albumBuilder_;
+      }
+
+      private int int2_ ;
+      /**
+       * <code>required int32 int2 = 21;</code>
+       */
+      public boolean hasInt2() {
+        return ((bitField0_ & 0x00100000) == 0x00100000);
+      }
+      /**
+       * <code>required int32 int2 = 21;</code>
        */
       public int getInt2() {
         return int2_;
       }
       /**
-       * <code>required int32 int2 = 18;</code>
+       * <code>required int32 int2 = 21;</code>
        */
       public Builder setInt2(int value) {
-        bitField0_ |= 0x00020000;
+        bitField0_ |= 0x00100000;
         int2_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>required int32 int2 = 18;</code>
+       * <code>required int32 int2 = 21;</code>
        */
       public Builder clearInt2() {
-        bitField0_ = (bitField0_ & ~0x00020000);
+        bitField0_ = (bitField0_ & ~0x00100000);
         int2_ = 0;
         onChanged();
         return this;
@@ -6031,6 +9415,21 @@ public final class AllSupportedOuterClass {
   private static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_AllSupported_Child_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_AllSupported_Digital_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      internal_static_AllSupported_Digital_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_AllSupported_CompactDisc_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      internal_static_AllSupported_CompactDisc_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_AllSupported_Album_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      internal_static_AllSupported_Album_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -6040,7 +9439,7 @@ public final class AllSupportedOuterClass {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\023all-supported.proto\"\211\006\n\014AllSupported\022\017" +
+      "\n\023all-supported.proto\"\316\010\n\014AllSupported\022\017" +
       "\n\007boolean\030\001 \002(\010\022\013\n\003int\030\002 \002(\005\022\014\n\004long\030\003 \002" +
       "(\003\022\021\n\tlistOfInt\030\004 \003(\005\022\016\n\006string\030\005 \002(\t\022\r\n" +
       "\005float\030\006 \002(\002\022\r\n\005short\030\007 \002(\005\022\016\n\006double\030\010 " +
@@ -6049,18 +9448,26 @@ public final class AllSupportedOuterClass {
       "Timestamp\022\014\n\004uuid\030\014 \002(\t\022\023\n\013enumeration\030\r" +
       " \002(\t\022\022\n\nbigDecimal\030\016 \002(\t\022\031\n\017eitherFieldL" +
       "eft\030\017 \001(\tH\000\022\032\n\020eitherFieldRight\030\020 \001(\005H\000\022" +
-      "\"\n\005child\030\021 \002(\0132\023.AllSupported.Child\022\014\n\004i" +
-      "nt2\030\022 \002(\005\032+\n\tTimestamp\022\017\n\007seconds\030\001 \002(\003\022" +
-      "\r\n\005nanos\030\002 \002(\003\032\310\002\n\005Child\022\017\n\007boolean\030\001 \001(" +
-      "\010\022\013\n\003int\030\002 \001(\005\022\014\n\004long\030\003 \001(\003\022\021\n\tlistOfIn" +
-      "t\030\004 \003(\005\022\016\n\006string\030\005 \001(\t\022\r\n\005float\030\006 \001(\002\022\r" +
-      "\n\005short\030\007 \001(\005\022\016\n\006double\030\010 \001(\001\022\021\n\tbyteArr" +
-      "ay\030\t \001(\014\022\021\n\tlocalDate\030\n \001(\003\022.\n\rlocalDate" +
-      "Time\030\013 \001(\0132\027.AllSupported.Timestamp\022\014\n\004u" +
-      "uid\030\014 \001(\t\022\023\n\013enumeration\030\r \001(\t\022\022\n\nbigDec" +
-      "imal\030\016 \001(\t\022\024\n\neitherLeft\030\017 \001(\tH\000\022\025\n\013eith" +
-      "erRight\030\020 \001(\005H\000B\010\n\006eitherB\016\n\014either_fiel" +
-      "d"
+      "\"\n\005child\030\021 \002(\0132\023.AllSupported.Child\022(\n\007d" +
+      "igital\030\022 \001(\0132\025.AllSupported.DigitalH\001\0221\n" +
+      "\014compact_disc\030\023 \001(\0132\031.AllSupported.Compa" +
+      "ctDiscH\001\022$\n\005album\030\024 \001(\0132\023.AllSupported.A" +
+      "lbumH\001\022\014\n\004int2\030\025 \002(\005\032+\n\tTimestamp\022\017\n\007sec" +
+      "onds\030\001 \002(\003\022\r\n\005nanos\030\002 \002(\003\032\310\002\n\005Child\022\017\n\007b" +
+      "oolean\030\001 \001(\010\022\013\n\003int\030\002 \001(\005\022\014\n\004long\030\003 \001(\003\022" +
+      "\021\n\tlistOfInt\030\004 \003(\005\022\016\n\006string\030\005 \001(\t\022\r\n\005fl" +
+      "oat\030\006 \001(\002\022\r\n\005short\030\007 \001(\005\022\016\n\006double\030\010 \001(\001" +
+      "\022\021\n\tbyteArray\030\t \001(\014\022\021\n\tlocalDate\030\n \001(\003\022." +
+      "\n\rlocalDateTime\030\013 \001(\0132\027.AllSupported.Tim" +
+      "estamp\022\014\n\004uuid\030\014 \001(\t\022\023\n\013enumeration\030\r \001(" +
+      "\t\022\022\n\nbigDecimal\030\016 \001(\t\022\024\n\neitherLeft\030\017 \001(" +
+      "\tH\000\022\025\n\013eitherRight\030\020 \001(\005H\000B\010\n\006either\032\'\n\007" +
+      "Digital\022\014\n\004name\030\001 \002(\t\022\016\n\006format\030\002 \002(\t\032C\n" +
+      "\013CompactDisc\022\014\n\004name\030\001 \002(\t\022\021\n\tcdQuality\030" +
+      "\002 \002(\t\022\023\n\013caseQuality\030\003 \002(\t\032A\n\005Album\022\014\n\004n" +
+      "ame\030\001 \002(\t\022\024\n\014albumQuality\030\002 \002(\t\022\024\n\014cover" +
+      "Quality\030\003 \002(\tB\016\n\014either_fieldB\017\n\rDigital" +
+      "_oneof"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -6079,7 +9486,7 @@ public final class AllSupportedOuterClass {
     internal_static_AllSupported_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_AllSupported_descriptor,
-        new java.lang.String[] { "Boolean", "Int", "Long", "ListOfInt", "String", "Float", "Short", "Double", "ByteArray", "LocalDate", "LocalDateTime", "Uuid", "Enumeration", "BigDecimal", "EitherFieldLeft", "EitherFieldRight", "Child", "Int2", "EitherField", });
+        new java.lang.String[] { "Boolean", "Int", "Long", "ListOfInt", "String", "Float", "Short", "Double", "ByteArray", "LocalDate", "LocalDateTime", "Uuid", "Enumeration", "BigDecimal", "EitherFieldLeft", "EitherFieldRight", "Child", "Digital", "CompactDisc", "Album", "Int2", "EitherField", "DigitalOneof", });
     internal_static_AllSupported_Timestamp_descriptor =
       internal_static_AllSupported_descriptor.getNestedTypes().get(0);
     internal_static_AllSupported_Timestamp_fieldAccessorTable = new
@@ -6092,6 +9499,24 @@ public final class AllSupportedOuterClass {
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_AllSupported_Child_descriptor,
         new java.lang.String[] { "Boolean", "Int", "Long", "ListOfInt", "String", "Float", "Short", "Double", "ByteArray", "LocalDate", "LocalDateTime", "Uuid", "Enumeration", "BigDecimal", "EitherLeft", "EitherRight", "Either", });
+    internal_static_AllSupported_Digital_descriptor =
+      internal_static_AllSupported_descriptor.getNestedTypes().get(2);
+    internal_static_AllSupported_Digital_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_AllSupported_Digital_descriptor,
+        new java.lang.String[] { "Name", "Format", });
+    internal_static_AllSupported_CompactDisc_descriptor =
+      internal_static_AllSupported_descriptor.getNestedTypes().get(3);
+    internal_static_AllSupported_CompactDisc_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_AllSupported_CompactDisc_descriptor,
+        new java.lang.String[] { "Name", "CdQuality", "CaseQuality", });
+    internal_static_AllSupported_Album_descriptor =
+      internal_static_AllSupported_descriptor.getNestedTypes().get(4);
+    internal_static_AllSupported_Album_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_AllSupported_Album_descriptor,
+        new java.lang.String[] { "Name", "AlbumQuality", "CoverQuality", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

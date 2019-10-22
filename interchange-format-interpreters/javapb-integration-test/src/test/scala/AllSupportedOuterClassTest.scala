@@ -53,6 +53,13 @@ class AllSupportedOuterClassTest extends FunSuite with MustMatchers {
 
     build.setEitherFieldRight(77)
 
+    val compactDisc = AllSupportedOuterClass.AllSupported.CompactDisc.newBuilder()
+    compactDisc.setName("Duchess Says")
+    compactDisc.setCaseQuality("Excellent")
+    compactDisc.setCdQuality("Mint")
+
+    build.setCompactDisc(compactDisc)
+
     build.setInt2(2)
     val output = new ByteArrayOutputStream
 
@@ -66,6 +73,7 @@ class AllSupportedOuterClassTest extends FunSuite with MustMatchers {
     val encoded = output.toByteArray
 
     val base64 = Base64.getEncoder().encode(encoded)
+//    println(s"BASE:${new String(base64)}")
 
     decode(output.toByteArray) match {
       case Left(err) => fail(err.toString())
