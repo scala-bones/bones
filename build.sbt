@@ -77,7 +77,7 @@ lazy val swaggerOas3 = (project in file("interchange-format-interpreters/swagger
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
       "org.scalatest" %% "scalatest" % "3.0.8" % Test
     )
-  ).dependsOn(core)
+  ).dependsOn(core, testSchemas % "test")
 lazy val doobieVersion = "0.6.0"
 lazy val jsonLift = (project in file("interchange-format-interpreters/lift-json"))
   .settings(

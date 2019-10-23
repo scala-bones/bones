@@ -194,7 +194,7 @@ object Schemas {
         kvp("bigDecimal", bigDecimal(bdv.max(BigDecimal(100)))) ::
         kvp("eitherField", either(string(sv.words), int)) ::
         kvp("child", allSupportedOptionalSchema.convert[AllSupportedOptional]) ::
-        kvpCoproduct("media", MusicMedium.bonesSchema) ::
+        kvp("media", MusicMedium.bonesSchema) ::
         kvp("int2", int(iv.between(Int.MinValue, Int.MinValue))) ::
         KvpNil
 
@@ -217,7 +217,7 @@ object Schemas {
                            bd: BigDecimal,
                            either: Either[String,Int],
                            child: AllSupportedOptional,
-                           media: MusicMedium.MusicMedium,
+                           media: MusicMedium,
                            int2: Int
                          )
 

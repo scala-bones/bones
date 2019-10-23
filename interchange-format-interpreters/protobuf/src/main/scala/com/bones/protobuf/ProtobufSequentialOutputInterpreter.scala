@@ -405,6 +405,17 @@ object ProtobufSequentialOutputInterpreter {
                 (allSize, encodeF)
               }
           )
+      case co: KvpCoproductConvert[c,a] =>
+        (fieldNumber: FieldNumber) =>
+          val (lastField,computeEncodeF) = kvpCoproduct(co.from)(fieldNumber)
+          (
+            lastField,
+            (a: A) =>
+              {
+                val coproduct = co.aToC(a)
+                computeEncodeF(coproduct)
+              }
+          )
 
 //        val dc = kvpHList(kvp.from)(0)
 //        (a: A) => {
