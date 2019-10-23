@@ -63,7 +63,7 @@ object ProtobufSequentialInputInterpreter {
     }
   }
 
-  private def kvpCoproduct[C<:Coproduct, A<:Coproduct](kvp: KvpCoproduct[C], kvpCoproductValue: KvpCoproductValue[A]): ExtractProductFromProto[C] = {
+  private def kvpCoproduct[C<:Coproduct, A](kvp: KvpCoproduct[C], kvpCoproductValue: KvpValue[A]): ExtractProductFromProto[C] = {
     kvp match {
       case KvpCoNil => (lastFieldNumber, path) =>
         (List.empty, lastFieldNumber, (canRead, _) => (canRead, Left(NonEmptyList.one(RequiredData(path, kvpCoproductValue)))))
@@ -513,6 +513,19 @@ object ProtobufSequentialInputInterpreter {
             })
           }
       }
+      case co: KvpCoproductConvert[c,a] => {
+        val coExtract = kvpCoproduct(co.from, co)
+        (last: LastFieldNumber, path: Path) =>
+           {
+             val (tags, lastFieldNumber, f) = coExtract(last, path)
+             val newF = (canReadTag: CanReadTag, in: CodedInputStream) => {
+               val (newCanReadTag, either) = f(canReadTag, in)
+               (newCanReadTag, either.map(coproduct => co.cToA(coproduct)))
+             }
+             (tags, lastFieldNumber, newF)
+           }
+      }
+
     }
 
   private def convert[A](in: CodedInputStream,

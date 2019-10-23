@@ -4,7 +4,7 @@ import java.time.{LocalDate, LocalDateTime}
 import java.util.{Base64, UUID}
 
 import cats.data.NonEmptyList
-import cats.implicits._
+//import cats.implicits._
 import com.bones.Util
 import com.bones.data.Error._
 import com.bones.data.{KeyValueDefinition, KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
@@ -373,9 +373,22 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
           val kvp = kvpHList(x.from)
           (jOpt: Option[IN], path: Path) =>
             jOpt match {
-              case None => Left(NonEmptyList.one(RequiredData(path, null)))
-              case Some(j) => kvp(j, path).right.map(x.fHtoA(_))
+              case None => Left(NonEmptyList.one(RequiredData(path, x)))
+              case Some(j) => kvp(j, path).map(x.fHtoA(_))
             }
+        }
+        case co: KvpCoproductConvert[a,c] => {
+          val fCo = kvpCoproduct(co.from)
+          (jOpt: Option[IN], path: Path) =>
+              jOpt match {
+                case None => Left(NonEmptyList.one(RequiredData(path, co)))
+                case Some(j) => {
+                  stringValue(j, coproductTypeKey) match {
+                    case None => Left(NonEmptyList.one(RequiredData(coproductTypeKey :: path, co)))
+                    case Some(coproductType) => fCo(j,path, coproductType).map(co.cToA(_))
+                  }
+                }
+              }
         }
       }
     result

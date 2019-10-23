@@ -47,6 +47,7 @@ class InterpreterTemplate {
       case kvp: KvpHListValue[h, hl] => ???
       case co: KvpCoproductValue[c] => ???
       case x: HListConvert[a, al, b] => ???
+      case co: KvpCoproductConvert[c,a] => ???
       case s: SumTypeData[a,b] => ???
     }
 

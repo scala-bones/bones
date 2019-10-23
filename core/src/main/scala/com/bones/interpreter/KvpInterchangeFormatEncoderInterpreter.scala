@@ -187,7 +187,12 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
         input =>
           val (name, out) = fc.apply(input.asInstanceOf[c])
           addStringField(out, coproductTypeKey, name)
-
+      case c: KvpCoproductConvert[c,a] =>
+        val fc = kvpCoproduct(c.from)
+        input: A => {
+          val (name, out) = fc(c.aToC(input))
+          addStringField(out, coproductTypeKey, name)
+        }
       case s: SumTypeData[a,b] =>
         input: A => ???
 //          val fh = s.typeToConversion(input)

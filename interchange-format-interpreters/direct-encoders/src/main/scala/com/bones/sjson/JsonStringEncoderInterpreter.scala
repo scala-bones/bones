@@ -135,6 +135,9 @@ trait JsonStringEncoderInterpreter {
       case x: HListConvert[a, al, b]      =>
         val fromDef = kvpHList(x.from)
         (input: A) => fromDef(x.fAtoH(input)).map("{" + _ + "}")
+      case co: KvpCoproductConvert[c,a] =>
+        val fromDef = kvpCoproduct(co.from)
+        (input: A) => fromDef(co.aToC(input))
       case s: SumTypeData[a, b]           =>
         val fh = valueDefinition(s.from)
         input: A =>
