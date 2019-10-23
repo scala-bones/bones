@@ -257,6 +257,12 @@ object ProtoFileInterpreter {
           val nested = NestedMessage(name, messageFields)
           (MessageField(NestedDataType(name), true, false, name, index),
            Vector(nested), index)
+        case co: KvpCoproductConvert[c,a] =>
+          val (fields, nestedTypes, nextIndex) = kvpCoproduct(co.from)(index)
+          val nestedMessageFields: Vector[MessageField] = nestedTypes.zipWithIndex.map(nt => MessageField(NestedDataType(nt._1.name), false, false, nt._1.name, index + nt._2))
+          val name = nestedTypes.headOption.map(_.name).getOrElse("unknown")
+          (MessageField(OneOf(name + "_oneof", nestedMessageFields.toList), true, false, name, nextIndex), nestedTypes, index + nestedMessageFields.length - 1)
+
 
     }
 

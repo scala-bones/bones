@@ -155,6 +155,17 @@ object Value {
       with ToListData[A]
       with BonesSchema[A] {}
 
+  final case class KvpCoproductConvert[C<:Coproduct, A: Manifest]
+  (
+    from: KvpCoproduct[C],
+    cToA: C => A,
+    aToC: A => C,
+    validations: List[ValidationOp[A]]
+  ) extends KvpValue[A]
+    with ToOptionalData[A]
+    with ToListData[A]
+    with BonesSchema[A]
+
   type Path = List[String]
 
   final case class SumTypeData[A, B: Manifest](from: KvpValue[A],

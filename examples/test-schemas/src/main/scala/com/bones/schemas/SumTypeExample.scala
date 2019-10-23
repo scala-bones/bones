@@ -2,7 +2,7 @@ package com.bones.schemas
 
 import com.bones.schemas.SumTypeExample.Quality.Quality
 import com.bones.syntax._
-import shapeless.{:+:, CNil}
+import shapeless.{:+:, CNil, Generic}
 
 object SumTypeExample {
 
@@ -16,8 +16,12 @@ object SumTypeExample {
     val baseFields =
       kvp("name", string(sv.words)) ::
       kvpNil
-    val bonesSchema = Digital.bonesSchema :+: CompactDisc.bonesSchema :+: Album.bonesSchema :+: kvpCoNil
-    type MusicMedium = Digital :+: CompactDisc :+: Album :+: CNil
+
+    // Note the order needs to be the order in which they are defined below
+    val bonesSchema =
+      (Album.bonesSchema :+: CompactDisc.bonesSchema :+: Digital.bonesSchema :+: kvpCoNil)
+        .convert[MusicMedium]
+//    type MusicMedium = Digital :+: CompactDisc :+: Album :+: CNil
   }
   sealed trait MusicMedium {
     val name: String
@@ -60,10 +64,11 @@ object SumTypeExample {
   object Item {
     val fields =
       kvp("artist", string(sv.words)) ::
-      kvpCoproduct("medium", MusicMedium.bonesSchema) ::
+//      kvp("medium", MusicMedium.bonesSchema) ::
       kvpNil
+//    val bonesSchema = fields.convert[Item]
   }
-  case class Item(artist: String, medium: MusicMedium.MusicMedium)
+  case class Item(artist: String, medium: MusicMedium)
 
 
 }

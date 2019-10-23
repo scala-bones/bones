@@ -2,17 +2,11 @@ package com.bones.oas3
 
 import java.util.UUID
 
+import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
 import com.bones.data.Value._
-import com.bones.validation.ValidationDefinition.{
-  InvalidValue,
-  ValidValue,
-  ValidationOp,
-  BigDecimalValidation => bdv,
-  LongValidation => iv,
-  StringValidation => sv
-}
+import com.bones.validation.ValidationDefinition.{InvalidValue, ValidValue, ValidationOp, BigDecimalValidation => bdv, LongValidation => iv, StringValidation => sv}
 import io.swagger.v3.oas.models.media._
-import shapeless.{HList, Nat}
+import shapeless.{Coproduct, HList, Nat}
 
 object SwaggerCoreInterpreter {
 
@@ -44,7 +38,20 @@ trait SwaggerCoreInterpreter {
     case x: HListConvert[_, _, A] => fromValueDef(x).apply(new Schema())
   }
 
-  def fromKvpHList[H <: HList, HL <: Nat](
+  private def fromKvpCoproduct[C<:Coproduct](co: KvpCoproduct[C]): Schema[_] => Schema[_] = {
+    co match {
+      case KvpCoNil => identity
+      case co: KvpSingleValueLeft[l,r] => {
+        val l = fromValueDef(co.kvpValue)
+        val r = fromKvpCoproduct(co.kvpTail)
+        schema =>
+          l(schema)
+          r(schema)
+      }
+    }
+  }
+
+  private def fromKvpHList[H <: HList, HL <: Nat](
       group: KvpHList[H, HL]): Schema[_] => Schema[_] = {
     group match {
       case KvpNil =>
@@ -90,7 +97,6 @@ trait SwaggerCoreInterpreter {
         val oasSchema = fromValueDef(op.valueDefinitionOp)
         schema =>
           oasSchema(schema).nullable(true)
-
       case _: BooleanData =>
         val boolSchema = new BooleanSchema()
           .example(new java.lang.Boolean(true))
@@ -143,17 +149,17 @@ trait SwaggerCoreInterpreter {
         schema =>
           stringSchema.name(schema.getName)
       case DoubleData(_) =>
-        val stringSchema = new NumberSchema()
+        val numberSchema = new NumberSchema()
           .example("3.14")
           .nullable(false)
         schema =>
-          stringSchema.name(schema.getName)
+          numberSchema.name(schema.getName)
       case FloatData(_) =>
-        val stringSchema = new NumberSchema()
+        val numberSchema = new NumberSchema()
           .example("3.14")
           .nullable(false)
         schema =>
-          stringSchema.name(schema.getName)
+          numberSchema.name(schema.getName)
       case _: BigDecimalData =>
         val stringSchema = new StringSchema()
           .example("3.14")
@@ -202,15 +208,13 @@ trait SwaggerCoreInterpreter {
           obj(schema)
 
       case gd: KvpHListValue[h, hl] =>
-        val obj = fromKvpHList(gd.kvpHList)
-        schema =>
-          obj(schema)
+        fromKvpHList(gd.kvpHList)
       case x: HListConvert[_, _, a] =>
-        val fromF = fromKvpHList(x.from)
-        schema =>
-          {
-            fromF(schema)
-          }
+        fromKvpHList(x.from)
+      case co: KvpCoproductConvert[c,a] =>
+        fromKvpCoproduct(co.from)
+      case co: KvpCoproductValue[c] =>
+        fromKvpCoproduct(co.kvpCoproduct)
     }
   }
 
