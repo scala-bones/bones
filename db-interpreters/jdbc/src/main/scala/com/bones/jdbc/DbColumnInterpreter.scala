@@ -81,8 +81,5 @@ object DbColumnInterpreter {
       case x: HListConvert[a, al, b] =>
         _ =>
           kvpHList(x.from)
-      case m: SumTypeData[a, b] =>
-        key =>
-          valueDefinition(m.from)(key)
     }
 }

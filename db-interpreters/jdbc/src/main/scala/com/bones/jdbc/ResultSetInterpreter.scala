@@ -169,11 +169,6 @@ object ResultSetInterpreter {
         val groupF = kvpHList(x.from)
         (path, _) =>
           groupF(path).andThen(_.map(x.fHtoA))
-      case s: SumTypeData[a, b] =>
-        val fromF = valueDefinition(s.from)
-        (path, fieldName) =>
-          fromF(path, fieldName).andThen(_.flatMap(a =>
-            s.fab(a, path).left.map(NonEmptyList.one(_))))
     }
 
   private def catchSql[A](

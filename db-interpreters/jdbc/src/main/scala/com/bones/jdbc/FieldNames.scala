@@ -58,7 +58,6 @@ object FieldNames {
       case ld: ListData[t]               => List.empty
       case ed: EitherData[a, b]          => List.empty
       case esd: EnumerationData[e,a] => List.empty
-      case st: SumTypeData[a, b]         => valueDefinition(st.from)
       case kvp: KvpHListValue[h, hl]     => kvpHList(kvp.kvpHList)
       case x: HListConvert[_, _, _]      => kvpHList(x.from)
     }

@@ -168,14 +168,6 @@ object DbInsertValues {
             groupF(index,x.fAtoH(h))
           }
         }
-      case s: SumTypeData[a,b] =>
-        val groupF = valueDefinition(s.from)
-        k => {
-          val groupK = groupF(k)
-          (index, a) => {
-            groupK(index,s.fba(a))
-          }
-        }
     }
 
 }

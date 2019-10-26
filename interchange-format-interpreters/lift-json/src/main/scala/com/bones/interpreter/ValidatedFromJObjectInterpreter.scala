@@ -210,6 +210,7 @@ trait ValidatedFromJObjectInterpreter
       case JArray(_)        => classOf[Array[_]]
       case JDouble(_)       => classOf[Double]
       case JString(_)       => classOf[String]
+      case _ => classOf[Object]
     }
     Left(NonEmptyList.one(WrongTypeError(path, expected, invalid)))
   }

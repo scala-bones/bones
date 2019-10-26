@@ -168,13 +168,6 @@ object Value {
 
   type Path = List[String]
 
-  final case class SumTypeData[A, B: Manifest](from: KvpValue[A],
-                                               fab: (A, Path) => Either[CanNotConvert[A, B], B],
-                                               fba: B => A,
-                                               keys: List[A],
-                                               validations: List[ValidationOp[B]]
-                                              ) extends KvpValue[B] {}
-
   /**
     * Base trait of a ValueDefinition where the value is a list of data.
     * HList stands for Heterogeneous List.

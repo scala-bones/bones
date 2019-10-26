@@ -134,8 +134,6 @@ object Scalacheck {
       case co: KvpCoproductConvert[c,a] =>
         val gens = kvpCoproduct(co.from).map( (1,_))
         Gen.frequency(gens:_*).map(coproduct => co.cToA(coproduct))
-      case s: SumTypeData[a, b] =>
-        Gen.oneOf(s.keys).map(k => s.fab(k, List.empty).right.get)
     }
 
 
