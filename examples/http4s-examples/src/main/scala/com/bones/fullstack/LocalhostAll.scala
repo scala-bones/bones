@@ -69,6 +69,7 @@ object LocalhostAllIOApp {
     val middleware = CrudDbDefinitions(schema, ds)
 
 
+    /** Create the REST interpreter with full CRUD capabilities which write data to the database */
     val interpreter = ClassicCrudInterpreter.allVerbs[A,BasicError,IO,Long](
       path,
       StandardCharsets.UTF_8,
