@@ -99,17 +99,17 @@ object PersonEndpoint extends LocalhostAllIOApp {
 ### List of Interpreters
 
 Serializer / Marhsaller Interpreters
-* [Circe](interchante-format-interpreters/circe/README.md)
-* [BSON](interchante-format-interpreters/bson/README.md)
-* [Argonaut](interchante-format-interpreters/argonaut/README.md)
-* [lift-json](interchante-format-interpreters/lift-json/README.md)
-* [protobuf](interchante-format-interpreters/protobuf/README.md)
+* [Circe](interchange-format-interpreters/circe/README.md)
+* [BSON](interchange-format-interpreters/bson/README.md)
+* [Argonaut](interchange-format-interpreters/argonaut/README.md)
+* [lift-json](interchange-format-interpreters/lift-json/README.md)
+* [protobuf](interchange-format-interpreters/protobuf/README.md)
 
 HTTP REST Interpreters
-* [http4s](rest-interpreteres/http4s-interpreter/README.md)
+* [http4s](rest-interpreters/http4s-interpreter/README.md)
 
 Incomplete Interpreters
-* [swagger](interchante-format-interpreters/swagger-oas3/README.md) - Does not currently support Coproduc
+* [swagger](interchange-format-interpreters/swagger-oas3/README.md) - Does not currently support Coproduc
 * [dbJdbc](db-interpreters/jdbc/README.md) - Does not currently support coproducts
 * [React](client-interpreters/react/README.md) - This is more of a POC.  Does not currently support Coproducts
 * [http4s-client](client-interpreters/http4s-client/README.md) - Not Implemented 
