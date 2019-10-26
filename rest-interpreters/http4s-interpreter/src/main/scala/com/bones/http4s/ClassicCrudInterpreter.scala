@@ -9,7 +9,7 @@ import com.bones.bson.{BsonEncoderInterpreter, BsonValidatorInterpreter}
 import com.bones.circe.{CirceEncoderInterpreter, CirceValidatorInterpreter}
 import com.bones.data.Error.ExtractionError
 import com.bones.data.KeyValueDefinition
-import com.bones.data.Value.{BonesSchema, HListConvert}
+import com.bones.data.{BonesSchema, HListConvert}
 import com.bones.oas3.CrudOasInterpreter
 import com.bones.protobuf.{ProtoFileInterpreter, ProtobufSequentialInputInterpreter, ProtobufSequentialOutputInterpreter}
 import fs2.Stream

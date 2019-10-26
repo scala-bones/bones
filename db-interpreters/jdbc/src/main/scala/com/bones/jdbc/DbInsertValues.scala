@@ -4,7 +4,7 @@ import java.sql._
 import java.time.{LocalDate, LocalDateTime, ZoneOffset}
 import java.util.UUID
 import com.bones.data.Error.SystemError
-import com.bones.data.Value._
+import com.bones.data._
 import com.bones.jdbc.DbUtil._
 import javax.sql.DataSource
 import shapeless.{HList, Nat}

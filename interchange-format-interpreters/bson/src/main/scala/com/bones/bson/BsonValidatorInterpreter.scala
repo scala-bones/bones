@@ -6,10 +6,10 @@ import java.util.UUID
 import cats.data.NonEmptyList
 import cats.implicits._
 import com.bones.data.Error._
-import com.bones.data.{KeyValueDefinition, Value}
+import com.bones.data._
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
 import com.bones.Util._
-import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.Path
+import com.bones.data.KvpValue.Path
 import reactivemongo.bson.buffer.ArrayReadableBuffer
 import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDecimal, BSONDocument, BSONDouble, BSONInteger, BSONLong, BSONNull, BSONString, BSONValue}
 
@@ -71,7 +71,7 @@ object BsonValidatorInterpreter
 
   }
 
-  override def extractString[A](op: Value.KvpValue[A],
+  override def extractString[A](op: KvpValue[A],
                                 clazz: Class[_])(
                                  in: BSONValue,
                                  path: List[String]): Either[NonEmptyList[ExtractionError], String] =
@@ -81,7 +81,7 @@ object BsonValidatorInterpreter
     }
 
 
-  override def extractShort(op: Value.ShortData)(in: BSONValue, path: Path): Either[NonEmptyList[ExtractionError], Short] =
+  override def extractShort(op: ShortData)(in: BSONValue, path: Path): Either[NonEmptyList[ExtractionError], Short] =
     in match {
       case BSONInteger(i) =>
         Try({
@@ -94,7 +94,7 @@ object BsonValidatorInterpreter
       case x => invalidValue(x, classOf[Long], path)
     }
 
-  override def extractInt(op: Value.IntData)(in: BSONValue, path: List[String]): Either[NonEmptyList[ExtractionError], Int] =
+  override def extractInt(op: IntData)(in: BSONValue, path: List[String]): Either[NonEmptyList[ExtractionError], Int] =
     in match {
       case BSONInteger(i) => Right(i)
       case BSONLong(l) =>
@@ -105,7 +105,7 @@ object BsonValidatorInterpreter
     }
 
 
-  override def extractLong(op: Value.LongData)(
+  override def extractLong(op: LongData)(
     in: BSONValue,
     path: List[String]): Either[NonEmptyList[ExtractionError], Long] =
     in match {
@@ -114,7 +114,7 @@ object BsonValidatorInterpreter
       case x => invalidValue(x, classOf[Long], path)
     }
 
-  override def extractBool(op: Value.BooleanData)(
+  override def extractBool(op: BooleanData)(
     in: BSONValue,
     path: List[String]): Either[NonEmptyList[ExtractionError], Boolean] =
     in match {
@@ -122,7 +122,7 @@ object BsonValidatorInterpreter
       case x => invalidValue(x, classOf[Boolean], path)
     }
 
-  override def extractUuid(op: Value.UuidData)(
+  override def extractUuid(op: UuidData)(
     in: BSONValue,
     path: List[String]): Either[NonEmptyList[ExtractionError], UUID] =
     in match {
@@ -130,7 +130,7 @@ object BsonValidatorInterpreter
       case x => invalidValue(x, classOf[UUID], path)
     }
 
-  override def extractLocalDateTime(op: Value.LocalDateTimeData)(in: BSONValue, path: List[String])
+  override def extractLocalDateTime(op: LocalDateTimeData)(in: BSONValue, path: List[String])
   : Either[NonEmptyList[ExtractionError], LocalDateTime] =
     in match {
       case BSONDateTime(date) =>
@@ -140,7 +140,7 @@ object BsonValidatorInterpreter
     }
 
 
-  override def extractLocalDate(op: Value.LocalDateData)(in: BSONValue, path: List[String])
+  override def extractLocalDate(op: LocalDateData)(in: BSONValue, path: List[String])
   : Either[NonEmptyList[ExtractionError], LocalDate] =
     in match {
       case BSONDateTime(date) =>
@@ -148,7 +148,7 @@ object BsonValidatorInterpreter
       case x => invalidValue(x, classOf[BSONDateTime], path)
     }
 
-  override def extractArray[A](op: Value.ListData[A])(in: BSONValue,
+  override def extractArray[A](op: ListData[A])(in: BSONValue,
                                                       path: List[String])
   : Either[NonEmptyList[ExtractionError], Seq[BSONValue]] =
     in match {
@@ -165,7 +165,7 @@ object BsonValidatorInterpreter
     }
 
 
-  override def extractFloat(op: Value.FloatData)(in: BSONValue, path: List[String]): Either[NonEmptyList[ExtractionError], Float] = {
+  override def extractFloat(op: FloatData)(in: BSONValue, path: List[String]): Either[NonEmptyList[ExtractionError], Float] = {
     in match {
       case BSONDouble(d) =>
         Try({d.toFloat})
@@ -184,7 +184,7 @@ object BsonValidatorInterpreter
     }
   }
 
-  override def extractDouble(op: Value.DoubleData)(in: BSONValue, path: List[String]): Either[NonEmptyList[ExtractionError], Double] =
+  override def extractDouble(op: DoubleData)(in: BSONValue, path: List[String]): Either[NonEmptyList[ExtractionError], Double] =
     in match {
       case BSONDouble(d) =>
         Right(d)
@@ -203,7 +203,7 @@ object BsonValidatorInterpreter
 
 
 
-  override def extractBigDecimal(op: Value.BigDecimalData)(
+  override def extractBigDecimal(op: BigDecimalData)(
     in: BSONValue,
     path: List[String]): Either[NonEmptyList[ExtractionError], BigDecimal] =
     in match {

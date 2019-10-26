@@ -14,7 +14,7 @@ import java.time.format.DateTimeFormatter
 import java.time.LocalDate
 import java.time.LocalDateTime
 import com.bones.data.Error.RequiredData
-import com.bones.data.Value.KvpValue
+import com.bones.data.KvpValue
 
 class UtilTest extends FunSuite with Checkers with MustMatchers {
   val path = List("a","b")

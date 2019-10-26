@@ -4,7 +4,7 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream, OutputStream}
 import java.nio.ByteBuffer
 import java.util.{Base64, UUID}
 
-import com.bones.data.Value.KvpNil
+import com.bones.data.KvpNil
 import org.scalatest.{FunSuite, MustMatchers}
 import org.scalatest.prop.Checkers
 import com.bones.syntax._

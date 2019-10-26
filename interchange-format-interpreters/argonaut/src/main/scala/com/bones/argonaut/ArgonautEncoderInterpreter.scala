@@ -6,7 +6,7 @@ import java.util.{Base64, UUID}
 
 import argonaut._
 import com.bones.data.KeyValueDefinition
-import com.bones.data.Value._
+import com.bones.data._
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
 
 object ArgonautEncoderInterpreter {

@@ -4,7 +4,7 @@ import java.time.{LocalDate, LocalDateTime, Year, ZoneId}
 import java.util.{Calendar, Date, UUID}
 
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
-import com.bones.data.Value._
+import com.bones.data._
 import com.bones.validation.ValidationDefinition.StringValidation._
 import com.bones.validation.ValidationDefinition._
 import com.bones.validation.ValidationUtil

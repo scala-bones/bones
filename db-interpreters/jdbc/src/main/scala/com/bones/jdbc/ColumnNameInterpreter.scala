@@ -1,6 +1,6 @@
 package com.bones.jdbc
 
-import com.bones.data.Value._
+import com.bones.data._
 import com.bones.jdbc.DbUtil._
 import shapeless.{HList, Nat}
 

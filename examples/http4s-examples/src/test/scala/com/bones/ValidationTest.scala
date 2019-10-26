@@ -5,7 +5,7 @@ import java.util.UUID
 import cats.data.NonEmptyList
 import cats.data.Validated.Valid
 import com.bones.circe.CirceValidatorInterpreter
-import com.bones.data.Value.KvpNil
+import com.bones.data.KvpNil
 //import com.bones.interpreter.{EncodeToJValueInterpreter, ValidatedFromJObjectInterpreter}
 import com.bones.oas3.SwaggerCoreInterpreter
 import io.swagger.v3.oas.models.{Components, OpenAPI}

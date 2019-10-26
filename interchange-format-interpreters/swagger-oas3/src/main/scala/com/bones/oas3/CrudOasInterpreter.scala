@@ -1,6 +1,6 @@
 package com.bones.oas3
 
-import com.bones.data.Value.BonesSchema
+import com.bones.data.BonesSchema
 import io.swagger.v3.oas.models._
 import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.media._

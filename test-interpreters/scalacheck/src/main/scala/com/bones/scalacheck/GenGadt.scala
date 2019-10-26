@@ -1,7 +1,7 @@
 package com.bones.scalacheck
 
 import com.bones.data.KeyValueDefinition
-import com.bones.data.Value._
+import com.bones.data._
 import com.bones.validation.ValidationDefinition.StringValidation.{MaxLength, Trimmed}
 import com.bones.validation.ValidationDefinition.ValidationOp
 import org.scalacheck.Gen

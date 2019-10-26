@@ -1,6 +1,6 @@
 package com.bones.gen
 
-import com.bones.data.Value.KvpHListValue
+import com.bones.data.KvpHListValue
 import com.bones.oas3.SwaggerCoreInterpreter
 import com.bones.scalacheck.GenGadt
 import io.swagger.v3.oas.models.media.{ObjectSchema, Schema}

@@ -1,6 +1,6 @@
 package com.bones.react
 
-import com.bones.data.Value._
+import com.bones.data._
 import shapeless.{HList, Nat}
 
 /**

@@ -3,7 +3,7 @@ package com.bones.fullstack
 import cats.data.NonEmptyList
 import cats.effect.IO
 import com.bones.data.Error.{ExtractionError, SystemError}
-import com.bones.data.Value.BonesSchema
+import com.bones.data.BonesSchema
 import com.bones.jdbc._
 import fs2.Stream
 import javax.sql.DataSource

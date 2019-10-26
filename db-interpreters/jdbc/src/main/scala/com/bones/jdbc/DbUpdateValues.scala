@@ -4,7 +4,7 @@ import java.sql.{Connection, PreparedStatement, SQLException, Types}
 import java.time.{LocalDate, LocalDateTime, ZoneOffset}
 import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionError, SystemError}
-import com.bones.data.Value._
+import com.bones.data._
 import com.bones.jdbc.DbUtil._
 import javax.sql.DataSource
 import shapeless.{HList, HNil, Nat}

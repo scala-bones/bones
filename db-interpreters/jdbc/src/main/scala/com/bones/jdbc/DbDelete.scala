@@ -4,7 +4,7 @@ import java.sql.Connection
 
 import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionError, SystemError}
-import com.bones.data.Value.{BonesSchema, HListConvert}
+import com.bones.data.{BonesSchema, HListConvert}
 import com.bones.jdbc.DbInsertValues.ID
 import com.bones.jdbc.DbUtil.{camelToSnake, withDataSource, withStatement}
 import javax.sql.DataSource

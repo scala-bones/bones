@@ -1,6 +1,6 @@
 package com.bones.scalacheck
 
-import com.bones.data.Value.KvpNil
+import com.bones.data.KvpNil
 import com.bones.schemas.Schemas
 import com.bones.schemas.Schemas.{AllSupported, CC}
 import org.scalacheck.{Arbitrary, Gen}

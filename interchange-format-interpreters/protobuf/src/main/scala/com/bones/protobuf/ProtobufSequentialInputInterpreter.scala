@@ -6,7 +6,7 @@ import java.util.UUID
 
 import cats.data.NonEmptyList
 import com.bones.data.Error._
-import com.bones.data.Value._
+import com.bones.data._
 import com.google.protobuf.{CodedInputStream, InvalidProtocolBufferException, Timestamp}
 import shapeless.{:+:, CNil, Coproduct, HList, HNil, Inl, Inr, Nat}
 import cats.implicits._

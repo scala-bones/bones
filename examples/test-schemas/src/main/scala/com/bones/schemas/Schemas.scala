@@ -4,7 +4,7 @@ import java.time.{LocalDate, LocalDateTime, Month}
 import java.util.UUID
 
 import com.bones.data.Error.CanNotConvert
-import com.bones.data.Value.KvpNil
+import com.bones.data.KvpNil
 import com.bones.schemas.SumTypeExample.MusicMedium
 import com.bones.validation.ValidationDefinition.ValidationOp
 import shapeless.{HNil, Poly1}

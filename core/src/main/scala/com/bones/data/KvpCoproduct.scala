@@ -1,6 +1,5 @@
 package com.bones.data
 
-import com.bones.data.Value.{KvpCoproductConvert, KvpValue}
 import com.bones.validation.ValidationDefinition.ValidationOp
 import shapeless.{:+:, CNil, Coproduct, Generic}
 

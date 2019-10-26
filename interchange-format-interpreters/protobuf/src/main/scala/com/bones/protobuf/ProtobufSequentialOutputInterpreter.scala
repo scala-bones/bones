@@ -8,7 +8,7 @@ import cats.Applicative
 import cats.data.NonEmptyList
 import cats.implicits._
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
-import com.bones.data.Value._
+import com.bones.data._
 import com.google.protobuf.{CodedOutputStream, Timestamp}
 import shapeless._
 
