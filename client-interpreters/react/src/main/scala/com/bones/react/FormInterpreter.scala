@@ -137,8 +137,5 @@ object FormInterpreter {
           val newComponent = ReactValueContainer( key, childForms, List.empty)
           (ReactFormValue( key, false, ReactComponentReference(key)), newComponent :: childComponents)
         }
-      case s: SumTypeData[a,b] =>
-        valueDefinition(s.from)
-
     }
 }

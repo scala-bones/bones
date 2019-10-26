@@ -220,17 +220,6 @@ object DbUpdateValues {
                              result.predefineUpdateStatements,
                              fa)
           }
-      case s: SumTypeData[a, b] =>
-        val valueF = valueDefinition(s.from)
-        (i, k) =>
-          {
-            val result = valueF(i, k)
-            val fa = (input: A) =>
-              result.actionableUpdateStatements(s.fba(input))
-            DefinitionResult(result.lastIndex,
-                             result.predefineUpdateStatements,
-                             fa)
-          }
     }
 
 }

@@ -193,11 +193,6 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
           val (name, out) = fc(c.aToC(input))
           addStringField(out, coproductTypeKey, name)
         }
-      case s: SumTypeData[a,b] =>
-        input: A => ???
-//          val fh = s.typeToConversion(input)
-//          val out = valueDefinition(fh).apply(input)
-//          addStringField(out, "type", fh.manifestOfA.runtimeClass.getSimpleName)
     }
 
 }

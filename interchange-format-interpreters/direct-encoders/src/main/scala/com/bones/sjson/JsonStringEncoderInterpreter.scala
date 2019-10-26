@@ -138,10 +138,6 @@ trait JsonStringEncoderInterpreter {
       case co: KvpCoproductConvert[c,a] =>
         val fromDef = kvpCoproduct(co.from)
         (input: A) => fromDef(co.aToC(input))
-      case s: SumTypeData[a, b]           =>
-        val fh = valueDefinition(s.from)
-        input: A =>
-          fh(s.fba(input)).map("{" + _ + "}")
     }
 
 

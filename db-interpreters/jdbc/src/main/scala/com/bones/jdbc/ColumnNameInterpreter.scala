@@ -59,8 +59,6 @@ object ColumnNameInterpreter {
       case x: HListConvert[a, al, b] =>
         _ =>
           kvpHList(x.from)
-      case s: SumTypeData[a, b] =>
-        valueDefinition(s.from)
     }
 
 }
