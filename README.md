@@ -67,7 +67,8 @@ REST CRUD apps.
  
 This example uses the Scala http4s with schema defined above and for less than 11 LINES OF CODE, provides full CRUD functionality writing to 
 a JDBC datasource.  It provides 3 interchange formats: JSON, BSON and Protobuf (yes, protobuf!), 
-a protofile describing the data and OAS3 compliant Schema.
+and finally a protofile describing the data and OAS3 compliant Schema.  The idea is that this will work for any Bones Schema Values
+(although there are currently some limitation on Coproduct which will be fixed soon).
 
 
 ```$scala
@@ -98,19 +99,20 @@ object PersonEndpoint extends LocalhostAllIOApp {
 ### List of Interpreters
 
 Serializer / Marhsaller Interpreters
-* [Circe](interchante-format-interpreters/circe)
-* [BSON](interchante-format-interpreters/bson)
-* [Argonaut](interchante-format-interpreters/argonaut)
-* [lift-json](interchante-format-interpreters/lift-json)
-* [protobuf](interchante-format-interpreters/protobuf)
+* [Circe](interchante-format-interpreters/circe/README.md)
+* [BSON](interchante-format-interpreters/bson/README.md)
+* [Argonaut](interchante-format-interpreters/argonaut/README.md)
+* [lift-json](interchante-format-interpreters/lift-json/README.md)
+* [protobuf](interchante-format-interpreters/protobuf/README.md)
 
 HTTP REST Interpreters
-* [http4s](rest-interpreteres/http4s-interpreter)
+* [http4s](rest-interpreteres/http4s-interpreter/README.md)
 
 Incomplete Interpreters
-* [swagger](interchante-format-interpreters/swagger-oas3) - Does not currently support Coproduc
-* [React](client-interpreters/react) - This is more of a POC.  Does not currently support Coproducts
-* [http4s-client](client-interpreters/http4s-client) - Not Implemented 
+* [swagger](interchante-format-interpreters/swagger-oas3/README.md) - Does not currently support Coproduc
+* [dbJdbc](db-interpreters/jdbc/README.md) - Does not currently support coproducts
+* [React](client-interpreters/react/README.md) - This is more of a POC.  Does not currently support Coproducts
+* [http4s-client](client-interpreters/http4s-client/README.md) - Not Implemented 
 
 
 ## Download
