@@ -121,9 +121,13 @@ Incomplete Interpreters
 Version 0.5.0 includes validation, CRUD and the http4s REST Interpreter.
 
 
-#### Http4s Circe Interpreter (currently the only interpreter)
+#### Getting Started with Http4s Circe Interpreter
 Basic CRUD capabilities implemented with http4s, circe and doobie.
-```libraryDependencies += "com.github.oletraveler" %% "bones-http4s-circe" % "0.5.0"```
+
+```libraryDependencies += "com.github.oletraveler" %% "examples" % "0.5.0"```
+
+Then check out the [LocalhostAll Example](examples/http4s-examples/src/main/scala/com/bones/fullstack/LocalhostAll.scala)
+and the 
 
 ### CI
 [![Build Status](https://travis-ci.org/OleTraveler/bones.svg?branch=master)](https://travis-ci.org/OleTraveler/bones)
