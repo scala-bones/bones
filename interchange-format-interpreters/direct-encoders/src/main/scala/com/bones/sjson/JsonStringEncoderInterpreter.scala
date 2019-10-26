@@ -4,7 +4,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Base64
 
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
-import com.bones.data.Value._
+import com.bones.data._
 import shapeless.{::, Coproduct, HList, Inl, Inr, Nat}
 import org.apache.commons.text.StringEscapeUtils.escapeJson
 

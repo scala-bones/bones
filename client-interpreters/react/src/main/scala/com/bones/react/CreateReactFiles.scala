@@ -1,6 +1,6 @@
 package com.bones.react
 
-import com.bones.data.Value.BonesSchema
+import com.bones.data.BonesSchema
 import com.bones.react.CreateReactFile.ReactFile
 
 /**

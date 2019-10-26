@@ -6,7 +6,7 @@ import java.util.UUID
 import cats.data.NonEmptyList
 import com.bones.data.Error.ExtractionError
 import com.bones.data.{KeyValueDefinition, KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
-import com.bones.data.Value._
+import com.bones.data._
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.CoproductType
 import shapeless.{::, Coproduct, HList, Inl, Inr, Nat}
 import KvpInterchangeFormatValidatorInterpreter.coproductTypeKey

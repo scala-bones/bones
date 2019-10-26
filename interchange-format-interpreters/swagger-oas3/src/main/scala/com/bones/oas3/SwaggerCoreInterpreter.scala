@@ -3,7 +3,7 @@ package com.bones.oas3
 import java.util.UUID
 
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
-import com.bones.data.Value._
+import com.bones.data._
 import com.bones.validation.ValidationDefinition.{InvalidValue, ValidValue, ValidationOp, BigDecimalValidation => bdv, LongValidation => iv, StringValidation => sv}
 import io.swagger.v3.oas.models.media._
 import shapeless.{Coproduct, HList, Nat}

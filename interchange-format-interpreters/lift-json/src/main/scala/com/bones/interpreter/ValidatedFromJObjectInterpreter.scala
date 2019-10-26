@@ -7,16 +7,16 @@ import java.util.UUID
 
 import cats.data.NonEmptyList
 import com.bones.data.Error._
-import com.bones.data.{KeyValueDefinition, Value}
+import com.bones.data._
 import net.liftweb.json.JsonAST._
 import com.bones.Util._
-import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.Path
+import com.bones.data.KvpValue.Path
 import net.liftweb.json.JsonParser.ParseException
 
 import scala.util.Try
 
 object ValidatedFromJObjectInterpreter {
-  def isoInterpreter = new ValidatedFromJObjectInterpreter {
+  def isoInterpreter: ValidatedFromJObjectInterpreter = new ValidatedFromJObjectInterpreter {
     override def localDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
     override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
   }
@@ -36,7 +36,7 @@ trait ValidatedFromJObjectInterpreter
   }
 
 
-  def byteArrayFuncFromSchema[A](schema: Value.BonesSchema[A],
+  def byteArrayFuncFromSchema[A](schema: BonesSchema[A],
                                           charset: Charset)
     : Array[Byte] => Either[NonEmptyList[ExtractionError], A] = {
     val unmarshallFunction = fromSchema(schema)
@@ -69,7 +69,7 @@ trait ValidatedFromJObjectInterpreter
     }
   }
 
-  override def extractString[A](op: Value.KvpValue[A], clazz: Class[_])(
+  override def extractString[A](op: KvpValue[A], clazz: Class[_])(
       in: JValue,
       path: List[String]): Either[NonEmptyList[ExtractionError], String] =
     in match {
@@ -77,7 +77,7 @@ trait ValidatedFromJObjectInterpreter
       case _          => Left(NonEmptyList.one(WrongTypeError(path, clazz, in.getClass)))
     }
 
-  override def extractLong(op: Value.LongData)(
+  override def extractLong(op: LongData)(
       in: JValue,
       path: List[String]): Either[NonEmptyList[ExtractionError], Long] =
     in match {
@@ -95,7 +95,7 @@ trait ValidatedFromJObjectInterpreter
     }
 
 
-  override def extractShort(op: Value.ShortData)(in: JValue, path: Path): Either[NonEmptyList[ExtractionError], Short] =
+  override def extractShort(op: ShortData)(in: JValue, path: Path): Either[NonEmptyList[ExtractionError], Short] =
     in match {
       case JInt(i)    => Right(i.toShort)
       case JDouble(i) => Right(i.toShort)
@@ -103,7 +103,7 @@ trait ValidatedFromJObjectInterpreter
         Left(NonEmptyList.one(WrongTypeError(path, classOf[Int], in.getClass)))
     }
 
-  override def extractInt(op: Value.IntData)(
+  override def extractInt(op: IntData)(
       in: JValue,
       path: List[String]): Either[NonEmptyList[ExtractionError], Int] =
     in match {
@@ -113,7 +113,7 @@ trait ValidatedFromJObjectInterpreter
         Left(NonEmptyList.one(WrongTypeError(path, classOf[Int], in.getClass)))
     }
 
-  override def extractFloat(op: Value.FloatData)(
+  override def extractFloat(op: FloatData)(
       in: JValue,
       path: List[String]): Either[NonEmptyList[ExtractionError], Float] =
     in match {
@@ -123,7 +123,7 @@ trait ValidatedFromJObjectInterpreter
         Left(NonEmptyList.one(WrongTypeError(path, classOf[Int], in.getClass)))
     }
 
-  override def extractDouble(op: Value.DoubleData)(
+  override def extractDouble(op: DoubleData)(
       in: JValue,
       path: List[String]): Either[NonEmptyList[ExtractionError], Double] =
     in match {
@@ -133,7 +133,7 @@ trait ValidatedFromJObjectInterpreter
         Left(NonEmptyList.one(WrongTypeError(path, classOf[Double], in.getClass)))
     }
 
-  override def extractBool(op: Value.BooleanData)(
+  override def extractBool(op: BooleanData)(
       in: JValue,
       path: List[String]): Either[NonEmptyList[ExtractionError], Boolean] =
     in match {
@@ -143,7 +143,7 @@ trait ValidatedFromJObjectInterpreter
           NonEmptyList.one(WrongTypeError(path, classOf[Boolean], in.getClass)))
     }
 
-  override def extractUuid(op: Value.UuidData)(
+  override def extractUuid(op: UuidData)(
       in: JValue,
       path: List[String]): Either[NonEmptyList[ExtractionError], UUID] =
     in match {
@@ -154,7 +154,7 @@ trait ValidatedFromJObjectInterpreter
     }
 
   override def extractLocalDateTime(
-      op: Value.LocalDateTimeData)(in: JValue, path: List[String])
+      op: LocalDateTimeData)(in: JValue, path: List[String])
     : Either[NonEmptyList[ExtractionError], LocalDateTime] =
     in match {
       case JString(s) => stringToLocalDateTime(s, localDateTimeFormatter, path)
@@ -165,7 +165,7 @@ trait ValidatedFromJObjectInterpreter
 
 
   override def extractLocalDate(
-      op: Value.LocalDateData)(in: JValue, path: List[String])
+      op: LocalDateData)(in: JValue, path: List[String])
     : Either[NonEmptyList[ExtractionError], LocalDate] =
     in match {
       case JString(s) => stringToLocalDate(s, localDateFormatter, path)
@@ -173,7 +173,7 @@ trait ValidatedFromJObjectInterpreter
         Left(NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass)))
     }
 
-  override def extractArray[A](op: Value.ListData[A])(
+  override def extractArray[A](op: ListData[A])(
       in: JValue,
       path: List[String]): Either[NonEmptyList[ExtractionError], Seq[JValue]] =
     in match {
@@ -184,7 +184,7 @@ trait ValidatedFromJObjectInterpreter
             WrongTypeError(path, classOf[Array[_]], in.getClass)))
     }
 
-  override def extractBigDecimal(op: Value.BigDecimalData)(
+  override def extractBigDecimal(op: BigDecimalData)(
       in: JValue,
       path: List[String]): Either[NonEmptyList[ExtractionError], BigDecimal] =
     in match {

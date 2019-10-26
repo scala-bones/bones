@@ -1,6 +1,6 @@
 package com.bones.react
 
-import com.bones.data.Value.BonesSchema
+import com.bones.data.BonesSchema
 import com.bones.react.FormInterpreter._
 import com.bones.react.ReactDataInterpreter.{KeyHierarchy, ReactComponentData}
 

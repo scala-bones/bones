@@ -4,11 +4,11 @@ import java.time.{LocalDate, LocalDateTime}
 import java.util.{Base64, UUID}
 
 import cats.data.NonEmptyList
-//import cats.implicits._
+import com.bones.data.KvpValue.Path
 import com.bones.Util
 import com.bones.data.Error._
 import com.bones.data.{KeyValueDefinition, KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
-import com.bones.data.Value._
+import com.bones.data._
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.{ValidationUtil => vu}
 import shapeless.{CNil, Coproduct, HList, HNil, Inl, Inr, Nat}
@@ -17,7 +17,6 @@ import scala.util.Try
 
 object KvpInterchangeFormatValidatorInterpreter {
   /** Represents a path to an element, such as List("someClass", "someMember", "someField") */
-  type Path = List[String]
   type CoproductType = String
   val coproductTypeKey = "type"
 }

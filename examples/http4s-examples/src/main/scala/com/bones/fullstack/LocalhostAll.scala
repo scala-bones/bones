@@ -7,7 +7,7 @@ import cats.data.{Kleisli, NonEmptyList}
 import cats.effect._
 import cats.implicits._
 import com.bones.data.Error.ExtractionError
-import com.bones.data.Value.{BonesSchema, KvpNil}
+import com.bones.data.{BonesSchema, KvpNil}
 import com.bones.http4s.ClassicCrudInterpreter
 import com.bones.jdbc.{DbColumnInterpreter, DbUtil}
 import com.bones.react.{CreateReactFile, CreateReactFiles}
