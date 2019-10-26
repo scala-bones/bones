@@ -240,8 +240,6 @@ object ProtoFileInterpreter {
           (MessageField(EitherDataType(oneOfName, messageFieldA, messageFieldB), false, false, name, index), Vector.empty, lastIndex)
         case esd: EnumerationData[e,a] =>
           (MessageField(PbString, true, false, name, index), Vector.empty, index)
-        case st: SumTypeData[a, b] =>
-          (MessageField(PbString, true, false, name, index), Vector.empty, index)
         case kvp: KvpCoproductValue[c] =>
           val (fields, nestedTypes,nextIndex) = kvpCoproduct(kvp.kvpCoproduct)(index)
           val nestedMessageFields: Vector[MessageField] = nestedTypes.zipWithIndex.map(nt => MessageField(NestedDataType(nt._1.name), false, false, nt._1.name, index + nt._2))

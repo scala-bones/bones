@@ -89,7 +89,5 @@ object ReactDataInterpreter {
             case None => groupData
           }
         }
-      case s: SumTypeData[a,b] =>
-        valueDefinition(s.from)
     }
 }

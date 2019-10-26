@@ -336,12 +336,6 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
                 op.manifestOfA)
             } yield enum.asInstanceOf[A]
 
-        case op: SumTypeData[a, A] =>
-          val valueF = valueDefinition(op.from)
-          (in: Option[IN], path: Path) => {
-            valueF(in, path).flatMap(res =>
-              op.fab(res, path).left.map(NonEmptyList.one))
-          }
         case op: KvpHListValue[h, hl] => {
           val fg: (IN, List[String]) => Either[NonEmptyList[ExtractionError], h] = kvpHList(op.kvpHList)
           (jsonOpt: Option[IN], path: Path) => {

@@ -360,18 +360,6 @@ object ProtobufSequentialOutputInterpreter {
                 write(_.writeString(fieldNumber, a.toString))
               )
           )
-      case st: SumTypeData[a, b] =>
-        (fieldNumber: FieldNumber) => {
-          val (nextFieldNumber, enc) = valueDefinition(st.from)(fieldNumber)
-          (
-            nextFieldNumber,
-            (out: A) =>
-              {
-                val a = st.fba(out)
-                enc(a)
-              }
-          )
-        }
       case kvp: KvpHListValue[h, hl] =>
         (fieldNumber: FieldNumber) =>
           val (nextFieldNumber, enc) = kvpHList(kvp.kvpHList)(1)

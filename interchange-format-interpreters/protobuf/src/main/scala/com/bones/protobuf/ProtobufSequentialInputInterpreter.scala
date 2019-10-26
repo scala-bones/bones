@@ -433,21 +433,6 @@ object ProtobufSequentialInputInterpreter {
              }
             )
           }
-      case sum: SumTypeData[a, b] => {
-        val fValueDefinition = valueDefinition(sum.from)
-        (last: LastFieldNumber, path: Path) =>
-          {
-            val (tags, lastFieldNumber, f) = fValueDefinition(last, path)
-
-            val fCis = (canReadTagInput: CanReadTag, cis: CodedInputStream) => {
-              val (canRead, result) = f(canReadTagInput, cis)
-              val convertedResult = result.flatMap(a =>
-                  sum.fab(a, path).left.map(x => NonEmptyList.one(x)))
-              (canRead, convertedResult)
-            }
-            (tags, lastFieldNumber, fCis)
-          }
-      }
       case kvp: KvpCoproductValue[c] => {
         val group = kvpCoproduct(kvp.kvpCoproduct, kvp)
         (last: LastFieldNumber, path: Path) =>

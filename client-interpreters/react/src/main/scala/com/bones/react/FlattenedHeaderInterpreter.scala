@@ -64,8 +64,6 @@ object FlattenedHeaderInterpreter {
         _ => kvpHList(kvp.kvpHList)
       case x: HListConvert[a,al,b] =>
         _ => kvpHList(x.from)
-      case s: SumTypeData[a,b] =>
-        _ => valueDefinition(s.from)(None)
     }
 
 }

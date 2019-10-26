@@ -202,11 +202,6 @@ trait SwaggerCoreInterpreter {
             nullableStringSchema
           }
 
-      case x: SumTypeData[a, b] =>
-        val obj = fromValueDef(x.from)
-        schema =>
-          obj(schema)
-
       case gd: KvpHListValue[h, hl] =>
         fromKvpHList(gd.kvpHList)
       case x: HListConvert[_, _, a] =>
