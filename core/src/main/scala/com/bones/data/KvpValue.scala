@@ -129,7 +129,6 @@ final case class KvpCoproductValue[C <: Coproduct: Manifest](kvpCoproduct: KvpCo
   extends KvpValue[C]
     with ToOptionalData[C]
     with ToListData[C]
-    with BonesSchema[C]
 {}
 
 /** Specifies a conversion to and from an HList to an A (where A is most likely a Case class) */

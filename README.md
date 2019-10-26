@@ -104,6 +104,7 @@ Serializer / Marhsaller Interpreters
 * [Argonaut](interchange-format-interpreters/argonaut/README.md)
 * [lift-json](interchange-format-interpreters/lift-json/README.md)
 * [protobuf](interchange-format-interpreters/protobuf/README.md)
+* [scalatest](test-interpreters/scalacheck/README.md)
 
 HTTP REST Interpreters
 * [http4s](rest-interpreters/http4s-interpreter/README.md)
