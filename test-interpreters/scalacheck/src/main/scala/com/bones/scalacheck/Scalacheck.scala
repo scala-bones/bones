@@ -16,6 +16,11 @@ import wolfendale.scalacheck.regexp.RegexpGen
 
 object Scalacheck {
 
+  def createGen[A](bonesSchema: BonesSchema[A]) : Gen[A] =
+    bonesSchema match {
+      case co: KvpCoproductConvert[c,a] => valueDefinition(co)
+      case co: HListConvert[h,n,a] => valueDefinition(co)
+    }
 
   def kvpCoproduct[C<:Coproduct](co: KvpCoproduct[C]): List[Gen[C]] = {
     co match {
