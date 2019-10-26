@@ -1,6 +1,6 @@
 package com.bones.interpreter
 
-import com.bones.data.Value.KvpNil
+import com.bones.data.KvpNil
 import com.bones.syntax._
 import net.liftweb.json.JsonAST.{JField, JInt, JObject, JString}
 import org.scalatest.FunSuite

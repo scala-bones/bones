@@ -3,7 +3,7 @@ package com.bones.data
 import java.time.{LocalDate, LocalDateTime}
 import java.util.UUID
 
-import com.bones.data.Value._
+import com.bones.data._
 import com.bones.validation.ValidationDefinition.ValidationOp
 import shapeless.{Coproduct, HList, Nat}
 

@@ -6,7 +6,7 @@ import cats.data.NonEmptyList
 import cats.effect.IO
 import com.bones.circe.CirceValidatorInterpreter
 import com.bones.data.Error.ExtractionError
-import com.bones.data.Value.BonesSchema
+import com.bones.data.BonesSchema
 import org.http4s.client.Client
 
 object Http4sClient {

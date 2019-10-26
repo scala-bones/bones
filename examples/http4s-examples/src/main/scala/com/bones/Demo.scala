@@ -1,7 +1,7 @@
 package com.bones
 
 import cats.effect.IO
-import com.bones.data.Value.KvpNil
+import com.bones.data.KvpNil
 import com.bones.fullstack.LocalhostAllIOApp
 import com.bones.syntax._
 import com.bones.validation.ValidationDefinition.{BigDecimalValidation => dv, StringValidation => sv}

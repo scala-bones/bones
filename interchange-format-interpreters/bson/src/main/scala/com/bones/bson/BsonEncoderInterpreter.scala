@@ -4,7 +4,7 @@ import java.time.{LocalDate, LocalDateTime, ZoneOffset}
 import java.util.{Base64, UUID}
 
 import com.bones.data.KeyValueDefinition
-import com.bones.data.Value._
+import com.bones.data._
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
 import reactivemongo.bson.buffer.ArrayBSONBuffer
 import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDecimal, BSONDocument, BSONElement, BSONInteger, BSONLong, BSONNull, BSONString, BSONValue}

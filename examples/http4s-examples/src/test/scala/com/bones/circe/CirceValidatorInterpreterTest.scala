@@ -1,6 +1,6 @@
 package com.bones.circe
 
-import com.bones.data.Value.KvpNil
+import com.bones.data.KvpNil
 import com.bones.syntax._
 import io.circe.{Json => CJson}
 import org.scalatest.FunSuite

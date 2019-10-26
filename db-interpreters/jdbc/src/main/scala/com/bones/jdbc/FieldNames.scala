@@ -2,7 +2,7 @@ package com.bones.jdbc
 
 import java.util.{Calendar, TimeZone}
 
-import com.bones.data.Value._
+import com.bones.data._
 import com.bones.jdbc.DbUtil.camelToSnake
 import shapeless.{HList, Nat}
 

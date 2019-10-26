@@ -11,9 +11,10 @@ import cats.data.NonEmptyList
 import cats.implicits._
 import com.bones.data.Error.{ExtractionError, ParsingError, RequiredData, WrongTypeError}
 import com.bones.data.KeyValueDefinition
-import com.bones.data.Value._
+import com.bones.data._
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
 import com.bones.Util._
+import com.bones.data.KvpValue.Path
 
 import scala.util.control.NonFatal
 

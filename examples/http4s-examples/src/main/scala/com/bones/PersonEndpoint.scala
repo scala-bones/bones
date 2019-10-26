@@ -3,7 +3,7 @@ package com.bones
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.info.Info
 import cats.effect.IO
-import com.bones.data.Value.KvpNil
+import com.bones.data.KvpNil
 import com.bones.fullstack.LocalhostAllIOApp
 import com.bones.syntax._
 import com.bones.validation.ValidationDefinition.{LongValidation => iv, StringValidation => sv}

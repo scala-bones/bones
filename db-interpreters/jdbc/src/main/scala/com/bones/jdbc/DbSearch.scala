@@ -5,7 +5,7 @@ import java.sql.{Connection, ResultSet}
 import cats.data.NonEmptyList
 import cats.effect.IO
 import com.bones.data.Error.ExtractionError
-import com.bones.data.Value.{BonesSchema, HListConvert}
+import com.bones.data.{BonesSchema, HListConvert}
 import com.bones.jdbc.DbUtil.camelToSnake
 import fs2.Stream
 import fs2.Stream.bracket

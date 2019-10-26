@@ -2,7 +2,7 @@ package com.bones.react
 
 import java.time.{LocalDate, LocalDateTime}
 
-import com.bones.data.Value._
+import com.bones.data._
 import com.bones.validation.ValidationDefinition.StringValidation.MaxLength
 import shapeless.{HList, Nat}
 

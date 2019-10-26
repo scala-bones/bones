@@ -8,7 +8,7 @@ import cats.data.NonEmptyList
 import com.bones.Util
 import com.bones.Util.{stringToEnumeration, stringToUuid}
 import com.bones.data.Error.{ExtractionError, RequiredData, SystemError}
-import com.bones.data.Value._
+import com.bones.data._
 import DbUtil.camelToSnake
 import FindInterpreter.{FieldName, Path, utcCalendar}
 import shapeless.{HList, HNil, Nat}
