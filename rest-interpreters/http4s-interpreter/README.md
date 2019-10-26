@@ -2,7 +2,6 @@
 
 This module is used to provide Http4s routes for a schema.
 
-
 Currently supported is a CRUD interface for a given Schema.
 
 For instance, if a schema is defined as such:

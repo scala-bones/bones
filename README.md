@@ -20,15 +20,11 @@ String, Int, Boolean, Either, Long, List, Short, Float, Double, BigDecimal, Byte
 LocalDate, UUID, Enumeration
 ```
 
-Product Types (Tuples) and Sum Types (traits/case classes) are also support.
+Product Types (Shapeless HList/ Case classes) and Sum Types (traits/case classes or Shapeless Coproducts) are also supported.
 
 Note: *Custom user defined types are currently not supported.*  For instance, something like 
 the java.io.File type can not be represented.  TODO: The goal of the next version (0.6.0) is to 
 make the interpreters coproduct aware, in order to support custom user defined types.  
- 
- 
- 
- 
  
 
 ### Schema DSL
@@ -114,6 +110,23 @@ object PersonEndpoint extends LocalhostAllIOApp {
 }
 ```
 
+### List of Interpreters
+
+Serializer / Marhsaller Interpreters
+* [Circe](interchante-format-interpreters/circe)
+* [BSON](interchante-format-interpreters/bson)
+* [Argonaut](interchante-format-interpreters/argonaut)
+* [lift-json](interchante-format-interpreters/lift-json)
+* [protobuf](interchante-format-interpreters/protobuf)
+
+HTTP REST Interpreters
+* [http4s](rest-interpreteres/http4s-interpreter)
+
+Incomplete Interpreters
+* [swagger](interchante-format-interpreters/swagger-oas3) - Does not currently support Coproduc
+* [React](client-interpreters/react) - This is more of a POC.  Does not currently support Coproducts
+* [http4s-client](client-interpreters/http4s-client) - Not Implemented 
+
 
 ## Download
 
@@ -122,7 +135,7 @@ Version 0.5.0 includes validation, CRUD and the http4s REST Interpreter.
 
 #### Http4s Circe Interpreter (currently the only interpreter)
 Basic CRUD capabilities implemented with http4s, circe and doobie.
-```libraryDependencies += "com.github.oletraveler" %% "bones-http4s-circe" % "0.5.0-SNAPSHOT"```
+```libraryDependencies += "com.github.oletraveler" %% "bones-http4s-circe" % "0.5.0"```
 
 ### CI
 [![Build Status](https://travis-ci.org/OleTraveler/bones.svg?branch=master)](https://travis-ci.org/OleTraveler/bones)
