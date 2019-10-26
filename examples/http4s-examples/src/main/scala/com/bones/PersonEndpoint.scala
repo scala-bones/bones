@@ -1,17 +1,22 @@
 package com.bones
 
-import io.swagger.v3.oas.models.OpenAPI
-import io.swagger.v3.oas.models.info.Info
 import cats.effect.IO
 import com.bones.data.KvpNil
 import com.bones.fullstack.LocalhostAllIOApp
+import com.bones.fullstack.LocalhostAllIOApp._
 import com.bones.syntax._
 import com.bones.validation.ValidationDefinition.{LongValidation => iv, StringValidation => sv}
 import com.zaxxer.hikari.HikariDataSource
 import org.http4s.HttpRoutes
 
 
-object Definitions {
+/** Example endpoint.  This creates a complete application which saves a person to a local database including:
+  * JSON endpoints, Protobuf Endpoints, 5 CRUD Endpoints (Get, Put, Post, Delete, Search All),
+  * Swagger, DB DDL.
+  */
+object PersonEndpoint extends LocalhostAllIOApp {
+
+  val ds: HikariDataSource = localhostDataSource
 
   case class Person(name: String, age: Long, gender: Option[String])
 
@@ -22,25 +27,7 @@ object Definitions {
       KvpNil
     ).convert[Person]
 
-}
-
-
-object PersonDoc extends App {
-  val info = new Info()
-    .description("Test Person Endpoint")
-    .title("Person")
-    .version("1.0")
-
-  val openApi = new OpenAPI()
-
-}
-
-object PersonEndpoint extends LocalhostAllIOApp {
-
-  import LocalhostAllIOApp._
-
-  val ds: HikariDataSource = localhostDataSource
 
   override def services: HttpRoutes[IO] =
-    serviceRoutesWithCrudMiddleware("person", Definitions.personSchema, ds)
+    serviceRoutesWithCrudMiddleware("person", personSchema, ds)
 }
