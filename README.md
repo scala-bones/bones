@@ -65,48 +65,33 @@ such as write to Kafka, S3, a Database or an external services, the boilerplate 
 This project is to provide a common vocabulary for any service, however this project is currently focused on 
 REST CRUD apps.
  
-This example uses the Scala http4s with schema defined above and for less than 40 LINES OF CODE, provides full CRUD functionality writing to 
+This example uses the Scala http4s with schema defined above and for less than 11 LINES OF CODE, provides full CRUD functionality writing to 
 a JDBC datasource.  It provides 3 interchange formats: JSON, BSON and Protobuf (yes, protobuf!), 
 a protofile describing the data and OAS3 compliant Schema.
 
 
 ```$scala
+/** Example endpoint.  This creates a complete application which saves a person to a local database including:
+  * JSON endpoints, Protobuf Endpoints, 5 CRUD Endpoints (Get, Put, Post, Delete, Search All),
+  * Swagger, DB DDL.
+  */
+
 object PersonEndpoint extends LocalhostAllIOApp {
 
-  import LocalhostAllIOApp._
-
   val ds: HikariDataSource = localhostDataSource
-  
-  case class BasicError(message: String)
-  private val basicErrorSchema =
-    (kvp("message", com.bones.syntax.string) :: KvpNil).convert[BasicError]  
 
-  override def services: HttpRoutes[IO] = {
-    val path = "person"
-    
-    
-    val middleware = CrudDbDefinitions(schema, ds)
+  case class Person(name: String, age: Long, gender: Option[String])
+
+  val personSchema = (
+    kvp("name", string(sv.matchesRegex("^[a-zA-Z ]*$".r))) ::
+      kvp("age", long(iv.min(0))) ::
+      kvp("gender", string.optional) ::
+      KvpNil
+    ).convert[Person]
 
 
-    val interpreter = ClassicCrudInterpreter.allVerbs[A,BasicError,IO,Long](
-      path,
-      StandardCharsets.UTF_8,
-      personSchema,
-      kvp("id", long(lv.min(1))),
-      str => Try(str.toLong).toEither.left.map(ex => BasicError("Could not convert parameter to a Long value")),
-      basicErrorSchema,
-      Kleisli(middleware.createF).map(_.left.map(e => extractionErrorToBasicError(e))).run,
-      Kleisli(middleware.readF).map(_.left.map(e => extractionErrorsToBasicError(e))).run,
-      Function.untupled(Kleisli(middleware.updateF.tupled).map(_.left.map(e => extractionErrorsToBasicError(e))).run),
-      Kleisli(middleware.deleteF).map(_.left.map(e => extractionErrorsToBasicError(e))).run,
-      () => middleware.searchF
-    )
-
-    val dbRoutes = dbSchemaEndpoint(path, schema)
-
-    interpreter.createRoutes <+> dbRoutes  
-  }
-    
+  override def services: HttpRoutes[IO] =
+    serviceRoutesWithCrudMiddleware("person", personSchema, ds)
 }
 ```
 
