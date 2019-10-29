@@ -36,7 +36,7 @@ class BsonTest extends FunSuite with Checkers with MustMatchers {
       val doc = BSONDocument.read(readBuffer)
 
 
-      val newCc = bsonToCc.apply(doc, List.empty)
+      val newCc = bsonToCc.apply(doc)
 
       newCc match {
         case Left(x) =>

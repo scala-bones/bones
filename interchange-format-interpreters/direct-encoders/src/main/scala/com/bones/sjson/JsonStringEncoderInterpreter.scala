@@ -10,6 +10,8 @@ import org.apache.commons.text.StringEscapeUtils.escapeJson
 
 object JsonStringEncoderInterpreter {
 
+  type CoproductType = String
+
   /**
     * Implementation of the JsonStringEncoderInterpreter assuming dates are String with Iso format.
     */
@@ -25,26 +27,34 @@ object JsonStringEncoderInterpreter {
   */
 trait JsonStringEncoderInterpreter {
 
+  import JsonStringEncoderInterpreter.CoproductType
+
   val dateTimeFormatter: DateTimeFormatter
   val dateFormatter: DateTimeFormatter
 
+  def apply[A](bonesSchema: BonesSchema[A]): A => Option[String] =
+    bonesSchema match {
+      case kvp: HListConvert[h,n,a] => valueDefinition(kvp)
+      case kvp: KvpCoproductConvert[c,a] => valueDefinition(kvp)
+    }
 
-  def kvpCoproduct[C<:Coproduct](kvp: KvpCoproduct[C]): C => Option[String] = {
+
+  private def kvpCoproduct[C<:Coproduct](kvp: KvpCoproduct[C]): C => (CoproductType, Option[String]) = {
     kvp match {
-      case KvpCoNil => _ => None
+      case KvpCoNil => _ => ("", None)
       case op: KvpSingleValueLeft[l,r] =>
         val valueF = valueDefinition(op.kvpValue)
         val valueT = kvpCoproduct(op.kvpTail)
         (input: C) =>
         {
           input match {
-            case Inl(left) => valueF(left)
+            case Inl(left) => (op.manifestH.runtimeClass.getSimpleName, valueF(left))
             case Inr(right) => valueT(right)
           }
         }
     }
   }
-  def kvpHList[H <: HList, HL <: Nat](group: KvpHList[H, HL]): H => Option[String] = {
+  private def kvpHList[H <: HList, HL <: Nat](group: KvpHList[H, HL]): H => Option[String] = {
     group match {
       case KvpNil                                          => _ => None
       case op: KvpSingleValueHead[h, t, tl, a]             =>
@@ -70,7 +80,7 @@ trait JsonStringEncoderInterpreter {
           val headOut = headF(l._1)
           val tailOut = tailF(l._2)
           (headOut, tailOut) match {
-            case (Some(h), Some(t)) => Some(h + t)
+            case (Some(h), Some(t)) => Some(h + "," + t)
             case (None, _) => tailOut
             case (_,None) => headOut
           }
@@ -131,13 +141,23 @@ trait JsonStringEncoderInterpreter {
         (input: A) => hListDef(input.asInstanceOf[h]).map("{" + _ + "}")
       case kvp: KvpCoproductValue[c] =>
         val coproductDef = kvpCoproduct(kvp.kvpCoproduct)
-        (input: A) => coproductDef(input.asInstanceOf[c]).map("{" + _ + "}")
+        (input: A) => {
+          val (coproductType, json) = coproductDef(input.asInstanceOf[c])
+          json.map(str => {
+            s"""{"type":"${coproductType}", ${str.substring(1)} """
+          }).orElse(Some(s"""{"type":"${coproductType}"}"""))
+        }
       case x: HListConvert[a, al, b]      =>
         val fromDef = kvpHList(x.from)
         (input: A) => fromDef(x.fAtoH(input)).map("{" + _ + "}")
       case co: KvpCoproductConvert[c,a] =>
         val fromDef = kvpCoproduct(co.from)
-        (input: A) => fromDef(co.aToC(input))
+        (input: A) => {
+          val (coproductType, json) = fromDef(co.aToC(input))
+          json.map(str => {
+            s"""{"type":"${coproductType}", ${str.substring(1)} """
+          }).orElse(Some(s"""{"type":"${coproductType}"}"""))
+        }
     }
 
 

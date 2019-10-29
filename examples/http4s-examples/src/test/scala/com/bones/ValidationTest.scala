@@ -141,7 +141,7 @@ class ValidationTest extends FunSuite {
     val jsonToCCProgram = CirceValidatorInterpreter.isoInterpreter.fromSchema(creditCardSchema)
 
     //here, we will test that just the validations step is working
-    val btCc = jsonToCCProgram.apply(parsed, List.empty)
+    val btCc = jsonToCCProgram.apply(parsed)
 
     btCc match {
       case Left(NonEmptyList(head, tail)) => {
