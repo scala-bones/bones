@@ -14,8 +14,11 @@ object EncodeToJValueInterpreter {
   val isoInterpreter = new EncodeToJValueInterpreter {
     override def localDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
     override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
-
   }
+
+  def stringToJson(str: String) : JValue =
+    net.liftweb.json.parse(str)
+
 
 }
 

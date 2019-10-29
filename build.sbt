@@ -96,6 +96,8 @@ lazy val directEncoders = (project in file("interchange-format-interpreters/dire
     name := "Bones String Json",
     libraryDependencies ++= Seq (
       "org.apache.commons" % "commons-text" % "1.8",
+      "io.circe" %% "circe-core" % circeVersion % Test,
+      "io.circe" %% "circe-parser" % circeVersion % Test,
       "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
       "org.scalatest" %% "scalatest" % "3.0.8" % Test
     )
@@ -203,7 +205,7 @@ lazy val examples = (project in file("examples/http4s-examples"))
         "org.scalatest" %% "scalatest" % "3.0.8" % Test
 //        "org.easymock" % "easymock" % "3.5.1" % Test
       )
-    ).dependsOn(core, swaggerOas3, dbJdbc, restHttp4s, swaggerOas3, protobuf, react, testSchemas % "test", scalacheck % "test")
+    ).dependsOn(core, swaggerOas3, dbJdbc, restHttp4s, swaggerOas3, protobuf, react, jsonArgonaut % "test", bson % "test", directEncoders % "test", jsonLift % "test", testSchemas % "test", scalacheck % "test")
 lazy val protobufIntegrationTest = (project in file("interchange-format-interpreters/javapb-integration-test"))
     .settings(
       commonSettings,
@@ -223,5 +225,3 @@ testOptions in Test += Tests.Argument("-oF")
 
 resolvers += "tPoleCat" at "https://dl.bintray.com/tpolecat/maven/"
 resolvers += "wolfendale" at "https://dl.bintray.com/wolfendale/maven/"
-
-

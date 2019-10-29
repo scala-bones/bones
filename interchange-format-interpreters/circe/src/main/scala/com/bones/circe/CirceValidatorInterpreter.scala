@@ -41,10 +41,9 @@ trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
   Array[Byte] => Either[NonEmptyList[ExtractionError],A] = {
     val f = fromSchema(schema)
     bytes => {
-      fromByteArray(bytes, charset).flatMap(f(_,List.empty))
+      fromByteArray(bytes, charset).flatMap(f(_))
     }
   }
-
 
   def fromByteArray(arr: Array[Byte], charSet: Charset)
     : Either[NonEmptyList[ParsingError], Json] = {
