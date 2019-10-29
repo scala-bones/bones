@@ -27,7 +27,13 @@ class JsonStringEncoderInterpreterTest extends FunSuite with Checkers {
     check((cc: AllSupported) => {
       val json = ccF(cc)
       json match {
-        case Some(v) => succeed
+        case Some(str) =>
+          io.circe.parser.parse(str) match {
+            case Left(err) => {
+              fail(err.toString + str)
+            }
+            case Right(_) => succeed
+          }
         case None => fail("expected success")
       }
       true

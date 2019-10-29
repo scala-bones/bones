@@ -219,7 +219,29 @@ object Schemas {
                            child: AllSupportedOptional,
                            media: MusicMedium,
                            int2: Int
-                         )
+                         ) {
+
+    /** Adds special test to accommodate Array[Byte] */
+    def fancyEquals(that: AllSupported): Boolean = {
+      val nullBa = Array[Byte]()
+
+      //Arrays seem to only be equal when they reference the same object, so let's remove them form the whole object copy
+      val newThis = this.copy(ba = nullBa).copy(child = this.child.copy(ba = None))
+      val newThat = that.copy(ba = nullBa).copy(child = that.child.copy(ba = None))
+      val thisEqualsThat = newThis == newThat
+      val arraysAreEqual = java.util.Arrays.equals(this.ba, that.ba)
+      val childArrayIsEqual = (this.child.ba, that.child.ba) match {
+        case (None, None) => true
+        case (Some(a1), Some(a2)) => java.util.Arrays.equals(a1, a2)
+        case _ => false
+      }
+
+      thisEqualsThat &&
+        arraysAreEqual &&
+        childArrayIsEqual
+    }
+
+  }
 
 
   val allSupportCaseClass = allSupportedSchema.convert[AllSupported]

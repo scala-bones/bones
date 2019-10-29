@@ -52,7 +52,7 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
             .parse(str)
             .left
             .map(str => NonEmptyList.one(ParsingError(str)))
-            .flatMap(fromSchemaFunction(_, List.empty))
+            .flatMap(fromSchemaFunction(_))
         } catch {
           case NonFatal(ex) =>
             Left(NonEmptyList.one(ParsingError(ex.getMessage, Some(ex))))

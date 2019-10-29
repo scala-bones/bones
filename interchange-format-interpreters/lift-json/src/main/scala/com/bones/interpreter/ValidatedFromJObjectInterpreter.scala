@@ -45,7 +45,7 @@ trait ValidatedFromJObjectInterpreter
         val str = new String(bytes, charset)
         try {
           val jValue = net.liftweb.json.parse(str)
-          unmarshallFunction(jValue, List.empty)
+          unmarshallFunction(jValue)
         } catch {
           case ex: ParseException =>
             Left(NonEmptyList.one(ParsingError(ex.getMessage)))

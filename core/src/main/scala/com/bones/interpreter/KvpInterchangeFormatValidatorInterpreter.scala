@@ -38,11 +38,11 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
     * @return A function which takes the IN data and returns an Either[ExtractionError,A]
     */
   def fromSchema[A](schema: BonesSchema[A])
-  : (IN, List[String]) => Either[NonEmptyList[ExtractionError], A] =
+  : IN => Either[NonEmptyList[ExtractionError], A] =
     schema match {
       case x: HListConvert[_, _, A] =>
-        (in, path) =>
-          valueDefinition(x).apply(Some(in), path)
+        (in) =>
+          valueDefinition(x).apply(Some(in), List.empty)
     }
 
 
@@ -57,7 +57,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
     * @tparam A The type being extracted.
     * @return Either successful A or failure.  Should probably just return result from headInterpreterF.
     */
-  def headValue[A](in: IN,
+  protected def headValue[A](in: IN,
                    kv: KeyValueDefinition[A],
                    headInterpreterF: (
                        Option[IN],
@@ -73,49 +73,49 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
     * @tparam A The expected resulting type, eg String or Enumerated Type which we are trying to extract from a string.
     * @return The extracted String or an Error
     */
-  def extractString[A](op: KvpValue[A], clazz: Class[_])(
+  protected def extractString[A](op: KvpValue[A], clazz: Class[_])(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], String]
-  def extractInt(op: IntData)(
+  protected def extractInt(op: IntData)(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], Int]
-  def extractLong(op: LongData)(
+  protected def extractLong(op: LongData)(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], Long]
-  def extractBool(op: BooleanData)(
+  protected def extractBool(op: BooleanData)(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], Boolean]
-  def extractUuid(op: UuidData)(
+  protected def extractUuid(op: UuidData)(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], UUID]
-  def extractLocalDateTime(op: LocalDateTimeData)(
+  protected def extractLocalDateTime(op: LocalDateTimeData)(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], LocalDateTime]
-  def extractLocalDate(op: LocalDateData)(
+  protected def extractLocalDate(op: LocalDateData)(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], LocalDate]
-  def extractArray[A](op: ListData[A])(
+  protected def extractArray[A](op: ListData[A])(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], Seq[IN]]
-  def extractFloat(op: FloatData)(
+  protected def extractFloat(op: FloatData)(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], Float]
-  def extractDouble(op: DoubleData)(
+  protected def extractDouble(op: DoubleData)(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], Double]
-  def extractShort(op: ShortData)(
+  protected def extractShort(op: ShortData)(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], Short]
-  def extractBigDecimal(op: BigDecimalData)(
+  protected def extractBigDecimal(op: BigDecimalData)(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], BigDecimal]
-  def stringValue(in: IN, elementName: String): Option[String]
+  protected def stringValue(in: IN, elementName: String): Option[String]
   protected def invalidValue[T](
       in: IN,
       expected: Class[T],
       path: Path): Left[NonEmptyList[ExtractionError], Nothing]
 
-  def required[A](
+  protected def required[A](
                    op: KvpValue[A],
                    validations: List[ValidationOp[A]],
                    f: (IN, List[String]) => Either[NonEmptyList[ExtractionError], A],
@@ -129,7 +129,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
       } yield a
 
 
-  def kvpCoproduct[C<:Coproduct](co: KvpCoproduct[C]):
+  protected def kvpCoproduct[C<:Coproduct](co: KvpCoproduct[C]):
     (IN, Path, CoproductType) => Either[NonEmptyList[ExtractionError], C] = {
     co match {
       case KvpCoNil => (_:IN, path:List[String], coType: CoproductType) =>
@@ -212,9 +212,9 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
     }
   }
 
-  def isEmpty(json: IN): Boolean
+  protected def isEmpty(json: IN): Boolean
 
-  def valueDefinition[A](fgo: KvpValue[A])
+  protected def valueDefinition[A](fgo: KvpValue[A])
     : (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A] = {
     val result
       : (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A] =
