@@ -19,7 +19,7 @@ object InterchangePerformanceTests extends App {
 
   val scalaCheckInterpreter = Scalacheck.valueDefinition(schema)
 
-  val directInterpreter = JsonStringEncoderInterpreter.isoEncoder(schema)
+  val directInterpreter = JsonStringEncoderInterpreter.isoEncoder.fAtoString(schema)
 
   val circeValidator = CirceValidatorInterpreter.isoInterpreter.byteArrayFuncFromSchema(schema, Charset.defaultCharset())
   val circeEncoder = CirceEncoderInterpreter.isoInterpreter.fromSchema(schema)
@@ -43,7 +43,7 @@ object InterchangePerformanceTests extends App {
 
   System.gc()
   val directEncoderStart = System.currentTimeMillis()
-  val jsonObjects = objects.flatMap(i => directInterpreter(i))
+  val jsonObjects = objects.map(i => directInterpreter(i))
   val directEncoderEnd = System.currentTimeMillis()
   val success = jsonObjects.traverse(io.circe.parser.parse).isRight
   val jsonSize = jsonObjects.map(_.getBytes.length).sum
