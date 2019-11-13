@@ -32,10 +32,10 @@ trait JsonStringEncoderInterpreter {
   val dateTimeFormatter: DateTimeFormatter
   val dateFormatter: DateTimeFormatter
 
-  def apply[A](bonesSchema: BonesSchema[A]): A => Option[String] =
+  def fAtoString[A](bonesSchema: BonesSchema[A]): A => String =
     bonesSchema match {
-      case kvp: HListConvert[h,n,a] => valueDefinition(kvp)
-      case kvp: KvpCoproductConvert[c,a] => valueDefinition(kvp)
+      case kvp: HListConvert[h,n,a] => valueDefinition(kvp).andThen(_.getOrElse("{}"))
+      case kvp: KvpCoproductConvert[c,a] => valueDefinition(kvp).andThen(_.getOrElse("{}"))
     }
 
 

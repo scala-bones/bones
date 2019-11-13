@@ -28,7 +28,4 @@ case class KvpSingleValueLeft[L, R<:Coproduct](
 
 }
 
-//case class KvpCoproductHead[A, H<:Coproduct, T<: Coproduct](head: KvpCoproduct[A,H], tail: KvpCoproduct[A,T]) extends KvpCoproduct[H :+: T] {
-//
-//}
 
