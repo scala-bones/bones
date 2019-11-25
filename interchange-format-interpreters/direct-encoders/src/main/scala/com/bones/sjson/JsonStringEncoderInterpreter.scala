@@ -48,7 +48,7 @@ trait JsonStringEncoderInterpreter {
         (input: C) =>
         {
           input match {
-            case Inl(left) => (op.manifestH.runtimeClass.getSimpleName, valueF(left))
+            case Inl(left) => (op.manifestL.runtimeClass.getSimpleName, valueF(left))
             case Inr(right) => valueT(right)
           }
         }

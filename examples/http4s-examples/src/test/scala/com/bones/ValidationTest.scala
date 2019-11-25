@@ -153,7 +153,7 @@ class ValidationTest extends FunSuite {
 
   test("validations example") {
 
-//    import Schemas._
+//    import SwaggerSchemas._
 //
 //    //sorry, we still use lift in my projects.  I will soon createOperation a Circe JsonExtract.
 //    val parsed = net.liftweb.json.parse(cc)

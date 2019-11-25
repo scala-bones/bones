@@ -21,9 +21,9 @@ abstract class KvpCoproduct[C <: Coproduct] {
 case object KvpCoNil extends KvpCoproduct[CNil]
 
 case class KvpSingleValueLeft[L, R<:Coproduct](
-  kvpValue: KvpValue[L],
-  kvpTail: KvpCoproduct[R],
-  manifestH: Manifest[L]
+                                                kvpValue: KvpValue[L],
+                                                kvpTail: KvpCoproduct[R],
+                                                manifestL: Manifest[L]
   ) extends KvpCoproduct[L:+:R] {
 
 }

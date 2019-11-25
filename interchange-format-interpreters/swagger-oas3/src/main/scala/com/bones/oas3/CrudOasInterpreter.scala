@@ -9,6 +9,10 @@ import io.swagger.v3.oas.models.responses.{ApiResponse, ApiResponses}
 
 import scala.collection.JavaConverters._
 
+/**
+  * Responsible for creating a full CRUD Swagger definition including paths and data.
+  *
+  */
 object CrudOasInterpreter {
 
   def jsonApiForService[A, E, ID](
@@ -106,10 +110,12 @@ object CrudOasInterpreter {
              urlPath: String): OpenAPI => OpenAPI = { openAPI =>
     val outputEntityName = outputSchema._2
 
-    val inputSchema =
-      SwaggerCoreInterpreter(outputSchema._1).name(outputEntityName)
+    val inputSchemas =
+      SwaggerCoreInterpreter(outputSchema._1)(outputEntityName)
 
-    upsertComponent(openAPI, outputEntityName, inputSchema)
+    inputSchemas.foreach {
+      schemas => upsertComponent(openAPI, schemas._1, schemas._2)
+    }
 
     val apiResponse = new ApiResponse()
       .$ref(s"#/components/schemas/${outputEntityName}")
@@ -144,9 +150,11 @@ object CrudOasInterpreter {
   ): OpenAPI => OpenAPI = { openAPI =>
     val outputEntityName = outputSchemaWithName._2
     val outputComponentSchema =
-      SwaggerCoreInterpreter(outputSchemaWithName._1).name(outputEntityName)
+      SwaggerCoreInterpreter(outputSchemaWithName._1)(outputEntityName)
 
-    upsertComponent(openAPI, outputEntityName, outputComponentSchema)
+    outputComponentSchema.foreach {
+      case (name, schema) => upsertComponent(openAPI, name, schema)
+    }
 
     val apiResponse = new ApiResponse()
       .$ref(s"#/components/schemas/${outputEntityName}")
@@ -184,16 +192,16 @@ object CrudOasInterpreter {
     val outputEntityName = outputSchemaAndName._2
     val errorEntityName = errorSchemaAndName._2
 
-    val inputComponentSchema =
-      SwaggerCoreInterpreter(inputSchemaAndName._1).name(inputEntityName)
-    val outputComponentSchema =
-      SwaggerCoreInterpreter(outputSchemaAndName._1).name(outputEntityName)
-    val errorComponentSchema =
-      SwaggerCoreInterpreter(errorSchemaAndName._1).name(errorEntityName)
+    val inputComponentSchemas =
+      SwaggerCoreInterpreter(inputSchemaAndName._1)(inputEntityName)
+    val outputComponentSchemas =
+      SwaggerCoreInterpreter(outputSchemaAndName._1)(outputEntityName)
+    val errorComponentSchemas =
+      SwaggerCoreInterpreter(errorSchemaAndName._1)(errorEntityName)
 
-    upsertComponent(openAPI, inputEntityName, inputComponentSchema)
-    upsertComponent(openAPI, outputEntityName, outputComponentSchema)
-    upsertComponent(openAPI, errorEntityName, errorComponentSchema)
+    (inputComponentSchemas ::: outputComponentSchemas ::: errorComponentSchemas)
+      .foreach { case (name, schema) => upsertComponent(openAPI, name, schema) }
+
 
     val outputComponentRef = s"#/components/schemas/${outputEntityName}"
     val inputComponentRef = s"#/components/schemas/${inputEntityName}"
@@ -256,16 +264,15 @@ object CrudOasInterpreter {
       val outputEntityName = outputSchemaAndName._2
       val errorEntityName = errorSchemaAndName._2
 
-      val inputComponentSchema =
-        SwaggerCoreInterpreter(inputSchemaAndName._1).name(inputEntityName)
-      val outputComponentSchema =
-        SwaggerCoreInterpreter(outputSchemaAndName._1).name(outputEntityName)
-      val errorComponentSchema =
-        SwaggerCoreInterpreter(errorSchemaAndName._1).name(errorEntityName)
+      val inputComponentSchemas =
+        SwaggerCoreInterpreter(inputSchemaAndName._1)(inputEntityName)
+      val outputComponentSchemas =
+        SwaggerCoreInterpreter(outputSchemaAndName._1)(outputEntityName)
+      val errorComponentSchemas =
+        SwaggerCoreInterpreter(errorSchemaAndName._1)(errorEntityName)
 
-      upsertComponent(openAPI, inputEntityName, inputComponentSchema)
-      upsertComponent(openAPI, outputEntityName, outputComponentSchema)
-      upsertComponent(openAPI, errorEntityName, errorComponentSchema)
+      (inputComponentSchemas ::: outputComponentSchemas ::: errorComponentSchemas)
+        .foreach { case (name, schema) => upsertComponent(openAPI, name, schema) }
 
       val outputComponentRef = s"#/components/schemas/${outputEntityName}"
       val inputComponentRef = s"#/components/schemas/${inputEntityName}"

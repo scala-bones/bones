@@ -158,7 +158,7 @@ object ProtoFileInterpreter {
     co match{
       case KvpCoNil => (Vector.empty, Vector.empty, lastIndex)
       case op: KvpSingleValueLeft[l,r] => {
-        val left = valueDefinition(op.kvpValue)(op.manifestH.runtimeClass.getSimpleName, lastIndex)
+        val left = valueDefinition(op.kvpValue)(op.manifestL.runtimeClass.getSimpleName, lastIndex)
         val right = kvpCoproduct(op.kvpTail)(left._3)
         (left._1 +: right._1, left._2 ++ right._2, right._3)
       }
