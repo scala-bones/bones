@@ -14,13 +14,14 @@ class GenSchema extends FunSuite with Checkers {
 
   implicit val hListValueGen: Gen[KvpHListValue[_<:HList,_<:Nat]] = GenGadt.genHListValue()
 
-  implicit val schema: Gen[Schema[Object]] = hListValueGen.map(hListValue => {
-    SwaggerCoreInterpreter.isoInterpreter.fromValueDef(hListValue).apply( (new ObjectSchema())).asInstanceOf[Schema[Object]]
-  })
-  implicit val arbitrary: Arbitrary[Schema[Object]] = Arbitrary(schema)
+  implicit val schema: Gen[List[Schema[Object]]] = hListValueGen.map(hListValue => {
+    val all = SwaggerCoreInterpreter.isoInterpreter.fromValueDef(hListValue)("hList")
+    ("hList", all.mainSchema) :: all.referenceSchemas
+  }).map(_.asInstanceOf[List[Schema[Object]]]) // TODO get rid  of asInstanceOf
+  implicit val arbitrary: Arbitrary[List[Schema[Object]]] = Arbitrary(schema)
 
   test("Schema Is Valid") {
-    check( (swaggerSchema: Schema[Object]) => {
+    check( (swaggerSchema: List[Schema[Object]]) => {
       val str = io.swagger.v3.core.util.Json.mapper().writeValueAsString(swaggerSchema)
 //      println(str)
       true

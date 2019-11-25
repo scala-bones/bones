@@ -8,6 +8,8 @@ import com.bones.validation.ValidationDefinition.{BigDecimalValidation => dv, Lo
 import org.http4s.HttpRoutes
 import cats.effect._
 import cats.implicits._
+import com.bones.oas3.SwaggerCoreInterpreter.SwaggerSchemas
+import com.bones.schemas.Schemas
 
 
 object WaterfallDefinitions {
@@ -70,6 +72,7 @@ object WaterfallApp extends LocalhostAllIOApp() {
       //    serviceRoutesWithCrudMiddleware(waterfallVisitService, ds) <+>
       dbSchemaEndpoint("waterfall", waterfallSchema) <+>
       dbSchemaEndpoint("waterfallVisit", waterfallVisitSchema) <+>
+      serviceRoutesWithCrudMiddleware("allSupported", Schemas.allSupportCaseClass, ds) <+>
       reactEndpoints(List(waterfallSchema, waterfallVisitSchema))
   }
 }
