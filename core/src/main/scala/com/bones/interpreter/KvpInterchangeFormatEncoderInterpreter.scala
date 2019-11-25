@@ -83,7 +83,7 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
         val fr = kvpCoproduct(co.kvpTail)
         (input: C) =>
           input match {
-            case Inl(l) => (co.manifestH.runtimeClass.getSimpleName, fl(l))
+            case Inl(l) => (co.manifestL.runtimeClass.getSimpleName, fl(l))
             case Inr(r) => fr(r)
         }
     }

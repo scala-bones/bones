@@ -138,7 +138,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
         val fValue = valueDefinition(co.kvpValue)
         val fTail = kvpCoproduct(co.kvpTail)
         (in, path, coType) => {
-          if (coType == co.manifestH.runtimeClass.getSimpleName) fValue(Some(in),path).map(Inl(_))
+          if (coType == co.manifestL.runtimeClass.getSimpleName) fValue(Some(in),path).map(Inl(_))
           else fTail(in,path,coType).map(Inr(_))
         }
       }

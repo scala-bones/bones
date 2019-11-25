@@ -110,7 +110,7 @@ HTTP REST Interpreters
 * [http4s](rest-interpreters/http4s-interpreter/README.md)
 
 Incomplete Interpreters
-* [swagger](interchange-format-interpreters/swagger-oas3/README.md) - Does not currently support Coproduc
+* [swagger](interchange-format-interpreters/swagger-oas3/README.md) - Does not currently support Coproduc (FIXED!!! in master, not released)
 * [dbJdbc](db-interpreters/jdbc/README.md) - Does not currently support coproducts
 * [React](client-interpreters/react/README.md) - This is more of a POC.  Does not currently support Coproducts
 * [http4s-client](client-interpreters/http4s-client/README.md) - Not Implemented 

@@ -10,6 +10,14 @@ import shapeless.{Coproduct, HList, Nat}
 
 object SwaggerCoreInterpreter {
 
+
+  type Name = String
+  object SwaggerSchemas {
+    def apply[S <: Schema[_]](mainSchema: S): SwaggerSchemas[S] = SwaggerSchemas(mainSchema, List.empty)
+  }
+  case class SwaggerSchemas[+S <: Schema[_]](mainSchema: S, referenceSchemas: List[(String, Schema[_])])
+
+
   /**
     * An implementation of the SwaggerCoreInterpreter using
     * ISO date as the default date interpreter.
@@ -20,70 +28,72 @@ object SwaggerCoreInterpreter {
     override def localDateFormatterExample: String = "2011-12-03T10:15:30"
   }
 
-  def apply[A](gd: BonesSchema[A]): Schema[_] = isoInterpreter.apply(gd)
+  def apply[A](gd: BonesSchema[A]): Name => List[(Name, Schema[_])] = isoInterpreter.apply(gd)
 }
 
+/**
+  * Responsible for creating the data portion of the Swagger schema.
+  */
 trait SwaggerCoreInterpreter {
+
+  import SwaggerCoreInterpreter.{SwaggerSchemas, Name}
 
   def dateFormatterExample: String
   def localDateFormatterExample: String
 
-  private def copySchema(head: Schema[_], tail: Schema[_]): Schema[_] = {
-    tail.getProperties.putAll(head.getProperties)
-    tail.getRequired.addAll(head.getRequired)
+  import scala.collection.JavaConverters._
+  private def copySchema(head: Schema[_], tail: ObjectSchema): ObjectSchema = {
+    Option(head.getProperties).foreach(_.asScala.toList.foreach(prop => tail.addProperties(prop._1, prop._2)))
+    Option(head.getRequired).foreach(_.asScala.toList.foreach(req => tail.addRequiredItem(req)))
     tail
   }
 
-  def apply[A](gd: BonesSchema[A]): Schema[_] = gd match {
-    case x: HListConvert[_, _, A] => fromValueDef(x).apply(new Schema())
+  def apply[A](gd: BonesSchema[A]): Name => List[(Name, Schema[_])] = name => {
+    val schemas = gd match {
+      case x: HListConvert[_, _, A] => fromValueDef(x)(name)
+      case x: KvpCoproductConvert[_, A] => fromValueDef(x)(name)
+    }
+    (name, schemas.mainSchema) :: schemas.referenceSchemas
   }
 
-  private def fromKvpCoproduct[C<:Coproduct](co: KvpCoproduct[C]): Schema[_] => Schema[_] = {
+  private def fromKvpCoproduct[C<:Coproduct](co: KvpCoproduct[C]): SwaggerSchemas[ComposedSchema] = {
     co match {
-      case KvpCoNil => identity
+      case KvpCoNil => SwaggerSchemas(new ComposedSchema())
       case co: KvpSingleValueLeft[l,r] => {
-        val l = fromValueDef(co.kvpValue)
-        val r = fromKvpCoproduct(co.kvpTail)
-        schema =>
-          l(schema)
-          r(schema)
+        val name = co.manifestL.runtimeClass.getSimpleName
+        val lSchema = fromValueDef(co.kvpValue)(name)
+        val composedSchema = fromKvpCoproduct(co.kvpTail)
+        val objectSchema = new ObjectSchema().$ref(name)
+        val mainSchema = composedSchema.mainSchema.addOneOfItem(objectSchema)
+        SwaggerSchemas(mainSchema, (name, lSchema.mainSchema) :: lSchema.referenceSchemas ::: composedSchema.referenceSchemas)
       }
     }
   }
 
   private def fromKvpHList[H <: HList, HL <: Nat](
-      group: KvpHList[H, HL]): Schema[_] => Schema[_] = {
+      group: KvpHList[H, HL]):  SwaggerSchemas[ObjectSchema] = {
     group match {
       case KvpNil =>
-        val objectSchema = new ObjectSchema()
-          .nullable(false)
-        schema =>
-          objectSchema.name(schema.getName)
+        val schema = new ObjectSchema()
+        schema.nullable(false)
+        SwaggerSchemas(schema)
       case op: KvpHListHead[H, al, h, hl, t, tl] =>
-        val head = fromKvpHList(op.head)
-        val tail = fromKvpHList(op.tail)
-        schema =>
-          copySchema(head(schema), tail(schema))
+        val headSchemas = fromKvpHList(op.head)
+        val tailSchemas = fromKvpHList(op.tail)
+        val schema = copySchema(headSchemas.mainSchema, tailSchemas.mainSchema)
+        SwaggerSchemas(schema, headSchemas.referenceSchemas ::: tailSchemas.referenceSchemas)
       case op: KvpSingleValueHead[h, t, tl, o] =>
-        val child = fromValueDef(op.fieldDefinition.op)
-        val tail = fromKvpHList(op.tail)
-        schema =>
-          {
-            val tailSchema = tail(schema)
-            val childSchema = child(new Schema[h])
-            tailSchema.addProperties(op.fieldDefinition.key, childSchema)
-            if (!childSchema.getNullable) {
-              tailSchema.addRequiredItem(op.fieldDefinition.key)
-            }
-            tailSchema
-          }
+        val headSchemas = fromValueDef(op.fieldDefinition.op)(op.fieldDefinition.key)
+        val tailSchemas = fromKvpHList(op.tail)
+        tailSchemas.mainSchema.addProperties(op.fieldDefinition.key, headSchemas.mainSchema)
+        val schema = copySchema(headSchemas.mainSchema, tailSchemas.mainSchema)
+        SwaggerSchemas(schema, headSchemas.referenceSchemas ::: tailSchemas.referenceSchemas)
       case op: KvpConcreteTypeHead[a, ht, nt, ho, xh, xl] =>
-        val valueF = fromValueDef(op.hListConvert)
-        schema =>
-          {
-            valueF(schema)
-            schema
-          }
+        val name = op.manifestOfA.runtimeClass.getSimpleName
+        val headSchemas = fromValueDef(op.hListConvert)(name)
+        val tailSchemas = fromKvpHList(op.tail)
+        val schema = copySchema(headSchemas.mainSchema, tailSchemas.mainSchema)
+        SwaggerSchemas(schema, headSchemas.referenceSchemas ::: tailSchemas.referenceSchemas)
     }
   }
 
@@ -91,125 +101,152 @@ trait SwaggerCoreInterpreter {
     * Recursive method which builds up a Swagger Core Schema object from the DataClass definition.
     * @param vd The DataClass definition to convert to a Schema
     **/
-  def fromValueDef[A](vd: KvpValue[A]): Schema[_] => Schema[_] = {
+  def fromValueDef[A](vd: KvpValue[A]):  Name => SwaggerSchemas[Schema[_]] = {
     vd match {
       case op: OptionalKvpValueDefinition[b] =>
-        val oasSchema = fromValueDef(op.valueDefinitionOp)
-        schema =>
-          oasSchema(schema).nullable(true)
+        name =>
+          val oasSchema = fromValueDef(op.valueDefinitionOp)(name)
+          oasSchema.copy(mainSchema = oasSchema.mainSchema.nullable(true))
       case _: BooleanData =>
-        val boolSchema = new BooleanSchema()
-          .example(new java.lang.Boolean(true))
-          .nullable(false)
-        schema =>
-          boolSchema.name(schema.getName)
+        name =>
+          val main = new BooleanSchema()
+            .example(new java.lang.Boolean(true))
+            .nullable(false)
+            .name(name)
+          SwaggerSchemas(main)
+
       case _: StringData =>
-        val stringSchema = new StringSchema()
-          .example("ABC")
-          .nullable(false)
-        schema =>
-          stringSchema.name(schema.getName)
+        name =>
+          val main = new StringSchema()
+            .example("ABC")
+            .nullable(false)
+            .name(name)
+          SwaggerSchemas(main)
       case ShortData(_) =>
-        val shortSchema = new IntegerSchema()
-          .nullable(false)
-          .example(123)
-          .format("int32")
-          .maximum(java.math.BigDecimal.valueOf(Short.MaxValue.toLong))
-          .minimum(java.math.BigDecimal.valueOf(Short.MinValue.toLong))
-        schema => shortSchema.name(schema.getName)
+        name =>
+          val main = new IntegerSchema()
+            .nullable(false)
+            .example(123)
+            .format("int32")
+            .maximum(java.math.BigDecimal.valueOf(Short.MaxValue.toLong))
+            .minimum(java.math.BigDecimal.valueOf(Short.MinValue.toLong))
+            .name(name)
+          SwaggerSchemas(main)
       case IntData(_) =>
-        val intSchema = new IntegerSchema()
-          .nullable(false)
-          .example(123)
-          .format("int32")
-        schema => intSchema.name(schema.getName)
+        name =>
+          val main = new IntegerSchema()
+            .nullable(false)
+            .example(123)
+            .maximum(java.math.BigDecimal.valueOf(Int.MaxValue.toLong))
+            .minimum(java.math.BigDecimal.valueOf(Int.MinValue.toLong))
+            .format("int32")
+            .name(name)
+          SwaggerSchemas(main)
       case _: LongData =>
-        val intSchema = new IntegerSchema()
-          .nullable(false)
-          .example(123)
-          .format("int64")
-        schema =>
-          intSchema.name(schema.getName)
+        name =>
+          val intSchema = new IntegerSchema()
+            .nullable(false)
+            .example(123)
+            .format("int64")
+            .name(name)
+          SwaggerSchemas(intSchema)
       case _: UuidData =>
-        val stringSchema = new UUIDSchema()
-          .example(UUID.randomUUID().toString)
-          .nullable(false)
-        schema =>
-          stringSchema.name(schema.getName)
+        name =>
+          val uuidSchema = new UUIDSchema()
+            .example(UUID.randomUUID().toString)
+            .nullable(false)
+            .name(name)
+          SwaggerSchemas(uuidSchema)
       case _: LocalDateTimeData =>
-        val stringSchema = new StringSchema()
-          .example(dateFormatterExample)
-          .nullable(false)
-        schema =>
-          stringSchema.name(schema.getName)
+        name =>
+          val stringSchema = new StringSchema()
+            .example(dateFormatterExample)
+            .nullable(false)
+            .name(name)
+          SwaggerSchemas(stringSchema)
       case _: LocalDateData =>
-        val stringSchema = new StringSchema()
-          .example(dateFormatterExample)
-          .nullable(false)
-        schema =>
-          stringSchema.name(schema.getName)
+        name =>
+          val stringSchema = new StringSchema()
+            .example(dateFormatterExample)
+            .nullable(false)
+            .name(name)
+          SwaggerSchemas(stringSchema)
       case DoubleData(_) =>
-        val numberSchema = new NumberSchema()
-          .example("3.14")
-          .nullable(false)
-        schema =>
-          numberSchema.name(schema.getName)
+        name =>
+          val numberSchema = new NumberSchema()
+            .example("3.14")
+            .nullable(false)
+            .name(name)
+          SwaggerSchemas(numberSchema)
       case FloatData(_) =>
-        val numberSchema = new NumberSchema()
-          .example("3.14")
-          .nullable(false)
-        schema =>
-          numberSchema.name(schema.getName)
+        name =>
+          val numberSchema = new NumberSchema()
+            .example("3.14")
+            .nullable(false)
+          SwaggerSchemas(numberSchema)
       case _: BigDecimalData =>
-        val stringSchema = new StringSchema()
-          .example("3.14")
-          .nullable(false)
-        schema =>
-          stringSchema.name(schema.getName)
+        name =>
+          val stringSchema = new StringSchema()
+            .example("3.14")
+            .nullable(false)
+            .name(name)
+          SwaggerSchemas(stringSchema)
       case _: ByteArrayData =>
-        val baSchema = new ByteArraySchema()
-          .example("0123456789abcdef")
-          .nullable(false)
-        schema =>
-          baSchema.name(schema.getName)
+        name =>
+          val baSchema = new ByteArraySchema()
+            .example("0123456789abcdef")
+            .nullable(false)
+            .name(name)
+          SwaggerSchemas(baSchema)
       case ListData(definition, _) =>
-        val items = fromValueDef(definition)
-        val arraySchema = new ArraySchema()
-        val itemSchema = items(new Schema())
-        arraySchema.setItems(itemSchema)
-        schema =>
-          arraySchema.name(schema.getName)
+        name =>
+          val itemSchema = fromValueDef(definition)(name)
+          val arraySchema = new ArraySchema()
+          arraySchema.setItems(itemSchema.mainSchema)
+          arraySchema.name(name)
+          SwaggerSchemas(arraySchema, itemSchema.referenceSchemas)
       case ed: EitherData[a, b] =>
-        val a = fromValueDef(ed.definitionA).apply(new Schema())
-        val b = fromValueDef(ed.definitionB).apply(new Schema())
-        val composedSchema = new ComposedSchema()
-          .addAnyOfItem(a)
-          .addAnyOfItem(b)
-          .nullable(false)
-        schema =>
-          composedSchema.name(schema.getName)
+        name =>
+          val a = fromValueDef(ed.definitionA)("left" + name.capitalize)
+          val b = fromValueDef(ed.definitionB)("right" + name.capitalize)
+          val composedSchema = new ComposedSchema()
+            .addAnyOfItem(a.mainSchema)
+            .addAnyOfItem(b.mainSchema)
+            .nullable(false)
+            .name(name)
+          SwaggerSchemas(composedSchema, a.referenceSchemas ::: b.referenceSchemas)
       case esd: EnumerationData[e,a] =>
-        val stringSchema = new StringSchema()
-        esd.enumeration.values.foreach(v =>
-          stringSchema.addEnumItemObject(v.toString))
-
-        val nullableStringSchema = stringSchema.nullable(false)
-          .example(esd.enumeration.values.head.toString)
-
-        schema =>
-          {
-            nullableStringSchema.setName(schema.getName)
-            nullableStringSchema
-          }
-
+        name =>
+          val stringSchema = new StringSchema()
+          stringSchema.name(name)
+              .nullable(false)
+              .example(esd.enumeration.values.head.toString)
+          esd.enumeration.values.foreach(v =>
+            stringSchema.addEnumItemObject(v.toString))
+          SwaggerSchemas(stringSchema)
       case gd: KvpHListValue[h, hl] =>
-        fromKvpHList(gd.kvpHList)
+        name =>
+          val schemas = fromKvpHList(gd.kvpHList)
+          schemas.mainSchema.name(name)
+          schemas
       case x: HListConvert[_, _, a] =>
-        fromKvpHList(x.from)
+        name =>
+          val schemas = fromKvpHList(x.from)
+          schemas.mainSchema.name(name)
+          schemas
       case co: KvpCoproductConvert[c,a] =>
-        fromKvpCoproduct(co.from)
+        name =>
+          val coproductSchemas = fromKvpCoproduct(co.from)
+          val main = new ObjectSchema().$ref(name)
+          SwaggerSchemas(main, (name, coproductSchemas.mainSchema) :: coproductSchemas.referenceSchemas)
       case co: KvpCoproductValue[c] =>
-        fromKvpCoproduct(co.kvpCoproduct)
+        name =>
+          val coproductSchemas = fromKvpCoproduct(co.kvpCoproduct)
+          val main = new ObjectSchema()
+            .name(name)
+            .$ref(name)
+          SwaggerSchemas(main, (name, coproductSchemas.mainSchema) :: coproductSchemas.referenceSchemas)
+
     }
   }
 
