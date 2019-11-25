@@ -14,9 +14,7 @@ import FindInterpreter.{FieldName, Path, utcCalendar}
 import shapeless.{HList, HNil, Nat}
 
 /** Responsible for converting a result set into the result type */
-trait ResultSetInterpreter {
-
-  def forListData[T](kvpHList: ListData[T])
+object ResultSetInterpreter {
 
   def kvpHList[H <: HList, N <: Nat](group: KvpHList[H, N])
     : Path => ResultSet => Either[NonEmptyList[ExtractionError], H] =
