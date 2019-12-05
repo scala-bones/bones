@@ -5,6 +5,7 @@ import java.time.{LocalDate, LocalDateTime}
 import java.util.{Base64, UUID}
 
 import com.bones.coproduct.{KeyValueDefinition, _}
+import com.bones.interpreter.CovKvpInterchangeFormatEncoderInterpreter.CovEncoder
 import com.bones.interpreter.{CovKvpInterchangeFormatEncoderInterpreter, KvpInterchangeFormatEncoderInterpreter}
 import io.circe._
 import shapeless.{CNil, Coproduct}
@@ -16,32 +17,31 @@ object CovCirceEncoderInterpreter {
   /**
     * Implementation of the [CirceEncoderInterpreter] specifying ISO String formatter for date and datetime.
     */
-  def isoInterpreterCov[A,COV[_]<:Coproduct](f: COV[A] => A => Json):
-    CovCirceEncoderInterpreter[COV] = new CovCirceEncoderInterpreter[COV] {
+  def isoInterpreterCov[A,COV[_]<:Coproduct](bonesSchema: BonesSchema[A,COV], covEncoder: CovEncoder[Json, COV]):
+    A => Json = {
+    val interpreter = new CovCirceEncoderInterpreter {
 
+      override def dateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
-    /** Override this method to provide functionality for custom Algebras */
-    override protected def covValueDefinition[A](cov: COV[A]): A => Json = f(cov)
+      override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+    }
 
+    interpreter.fromSchema(bonesSchema, covEncoder)
+  }
+
+  val isoInterpreterCov: CovCirceEncoderInterpreter = new CovCirceEncoderInterpreter {
     override def dateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+
     override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
   }
 
-  val isoInterpreterCov: CovCirceEncoderInterpreter[CovCNil] = new CovCirceEncoderInterpreter[CovCNil] {
-    override def dateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-    override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
-
-    /** Override this method to provide functionality for custom Algebras */
-    override protected def covValueDefinition[A](cov: CovCNil[A]): A => Json =
-      sys.error("it should be impossible for this method to be called.")
-  }
 }
 
 /**
   * Module responsible for converting values to Circe JSON without validation.
   * The entry point for this class is [KvpInterchangeFormatEncoderInterpreter.fromSchema].
   */
-trait CovCirceEncoderInterpreter[COV[_]<:Coproduct] extends CovKvpInterchangeFormatEncoderInterpreter[Json, COV] {
+trait CovCirceEncoderInterpreter extends CovKvpInterchangeFormatEncoderInterpreter[Json] {
 
 
 
@@ -59,8 +59,9 @@ trait CovCirceEncoderInterpreter[COV[_]<:Coproduct] extends CovKvpInterchangeFor
     Json.obj(v1 ::: v2: _*)
   }
 
-  override def toObj[A](kvDef: KeyValueDefinition[A, COV], value: Json): Json =
+  override def toObj[A, COV[_]](kvDef: KeyValueDefinition[A, COV], value: Json, covEncoder: CovEncoder[Json, COV]): Json =
     Json.obj((kvDef.key, value))
+
 
   override def booleanToOut(op: BooleanData): Boolean => Json =
     input => Json.fromBoolean(input)
