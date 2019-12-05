@@ -126,7 +126,7 @@ trait Sugar {
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
   def either[A: Manifest, B: Manifest](definitionA: KvpValue[A],
                                        definitionB: KvpValue[B]) =
-    EitherData(definitionA, definitionB)
+    EitherData(Left(definitionA), Left(definitionB))
 
   /** Expecting the type to be a Scala style enumeration
     *
