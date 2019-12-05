@@ -20,13 +20,13 @@ object KvpValue {
 }
 
 /** Wraps a data definition to mark the field optional */
-case class OptionalKvpValueDefinition[B: Manifest](valueDefinitionOp: KvpValue[B])
+case class OptionalKvpValueDefinition[B: Manifest, ALG[_]](valueDefinitionOp: Either[KvpValue[B], ALG[B]])
   extends KvpValue[Option[B]] {}
 
 /** Syntactic sugar to wrap the data definition to allow 'optional' syntax on a KvpValue. */
 trait ToOptionalData[B] { self: KvpValue[B] =>
   private implicit val manifestOfB: Manifest[B] = self.manifestOfA
-  val optional: OptionalKvpValueDefinition[B] = OptionalKvpValueDefinition[B](self)
+  val optional: OptionalKvpValueDefinition[B, Nothing] = OptionalKvpValueDefinition[B, Nothing](Left(self))
 }
 
 /** Syntactic sugar to wrap the definition in a List type. */
@@ -40,8 +40,8 @@ final case class BooleanData(validations: List[ValidationOp[Boolean]])
   extends KvpValue[Boolean]
     with ToOptionalData[Boolean]
 
-final case class EitherData[A: Manifest, B: Manifest](definitionA: KvpValue[A],
-                                                      definitionB: KvpValue[B])
+final case class EitherData[A: Manifest, B: Manifest, ALG[_]](definitionA: Either[KvpValue[A], ALG[A]],
+                                                      definitionB: Either[KvpValue[B], ALG[B]])
   extends KvpValue[Either[A, B]]
     with ToOptionalData[Either[A, B]] {}
 
@@ -53,7 +53,7 @@ final case class LongData(validations: List[ValidationOp[Long]])
   extends KvpValue[Long]
     with ToOptionalData[Long]
 
-final case class ListData[T: Manifest, COV[_]](tDefinition: Either[KvpValue[T], COV[T]],
+final case class ListData[T: Manifest, ALG[_]](tDefinition: Either[KvpValue[T], ALG[T]],
                                        validations: List[ValidationOp[List[T]]])
   extends KvpValue[List[T]]
     with ToOptionalData[List[T]]
@@ -103,37 +103,37 @@ final case class EnumerationData[E<: Enumeration, V:Manifest](enumeration: E,
     with ToOptionalData[V] {}
 
 /** Represents a type where the value is an HList */
-final case class KvpHListValue[H <: HList : Manifest, HL <: Nat, COV[_]](kvpHList: KvpHList[H, HL, COV],
+final case class KvpHListValue[H <: HList : Manifest, HL <: Nat, ALG[_]](kvpHList: KvpHList[H, HL, ALG],
                                                                  validations: List[ValidationOp[H]])
   extends KvpValue[H]
     with ToOptionalData[H] {
 
   def convert[Z: Manifest](convertValidation: ValidationOp[Z]*)(
-    implicit gen: Generic.Aux[Z, H]): HListConvert[H, HL, Z, COV] =
+    implicit gen: Generic.Aux[Z, H]): HListConvert[H, HL, Z, ALG] =
     HListConvert(kvpHList, gen.from, gen.to, convertValidation.toList)
 
   def tupled[Tup<:Product:Manifest](tupleValidations: ValidationOp[Tup]*)(
     implicit tupler: Tupler.Aux[H,Tup],
     gen: Generic[Tup]
-  ): HListConvert[H,HL,Tup, COV] =
-    HListConvert[H,HL,Tup, COV](kvpHList, (h: H) => tupler.apply(h), (t: Tup) => gen.to(t).asInstanceOf[H], tupleValidations.toList)
+  ): HListConvert[H,HL,Tup, ALG] =
+    HListConvert[H,HL,Tup, ALG](kvpHList, (h: H) => tupler.apply(h), (t: Tup) => gen.to(t).asInstanceOf[H], tupleValidations.toList)
 
 }
 
-trait BonesSchema[A, COV[_]] {
+trait BonesSchema[A, ALG[_]] {
   val manifestOfA: Manifest[A]
 }
 
 /** Represents a coproduct value where the resulting type is a shapeless coproduct */
-final case class KvpCoproductValue[C <: Coproduct: Manifest, COV[_]](kvpCoproduct: KvpCoproduct[C, COV])
+final case class KvpCoproductValue[C <: Coproduct: Manifest, ALG[_]](kvpCoproduct: KvpCoproduct[C, ALG])
   extends KvpValue[C]
     with ToOptionalData[C]
     with ToListData[C]
 {}
 
 /** Specifies a conversion to and from an HList to an A (where A is most likely a Case class) */
-final case class HListConvert[H <: HList, N <: Nat, A: Manifest, COV[_]]
-(from: KvpHList[H, N, COV],
+final case class HListConvert[H <: HList, N <: Nat, A: Manifest, ALG[_]]
+(from: KvpHList[H, N, ALG],
  fHtoA: H => A,
  fAtoH: A => H,
  validations: List[ValidationOp[A]]
@@ -141,17 +141,17 @@ final case class HListConvert[H <: HList, N <: Nat, A: Manifest, COV[_]]
   extends KvpValue[A]
     with ToOptionalData[A]
     with ToListData[A]
-    with BonesSchema[A, COV] {}
+    with BonesSchema[A, ALG] {}
 
 /** Represents a coproduct value which is to be converted to a class */
-final case class KvpCoproductConvert[C<:Coproduct, A: Manifest, COV[_]]
+final case class KvpCoproductConvert[C<:Coproduct, A: Manifest, ALG[_]]
 (
-  from: KvpCoproduct[C, COV],
+  from: KvpCoproduct[C, ALG],
   cToA: C => A,
   aToC: A => C,
   validations: List[ValidationOp[A]]
 ) extends KvpValue[A]
   with ToOptionalData[A]
   with ToListData[A]
-  with BonesSchema[A, COV]
+  with BonesSchema[A, ALG]
 

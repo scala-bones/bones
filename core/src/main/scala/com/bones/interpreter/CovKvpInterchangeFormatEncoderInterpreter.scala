@@ -4,11 +4,13 @@ import java.time.{LocalDate, LocalDateTime}
 import java.util.UUID
 
 import com.bones.coproduct.{KeyValueDefinition, KvpCoNil, KvpCoproduct, KvpSingleValueLeft, _}
+import com.bones.interpreter.CovKvpInterchangeFormatEncoderInterpreter.CovEncoder
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.{CoproductType, coproductTypeKey}
 import shapeless.{::, Coproduct, HList, Inl, Inr, Nat}
 
 object CovKvpInterchangeFormatEncoderInterpreter {
-  trait Encoder[OUT, ALG[_]] {
+
+  trait CovEncoder[OUT, ALG[_]] {
     def encode[A](alg: ALG[A]) : A => OUT
   }
 }
@@ -17,12 +19,7 @@ object CovKvpInterchangeFormatEncoderInterpreter {
   * Base trait for converting from HList or Case class to an interchange format such as JSON.
   * @tparam OUT The interchange format.
   */
-trait CovKvpInterchangeFormatEncoderInterpreter[OUT, COV[_]<:Coproduct] {
-
-  /** Override this method to provide functionality for custom Algebras */
-  protected def covValueDefinition[A](cov: COV[A]): A => OUT
-
-
+trait CovKvpInterchangeFormatEncoderInterpreter[OUT] {
 
   /** This is the main entry point whose purpose is to convert
     * a schema into a function which expects the Type described by the schema (for example a case class)
@@ -34,8 +31,8 @@ trait CovKvpInterchangeFormatEncoderInterpreter[OUT, COV[_]<:Coproduct] {
     * @tparam A
     * @return
     */
-  def fromSchema[A](bonesSchema: BonesSchema[A, COV]): A => OUT = bonesSchema match {
-    case x: HListConvert[_, _, A, COV] => valueDefinition(x)
+  def fromSchema[A, COV[_]](bonesSchema: BonesSchema[A, COV], covEncoder: CovEncoder[OUT, COV]): A => OUT = bonesSchema match {
+    case x: HListConvert[_, _, A, COV] => valueDefinition(x, covEncoder)
   }
 
   def none: OUT
@@ -48,7 +45,7 @@ trait CovKvpInterchangeFormatEncoderInterpreter[OUT, COV[_]<:Coproduct] {
     * a key value pair wrapped in the OUT type.  Analogous to
     * wrapping a key value pair in a JSON Object.
     * */
-  def toObj[A](kvDef: KeyValueDefinition[A, COV], value: OUT): OUT
+  def toObj[A, COV[_]](kvDef: KeyValueDefinition[A, COV], value: OUT, covEncoder: CovEncoder[OUT,COV]): OUT
 
   /** Create a function which converts a boolean into the specific OUT type */
   def booleanToOut(op: BooleanData): Boolean => OUT
@@ -77,13 +74,13 @@ trait CovKvpInterchangeFormatEncoderInterpreter[OUT, COV[_]<:Coproduct] {
   def enumerationToOut[E<:Enumeration, V:Manifest](op: EnumerationData[E, V]): op.enumeration.Value => OUT
   def addStringField(element: OUT, name: String, value: String): OUT
 
-  protected def kvpCoproduct[C <: Coproduct](kvpCo: KvpCoproduct[C, COV]): C => (CoproductType, OUT) = {
+  protected def kvpCoproduct[C <: Coproduct, COV[_]](kvpCo: KvpCoproduct[C, COV], covEncoder: CovEncoder[OUT, COV]): C => (CoproductType, OUT) = {
     kvpCo match {
       case co: KvpCoNil[COV] =>
         (input: C) => ("", empty)
       case co: KvpSingleValueLeft[l,r,COV] =>
-        val fl = determineValueDefinition(co.kvpValue)
-        val fr = kvpCoproduct(co.kvpTail)
+        val fl = determineValueDefinition(co.kvpValue, covEncoder)
+        val fr = kvpCoproduct(co.kvpTail, covEncoder)
         (input: C) =>
           input match {
             case Inl(l) => (co.manifestL.runtimeClass.getSimpleName, fl(l))
@@ -93,15 +90,15 @@ trait CovKvpInterchangeFormatEncoderInterpreter[OUT, COV[_]<:Coproduct] {
   }
 
   /** Interpreter for the KvpHList type. */
-  protected def kvpHList[H <: HList, HL <: Nat](
-      group: KvpHList[H, HL, COV]): H => OUT =
+  protected def kvpHList[H <: HList, HL <: Nat, COV[_]](
+      group: KvpHList[H, HL, COV], covEncoder: CovEncoder[OUT,COV]): H => OUT =
     group match {
       case _: KvpNil[COV] =>
         (input: H) =>
           empty
       case op: KvpHListHead[out, l, h, hl, t, tl, COV] =>
-        val headF = kvpHList(op.head)
-        val tailF = kvpHList[t, tl](op.tail)
+        val headF = kvpHList(op.head, covEncoder)
+        val tailF = kvpHList[t, tl, COV](op.tail, covEncoder)
         (input: H) =>
           {
             val l = op.split(input)
@@ -110,18 +107,18 @@ trait CovKvpInterchangeFormatEncoderInterpreter[OUT, COV[_]<:Coproduct] {
             combine(headOut, tailOut)
           }
       case op: KvpSingleValueHead[h, t, tl, H, COV] =>
-        val valueF = determineValueDefinition(op.fieldDefinition.op)
-        val tailF = kvpHList(op.tail)
+        val valueF = determineValueDefinition(op.fieldDefinition.op, covEncoder)
+        val tailF = kvpHList(op.tail, covEncoder)
         implicit val hCons = op.isHCons
         (input: H) =>
           {
             val val1 = valueF(input.head)
             val tail = tailF(input.tail)
-            combine(toObj(op.fieldDefinition, val1), tail)
+            combine(toObj(op.fieldDefinition, val1, covEncoder), tail)
           }
       case op: KvpConcreteTypeHead[a, ht, nt, ho, xl, xll, COV] => {
-        val headF = kvpHList(op.hListConvert.from)
-        val tailF = kvpHList(op.tail)
+        val headF = kvpHList(op.hListConvert.from, covEncoder)
+        val tailF = kvpHList(op.tail, covEncoder)
         implicit val hCons = op.isHCons
         (input: a :: ht) =>
           {
@@ -132,17 +129,17 @@ trait CovKvpInterchangeFormatEncoderInterpreter[OUT, COV[_]<:Coproduct] {
       }
     }
 
-  protected def determineValueDefinition[A](value: Either[KvpValue[A], COV[A]]): A => OUT = {
+  protected def determineValueDefinition[A, COV[_]](value: Either[KvpValue[A], COV[A]], covEncoder: CovEncoder[OUT, COV]): A => OUT = {
     value match {
-      case Left(kvp) => valueDefinition(kvp)
-      case Right(cov) => covValueDefinition(cov)
+      case Left(kvp) => valueDefinition(kvp, covEncoder)
+      case Right(cov) => covEncoder.encode(cov)
     }
   }
 
-  protected def valueDefinition[A](fgo: KvpValue[A]): A => OUT =
+  protected def valueDefinition[A, COV[_]](fgo: KvpValue[A], covEncoder: CovEncoder[OUT, COV]): A => OUT =
     fgo match {
-      case op: OptionalKvpValueDefinition[b] =>
-        val valueF = valueDefinition(op.valueDefinitionOp)
+      case op: OptionalKvpValueDefinition[b, COV] =>
+        val valueF = determineValueDefinition(op.valueDefinitionOp, covEncoder)
         (input: A) =>
           {
             input match {
@@ -163,15 +160,15 @@ trait CovKvpInterchangeFormatEncoderInterpreter[OUT, COV[_]<:Coproduct] {
       case bd: BigDecimalData => bigDecimalToOut(bd)
       case ba: ByteArrayData  => byteArrayToOut(ba)
       case ld: ListData[t, COV]    => {
-        val itemToOut = determineValueDefinition(ld.tDefinition)
+        val itemToOut = determineValueDefinition(ld.tDefinition, covEncoder)
         (input: List[t]) => {
           val listOfJson = input.map(itemToOut)
           toOutList(listOfJson)
         }
       }
-      case EitherData(aDefinition, bDefinition) =>
-        val aF = valueDefinition(aDefinition)
-        val bF = valueDefinition(bDefinition)
+      case ed: EitherData[a,b,COV] =>
+        val aF = determineValueDefinition[a,COV](ed.definitionA, covEncoder)
+        val bF = determineValueDefinition[b,COV](ed.definitionB, covEncoder)
         (input: A) =>
           {
             input match {
@@ -184,21 +181,21 @@ trait CovKvpInterchangeFormatEncoderInterpreter[OUT, COV[_]<:Coproduct] {
         enumerationToOut[e,a](e).asInstanceOf[A=>OUT]
       }
       case gd: KvpHListValue[h, hl, COV] =>
-        val fh = kvpHList(gd.kvpHList)
+        val fh = kvpHList(gd.kvpHList, covEncoder)
         input => fh(input.asInstanceOf[h])
       case x: HListConvert[h, hl, A, COV] =>
-        val fh = kvpHList(x.from)
+        val fh = kvpHList(x.from, covEncoder)
         input: A =>
           {
             fh(x.fAtoH(input))
           }
       case c: KvpCoproductValue[c, COV] =>
-        val fc = kvpCoproduct(c.kvpCoproduct)
+        val fc = kvpCoproduct(c.kvpCoproduct, covEncoder)
         input =>
           val (name, out) = fc.apply(input.asInstanceOf[c])
           addStringField(out, coproductTypeKey, name)
       case c: KvpCoproductConvert[c,a, COV] =>
-        val fc = kvpCoproduct(c.from)
+        val fc = kvpCoproduct(c.from, covEncoder)
         input: A => {
           val (name, out) = fc(c.aToC(input))
           addStringField(out, coproductTypeKey, name)
