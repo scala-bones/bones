@@ -3,12 +3,10 @@ package com.bones.schemas
 import java.time.{LocalDate, LocalDateTime, Month}
 import java.util.UUID
 
-import com.bones.data.Error.CanNotConvert
-import com.bones.data.KvpNil
 import com.bones.schemas.SumTypeExample.MusicMedium
-import com.bones.validation.ValidationDefinition.ValidationOp
-import shapeless.{HNil, Poly1}
 import com.bones.syntax._
+import com.bones.validation.ValidationDefinition.ValidationOp
+import shapeless.HNil
 
 
 object Schemas {
@@ -60,9 +58,9 @@ object Schemas {
   }
 
   val ccExp = (
-    kvp("expMonth", long(lv.between(1,12))) ::
-    kvp("expYear", long(lv.between(1950, 9999))) ::
-    KvpNil
+    ("expMonth", long(lv.between(1,12))) ::
+    ("expYear", long(lv.between(1950, 9999))) ::
+    kvpNil
   ).validate(HasNotExpired)
 
   val ccTypeValue = enumeration[CreditCardType.type, CreditCardType.Value](CreditCardType)
@@ -70,23 +68,23 @@ object Schemas {
 
   // Here we are defining our expected input data.  This definition will drive the interpreters.
   val ccObj = (
-    kvp("firstSix", string(sv.length(6), sv.matchesRegex("[0-9]{6}".r))) ::
-    kvp("lastFour", string(sv.length(4), sv.matchesRegex("[0-9]{4}".r))) ::
-    kvp("uuid", uuid) ::
-    kvp("token", uuid) ::
-    kvp("ccType", ccTypeValue) ::
-    KvpNil
+    ("firstSix", string(sv.length(6), sv.matchesRegex("[0-9]{6}".r))) ::
+    ("lastFour", string(sv.length(4), sv.matchesRegex("[0-9]{4}".r))) ::
+    ("uuid", uuid) ::
+    ("token", uuid) ::
+    ("ccType", ccTypeValue) ::
+    kvpNil
   ) ::: ccExp ::: (
-    kvp("cardHolder", string(sv.words)) ::
-      kvp("currencyIso", enumeration[Currency.type, Currency.Value](Currency)) ::
-      kvp("deletedAt", localDateTime.optional) ::
-      kvp("lastModifiedRequest", uuid) ::
-      kvp("billingLocation", (
-        kvp("countryIso", string(sv.validVector(isoList))) ::
-        kvp("zipCode", string(sv.max(10)).optional) ::
-        KvpNil
+    ("cardHolder", string(sv.words)) ::
+      ("currencyIso", enumeration[Currency.type, Currency.Value](Currency)) ::
+      ("deletedAt", localDateTime.optional) ::
+      ("lastModifiedRequest", uuid) ::
+      ("billingLocation", (
+        ("countryIso", string(sv.validVector(isoList))) ::
+        ("zipCode", string(sv.max(10)).optional) ::
+        kvpNil
       ).convert[BillingLocation].optional) :: //TODO: Optional
-    KvpNil
+    kvpNil
   )
 
   case class OasMetadata(example: Option[String], description: Option[String])
@@ -142,21 +140,21 @@ object Schemas {
 
 
 
-  val allSupportedOptionalSchema = kvp("boolean", boolean.optional) ::
-    kvp("int", int(iv.between(0,10)).optional) ::
-    kvp("long", long(lv.min(0)).optional) ::
-    kvp("listOfInt", list(int).optional) ::
-    kvp("string", string(sv.min(0), sv.words).optional) ::
-    kvp("float", float(fv.max(100)).optional) ::
-    kvp("short", short(shv.max(100)).optional) ::
-    kvp("double", double(dv.min(0)).optional) ::
-    kvp("byteArray", byteArray.optional) ::
-    kvp("localDate", localDate(ldv.min(LocalDate.of(1800,1,1))).optional) ::
-    kvp("localDateTime", localDateTime(ldtv.min(LocalDateTime.of(1800,Month.JANUARY,1, 0, 0))).optional) ::
-    kvp("uuid", uuid.optional) ::
-    kvp("enumeration", enumeration[Currency.type, Currency.Value](Currency).optional) ::
-    kvp("bigDecimal", bigDecimal(bdv.max(BigDecimal(100))).optional) ::
-    kvp("either", either(string(sv.words), int).optional) ::
+  val allSupportedOptionalSchema = ("boolean", boolean.optional) ::
+    ("int", int(iv.between(0,10)).optional) ::
+    ("long", long(lv.min(0)).optional) ::
+    ("listOfInt", list(int).optional) ::
+    ("string", string(sv.min(0), sv.words).optional) ::
+    ("float", float(fv.max(100)).optional) ::
+    ("short", short(shv.max(100)).optional) ::
+    ("double", double(dv.min(0)).optional) ::
+    ("byteArray", byteArray.optional) ::
+    ("localDate", localDate(ldv.min(LocalDate.of(1800,1,1))).optional) ::
+    ("localDateTime", localDateTime(ldtv.min(LocalDateTime.of(1800,Month.JANUARY,1, 0, 0))).optional) ::
+    ("uuid", uuid.optional) ::
+    ("enumeration", enumeration[Currency.type, Currency.Value](Currency).optional) ::
+    ("bigDecimal", bigDecimal(bdv.max(BigDecimal(100))).optional) ::
+    ("either", either(string(sv.words), int).optional) ::
     kvpNil
 
   case class AllSupportedOptional(
@@ -178,25 +176,25 @@ object Schemas {
                                  )
 
   val allSupportedSchema =
-        kvp("boolean", boolean) ::
-        kvp("int", int(iv.between(0,10))) ::
-        kvp("long", long(lv.min(0))) ::
-        kvp("listOfInt", list(int)) ::
-        kvp("string", string(sv.min(0), sv.words)) ::
-        kvp("float", float(fv.max(100))) ::
-        kvp("short", short(shv.max(100))) ::
-        kvp("double", double(dv.min(0))) ::
-        kvp("byteArray", byteArray) ::
-        kvp("localDate", localDate(ldv.min(LocalDate.of(1800,1,1)))) ::
-        kvp("localDateTime", localDateTime(ldtv.min(LocalDateTime.of(1800,Month.JANUARY,1, 0, 0)))) ::
-        kvp("uuid", uuid) ::
-        kvp("enumeration", enumeration[Currency.type, Currency.Value](Currency)) ::
-        kvp("bigDecimal", bigDecimal(bdv.max(BigDecimal(100)))) ::
-        kvp("eitherField", either(string(sv.words), int)) ::
-        kvp("child", allSupportedOptionalSchema.convert[AllSupportedOptional]) ::
-        kvp("media", MusicMedium.bonesSchema) ::
-        kvp("int2", int(iv.between(Int.MinValue, Int.MinValue))) ::
-        KvpNil
+        ("boolean", boolean) ::
+        ("int", int(iv.between(0,10))) ::
+        ("long", long(lv.min(0))) ::
+        ("listOfInt", list(int)) ::
+        ("string", string(sv.min(0), sv.words)) ::
+        ("float", float(fv.max(100))) ::
+        ("short", short(shv.max(100))) ::
+        ("double", double(dv.min(0))) ::
+        ("byteArray", byteArray) ::
+        ("localDate", localDate(ldv.min(LocalDate.of(1800,1,1)))) ::
+        ("localDateTime", localDateTime(ldtv.min(LocalDateTime.of(1800,Month.JANUARY,1, 0, 0)))) ::
+        ("uuid", uuid) ::
+        ("enumeration", enumeration[Currency.type, Currency.Value](Currency)) ::
+        ("bigDecimal", bigDecimal(bdv.max(BigDecimal(100)))) ::
+        ("eitherField", either(string(sv.words), int)) ::
+        ("child", allSupportedOptionalSchema.convert[AllSupportedOptional]) ::
+        ("media", MusicMedium.bonesSchema) ::
+        ("int2", int(iv.between(Int.MinValue, Int.MinValue))) ::
+        kvpNil
 
 
 

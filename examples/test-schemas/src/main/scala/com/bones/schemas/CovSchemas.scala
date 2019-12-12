@@ -4,7 +4,7 @@ import java.time.{Instant, LocalDate, LocalDateTime, Month}
 import java.util.UUID
 
 import com.bones.schemas.CovSumTypeExample.{Digital, MusicMedium}
-import com.bones.covSyntax._
+import com.bones.syntax._
 import com.bones.schemas.Schemas.AllSupported
 import com.bones.validation.ValidationDefinition.ValidationOp
 import shapeless.{:+:, CNil, HNil, Inl, Inr}

@@ -1,6 +1,5 @@
 package com.bones.oas3
 
-import com.bones.data.HListConvert
 import com.bones.schemas.Schemas
 import com.bones.schemas.Schemas.AllSupported
 import org.scalatest.FunSuite
@@ -9,13 +8,9 @@ import io.swagger.v3.oas.models.OpenAPI
 
 class CrudOasInterpreterTest extends FunSuite {
 
-  val idDefinition = kvp("id", int)
-  val allSupportedWithId = Schemas.allSupportCaseClass match {
-    case h: HListConvert[_,_,AllSupported] => {
-      implicit val manifest = h.manifestOfA
-      (idDefinition :: h :><: com.bones.syntax.kvpNil).tupled[(Int,AllSupported)]
-    }
-  }
+  val idDefinition = ("id", int)
+
+  val allSupportedWithId = (idDefinition :: Schemas.allSupportCaseClass :><: kvpNil).tupled[(Int, AllSupported)]
 
   case class Error(message: String)
   val error = (kvp("message", string) :: kvpNil).convert[Error]
@@ -30,11 +25,12 @@ class CrudOasInterpreterTest extends FunSuite {
       Schemas.allSupportCaseClass,
       allSupportedWithId,
       error,
+      SwaggerCoreInterpreter.noAlgebraInterpreter,
       true, true, true, true, true
     )(new OpenAPI())
 
     val string = io.swagger.v3.core.util.Json.mapper().writeValueAsString(openApi)
-    println(string)
+//    println(string)
   }
 
 }

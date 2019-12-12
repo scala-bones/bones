@@ -1,6 +1,6 @@
 package com.bones.schemas
 
-import com.bones.covSyntax._
+import com.bones.syntax._
 
 object CovSumTypeExample {
 

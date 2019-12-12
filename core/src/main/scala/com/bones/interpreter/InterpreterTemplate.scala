@@ -10,25 +10,27 @@ import shapeless.{Coproduct, HList, Nat}
   */
 class InterpreterTemplate {
 
-  def kvpHList[H <: HList, HL <: Nat](group: KvpHList[H, HL]): Unit = {
+  def kvpHList[ALG[_], H <: HList, HL <: Nat](group: KvpHList[ALG, H, HL]): Unit = {
     group match {
-      case KvpNil => ???
-      case op: KvpSingleValueHead[h, t, tl, a] => ???
-      case op: KvpHListHead[a, al, h, hl, t, tl] => ???
-      case op: KvpConcreteTypeHead[a, ht, nt, ho, xl, xll] => ???
+      case nil: KvpNil[_] => ???
+      case op: KvpSingleValueHead[alg, h, t, tl, a] => ???
+      case op: KvpHListHead[alg, a, al, h, hl, t, tl] => ???
+      case op: KvpConcreteTypeHead[alg, a, ht, nt] => ???
     }
   }
 
-  def kvpCoproduct[C<:Coproduct](co: KvpCoproduct[C]): Unit = {
+  def kvpCoproduct[ALG[_], C<:Coproduct](co: KvpCoproduct[ALG, C]): Unit = {
     co match {
-      case KvpCoNil => ???
-      case co: KvpSingleValueLeft[l,r] => ???
+      case nil: KvpCoNil[_] => ???
+      case co: KvpSingleValueLeft[alg, l,r] => ???
     }
   }
+
+  def determineValueDefinition[ALG[_], A](value: Either[KvpValue[A], ALG[A]], interpeter: Nothing): Unit = ???
 
   def valueDefinition[A](fgo: KvpValue[A]): Unit =
     fgo match {
-      case op: OptionalKvpValueDefinition[a] => ???
+      case op: OptionalKvpValueDefinition[alg, a] => ???
       case ob: BooleanData => ???
       case rs: StringData => ???
       case id: IntData => ???
@@ -40,14 +42,14 @@ class InterpreterTemplate {
       case sd: ShortData => ???
       case id: DoubleData => ???
       case bd: BigDecimalData => ???
-      case ld: ListData[t] => ???
-      case ed: EitherData[a, b] => ???
+      case ld: ListData[alg, t] => ???
+      case ed: EitherData[alg, a, b] => ???
       case ba: ByteArrayData => ???
       case esd: EnumerationData[a,b] => ???
-      case kvp: KvpHListValue[h, hl] => ???
-      case co: KvpCoproductValue[c] => ???
-      case x: HListConvert[a, al, b] => ???
-      case co: KvpCoproductConvert[c,a] => ???
+      case kvp: KvpHListValue[alg, h, hl] => ???
+      case co: KvpCoproductValue[alg, c] => ???
+      case x: HListConvert[alg, a, al, b] => ???
+      case co: KvpCoproductConvert[alg, c,a] => ???
     }
 
 }

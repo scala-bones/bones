@@ -1,12 +1,12 @@
 package com.bones.circe
 
-import java.time.{LocalDate, LocalDateTime}
 import java.time.format.DateTimeFormatter
+import java.time.{LocalDate, LocalDateTime}
 import java.util.{Base64, UUID}
 
-import com.bones.data.KeyValueDefinition
-import com.bones.data._
+import com.bones.data.{KeyValueDefinition, _}
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
+import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.NoAlgebraEncoder
 import io.circe._
 
 object CirceEncoderInterpreter {
@@ -15,9 +15,11 @@ object CirceEncoderInterpreter {
     * Implementation of the [CirceEncoderInterpreter] specifying ISO String formatter for date and datetime.
     */
   val isoInterpreter: CirceEncoderInterpreter = new CirceEncoderInterpreter {
-    override def dateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-    override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
-  }
+      override def dateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+      override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+    }
+
+  val noAlgebraEncoder: NoAlgebraEncoder[Json] = NoAlgebraEncoder[Json]()
 }
 
 /**
@@ -40,7 +42,7 @@ trait CirceEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[Jso
     Json.obj(v1 ::: v2: _*)
   }
 
-  override def toObj[A](kvDef: KeyValueDefinition[A], value: Json): Json =
+  override def toObj[ALG[_], A](kvDef: KeyValueDefinition[ALG, A], value: Json): Json =
     Json.obj((kvDef.key, value))
 
   override def booleanToOut(op: BooleanData): Boolean => Json =
