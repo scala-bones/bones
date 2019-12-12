@@ -8,7 +8,7 @@ class ToOasInterpreterTest extends FunSuite {
 
   val interpreter = SwaggerCoreInterpreter.isoInterpreter
 
-  val swaggerSchema = interpreter(allSupportCaseClass)("root")
+  val swaggerSchema = interpreter.fromSchema(allSupportCaseClass)("root")
 //  val str = io.swagger.v3.core.util.Json.mapper().writeValueAsString(swaggerSchema)
   val str = swaggerSchema.map(schemas => io.swagger.v3.core.util.Yaml.mapper().writeValueAsString(schemas._2)).mkString("\n")
   println(str)
@@ -16,7 +16,7 @@ class ToOasInterpreterTest extends FunSuite {
   test("simpleTypeWorks") {
     case class Simple(id: Int, name: String)
     val simpleBone = (kvp("id", int) :: kvp("name", string) :: kvpNil).convert[Simple]
-    val simpleSwagger = interpreter(simpleBone)("root")
+    val simpleSwagger = interpreter.fromSchema(simpleBone)("root")
     val simpleStr = io.swagger.v3.core.util.Yaml.mapper().writeValueAsString(simpleSwagger.head._2)
     println(simpleStr)
   }

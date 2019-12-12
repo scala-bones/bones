@@ -2,11 +2,10 @@ package com.bones.circe
 
 import java.nio.charset.Charset
 
-import com.bones.scalacheck.Scalacheck
-import org.scalatest.{FunSuite, MustMatchers}
+import com.bones.scalacheck.{NoAlgebraGen, Scalacheck}
 import com.bones.schemas.Schemas.{AllSupported, allSupportCaseClass}
 import org.scalacheck.Arbitrary
-import org.scalatest.FunSuite
+import org.scalatest.{FunSuite, MustMatchers}
 import org.scalatestplus.scalacheck.Checkers
 
 
@@ -18,14 +17,18 @@ class CirceTest extends FunSuite with Checkers with MustMatchers {
 
   val validateFromCirce = CirceValidatorInterpreter.isoInterpreter
 
-  val jsonToCc = validateFromCirce.byteArrayFuncFromSchema(allSupportCaseClass, Charset.forName("UTF8"))
-  val ccToJson = CirceEncoderInterpreter.isoInterpreter.fromSchema(allSupportCaseClass)
+  val noAlgebraInterpreter = CirceValidatorInterpreter.noAlgebraInterpreter
 
-  implicit val arb = Arbitrary(Scalacheck.valueDefinition(allSupportCaseClass))
+  val interchangeFormatEncoder = CirceEncoderInterpreter.noAlgebraEncoder
+
+  val jsonToCc = validateFromCirce.byteArrayFuncFromSchema(allSupportCaseClass, Charset.forName("UTF8"), noAlgebraInterpreter )
+  val ccToJson = CirceEncoderInterpreter.isoInterpreter.fromSchema(allSupportCaseClass, interchangeFormatEncoder)
+
+  implicit val arb = Arbitrary(Scalacheck.valueDefinition(allSupportCaseClass, NoAlgebraGen))
   val utf8 = Charset.forName("UTF8")
 
 
-  test("scalacheck allSupport types - marshall then marshall") {
+  test("scalacheck allSupport types - marshall then unmarshall") {
     check((cc: AllSupported) => {
       val json = ccToJson.apply(cc)
       val jsonString = json.spaces2.getBytes(utf8)
