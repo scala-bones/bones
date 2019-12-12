@@ -14,7 +14,7 @@ object SumTypeExample {
 
   object MusicMedium {
     val baseFields =
-      kvp("name", string(sv.words)) ::
+      ("name", string(sv.words)) ::
       kvpNil
 
     // Note the order needs to be the order in which they are defined below
@@ -30,8 +30,8 @@ object SumTypeExample {
   object Album {
     private val fields =
       MusicMedium.baseFields :::
-      kvp("albumQuality", Quality.bonesSchema) ::
-      kvp("coverQuality", Quality.bonesSchema) ::
+      ("albumQuality", Quality.bonesSchema) ::
+      ("coverQuality", Quality.bonesSchema) ::
       kvpNil
 
     val bonesSchema = fields.convert[Album]
@@ -41,8 +41,8 @@ object SumTypeExample {
   object CompactDisc {
     private val fields =
       MusicMedium.baseFields :::
-      kvp("cdQuality", Quality.bonesSchema) ::
-      kvp("caseQuality", Quality.bonesSchema) ::
+      ("cdQuality", Quality.bonesSchema) ::
+      ("caseQuality", Quality.bonesSchema) ::
       kvpNil
 
     val bonesSchema = fields.convert[CompactDisc]
@@ -53,7 +53,7 @@ object SumTypeExample {
   object Digital {
     private val fields =
       MusicMedium.baseFields :::
-      kvp("format", string()) ::
+      ("format", string()) ::
       kvpNil
     val bonesSchema = fields.convert[Digital]
   }
@@ -63,8 +63,8 @@ object SumTypeExample {
 
   object Item {
     val fields =
-      kvp("artist", string(sv.words)) ::
-//      kvp("medium", MusicMedium.bonesSchema) ::
+      ("artist", string(sv.words)) ::
+//      ("medium", MusicMedium.bonesSchema) ::
       kvpNil
 //    val bonesSchema = fields.convert[Item]
   }

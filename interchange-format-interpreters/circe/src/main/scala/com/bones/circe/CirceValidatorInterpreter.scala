@@ -12,6 +12,7 @@ import com.bones.data.KeyValueDefinition
 import com.bones.data.KvpValue.Path
 import com.bones.data._
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
+import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.{InterchangeFormatValidator, NoAlgebraValidator}
 import io.circe.Json
 
 object CirceValidatorInterpreter {
@@ -23,6 +24,8 @@ object CirceValidatorInterpreter {
     override def dateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
     override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
   }
+
+  val noAlgebraInterpreter = NoAlgebraValidator[Json]()
 }
 
 /**
@@ -37,13 +40,17 @@ trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
 
   override def isEmpty(json: Json): Boolean = json.isNull
 
-  def byteArrayFuncFromSchema[A](schema: BonesSchema[A], charset: Charset) :
-  Array[Byte] => Either[NonEmptyList[ExtractionError],A] = {
-    val f = fromSchema(schema)
-    bytes => {
-      fromByteArray(bytes, charset).flatMap(f(_))
+  def byteArrayFuncFromSchema[ALG[_], A]
+    (
+      schema: BonesSchema[ALG, A],
+      charset: Charset,
+      validatorInterpreter: InterchangeFormatValidator[ALG,Json]
+    ) : Array[Byte] => Either[NonEmptyList[ExtractionError],A] = {
+      val f = fromSchema(schema, validatorInterpreter)
+      bytes => {
+        fromByteArray(bytes, charset).flatMap(f(_))
+      }
     }
-  }
 
   def fromByteArray(arr: Array[Byte], charSet: Charset)
     : Either[NonEmptyList[ParsingError], Json] = {
@@ -80,9 +87,9 @@ trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
     NonEmptyList.one(error)
   }
 
-  override def headValue[A](
+  override def headValue[ALG[_], A](
       in: Json,
-      kv: KeyValueDefinition[A],
+      kv: KeyValueDefinition[ALG, A],
       headInterpreter: (
           Option[Json],
           List[String]) => Either[NonEmptyList[ExtractionError], A],
@@ -156,7 +163,7 @@ trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
     .toRight(determineError(in, op, classOf[LocalDate], path))
     .flatMap(stringToLocalDate(_, localDateFormatter, path))
 
-  override def extractArray[A](op: ListData[A])(
+  override def extractArray[ALG[_], A](op: ListData[ALG, A])(
       in: Json,
       path: List[String]): Either[NonEmptyList[ExtractionError], Seq[Json]] =
     in.asArray

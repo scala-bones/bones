@@ -4,6 +4,8 @@ import java.util.UUID
 
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
 import com.bones.data._
+import com.bones.oas3.SwaggerCoreInterpreter.CustomSwaggerInterpreter
+import com.bones.syntax.NoAlgebra
 import com.bones.validation.ValidationDefinition.{InvalidValue, ValidValue, ValidationOp, BigDecimalValidation => bdv, LongValidation => iv, StringValidation => sv}
 import io.swagger.v3.oas.models.media._
 import shapeless.{Coproduct, HList, Nat}
@@ -28,7 +30,21 @@ object SwaggerCoreInterpreter {
     override def localDateFormatterExample: String = "2011-12-03T10:15:30"
   }
 
-  def apply[A](gd: BonesSchema[A]): Name => List[(Name, Schema[_])] = isoInterpreter.apply(gd)
+  def fromSchemaWithAlg[ALG[_], A](gd: BonesSchema[ALG, A], customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]):
+    Name => List[(Name, Schema[_])] = isoInterpreter.fromSchemaWithAlg(gd, customAlgebraInterpreter)
+
+  def fromSchema[ALG[_], A](gd: BonesSchema[NoAlgebra, A]): Name => List[(Name, Schema[_])] =
+    fromSchemaWithAlg[NoAlgebra, A](gd, noAlgebraInterpreter)
+
+
+  trait CustomSwaggerInterpreter[ALG[_]] {
+    def toSchema[A](vd: ALG[A]):  Name => SwaggerSchemas[Schema[_]]
+  }
+
+  val noAlgebraInterpreter = new CustomSwaggerInterpreter[NoAlgebra] {
+    override def toSchema[A](vd: NoAlgebra[A]): Nothing =
+      sys.error("Unreachable code")
+  }
 }
 
 /**
@@ -48,64 +64,91 @@ trait SwaggerCoreInterpreter {
     tail
   }
 
-  def apply[A](gd: BonesSchema[A]): Name => List[(Name, Schema[_])] = name => {
-    val schemas = gd match {
-      case x: HListConvert[_, _, A] => fromValueDef(x)(name)
-      case x: KvpCoproductConvert[_, A] => fromValueDef(x)(name)
-    }
-    (name, schemas.mainSchema) :: schemas.referenceSchemas
-  }
-
-  private def fromKvpCoproduct[C<:Coproduct](co: KvpCoproduct[C]): SwaggerSchemas[ComposedSchema] = {
-    co match {
-      case KvpCoNil => SwaggerSchemas(new ComposedSchema())
-      case co: KvpSingleValueLeft[l,r] => {
-        val name = co.manifestL.runtimeClass.getSimpleName
-        val lSchema = fromValueDef(co.kvpValue)(name)
-        val composedSchema = fromKvpCoproduct(co.kvpTail)
-        val objectSchema = new ObjectSchema().$ref(name)
-        val mainSchema = composedSchema.mainSchema.addOneOfItem(objectSchema)
-        SwaggerSchemas(mainSchema, (name, lSchema.mainSchema) :: lSchema.referenceSchemas ::: composedSchema.referenceSchemas)
+  def fromSchemaWithAlg[ALG[_],A]
+    (
+      gd: BonesSchema[ALG,A],
+      customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]
+    ): Name => List[(Name, Schema[_])] = name => {
+      val schemas = gd match {
+        case x: HListConvert[ALG,_, _, A] => valueDefinition(x, customAlgebraInterpreter)(name)
+        case x: KvpCoproductConvert[ALG,_, A] => valueDefinition(x, customAlgebraInterpreter)(name)
       }
+      (name, schemas.mainSchema) :: schemas.referenceSchemas
     }
-  }
 
-  private def fromKvpHList[H <: HList, HL <: Nat](
-      group: KvpHList[H, HL]):  SwaggerSchemas[ObjectSchema] = {
+  def fromSchema[A]
+  (
+    gd: BonesSchema[NoAlgebra,A]
+  ): Name => List[(Name, Schema[_])] = fromSchemaWithAlg(gd, SwaggerCoreInterpreter.noAlgebraInterpreter)
+
+  private def fromKvpCoproduct[ALG[_],C<:Coproduct]
+    (
+      co: KvpCoproduct[ALG,C],
+      customInterpreter: CustomSwaggerInterpreter[ALG]
+    ): SwaggerSchemas[ComposedSchema] =
+      co match {
+        case nil: KvpCoNil[_] => SwaggerSchemas(new ComposedSchema())
+        case co: KvpSingleValueLeft[ALG,l,r] @unchecked => {
+          val name = co.manifestL.runtimeClass.getSimpleName
+          val lSchema = determineValueDefinition(co.kvpValue, customInterpreter)(name)
+          val composedSchema = fromKvpCoproduct(co.kvpTail, customInterpreter)
+          val objectSchema = new ObjectSchema().$ref(name)
+          val mainSchema = composedSchema.mainSchema.addOneOfItem(objectSchema)
+          SwaggerSchemas(mainSchema, (name, lSchema.mainSchema) :: lSchema.referenceSchemas ::: composedSchema.referenceSchemas)
+        }
+      }
+
+  private def fromKvpHList[ALG[_], H <: HList, HL <: Nat](
+      group: KvpHList[ALG, H, HL], customInterpreter: CustomSwaggerInterpreter[ALG]):  SwaggerSchemas[ObjectSchema] = {
     group match {
-      case KvpNil =>
+      case nil: KvpNil[_] =>
         val schema = new ObjectSchema()
         schema.nullable(false)
         SwaggerSchemas(schema)
-      case op: KvpHListHead[H, al, h, hl, t, tl] =>
-        val headSchemas = fromKvpHList(op.head)
-        val tailSchemas = fromKvpHList(op.tail)
+      case op: KvpHListHead[ALG,H, al, h, hl, t, tl] @unchecked =>
+        val headSchemas = fromKvpHList(op.head, customInterpreter)
+        val tailSchemas = fromKvpHList(op.tail, customInterpreter)
         val schema = copySchema(headSchemas.mainSchema, tailSchemas.mainSchema)
         SwaggerSchemas(schema, headSchemas.referenceSchemas ::: tailSchemas.referenceSchemas)
-      case op: KvpSingleValueHead[h, t, tl, o] =>
-        val headSchemas = fromValueDef(op.fieldDefinition.op)(op.fieldDefinition.key)
-        val tailSchemas = fromKvpHList(op.tail)
+      case op: KvpSingleValueHead[ALG, h, t, tl, o] =>
+        val headSchemas = determineValueDefinition(op.fieldDefinition.op, customInterpreter)(op.fieldDefinition.key)
+        val tailSchemas = fromKvpHList(op.tail, customInterpreter)
         tailSchemas.mainSchema.addProperties(op.fieldDefinition.key, headSchemas.mainSchema)
         val schema = copySchema(headSchemas.mainSchema, tailSchemas.mainSchema)
         SwaggerSchemas(schema, headSchemas.referenceSchemas ::: tailSchemas.referenceSchemas)
-      case op: KvpConcreteTypeHead[a, ht, nt, ho, xh, xl] =>
-        val name = op.manifestOfA.runtimeClass.getSimpleName
-        val headSchemas = fromValueDef(op.hListConvert)(name)
-        val tailSchemas = fromKvpHList(op.tail)
+      case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked =>
+        val headSchemas = op.bonesSchema match {
+          case op: KvpCoproductConvert[ALG, c, a] =>
+            fromKvpCoproduct(op.from, customInterpreter)
+          case op: HListConvert[ALG, h, n, a] =>
+            fromKvpHList(op.from, customInterpreter)
+        }
+        val tailSchemas = fromKvpHList(op.tail, customInterpreter)
         val schema = copySchema(headSchemas.mainSchema, tailSchemas.mainSchema)
         SwaggerSchemas(schema, headSchemas.referenceSchemas ::: tailSchemas.referenceSchemas)
     }
   }
+
+
+  def determineValueDefinition[ALG[_], A]
+    (
+      value: Either[KvpValue[A], ALG[A]],
+      customInterpreter: CustomSwaggerInterpreter[ALG]
+    ): Name => SwaggerSchemas[Schema[_]] =
+      value match {
+        case Left(kvp) => valueDefinition(kvp, customInterpreter)
+        case Right(alg) => customInterpreter.toSchema(alg)
+      }
 
   /**
     * Recursive method which builds up a Swagger Core Schema object from the DataClass definition.
     * @param vd The DataClass definition to convert to a Schema
     **/
-  def fromValueDef[A](vd: KvpValue[A]):  Name => SwaggerSchemas[Schema[_]] = {
+  def valueDefinition[ALG[_],A](vd: KvpValue[A], customInterpreter: CustomSwaggerInterpreter[ALG]):  Name => SwaggerSchemas[Schema[_]] = {
     vd match {
-      case op: OptionalKvpValueDefinition[b] =>
+      case op: OptionalKvpValueDefinition[ALG,b] @unchecked =>
         name =>
-          val oasSchema = fromValueDef(op.valueDefinitionOp)(name)
+          val oasSchema = determineValueDefinition(op.valueDefinitionOp, customInterpreter)(name)
           oasSchema.copy(mainSchema = oasSchema.mainSchema.nullable(true))
       case _: BooleanData =>
         name =>
@@ -198,24 +241,24 @@ trait SwaggerCoreInterpreter {
             .nullable(false)
             .name(name)
           SwaggerSchemas(baSchema)
-      case ListData(definition, _) =>
+      case ld: ListData[ALG,t] @unchecked =>
         name =>
-          val itemSchema = fromValueDef(definition)(name)
+          val itemSchema = determineValueDefinition(ld.tDefinition, customInterpreter)(name)
           val arraySchema = new ArraySchema()
           arraySchema.setItems(itemSchema.mainSchema)
           arraySchema.name(name)
           SwaggerSchemas(arraySchema, itemSchema.referenceSchemas)
-      case ed: EitherData[a, b] =>
+      case ed: EitherData[ALG, a, b] @unchecked =>
         name =>
-          val a = fromValueDef(ed.definitionA)("left" + name.capitalize)
-          val b = fromValueDef(ed.definitionB)("right" + name.capitalize)
+          val a = determineValueDefinition(ed.definitionA, customInterpreter)("left" + name.capitalize)
+          val b = determineValueDefinition(ed.definitionB, customInterpreter)("right" + name.capitalize)
           val composedSchema = new ComposedSchema()
             .addAnyOfItem(a.mainSchema)
             .addAnyOfItem(b.mainSchema)
             .nullable(false)
             .name(name)
           SwaggerSchemas(composedSchema, a.referenceSchemas ::: b.referenceSchemas)
-      case esd: EnumerationData[e,a] =>
+      case esd: EnumerationData[e,a] @unchecked =>
         name =>
           val stringSchema = new StringSchema()
           stringSchema.name(name)
@@ -224,24 +267,24 @@ trait SwaggerCoreInterpreter {
           esd.enumeration.values.foreach(v =>
             stringSchema.addEnumItemObject(v.toString))
           SwaggerSchemas(stringSchema)
-      case gd: KvpHListValue[h, hl] =>
+      case gd: KvpHListValue[ALG, h, hl] @unchecked =>
         name =>
-          val schemas = fromKvpHList(gd.kvpHList)
+          val schemas = fromKvpHList(gd.kvpHList, customInterpreter)
           schemas.mainSchema.name(name)
           schemas
-      case x: HListConvert[_, _, a] =>
+      case x: HListConvert[ALG, _, _, a] @unchecked =>
         name =>
-          val schemas = fromKvpHList(x.from)
+          val schemas = fromKvpHList(x.from, customInterpreter)
           schemas.mainSchema.name(name)
           schemas
-      case co: KvpCoproductConvert[c,a] =>
+      case co: KvpCoproductConvert[ALG,c,a] @unchecked =>
         name =>
-          val coproductSchemas = fromKvpCoproduct(co.from)
+          val coproductSchemas = fromKvpCoproduct(co.from, customInterpreter)
           val main = new ObjectSchema().$ref(name)
           SwaggerSchemas(main, (name, coproductSchemas.mainSchema) :: coproductSchemas.referenceSchemas)
-      case co: KvpCoproductValue[c] =>
+      case co: KvpCoproductValue[ALG,c] @unchecked =>
         name =>
-          val coproductSchemas = fromKvpCoproduct(co.kvpCoproduct)
+          val coproductSchemas = fromKvpCoproduct(co.kvpCoproduct, customInterpreter)
           val main = new ObjectSchema()
             .name(name)
             .$ref(name)

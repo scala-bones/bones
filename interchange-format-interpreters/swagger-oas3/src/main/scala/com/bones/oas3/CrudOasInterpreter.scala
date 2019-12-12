@@ -1,6 +1,7 @@
 package com.bones.oas3
 
 import com.bones.data.BonesSchema
+import com.bones.oas3.SwaggerCoreInterpreter.CustomSwaggerInterpreter
 import io.swagger.v3.oas.models._
 import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.media._
@@ -15,19 +16,20 @@ import scala.collection.JavaConverters._
   */
 object CrudOasInterpreter {
 
-  def jsonApiForService[A, E, ID](
-      path: String,
-      title: String,
-      version: String,
-      contentTypes: List[String],
-      schema: BonesSchema[A],
-      schemaWithId: BonesSchema[(ID,A)],
-      errorSchema: BonesSchema[E],
-      withCreate: Boolean,
-      withRead: Boolean,
-      withUpdate: Boolean,
-      withDelete: Boolean,
-      withSearch: Boolean
+  def jsonApiForService[ALG[_], A, E, ID](
+                                           path: String,
+                                           title: String,
+                                           version: String,
+                                           contentTypes: List[String],
+                                           schema: BonesSchema[ALG, A],
+                                           schemaWithId: BonesSchema[ALG, (ID,A)],
+                                           errorSchema: BonesSchema[ALG, E],
+                                           customAlgebraInterpreter: CustomSwaggerInterpreter[ALG],
+                                           withCreate: Boolean,
+                                           withRead: Boolean,
+                                           withUpdate: Boolean,
+                                           withDelete: Boolean,
+                                           withSearch: Boolean
   ): OpenAPI => OpenAPI = { openApi =>
     if (withCreate) {
       CrudOasInterpreter
@@ -36,14 +38,15 @@ object CrudOasInterpreter {
           (schemaWithId, path),
           (errorSchema, "error"),
           s"/${path}",
-          contentTypes
+          contentTypes,
+          customAlgebraInterpreter
         )
         .apply(openApi)
     }
 
     if (withRead) {
       CrudOasInterpreter
-        .get((schemaWithId, path), s"/${path}")
+        .get((schemaWithId, path), s"/${path}", customAlgebraInterpreter)
         .apply(openApi)
     }
 
@@ -54,14 +57,15 @@ object CrudOasInterpreter {
           (schemaWithId, path),
           (errorSchema, "error"),
           s"/${path}",
-          contentTypes
+          contentTypes,
+          customAlgebraInterpreter
         )
         .apply(openApi)
     }
 
     if (withDelete) {
       CrudOasInterpreter
-        .delete((schemaWithId, path), s"/${path}", contentTypes)
+        .delete((schemaWithId, path), s"/${path}", contentTypes, customAlgebraInterpreter)
         .apply(openApi)
     }
 
@@ -106,51 +110,57 @@ object CrudOasInterpreter {
 
   }
 
-  def get[A](outputSchema: (BonesSchema[A], String),
-             urlPath: String): OpenAPI => OpenAPI = { openAPI =>
-    val outputEntityName = outputSchema._2
+  def get[ALG[_],A]
+    (
+      outputSchema: (BonesSchema[ALG,A], String),
+      urlPath: String,
+      customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]
+    ): OpenAPI => OpenAPI = { openAPI =>
 
-    val inputSchemas =
-      SwaggerCoreInterpreter(outputSchema._1)(outputEntityName)
+      val outputEntityName = outputSchema._2
 
-    inputSchemas.foreach {
-      schemas => upsertComponent(openAPI, schemas._1, schemas._2)
+      val inputSchemas =
+        SwaggerCoreInterpreter.fromSchemaWithAlg(outputSchema._1, customAlgebraInterpreter)(outputEntityName)
+
+      inputSchemas.foreach {
+        schemas => upsertComponent(openAPI, schemas._1, schemas._2)
+      }
+
+      val apiResponse = new ApiResponse()
+        .$ref(s"#/components/schemas/${outputEntityName}")
+      val apiResponses = new ApiResponses()
+        .addApiResponse("200", apiResponse)
+
+      val paramSchema = new IntegerSchema()
+      val param = new Parameter()
+        .name("id")
+        .in("path")
+        .required(true)
+        .description(s"id of the ${outputEntityName} to retrieve")
+        .schema(paramSchema)
+
+      val operation = new Operation()
+        .responses(apiResponses)
+        .parameters(java.util.Collections.singletonList(param))
+        .tags(java.util.Collections.singletonList(outputEntityName))
+        .summary(s"Find ${outputEntityName} by ID")
+        .description(s"Returns ${outputEntityName} by id")
+        .operationId(s"get${outputEntityName.capitalize}ById")
+
+      upcertPath(openAPI, "/{id}", _.get(operation))
+
+      openAPI
     }
 
-    val apiResponse = new ApiResponse()
-      .$ref(s"#/components/schemas/${outputEntityName}")
-    val apiResponses = new ApiResponses()
-      .addApiResponse("200", apiResponse)
-
-    val paramSchema = new IntegerSchema()
-    val param = new Parameter()
-      .name("id")
-      .in("path")
-      .required(true)
-      .description(s"id of the ${outputEntityName} to retrieve")
-      .schema(paramSchema)
-
-    val operation = new Operation()
-      .responses(apiResponses)
-      .parameters(java.util.Collections.singletonList(param))
-      .tags(java.util.Collections.singletonList(outputEntityName))
-      .summary(s"Find ${outputEntityName} by ID")
-      .description(s"Returns ${outputEntityName} by id")
-      .operationId(s"get${outputEntityName.capitalize}ById")
-
-    upcertPath(openAPI, "/{id}", _.get(operation))
-
-    openAPI
-  }
-
-  def delete[O](
-      outputSchemaWithName: (BonesSchema[O], String),
+  def delete[ALG[_], O](
+      outputSchemaWithName: (BonesSchema[ALG, O], String),
       urlPath: String,
-      contentTypes: List[String]
+      contentTypes: List[String],
+      customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]
   ): OpenAPI => OpenAPI = { openAPI =>
     val outputEntityName = outputSchemaWithName._2
     val outputComponentSchema =
-      SwaggerCoreInterpreter(outputSchemaWithName._1)(outputEntityName)
+      SwaggerCoreInterpreter.fromSchemaWithAlg(outputSchemaWithName._1, customAlgebraInterpreter)(outputEntityName)
 
     outputComponentSchema.foreach {
       case (name, schema) => upsertComponent(openAPI, name, schema)
@@ -181,23 +191,24 @@ object CrudOasInterpreter {
     openAPI
   }
 
-  def put[I, O, E](
-      inputSchemaAndName: (BonesSchema[I], String),
-      outputSchemaAndName: (BonesSchema[O], String),
-      errorSchemaAndName: (BonesSchema[E], String),
+  def put[ALG[_], I, O, E](
+      inputSchemaAndName: (BonesSchema[ALG, I], String),
+      outputSchemaAndName: (BonesSchema[ALG, O], String),
+      errorSchemaAndName: (BonesSchema[ALG, E], String),
       urlPath: String,
-      contentTypes: List[String]
+      contentTypes: List[String],
+      customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]
   ): OpenAPI => OpenAPI = { openAPI =>
     val inputEntityName = inputSchemaAndName._2
     val outputEntityName = outputSchemaAndName._2
     val errorEntityName = errorSchemaAndName._2
 
     val inputComponentSchemas =
-      SwaggerCoreInterpreter(inputSchemaAndName._1)(inputEntityName)
+      SwaggerCoreInterpreter.fromSchemaWithAlg(inputSchemaAndName._1, customAlgebraInterpreter)(inputEntityName)
     val outputComponentSchemas =
-      SwaggerCoreInterpreter(outputSchemaAndName._1)(outputEntityName)
+      SwaggerCoreInterpreter.fromSchemaWithAlg(outputSchemaAndName._1, customAlgebraInterpreter)(outputEntityName)
     val errorComponentSchemas =
-      SwaggerCoreInterpreter(errorSchemaAndName._1)(errorEntityName)
+      SwaggerCoreInterpreter.fromSchemaWithAlg(errorSchemaAndName._1, customAlgebraInterpreter)(errorEntityName)
 
     (inputComponentSchemas ::: outputComponentSchemas ::: errorComponentSchemas)
       .foreach { case (name, schema) => upsertComponent(openAPI, name, schema) }
@@ -254,65 +265,68 @@ object CrudOasInterpreter {
 
   }
 
-  def post[I, O, E](inputSchemaAndName: (BonesSchema[I], String),
-                    outputSchemaAndName: (BonesSchema[O], String),
-                    errorSchemaAndName: (BonesSchema[E], String),
-                    urlPath: String,
-                    contentTypes: List[String]): OpenAPI => OpenAPI = {
-    openAPI =>
-      val inputEntityName = inputSchemaAndName._2
-      val outputEntityName = outputSchemaAndName._2
-      val errorEntityName = errorSchemaAndName._2
+  def post[ALG[_], I, O, E]
+    (
+      inputSchemaAndName: (BonesSchema[ALG, I], String),
+      outputSchemaAndName: (BonesSchema[ALG, O], String),
+      errorSchemaAndName: (BonesSchema[ALG, E], String),
+      urlPath: String,
+      contentTypes: List[String],
+      customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]
+    ): OpenAPI => OpenAPI = {
+      openAPI =>
+        val inputEntityName = inputSchemaAndName._2
+        val outputEntityName = outputSchemaAndName._2
+        val errorEntityName = errorSchemaAndName._2
 
-      val inputComponentSchemas =
-        SwaggerCoreInterpreter(inputSchemaAndName._1)(inputEntityName)
-      val outputComponentSchemas =
-        SwaggerCoreInterpreter(outputSchemaAndName._1)(outputEntityName)
-      val errorComponentSchemas =
-        SwaggerCoreInterpreter(errorSchemaAndName._1)(errorEntityName)
+        val inputComponentSchemas =
+          SwaggerCoreInterpreter.fromSchemaWithAlg(inputSchemaAndName._1, customAlgebraInterpreter)(inputEntityName)
+        val outputComponentSchemas =
+          SwaggerCoreInterpreter.fromSchemaWithAlg(outputSchemaAndName._1, customAlgebraInterpreter)(outputEntityName)
+        val errorComponentSchemas =
+          SwaggerCoreInterpreter.fromSchemaWithAlg(errorSchemaAndName._1, customAlgebraInterpreter)(errorEntityName)
 
-      (inputComponentSchemas ::: outputComponentSchemas ::: errorComponentSchemas)
-        .foreach { case (name, schema) => upsertComponent(openAPI, name, schema) }
+        (inputComponentSchemas ::: outputComponentSchemas ::: errorComponentSchemas)
+          .foreach { case (name, schema) => upsertComponent(openAPI, name, schema) }
 
-      val outputComponentRef = s"#/components/schemas/${outputEntityName}"
-      val inputComponentRef = s"#/components/schemas/${inputEntityName}"
-      val errorComponentRef = s"#/components/schemas/${errorEntityName}"
+        val outputComponentRef = s"#/components/schemas/${outputEntityName}"
+        val inputComponentRef = s"#/components/schemas/${inputEntityName}"
+        val errorComponentRef = s"#/components/schemas/${errorEntityName}"
 
-      val apiResponses = new ApiResponses()
-        .addApiResponse("200", new ApiResponse().$ref(outputComponentRef))
-        .addApiResponse("400", new ApiResponse().$ref(errorComponentRef))
+        val apiResponses = new ApiResponses()
+          .addApiResponse("200", new ApiResponse().$ref(outputComponentRef))
+          .addApiResponse("400", new ApiResponse().$ref(errorComponentRef))
 
-      val inputOasSchema = new Schema()
-        .$ref(inputComponentRef)
+        val inputOasSchema = new Schema()
+          .$ref(inputComponentRef)
 
-      val operation = new Operation()
-        .responses(apiResponses)
-        .tags(java.util.Collections.singletonList(outputEntityName))
-        .summary(s"Create ${inputEntityName}, returning ${outputEntityName}")
-        .description(s"Create and return the newly created ${outputEntityName}")
-        .operationId(s"post${inputEntityName}")
+        val operation = new Operation()
+          .responses(apiResponses)
+          .tags(java.util.Collections.singletonList(outputEntityName))
+          .summary(s"Create ${inputEntityName}, returning ${outputEntityName}")
+          .description(s"Create and return the newly created ${outputEntityName}")
+          .operationId(s"post${inputEntityName}")
 
-      val content = new Content()
+        val content = new Content()
 
-      contentTypes.foreach(contentType => {
-        val encoding = new Encoding().contentType(contentType)
-        val encodings = Map((contentType, encoding))
-        val mediaType = new MediaType()
-          .schema(inputOasSchema)
-          .encoding(encodings.asJava)
-        content
-          .addMediaType(contentType, mediaType)
+        contentTypes.foreach(contentType => {
+          val encoding = new Encoding().contentType(contentType)
+          val encodings = Map((contentType, encoding))
+          val mediaType = new MediaType()
+            .schema(inputOasSchema)
+            .encoding(encodings.asJava)
+          content
+            .addMediaType(contentType, mediaType)
 
-      })
-      val requestBody = new RequestBody()
-        .content(content)
+        })
+        val requestBody = new RequestBody()
+          .content(content)
 
-      operation.setRequestBody(requestBody)
+        operation.setRequestBody(requestBody)
 
-      upcertPath(openAPI, "/", _.post(operation))
+        upcertPath(openAPI, "/", _.post(operation))
 
-      openAPI
-
-  }
+        openAPI
+    }
 
 }

@@ -3,30 +3,49 @@ package com.bones.data
 import java.time.{LocalDate, LocalDateTime}
 import java.util.UUID
 
-import com.bones.data._
+import com.bones.syntax.NoAlgebra
 import com.bones.validation.ValidationDefinition.ValidationOp
-import shapeless.{Coproduct, HList, Nat}
+import shapeless.{CNil, Coproduct, HList, Nat}
 
-/** A String key and it's value description where A is the type the value. */
-case class KeyValueDefinition[A](key: String, op: KvpValue[A])
+/** A String key and it's value description where A is the type the value.
+  *
+  * @param key
+  * @param op
+  * @tparam A
+  * @tparam ALG Coprodcut Value
+  */
+case class KeyValueDefinition[ALG[_], A](key: String, op: KeyValueDefinition.CoproductDataDefinition[ALG, A])
 
-/** Useful DSL builder */
-trait KeyValueDefinitionSugar {
-  def kvp[A](key: String, valueDefinitionOp: KvpValue[A]) =
-    KeyValueDefinition(key, valueDefinitionOp)
-
-  def kvpHList[H <: HList: Manifest, HL <: Nat](key: String,
-                                                kvpHList: KvpHList[H, HL]) =
-    KeyValueDefinition(key, KvpHListValue(kvpHList, List.empty))
-
-  def kvpCoproduct[C<:Coproduct:Manifest](key: String,
-                                 kvpCoproduct: KvpCoproduct[C]) =
-    KeyValueDefinition(key, KvpCoproductValue(kvpCoproduct))
+object KeyValueDefinition {
+  type CoproductDataDefinition[ALG[_], A] = Either[KvpValue[A], ALG[A]]
 
 }
 
+/** Useful DSL builder */
+trait KeyValueDefinitionSugar {
+
+  def kvp[ALG[_], A](key: String, valueDefinitionOp: KvpValue[A]) =
+    KeyValueDefinition[ALG, A](key, Left(valueDefinitionOp))
+
+  def kvpCov[ALG[_], A](key: String, valueDefinitionOp: ALG[A]) =
+    KeyValueDefinition[ALG, A](key, Right(valueDefinitionOp))
+
+  def kvpHList[ALG[_], H <: HList: Manifest, HL <: Nat](key: String,
+                                                        kvpHList: KvpHList[ALG, H, HL]) =
+    KeyValueDefinition[ALG, H](key, Left(KvpHListValue(kvpHList, List.empty)))
+
+  def kvpCoproduct[ALG[_], C<:Coproduct:Manifest](key: String,
+                                                  kvpCoproduct: KvpCoproduct[ALG, C]) =
+    KeyValueDefinition[ALG, C](key, Left(KvpCoproductValue(kvpCoproduct)))
+
+}
+
+
+
 /** Starting point for obtaining a value definition. */
 trait Sugar {
+
+  import KeyValueDefinition._
 
   /** Indicates that the data tied to this key is a String type that must pass the specified validations */
   def string(validationOp: ValidationOp[String]*) =
@@ -74,9 +93,9 @@ trait Sugar {
     * @tparam T The type of each element.  Can be an EitherFieldDefinition if more than one type is expected in the list.
     * @return
     */
-  def list[T: Manifest](dataDefinitionOp: KvpValue[T],
-                        v: ValidationOp[List[T]]*) =
-    ListData(dataDefinitionOp, v.toList)
+  def list[ALG[_], T: Manifest](dataDefinitionOp: KvpValue[T],
+                                v: ValidationOp[List[T]]*) =
+    ListData[ALG, T](Left(dataDefinitionOp), v.toList)
 
   /** Indicates that the data tied to this key is an boolean type that must pass the specified validations. */
   def boolean(f: ValidationOp[Boolean]*) = BooleanData(f.toList)
@@ -107,7 +126,7 @@ trait Sugar {
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
   def either[A: Manifest, B: Manifest](definitionA: KvpValue[A],
                                        definitionB: KvpValue[B]) =
-    EitherData(definitionA, definitionB)
+    EitherData(Left(definitionA), Left(definitionB))
 
   /** Expecting the type to be a Scala style enumeration
     *
@@ -120,22 +139,22 @@ trait Sugar {
 
 
   /** Indicates that the data is a list of Key Value pairs */
-  def kvpHList[H <: HList: Manifest, HL <: Nat](kvpHList: KvpHList[H, HL],
-                                                v: ValidationOp[H]*) =
+  def kvpHList[H <: HList: Manifest, HL <: Nat, ALG[_]](kvpHList: KvpHList[ALG, H, HL],
+                                                        v: ValidationOp[H]*) =
     KvpHListValue(kvpHList, v.toList)
 
-  val kvpNil: KvpNil.type = KvpNil
+  def kvpNil = new KvpNil[NoAlgebra]()
 
-  def kvpCoNil: KvpCoNil.type = KvpCoNil
+  def kvpNilCov[ALG[_]] = new KvpNil[ALG]()
+
+  def kvpCoNil = new KvpCoNil[NoAlgebra]
+
+  def kvpCoNilCov[ALG[_]] = new KvpCoNil[ALG]()
 
   /** Indicates that the data tied to the value is an Array of Bytes */
   def byteArray(v: ValidationOp[Array[Byte]]*): ByteArrayData = ByteArrayData(v.toList)
 
   /** Alias for byte array without validations */
   val byteArray: ByteArrayData = byteArray()
-
-//  def sumType[A:Manifest](subclassSchemas: List[HListConvert[_,_,A]], typeToConversion: A => HListConvert[_,_,A]): SumTypeData[A] = SumTypeData[A](subclassSchemas, typeToConversion)
-
-//  def sumType[A](subclassSchemas: HListConvert[_,_,A]*)(validationOp: ValidationOp[A]*) = SumType(subclassSchemas.toList, validationOp.toList)
 
 }

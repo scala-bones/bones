@@ -1,21 +1,15 @@
 package com.bones.circe
 
-import java.nio.charset.Charset
-import java.time.{Instant, ZoneId}
 import java.time.format.DateTimeFormatter
+import java.time.{Instant, ZoneId}
 import java.util.Locale
 
-import cats.data.Tuple2K
-import com.bones.interpreter.CovKvpInterchangeFormatEncoderInterpreter
-import com.bones.interpreter.CovKvpInterchangeFormatEncoderInterpreter.CovEncoder
-import com.bones.scalacheck.Scalacheck
-import com.bones.schemas.CovSchemas.{AllSupported, allSupportCaseClass}
-import org.scalacheck.Arbitrary
-import org.scalatest.{FunSuite, MustMatchers}
-import org.scalatestplus.scalacheck.Checkers
+import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
 import com.bones.schemas.CovSchemas._
 import io.circe.Json
-import shapeless.{:+:, CNil, Inl, Inr, Poly1, Poly2, PolyApply}
+import org.scalatest.{FunSuite, MustMatchers}
+import org.scalatestplus.scalacheck.Checkers
+import shapeless.{:+:, CNil, Inl, Inr}
 
 
 class CovCirceTest extends FunSuite with Checkers with MustMatchers {
@@ -23,8 +17,8 @@ class CovCirceTest extends FunSuite with Checkers with MustMatchers {
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)
 
-  test("scalacheck allSupport types - marshall then marshall") {
-    val validateFromCirce = CovCirceEncoderInterpreter.isoInterpreterCov
+  test("scalacheck allSupport types - marshall then unmarshall with custom algebra") {
+    val validateFromCirce = CirceEncoderInterpreter.isoInterpreter
 
     //  val jsonToCc = validateFromCirce.byteArrayFuncFromSchema(allSupportCaseClass, Charset.forName("UTF8"))
 
@@ -43,20 +37,22 @@ class CovCirceTest extends FunSuite with Checkers with MustMatchers {
 
     type CombinedAlgebra[A] = CustomAlgebra[A] :+: DateExtAlgebra[A] :+: CNil
 
-    case class BlogEncoder() extends CovEncoder[Json, CombinedAlgebra] {
+    case class BlogEncoder() extends InterchangeFormatEncoder[CombinedAlgebra, Json] {
 
       def encode[A](alg: CombinedAlgebra[A]): A => Json =
         alg match {
           case Inl(customAlgebra) => customAlgebraEncoder(customAlgebra)
           case Inr(Inl(dateExtAlgebra)) => dateExtAlgebraEncoder(dateExtAlgebra)
+          case Inr(Inr(_)) => sys.error("Unreachable code")
         }
     }
 
 
-    val blogPostToJson = CovCirceEncoderInterpreter.isoInterpreterCov(BlogPost.blogPostSchema, BlogEncoder())
+    val blogPostToJson = CirceEncoderInterpreter.isoInterpreter.fromSchema(BlogPost.blogPostSchema, BlogEncoder())
 
     val blogPost = BlogPost(1, "title", List("tag1", "tag2"), Instant.now(), "Here is some content")
 
+    println("about to marshall")
 
     val json = blogPostToJson.apply(blogPost)
     val jsonString = json.spaces2

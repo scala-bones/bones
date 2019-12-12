@@ -5,6 +5,7 @@ import java.util.{Calendar, Date, UUID}
 
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
 import com.bones.data._
+import com.bones.syntax.NoAlgebra
 import com.bones.validation.ValidationDefinition.StringValidation._
 import com.bones.validation.ValidationDefinition._
 import com.bones.validation.ValidationUtil
@@ -14,32 +15,45 @@ import org.scalacheck._
 import shapeless.{CNil, Coproduct, HList, HNil, Inl, Inr, Nat}
 import wolfendale.scalacheck.regexp.RegexpGen
 
+/**
+  * Implement this to support a custom Algebra.
+  * @tparam ALG
+  */
+trait GenAlg[ALG[_]] {
+  def gen[A](ag: ALG[A]): A
+}
+
+object NoAlgebraGen extends GenAlg[NoAlgebra] {
+  override def gen[A](ag: NoAlgebra[A]): A = sys.error("Unreachable code")
+}
+
+
 object Scalacheck {
 
-  def createGen[A](bonesSchema: BonesSchema[A]) : Gen[A] =
+  def createGen[ALG[_], A](bonesSchema: BonesSchema[ALG, A], genAlg: GenAlg[ALG]) : Gen[A] =
     bonesSchema match {
-      case co: KvpCoproductConvert[c,a] => valueDefinition(co)
-      case co: HListConvert[h,n,a] => valueDefinition(co)
+      case co: KvpCoproductConvert[ALG, c,a] => valueDefinition(co, genAlg)
+      case co: HListConvert[ALG,h,n,a] => valueDefinition(co, genAlg)
     }
 
-  def kvpCoproduct[C<:Coproduct](co: KvpCoproduct[C]): List[Gen[C]] = {
+  def kvpCoproduct[ALG[_], C<:Coproduct](co: KvpCoproduct[ALG, C], genAlg: GenAlg[ALG]): List[Gen[C]] = {
     co match {
-      case KvpCoNil => List.empty
-      case co: KvpSingleValueLeft[l,r] =>
-        val head = valueDefinition(co.kvpValue).map(Inl(_))
-        val tail = kvpCoproduct(co.kvpTail).map(gen => gen.map(Inr(_)))
+      case nil: KvpCoNil[_] => List.empty
+      case co: KvpSingleValueLeft[ALG, C,r] @unchecked =>
+        val head = determineValueDefinition[ALG, C](co.kvpValue, genAlg).map(Inl(_))
+        val tail = kvpCoproduct(co.kvpTail, genAlg).map(gen => gen.map(Inr(_)))
         head :: tail
     }
   }
 
 
-  def kvpHList[H <: HList, HL <: Nat](group: KvpHList[H, HL]): Gen[H] = {
+  def kvpHList[ALG[_],  H <: HList, HL <: Nat](group: KvpHList[ALG, H, HL], genAlg: GenAlg[ALG]): Gen[H] = {
     group match {
-      case KvpNil => Gen.const(HNil)
-      case op: KvpSingleValueHead[h, t, tl, a] =>
+      case ni: KvpNil[_] => Gen.const(HNil)
+      case op: KvpSingleValueHead[ALG, h, t, tl, a] @unchecked =>
         implicit val isHCons = op.isHCons
-        val headGen = valueDefinition(op.fieldDefinition.op)
-        val tailGen = kvpHList(op.tail)
+        val headGen = determineValueDefinition(op.fieldDefinition.op, genAlg)
+        val tailGen = kvpHList(op.tail, genAlg)
         val result: Gen[H] = for {
           head <- headGen
           tail <- tailGen
@@ -47,19 +61,19 @@ object Scalacheck {
           op.isHCons.cons(head, tail)
         }
         result
-      case op: KvpHListHead[a, al, h, hl, t, tl] =>
+      case op: KvpHListHead[ALG, a, al, h, hl, t, tl] @unchecked =>
         implicit val prepend = op.prepend
-        val headGen = kvpHList(op.head)
-        val tailGen = kvpHList(op.tail)
+        val headGen = kvpHList(op.head, genAlg)
+        val tailGen = kvpHList(op.tail, genAlg)
         for {
           head <- headGen
           tail <- tailGen
         } yield {
           head ::: tail
         }
-      case op: KvpConcreteTypeHead[a, ht, nt, ho, xl, xll] =>
-        val headGen = valueDefinition(op.hListConvert)
-        val tailGen = kvpHList(op.tail)
+      case op: KvpConcreteTypeHead[ALG, a, ht, nt, ho, xl, xll] @unchecked =>
+        val headGen = valueDefinition(op.hListConvert, genAlg)
+        val tailGen = kvpHList(op.tail, genAlg)
         for {
           a <- headGen
           tail <- tailGen
@@ -69,10 +83,19 @@ object Scalacheck {
     }
   }
 
-  def valueDefinition[A](fgo: KvpValue[A]): Gen[A] =
+  def determineValueDefinition[ALG[_], A](value: Either[KvpValue[A], ALG[A]],
+                                          genAlg: GenAlg[ALG]
+                              ): Gen[A] = {
+    value match {
+      case Left(kvp) => valueDefinition(kvp, genAlg)
+      case Right(alg) => genAlg.gen(alg)
+    }
+  }
+
+  def valueDefinition[ALG[_], A](fgo: KvpValue[A], genAlg: GenAlg[ALG]): Gen[A] =
     fgo match {
-      case op: OptionalKvpValueDefinition[a] => {
-        val optionalGen = valueDefinition(op.valueDefinitionOp).map(Some(_))
+      case op: OptionalKvpValueDefinition[ALG, a] @unchecked => {
+        val optionalGen = determineValueDefinition(op.valueDefinitionOp, genAlg).map(Some(_))
         Gen.frequency(
           (9, optionalGen),
           (1, None)
@@ -113,31 +136,31 @@ object Scalacheck {
         validationConstraints[BigDecimal](bd.validations, BigDecimalValidation, _ + BigDecimal(".00000001"), _ - BigDecimal(".00000001"), BigDecimal(Double.MinValue), BigDecimal(Double.MaxValue))(
           Choose.xmap[Double,BigDecimal](d => BigDecimal(d), _.toDouble)
         )
-      case ld: ListData[t] =>
-        implicit val elemGenerator = valueDefinition(ld.tDefinition)
+      case ld: ListData[ALG, t] @unchecked =>
+        implicit val elemGenerator = determineValueDefinition(ld.tDefinition, genAlg)
         for {
           numElems <- Gen.choose(1,500)
           elem <- Gen.listOfN(numElems, elemGenerator)
         } yield elem
-      case ed: EitherData[a, b] => {
-        val left = valueDefinition(ed.definitionA).map(Left(_))
-        val right = valueDefinition(ed.definitionB).map(Right(_))
+      case ed: EitherData[ALG, a, b] @unchecked => {
+        val left = determineValueDefinition(ed.definitionA, genAlg).map(Left(_))
+        val right = determineValueDefinition(ed.definitionB, genAlg).map(Right(_))
         Gen.frequency((1, left), (1, right))
       }
       case ba: ByteArrayData => arbitrary[Array[Byte]]
-      case esd: EnumerationData[e,a] => {
+      case esd: EnumerationData[e,A] => {
         Gen.oneOf(esd.enumeration.values.toSeq.map(_.asInstanceOf[A]))
       }
-      case kvp: KvpHListValue[h, hl] =>
-        kvpHList(kvp.kvpHList).map(_.asInstanceOf[A])
-      case co: KvpCoproductValue[c] =>
+      case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
+        kvpHList(kvp.kvpHList, genAlg).map(_.asInstanceOf[A])
+      case co: KvpCoproductValue[ALG, c] @unchecked =>
         // Get a list of coproduct and gen them with equal frequency (1)
-        val gens = kvpCoproduct(co.kvpCoproduct).map(_.map(_.asInstanceOf[A])).map( (1,_))
+        val gens = kvpCoproduct(co.kvpCoproduct, genAlg).map(_.map(_.asInstanceOf[A])).map( (1,_))
         Gen.frequency(gens:_*)
-      case x: HListConvert[a, al, b] =>
-        kvpHList(x.from).map(hList => x.fHtoA(hList))
-      case co: KvpCoproductConvert[c,a] =>
-        val gens = kvpCoproduct(co.from).map( (1,_))
+      case x: HListConvert[ALG, a, al, b] @unchecked =>
+        kvpHList(x.from, genAlg).map(hList => x.fHtoA(hList))
+      case co: KvpCoproductConvert[ALG,c,a] @unchecked =>
+        val gens = kvpCoproduct(co.from, genAlg).map( (1,_))
         Gen.frequency(gens:_*).map(coproduct => co.cToA(coproduct))
     }
 
