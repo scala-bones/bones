@@ -79,17 +79,6 @@ lazy val swaggerOas3 = (project in file("interchange-format-interpreters/swagger
     )
   ).dependsOn(core, testSchemas % "test")
 lazy val doobieVersion = "0.6.0"
-lazy val jsonLift = (project in file("interchange-format-interpreters/lift-json"))
-  .settings(
-    commonSettings,
-    name := "Bones Json Lift",
-    libraryDependencies ++= Seq (
-      "net.liftweb" %% "lift-json" % "3.3.0",
-      "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
-      "org.scalatest" %% "scalatest" % "3.0.8" % Test
-    )
-  )
-  .dependsOn(core, testSchemas % "test", scalacheck % "test")
 lazy val directEncoders = (project in file("interchange-format-interpreters/direct-encoders"))
   .settings(
     commonSettings,
@@ -171,16 +160,6 @@ lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
       "org.scalatest" %% "scalatest" % "3.0.8" % Test
     )
   ).dependsOn(core, jsonCirce, swaggerOas3, protobuf, bson)
-lazy val react = (project in file("client-interpreters/react"))
-  .settings(
-    commonSettings,
-    name := "Bones React",
-    libraryDependencies ++= Seq(
-      "com.lihaoyi" %% "scalatags" % "0.7.0",
-      "org.scalacheck" %% "scalacheck" % "1.14.0" % Test,
-      "org.scalatest" %% "scalatest" % "3.0.8" % Test
-    )
-  ).dependsOn(core, testSchemas % "test")
 lazy val http4sClient = (project in file("client-interpreters/http4s-client"))
   .settings(
     commonSettings,
