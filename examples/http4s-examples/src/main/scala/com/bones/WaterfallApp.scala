@@ -69,7 +69,6 @@ object WaterfallApp extends LocalhostAllIOApp() {
     serviceRoutesWithCrudMiddleware("waterfall", waterfallSchema, ds) <+>
       //    serviceRoutesWithCrudMiddleware(waterfallVisitService, ds) <+>
       dbSchemaEndpoint("waterfall", waterfallSchema) <+>
-      dbSchemaEndpoint("waterfallVisit", waterfallVisitSchema) <+>
-      reactEndpoints(List(waterfallSchema, waterfallVisitSchema))
+      dbSchemaEndpoint("waterfallVisit", waterfallVisitSchema)
   }
 }

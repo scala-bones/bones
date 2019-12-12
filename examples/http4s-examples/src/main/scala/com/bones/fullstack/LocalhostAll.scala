@@ -10,7 +10,6 @@ import com.bones.data.Error.ExtractionError
 import com.bones.data.{BonesSchema, KvpNil}
 import com.bones.http4s.ClassicCrudInterpreter
 import com.bones.jdbc.{DbColumnInterpreter, DbUtil}
-import com.bones.react.{CreateReactFile, CreateReactFiles}
 import com.bones.syntax.{kvp, long, lv}
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import javax.sql.DataSource
@@ -54,13 +53,13 @@ object LocalhostAllIOApp {
       }
   }
 
-  def reactEndpoints(schemas: List[BonesSchema[_]]): HttpRoutes[IO] = {
-    val (indexJs, indexHtml, library) = CreateReactFiles.fromSchemas(schemas)
-    HttpRoutes.of[IO] {
-      case GET -> Root / "webapp" / "index.html" => Ok(indexHtml, Header("Content-Type", "text/html"))
-      case GET -> Root / "webapp" / "index.js" => Ok(library + "\n" + indexJs, Header("Content-Type", "text/javascript"))
-    }
-  }
+//  def reactEndpoints(schemas: List[BonesSchema[_]]): HttpRoutes[IO] = {
+//    val (indexJs, indexHtml, library) = CreateReactFiles.fromSchemas(schemas)
+//    HttpRoutes.of[IO] {
+//      case GET -> Root / "webapp" / "index.html" => Ok(indexHtml, Header("Content-Type", "text/html"))
+//      case GET -> Root / "webapp" / "index.js" => Ok(library + "\n" + indexJs, Header("Content-Type", "text/javascript"))
+//    }
+//  }
 
   def serviceRoutesWithCrudMiddleware[A](path: String, schema: BonesSchema[A],ds: DataSource
                                                                              ): HttpRoutes[IO] = {
