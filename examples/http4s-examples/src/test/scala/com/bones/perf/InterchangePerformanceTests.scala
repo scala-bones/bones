@@ -6,7 +6,6 @@ import cats.implicits._
 import com.bones.argonaut.{ArgonautEncoderInterpreter, ArgonautValidatorInterpreter}
 import com.bones.bson.{BsonEncoderInterpreter, BsonValidatorInterpreter}
 import com.bones.circe.{CirceEncoderInterpreter, CirceValidatorInterpreter}
-import com.bones.interpreter.{EncodeToJValueInterpreter, ValidatedFromJObjectInterpreter}
 import com.bones.protobuf.{ProtobufSequentialInputInterpreter, ProtobufSequentialOutputInterpreter}
 import com.bones.scalacheck.Scalacheck
 import com.bones.schemas.Schemas.allSupportCaseClass
@@ -29,9 +28,6 @@ object InterchangePerformanceTests extends App {
 
   val bsonValidator = BsonValidatorInterpreter.fromSchema(schema)
   val bsonEncoder = BsonEncoderInterpreter.fromSchema(schema)
-
-  val liftJsonValidator = ValidatedFromJObjectInterpreter.isoInterpreter.fromSchema(schema)
-  val liftJsonEncoder = EncodeToJValueInterpreter.isoInterpreter.fromSchema(schema)
 
   val protoValidator = ProtobufSequentialInputInterpreter.fromBytes(schema)
   val protoEncoder = ProtobufSequentialOutputInterpreter.encodeToBytes(schema)
@@ -110,26 +106,6 @@ object InterchangePerformanceTests extends App {
     }})
   val argoSuccess = badCirceResults.isEmpty
   println(s"Argo Validator Success: ${argoSuccess} Time: ${argoStop - argoStart}")
-  System.gc()
-
-  val liftJsonEncoderStart = System.currentTimeMillis()
-  val liftEncoder = objects.map(o => compactRender(liftJsonEncoder.apply(o)))
-  val liftJsonEncoderEnd = System.currentTimeMillis()
-  println(s"Lift Json Encoder Time: ${liftJsonEncoderEnd - liftJsonEncoderStart}")
-  System.gc()
-
-  val liftJsonValidatorStart = System.currentTimeMillis()
-  val liftValidatorResult =
-    jsonObjects.map(j => liftJsonValidator.apply(EncodeToJValueInterpreter.stringToJson(j)))
-  val liftJsonValidatorEnd = System.currentTimeMillis()
-  val badListResults = liftValidatorResult.indices.filterNot(i => {
-    (liftValidatorResult.get(i).flatMap(_.toOption), objects.get(i)) match {
-      case (Some(o1), Some(o2)) => o1.fancyEquals(o2)
-      case (None, None) => true
-      case _ => false
-    }})
-  val liftSuccess = badListResults.isEmpty
-  println(s"Lift Json Validator Success: ${liftSuccess} Time: ${liftJsonValidatorEnd - liftJsonValidatorStart}")
   System.gc()
 
   val protoEncodeStart = System.currentTimeMillis()

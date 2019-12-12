@@ -41,8 +41,8 @@ object DemoApp extends LocalhostAllIOApp() {
 
   override def services: HttpRoutes[IO] = {
     serviceRoutesWithCrudMiddleware("waterfall", waterfallSchema, ds) <+>
-      dbSchemaEndpoint("waterfall", waterfallSchema) <+>
-      reactEndpoints(List(waterfallSchema))
+      dbSchemaEndpoint("waterfall", waterfallSchema)
+//      reactEndpoints(List(waterfallSchema))
   }
 }
 
