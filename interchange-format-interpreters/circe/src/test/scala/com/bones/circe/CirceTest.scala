@@ -22,7 +22,7 @@ class CirceTest extends FunSuite with Checkers with MustMatchers {
   val interchangeFormatEncoder = CirceEncoderInterpreter.noAlgebraEncoder
 
   val jsonToCc = validateFromCirce.byteArrayFuncFromSchema(allSupportCaseClass, Charset.forName("UTF8"), noAlgebraInterpreter )
-  val ccToJson = CirceEncoderInterpreter.isoInterpreter.fromSchema(allSupportCaseClass, interchangeFormatEncoder)
+  val ccToJson = CirceEncoderInterpreter.isoInterpreter.fromSchema(allSupportCaseClass)
 
   implicit val arb = Arbitrary(Scalacheck.valueDefinition(allSupportCaseClass, NoAlgebraGen))
   val utf8 = Charset.forName("UTF8")

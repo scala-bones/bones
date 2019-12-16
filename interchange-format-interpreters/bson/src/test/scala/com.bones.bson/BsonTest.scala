@@ -21,7 +21,7 @@ class BsonTest extends FunSuite with Checkers with MustMatchers {
 
   val ccToBson = BsonEncoderInterpreter.fromSchema(allSupportCaseClass)
 
-  implicit val arb = Arbitrary(Scalacheck.valueDefinition(allSupportCaseClass))
+  implicit val arb = Arbitrary(Scalacheck.fromBonesSchema(allSupportCaseClass))
 
   test("scalacheck allSupport types - marshall then marshall") {
     check((cc: AllSupported) => {

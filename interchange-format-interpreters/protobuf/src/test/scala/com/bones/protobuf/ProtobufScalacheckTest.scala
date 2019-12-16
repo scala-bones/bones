@@ -18,7 +18,7 @@ class ProtobufScalacheckTest extends FunSuite with Checkers {
 //  implicit override val generatorDrivenConfig =
 //    PropertyCheckConfiguration(minSuccessful = 10000, workers = 5)
 
-  implicit val arb = Arbitrary(Scalacheck.valueDefinition(allSupportCaseClass))
+  implicit val arb = Arbitrary(Scalacheck.fromBonesSchema(allSupportCaseClass))
 
   test("scalacheck allSupport types - marshall then marshall") {
     check((cc: AllSupported) => {

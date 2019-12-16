@@ -7,20 +7,21 @@ import com.bones.argonaut.{ArgonautEncoderInterpreter, ArgonautValidatorInterpre
 import com.bones.bson.{BsonEncoderInterpreter, BsonValidatorInterpreter}
 import com.bones.circe.{CirceEncoderInterpreter, CirceValidatorInterpreter}
 import com.bones.protobuf.{ProtobufSequentialInputInterpreter, ProtobufSequentialOutputInterpreter}
-import com.bones.scalacheck.Scalacheck
+import com.bones.scalacheck.{Scalacheck, NoAlgebraGen}
 import com.bones.schemas.Schemas.allSupportCaseClass
 import com.bones.sjson.JsonStringEncoderInterpreter
-import net.liftweb.json.compactRender
 
 object InterchangePerformanceTests extends App {
 
   val schema = allSupportCaseClass
 
-  val scalaCheckInterpreter = Scalacheck.valueDefinition(schema)
+  val scalaCheckInterpreter = Scalacheck.valueDefinition(schema, NoAlgebraGen)
 
-  val directInterpreter = JsonStringEncoderInterpreter.isoEncoder.fAtoString(schema)
+  val directInterpreter = 
+    JsonStringEncoderInterpreter.isoEncoder.fAtoString(schema, JsonStringEncoderInterpreter.NoAlgebra)
 
-  val circeValidator = CirceValidatorInterpreter.isoInterpreter.byteArrayFuncFromSchema(schema, Charset.defaultCharset())
+  val circeValidator = 
+    CirceValidatorInterpreter.isoInterpreter.byteArrayFuncFromSchema(schema, Charset.defaultCharset(), CirceValidatorInterpreter.noAlgebraInterpreter)
   val circeEncoder = CirceEncoderInterpreter.isoInterpreter.fromSchema(schema)
 
   val argValidator = ArgonautValidatorInterpreter.isoInterpreter.byteArrayFuncFromSchema(schema, Charset.defaultCharset())

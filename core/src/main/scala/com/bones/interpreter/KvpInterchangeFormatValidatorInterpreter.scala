@@ -48,12 +48,16 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
     * @tparam A The final data type returned by the resulting function.
     * @return A function which takes the IN data and returns an Either[ExtractionError,A]
     */
-  def fromSchema[ALG[_], A](schema: BonesSchema[ALG, A], interchangeFormatValidator: InterchangeFormatValidator[ALG,IN])
+  def fromCustomSchema[ALG[_], A](schema: BonesSchema[ALG, A], interchangeFormatValidator: InterchangeFormatValidator[ALG,IN])
   : IN => Either[NonEmptyList[ExtractionError], A] =
     schema match {
       case x: HListConvert[ALG, _, _, A] =>
         (in) => valueDefinition(x, interchangeFormatValidator).apply(Some(in), List.empty)
     }
+
+  def fromSchema[A](schema: BonesSchema[NoAlgebra, A]) : IN => Either[NonEmptyList[ExtractionError], A] =
+    fromCustomSchema[NoAlgebra, A](schema, NoAlgebraValidator[IN])
+
 
 
   def fromSchemaWithPath[ALG[_], A](schema: BonesSchema[ALG, A], interchangeFormatValidator: InterchangeFormatValidator[ALG,IN])
@@ -152,7 +156,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
     (inOpt: Option[IN], path: Path) =>
       for {
         json <- inOpt
-          .toRight(NonEmptyList.one(RequiredData(path, op)))
+          .toRight(NonEmptyList.one(RequiredData(path, Left(op))))
         a <- f(json, path)
         v <- vu.validate(validations)(a, path)
       } yield a
@@ -286,7 +290,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
           (inOpt: Option[IN], path: Path) =>
             for {
               in <- inOpt.toRight[NonEmptyList[ExtractionError]](
-                NonEmptyList.one(RequiredData(path, op)))
+                NonEmptyList.one(RequiredData(path, Left(op))))
               str <- extractString(op, classOf[Array[Byte]])(in, path)
               arr <- Try {
                 decoder.decode(str)
@@ -311,7 +315,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
                   optionalB(in, path) match {
                     case Right(b) => Right(Right(b))
                     case Left(err) => {
-                      Left(NonEmptyList.one(RequiredData(path, ed)))
+                      Left(NonEmptyList.one(RequiredData(path, Left(ed))))
                     }
                   }
                 } else {
@@ -350,7 +354,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
 
           (inOpt: Option[IN], path: Path) => {
             for {
-              in <- inOpt.toRight(NonEmptyList.one(RequiredData(path, op)))
+              in <- inOpt.toRight(NonEmptyList.one(RequiredData(path, Left(op))))
               arr <- extractArray(op)(in, path)
               listOfIn <- traverseArray(arr, path)
             } yield listOfIn
@@ -367,7 +371,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
           (inOpt: Option[IN], path: Path) =>
             for {
               in <- inOpt.toRight[NonEmptyList[ExtractionError]](
-                NonEmptyList.one(RequiredData(path, op)))
+                NonEmptyList.one(RequiredData(path, Left(op))))
               str <- extractString(op, op.manifestOfA.runtimeClass)(in, path)
               enum <- stringToEnumeration[e, A](str,
                 path,
@@ -383,7 +387,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
                 fg(json, path)
                   .flatMap(res => vu.validate[h](op.validations)(res, path))
                   .map(_.asInstanceOf[A])
-              case None => Left(NonEmptyList.one(RequiredData(path, op)))
+              case None => Left(NonEmptyList.one(RequiredData(path, Left(op))))
             }
           }
         }
@@ -398,7 +402,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
                 }
 
               }
-              case None => Left(NonEmptyList.one(RequiredData(path, co)))
+              case None => Left(NonEmptyList.one(RequiredData(path, Left(co))))
             }
           }
         }
@@ -406,7 +410,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
           val kvp = kvpHList(x.from, extendedValidator)
           (jOpt: Option[IN], path: Path) =>
             jOpt match {
-              case None => Left(NonEmptyList.one(RequiredData(path, x)))
+              case None => Left(NonEmptyList.one(RequiredData(path, Left(x))))
               case Some(j) => kvp(j, path).map(x.fHtoA(_))
             }
         }
@@ -414,10 +418,10 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
           val fCo = kvpCoproduct(co.from, extendedValidator)
           (jOpt: Option[IN], path: Path) =>
               jOpt match {
-                case None => Left(NonEmptyList.one(RequiredData(path, co)))
+                case None => Left(NonEmptyList.one(RequiredData(path, Left(co))))
                 case Some(j) => {
                   stringValue(j, coproductTypeKey) match {
-                    case None => Left(NonEmptyList.one(RequiredData(coproductTypeKey :: path, co)))
+                    case None => Left(NonEmptyList.one(RequiredData(coproductTypeKey :: path, Left(co))))
                     case Some(coproductType) => fCo(j,path, coproductType).map(co.cToA(_))
                   }
                 }

@@ -57,7 +57,7 @@ sealed abstract class KvpHList[ALG[_], H <: HList, N <: Nat] {
   KvpSingleValueHead[ALG, A, H, N, A :: H]
 
 
-  def ::[A](v: KeyValueDefinition[ALG, A])(implicit isHCons: IsHCons.Aux[A :: H, A, H]):
+  def >>:[A](v: KeyValueDefinition[ALG, A])(implicit isHCons: IsHCons.Aux[A :: H, A, H]):
   KvpSingleValueHead[ALG, A, H, N, A :: H] = prependSingleValue(v)
 
   /**

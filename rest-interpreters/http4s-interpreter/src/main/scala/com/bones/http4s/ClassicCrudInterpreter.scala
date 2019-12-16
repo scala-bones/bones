@@ -10,14 +10,23 @@ import com.bones.circe.{CirceEncoderInterpreter, CirceValidatorInterpreter}
 import com.bones.data.Error.ExtractionError
 import com.bones.data.KeyValueDefinition
 import com.bones.data.{BonesSchema, HListConvert}
-import com.bones.oas3.CrudOasInterpreter
+import com.bones.http4s.ClassicCrudInterpreter.{CustomInterpreter, ProtobufInterpreter}
+import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
+import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
+import com.bones.oas3.{CrudOasInterpreter, SwaggerCoreInterpreter}
+import com.bones.oas3.SwaggerCoreInterpreter.CustomSwaggerInterpreter
+import com.bones.protobuf.ProtoFileInterpreter.Name
+import com.bones.protobuf.ProtobufSequentialInputInterpreter.ExtractFromProto
+import com.bones.protobuf.ProtobufSequentialOutputInterpreter.EncodeToProto
 import com.bones.protobuf.{ProtoFileInterpreter, ProtobufSequentialInputInterpreter, ProtobufSequentialOutputInterpreter}
+import com.bones.syntax.NoAlgebra
 import fs2.Stream
 import io.circe.Json
 import io.circe.syntax._
 import io.swagger.v3.oas.models.OpenAPI
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
+import reactivemongo.bson.BSONValue
 import shapeless.{::, HNil, Nat, Succ}
 import shapeless._
 //import org.http4s.dsl.io._
@@ -26,6 +35,55 @@ import org.http4s.util.CaseInsensitiveString
 
 object ClassicCrudInterpreter {
 
+  trait CustomInterpreter[ALG[_], I]
+    extends InterchangeFormatValidator[ALG, I]
+    with InterchangeFormatEncoder[ALG, I]
+
+  case class NoAlgebraCustomInterpreter[I]() extends CustomInterpreter[NoAlgebra, I]  {
+    override def encode[A](alg: NoAlgebra[A]): A => I = sys.error("Unreachable code")
+    override def validate[A](alg: NoAlgebra[A]): (Option[I], List[String]) => Either[NonEmptyList[ExtractionError], A] = sys.error("Unreachable code")
+  }
+
+  trait ProtobufInterpreter[ALG[_]]
+    extends ProtobufSequentialInputInterpreter.CustomInterpreter[ALG]
+    with ProtobufSequentialOutputInterpreter.CustomInterpreter[ALG]
+    with ProtoFileInterpreter.CustomInterpreter[ALG]
+
+  case object NoAlgebraProtobufInterpreter extends ProtobufInterpreter[NoAlgebra] {
+    override def encodeToProto[A](alg: NoAlgebra[A]): EncodeToProto[A] = sys.error("Unreachable code")
+
+    override def extractFromProto[A](alg: NoAlgebra[A]): ExtractFromProto[A] = sys.error("Unreachable code")
+
+    override def toMessageField[A](alg: NoAlgebra[A]): (Name, Int) => (ProtoFileInterpreter.MessageField, Vector[ProtoFileInterpreter.NestedType], Int) = sys.error("Unreachable code")
+  }
+
+  def empty[A,E,F[_],ID:Manifest](
+                                          path: String,
+                                          charset: java.nio.charset.Charset = StandardCharsets.UTF_8,
+                                          customJsonInterpreter: CustomInterpreter[NoAlgebra, Json],
+                                          customBsonInterpreter: CustomInterpreter[NoAlgebra, BSONValue],
+                                          customProtobufInterpreter: ProtobufInterpreter[NoAlgebra],
+                                          customSwaggerInterpreter: CustomSwaggerInterpreter[NoAlgebra],
+                                          schema: BonesSchema[NoAlgebra,A],
+                                          idDefinition: KeyValueDefinition[NoAlgebra,ID],
+                                          pathStringToId: String => Either[E,ID],
+                                          errorSchema: BonesSchema[NoAlgebra,E],
+                                        )(implicit F: Sync[F]) : ClassicCrudInterpreter[NoAlgebra,A,E,F,ID] =
+    emptyCustomAlgebra[NoAlgebra, A, E, F, ID](
+      path,
+      charset,
+      NoAlgebraCustomInterpreter[Json](),
+      NoAlgebraCustomInterpreter[BSONValue](),
+      NoAlgebraProtobufInterpreter,
+      SwaggerCoreInterpreter.noAlgebraInterpreter,
+      schema,
+      idDefinition,
+      pathStringToId,
+      errorSchema
+    )
+
+
+
   /** Creates a CRUD definition, but no user defined functions, so no actual endpoints.
     * To be used with the [ClassicCrudInterpreter.withCreate], [ClassicCrudInterpreter.withRead],
     *   [ClassicCrudInterpreter.withUpdate], [ClassicCrudInterpreter.withDelete] and [ClassicCrudInterpreter.withSearch].  Use
@@ -33,29 +91,86 @@ object ClassicCrudInterpreter {
     *   Use the [allVerbs] method if all CRUD endpoints should be implemented.
     *   See [ClassicCrudInterpreter] for details on the parameters.
     */
-  def empty[A,E,F[_],ID:Manifest](
+  def emptyCustomAlgebra[ALG[_],A,E,F[_],ID:Manifest](
     path: String,
     charset: java.nio.charset.Charset = StandardCharsets.UTF_8,
-    schema: BonesSchema[A],
-    idDefinition: KeyValueDefinition[ID],
+    customJsonInterpreter: CustomInterpreter[ALG, Json],
+    customBsonInterpreter: CustomInterpreter[ALG, BSONValue],
+    customProtobufInterpreter: ProtobufInterpreter[ALG],
+    customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
+    schema: BonesSchema[ALG,A],
+    idDefinition: KeyValueDefinition[ALG,ID],
     pathStringToId: String => Either[E,ID],
-    errorSchema: BonesSchema[E],
+    errorSchema: BonesSchema[ALG,E],
   )(
     implicit F: Sync[F]
-  ): ClassicCrudInterpreter[A,E,F,ID] = ClassicCrudInterpreter(path, charset, schema, idDefinition, pathStringToId, errorSchema, None, None, None, None, None)
+  ): ClassicCrudInterpreter[ALG,A,E,F,ID] =
+    ClassicCrudInterpreter(
+      path,
+      charset,
+      customJsonInterpreter,
+      customBsonInterpreter,
+      customProtobufInterpreter,
+      customSwaggerInterpreter,
+      schema,
+      idDefinition,
+      pathStringToId,
+      errorSchema,
+      None,
+      None,
+      None,
+      None,
+      None
+    )
+
+  def allVerbs[A,E,F[_],ID:Manifest](
+    path: String,
+    charset: java.nio.charset.Charset = StandardCharsets.UTF_8,
+    schema: BonesSchema[NoAlgebra,A],
+    idDefinition: KeyValueDefinition[NoAlgebra,ID],
+    pathStringToId: String => Either[E,ID],
+    errorSchema: BonesSchema[NoAlgebra,E],
+    createF: A => F[Either[E, (ID,A)]],
+    readF: ID => F[Either[E,(ID,A)]],
+    updateF: (ID,A) => F[Either[E,(ID,A)]],
+    deleteF: ID => F[Either[E,(ID,A)]],
+    searchF: () => Stream[F,(ID,A)]
+  )(
+    implicit F: Sync[F]
+  ) = allVerbsCustomAlgebra[NoAlgebra,A,E,F,ID](
+    path,
+    charset,
+    NoAlgebraCustomInterpreter[Json](),
+    NoAlgebraCustomInterpreter[BSONValue](),
+    NoAlgebraProtobufInterpreter,
+    SwaggerCoreInterpreter.noAlgebraInterpreter,
+    schema,
+    idDefinition,
+    pathStringToId,
+    errorSchema,
+    createF,
+    readF,
+    updateF,
+    deleteF,
+    searchF
+  )
 
   /**
     * Creates a CRUD definition so that all CRUD verbs (GET, POST, PUT, DELETE) are supported.  If only a sub-set of Verbs
     * are desired, see [empty].
     *   See [ClassicCrudInterpreter] for details on the parameters.
     */
-  def allVerbs[A,E,F[_],ID:Manifest](
+  def allVerbsCustomAlgebra[ALG[_],A,E,F[_],ID:Manifest](
      path: String,
      charset: java.nio.charset.Charset = StandardCharsets.UTF_8,
-     schema: BonesSchema[A],
-     idDefinition: KeyValueDefinition[ID],
+     customJsonInterpreter: CustomInterpreter[ALG, Json],
+     customBsonInterpreter: CustomInterpreter[ALG, BSONValue],
+     customProtobufInterpreter: ProtobufInterpreter[ALG],
+     customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
+     schema: BonesSchema[ALG,A],
+     idDefinition: KeyValueDefinition[ALG,ID],
      pathStringToId: String => Either[E,ID],
-     errorSchema: BonesSchema[E],
+     errorSchema: BonesSchema[ALG,E],
      createF: A => F[Either[E, (ID,A)]],
      readF: ID => F[Either[E,(ID,A)]],
      updateF: (ID,A) => F[Either[E,(ID,A)]],
@@ -63,7 +178,23 @@ object ClassicCrudInterpreter {
      searchF: () => Stream[F,(ID,A)]
    )(
      implicit F: Sync[F]
-   ) = ClassicCrudInterpreter(path, charset, schema, idDefinition, pathStringToId, errorSchema, Some(createF), Some(readF), Some(updateF), Some(deleteF), Some(searchF))
+   ) = ClassicCrudInterpreter(
+    path,
+    charset,
+    customJsonInterpreter,
+    customBsonInterpreter,
+    customProtobufInterpreter,
+    customSwaggerInterpreter,
+    schema,
+    idDefinition,
+    pathStringToId,
+    errorSchema,
+    Some(createF),
+    Some(readF),
+    Some(updateF),
+    Some(deleteF),
+    Some(searchF)
+  )
 }
 
 /**
@@ -93,18 +224,22 @@ object ClassicCrudInterpreter {
   * @tparam F An subclass of the Sync typeclass
   * @tparam ID The ID type.
   */
-case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
-                                                 path: String,
-                                                 charset: java.nio.charset.Charset = StandardCharsets.UTF_8,
-                                                 schema: BonesSchema[A],
-                                                 idDefinition: KeyValueDefinition[ID],
-                                                 pathStringToId: String => Either[E,ID],
-                                                 errorSchema: BonesSchema[E],
-                                                 createF: Option[A => F[Either[E, (ID,A)]]] = None,
-                                                 readF: Option[ID => F[Either[E,(ID,A)]]] = None,
-                                                 updateF: Option[(ID,A) => F[Either[E,(ID,A)]]] = None,
-                                                 deleteF: Option[ID => F[Either[E,(ID,A)]]] = None,
-                                                 searchF: Option[() => Stream[F, (ID,A)]]
+case class ClassicCrudInterpreter[ALG[_],A,E,F[_], ID:Manifest](
+                                                                 path: String,
+                                                                 charset: java.nio.charset.Charset = StandardCharsets.UTF_8,
+                                                                 customJsonInterpreter: CustomInterpreter[ALG, Json],
+                                                                 customBsonInterpreter: CustomInterpreter[ALG, BSONValue],
+                                                                 customProtobufInterpreter: ProtobufInterpreter[ALG],
+                                                                 customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
+                                                                 schema: BonesSchema[ALG,A],
+                                                                 idDefinition: KeyValueDefinition[ALG,ID],
+                                                                 pathStringToId: String => Either[E,ID],
+                                                                 errorSchema: BonesSchema[ALG,E],
+                                                                 createF: Option[A => F[Either[E, (ID,A)]]] = None,
+                                                                 readF: Option[ID => F[Either[E,(ID,A)]]] = None,
+                                                                 updateF: Option[(ID,A) => F[Either[E,(ID,A)]]] = None,
+                                                                 deleteF: Option[ID => F[Either[E,(ID,A)]]] = None,
+                                                                 searchF: Option[() => Stream[F, (ID,A)]]
                                          )(
                               implicit F: Sync[F]
                             ) {
@@ -114,7 +249,7 @@ case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
     * @param create The function which is to be called during Create input.
     * @return Copy of ClassicCrudInterpreter with the new create function.
     */
-  def withCreate(create: A => F[Either[E, (ID,A)]]) : ClassicCrudInterpreter[A,E,F,ID] =
+  def withCreate(create: A => F[Either[E, (ID,A)]]) : ClassicCrudInterpreter[ALG,A,E,F,ID] =
     this.copy(createF = Some(create))
 
   /** Add or overwrite the existing user defined function to find data in a data store.  Adding
@@ -122,7 +257,7 @@ case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
     * @param read The function to be called to look up an entity in a data store.
     * @return Copy of the ClassicCrudInterpreter with the new create function
     */
-  def withRead(read: ID => F[Either[E,(ID,A)]]) : ClassicCrudInterpreter[A,E,F,ID] =
+  def withRead(read: ID => F[Either[E,(ID,A)]]) : ClassicCrudInterpreter[ALG,A,E,F,ID] =
     this.copy(readF = Some(read))
 
   /** Add or overwrite the existing user defined function to update data in a data store.  Adding
@@ -130,7 +265,7 @@ case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
     * @param update The function to be called to update an entity in a data store.
     * @return Copy of the ClassicCrudInterpreter with the new update function
     */
-  def withRead(update: (ID,A) => F[Either[E,(ID,A)]]) : ClassicCrudInterpreter[A,E,F,ID] =
+  def withRead(update: (ID,A) => F[Either[E,(ID,A)]]) : ClassicCrudInterpreter[ALG,A,E,F,ID] =
     this.copy(updateF = Some(update))
 
   /** Add or overwrite the existing user defined function to delete data in a data store.  Adding
@@ -138,7 +273,7 @@ case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
     * @param delete The function to be called to delete an entity in a data store.
     * @return Copy of the ClassicCrudInterpreter with the new delete function
     */
-  def withDelete(delete: ID => F[Either[E,(ID,A)]]) : ClassicCrudInterpreter[A,E,F,ID] =
+  def withDelete(delete: ID => F[Either[E,(ID,A)]]) : ClassicCrudInterpreter[ALG,A,E,F,ID] =
     this.copy(deleteF = Some(delete))
 
   /** Add or overwrite the existing user defined function to search for data in a data store.  Adding
@@ -146,15 +281,15 @@ case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
     * @param search The function to be called to search for all entities in a data store.
     * @return Copy of the ClassicCrudInterpreter with the new delete function
     */
-  def withSearch(search: () => Stream[F, (ID,A)]) : ClassicCrudInterpreter[A,E,F,ID] =
+  def withSearch(search: () => Stream[F, (ID,A)]) : ClassicCrudInterpreter[ALG,A,E,F,ID] =
     this.copy(searchF = Some(search))
 
 
   import ClassicCrudInterpreterDescription._
   val schemaWithId = schema match {
-    case h: HListConvert[_,_,A] => {
+    case h: HListConvert[ALG,_,_,A] @unchecked => {
       implicit val manifest = h.manifestOfA
-      (idDefinition :: h :><: com.bones.syntax.kvpNil).tupled[(ID,A)]
+      (idDefinition >>: h :><: com.bones.syntax.kvpNilCov[ALG]).tupled[(ID,A)]
     }
   }
   val encodeToCirceInterpreter = CirceEncoderInterpreter.isoInterpreter
@@ -166,14 +301,14 @@ case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
 
   def createRoutes: HttpRoutes[F] = {
 
-    object http extends ClassicCrudInterpreterF[A,E,F,ID]
+    object http extends ClassicCrudInterpreterF[ALG,A,E,F,ID]
 
     val updateHttpService =
       updateF.toList.flatMap(update => {
         val inputValidation =
-          validatedFromCirceInterpreter.fromSchema(schemaWithId)
-        val outputEncoder = encodeToCirceInterpreter.fromSchema(schemaWithId)
-        val errorEncoder = encodeToCirceInterpreter.fromSchema(errorSchema)
+          validatedFromCirceInterpreter.fromCustomSchema(schemaWithId, customJsonInterpreter)
+        val outputEncoder = encodeToCirceInterpreter.fromCustomSchema(schemaWithId, customJsonInterpreter)
+        val errorEncoder = encodeToCirceInterpreter.fromCustomSchema(errorSchema, customJsonInterpreter)
 
         val json = PutPostInterpreterGroup[(ID,A), (ID,A), E](
           "application/json",
@@ -186,9 +321,9 @@ case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
         )
 
         val bInputValidation =
-          BsonValidatorInterpreter.fromSchema(schemaWithId)
-        val bOutputEncoder = BsonEncoderInterpreter.fromSchema(schemaWithId)
-        val bErrorEncoder = BsonEncoderInterpreter.fromSchema(errorSchema)
+          BsonValidatorInterpreter.fromCustomSchema(schemaWithId, customBsonInterpreter)
+        val bOutputEncoder = BsonEncoderInterpreter.fromCustomSchema(schemaWithId, customBsonInterpreter)
+        val bErrorEncoder = BsonEncoderInterpreter.fromCustomSchema(errorSchema, customBsonInterpreter)
 
         val bson = PutPostInterpreterGroup[(ID,A), (ID,A), E](
           "application/ubjson",
@@ -201,11 +336,11 @@ case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
         )
 
         val pInputInterpreter =
-          ProtobufSequentialInputInterpreter.fromBytes(schemaWithId)
-        val pOutputEncoder = ProtobufSequentialOutputInterpreter.encodeToBytes(
-          schemaWithId)
-        val protobufErrorEncoder = ProtobufSequentialOutputInterpreter.encodeToBytes(
-          errorSchema)
+          ProtobufSequentialInputInterpreter.fromCustomBytes(schemaWithId, customProtobufInterpreter)
+        val pOutputEncoder = ProtobufSequentialOutputInterpreter.encodeToBytesCustomAlgebra[ALG,(ID,A)](
+          schemaWithId, customProtobufInterpreter)
+        val protobufErrorEncoder = ProtobufSequentialOutputInterpreter.encodeToBytesCustomAlgebra(
+          errorSchema, customProtobufInterpreter)
 
         val protoBuf = PutPostInterpreterGroup[(ID,A), (ID,A), E](
           "application/protobuf",
@@ -222,25 +357,25 @@ case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
 
     val readHttpService = readF.toList.flatMap(read => {
       val outputF =
-        encodeToCirceInterpreter.fromSchema(schemaWithId)
-      val errorF = encodeToCirceInterpreter.fromSchema(errorSchema)
+        encodeToCirceInterpreter.fromCustomSchema(schemaWithId, customJsonInterpreter)
+      val errorF = encodeToCirceInterpreter.fromCustomSchema(errorSchema, customJsonInterpreter)
       val json = GetInterpreterGroup[(ID,A), E](
         "application/json",
         ro => outputF(ro).spaces2.getBytes(charset),
         re => errorF(re).spaces2.getBytes(charset)
       )
 
-      val bOutputF = BsonEncoderInterpreter.fromSchema(schemaWithId)
-      val bErrorF = BsonEncoderInterpreter.fromSchema(errorSchema)
+      val bOutputF = BsonEncoderInterpreter.fromCustomSchema(schemaWithId, customBsonInterpreter)
+      val bErrorF = BsonEncoderInterpreter.fromCustomSchema(errorSchema, customBsonInterpreter)
       val bson = GetInterpreterGroup[(ID,A), E](
         "application/ubjson",
         ro => BsonEncoderInterpreter.bsonResultToBytes(bOutputF(ro)),
         re => BsonEncoderInterpreter.bsonResultToBytes(bErrorF(re))
       )
 
-      val pOutputF = ProtobufSequentialOutputInterpreter.encodeToBytes(schemaWithId)
+      val pOutputF = ProtobufSequentialOutputInterpreter.encodeToBytesCustomAlgebra(schemaWithId, customProtobufInterpreter)
       val pErrorF =
-        ProtobufSequentialOutputInterpreter.encodeToBytes(errorSchema)
+        ProtobufSequentialOutputInterpreter.encodeToBytesCustomAlgebra(errorSchema, customProtobufInterpreter)
       val protoBuf = GetInterpreterGroup[(ID,A), E](
         "application/protobuf",
         pOutputF,
@@ -258,7 +393,7 @@ case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
     val searchHttpService =
       searchF.toList.flatMap(search => {
         val outputF =
-          encodeToCirceInterpreter.fromSchema(schemaWithId)
+          encodeToCirceInterpreter.fromCustomSchema(schemaWithId, customJsonInterpreter)
 
         val jsonSearch = SearchInterpreterGroup[F,(ID,A)](
           "application/json",
@@ -275,9 +410,9 @@ case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
     val createHttpService =
       createF.toList.flatMap(create => {
         val inputF =
-          validatedFromCirceInterpreter.fromSchema(schema)
-        val outputF = encodeToCirceInterpreter.fromSchema(schemaWithId)
-        val errorF = encodeToCirceInterpreter.fromSchema(errorSchema)
+          validatedFromCirceInterpreter.fromCustomSchema(schema, customJsonInterpreter)
+        val outputF = encodeToCirceInterpreter.fromCustomSchema(schemaWithId, customJsonInterpreter)
+        val errorF = encodeToCirceInterpreter.fromCustomSchema(errorSchema, customJsonInterpreter)
 
         val json = PutPostInterpreterGroup[A, (ID,A), E](
           "application/json",
@@ -290,9 +425,9 @@ case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
         )
 
         val bInputF =
-          BsonValidatorInterpreter.fromSchema(schema)
-        val bOutputF = BsonEncoderInterpreter.fromSchema(schemaWithId)
-        val bErrorF = BsonEncoderInterpreter.fromSchema(errorSchema)
+          BsonValidatorInterpreter.fromCustomSchema(schema, customBsonInterpreter)
+        val bOutputF = BsonEncoderInterpreter.fromCustomSchema(schemaWithId, customBsonInterpreter)
+        val bErrorF = BsonEncoderInterpreter.fromCustomSchema(errorSchema, customBsonInterpreter)
 
         val bson = PutPostInterpreterGroup[A, (ID,A), E](
           "application/ubjson",
@@ -305,11 +440,11 @@ case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
         )
 
         val pInputF =
-          ProtobufSequentialInputInterpreter.fromBytes(schema)
-        val pOutputF = ProtobufSequentialOutputInterpreter.encodeToBytes(
-          schemaWithId)
+          ProtobufSequentialInputInterpreter.fromCustomBytes(schema, customProtobufInterpreter)
+        val pOutputF = ProtobufSequentialOutputInterpreter
+          .encodeToBytesCustomAlgebra(schemaWithId, customProtobufInterpreter)
         val pErrorF =
-          ProtobufSequentialOutputInterpreter.encodeToBytes(errorSchema)
+          ProtobufSequentialOutputInterpreter.encodeToBytesCustomAlgebra(errorSchema, customProtobufInterpreter)
         val protoBuf = PutPostInterpreterGroup[A, (ID,A), E](
           "application/protobuf",
           pInputF,
@@ -326,16 +461,16 @@ case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
 
     val deleteHttpService =
       deleteF.toList.flatMap(del => {
-        val outputF = encodeToCirceInterpreter.fromSchema(schemaWithId)
-        val errorF = encodeToCirceInterpreter.fromSchema(errorSchema)
+        val outputF = encodeToCirceInterpreter.fromCustomSchema(schemaWithId, customJsonInterpreter)
+        val errorF = encodeToCirceInterpreter.fromCustomSchema(errorSchema, customJsonInterpreter)
         val json = DeleteInterpreterGroup[(ID,A), E](
           "application/json",
           dout => outputF(dout).spaces2.getBytes(charset),
           de => errorF(de).spaces2.getBytes(charset)
         )
 
-        val bOutputF = BsonEncoderInterpreter.fromSchema(schemaWithId)
-        val bErrorF = BsonEncoderInterpreter.fromSchema(errorSchema)
+        val bOutputF = BsonEncoderInterpreter.fromCustomSchema(schemaWithId, customBsonInterpreter)
+        val bErrorF = BsonEncoderInterpreter.fromCustomSchema(errorSchema, customBsonInterpreter)
         val bson = DeleteInterpreterGroup[(ID,A), E](
           "application/ubjson",
           dout => BsonEncoderInterpreter.bsonResultToBytes(bOutputF(dout)),
@@ -343,9 +478,9 @@ case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
         )
 
         val pOutputF =
-          ProtobufSequentialOutputInterpreter.encodeToBytes(schemaWithId)
+          ProtobufSequentialOutputInterpreter.encodeToBytesCustomAlgebra(schemaWithId, customProtobufInterpreter)
         val pErrorF =
-          ProtobufSequentialOutputInterpreter.encodeToBytes(errorSchema)
+          ProtobufSequentialOutputInterpreter.encodeToBytesCustomAlgebra(errorSchema, customProtobufInterpreter)
         val protobuf = DeleteInterpreterGroup[(ID,A), E](
           "application/protobuf",
           pOutputF,
@@ -359,10 +494,10 @@ case class ClassicCrudInterpreter[A,E,F[_], ID:Manifest](
       })
 
     val contentTypes = "application/json" :: "application/ubjson" :: "application/protobuf" :: Nil
-    val swagger = http.swaggerDoc(contentTypes, schema, schemaWithId, errorSchema, path)
+    val swagger = http.swaggerDoc(contentTypes, customSwaggerInterpreter, schema, schemaWithId, errorSchema, path)
 
     val services: List[HttpRoutes[F]] =
-      http.protoBuff(path, schema, schemaWithId, errorSchema) :: swagger :: createHttpService ::: readHttpService ::: updateHttpService ::: deleteHttpService ::: searchHttpService
+      http.protoBuff(path, customProtobufInterpreter, schema, schemaWithId, errorSchema) :: swagger :: createHttpService ::: readHttpService ::: updateHttpService ::: deleteHttpService ::: searchHttpService
 
     services.foldLeft[HttpRoutes[F]](HttpRoutes.empty)(
       (op1: HttpRoutes[F], op2: HttpRoutes[F]) => op1 <+> op2
@@ -402,9 +537,10 @@ object ClassicCrudInterpreterDescription {
                                        )
 }
 
-trait ClassicCrudInterpreterF[A,E,F[_],ID] extends Http4sDsl[F] {
+trait ClassicCrudInterpreterF[ALG[_],A,E,F[_],ID] extends Http4sDsl[F] {
 
   import ClassicCrudInterpreterDescription._
+  import ClassicCrudInterpreter._
 
   def eeToOut(ee: NonEmptyList[ExtractionError])(implicit F: Sync[F]): F[Response[F]] = {
 
@@ -413,11 +549,12 @@ trait ClassicCrudInterpreterF[A,E,F[_],ID] extends Http4sDsl[F] {
   }
 
   /** Create an endpoint to display the swagger doc for for this type.  Endpoint is /swagger/'entityName' */
-  def swaggerDoc(
+  def swaggerDoc[ALG[_]](
                   contentTypes: List[String],
-                  schema: BonesSchema[A],
-                  schemaWithId: BonesSchema[(ID,A)],
-                  errorSchema: BonesSchema[E],
+                  customInterpreter: CustomSwaggerInterpreter[ALG],
+                  schema: BonesSchema[ALG,A],
+                  schemaWithId: BonesSchema[ALG,(ID,A)],
+                  errorSchema: BonesSchema[ALG,E],
                   path: String)(implicit F: Sync[F]): HttpRoutes[F] = {
 
     val openApi =
@@ -429,6 +566,7 @@ trait ClassicCrudInterpreterF[A,E,F[_],ID] extends Http4sDsl[F] {
         schema,
         schemaWithId,
         errorSchema,
+        customInterpreter,
         true,
         true,
         true,
@@ -444,10 +582,10 @@ trait ClassicCrudInterpreterF[A,E,F[_],ID] extends Http4sDsl[F] {
   }
 
   /** Create an endpoint to display the protobuf schema for each endpoint */
-  def protoBuff(path: String, schema: BonesSchema[A], schemaWithId: BonesSchema[(ID,A)], errorSchema: BonesSchema[E])(
+  def protoBuff(path: String, customProtobufInterpreter: ProtobufInterpreter[ALG], schema: BonesSchema[ALG,A], schemaWithId: BonesSchema[ALG,(ID,A)], errorSchema: BonesSchema[ALG,E])(
                        implicit F: Sync[F]): HttpRoutes[F] = {
     def toFile[A] =
-      ProtoFileInterpreter.fromSchemaToProtoFile(_: BonesSchema[A])
+      ProtoFileInterpreter.fromSchemaToProtoFile[ALG,A](_: BonesSchema[ALG,A], customProtobufInterpreter)
 
     val text =
         s"""

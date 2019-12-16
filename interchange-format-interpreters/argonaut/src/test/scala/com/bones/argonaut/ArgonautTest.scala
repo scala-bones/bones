@@ -19,7 +19,7 @@ class ArgonautTest extends FunSuite with Checkers with MustMatchers {
   val jsonToCc = validateFromCirce.byteArrayFuncFromSchema(allSupportCaseClass, Charset.forName("UTF8"))
   val ccToJson = ArgonautEncoderInterpreter.isoInterpreter.fromSchema(allSupportCaseClass)
 
-  implicit val arb = Arbitrary(Scalacheck.valueDefinition(allSupportCaseClass))
+  implicit val arb = Arbitrary(Scalacheck.createGen(allSupportCaseClass))
   val utf8 = Charset.forName("UTF8")
 
 

@@ -1,5 +1,6 @@
 package com.bones.data
 
+import com.bones.data.KeyValueDefinition.CoproductDataDefinition
 import com.bones.validation.ValidationDefinition.ValidationOp
 
 /**
@@ -46,10 +47,10 @@ object Error {
 
   /** Used when a required piece of data is missing
     * @param path The path within the schema to the offending definition
-    * @param valueDefinitionOp The definition of the required value
+    * @param coproductDataDefinition The definition of the required value
     * @tparam A The type of the required value
     */
-  case class RequiredData[A](path: List[String], valueDefinitionOp: KvpValue[A])
+  case class RequiredData[ALG[_],A](path: List[String], coproductDataDefinition: CoproductDataDefinition[ALG, A])
       extends ExtractionError
 
   case class SumTypeError(path: List[String], problem: String)

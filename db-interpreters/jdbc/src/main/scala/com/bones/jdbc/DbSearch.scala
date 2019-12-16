@@ -6,6 +6,8 @@ import cats.data.NonEmptyList
 import cats.effect.IO
 import com.bones.data.Error.ExtractionError
 import com.bones.data.{BonesSchema, HListConvert}
+import com.bones.jdbc.ColumnNameInterpreter.{ CustomInterpreter => ColumnNameCustomInterpreter }
+import com.bones.jdbc.ResultSetInterpreter.{ CustomInterpreter => ResultSetCustomInterpreter }
 import com.bones.jdbc.DbUtil.camelToSnake
 import fs2.Stream
 import fs2.Stream.bracket
@@ -13,10 +15,16 @@ import javax.sql.DataSource
 
 object DbSearch {
 
-  def getEntity[A](schema: BonesSchema[A]): DataSource => Stream[
+  type DbSearchCustomInterpreter[ALG[_]] = ColumnNameCustomInterpreter[ALG] with ResultSetCustommarshall then unmarshallInterpreter[ALG]
+
+  def getEntity[ALG[_], A]
+    (
+      schema: BonesSchema[ALG, A],
+      customInterpreter: DbSearchCustomInterpreter[ALG]
+    ): DataSource => Stream[
     IO,
     Either[NonEmptyList[ExtractionError], (Long,A)]] = {
-    val withConnection = searchEntityWithConnection[A](schema)
+    val withConnection = searchEntityWithConnection[ALG, A](schema, customInterpreter)
     ds =>
       {
         bracket(IO { ds.getConnection })(con => IO { con.close() })
@@ -37,24 +45,22 @@ object DbSearch {
     }
   }
 
-  def searchEntityWithConnection[A](
-      schema: BonesSchema[A]): Connection => Stream[
-    IO,
-    Either[NonEmptyList[ExtractionError], (Long,A)]] = {
+  def searchEntityWithConnection[ALG[_], A](
+      schema: BonesSchema[ALG, A],
+      customInterpreter: DbSearchCustomInterpreter[ALG]
+  ): Connection => Stream[IO,Either[NonEmptyList[ExtractionError], (Long,A)]] = {
     schema match {
-      case x: HListConvert[h, n, b] =>
+      case x: HListConvert[ALG, h, n, b] @unchecked =>
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
-        val schemaWithId = schema match {
-          case h: HListConvert[_,_,A] =>
-            implicit val manifest: Manifest[A] = h.manifestOfA
-            (DbUtil.longIdKeyValueDef :: h :><: com.bones.syntax.kvpNil).tupled[(Long,A)]
-        }
+        implicit val manifest: Manifest[b] = x.manifestOfA
+        val schemaWithId =
+            (DbUtil.longIdKeyValueDef[ALG] >>: x :><: com.bones.syntax.kvpNilCov[ALG]).tupled[(Long,A)]
 
         val resultSetF: ResultSet => Either[NonEmptyList[ExtractionError],
                                             (Long,A)] =
-          ResultSetInterpreter.valueDefinition(schemaWithId)(List.empty, "")
+          ResultSetInterpreter.valueDefinition(schemaWithId, customInterpreter)(List.empty, "")
 
-        val fields = ColumnNameInterpreter.valueDefinition(schemaWithId)("")
+        val fields = ColumnNameInterpreter.valueDefinition(schemaWithId, customInterpreter)("")
         val sql = s"""select ${fields.mkString(",")} from $tableName limit 50"""
         con =>
           {

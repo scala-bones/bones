@@ -2,15 +2,25 @@ package com.bones.jdbc
 
 import java.sql.{Connection, PreparedStatement, SQLException, Types}
 import java.time.{LocalDate, LocalDateTime, ZoneOffset}
+
 import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionError, SystemError}
 import com.bones.data._
 import com.bones.jdbc.DbUtil._
+import com.bones.syntax.NoAlgebra
 import javax.sql.DataSource
-import shapeless.{HList, HNil, Nat}
+import shapeless.{HList, HNil, Nat, ::}
 
 /** insert into table (field1, field2, field3) values (:value1, :value2, :value3) */
 object DbUpdateValues {
+
+  trait CustomDbUpdateInterpreter[ALG[_]] {
+    def definitionResult[A](alg: ALG[A]): (Index, Key) => DefinitionResult[A]
+  }
+
+  object NoAlgebraInterpreter extends CustomDbUpdateInterpreter[NoAlgebra] {
+    override def definitionResult[A](alg: NoAlgebra[A]): (Index, Key) => DefinitionResult[A] = sys.error("Unreachable code.")
+  }
 
   type FieldName = String
   type FieldValue = String
@@ -26,21 +36,26 @@ object DbUpdateValues {
       predefineUpdateStatements: List[(UpdateString, SetNull)],
       actionableUpdateStatements: A => List[SetValue])
 
-  def updateQuery[A](bonesSchema: BonesSchema[A]): DataSource => (
-      Long,
-      A) => Either[NonEmptyList[ExtractionError], (Long,A)] = {
-    val uq = updateQueryWithConnection(bonesSchema)
+  def updateQuery[A](bonesSchema: BonesSchema[NoAlgebra, A]): DataSource => (Long, A) => Either[NonEmptyList[ExtractionError], (Long,A)] =
+    updateQueryCustomAlgebra[NoAlgebra, A](bonesSchema, NoAlgebraInterpreter)
+
+  def updateQueryCustomAlgebra[ALG[_],A](bonesSchema: BonesSchema[ALG, A], customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG]):
+    DataSource => (Long, A) => Either[NonEmptyList[ExtractionError], (Long,A)] = {
+    val uq = updateQueryWithConnectionCustomAlgebra(bonesSchema, customDbUpdateInterpreter)
     ds => (id, a) =>
       withDataSource[(Long,A)](ds)(con => uq(id, a)(con))
   }
 
-  def updateQueryWithConnection[A](bonesSchema: BonesSchema[A])
-    : (Long,
-       A) => Connection => Either[NonEmptyList[SystemError], (Long,A)] =
+  def updateQueryWithConnection[ALG[_], A](bonesSchema: BonesSchema[NoAlgebra, A])
+  : (Long, A) => Connection => Either[NonEmptyList[SystemError], (Long,A)] =
+    updateQueryWithConnectionCustomAlgebra[NoAlgebra, A](bonesSchema, NoAlgebraInterpreter)
+
+  def updateQueryWithConnectionCustomAlgebra[ALG[_], A](bonesSchema: BonesSchema[ALG, A], customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG])
+    : (Long, A) => Connection => Either[NonEmptyList[SystemError], (Long,A)] =
     bonesSchema match {
-      case x: HListConvert[h, n, b] => {
+      case x: HListConvert[ALG, h, n, b] @unchecked => {
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
-        val updates = valueDefinition(x)(1, tableName)
+        val updates = kvpHList(x.from, customDbUpdateInterpreter)(1)
         (id: Long, a: A) =>
           {
             val sql =
@@ -52,7 +67,7 @@ object DbUpdateValues {
                 val statement = con.prepareCall(sql)
                 try {
                   updates
-                    .actionableUpdateStatements(a)
+                    .actionableUpdateStatements(x.fAtoH(a))
                     .foreach(f => f(statement))
                   statement.setLong(updates.lastIndex, id)
                   statement.execute()
@@ -69,22 +84,23 @@ object DbUpdateValues {
       }
     }
 
-  def kvpHList[H <: HList, HL <: Nat](
-      group: KvpHList[H, HL]): Index => DefinitionResult[H] = {
+  def kvpHList[ALG[_], H <: HList, HL <: Nat](
+      group: KvpHList[ALG, H, HL], customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG]): Index => DefinitionResult[H] = {
     group match {
-      case KvpNil =>
-        i =>
-          DefinitionResult(i, List.empty, (h: HNil) => List.empty)
-      case op: KvpSingleValueHead[h, t, tl, a] => {
-        val headF = valueDefinition(op.fieldDefinition.op)
-        val tailF = kvpHList(op.tail)
+      case kvp: KvpNil[_] =>
+        i => DefinitionResult(i, List.empty, (h: HNil) => List.empty)
+      case op: KvpSingleValueHead[ALG, h, t, tl, a] => {
+        val headF = determineValueDefinition(op.fieldDefinition.op, customDbUpdateInterpreter)
+        val tailF = kvpHList(op.tail, customDbUpdateInterpreter)
         (i: Index) =>
           {
             val headResult = headF(i, op.fieldDefinition.key)
             val tailResult = tailF(headResult.lastIndex)
+            implicit val hCons = op.isHCons
             val f: H => List[SetValue] = (h: H) => {
-              val headSetValues = headResult.actionableUpdateStatements(h.head)
-              val tailSetValue = tailResult.actionableUpdateStatements(h.tail)
+              val hAsA: a = h.asInstanceOf[a]
+              val headSetValues = headResult.actionableUpdateStatements(hAsA.head)
+              val tailSetValue = tailResult.actionableUpdateStatements(hAsA.tail)
               headSetValues ::: tailSetValue
             }
             DefinitionResult(
@@ -93,16 +109,30 @@ object DbUpdateValues {
               f)
           }
       }
-      case op: KvpConcreteTypeHead[a, ht, nt, ho, xl, xll] => {
-        val headF = kvpHList(op.hListConvert.from)
-        val tailF = kvpHList(op.tail)
+      case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked=> {
+
+        def fromBones[A](bonesSchema: BonesSchema[ALG, A]): Index => DefinitionResult[A] = {
+          bonesSchema match {
+            case hList: HListConvert[ALG, h, n, a] =>
+              index => {
+                val dr: DefinitionResult[h] = kvpHList(hList.from, customDbUpdateInterpreter)(index)
+                val as: A => List[SetValue] = a => dr.actionableUpdateStatements(hList.fAtoH(a))
+                DefinitionResult(dr.lastIndex, dr.predefineUpdateStatements, as)
+              }
+            case co: KvpCoproductConvert[ALG, c, a] =>
+              index => ???
+          }
+        }
+
+        val headF = fromBones(op.bonesSchema)
+        val tailF = kvpHList(op.tail, customDbUpdateInterpreter)
         (i: Index) =>
           {
             val headResult = headF(i)
             val tailResult = tailF(headResult.lastIndex)
-            val f = (input: H) => {
-              val headList = headResult.actionableUpdateStatements(
-                op.hListConvert.fAtoH(input.head))
+            implicit val isHCons = op.isHCons
+            val f = (input: a :: ht) => {
+              val headList = headResult.actionableUpdateStatements(input.head)
               val tailList = tailResult.actionableUpdateStatements(input.tail)
               (headList ::: tailList)
             }
@@ -112,9 +142,9 @@ object DbUpdateValues {
               f)
           }
       }
-      case op: KvpHListHead[a, al, h, hl, t, tl] => {
-        val headF = kvpHList(op.head)
-        val tailF = kvpHList(op.tail)
+      case op: KvpHListHead[ALG, a, al, h, hl, t, tl] @unchecked => {
+        val headF = kvpHList(op.head, customDbUpdateInterpreter)
+        val tailF = kvpHList(op.tail, customDbUpdateInterpreter)
         (i: Index) =>
           {
             val headResult = headF(i)
@@ -148,13 +178,23 @@ object DbUpdateValues {
       DefinitionResult(index + 1, List((updateString, psNull)), setValue)
     }
 
-  def valueDefinition[A](
-      fgo: KvpValue[A]): (Index, Key) => DefinitionResult[A] =
+  def determineValueDefinition[ALG[_], A]
+  (
+    valueDef: Either[KvpValue[A], ALG[A]],
+    customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG]
+  ) : (Index, Key) => DefinitionResult[A] =
+    valueDef match {
+      case Left(kvp) => valueDefinition[ALG, A](kvp, customDbUpdateInterpreter)
+      case Right(alg) => customDbUpdateInterpreter.definitionResult(alg)
+    }
+
+  def valueDefinition[ALG[_], A](
+      fgo: KvpValue[A], customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG]): (Index, Key) => DefinitionResult[A] =
     fgo match {
-      case op: OptionalKvpValueDefinition[b] =>
-        val valueF = valueDefinition(op.valueDefinitionOp)
+      case op: OptionalKvpValueDefinition[ALG, b] @unchecked =>
+        val valueF = determineValueDefinition(op.valueDefinitionOp, customDbUpdateInterpreter)
         (i, k) =>
-          val ops = valueF(i, k)
+          val ops = valueF.apply(i, k)
 
           val f: A => List[SetValue] = (a: A) => {
             a match {
@@ -193,12 +233,12 @@ object DbUpdateValues {
                         Types.NUMERIC)
       case ba: ByteArrayData =>
         psF[Array[Byte]](i => (ps, a) => ps.setBytes(i, a), Types.BINARY)
-      case ld: ListData[t]      => ???
-      case ed: EitherData[a, b] => ???
+      case ld: ListData[ALG, t] @unchecked      => ???
+      case ed: EitherData[ALG, a, b] @unchecked => ???
       case esd: EnumerationData[e,a] =>
         psF(i => (ps, a) => ps.setString(i, a.toString), Types.VARCHAR)
-      case kvp: KvpHListValue[h, hl] => {
-        val groupF = kvpHList(kvp.kvpHList)
+      case kvp: KvpHListValue[ALG, h, hl] @unchecked => {
+        val groupF = kvpHList(kvp.kvpHList, customDbUpdateInterpreter)
         (i, k) =>
           {
             val result = groupF(i)
@@ -209,8 +249,8 @@ object DbUpdateValues {
                              fa)
           }
       }
-      case x: HListConvert[a, al, b] =>
-        val groupF = kvpHList(x.from)
+      case x: HListConvert[ALG, a, al, b] @unchecked =>
+        val groupF = kvpHList(x.from, customDbUpdateInterpreter)
         (i, k) =>
           {
             val result = groupF(i)

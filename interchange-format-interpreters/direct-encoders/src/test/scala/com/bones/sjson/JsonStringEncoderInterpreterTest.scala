@@ -2,9 +2,8 @@ package com.bones.sjson
 
 import java.time.format.DateTimeFormatter
 
-import com.bones.scalacheck.Scalacheck
+import com.bones.scalacheck.{NoAlgebraGen, Scalacheck}
 import org.scalatestplus.scalacheck.Checkers
-
 import com.bones.schemas.Schemas.{AllSupported, allSupportCaseClass}
 import org.scalacheck.Arbitrary
 import org.scalatest.FunSuite
@@ -18,9 +17,9 @@ class JsonStringEncoderInterpreterTest extends FunSuite with Checkers {
   }
 
 
-  val ccF = interpreter.valueDefinition(allSupportCaseClass)
+  val ccF = interpreter.valueDefinition(allSupportCaseClass, JsonStringEncoderInterpreter.NoAlgebra)
 
-  implicit val arb = Arbitrary(Scalacheck.valueDefinition(allSupportCaseClass))
+  implicit val arb = Arbitrary(Scalacheck.valueDefinition(allSupportCaseClass, NoAlgebraGen))
 
   test("to json") {
 

@@ -34,7 +34,7 @@ trait ArgonautEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[
     Json.obj(values1 ::: values2: _*)
   }
 
-  override def toObj[A](kvDef: KeyValueDefinition[A], value: Json): Json =
+  override def toObj[ALG[_], A](kvDef: KeyValueDefinition[ALG, A], value: Json): Json =
     Json.obj((kvDef.key, value))
 
   override def booleanToOut(op: BooleanData): Boolean => Json =

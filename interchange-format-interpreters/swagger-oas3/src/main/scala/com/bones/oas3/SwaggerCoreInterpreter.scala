@@ -98,7 +98,7 @@ trait SwaggerCoreInterpreter {
         }
       }
 
-  private def fromKvpHList[ALG[_], H <: HList, HL <: Nat](
+  protected def fromKvpHList[ALG[_], H <: HList, HL <: Nat](
       group: KvpHList[ALG, H, HL], customInterpreter: CustomSwaggerInterpreter[ALG]):  SwaggerSchemas[ObjectSchema] = {
     group match {
       case nil: KvpNil[_] =>

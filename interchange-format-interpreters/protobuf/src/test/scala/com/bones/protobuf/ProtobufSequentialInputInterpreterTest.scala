@@ -18,19 +18,19 @@ class ProtobufSequentialInputInterpreterTest extends FunSuite with Checkers with
   val monica = Person(UUID.randomUUID(), "Monica", 44l, Loc("Denver", "CO"), true, Some("black"))
 
   val loc = (
-    kvp("city", string) ::
-      kvp("state", string) ::
-      KvpNil
+      ("city", string) ::
+      ("state", string) ::
+      kvpNil
   ).convert[Loc]
 
   val person = (
-    kvp("id", uuid) ::
-    kvp("name", string) ::
-    kvp("age", long) ::
-    kvp("location", loc) ::
-    kvp("knowsAboutGadt", boolean) ::
-    kvp("favoriteColor", string.optional) ::
-    KvpNil
+    ("id", uuid) ::
+    ("name", string) ::
+    ("age", long) ::
+    ("location", loc) ::
+    ("knowsAboutGadt", boolean) ::
+    ("favoriteColor", string.optional) ::
+    kvpNil
   ).convert[Person]
 
   ignore("single items") {

@@ -9,27 +9,37 @@ import com.bones.Util
 import com.bones.Util.{stringToEnumeration, stringToUuid}
 import com.bones.data.Error.{ExtractionError, RequiredData, SystemError}
 import com.bones.data._
+import com.bones.syntax.NoAlgebra
 import DbUtil.camelToSnake
 import FindInterpreter.{FieldName, Path, utcCalendar}
+import com.bones.data.KeyValueDefinition.CoproductDataDefinition
 import shapeless.{HList, HNil, Nat}
 
 /** Responsible for converting a result set into the result type */
 object ResultSetInterpreter {
 
-  def kvpHList[H <: HList, N <: Nat](group: KvpHList[H, N])
+  trait CustomInterpreter[ALG[_]] {
+    def resultSet[A](alg: ALG[A]): (Path, FieldName) => ResultSet => Either[NonEmptyList[ExtractionError], A]
+  }
+
+  case object CustomInterpreterNoAlgebra extends CustomInterpreter[NoAlgebra] {
+    def resultSet[A](alg: NoAlgebra[A]): (Path, FieldName) => ResultSet => Either[NonEmptyList[ExtractionError], A] =
+      sys.error("unreachable code")
+  }
+
+  def kvpHList[ALG[_], H <: HList, N <: Nat](group: KvpHList[ALG, H, N], customInterpreter: CustomInterpreter[ALG])
     : Path => ResultSet => Either[NonEmptyList[ExtractionError], H] =
     group match {
-      case KvpNil =>
-        path => rs =>
-          Right(HNil)
-      case op: KvpSingleValueHead[h, t, tl, a] =>
+      case nil: KvpNil[_] =>
+        path => rs => Right(HNil)
+      case op: KvpSingleValueHead[ALG, h, t, tl, a] @unchecked =>
         path =>
           {
             val newPath = op.fieldDefinition.key :: path
-            val rsToHead = valueDefinition(op.fieldDefinition.op)(
+            val rsToHead = determineValueDefinition(op.fieldDefinition.op, customInterpreter)(
               newPath,
               camelToSnake(op.fieldDefinition.key))
-            val rsToTail = kvpHList(op.tail)(path)
+            val rsToTail = kvpHList(op.tail, customInterpreter)(path)
             rs =>
               {
                 Util.eitherMap2(rsToHead(rs), rsToTail(rs))((l1: h, l2: t) => {
@@ -37,9 +47,21 @@ object ResultSetInterpreter {
                 })
               }
           }
-      case op: KvpConcreteTypeHead[a, ht, nt, ho, xl, xll] =>
-        val headF = kvpHList(op.hListConvert.from)
-        val tailF = kvpHList(op.tail)
+      case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked =>
+
+        def fromSchema[A](bonesSchema: BonesSchema[ALG,A]) : Path => ResultSet => Either[NonEmptyList[ExtractionError], A] =
+          bonesSchema match {
+            case hList: HListConvert[ALG, hh, nn, A] @unchecked => {
+              path => resultSet => {
+                val resultHH = kvpHList(hList.from, customInterpreter)(path)(resultSet)
+                resultHH.map(hh => hList.fHtoA(hh))
+              }
+            }
+            case co: KvpCoproductConvert[ALG, c, a] => ???
+          }
+
+        val headF = fromSchema(op.bonesSchema)
+        val tailF = kvpHList(op.tail, customInterpreter)
         import shapeless.::
         path =>
           {
@@ -48,14 +70,14 @@ object ResultSetInterpreter {
             rs =>
               {
                 Util.eitherMap2(rsToHead(rs), rsToTail(rs))(
-                  (l1: xl, l2: ht) => {
-                    op.isHCons.cons(op.hListConvert.fHtoA(l1), l2)
+                  (l1: a, l2: ht) => {
+                    op.isHCons.cons(l1, l2)
                   })
               }
           }
-      case op: KvpHListHead[a, al, h, hl, t, tl] =>
-        val headF = kvpHList(op.head)
-        val tailF = kvpHList(op.tail)
+      case op: KvpHListHead[ALG, a, al, h, hl, t, tl] @unchecked =>
+        val headF = kvpHList(op.head, customInterpreter)
+        val tailF = kvpHList(op.tail, customInterpreter)
         path =>
           {
             val rsToHead = headF(path)
@@ -69,13 +91,20 @@ object ResultSetInterpreter {
           }
     }
 
-  def valueDefinition[A](fgo: KvpValue[A]): (
+  def determineValueDefinition[ALG[_], A](coproduct: CoproductDataDefinition[ALG, A], customInterpreter: CustomInterpreter[ALG]) : (Path, FieldName) =>
+    ResultSet => Either[NonEmptyList[ExtractionError], A]  =
+    coproduct match {
+      case Left(kvp) => valueDefinition(kvp, customInterpreter)
+      case Right(alg) => customInterpreter.resultSet(alg)
+    }
+
+  def valueDefinition[ALG[_], A](fgo: KvpValue[A], customInterpreter: CustomInterpreter[ALG]): (
       Path,
       FieldName) => ResultSet => Either[NonEmptyList[ExtractionError], A] =
     fgo match {
-      case op: OptionalKvpValueDefinition[a] =>
+      case op: OptionalKvpValueDefinition[ALG, a] =>
         (path, fieldName) =>
-          val child = valueDefinition(op.valueDefinitionOp)(path, fieldName)
+          val child = determineValueDefinition(op.valueDefinitionOp, customInterpreter)(path, fieldName)
           rs => {
             child(rs) match {
               case Left(errs) =>
@@ -132,16 +161,16 @@ object ResultSetInterpreter {
       case ba: ByteArrayData =>
         (path, fieldName) => rs =>
           catchSql(rs.getBytes(fieldName), path, ba)
-      case ld: ListData[t]      => ???
-      case ed: EitherData[a, b] =>
+      case ld: ListData[ALG, t] @unchecked      => ???
+      case ed: EitherData[ALG, a, b] @unchecked =>
         (path, fieldName) => rs => {
-          val result = valueDefinition(ed.definitionA)(path, "left_" + fieldName)(rs) match {
+          val result = determineValueDefinition(ed.definitionA, customInterpreter)(path, "left_" + fieldName)(rs) match {
             //if the error is that the left is required, we will check the right.
             case Left(nel) =>
               if (nel.length == 1) {
                 nel.head match {
                   case RequiredData(path, op) if op == ed.definitionA => {
-                    valueDefinition(ed.definitionB)(path, "right_" + fieldName)(rs).map(Right(_))
+                    determineValueDefinition(ed.definitionB, customInterpreter)(path, "right_" + fieldName)(rs).map(Right(_))
                   }
                   case _ => Left(nel)
                 }
@@ -160,13 +189,13 @@ object ResultSetInterpreter {
             e <- stringToEnumeration[e,a](r, path, esd.enumeration)(esd.manifestOfA)
           } yield e.asInstanceOf[A]
         }:Either[NonEmptyList[com.bones.data.Error.ExtractionError], A]
-      case kvp: KvpHListValue[h, hl] =>
-        val groupF = kvpHList(kvp.kvpHList)
+      case kvp: KvpHListValue[ALG, h, hl] =>
+        val groupF = kvpHList(kvp.kvpHList, customInterpreter)
         (path, _) => //Ignore fieldName here
           groupF(path).andThen(_.map(_.asInstanceOf[A]))
 
-      case x: HListConvert[a, al, b] =>
-        val groupF = kvpHList(x.from)
+      case x: HListConvert[ALG, a, al, b] @unchecked=>
+        val groupF = kvpHList(x.from, customInterpreter)
         (path, _) =>
           groupF(path).andThen(_.map(x.fHtoA))
     }
@@ -178,7 +207,7 @@ object ResultSetInterpreter {
     try {
       val result = f
       if (result == null) {
-        Left(NonEmptyList.one(RequiredData(path, op)))
+        Left(NonEmptyList.one(RequiredData(path, Left(op))))
       } else {
         Right(result)
       }

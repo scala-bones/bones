@@ -18,16 +18,16 @@ object Demo {
   case class Waterfall(name: String, location: Option[Location], height: Option[BigDecimal])
 
   val locationSchema = (
-      kvp("latitude", bigDecimal(dv.min(-180), dv.max(180))) ::
-      kvp("longitude", bigDecimal(dv.min(-180), dv.max(180))) ::
-      KvpNil
+      ("latitude", bigDecimal(dv.min(-180), dv.max(180))) ::
+      ("longitude", bigDecimal(dv.min(-180), dv.max(180))) ::
+      kvpNil
     ).convert[Location]
 
   val waterfallSchema = (
-      kvp("name", string(sv.max(200), sv.trimmed, sv.words)) ::
-      kvp("location", locationSchema.optional) ::
-      kvp("height", bigDecimal(dv.min(0)).optional) ::
-      KvpNil
+      ("name", string(sv.max(200), sv.trimmed, sv.words)) ::
+      ("location", locationSchema.optional) ::
+      ("height", bigDecimal(dv.min(0)).optional) ::
+      kvpNil
     ).convert[Waterfall]
 
 }
