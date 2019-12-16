@@ -2,6 +2,7 @@ package com.bones.protobuf
 
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
 import com.bones.data._
+import com.bones.syntax.NoAlgebra
 import shapeless.{Coproduct, HList, Nat}
 
 /**
@@ -13,6 +14,14 @@ object ProtoFileInterpreter {
   type Repeated = Boolean
   type Name = String
   type Index = Int
+
+  trait CustomInterpreter[ALG[_]] {
+    def toMessageField[A](alg: ALG[A]): (Name, Int) => (MessageField, Vector[NestedType], Int)
+  }
+
+  object NoAlgebraCustomInterpreter extends CustomInterpreter[NoAlgebra] {
+    def toMessageField[A](alg: NoAlgebra[A]) = sys.error("Unreachable code")
+  }
 
   /** Types that can be in a Message */
   sealed trait DataType {
@@ -122,8 +131,8 @@ object ProtoFileInterpreter {
 
   }
 
-  def fromSchemaToProtoFile[A](dc: BonesSchema[A]): String =
-    messageToProtoFile(fromSchema(dc))
+  def fromSchemaToProtoFile[ALG[_], A](dc: BonesSchema[ALG, A], customInterpreter: CustomInterpreter[ALG]): String =
+    messageToProtoFile(fromSchemaCustomAlgebra(dc, customInterpreter))
 
   def messageToProtoFile(message: Message): String = {
     s"""
@@ -143,57 +152,85 @@ object ProtoFileInterpreter {
 //     """.stripMargin
 //  }
 
-  def fromSchema[A](dc: BonesSchema[A]): Message = {
+  def fromSchema[A](dc: BonesSchema[NoAlgebra, A]): Message =
+    fromSchemaCustomAlgebra(dc, NoAlgebraCustomInterpreter)
+
+  def fromSchemaCustomAlgebra[ALG[_],A](dc: BonesSchema[ALG, A], customerInterpreter: CustomInterpreter[ALG]): Message = {
     dc match {
-      case t: HListConvert[a, al, b] =>
-        val (messageFields, nestedTypes, lastIndex) = kvpHList(t.from)(0)
+      case t: HListConvert[ALG, a, al, b] =>
+        val (messageFields, nestedTypes, lastIndex) = kvpHList(t.from, customerInterpreter)(0)
         Message(t.manifestOfA.runtimeClass.getSimpleName,
                 messageFields,
                 nestedTypes)
     }
   }
 
-  def kvpCoproduct[C<:Coproduct](co: KvpCoproduct[C]):
+  def kvpCoproduct[ALG[_], C<:Coproduct](co: KvpCoproduct[ALG, C], customerInterpreter: CustomInterpreter[ALG]):
     Int => (Vector[MessageField], Vector[NestedType], Int) = lastIndex => {
     co match{
-      case KvpCoNil => (Vector.empty, Vector.empty, lastIndex)
-      case op: KvpSingleValueLeft[l,r] => {
-        val left = valueDefinition(op.kvpValue)(op.manifestL.runtimeClass.getSimpleName, lastIndex)
-        val right = kvpCoproduct(op.kvpTail)(left._3)
+      case nil: KvpCoNil[_] => (Vector.empty, Vector.empty, lastIndex)
+      case op: KvpSingleValueLeft[ALG,l,r] @unchecked => {
+        val left = determineValueDefinition(op.kvpValue, customerInterpreter)(op.manifestL.runtimeClass.getSimpleName, lastIndex)
+        val right = kvpCoproduct(op.kvpTail, customerInterpreter)(left._3)
         (left._1 +: right._1, left._2 ++ right._2, right._3)
       }
     }
   }
 
-  def kvpHList[H <: HList, HL <: Nat](group: KvpHList[H, HL])
+  def kvpHList[ALG[_], H <: HList, HL <: Nat](group: KvpHList[ALG, H, HL], customerInterpreter: CustomInterpreter[ALG])
     : Int => (Vector[MessageField], Vector[NestedType], Int) = lastIndex => {
     group match {
-      case KvpNil => (Vector.empty, Vector.empty, lastIndex)
-      case op: KvpSingleValueHead[h, t, tl, a] => {
+      case nil: KvpNil[_] => (Vector.empty, Vector.empty, lastIndex)
+      case op: KvpSingleValueHead[ALG, h, t, tl, a] @unchecked => {
         val thisIndex = lastIndex + 1
-        val r = valueDefinition(op.fieldDefinition.op)(op.fieldDefinition.key,
+        val r = determineValueDefinition(op.fieldDefinition.op, customerInterpreter)(op.fieldDefinition.key,
                                                        thisIndex)
         val (messageFields, nestedTypes, lastUsedIndex) =
-          kvpHList(op.tail)(r._3)
+          kvpHList(op.tail, customerInterpreter)(r._3)
         (messageFields :+ r._1, r._2 ++ nestedTypes, lastUsedIndex)
       }
-      case op: KvpConcreteTypeHead[a, ht, nt, ho, hx, nx] =>
-        val head = kvpHList(op.hListConvert.from)(lastIndex)
-        val tail = kvpHList(op.tail)(head._3)
+      case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked =>
+        val head = fromBonesSchema(op.bonesSchema, customerInterpreter)(lastIndex)
+        val tail = kvpHList(op.tail, customerInterpreter)(head._3)
         (head._1 ++ tail._1, head._2 ++ tail._2, tail._3)
-      case op: KvpHListHead[a, al, h, hl, t, tl] =>
-        val head = kvpHList(op.head)(lastIndex)
-        val tail = kvpHList(op.tail)(head._3)
+      case op: KvpHListHead[ALG, a, al, h, hl, t, tl] @unchecked =>
+        val head = kvpHList(op.head, customerInterpreter)(lastIndex)
+        val tail = kvpHList(op.tail, customerInterpreter)(head._3)
         (head._1 ++ tail._1, head._2 ++ tail._2, tail._3)
     }
   }
 
-  def valueDefinition[A](fgo: KvpValue[A])
+  def fromBonesSchema[ALG[_], A]
+    (
+      bonesSchema: BonesSchema[ALG,A],
+      customerInterpreter: CustomInterpreter[ALG]
+    ) : Int => (Vector[MessageField], Vector[NestedType], Int) = {
+
+    bonesSchema match {
+      case co: KvpCoproductConvert[ALG, c, a] @unchecked =>
+        kvpCoproduct(co.from, customerInterpreter)
+      case hl: HListConvert[ALG, h, n, a] @unchecked =>
+        kvpHList(hl.from, customerInterpreter)
+    }
+
+  }
+
+  def determineValueDefinition[ALG[_], A]
+    (
+      value: Either[KvpValue[A], ALG[A]],
+      customerInterpreter: CustomInterpreter[ALG]
+    ): (Name, Int) => (MessageField, Vector[NestedType], Int) =
+    value match {
+      case Left(kvp) => valueDefinition(kvp, customerInterpreter)
+      case Right(alg) => customerInterpreter.toMessageField(alg)
+    }
+
+  def valueDefinition[ALG[_], A](fgo: KvpValue[A], customerInterpreter: CustomInterpreter[ALG])
     : (Name, Int) => (MessageField, Vector[NestedType], Int) =
     (name, index) =>
       fgo match {
-        case op: OptionalKvpValueDefinition[a] =>
-          val result = valueDefinition(op.valueDefinitionOp)(name, index)
+        case op: OptionalKvpValueDefinition[ALG, a] @unchecked =>
+          val result = determineValueDefinition(op.valueDefinitionOp, customerInterpreter)(name, index)
           (result._1.copy(required = false), result._2, index)
         case ob: BooleanData =>
           (MessageField(Bool, true, false, name, index), Vector.empty, index)
@@ -230,33 +267,33 @@ object ProtoFileInterpreter {
           (MessageField(PbString, true, false, name, index), Vector.empty, index)
         case ba: ByteArrayData =>
           (MessageField(Bytes, true, false, name, index), Vector.empty, index)
-        case ld: ListData[t] =>
-          val result = valueDefinition(ld.tDefinition)(name, index)
+        case ld: ListData[ALG, t] @unchecked =>
+          val result = determineValueDefinition(ld.tDefinition, customerInterpreter)(name, index)
           (result._1.copy(repeated = true), result._2, index)
-        case ed: EitherData[a, b] =>
-          val (messageFieldA, nestedTypesA, nextIndex) = valueDefinition(ed.definitionA)(s"${name}Left", index)
-          val (messageFieldB, nestedTypesB, lastIndex) = valueDefinition(ed.definitionB)(s"${name}Right", nextIndex + 1)
+        case ed: EitherData[ALG, a, b] @unchecked =>
+          val (messageFieldA, nestedTypesA, nextIndex) = determineValueDefinition(ed.definitionA, customerInterpreter)(s"${name}Left", index)
+          val (messageFieldB, nestedTypesB, lastIndex) = determineValueDefinition(ed.definitionB, customerInterpreter)(s"${name}Right", nextIndex + 1)
           val oneOfName = toSnake(name.capitalize)
           (MessageField(EitherDataType(oneOfName, messageFieldA, messageFieldB), false, false, name, index), Vector.empty, lastIndex)
         case esd: EnumerationData[e,a] =>
           (MessageField(PbString, true, false, name, index), Vector.empty, index)
-        case kvp: KvpCoproductValue[c] =>
-          val (fields, nestedTypes,nextIndex) = kvpCoproduct(kvp.kvpCoproduct)(index)
+        case kvp: KvpCoproductValue[ALG, c] @unchecked =>
+          val (fields, nestedTypes,nextIndex) = kvpCoproduct(kvp.kvpCoproduct, customerInterpreter)(index)
           val nestedMessageFields: Vector[MessageField] = nestedTypes.zipWithIndex.map(nt => MessageField(NestedDataType(nt._1.name), false, false, nt._1.name, index + nt._2))
           val name = nestedTypes.headOption.map(_.name).getOrElse("unknown")
           (MessageField(OneOf(name + "_oneof", nestedMessageFields.toList), true, false, name, nextIndex), nestedTypes, index + nestedMessageFields.length - 1)
-        case kvp: KvpHListValue[h, hl] =>
-          val result = kvpHList(kvp.kvpHList)(0)
+        case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
+          val result = kvpHList(kvp.kvpHList, customerInterpreter)(0)
           val nested = NestedMessage(name, result._1)
           (MessageField(NestedDataType(name), true, false, name, index),
            Vector(nested), index)
-        case t: HListConvert[h, hl, a] =>
-          val (messageFields, _, _) = kvpHList(t.from)(0)
+        case t: HListConvert[ALG, h, hl, a] @unchecked =>
+          val (messageFields, _, _) = kvpHList(t.from, customerInterpreter)(0)
           val nested = NestedMessage(name, messageFields)
           (MessageField(NestedDataType(name), true, false, name, index),
            Vector(nested), index)
-        case co: KvpCoproductConvert[c,a] =>
-          val (fields, nestedTypes, nextIndex) = kvpCoproduct(co.from)(index)
+        case co: KvpCoproductConvert[ALG, c,a] @unchecked =>
+          val (fields, nestedTypes, nextIndex) = kvpCoproduct(co.from, customerInterpreter)(index)
           val nestedMessageFields: Vector[MessageField] = nestedTypes.zipWithIndex.map(nt => MessageField(NestedDataType(nt._1.name), false, false, nt._1.name, index + nt._2))
           val name = nestedTypes.headOption.map(_.name).getOrElse("unknown")
           (MessageField(OneOf(name + "_oneof", nestedMessageFields.toList), true, false, name, nextIndex), nestedTypes, index + nestedMessageFields.length - 1)

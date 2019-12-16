@@ -10,6 +10,7 @@ import com.bones.data._
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
 import com.bones.Util._
 import com.bones.data.KvpValue.Path
+import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
 import reactivemongo.bson.buffer.ArrayReadableBuffer
 import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDecimal, BSONDocument, BSONDouble, BSONInteger, BSONLong, BSONNull, BSONString, BSONValue}
 
@@ -20,6 +21,8 @@ import scala.util.Try
   */
 object BsonValidatorInterpreter
   extends KvpInterchangeFormatValidatorInterpreter[BSONValue] {
+
+  trait BsonValidator[ALG[_]] extends InterchangeFormatValidator[ALG, BSONValue]
 
   def fromByteArray(
                      arr: Array[Byte]): Either[NonEmptyList[ExtractionError], BSONValue] = {
@@ -55,9 +58,9 @@ object BsonValidatorInterpreter
     Left(NonEmptyList.one(WrongTypeError(path, expected, invalid)))
   }
 
-  override def headValue[A](
+  override def headValue[ALG[_],A](
                              in: BSONValue,
-                             kv: KeyValueDefinition[A],
+                             kv: KeyValueDefinition[ALG,A],
                              headInterpreter: (
                                Option[BSONValue],
                                  List[String]) => Either[NonEmptyList[ExtractionError], A],
@@ -148,7 +151,7 @@ object BsonValidatorInterpreter
       case x => invalidValue(x, classOf[BSONDateTime], path)
     }
 
-  override def extractArray[A](op: ListData[A])(in: BSONValue,
+  override def extractArray[ALG[_],A](op: ListData[ALG,A])(in: BSONValue,
                                                       path: List[String])
   : Either[NonEmptyList[ExtractionError], Seq[BSONValue]] =
     in match {

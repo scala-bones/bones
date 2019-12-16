@@ -7,6 +7,8 @@ import cats.effect.IO
 import com.bones.circe.CirceValidatorInterpreter
 import com.bones.data.Error.ExtractionError
 import com.bones.data.BonesSchema
+import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
+import io.circe.Json
 import org.http4s.client.Client
 
 object Http4sClient {
@@ -17,11 +19,16 @@ object Http4sClient {
 
 
 
-  def getF[O,E](path: String, outputSchema: BonesSchema[O]) : Client[IO] => ID => IO[Either[Error[E],O]] = {
-    val f = CirceValidatorInterpreter.isoInterpreter.byteArrayFuncFromSchema(outputSchema, Charset.forName("utf-8"))
+  def getF[ALG[_], O,E](
+                         path: String, outputSchema: BonesSchema[ALG, O],
+                         validatorInterpreter: InterchangeFormatValidator[ALG,Json]
+                       ) : Client[IO] => ID => IO[Either[Error[E],O]] = {
+
+    val f = CirceValidatorInterpreter
+      .isoInterpreter
+      .byteArrayFuncFromSchema(outputSchema, Charset.forName("utf-8"), validatorInterpreter)
 
     httpClient => id => {
-//      httpClient.fetch[Array[Byte]](s"http://localhost:8080/$path/$id")
       httpClient.expect[Array[Byte]](s"http://localhost:8080/$path/$id")
         .map(bytes => f.apply(bytes))
       ???

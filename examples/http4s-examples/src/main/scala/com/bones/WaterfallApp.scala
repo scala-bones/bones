@@ -17,9 +17,9 @@ object WaterfallDefinitions {
   case class Location(latitude: BigDecimal, longitude: BigDecimal)
 
   val imperialMeasurement = (
-    kvp("feet", long(lv.min(0))) ::
-      kvp("inches", long(lv.between(0, 12))) ::
-      KvpNil
+    ("feet", long(lv.min(0))) ::
+      ("inches", long(lv.between(0, 12))) ::
+      kvpNil
     ).convert[ImperialMeasurement]
 
   object WaterVolume extends Enumeration {
@@ -33,27 +33,27 @@ object WaterfallDefinitions {
                        /*wantToVisit: Boolean, description: String*/)
 
   val waterfallSchema = (
-    kvp("name", string(sv.max(200))) ::
-      kvp("latitude", bigDecimal(dv.min(-180), dv.max(180))) ::
-      kvp("longitude", bigDecimal(dv.min(-180), dv.max(180))) ::
-      kvp("cubicFeetPerMinute", bigDecimal(dv.positive).optional) ::
-      kvp("height", imperialMeasurement.optional) ::
-      kvp("waterVolume", enumeration[WaterVolume.type, WaterVolume.Value](WaterVolume)) ::
+    ("name", string(sv.max(200))) ::
+      ("latitude", bigDecimal(dv.min(-180), dv.max(180))) ::
+      ("longitude", bigDecimal(dv.min(-180), dv.max(180))) ::
+      ("cubicFeetPerMinute", bigDecimal(dv.positive).optional) ::
+      ("height", imperialMeasurement.optional) ::
+      ("waterVolume", enumeration[WaterVolume.type, WaterVolume.Value](WaterVolume)) ::
       //      kvp("discoveryDate", isoDateTime()) ::
 //      kvp("wantToVisit", boolean) ::
 //      kvp("description", string(sv.max(500))) ::
-      KvpNil
+      kvpNil
     ).convert[Waterfall]
 
 
   case class WaterfallVisit(waterfallId: Long, waterVolume: WaterVolume.Value, notes: Option[String])
 
   val waterfallVisitSchema = (
-    kvp("waterfallId", long(lv.min(1))) ::
+    ("waterfallId", long(lv.min(1))) ::
       //      kvp("visitDate", isoDate()) ::
-      kvp("waterVolume", enumeration[WaterVolume.type, WaterVolume.Value](WaterVolume)) ::
-      kvp("notes", string.optional) ::
-      KvpNil
+      ("waterVolume", enumeration[WaterVolume.type, WaterVolume.Value](WaterVolume)) ::
+      ("notes", string.optional) ::
+      kvpNil
     ).convert[WaterfallVisit]
 
 }

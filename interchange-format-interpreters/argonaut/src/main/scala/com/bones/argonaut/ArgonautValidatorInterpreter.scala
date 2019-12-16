@@ -15,6 +15,8 @@ import com.bones.data._
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
 import com.bones.Util._
 import com.bones.data.KvpValue.Path
+import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.{InterchangeFormatValidator, NoAlgebraValidator}
+import com.bones.syntax.NoAlgebra
 
 import scala.util.control.NonFatal
 
@@ -41,9 +43,12 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
 
   override def isEmpty(json: Json): JsonBoolean = json.isNull
 
-  def byteArrayFuncFromSchema[A](schema: BonesSchema[A], charset: Charset)
+  def byteArrayFuncFromSchema[A](schema: BonesSchema[NoAlgebra,A], charset: Charset) =
+    byteArrayFuncFromCustomSchema[NoAlgebra, A](schema, NoAlgebraValidator(), charset)
+
+  def byteArrayFuncFromCustomSchema[ALG[_],A](schema: BonesSchema[ALG,A], customValidator: InterchangeFormatValidator[ALG,Json], charset: Charset)
     : Array[Byte] => Either[NonEmptyList[ExtractionError], A] = {
-    val fromSchemaFunction = fromSchema(schema)
+    val fromSchemaFunction = fromCustomSchema(schema, customValidator)
     bytes =>
       {
         try {
@@ -64,9 +69,9 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
                     charset: Charset): Either[ExtractionError, Json] =
     Parse.parse(new String(arr, charset)).left.map(err => ParsingError(err))
 
-  override def headValue[A](
+  override def headValue[ALG[_],A](
       in: Json,
-      kv: KeyValueDefinition[A],
+      kv: KeyValueDefinition[ALG,A],
       headInterpreter: (
           Option[Json],
           List[String]) => Either[NonEmptyList[ExtractionError], A],
@@ -142,7 +147,7 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
     .flatMap(stringToLocalDate(_,localDateFormatter, path))
 
 
-  override def extractArray[A](op: ListData[A])(
+  override def extractArray[ALG[_],A](op: ListData[ALG,A])(
       in: Json,
       path: List[String]): Either[NonEmptyList[ExtractionError], Seq[Json]] =
     in.array.toRight(

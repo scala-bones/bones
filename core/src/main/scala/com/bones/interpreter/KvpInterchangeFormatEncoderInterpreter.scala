@@ -46,13 +46,16 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
     * @tparam A
     * @return
     */
-  def fromSchema[ALG[_], A]
+  def fromCustomSchema[ALG[_], A]
     (
       bonesSchema: BonesSchema[ALG, A],
       covEncoder: InterchangeFormatEncoder[ALG, OUT]
     ): A => OUT = bonesSchema match {
       case x: HListConvert[ALG, _, _, A] => valueDefinition(x, covEncoder)
     }
+
+  def fromSchema[A](bonesSchema: BonesSchema[NoAlgebra, A]) =
+    fromCustomSchema[NoAlgebra, A](bonesSchema, NoAlgebraEncoder[OUT]())
 
   def none: OUT
   def empty: OUT
@@ -136,7 +139,7 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
             combine(toObj(op.fieldDefinition, val1), tail)
           }
       case op: KvpConcreteTypeHead[ALG, H, ht, nt] @unchecked => {
-        val headF = fromSchema(op.bonesSchema, encoder)
+        val headF = fromCustomSchema(op.bonesSchema, encoder)
         val tailF = kvpHList(op.tail, encoder)
         implicit val hCons = op.isHCons
         (input: H) =>

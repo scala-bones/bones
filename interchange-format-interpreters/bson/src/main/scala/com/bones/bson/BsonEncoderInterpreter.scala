@@ -6,6 +6,7 @@ import java.util.{Base64, UUID}
 import com.bones.data.KeyValueDefinition
 import com.bones.data._
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
+import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
 import reactivemongo.bson.buffer.ArrayBSONBuffer
 import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDecimal, BSONDocument, BSONElement, BSONInteger, BSONLong, BSONNull, BSONString, BSONValue}
 
@@ -15,6 +16,8 @@ import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDecimal, BS
   * module.
   */
 object BsonEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[BSONValue] {
+
+  trait BsonEncoder[ALG[_]] extends InterchangeFormatEncoder[ALG, BSONValue]
 
   def bsonResultToBytes(bsonValue: BSONValue): Array[Byte] = {
     val buffer = new ArrayBSONBuffer()
@@ -80,7 +83,7 @@ object BsonEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[BSO
     op.enumeration.Value => BSONValue =
     input => BSONString(input.toString)
 
-  def toObj[A](kvDef: KeyValueDefinition[A], value: BSONValue): BSONValue =
+  def toObj[ALG[_], A](kvDef: KeyValueDefinition[ALG, A], value: BSONValue): BSONValue =
     BSONDocument(BSONElement(kvDef.key, value))
 
   override def addStringField(element: BSONValue, name: String, value: String): BSONValue =

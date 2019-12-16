@@ -2,15 +2,15 @@ package com.bones.fullstack
 
 
 import java.nio.charset.StandardCharsets
-
 import cats.data.{Kleisli, NonEmptyList}
 import cats.effect._
 import cats.implicits._
 import com.bones.data.Error.ExtractionError
-import com.bones.data.{BonesSchema, KvpNil}
+import com.bones.data.{BonesSchema}
+import com.bones.syntax.NoAlgebra
 import com.bones.http4s.ClassicCrudInterpreter
 import com.bones.jdbc.{DbColumnInterpreter, DbUtil}
-import com.bones.syntax.{kvp, long, lv}
+import com.bones.syntax.{kvp, long, lv, kvpNil}
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import javax.sql.DataSource
 import org.http4s.dsl.io._
@@ -24,7 +24,7 @@ object LocalhostAllIOApp {
 
   case class BasicError(message: String)
   private val basicErrorSchema =
-    (kvp("message", com.bones.syntax.string) :: KvpNil).convert[BasicError]
+    (("message", com.bones.syntax.string) :: kvpNil).convert[BasicError]
 
   def extractionErrorToBasicError(extractionError: ExtractionError) : BasicError = {
     BasicError(extractionError.toString)
@@ -46,7 +46,7 @@ object LocalhostAllIOApp {
     new HikariDataSource(config)
   }
 
-  def dbSchemaEndpoint[A](path: String, schema: BonesSchema[A]): HttpRoutes[IO] = {
+  def dbSchemaEndpoint[A](path: String, schema: BonesSchema[NoAlgebra,A]): HttpRoutes[IO] = {
       val dbSchema = DbColumnInterpreter.tableDefinition(schema)
       HttpRoutes.of[IO] {
         case GET -> Root / "dbSchema" / path => Ok(dbSchema, Header("Content-Type", "text/plain"))
@@ -61,7 +61,7 @@ object LocalhostAllIOApp {
 //    }
 //  }
 
-  def serviceRoutesWithCrudMiddleware[A](path: String, schema: BonesSchema[A],ds: DataSource
+  def serviceRoutesWithCrudMiddleware[A](path: String, schema: BonesSchema[NoAlgebra,A],ds: DataSource
                                                                              ): HttpRoutes[IO] = {
 
 
