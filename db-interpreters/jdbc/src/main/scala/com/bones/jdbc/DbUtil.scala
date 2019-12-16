@@ -4,7 +4,7 @@ import java.sql.{CallableStatement, Connection, SQLException}
 
 import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionError, SystemError}
-import com.bones.syntax.{kvp, long, lv}
+import com.bones.syntax.{NoAlgebra, kvp, long, lv}
 import javax.sql.DataSource
 
 import scala.annotation.tailrec
@@ -59,5 +59,5 @@ object DbUtil {
       con.close()
     }
 
-  val longIdKeyValueDef = kvp("id", long(lv.min(0)))
+  def longIdKeyValueDef[ALG[_]] = kvp[ALG, Long]("id", long(lv.min(0)))
 }

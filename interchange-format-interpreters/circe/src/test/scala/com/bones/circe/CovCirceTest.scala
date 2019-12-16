@@ -48,7 +48,7 @@ class CovCirceTest extends FunSuite with Checkers with MustMatchers {
     }
 
 
-    val blogPostToJson = CirceEncoderInterpreter.isoInterpreter.fromSchema(BlogPost.blogPostSchema, BlogEncoder())
+    val blogPostToJson = CirceEncoderInterpreter.isoInterpreter.fromCustomSchema(BlogPost.blogPostSchema, BlogEncoder())
 
     val blogPost = BlogPost(1, "title", List("tag1", "tag2"), Instant.now(), "Here is some content")
 

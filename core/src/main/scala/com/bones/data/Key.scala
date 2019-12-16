@@ -18,7 +18,6 @@ case class KeyValueDefinition[ALG[_], A](key: String, op: KeyValueDefinition.Cop
 
 object KeyValueDefinition {
   type CoproductDataDefinition[ALG[_], A] = Either[KvpValue[A], ALG[A]]
-
 }
 
 /** Useful DSL builder */

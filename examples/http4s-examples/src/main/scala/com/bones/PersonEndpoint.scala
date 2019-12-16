@@ -21,10 +21,10 @@ object PersonEndpoint extends LocalhostAllIOApp {
   case class Person(name: String, age: Long, gender: Option[String])
 
   val personSchema = (
-    kvp("name", string(sv.matchesRegex("^[a-zA-Z ]*$".r))) ::
-      kvp("age", long(iv.min(0))) ::
-      kvp("gender", string.optional) ::
-      KvpNil
+    ("name", string(sv.matchesRegex("^[a-zA-Z ]*$".r))) ::
+      ("age", long(iv.min(0))) ::
+      ("gender", string.optional) ::
+      kvpNil
     ).convert[Person]
 
 

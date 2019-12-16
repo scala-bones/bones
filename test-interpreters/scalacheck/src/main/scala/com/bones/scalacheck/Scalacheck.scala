@@ -30,11 +30,14 @@ object NoAlgebraGen extends GenAlg[NoAlgebra] {
 
 object Scalacheck {
 
-  def createGen[ALG[_], A](bonesSchema: BonesSchema[ALG, A], genAlg: GenAlg[ALG]) : Gen[A] =
+  def createCustomGen[ALG[_], A](bonesSchema: BonesSchema[ALG, A], genAlg: GenAlg[ALG]) : Gen[A] =
     bonesSchema match {
       case co: KvpCoproductConvert[ALG, c,a] => valueDefinition(co, genAlg)
       case co: HListConvert[ALG,h,n,a] => valueDefinition(co, genAlg)
     }
+
+  def createGen[A](bonesSchema: BonesSchema[NoAlgebra, A]): Gen[A] =
+    createCustomGen[NoAlgebra,A](bonesSchema, NoAlgebraGen)
 
   def kvpCoproduct[ALG[_], C<:Coproduct](co: KvpCoproduct[ALG, C], genAlg: GenAlg[ALG]): List[Gen[C]] = {
     co match {
@@ -71,8 +74,8 @@ object Scalacheck {
         } yield {
           head ::: tail
         }
-      case op: KvpConcreteTypeHead[ALG, a, ht, nt, ho, xl, xll] @unchecked =>
-        val headGen = valueDefinition(op.hListConvert, genAlg)
+      case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked =>
+        val headGen = fromCustomSchema(op.bonesSchema, genAlg)
         val tailGen = kvpHList(op.tail, genAlg)
         for {
           a <- headGen
@@ -80,6 +83,19 @@ object Scalacheck {
         } yield {
           op.isHCons.cons(a,tail)
         }
+    }
+  }
+
+  def fromBonesSchema[A](bonesSchema: BonesSchema[NoAlgebra, A]) : Gen[A] =
+    fromCustomSchema(bonesSchema, NoAlgebraGen)
+
+  def fromCustomSchema[ALG[_], A](bonesSchema: BonesSchema[ALG, A], genAlg: GenAlg[ALG]) : Gen[A] = {
+    bonesSchema match {
+      case hl: HListConvert[ALG, h, n, a] => kvpHList(hl.from, genAlg).map(hl.fHtoA)
+      case co: KvpCoproductConvert[ALG, c, a] => {
+        val gens = kvpCoproduct(co.from, genAlg).map(genList => genList.map(co.cToA)).map( (1,_))
+        Gen.frequency(gens:_*)
+      }
     }
   }
 

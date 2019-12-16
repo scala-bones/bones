@@ -46,7 +46,7 @@ trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
       charset: Charset,
       validatorInterpreter: InterchangeFormatValidator[ALG,Json]
     ) : Array[Byte] => Either[NonEmptyList[ExtractionError],A] = {
-      val f = fromSchema(schema, validatorInterpreter)
+      val f = fromCustomSchema(schema, validatorInterpreter)
       bytes => {
         fromByteArray(bytes, charset).flatMap(f(_))
       }
@@ -82,7 +82,7 @@ trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
                                    expectedType: Class[_],
                                    path: List[String]): NonEmptyList[ExtractionError] = {
     val error =
-      if (in.isNull) RequiredData(path, op)
+      if (in.isNull) RequiredData(path, Left(op))
       else WrongTypeError(path, expectedType, in.getClass)
     NonEmptyList.one(error)
   }

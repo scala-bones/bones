@@ -21,15 +21,15 @@ class ValidationTest extends FunSuite {
     import com.bones.syntax._
 
     val o1 =
-      kvp("key1", string) ::
-      kvp("key2", string) ::
-      KvpNil
+      ("key1", string) ::
+      ("key2", string) ::
+      kvpNil
 
 
     val o2 =
-      kvp("key3", string) ::
-      kvp("key4", string) ::
-      KvpNil
+      ("key3", string) ::
+      ("key4", string) ::
+      kvpNil
 
 //    val o3 = o1 append o2
   }
@@ -65,14 +65,14 @@ class ValidationTest extends FunSuite {
 
 
     val s2 =
-      kvp("val1", string()) ::
-      kvp("val2", string) ::
-      KvpNil
+      ("val1", string()) ::
+      ("val2", string) ::
+      kvpNil
 
     val i2 =
-      kvp("int1", long) ::
-      kvp("int2", long) ::
-      KvpNil
+      ("int1", long) ::
+      ("int2", long) ::
+      kvpNil
 
     val merged = s2 ::: i2
 

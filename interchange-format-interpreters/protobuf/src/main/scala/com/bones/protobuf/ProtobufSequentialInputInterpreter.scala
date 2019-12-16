@@ -12,6 +12,7 @@ import shapeless.{:+:, CNil, Coproduct, HList, HNil, Inl, Inr, Nat}
 import cats.implicits._
 import com.bones.Util
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
+import com.bones.syntax.NoAlgebra
 import com.bones.validation.{ValidationUtil => vu}
 
 import scala.annotation.tailrec
@@ -22,6 +23,14 @@ import scala.annotation.tailrec
 object ProtobufSequentialInputInterpreter {
 
   val zoneOffset = ZoneOffset.UTC
+
+  trait CustomInterpreter[ALG[_]] {
+    def extractFromProto[A](alg: ALG[A]): ExtractFromProto[A]
+  }
+
+  object NoAlgebraInterpreter extends CustomInterpreter[NoAlgebra] {
+    override def extractFromProto[A](alg: NoAlgebra[A]): ExtractFromProto[A] = sys.error("Unreachable code")
+  }
 
   import com.bones.Util._
 
@@ -46,11 +55,12 @@ object ProtobufSequentialInputInterpreter {
                 (CanReadTag, CodedInputStream) => (CanReadTag, Either[NonEmptyList[ExtractionError], C])
     )
 
+  def fromBytes[A](dc: BonesSchema[NoAlgebra, A]) = fromCustomBytes(dc, NoAlgebraInterpreter)
 
-  def fromBytes[A](dc: BonesSchema[A])
+  def fromCustomBytes[ALG[_], A](dc: BonesSchema[ALG, A], customInterpreter: CustomInterpreter[ALG])
     : Array[Byte] => Either[NonEmptyList[ExtractionError], A] = dc match {
-    case x: HListConvert[_, _, A] => {
-      val (lastFieldNumber, f) = kvpHList(x.from)(1, List.empty)
+    case x: HListConvert[ALG, _, _, A] @unchecked => {
+      val (lastFieldNumber, f) = kvpHList(x.from, customInterpreter)(1, List.empty)
       (bytes: Array[Byte]) =>
         {
           val is = new ByteArrayInputStream(bytes)
@@ -63,15 +73,21 @@ object ProtobufSequentialInputInterpreter {
     }
   }
 
-  private def kvpCoproduct[C<:Coproduct, A](kvp: KvpCoproduct[C], kvpCoproductValue: KvpValue[A]): ExtractProductFromProto[C] = {
+  private def kvpCoproduct[ALG[_], C<:Coproduct, A]
+    (
+      kvp: KvpCoproduct[ALG, C],
+      kvpCoproductValue: KvpValue[A],
+      customInterpreter: CustomInterpreter[ALG]
+    ): ExtractProductFromProto[C] = {
+
     kvp match {
-      case KvpCoNil => (lastFieldNumber, path) =>
-        (List.empty, lastFieldNumber, (canRead, _) => (canRead, Left(NonEmptyList.one(RequiredData(path, kvpCoproductValue)))))
-      case op: KvpSingleValueLeft[l,r] =>
-        val vd = valueDefinition(op.kvpValue)
+      case nil: KvpCoNil[_] => (lastFieldNumber, path) =>
+        (List.empty, lastFieldNumber, (canRead, _) => (canRead, Left(NonEmptyList.one(RequiredData(path, Left(kvpCoproductValue))))))
+      case op: KvpSingleValueLeft[ALG, l,r] @unchecked =>
+        val vd = determineValueDefinition(op.kvpValue, customInterpreter)
         (lastFieldNumber, path) =>
           val (headTags, headFieldNumber, fHead) = vd(lastFieldNumber, path)
-          val (tailTags, tailFieldNumber, fTail) = kvpCoproduct(op.kvpTail, kvpCoproductValue)(headFieldNumber, path)
+          val (tailTags, tailFieldNumber, fTail) = kvpCoproduct(op.kvpTail, kvpCoproductValue, customInterpreter)(headFieldNumber, path)
           (headTags ::: tailTags, tailFieldNumber, (canReadTag, in) => {
             if (canReadTag) in.readTag()
 
@@ -86,20 +102,20 @@ object ProtobufSequentialInputInterpreter {
     }
   }
 
-  private def kvpHList[H <: HList, HL <: Nat](
-      group: KvpHList[H, HL]): ExtractHListFromProto[H] = {
+  private def kvpHList[ALG[_], H <: HList, HL <: Nat](
+      group: KvpHList[ALG, H, HL], customInterpreter: CustomInterpreter[ALG]): ExtractHListFromProto[H] = {
     group match {
-      case KvpNil =>
+      case nil: KvpNil[_] =>
         (lastFieldNumber, path) =>
           (lastFieldNumber, (canRead,_) => (canRead, Right(HNil)))
 
-      case op: KvpSingleValueHead[h, t, tl, a] =>
-        val vd = valueDefinition(op.fieldDefinition.op)
+      case op: KvpSingleValueHead[ALG, h, t, tl, a] @unchecked =>
+        val vd = determineValueDefinition(op.fieldDefinition.op, customInterpreter)
         (lastFieldNumber, path) =>
           {
             val (tag, headFieldNumber, fHead) =
               vd(lastFieldNumber, path :+ op.fieldDefinition.key)
-            val (tailFieldNumber, fTail) = kvpHList(op.tail)(headFieldNumber, path)
+            val (tailFieldNumber, fTail) = kvpHList(op.tail, customInterpreter)(headFieldNumber, path)
             (tailFieldNumber, (canReadTag, in) => {
               if (canReadTag) in.readTag
 
@@ -115,12 +131,14 @@ object ProtobufSequentialInputInterpreter {
               (canReadTail, result)
             })
           }
-      case op: KvpConcreteTypeHead[a, ht, nt, ho, xl, xll] =>
-        val head = kvpHList(op.hListConvert.from)
-        val tail = kvpHList(op.tail)
+      case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked =>
+        def fromBonesSchema[A](bonesSchema: BonesSchema[ALG, A]) : ExtractFromProto[A] = ???
+
+        val head = fromBonesSchema(op.bonesSchema)
+        val tail = kvpHList(op.tail, customInterpreter)
         (lastFieldNumber, path) =>
           {
-            val (headFieldNumber, fHead) = head(lastFieldNumber, path)
+            val (tags, headFieldNumber, fHead) = head(lastFieldNumber, path)
             val (tailFieldNumber, fTail) = tail(headFieldNumber, path)
             (tailFieldNumber, (canReadTag, in) => {
 
@@ -129,18 +147,18 @@ object ProtobufSequentialInputInterpreter {
 
               val totalResult = Util
                 .eitherMap2(headResult, tailResult)(
-                  (l1: xl, l2: ht) => op.isHCons.cons(op.hListConvert.fHtoA(l1), l2)
+                  (l1: a, l2: ht) => op.isHCons.cons(l1, l2)
                 )
                 .flatMap { l =>
-                  vu.validate[ho](op.validations)(l, path)
+                  vu.validate(op.validations)(l, path)
                 }
 
               (canReadTail, totalResult)
             })
           }
-      case op: KvpHListHead[a, al, h, hl, t, tl] =>
-        val head = kvpHList(op.head)
-        val tail = kvpHList(op.tail)
+      case op: KvpHListHead[ALG, a, al, h, hl, t, tl] @unchecked =>
+        val head = kvpHList(op.head, customInterpreter)
+        val tail = kvpHList(op.tail, customInterpreter)
         (lastFieldNumber, path) =>
           {
             val (headFieldNumber, fHead) = head(lastFieldNumber, path)
@@ -164,17 +182,28 @@ object ProtobufSequentialInputInterpreter {
     }
   }
 
+
   // see https://developers.google.com/protocol-buffers/docs/encoding
   private val VARINT = 0 //	Varint	int32, int64, uint32, uint64, sint32, sint64, bool, enum
   private val BIT64 = 1 // 64-bit	fixed64, sfixed64, double
   private val LENGTH_DELIMITED = 2 // Length-delimited	string, bytes, embedded messages, packed repeated fields
   private val BIT32 = 5 // 32-bit	fixed32, sfixed32, float
 
-  private def valueDefinition[A](
-      fgo: KvpValue[A]): ExtractFromProto[A] =
+  private def determineValueDefinition[ALG[_], A]
+  (
+    definition: Either[KvpValue[A], ALG[A]],
+    customInterpreter: CustomInterpreter[ALG]
+  ): ExtractFromProto[A] =
+    definition match {
+      case Left(kvp) => valueDefinition(kvp, customInterpreter)
+      case Right(alg) => customInterpreter.extractFromProto(alg)
+    }
+
+  private def valueDefinition[ALG[_], A](
+      fgo: KvpValue[A], customInterpreter: CustomInterpreter[ALG]): ExtractFromProto[A] =
     fgo match {
-      case op: OptionalKvpValueDefinition[a] =>
-        val vd = valueDefinition(op.valueDefinitionOp)
+      case op: OptionalKvpValueDefinition[ALG, a] @unchecked =>
+        val vd = determineValueDefinition(op.valueDefinitionOp, customInterpreter)
         (fieldNumber: LastFieldNumber, path: Path) =>
           {
             val (tags, childFieldNumber, fa) = vd(fieldNumber, path)
@@ -195,7 +224,7 @@ object ProtobufSequentialInputInterpreter {
               if (in.getLastTag == thisTag) {
                 (true, convert(in, classOf[Boolean], path)(_.readBool()))
               } else {
-                (canReadTag, Left(NonEmptyList.one(RequiredData(path, ob))))
+                (canReadTag, Left(NonEmptyList.one(RequiredData(path, Left(ob)))))
               }
             }:(CanReadTag, Either[NonEmptyList[ExtractionError], Boolean]))
           }
@@ -212,7 +241,7 @@ object ProtobufSequentialInputInterpreter {
                 })
                 (true, utfStringResult)
               } else {
-                (canReadTag, Left(NonEmptyList.one(RequiredData(path, rs))))
+                (canReadTag, Left(NonEmptyList.one(RequiredData(path, Left(rs)))))
               }
             }:(CanReadTag, Either[NonEmptyList[ExtractionError], String]))
           }
@@ -224,7 +253,7 @@ object ProtobufSequentialInputInterpreter {
             if (in.getLastTag == thisTag) {
               (true, convert(in, classOf[Short], path)(_.readInt32().toShort))
             } else {
-              (canReadTag, Left(NonEmptyList.one(RequiredData(path, sd))))
+              (canReadTag, Left(NonEmptyList.one(RequiredData(path, Left(sd)))))
             }
           }:(CanReadTag, Either[NonEmptyList[ExtractionError], Short]))
         }
@@ -236,7 +265,7 @@ object ProtobufSequentialInputInterpreter {
             if (in.getLastTag == thisTag) {
               (true, convert(in, classOf[Int], path)(_.readInt32()))
             } else {
-              (canReadTag, Left(NonEmptyList.one(RequiredData(path, id))))
+              (canReadTag, Left(NonEmptyList.one(RequiredData(path, Left(id)))))
             }
           }:(CanReadTag, Either[NonEmptyList[ExtractionError], Int]))
         }
@@ -248,7 +277,7 @@ object ProtobufSequentialInputInterpreter {
               if (in.getLastTag == thisTag) {
                 (true, convert(in, classOf[Long], path)(_.readInt64()))
               } else {
-                (canReadTag, Left(NonEmptyList.one(RequiredData(path, ri))))
+                (canReadTag, Left(NonEmptyList.one(RequiredData(path, Left(ri)))))
               }
             }:(CanReadTag, Either[NonEmptyList[ExtractionError], Long]))
           }
@@ -260,7 +289,7 @@ object ProtobufSequentialInputInterpreter {
               if (in.getLastTag == thisField) {
                 (true, convert(in, classOf[Array[Byte]], path)(_.readByteArray()))
               } else {
-                (canReadTag, Left(NonEmptyList.one(RequiredData(path, ba))))
+                (canReadTag, Left(NonEmptyList.one(RequiredData(path, Left(ba)))))
               }
             }:(CanReadTag, Either[NonEmptyList[ExtractionError], Array[Byte]]))
           }
@@ -283,7 +312,7 @@ object ProtobufSequentialInputInterpreter {
                   })
                 (true, uuidResult)
               } else {
-                (canReadTag, Left(NonEmptyList.one(RequiredData(path, uu))))
+                (canReadTag, Left(NonEmptyList.one(RequiredData(path, Left(uu)))))
               }
             }:(CanReadTag, Either[NonEmptyList[ExtractionError], UUID]))
           }
@@ -323,7 +352,7 @@ object ProtobufSequentialInputInterpreter {
                 .map(LocalDate.ofEpochDay(_))
               (true, localDateResult)
             } else {
-              (canReadTag, Left(NonEmptyList.one(RequiredData(path, dt))))
+              (canReadTag, Left(NonEmptyList.one(RequiredData(path, Left(dt)))))
             }
           }:(CanReadTag, Either[NonEmptyList[ExtractionError], LocalDate]))
         }
@@ -335,7 +364,7 @@ object ProtobufSequentialInputInterpreter {
             if (in.getLastTag == thisTag) {
               (true, convert[Float](in, classOf[Float], path)(_.readFloat()))
             } else {
-              (canReadTag, Left(NonEmptyList.one(RequiredData(path, fd))))
+              (canReadTag, Left(NonEmptyList.one(RequiredData(path, Left(fd)))))
             }
           }:(CanReadTag, Either[NonEmptyList[ExtractionError],Float]))
         }
@@ -347,7 +376,7 @@ object ProtobufSequentialInputInterpreter {
             if (in.getLastTag == thisTag) {
               (true, convert(in, classOf[Double], path)(_.readDouble()))
             } else {
-              (canReadTag, Left(NonEmptyList.one(RequiredData(path, dd))))
+              (canReadTag, Left(NonEmptyList.one(RequiredData(path, Left(dd)))))
             }
           }:(CanReadTag, Either[cats.data.NonEmptyList[com.bones.data.Error.ExtractionError],Double]))
         }
@@ -361,12 +390,12 @@ object ProtobufSequentialInputInterpreter {
                   .flatMap(stringToBigDecimal(_, path))
                 (true, bigDecimalResult)
               } else {
-                (canReadTag, Left(NonEmptyList.one(RequiredData(path, bd))))
+                (canReadTag, Left(NonEmptyList.one(RequiredData(path, Left(bd)))))
               }
             }:(CanReadTag, Either[NonEmptyList[ExtractionError],BigDecimal]))
           }
-      case ld: ListData[t] =>
-        val child = valueDefinition(ld.tDefinition)
+      case ld: ListData[ALG, t] @unchecked =>
+        val child = determineValueDefinition(ld.tDefinition, customInterpreter)
         @tailrec
         def loop[C](
             tags: List[Int],
@@ -397,9 +426,9 @@ object ProtobufSequentialInputInterpreter {
               (false, loopResult.sequence) //we read in tag to see the last value
             })
           }
-      case ed: EitherData[a, b] =>
-        val extractA: ExtractFromProto[a] = valueDefinition(ed.definitionA)
-        val extractB: ExtractFromProto[b] = valueDefinition(ed.definitionB)
+      case ed: EitherData[ALG, a, b] @unchecked =>
+        val extractA: ExtractFromProto[a] = determineValueDefinition(ed.definitionA, customInterpreter)
+        val extractB: ExtractFromProto[b] = determineValueDefinition(ed.definitionB, customInterpreter)
         (lastFieldNumber, path) => {
           val (tagsA, fieldNumberA, cisFA) = extractA(lastFieldNumber, path)
           val (tagsB, fieldNumberB, cisFB) = extractB(fieldNumberA, path)
@@ -411,7 +440,7 @@ object ProtobufSequentialInputInterpreter {
               val (canReadResult, result) = cisFB(canReadTag, in)
               (canReadResult, result.map(Right(_)))
             } else {
-              (canReadTag, Left(NonEmptyList.one(RequiredData(path, ed))))
+              (canReadTag, Left(NonEmptyList.one(RequiredData(path, Left(ed)))))
             }
           }:(CanReadTag, Either[NonEmptyList[ExtractionError],A]))
 
@@ -433,8 +462,8 @@ object ProtobufSequentialInputInterpreter {
              }
             )
           }
-      case kvp: KvpCoproductValue[c] => {
-        val group = kvpCoproduct(kvp.kvpCoproduct, kvp)
+      case kvp: KvpCoproductValue[ALG, c] @unchecked => {
+        val group = kvpCoproduct(kvp.kvpCoproduct, kvp, customInterpreter)
         (last: LastFieldNumber, path: Path) =>
           {
             val (tags, lastFieldNumber, coproductF) = group(last, path)
@@ -446,8 +475,8 @@ object ProtobufSequentialInputInterpreter {
           }
 
       }
-      case kvp: KvpHListValue[h, hl] => {
-        val groupExtract = kvpHList(kvp.kvpHList)
+      case kvp: KvpHListValue[ALG, h, hl] @unchecked => {
+        val groupExtract = kvpHList(kvp.kvpHList, customInterpreter)
         (last: LastFieldNumber, path: Path) =>
           {
             val tag = (last + 1) << 3 | LENGTH_DELIMITED
@@ -471,8 +500,8 @@ object ProtobufSequentialInputInterpreter {
             }:(CanReadTag, Either[NonEmptyList[ExtractionError], A]))
           }
       }
-      case kvp: HListConvert[a, al, b] => {
-        val groupExtract = kvpHList(kvp.from)
+      case kvp: HListConvert[ALG, a, al, b] @unchecked => {
+        val groupExtract = kvpHList(kvp.from, customInterpreter)
         (last: LastFieldNumber, path: Path) =>
           {
             val thisTag = last  << 3 | LENGTH_DELIMITED
@@ -498,8 +527,8 @@ object ProtobufSequentialInputInterpreter {
             })
           }
       }
-      case co: KvpCoproductConvert[c,a] => {
-        val coExtract = kvpCoproduct(co.from, co)
+      case co: KvpCoproductConvert[ALG, c,a] @unchecked => {
+        val coExtract = kvpCoproduct(co.from, co, customInterpreter)
         (last: LastFieldNumber, path: Path) =>
            {
              val (tags, lastFieldNumber, f) = coExtract(last, path)
