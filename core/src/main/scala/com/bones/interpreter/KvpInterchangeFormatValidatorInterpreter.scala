@@ -167,8 +167,8 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
     co match {
       case nil: KvpCoNil[_] => (_:IN, path:List[String], coType: CoproductType) =>
         Left(NonEmptyList.one(SumTypeError(path, s"Unexpected type value: ${coType}")))
-      case co: KvpSingleValueLeft[ALG, C,r] @unchecked => {
-        val fValue = determineValueDefinition[ALG, C](co.kvpValue, validator)
+      case co: KvpSingleValueLeft[ALG, a,r] @unchecked => {
+        val fValue = determineValueDefinition[ALG, a](co.kvpValue, validator)
         val fTail = kvpCoproduct[ALG, r](co.kvpTail, validator)
         (in, path, coType) => {
           if (coType == co.manifestL.runtimeClass.getSimpleName) fValue(Some(in),path).map(Inl(_))

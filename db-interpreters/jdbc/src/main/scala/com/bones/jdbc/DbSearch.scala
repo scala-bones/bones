@@ -15,7 +15,7 @@ import javax.sql.DataSource
 
 object DbSearch {
 
-  type DbSearchCustomInterpreter[ALG[_]] = ColumnNameCustomInterpreter[ALG] with ResultSetCustommarshall then unmarshallInterpreter[ALG]
+  type DbSearchCustomInterpreter[ALG[_]] = ColumnNameCustomInterpreter[ALG] with ResultSetCustomInterpreter[ALG]
 
   def getEntity[ALG[_], A]
     (
