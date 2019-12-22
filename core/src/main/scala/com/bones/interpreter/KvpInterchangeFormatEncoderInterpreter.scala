@@ -101,8 +101,8 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
       case co: KvpCoNil[_] =>
         (input: C) => ("", empty)
       case co: KvpSingleValueLeft[ALG, l,r] =>
-        val fl = determineValueDefinition(co.kvpValue, encoder)
-        val fr = kvpCoproduct(co.kvpTail, encoder)
+        val fl: l => OUT = determineValueDefinition(co.kvpValue, encoder)
+        val fr: r => (CoproductType, OUT) = kvpCoproduct(co.kvpTail, encoder)
         (input: C) =>
           input match {
             case Inl(l) => (co.manifestL.runtimeClass.getSimpleName, fl(l))

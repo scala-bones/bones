@@ -42,8 +42,8 @@ object Scalacheck {
   def kvpCoproduct[ALG[_], C<:Coproduct](co: KvpCoproduct[ALG, C], genAlg: GenAlg[ALG]): List[Gen[C]] = {
     co match {
       case nil: KvpCoNil[_] => List.empty
-      case co: KvpSingleValueLeft[ALG, C,r] @unchecked =>
-        val head = determineValueDefinition[ALG, C](co.kvpValue, genAlg).map(Inl(_))
+      case co: KvpSingleValueLeft[ALG, a,r] @unchecked =>
+        val head = determineValueDefinition[ALG, a](co.kvpValue, genAlg).map(Inl(_))
         val tail = kvpCoproduct(co.kvpTail, genAlg).map(gen => gen.map(Inr(_)))
         head :: tail
     }
