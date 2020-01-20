@@ -4,15 +4,15 @@ import java.time.{LocalDate, LocalDateTime}
 import java.util.{Base64, UUID}
 
 import cats.data.NonEmptyList
-import com.bones.data.KvpValue.Path
 import com.bones.Util
 import com.bones.data.Error._
-import com.bones.data.{KeyValueDefinition, KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
-import com.bones.data._
+import com.bones.data.KeyValueDefinition.CoproductDataDefinition
+import com.bones.data.KvpValue.Path
+import com.bones.data.{KeyValueDefinition, KvpCoNil, KvpCoproduct, KvpSingleValueLeft, _}
 import com.bones.syntax.NoAlgebra
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.{ValidationUtil => vu}
-import shapeless.{CNil, Coproduct, HList, HNil, Inl, Inr, Nat, ::}
+import shapeless.{::, Coproduct, HList, HNil, Inl, Inr, Nat}
 
 import scala.util.Try
 
@@ -38,8 +38,8 @@ object KvpInterchangeFormatValidatorInterpreter {
   */
 trait KvpInterchangeFormatValidatorInterpreter[IN] {
 
-  import Util._
   import KvpInterchangeFormatValidatorInterpreter._
+  import Util._
 
   /** Entry point for this class to convert a Schema into a function where
     * the function takes an interchange format, validates it and if successful, spits out
@@ -99,47 +99,46 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
 
   /**
     * Override this to provide the ability to extract a String from the IN type.
-    * @param op The string definition.
     * @param clazz The resulting class we are tyring to extract.
     * @param in The interchange format input type.
     * @param path The path hierarchy.
     * @tparam A The expected resulting type, eg String or Enumerated Type which we are trying to extract from a string.
     * @return The extracted String or an Error
     */
-  protected def extractString[A](op: KvpValue[A], clazz: Class[_])(
+  protected def extractString[ALG[_], A](op: CoproductDataDefinition[ALG, A], clazz: Class[_])(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], String]
-  protected def extractInt(op: IntData)(
+  protected def extractInt[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], Int]
-  protected def extractLong(op: LongData)(
+  protected def extractLong[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], Long]
-  protected def extractBool(op: BooleanData)(
+  protected def extractBool[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], Boolean]
-  protected def extractUuid(op: UuidData)(
+  protected def extractUuid[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], UUID]
-  protected def extractLocalDateTime(op: LocalDateTimeData)(
+  protected def extractLocalDateTime[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], LocalDateTime]
-  protected def extractLocalDate(op: LocalDateData)(
+  protected def extractLocalDate[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], LocalDate]
   protected def extractArray[ALG[_], A](op: ListData[ALG, A])(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], Seq[IN]]
-  protected def extractFloat(op: FloatData)(
+  protected def extractFloat[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], Float]
-  protected def extractDouble(op: DoubleData)(
+  protected def extractDouble[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], Double]
-  protected def extractShort(op: ShortData)(
+  protected def extractShort[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], Short]
-  protected def extractBigDecimal(op: BigDecimalData)(
+  protected def extractBigDecimal[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], BigDecimal]
   protected def stringValue(in: IN, elementName: String): Option[String]
@@ -272,26 +271,26 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
               case some@Some(json) => applied(some, path).map(Some(_))
             }
         case op: StringData =>
-          required(op, op.validations, extractString(op, classOf[String]))
+          required(op, op.validations, extractString(Left(fgo), classOf[String]))
         case id: IntData =>
-          required(id, id.validations, extractInt(id))
+          required(id, id.validations, extractInt(Left(fgo)))
         case op: LongData =>
-          required(op, op.validations, extractLong(op))
+          required(op, op.validations, extractLong(Left(fgo)))
         case op: BooleanData =>
-          required(op, op.validations, extractBool(op))
+          required(op, op.validations, extractBool(Left(fgo)))
         case op: UuidData =>
-          required(op, op.validations, extractUuid(op))
+          required(op, op.validations, extractUuid(Left(fgo)))
         case op@LocalDateTimeData(validations) =>
-          required(op, validations, extractLocalDateTime(op))
+          required(op, validations, extractLocalDateTime(Left(fgo)))
         case op@LocalDateData(validations) =>
-          required(op, validations, extractLocalDate(op))
+          required(op, validations, extractLocalDate(Left(fgo)))
         case op@ByteArrayData(validations) =>
           val decoder = Base64.getDecoder
           (inOpt: Option[IN], path: Path) =>
             for {
               in <- inOpt.toRight[NonEmptyList[ExtractionError]](
                 NonEmptyList.one(RequiredData(path, Left(op))))
-              str <- extractString(op, classOf[Array[Byte]])(in, path)
+              str <- extractString(Left(fgo), classOf[Array[Byte]])(in, path)
               arr <- Try {
                 decoder.decode(str)
               }.toEither.left.map(thr =>
@@ -360,19 +359,19 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
             } yield listOfIn
           }
         case fd: FloatData =>
-          required(fd, fd.validations, extractFloat(fd))
+          required(fd, fd.validations, extractFloat(Left(fgo)))
         case dd: DoubleData =>
-          required(dd, dd.validations, extractDouble(dd))
+          required(dd, dd.validations, extractDouble(Left(fgo)))
         case sd: ShortData =>
-          required(sd, sd.validations, extractShort(sd))
+          required(sd, sd.validations, extractShort(Left(fgo)))
         case op: BigDecimalData =>
-          required(op, op.validations, extractBigDecimal(op))
+          required(op, op.validations, extractBigDecimal(Left(fgo)))
         case op: EnumerationData[e, A] =>
           (inOpt: Option[IN], path: Path) =>
             for {
               in <- inOpt.toRight[NonEmptyList[ExtractionError]](
                 NonEmptyList.one(RequiredData(path, Left(op))))
-              str <- extractString(op, op.manifestOfA.runtimeClass)(in, path)
+              str <- extractString(Left(fgo), op.manifestOfA.runtimeClass)(in, path)
               enum <- stringToEnumeration[e, A](str,
                 path,
                 op.enumeration.asInstanceOf[e])(

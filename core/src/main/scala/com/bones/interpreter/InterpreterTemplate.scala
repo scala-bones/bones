@@ -26,7 +26,7 @@ class InterpreterTemplate {
     }
   }
 
-  def determineValueDefinition[ALG[_], A](value: Either[KvpValue[A], ALG[A]], interpeter: Nothing): Unit = ???
+  def determineValueDefinition[ALG[_], A](value: Either[KvpValue[A], ALG[A]], interpreter: Nothing): Unit = ???
 
   def valueDefinition[A](fgo: KvpValue[A]): Unit =
     fgo match {

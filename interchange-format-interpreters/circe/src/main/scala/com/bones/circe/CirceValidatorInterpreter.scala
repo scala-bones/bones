@@ -9,6 +9,7 @@ import cats.data.NonEmptyList
 import com.bones.Util._
 import com.bones.data.Error.{ExtractionError, ParsingError, RequiredData, WrongTypeError}
 import com.bones.data.KeyValueDefinition
+import com.bones.data.KeyValueDefinition.CoproductDataDefinition
 import com.bones.data.KvpValue.Path
 import com.bones.data._
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
@@ -76,13 +77,13 @@ trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
     Left(NonEmptyList.one(WrongTypeError(path, expected, invalid)))
   }
 
-  protected def determineError[A](
+  protected def determineError[ALG[_], A](
                                    in: Json,
-                                   op: KvpValue[A],
+                                   op: CoproductDataDefinition[ALG, A],
                                    expectedType: Class[_],
                                    path: List[String]): NonEmptyList[ExtractionError] = {
     val error =
-      if (in.isNull) RequiredData(path, Left(op))
+      if (in.isNull) RequiredData(path, op)
       else WrongTypeError(path, expectedType, in.getClass)
     NonEmptyList.one(error)
   }
@@ -103,27 +104,27 @@ trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
           NonEmptyList.one(WrongTypeError(path, classOf[Object], in.getClass)))
     }
 
-  override def extractString[A](op: KvpValue[A], clazz: Class[_])(
+  override def extractString[ALG[_], A](op: CoproductDataDefinition[ALG, A], clazz: Class[_])(
       in: Json,
       path: List[String]): Either[NonEmptyList[ExtractionError], String] =
     in.asString.toRight(determineError(in, op, clazz, path))
 
 
-  override def extractInt(op: IntData)(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Int] =
+  override def extractInt[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Int] =
     in.asNumber.flatMap(_.toInt)
     .toRight(NonEmptyList.one(WrongTypeError(path, classOf[Int], in.getClass)))
 
-  override def extractFloat(op: FloatData)(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Float] =
+  override def extractFloat[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Float] =
     in.asNumber.map(_.toDouble.toFloat)
       .toRight(NonEmptyList.one(WrongTypeError(path, classOf[Float], in.getClass)))
 
 
-  override def extractDouble(op: DoubleData)(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Double] =
+  override def extractDouble[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Double] =
     in.asNumber.map(_.toDouble)
       .toRight(NonEmptyList.one(WrongTypeError(path, classOf[Double], in.getClass)))
 
 
-  override def extractLong(op: LongData)(
+  override def extractLong[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: Json,
       path: List[String]): Either[NonEmptyList[WrongTypeError[Long]], Long] =
     in.asNumber
@@ -132,32 +133,30 @@ trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
         NonEmptyList.one(WrongTypeError(path, classOf[Long], in.getClass)))
 
 
-  override def extractShort(op: ShortData)(in: Json, path: Path): Either[NonEmptyList[ExtractionError], Short] =
+  override def extractShort[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: Json, path: Path): Either[NonEmptyList[ExtractionError], Short] =
     in.asNumber.flatMap(_.toShort)
     .toRight(
       NonEmptyList.one(WrongTypeError(path, classOf[Short], in.getClass)))
 
-  override def extractBool(op: BooleanData)(
+  override def extractBool[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: Json,
       path: List[String]): Either[NonEmptyList[ExtractionError], Boolean] =
     in.asBoolean.toRight(determineError(in, op, classOf[Boolean], path))
 
-  override def extractUuid(op: UuidData)(
+  override def extractUuid[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: Json,
       path: List[String]): Either[NonEmptyList[ExtractionError], UUID] =
     in.asString
       .toRight(determineError(in, op, classOf[UUID], path))
       .flatMap(stringToUuid(_, path))
 
-  override def extractLocalDateTime(
-      op: LocalDateTimeData)(in: Json, path: List[String])
+  override def extractLocalDateTime[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: Json, path: List[String])
     : Either[NonEmptyList[ExtractionError], LocalDateTime] =
     in.asString
       .toRight(determineError(in, op, classOf[LocalDateTime], path))
       .flatMap(stringToLocalDateTime(_, dateFormatter, path))
 
-  override def extractLocalDate(
-      op: LocalDateData)(in: Json, path: List[String])
+  override def extractLocalDate[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: Json, path: List[String])
     : Either[NonEmptyList[ExtractionError], LocalDate] =
     in.asString
     .toRight(determineError(in, op, classOf[LocalDate], path))
@@ -167,9 +166,9 @@ trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
       in: Json,
       path: List[String]): Either[NonEmptyList[ExtractionError], Seq[Json]] =
     in.asArray
-      .toRight(determineError(in, op, classOf[List[A]], path))
+      .toRight(determineError(in, Left(op), classOf[List[A]], path))
 
-  override def extractBigDecimal(op: BigDecimalData)(
+  override def extractBigDecimal[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: Json,
       path: List[String]): Either[NonEmptyList[ExtractionError], BigDecimal] =
     in.asNumber
