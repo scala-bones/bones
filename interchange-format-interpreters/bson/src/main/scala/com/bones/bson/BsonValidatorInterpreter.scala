@@ -9,6 +9,7 @@ import com.bones.data.Error._
 import com.bones.data._
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
 import com.bones.Util._
+import com.bones.data.KeyValueDefinition.CoproductDataDefinition
 import com.bones.data.KvpValue.Path
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
 import reactivemongo.bson.buffer.ArrayReadableBuffer
@@ -74,7 +75,7 @@ object BsonValidatorInterpreter
 
   }
 
-  override def extractString[A](op: KvpValue[A],
+  override def extractString[ALG[_], A](op: CoproductDataDefinition[ALG, A],
                                 clazz: Class[_])(
                                  in: BSONValue,
                                  path: List[String]): Either[NonEmptyList[ExtractionError], String] =
@@ -84,7 +85,7 @@ object BsonValidatorInterpreter
     }
 
 
-  override def extractShort(op: ShortData)(in: BSONValue, path: Path): Either[NonEmptyList[ExtractionError], Short] =
+  override def extractShort[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: BSONValue, path: Path): Either[NonEmptyList[ExtractionError], Short] =
     in match {
       case BSONInteger(i) =>
         Try({
@@ -97,7 +98,7 @@ object BsonValidatorInterpreter
       case x => invalidValue(x, classOf[Long], path)
     }
 
-  override def extractInt(op: IntData)(in: BSONValue, path: List[String]): Either[NonEmptyList[ExtractionError], Int] =
+  override def extractInt[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: BSONValue, path: List[String]): Either[NonEmptyList[ExtractionError], Int] =
     in match {
       case BSONInteger(i) => Right(i)
       case BSONLong(l) =>
@@ -108,7 +109,7 @@ object BsonValidatorInterpreter
     }
 
 
-  override def extractLong(op: LongData)(
+  override def extractLong[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
     in: BSONValue,
     path: List[String]): Either[NonEmptyList[ExtractionError], Long] =
     in match {
@@ -117,7 +118,7 @@ object BsonValidatorInterpreter
       case x => invalidValue(x, classOf[Long], path)
     }
 
-  override def extractBool(op: BooleanData)(
+  override def extractBool[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
     in: BSONValue,
     path: List[String]): Either[NonEmptyList[ExtractionError], Boolean] =
     in match {
@@ -125,7 +126,7 @@ object BsonValidatorInterpreter
       case x => invalidValue(x, classOf[Boolean], path)
     }
 
-  override def extractUuid(op: UuidData)(
+  override def extractUuid[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
     in: BSONValue,
     path: List[String]): Either[NonEmptyList[ExtractionError], UUID] =
     in match {
@@ -133,7 +134,7 @@ object BsonValidatorInterpreter
       case x => invalidValue(x, classOf[UUID], path)
     }
 
-  override def extractLocalDateTime(op: LocalDateTimeData)(in: BSONValue, path: List[String])
+  override def extractLocalDateTime[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: BSONValue, path: List[String])
   : Either[NonEmptyList[ExtractionError], LocalDateTime] =
     in match {
       case BSONDateTime(date) =>
@@ -143,7 +144,7 @@ object BsonValidatorInterpreter
     }
 
 
-  override def extractLocalDate(op: LocalDateData)(in: BSONValue, path: List[String])
+  override def extractLocalDate[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: BSONValue, path: List[String])
   : Either[NonEmptyList[ExtractionError], LocalDate] =
     in match {
       case BSONDateTime(date) =>
@@ -168,7 +169,7 @@ object BsonValidatorInterpreter
     }
 
 
-  override def extractFloat(op: FloatData)(in: BSONValue, path: List[String]): Either[NonEmptyList[ExtractionError], Float] = {
+  override def extractFloat[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: BSONValue, path: List[String]): Either[NonEmptyList[ExtractionError], Float] = {
     in match {
       case BSONDouble(d) =>
         Try({d.toFloat})
@@ -187,7 +188,7 @@ object BsonValidatorInterpreter
     }
   }
 
-  override def extractDouble(op: DoubleData)(in: BSONValue, path: List[String]): Either[NonEmptyList[ExtractionError], Double] =
+  override def extractDouble[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: BSONValue, path: List[String]): Either[NonEmptyList[ExtractionError], Double] =
     in match {
       case BSONDouble(d) =>
         Right(d)
@@ -206,7 +207,7 @@ object BsonValidatorInterpreter
 
 
 
-  override def extractBigDecimal(op: BigDecimalData)(
+  override def extractBigDecimal[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
     in: BSONValue,
     path: List[String]): Either[NonEmptyList[ExtractionError], BigDecimal] =
     in match {
