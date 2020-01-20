@@ -15,7 +15,7 @@ object CirceEncoderInterpreter {
     * Implementation of the [CirceEncoderInterpreter] specifying ISO String formatter for date and datetime.
     */
   val isoInterpreter: CirceEncoderInterpreter = new CirceEncoderInterpreter {
-      override def dateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+      override def localDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
       override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
     }
 
@@ -28,7 +28,7 @@ object CirceEncoderInterpreter {
   */
 trait CirceEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[Json] {
 
-  def dateFormatter: DateTimeFormatter
+  def localDateTimeFormatter: DateTimeFormatter
   def localDateFormatter: DateTimeFormatter
 
   override def none: Json = Json.Null
@@ -73,7 +73,7 @@ trait CirceEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[Jso
     input => Json.fromString(input.toString)
 
   override def dateTimeToOut(op: LocalDateTimeData): LocalDateTime => Json =
-    input => Json.fromString(dateFormatter.format(input))
+    input => Json.fromString(localDateTimeFormatter.format(input))
 
   override def localDateToOut(op: LocalDateData): LocalDate => Json =
     input => Json.fromString(localDateFormatter.format(input))
