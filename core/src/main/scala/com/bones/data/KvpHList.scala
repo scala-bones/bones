@@ -69,7 +69,12 @@ sealed abstract class KvpHList[ALG[_], H <: HList, N <: Nat] {
     */
   def :^:[A](input: (String, ALG[A]))(implicit isHCons: IsHCons.Aux[A :: H, A, H]):
   KvpSingleValueHead[ALG, A, H, N, A :: H] =
-    prependSingleValue(KeyValueDefinition(input._1, Right(input._2)))(isHCons)
+    prependSingleValue(KeyValueDefinition(input._1, Right(input._2), None, None))(isHCons)
+
+  def :^:[A](input: (String, ALG[A], String, A))(implicit isHCons: IsHCons.Aux[A :: H, A, H]):
+  KvpSingleValueHead[ALG, A, H, N, A :: H] =
+    prependSingleValue(KeyValueDefinition(input._1, Right(input._2), Some(input._3), Some(input._4)))(isHCons)
+
 
   /**
     *
@@ -80,7 +85,12 @@ sealed abstract class KvpHList[ALG[_], H <: HList, N <: Nat] {
     */
   def ::[A] ( input: (String, KvpValue[A]) )(implicit isHCons: Aux[A :: H, A, H]):
   KvpSingleValueHead[ALG, A, H, N, A :: H] =
-    prependSingleValue(new KeyValueDefinition(input._1, Left(input._2)))(isHCons)
+    prependSingleValue(new KeyValueDefinition(input._1, Left(input._2), None, None))(isHCons)
+
+  def ::[A] ( input: (String, KvpValue[A], String, A) )(implicit isHCons: Aux[A :: H, A, H]):
+  KvpSingleValueHead[ALG, A, H, N, A :: H] =
+    prependSingleValue(new KeyValueDefinition(input._1, Left(input._2), Some(input._3), Some(input._4)))(isHCons)
+
 
 
   /* The ability to prefix an HListConvert (case class) to a KvpHList */

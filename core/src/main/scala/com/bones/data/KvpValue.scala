@@ -30,21 +30,11 @@ trait ToOptionalData[B] { self: KvpValue[B] =>
   val optional: OptionalKvpValueDefinition[NoAlgebra, B] = OptionalKvpValueDefinition[NoAlgebra, B](Left(self))
 }
 
-//trait ToOptionalDataAlg[ALG[_], B] { self: ALG[B] =>
-//  implicit val manifestOfB: Manifest[B]
-//  val optional: OptionalKvpValueDefinition[ALG, B] = OptionalKvpValueDefinition[ALG, B](Right(self:ALG[B]))
-//}
-
 /** Syntactic sugar to wrap the definition in a List type. */
 trait ToListData[B] { self: KvpValue[B] =>
   private implicit val manifestOfB: Manifest[B] = self.manifestOfA
   val list: ListData[NoAlgebra, B] = ListData[NoAlgebra, B](Left(self), List.empty)
 }
-
-//trait ToListDataAlg[ALG[_], B] { self: ALG[B] =>
-//  implicit val manifestOfB: Manifest[B]
-//  val list: ListData[ALG, B] = ListData(Right(self), List.empty)
-//}
 
 /** Schema type for Boolean Data */
 final case class BooleanData(validations: List[ValidationOp[Boolean]])
