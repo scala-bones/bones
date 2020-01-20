@@ -14,7 +14,13 @@ import shapeless.{CNil, Coproduct, HList, Nat}
   * @tparam A
   * @tparam ALG Coprodcut Value
   */
-case class KeyValueDefinition[ALG[_], A](key: String, op: KeyValueDefinition.CoproductDataDefinition[ALG, A])
+case class KeyValueDefinition[ALG[_], A]
+  (
+    key: String,
+    op: KeyValueDefinition.CoproductDataDefinition[ALG, A],
+    description: Option[String],
+    example: Option[A]
+  )
 
 object KeyValueDefinition {
   type CoproductDataDefinition[ALG[_], A] = Either[KvpValue[A], ALG[A]]
@@ -24,18 +30,18 @@ object KeyValueDefinition {
 trait KeyValueDefinitionSugar {
 
   def kvp[ALG[_], A](key: String, valueDefinitionOp: KvpValue[A]) =
-    KeyValueDefinition[ALG, A](key, Left(valueDefinitionOp))
+    KeyValueDefinition[ALG, A](key, Left(valueDefinitionOp), None, None)
 
   def kvpCov[ALG[_], A](key: String, valueDefinitionOp: ALG[A]) =
-    KeyValueDefinition[ALG, A](key, Right(valueDefinitionOp))
+    KeyValueDefinition[ALG, A](key, Right(valueDefinitionOp), None, None)
 
   def kvpHList[ALG[_], H <: HList: Manifest, HL <: Nat](key: String,
                                                         kvpHList: KvpHList[ALG, H, HL]) =
-    KeyValueDefinition[ALG, H](key, Left(KvpHListValue(kvpHList, List.empty)))
+    KeyValueDefinition[ALG, H](key, Left(KvpHListValue(kvpHList, List.empty)), None, None)
 
   def kvpCoproduct[ALG[_], C<:Coproduct:Manifest](key: String,
                                                   kvpCoproduct: KvpCoproduct[ALG, C]) =
-    KeyValueDefinition[ALG, C](key, Left(KvpCoproductValue(kvpCoproduct)))
+    KeyValueDefinition[ALG, C](key, Left(KvpCoproductValue(kvpCoproduct)), None, None)
 
 }
 

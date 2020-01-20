@@ -65,13 +65,15 @@ object Schemas {
 
   val ccTypeValue = enumeration[CreditCardType.type, CreditCardType.Value](CreditCardType)
 
+  val firstSix = ("firstSix", string(sv.length(6), sv.matchesRegex("[0-9]{6}".r)), "First Six Digits of the credit card", "54545454")
+  val lastFour = ("lastFour", string(sv.length(4), sv.matchesRegex("[0-9]{4}".r)), "The last four digits of the creidt card", "5454")
 
   // Here we are defining our expected input data.  This definition will drive the interpreters.
   val ccObj = (
-    ("firstSix", string(sv.length(6), sv.matchesRegex("[0-9]{6}".r))) ::
-    ("lastFour", string(sv.length(4), sv.matchesRegex("[0-9]{4}".r))) ::
-    ("uuid", uuid) ::
-    ("token", uuid) ::
+    firstSix ::
+    lastFour ::
+    ("uuid", uuid, "The UUID is the ID of the Credit Card", UUID.randomUUID()) ::
+    ("token", uuid, "identifies the credit card number in the encrypted repository", UUID.randomUUID()) ::
     ("ccType", ccTypeValue) ::
     kvpNil
   ) ::: ccExp ::: (
