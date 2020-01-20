@@ -14,6 +14,7 @@ import com.bones.data.KeyValueDefinition
 import com.bones.data._
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
 import com.bones.Util._
+import com.bones.data.KeyValueDefinition.CoproductDataDefinition
 import com.bones.data.KvpValue.Path
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.{InterchangeFormatValidator, NoAlgebraValidator}
 import com.bones.syntax.NoAlgebra
@@ -88,21 +89,21 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
       .flatMap(j => headInterpreter.apply(Some(j._2), path))
   }
 
-  override def extractString[A](op: KvpValue[A], clazz: Class[_])(
+  override def extractString[ALG[_], A](op: CoproductDataDefinition[ALG, A], clazz: Class[_])(
       in: Json,
       path: List[String]): Either[NonEmptyList[ExtractionError], String] =
     in.string.toRight(
       NonEmptyList.one(WrongTypeError(path, clazz, in.getClass)))
 
 
-  override def extractShort(op: ShortData)(in: Json, path: Path):
+  override def extractShort[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: Json, path: Path):
       Either[NonEmptyList[ExtractionError], Short] =
     in.number
     .flatMap(n => n.toShort)
       .toRight(
         NonEmptyList.one(WrongTypeError(path, classOf[Short], in.getClass)))
 
-  override def extractInt(op: IntData)(
+  override def extractInt[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: Json,
       path: List[String]): Either[NonEmptyList[ExtractionError], Int] =
     in.number
@@ -110,7 +111,7 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
       .toRight(
         NonEmptyList.one(WrongTypeError(path, classOf[Int], in.getClass)))
 
-  override def extractLong(op: LongData)(
+  override def extractLong[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: Json,
       path: List[String]): Either[NonEmptyList[ExtractionError], Long] =
     in.number
@@ -118,13 +119,13 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
       .toRight(
         NonEmptyList.one(WrongTypeError(path, classOf[Long], in.getClass)))
 
-  override def extractBool(op: BooleanData)(
+  override def extractBool[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: Json,
       path: List[String]): Either[NonEmptyList[ExtractionError], JsonBoolean] =
     in.bool.toRight(
       NonEmptyList.one(WrongTypeError(path, classOf[Boolean], in.getClass)))
 
-  override def extractUuid(op: UuidData)(
+  override def extractUuid[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: Json,
       path: List[String]): Either[NonEmptyList[ExtractionError], UUID] =
     in.string
@@ -132,15 +133,14 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
         NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass)))
       .flatMap(stringToUuid(_, path))
 
-  override def extractLocalDateTime(
-      op: LocalDateTimeData)(in: Json, path: List[String])
+  override def extractLocalDateTime[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: Json, path: List[String])
     : Either[NonEmptyList[ExtractionError], LocalDateTime] =
     in.string
       .toRight(
         NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass)))
       .flatMap(stringToLocalDateTime(_, localDateTimeFormatter, path))
 
-  def extractLocalDate(dataData: LocalDateData)(in: Json, path: List[String])
+  def extractLocalDate[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: Json, path: List[String])
     : Either[NonEmptyList[ExtractionError], LocalDate] =
     in.string
       .toRight(NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass)))
@@ -153,7 +153,7 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
     in.array.toRight(
       NonEmptyList.one(WrongTypeError(path, classOf[Array[_]], in.getClass)))
 
-  override def extractFloat(op: FloatData)(
+  override def extractFloat[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: Json,
       path: List[String]): Either[NonEmptyList[ExtractionError], Float] =
     in.number
@@ -161,7 +161,7 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
       .toRight(
         NonEmptyList.one(WrongTypeError(path, classOf[Byte], in.getClass)))
 
-  override def extractDouble(op: DoubleData)(
+  override def extractDouble[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: Json,
       path: List[String]): Either[NonEmptyList[ExtractionError], Double] =
     in.number
@@ -169,7 +169,7 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
       .toRight(
         NonEmptyList.one(WrongTypeError(path, classOf[Byte], in.getClass)))
 
-  override def extractBigDecimal(op: BigDecimalData)(
+  override def extractBigDecimal[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: Json,
       path: List[String]): Either[NonEmptyList[ExtractionError], BigDecimal] =
     in.number
