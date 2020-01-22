@@ -13,6 +13,8 @@ There are 3 steps to create a new CRUD application.
  
 ## Data Types.
 
+### Native Types
+
 Bones currently supports the following data types natively.
 
 ```
@@ -20,12 +22,28 @@ String, Int, Boolean, Either, Long, List, Short, Float, Double, BigDecimal, Byte
 LocalDate, UUID, Enumeration
 ```
 
-Product Types (Shapeless HList/ Case classes) and Sum Types (traits/case classes or Shapeless Coproducts) are also supported.
+### Custom Types
+Custom types allow a user to define their own Algebra.  There are a few nice use cases for this.
 
-Note: *Custom user defined types are currently not supported.*  For instance, something like 
-the java.io.File type can not be represented.  TODO: The goal of the next version (0.6.0) is to 
-make the interpreters coproduct aware, in order to support custom user defined types.  
- 
+Custom types allow us to create Algebra for types not supported natively above.  For instance, there is a
+package com.bones.data.custom.JavaTimeValue which contains an Algebra to support types found
+in the java.time package.  This allows us to provide these types for our core interpreters without
+forcing them to be supported in all custom interpreters.
+
+Custom types allow for a user to create types that are context specific.  For instance, a
+type of `Markdown` would be a string that, when used in the context of a web application, would display a
+markdown editor for the user to enter in data.  And in the context of a JSON API, would
+
+Custom types allow a project or an organization to cherry-pick custom algebras and context specific algabras
+for a standard project/organization wide vocabulary.
+
+### Product Types
+Product Types (Shapeless HList/ Case classes) and Sum Types (traits/case classes or 
+Shapeless Coproducts) are also supported for collections of both Native types and Custom types.
+
+
+
+  
 
 ### Schema DSL
 Bones defines a Domain Specific Language (DSL) for describing CRUD applications with validation.

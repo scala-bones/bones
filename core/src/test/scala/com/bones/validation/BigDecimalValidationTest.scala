@@ -2,12 +2,12 @@ package com.bones.validation
 
 import com.bones.validation.ValidationDefinition.BigDecimalValidation._
 import org.scalacheck.Prop._
-import org.scalatest.FunSuite
 import org.scalatestplus.scalacheck.Checkers
 import com.bones.validation.ValidationDefinition.ValidValue
 import org.scalatest.MustMatchers
+import org.scalatest.funsuite.AnyFunSuite
 
-class BigDecimalValidationTest extends FunSuite with Checkers with MustMatchers {
+class BigDecimalValidationTest extends AnyFunSuite with Checkers with MustMatchers{
 
   test("Max is valid") {
     forAll { (max: BigDecimal, input: BigDecimal) =>
