@@ -1,14 +1,12 @@
 package com.bones.protobuf
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream, OutputStream}
-import java.nio.ByteBuffer
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.util.{Base64, UUID}
 
-import com.bones.data.KvpNil
-import org.scalatest.{FunSuite, MustMatchers}
-import org.scalatest.prop.Checkers
 import com.bones.syntax._
 import com.google.protobuf.{CodedInputStream, CodedOutputStream}
+import org.scalatest.{FunSuite, MustMatchers}
+import org.scalatestplus.scalacheck.Checkers
 
 class ProtobufSequentialInputInterpreterTest extends FunSuite with Checkers with MustMatchers{
 

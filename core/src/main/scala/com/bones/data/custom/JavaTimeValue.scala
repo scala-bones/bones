@@ -2,42 +2,39 @@ package com.bones.data.custom
 
 import java.time._
 
-import com.bones.data.OptionalKvpValueDefinition
+import com.bones.data.{AlgToCollectionData, HasManifest, ListData}
 import com.bones.validation.ValidationDefinition.ValidationOp
 
-sealed abstract class JavaTimeValue[A: Manifest] {
+sealed abstract class JavaTimeValue[A: Manifest] extends HasManifest[A] {
   val manifestOfA: Manifest[A] = manifest[A]
 }
 
 final case class DurationData(validationOp: ValidationOp[Duration])
   extends JavaTimeValue[Duration]
-    with ToOptionalData[Duration]
+    with AlgToCollectionData[JavaTimeValue, Duration, DurationData]
 
 final case class InstantData(validationOp: ValidationOp[Instant])
   extends JavaTimeValue[Instant]
-    with ToOptionalData[Instant]
+    with AlgToCollectionData[JavaTimeValue, Instant, InstantData]
 
 final case class MonthData(validationOp: ValidationOp[Month])
   extends JavaTimeValue[Month]
-    with ToOptionalData[Month]
+    with AlgToCollectionData[JavaTimeValue, Month, MonthData]
+
+final case class MonthDay(validationOp: ValidationOp[MonthDay])
+  extends JavaTimeValue[MonthDay]
+    with AlgToCollectionData[JavaTimeValue, MonthDay, MonthDay]
 
 final case class PeriodData(validationOp: ValidationOp[Period])
   extends JavaTimeValue[Period]
-    with ToOptionalData[Period]
+    with AlgToCollectionData[JavaTimeValue, Period, PeriodData]
 
 final case class ZoneIdData(validationOp: ValidationOp[ZoneId])
   extends JavaTimeValue[ZoneId]
-    with ToOptionalData[ZoneId]
+    with AlgToCollectionData[JavaTimeValue, ZoneId, ZoneIdData]
 
 final case class ZoneOffsetData(validationOp: ValidationOp[ZoneOffset])
   extends JavaTimeValue[ZoneOffset]
-    with ToOptionalData[ZoneOffset]
-
-/** Syntactic sugar to wrap the data definition to allow 'optional' syntax on a KvpValue. */
-trait ToOptionalData[B] { self: JavaTimeValue[B] =>
-  private implicit val manifestOfB: Manifest[B] = self.manifestOfA
-  val optional: OptionalKvpValueDefinition[JavaTimeValue, B] = OptionalKvpValueDefinition[JavaTimeValue, B](Right(self))
-}
-
+    with AlgToCollectionData[JavaTimeValue, ZoneOffset, ZoneOffsetData]
 
 
