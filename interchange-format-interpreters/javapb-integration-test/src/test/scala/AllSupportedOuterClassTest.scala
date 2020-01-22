@@ -10,7 +10,6 @@ import com.bones.protobuf.{ProtobufSequentialInputInterpreter, ProtobufSequentia
 import com.bones.schemas.Schemas
 import com.bones.schemas.Schemas.Currency
 import org.scalatest.{FunSuite, MustMatchers}
-import org.scalatest.prop.Checkers
 
 class AllSupportedOuterClassTest extends FunSuite with MustMatchers {
 

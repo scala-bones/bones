@@ -4,7 +4,7 @@ import java.util.UUID
 
 import com.bones.validation.ValidationDefinition.StringValidation._
 import org.scalatest.FunSuite
-import org.scalatest.prop.Checkers
+import org.scalatestplus.scalacheck.Checkers
 
 class ValidationDefinitionTest extends FunSuite with Checkers {
 
