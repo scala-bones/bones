@@ -1,6 +1,6 @@
 package com.bones.bson
 
-import java.time.{Instant, LocalDate, LocalDateTime, ZoneOffset}
+import java.time._
 import java.util.UUID
 
 import cats.data.NonEmptyList
@@ -150,6 +150,13 @@ object BsonValidatorInterpreter
       case BSONDateTime(date) =>
         Right(LocalDate.ofEpochDay(date))
       case x => invalidValue(x, classOf[BSONDateTime], path)
+    }
+
+  override protected def extractLocalTime[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: BSONValue, path: Path):
+    Either[NonEmptyList[ExtractionError], LocalTime] =
+    in match {
+      case BSONLong(time) => Right(LocalTime.ofNanoOfDay(time))
+      case x => invalidValue(x, classOf[BSONLong], path)
     }
 
   override def extractArray[ALG[_],A](op: ListData[ALG,A])(in: BSONValue,

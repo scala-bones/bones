@@ -1,7 +1,7 @@
 package com.bones.circe
 
 import java.nio.charset.Charset
-import java.time.{LocalDate, LocalDateTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
@@ -24,6 +24,7 @@ object CirceValidatorInterpreter {
   val isoInterpreter: CirceValidatorInterpreter = new CirceValidatorInterpreter {
     override def dateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
     override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+    override def localTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_TIME
   }
 
   val noAlgebraInterpreter = NoAlgebraValidator[Json]()
@@ -37,6 +38,7 @@ trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
 
   def dateFormatter: DateTimeFormatter
   def localDateFormatter: DateTimeFormatter
+  def localTimeFormatter: DateTimeFormatter
 
 
   override def isEmpty(json: Json): Boolean = json.isNull
@@ -161,6 +163,13 @@ trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
     in.asString
     .toRight(determineError(in, op, classOf[LocalDate], path))
     .flatMap(stringToLocalDate(_, localDateFormatter, path))
+
+
+  override protected def extractLocalTime[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: Json, path: Path)
+    : Either[NonEmptyList[ExtractionError], LocalTime] =
+    in.asString
+    .toRight(determineError(in, op, classOf[LocalTime], path))
+    .flatMap(stringToLocalTime(_, localTimeFormatter, path))
 
   override def extractArray[ALG[_], A](op: ListData[ALG, A])(
       in: Json,
