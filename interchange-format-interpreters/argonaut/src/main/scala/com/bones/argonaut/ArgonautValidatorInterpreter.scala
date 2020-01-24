@@ -1,7 +1,7 @@
 package com.bones.argonaut
 
 import java.nio.charset.Charset
-import java.time.{LocalDate, LocalDateTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
@@ -28,8 +28,9 @@ object ArgonautValidatorInterpreter {
     */
   val isoInterpreter: ArgonautValidatorInterpreter = new ArgonautValidatorInterpreter {
     override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
-
     override def localDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    override def localTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_TIME
+
   }
 }
 
@@ -40,6 +41,7 @@ object ArgonautValidatorInterpreter {
 trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter[Json]{
   def localDateFormatter: DateTimeFormatter
   def localDateTimeFormatter: DateTimeFormatter
+  def localTimeFormatter: DateTimeFormatter
 
 
   override def isEmpty(json: Json): JsonBoolean = json.isNull
@@ -140,12 +142,18 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
         NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass)))
       .flatMap(stringToLocalDateTime(_, localDateTimeFormatter, path))
 
-  def extractLocalDate[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: Json, path: List[String])
+  override def extractLocalDate[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: Json, path: List[String])
     : Either[NonEmptyList[ExtractionError], LocalDate] =
     in.string
       .toRight(NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass)))
     .flatMap(stringToLocalDate(_,localDateFormatter, path))
 
+
+  override def extractLocalTime[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: Json, path: Path)
+    : Either[NonEmptyList[ExtractionError], LocalTime] =
+    in.string
+      .toRight(NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass)))
+      .flatMap(stringToLocalTime(_,localTimeFormatter, path))
 
   override def extractArray[ALG[_],A](op: ListData[ALG,A])(
       in: Json,

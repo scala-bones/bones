@@ -1,6 +1,6 @@
 package com.bones.interpreter
 
-import java.time.{LocalDate, LocalDateTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util.{Base64, UUID}
 
 import cats.data.NonEmptyList
@@ -126,6 +126,9 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
   protected def extractLocalDate[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], LocalDate]
+  protected def extractLocalTime[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
+    in: IN,
+    path: Path): Either[NonEmptyList[ExtractionError], LocalTime]
   protected def extractArray[ALG[_], A](op: ListData[ALG, A])(
       in: IN,
       path: Path): Either[NonEmptyList[ExtractionError], Seq[IN]]
@@ -284,6 +287,8 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
           required(op, validations, extractLocalDateTime(Left(fgo)))
         case op@LocalDateData(validations) =>
           required(op, validations, extractLocalDate(Left(fgo)))
+        case op@LocalTimeData(validations) =>
+          required(op, validations, extractLocalTime(Left(fgo)))
         case op@ByteArrayData(validations) =>
           val decoder = Base64.getDecoder
           (inOpt: Option[IN], path: Path) =>
