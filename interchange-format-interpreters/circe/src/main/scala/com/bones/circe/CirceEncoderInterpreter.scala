@@ -1,7 +1,7 @@
 package com.bones.circe
 
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDate, LocalDateTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util.{Base64, UUID}
 
 import com.bones.data.{KeyValueDefinition, _}
@@ -15,9 +15,10 @@ object CirceEncoderInterpreter {
     * Implementation of the [CirceEncoderInterpreter] specifying ISO String formatter for date and datetime.
     */
   val isoInterpreter: CirceEncoderInterpreter = new CirceEncoderInterpreter {
-      override def localDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-      override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
-    }
+    override def localDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+    override def localTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_TIME
+  }
 
   val noAlgebraEncoder: NoAlgebraEncoder[Json] = NoAlgebraEncoder[Json]()
 }
@@ -30,6 +31,7 @@ trait CirceEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[Jso
 
   def localDateTimeFormatter: DateTimeFormatter
   def localDateFormatter: DateTimeFormatter
+  def localTimeFormatter: DateTimeFormatter
 
   override def none: Json = Json.Null
 
@@ -74,6 +76,9 @@ trait CirceEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[Jso
 
   override def dateTimeToOut(op: LocalDateTimeData): LocalDateTime => Json =
     input => Json.fromString(localDateTimeFormatter.format(input))
+
+  override def localTimeToOut(op: LocalTimeData): LocalTime => Json =
+    input => Json.fromString(localTimeFormatter.format(input))
 
   override def localDateToOut(op: LocalDateData): LocalDate => Json =
     input => Json.fromString(localDateFormatter.format(input))
