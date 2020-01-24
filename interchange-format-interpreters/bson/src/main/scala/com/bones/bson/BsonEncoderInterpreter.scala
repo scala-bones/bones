@@ -1,6 +1,6 @@
 package com.bones.bson
 
-import java.time.{LocalDate, LocalDateTime, ZoneOffset}
+import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneOffset}
 import java.util.{Base64, UUID}
 
 import com.bones.data.KeyValueDefinition
@@ -58,6 +58,9 @@ object BsonEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[BSO
 
   override def dateTimeToOut(op: LocalDateTimeData): LocalDateTime => BSONValue =
     input => BSONDateTime(input.toInstant(ZoneOffset.UTC).toEpochMilli)
+
+  override def localTimeToOut(op: LocalTimeData): LocalTime => BSONValue =
+    input => BSONLong(input.toNanoOfDay)
 
   override def localDateToOut(op: LocalDateData): LocalDate => BSONValue =
     input => BSONDateTime(input.toEpochDay)
