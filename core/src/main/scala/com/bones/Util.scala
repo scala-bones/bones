@@ -1,6 +1,6 @@
 package com.bones
 
-import java.time.{LocalDate, LocalDateTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.time.format.{DateTimeFormatter, DateTimeParseException}
 import java.util.UUID
 
@@ -28,15 +28,27 @@ object Util {
      * if there is an parse error.
      */
   def stringToLocalDate(input: String,
+    dateFormat: DateTimeFormatter,
+    path: List[String])
+    : Either[NonEmptyList[ExtractionError], LocalDate] =
+  try {
+    Right(LocalDate.parse(input, dateFormat))
+  } catch {
+    case _: DateTimeParseException =>
+      Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDate])))
+  }
+
+  def stringToLocalTime(input: String,
                         dateFormat: DateTimeFormatter,
                         path: List[String])
-  : Either[NonEmptyList[ExtractionError], LocalDate] =
+  : Either[NonEmptyList[ExtractionError], LocalTime] =
     try {
-      Right(LocalDate.parse(input, dateFormat))
+      Right(LocalTime.parse(input, dateFormat))
     } catch {
       case _: DateTimeParseException =>
         Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDate])))
     }
+
 
     /** Convert the String to a LocalDateTime returning Left[NonEmptyList[ExtractionError]] 
      * if there is an parse error.
