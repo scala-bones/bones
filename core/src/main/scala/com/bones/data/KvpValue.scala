@@ -1,6 +1,6 @@
 package com.bones.data
 
-import java.time.{LocalDate, LocalDateTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util.UUID
 
 import com.bones.syntax.NoAlgebra
@@ -133,13 +133,19 @@ final case class LocalDateData(validations: List[ValidationOp[LocalDate]])
   extends KvpValue[LocalDate]
     with ToCollectionData[LocalDate]
 
+final case class LocalTimeData(validations: List[ValidationOp[LocalTime]])
+  extends KvpValue[LocalTime]
+    with ToCollectionData[LocalTime]
+
 final case class UuidData(validations: List[ValidationOp[UUID]])
   extends KvpValue[UUID]
     with ToCollectionData[UUID]
 
-final case class EnumerationData[E<: Enumeration, V:Manifest](enumeration: E,
-                                                              validations: List[ValidationOp[V]])
-  extends KvpValue[V]
+final case class EnumerationData[E<: Enumeration, V:Manifest]
+  (
+    enumeration: E,
+    validations: List[ValidationOp[V]]
+  ) extends KvpValue[V]
     with ToCollectionData[V] {}
 
 /** Represents a type where the value is an HList */

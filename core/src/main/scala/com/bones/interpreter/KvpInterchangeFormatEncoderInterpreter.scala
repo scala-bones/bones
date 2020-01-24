@@ -1,6 +1,6 @@
 package com.bones.interpreter
 
-import java.time.{LocalDate, LocalDateTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util.UUID
 
 import cats.data.NonEmptyList
@@ -87,6 +87,7 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
   /** Create a function which converts a LocalDateTime into the specific OUT type */
   def dateTimeToOut(op: LocalDateTimeData): LocalDateTime => OUT
   def localDateToOut(op: LocalDateData): LocalDate => OUT
+  def localTimeToOut(op: LocalTimeData): LocalTime => OUT
   def floatToOut(op: FloatData): Float => OUT
   def doubleToOut(op: DoubleData): Double => OUT
   def shortToOut(sd: ShortData): Short => OUT
@@ -177,6 +178,7 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
       case uu: UuidData       => uuidToOut(uu)
       case dd: LocalDateTimeData   => dateTimeToOut(dd)
       case ld: LocalDateData  => localDateToOut(ld)
+      case lt: LocalTimeData => localTimeToOut(lt)
       case fd: FloatData      => floatToOut(fd)
       case dd: DoubleData     => doubleToOut(dd)
       case sd: ShortData      => shortToOut(sd)

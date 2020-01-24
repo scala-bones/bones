@@ -48,7 +48,7 @@ Shapeless Coproducts) are also supported for collections of both Native types an
 ### Schema DSL
 Bones defines a Domain Specific Language (DSL) for describing CRUD applications with validation.
 
-Using the DSL will result in creating a Generalized Algebraic Data Type (GADT) data structure.
+Using the DSL will result in creating a Generalized Algebraic Data Type (GADT) tree-like data structure.
 The GADT structure describes the data, validation and available Create/Read/Update/Delete (CRUD) actions.
  
 As an example, we will describe a Person CRUD application.  For a complete running service writing to the Database,
@@ -62,8 +62,8 @@ import com.bones.syntax._
 case class Person(name: String, age: Int)
 
 val personSchema = (
-  kvp("name", string(sv.matchesRegex("^[a-zA-Z ]*$".r))) ::
-  kvp("age", int(iv.min(0))) ::
+  kvp("name", string(sv.matchesRegex("^[a-zA-Z ]*$".r))) ::  // The name must be alphanumeric
+  kvp("age", int(iv.min(0))) ::                              // Age must be >= 0
   KvpNil
 ).convert[Person]
 
@@ -79,14 +79,14 @@ Once the basic functionality of the interpreter is created, we can reuse the int
 to create common functionality.
 
 I other words, if services perform similar behavior, 
-such as write to Kafka, S3, a Database or an external services, the boilerplate code can be reduced by using GADTs.
+such as validate HTTP requests and write to Kafka, S3, a Database or an external services, the boilerplate code can be reduced by using GADTs.
 This project is to provide a common vocabulary for any service, however this project is currently focused on 
 REST CRUD apps.
  
 This example uses the Scala http4s with schema defined above and for less than 11 LINES OF CODE, provides full CRUD functionality writing to 
 a JDBC datasource.  It provides 3 interchange formats: JSON, BSON and Protobuf (yes, protobuf!), 
-and finally a protofile describing the data and OAS3 compliant Schema.  The idea is that this will work for any Bones Schema Values
-(although there are currently some limitation on Coproduct which will be fixed soon).
+and finally a protofile describing the data and OAS3 compliant Schema.  
+The idea is that this will work for any Bones Schema Values.
 
 
 ```$scala

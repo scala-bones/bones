@@ -1,6 +1,6 @@
 package com.bones.argonaut
 
-import java.time.{LocalDate, LocalDateTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.time.format.DateTimeFormatter
 import java.util.{Base64, UUID}
 
@@ -13,6 +13,7 @@ object ArgonautEncoderInterpreter {
   val isoInterpreter = new ArgonautEncoderInterpreter {
     override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
     override def localDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    override def localTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_TIME
   }
 }
 /**
@@ -23,6 +24,7 @@ trait ArgonautEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[
 
   def localDateFormatter: DateTimeFormatter
   def localDateTimeFormatter: DateTimeFormatter
+  def localTimeFormatter: DateTimeFormatter
 
   override def none: Json = Json.jNull
 
@@ -56,6 +58,9 @@ trait ArgonautEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[
 
   override def localDateToOut(op: LocalDateData): LocalDate => Json =
     input => Json.jString(localDateFormatter.format(input))
+
+  override def localTimeToOut(op: LocalTimeData): LocalTime => Json =
+    input => Json.jString(localTimeFormatter.format(input))
 
   override def floatToOut(op: FloatData): Float => Json =
     input => Json.jNumber(input.toDouble)
