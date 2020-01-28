@@ -76,7 +76,7 @@ trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
       _ => classOf[Array[_]],
       _ => classOf[Object]
     )
-    Left(NonEmptyList.one(WrongTypeError(path, expected, invalid)))
+    Left(NonEmptyList.one(WrongTypeError(path, expected, invalid, None)))
   }
 
   protected def determineError[ALG[_], A](
@@ -86,7 +86,7 @@ trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
                                    path: List[String]): NonEmptyList[ExtractionError] = {
     val error =
       if (in.isNull) RequiredData(path, op)
-      else WrongTypeError(path, expectedType, in.getClass)
+      else WrongTypeError(path, expectedType, in.getClass, None)
     NonEmptyList.one(error)
   }
 
@@ -103,7 +103,7 @@ trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
         headInterpreter(fields.find(_._1 == kv.key).map(_._2), path)
       case None =>
         Left(
-          NonEmptyList.one(WrongTypeError(path, classOf[Object], in.getClass)))
+          NonEmptyList.one(WrongTypeError(path, classOf[Object], in.getClass, None)))
     }
 
   override def extractString[ALG[_], A](op: CoproductDataDefinition[ALG, A], clazz: Class[_])(
@@ -114,16 +114,16 @@ trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
 
   override def extractInt[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Int] =
     in.asNumber.flatMap(_.toInt)
-    .toRight(NonEmptyList.one(WrongTypeError(path, classOf[Int], in.getClass)))
+    .toRight(NonEmptyList.one(WrongTypeError(path, classOf[Int], in.getClass, None)))
 
   override def extractFloat[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Float] =
     in.asNumber.map(_.toDouble.toFloat)
-      .toRight(NonEmptyList.one(WrongTypeError(path, classOf[Float], in.getClass)))
+      .toRight(NonEmptyList.one(WrongTypeError(path, classOf[Float], in.getClass, None)))
 
 
   override def extractDouble[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Double] =
     in.asNumber.map(_.toDouble)
-      .toRight(NonEmptyList.one(WrongTypeError(path, classOf[Double], in.getClass)))
+      .toRight(NonEmptyList.one(WrongTypeError(path, classOf[Double], in.getClass, None)))
 
 
   override def extractLong[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
@@ -132,13 +132,13 @@ trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
     in.asNumber
       .flatMap(_.toLong)
       .toRight(
-        NonEmptyList.one(WrongTypeError(path, classOf[Long], in.getClass)))
+        NonEmptyList.one(WrongTypeError(path, classOf[Long], in.getClass, None)))
 
 
   override def extractShort[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: Json, path: Path): Either[NonEmptyList[ExtractionError], Short] =
     in.asNumber.flatMap(_.toShort)
     .toRight(
-      NonEmptyList.one(WrongTypeError(path, classOf[Short], in.getClass)))
+      NonEmptyList.one(WrongTypeError(path, classOf[Short], in.getClass, None)))
 
   override def extractBool[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: Json,

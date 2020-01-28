@@ -34,8 +34,8 @@ trait TimeValidator extends InterchangeFormatValidator[JavaTimeValue, Json] {
     try {
       Right(f(input))
     } catch {
-      case ex: DateTimeParseException => Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDateTime])))
-      case ex: IllegalArgumentException => Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDateTime])))
+      case ex: DateTimeParseException => Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDateTime], Some(ex))))
+      case ex: IllegalArgumentException => Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDateTime], Some(ex))))
     }
 
   private def parseTime[A](alg: JavaTimeValue[A], clazz: Class[A], f: String => A): (Option[Json], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] = {

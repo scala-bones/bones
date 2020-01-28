@@ -12,20 +12,18 @@ import com.bones.data.Error.{CanNotConvert, ExtractionError}
   */
 object Util {
 
-  /** Convert a String to a UUID returning Left[NoneEmptyList[ExtractionError]]
+  /** Convert a String to a UUID returning Left[NoneEmptyList[ExtractionError],UUID]
    * if there is a failure in conversion */
-  def stringToUuid(
-      uuidString: String,
-      path: List[String]): Either[NonEmptyList[ExtractionError], UUID] =
+  def stringToUuid(uuidString: String, path: List[String]): Either[NonEmptyList[ExtractionError], UUID] =
     try {
       Right(UUID.fromString(uuidString))
     } catch {
-      case _: IllegalArgumentException =>
-        Left(NonEmptyList.one(CanNotConvert(path, uuidString, classOf[UUID])))
+      case e: IllegalArgumentException =>
+        Left(NonEmptyList.one(CanNotConvert(path, uuidString, classOf[UUID], Some(e))))
     }
 
-    /** Convert the String to a LocalDate returning Left[NonEmptyList[ExtractionError]] 
-     * if there is an parse error.
+    /**
+     * Convert the String to a LocalDate returning Either[NonEmptyList[ExtractionError],LocalDate]
      */
   def stringToLocalDate(input: String,
     dateFormat: DateTimeFormatter,
@@ -34,8 +32,8 @@ object Util {
   try {
     Right(LocalDate.parse(input, dateFormat))
   } catch {
-    case _: DateTimeParseException =>
-      Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDate])))
+    case e: DateTimeParseException =>
+      Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDate], Some(e))))
   }
 
   def stringToLocalTime(input: String,
@@ -45,13 +43,13 @@ object Util {
     try {
       Right(LocalTime.parse(input, dateFormat))
     } catch {
-      case _: DateTimeParseException =>
-        Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDate])))
+      case e: DateTimeParseException =>
+        Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDate], Some(e))))
     }
 
 
-    /** Convert the String to a LocalDateTime returning Left[NonEmptyList[ExtractionError]] 
-     * if there is an parse error.
+    /** Convert the String to a LocalDateTime.
+     *  @return Left[NonEmptyList[ExtractionError],String]
      */
     def stringToLocalDateTime(input: String,
                             dateFormat: DateTimeFormatter,
@@ -60,12 +58,12 @@ object Util {
     try {
       Right(LocalDateTime.parse(input, dateFormat))
     } catch {
-      case _: DateTimeParseException =>
-        Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDateTime])))
+      case e: DateTimeParseException =>
+        Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDateTime], Some(e))))
     }
 
-    /** Convert the String to a BigDecimal returning Left[NonEmptyList[ExtractionError]] 
-     * if there is an parse error.
+    /**
+     * Convert the String to a BigDecimal returning Either[NonEmptyList[ExtractionError],BigDecimal]
      */
     def stringToBigDecimal(
       input: String,
@@ -73,35 +71,45 @@ object Util {
     try {
       Right(BigDecimal(input))
     } catch {
-      case _: NumberFormatException =>
-        Left(NonEmptyList.one(CanNotConvert(path, input, classOf[BigDecimal])))
+      case e: NumberFormatException =>
+        Left(NonEmptyList.one(CanNotConvert(path, input, classOf[BigDecimal], Some(e))))
     }
 
-    /** Convert the String to an Enumeration using [[Enumeration.withName]] returning Left[NonEmptyList[ExtractionError]] 
+    /** Convert the String to an Enumeration using [[Enumeration.withName]] returning Left[NonEmptyList[ExtractionError],Object]
      * if there is an parse error.
      */
     def stringToEnumeration[E<:Enumeration,V](str: String,
                              path: List[String],
                              enumeration: E)(implicit manifest: Manifest[V])
-    : Either[NonEmptyList[CanNotConvert[String, Object]], enumeration.Value] =
+    : Either[NonEmptyList[CanNotConvert[String, V]], enumeration.Value] =
     try {
       val clazz = manifest.runtimeClass.asInstanceOf[Class[enumeration.Value]]
       Right(clazz.cast(enumeration.withName(str)))
     } catch {
-      case _: NoSuchElementException =>
-        Left(NonEmptyList.one(CanNotConvert(path, str, classOf[Object])))
+      case e: NoSuchElementException =>
+        Left(NonEmptyList.one(CanNotConvert(path, str, manifest.runtimeClass.asInstanceOf[Class[V]], Some(e))))
     }
 
-    /** Convert the string to an Enum using [[Enumeration.withName]] returning Left[NonEmptyList[ExtractionError]] 
+    /** Convert the string to an Enum using [[Enumeration.withName]] returning Either[NonEmptyList[ExtractionError],A]
      * if there is an parse error.
      */
-    def stringToEnum[A <: Enum[A]](
+    def stringToEnum[A <: Enum[A]:Manifest](
       str: String,
       path: List[String],
-      enums: List[A]): Either[NonEmptyList[CanNotConvert[String, Object]], A] =
-    enums
-      .find(_.toString == str)
-      .toRight(NonEmptyList.one(CanNotConvert(path, str, classOf[Object])))
+      enums: List[A]): Either[NonEmptyList[CanNotConvert[String, A]], A] = {
+      val manifestA = manifest[A]
+      enums
+        .find(_.toString == str)
+        .toRight(NonEmptyList.one(CanNotConvert[String,A](path, str, manifestA.runtimeClass.asInstanceOf[Class[A]], None)))
+    }
+
+  /** Converts a long to a LocalDate.  Never fails */
+  def longToLocalDate: (Long, List[String]) => Either[NonEmptyList[ExtractionError], LocalDate] =
+    (l,p) => Right(LocalDate.ofEpochDay(l))
+
+  def longToLocalTime: (Long, List[String]) => Either[NonEmptyList[ExtractionError], LocalTime] =
+    (l,p) => Right(LocalTime.ofNanoOfDay(l))
+
 
   /**
    * Accumulates error on the left or combines success on the right, just

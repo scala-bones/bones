@@ -1,7 +1,7 @@
 package com.bones.protobuf
 
 import java.io.{ByteArrayOutputStream, IOException}
-import java.time.{LocalDate, LocalDateTime, ZoneOffset}
+import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneOffset}
 import java.util.UUID
 
 import cats.Applicative
@@ -12,20 +12,17 @@ import com.bones.data.{KeyValueDefinition, KvpCoNil, KvpCoproduct, KvpSingleValu
 import com.bones.syntax.NoAlgebra
 import com.google.protobuf.{CodedOutputStream, Timestamp}
 import shapeless._
-import com.bones.protobuf.ProtobufSequentialInputInterpreter.NoAlgebraInterpreter
 
-/**
-  * Notes:
-  * An Option[List] where the data is a some of empty list: Some(List()) becomes a None when using ProtobufSequentialInputInterpreter.
-  *
-  */
+object UtcProtobufSequentialOutputInterpreter extends ProtobufSequentialOutputInterpreter {
+  override val zoneOffset: ZoneOffset = ZoneOffset.UTC
+}
+
 object ProtobufSequentialOutputInterpreter {
-
   trait CustomInterpreter[ALG[_]] {
     def encodeToProto[A](alg: ALG[A]) : EncodeToProto[A]
   }
 
-  object NoAgebraCustomInterpreter extends CustomInterpreter[NoAlgebra] {
+  object NoAlgebraCustomInterpreter extends CustomInterpreter[NoAlgebra] {
     def encodeToProto[A](alg: NoAlgebra[A]): EncodeToProto[A] = sys.error("Unreachable code")
   }
 
@@ -42,8 +39,199 @@ object ProtobufSequentialOutputInterpreter {
   type EncodeCoproductToProto[C<:Coproduct] =
     LastFieldNumber => (LastFieldNumber, ComputeEncode[C])
 
+  /** Run code against the CodedOutputStream and watch for errors */
+  def write(f: CodedOutputStream => Unit): Encode =
+    (codedOutputStream: CodedOutputStream) =>
+      try {
+        f(codedOutputStream)
+        Right(codedOutputStream)
+      } catch {
+        case ex: IOException => Left(NonEmptyList.one(ex))
+      }
+
+
+  def determineValueDefinition[ALG[_], A]
+  (
+    kvp: CoproductDataDefinition[ALG, A],
+    valueDefinition: (KvpValue[A], CustomInterpreter[ALG]) => EncodeToProto[A],
+    customInterpreter: CustomInterpreter[ALG]
+  ): EncodeToProto[A] =
+    kvp match {
+      case Left(kvp) => valueDefinition(kvp, customInterpreter)
+      case Right(vd) => customInterpreter.encodeToProto(vd)
+    }
+
+
+
+  def optionalKvpValueDefinition[ALG[_],B](
+    op: OptionalKvpValueDefinition[ALG, B],
+    valueDefinition: (KvpValue[B], CustomInterpreter[ALG]) => EncodeToProto[B],
+    customInterpreter: CustomInterpreter[ALG]
+  ): EncodeToProto[Option[B]] = {
+    (fieldNumber: FieldNumber) =>
+      val (lastFieldNumber, fa) = determineValueDefinition(op.valueDefinitionOp, valueDefinition, customInterpreter)(fieldNumber)
+      (lastFieldNumber,
+        (opt: Option[B]) => {
+          val optB = opt.map(fa)
+          (
+            () => optB.fold(0)(_._1()),
+            (outputStream: CodedOutputStream) =>
+              optB.fold[Either[NonEmptyList[IOException], CodedOutputStream]](
+                Right(outputStream))(item => item._2(outputStream))
+          )
+        }
+      )
+  }
+
+  val booleanData: EncodeToProto[Boolean] =
+    (fieldNumber: FieldNumber) => (
+      fieldNumber + 1,
+      (bool: Boolean) =>
+        (
+          () => CodedOutputStream.computeBoolSize(fieldNumber, bool),
+          write(_.writeBool(fieldNumber, bool))
+        )
+    )
+
+
+  val stringData = stringDataFromMap[String](identity)
+
+  def stringDataFromMap[A](f: A => String): EncodeToProto[A] =
+    (fieldNumber: FieldNumber) => (
+      fieldNumber + 1,
+      (a: A) => {
+        val mapped = f(a)
+        (
+          () => CodedOutputStream.computeStringSize(fieldNumber, mapped),
+          write(_.writeString(fieldNumber, mapped))
+        )
+      }
+    )
+
+  /** Can't go shorter than an Int */
+  val shortData = intDataFromMap[Short](_.toInt)
+
+  val intData = intDataFromMap[Int](identity)
+  def intDataFromMap[A](f: A => Int) : EncodeToProto[A] =
+    (fieldNumber: FieldNumber) =>
+      (fieldNumber + 1,
+        (l: A) => {
+          val mapped = f(l)
+            (
+              () => CodedOutputStream.computeInt32Size(fieldNumber, mapped),
+              write(_.writeInt32(fieldNumber, mapped))
+            )
+        }
+      )
+
+  val longData = longDataFromMap[Long](identity)
+  def longDataFromMap[A](f: A => Long): EncodeToProto[A] =
+    (fieldNumber: FieldNumber) =>
+      (
+        fieldNumber + 1,
+        (l: A) => {
+          val mapped = f(l)
+          (
+            () => CodedOutputStream.computeInt64Size(fieldNumber, mapped),
+            write(_.writeInt64(fieldNumber, mapped))
+          )
+        }
+      )
+
+  val uuidData: EncodeToProto[UUID] = stringDataFromMap(_.toString)
+
+  def localDateTimeToSecondsNanos(zoneOffset: ZoneOffset): LocalDateTime => (Long,Int) =
+    localDateTime =>
+      (localDateTime.toEpochSecond(zoneOffset), localDateTime.getNano)
+
+  def localDateTimeData(zoneOffset: ZoneOffset) = timestampFromMap(localDateTimeToSecondsNanos(zoneOffset))
+
+
+  def timestampFromMap[A](f: A => (Long,Int)): EncodeToProto[A] = {
+    (fieldNumber: FieldNumber) =>
+      (
+        fieldNumber + 1,
+        (d: A) =>
+        {
+          val (seconds, nanos) = f(d)
+          val timestamp = Timestamp.newBuilder()
+            .setSeconds(seconds)
+            .setNanos(nanos)
+            .build()
+          val groupSize = timestamp.getSerializedSize
+
+          val encodeF: Encode = (outputStream: CodedOutputStream) => {
+            try {
+              outputStream.writeTag(fieldNumber, 2)
+              outputStream.writeUInt32NoTag(groupSize)
+              timestamp.writeTo(outputStream)
+              Right(outputStream)
+            } catch {
+              case ex: IOException => Left(NonEmptyList.one(ex))
+            }
+          }
+          val allSize = () => {
+            groupSize + 1 + CodedOutputStream.computeUInt32SizeNoTag(groupSize)
+          }
+          (allSize, encodeF)
+        }
+      )
+  }
+
+  val localDateData: EncodeToProto[LocalDate] = longDataFromMap[LocalDate](_.toEpochDay)
+  val localTimeData: EncodeToProto[LocalTime] = longDataFromMap[LocalTime](_.toNanoOfDay)
+
+  val floatData: EncodeToProto[Float] =
+    (fieldNumber: FieldNumber) =>
+      (
+        fieldNumber + 1,
+        (f: Float) =>
+          (
+            () =>
+              CodedOutputStream.computeFloatSize(fieldNumber, f),
+            write(_.writeFloat(fieldNumber, f))
+          )
+      )
+
+  val doubleData: EncodeToProto[Double] =
+    (fieldNumber: FieldNumber) =>
+      (
+        fieldNumber + 1,
+        (d: Double) =>
+          (
+            () => CodedOutputStream.computeDoubleSize(fieldNumber, d),
+            write(_.writeDouble(fieldNumber, d))
+          )
+      )
+  val bigDecimalData: EncodeToProto[BigDecimal] = stringDataFromMap[BigDecimal](_.toString)
+
+  val byteArrayData: EncodeToProto[Array[Byte]] =
+    (fieldNumber: FieldNumber) => (
+      fieldNumber + 1,
+      (arr: Array[Byte]) =>
+        (
+          () => CodedOutputStream.computeByteArraySize(fieldNumber, arr),
+          write(_.writeByteArray(fieldNumber, arr))
+        )
+    )
+
+  def enumerationData[A]: EncodeToProto[A] = stringDataFromMap[A](_.toString)
+
+}
+/**
+  * Notes:
+  * An Option[List] where the data is a some of empty list: Some(List()) becomes a None when using ProtobufSequentialInputInterpreter.
+  *
+  */
+trait ProtobufSequentialOutputInterpreter {
+
+  import ProtobufSequentialOutputInterpreter._
+
+  val zoneOffset: ZoneOffset
+
+
   def encodeToBytes[A](dc: BonesSchema[NoAlgebra,A]): A => Array[Byte] =
-  encodeToBytesCustomAlgebra[NoAlgebra, A](dc, NoAgebraCustomInterpreter)
+  encodeToBytesCustomAlgebra[NoAlgebra, A](dc, NoAlgebraCustomInterpreter)
 
   def encodeToBytesCustomAlgebra[ALG[_], A](dc: BonesSchema[ALG,A], customInterpreter: CustomInterpreter[ALG]): A => Array[Byte] = dc match {
     case x: HListConvert[ALG, _, _, A] @unchecked => {
@@ -63,7 +251,11 @@ object ProtobufSequentialOutputInterpreter {
     }
   }
 
-  protected def kvpCoproduct[ALG[_], C<:Coproduct](co: KvpCoproduct[ALG, C], customInterpreter: CustomInterpreter[ALG]): EncodeCoproductToProto[C] = {
+  protected def kvpCoproduct[ALG[_], C<:Coproduct]
+  (
+    co: KvpCoproduct[ALG, C],
+    customInterpreter: CustomInterpreter[ALG]
+  ): EncodeCoproductToProto[C] = {
     co match {
       case nil: KvpCoNil[_] =>
         (fieldNumber: FieldNumber) => (
@@ -73,7 +265,7 @@ object ProtobufSequentialOutputInterpreter {
         )
       case kvp: KvpSingleValueLeft[ALG, l,r] @unchecked => {
         (fieldNumber: FieldNumber) =>
-          val (nextFieldLeft, leftF) = determineValueDefinition(kvp.kvpValue, customInterpreter)(fieldNumber)
+          val (nextFieldLeft, leftF) = determineValueDefinition[ALG, l](kvp.kvpValue, valueDefinition[ALG,l], customInterpreter)(fieldNumber)
           val (nextFieldTail, tailF) = kvpCoproduct(kvp.kvpTail, customInterpreter)(nextFieldLeft)
           (
             nextFieldTail,
@@ -100,7 +292,7 @@ object ProtobufSequentialOutputInterpreter {
           )
       case op: KvpSingleValueHead[ALG, h, t, tl, o] =>
         (fieldNumber: FieldNumber) =>
-          val (nextFieldHead, headF) = determineValueDefinition(op.fieldDefinition.op, customInterpreter)(fieldNumber)
+          val (nextFieldHead, headF) = determineValueDefinition[ALG,h](op.fieldDefinition.op, valueDefinition[ALG,h], customInterpreter)(fieldNumber)
           val (nextFieldTail, tailF) = kvpHList(op.tail, customInterpreter)(nextFieldHead)
           implicit val isHCons = op.isHCons
           (
@@ -196,168 +388,27 @@ object ProtobufSequentialOutputInterpreter {
     }
   }
 
-  def determineValueDefinition[ALG[_], A](kvp: CoproductDataDefinition[ALG, A], customInterpreter: CustomInterpreter[ALG]): EncodeToProto[A] =
-    kvp match {
-      case Left(kvp) => valueDefinition(kvp, customInterpreter)
-      case Right(vd) => customInterpreter.encodeToProto(vd)
-    }
-
   def valueDefinition[ALG[_], A](fgo: KvpValue[A], customInterpreter: CustomInterpreter[ALG]): EncodeToProto[A] = {
     fgo match {
-      case op: OptionalKvpValueDefinition[ALG, a] @unchecked =>
-        (fieldNumber: FieldNumber) =>
-          val (lastFieldNumber, fa) = determineValueDefinition(op.valueDefinitionOp, customInterpreter)(fieldNumber)
-          (lastFieldNumber,
-            (opt: Option[a]) => {
-              val optB = opt.map(fa)
-              (
-                () => optB.fold(0)(_._1()),
-                (outputStream: CodedOutputStream) =>
-                  optB.fold[Either[NonEmptyList[IOException], CodedOutputStream]](
-                    Right(outputStream))(item => item._2(outputStream))
-              )
-            }
-          )
-      case ob: BooleanData =>
-        (fieldNumber: FieldNumber) => (
-          fieldNumber + 1,
-          (bool: Boolean) =>
-          (
-            () => CodedOutputStream.computeBoolSize(fieldNumber, bool),
-            write(_.writeBool(fieldNumber, bool))
-          )
-        )
-      case rs: StringData =>
-        (fieldNumber: FieldNumber) => (
-          fieldNumber + 1,
-          (str: String) =>
-          (
-            () => CodedOutputStream.computeStringSize(fieldNumber, str),
-            write(_.writeString(fieldNumber, str))
-          )
-          )
-      case id: ShortData =>
-        (fieldNumber: FieldNumber) => (
-          (fieldNumber + 1,
-            (s: Short) => {
-              val intValue = s.toInt
-              (
-                () => CodedOutputStream.computeInt32Size(fieldNumber, intValue),
-                write(_.writeInt32(fieldNumber, intValue))
-              )
-            }
-          )
-        )
-      case id: IntData =>
-        (fieldNumber: FieldNumber) =>
-          (fieldNumber + 1,
-            (l: Int) =>
-            (
-              () => CodedOutputStream.computeInt32Size(fieldNumber, l),
-              write(_.writeInt32(fieldNumber, l))
-            )
-          )
-      case ri: LongData =>
-        (fieldNumber: FieldNumber) =>
-          (
-            fieldNumber + 1,
-            (l: Long) =>
-            (
-              () => CodedOutputStream.computeInt64Size(fieldNumber, l),
-              write(_.writeInt64(fieldNumber, l))
-            )
-          )
-      case uu: UuidData =>
-        (fieldNumber: FieldNumber) =>
-          (
-            fieldNumber + 1,
-            (u: UUID) =>
-              (
-                () => CodedOutputStream.computeStringSize(fieldNumber, u.toString),
-                write(_.writeString(fieldNumber, u.toString))
-              )
-          )
-      case dd: LocalDateTimeData =>
-        (fieldNumber: FieldNumber) =>
-          (
-            fieldNumber + 1,
-            (d: LocalDateTime) =>
-            {
-              val timestamp = Timestamp.newBuilder()
-                .setSeconds(d.toEpochSecond(ZoneOffset.UTC))
-                .setNanos(d.getNano)
-                .build()
-              val groupSize = timestamp.getSerializedSize
+      case op: OptionalKvpValueDefinition[ALG, a] @unchecked => optionalKvpValueDefinition[ALG,a](op, valueDefinition, customInterpreter)
+      case ob: BooleanData => booleanData
+      case rs: StringData => stringData
+      case id: ShortData => shortData
+      case id: IntData => intData
+      case ri: LongData => longData
+      case uu: UuidData => uuidData
+      case dd: LocalDateTimeData => localDateTimeData(zoneOffset)
+      case dt: LocalDateData => localDateData
+      case lt: LocalTimeData => localTimeData
+      case fd: FloatData => floatData
+      case dd: DoubleData => doubleData
+      case bd: BigDecimalData => bigDecimalData
+      case ba: ByteArrayData => byteArrayData
+      case esd: EnumerationData[e,a] => enumerationData
 
-              val encodeF: Encode = (outputStream: CodedOutputStream) => {
-                try {
-                  outputStream.writeTag(fieldNumber, 2)
-                  outputStream.writeUInt32NoTag(groupSize)
-                  timestamp.writeTo(outputStream)
-                  Right(outputStream)
-                } catch {
-                  case ex: IOException => Left(NonEmptyList.one(ex))
-                }
-              }
-              val allSize = () => {
-                groupSize + 1 + CodedOutputStream.computeUInt32SizeNoTag(groupSize)
-              }
-              (allSize, encodeF)
-            }
-          )
-      case dt: LocalDateData =>
-        (fieldNumber: FieldNumber) =>
-          (
-            fieldNumber + 1,
-            (d: LocalDate) =>
-            (
-              () => CodedOutputStream.computeInt64Size(fieldNumber, d.toEpochDay),
-              write(_.writeInt64(fieldNumber, d.toEpochDay))
-            )
-          )
-      case fd: FloatData =>
-        (fieldNumber: FieldNumber) =>
-          (
-            fieldNumber + 1,
-            (f: Float) =>
-            (
-              () =>
-                CodedOutputStream.computeFloatSize(fieldNumber, f),
-              write(_.writeFloat(fieldNumber, f))
-            )
-          )
-      case dd: DoubleData =>
-        (fieldNumber: FieldNumber) =>
-          (
-            fieldNumber + 1,
-            (d: Double) =>
-            (
-              () => CodedOutputStream.computeDoubleSize(fieldNumber, d),
-              write(_.writeDouble(fieldNumber, d))
-            )
-          )
-      case bd: BigDecimalData =>
-        (fieldNumber: FieldNumber) =>
-          (
-            fieldNumber + 1,
-            (d: BigDecimal) =>
-              (
-                () => CodedOutputStream.computeStringSize(fieldNumber, d.toString()),
-                write(_.writeString(fieldNumber, d.toString))
-              )
-          )
-      case ba: ByteArrayData =>
-        (fieldNumber: FieldNumber) => (
-          fieldNumber + 1,
-          (arr: Array[Byte]) =>
-          (
-            () => CodedOutputStream.computeByteArraySize(fieldNumber, arr),
-            write(_.writeByteArray(fieldNumber, arr))
-          )
-        )
       case ld: ListData[ALG,t] @unchecked=>
         (fieldNumber: FieldNumber) => {
-          val (lastFieldNumber, ft) = determineValueDefinition(ld.tDefinition, customInterpreter)(fieldNumber)
+          val (lastFieldNumber, ft) = determineValueDefinition[ALG,t](ld.tDefinition, valueDefinition[ALG,t], customInterpreter)(fieldNumber)
           (
             lastFieldNumber,
             (l: List[t]) => {
@@ -371,8 +422,8 @@ object ProtobufSequentialOutputInterpreter {
           )
         }
       case ed: EitherData[ALG, a, b] @unchecked =>
-        val encodeToProtobufA: EncodeToProto[a] = determineValueDefinition(ed.definitionA, customInterpreter)
-        val encodeToProtobufB: EncodeToProto[b] = determineValueDefinition(ed.definitionB, customInterpreter)
+        val encodeToProtobufA: EncodeToProto[a] = determineValueDefinition(ed.definitionA, valueDefinition[ALG,a], customInterpreter)
+        val encodeToProtobufB: EncodeToProto[b] = determineValueDefinition(ed.definitionB, valueDefinition[ALG,b], customInterpreter)
 
 
         (fieldNumber: FieldNumber) =>
@@ -388,16 +439,6 @@ object ProtobufSequentialOutputInterpreter {
                 case Left(aInput) => withFieldNumberA(aInput)
                 case Right(bInput) => withFieldNumberB(bInput)
               }
-          )
-      case esd: EnumerationData[e,a] =>
-        (fieldNumber: FieldNumber) =>
-          (
-            fieldNumber + 1,
-            (a: A) =>
-              (
-                () => CodedOutputStream.computeStringSize(fieldNumber, a.toString),
-                write(_.writeString(fieldNumber, a.toString))
-              )
           )
       case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
         (fieldNumber: FieldNumber) =>
@@ -443,31 +484,8 @@ object ProtobufSequentialOutputInterpreter {
                 computeEncodeF(coproduct)
               }
           )
-
-//        val dc = kvpHList(kvp.from)(0)
-//        (a: A) => {
-//          val hlist = kvp.fAtoH(a)
-//          val (childSizeF, childEncodeF) = dc(hlist)
-//          val size = childSizeF()
-//          val sizeF: ComputeSize = () => size
-//          val encodeF: Encode = (outputStream: CodedOutputStream) => {
-//            outputStream.writeTag(fieldNumber, 2)
-//            outputStream.writeUInt32NoTag(size)
-//            childEncodeF(outputStream)
-//          }
-//          (sizeF, encodeF)
-//        }
-
     }
   }
 
-  private def write(f: CodedOutputStream => Unit): Encode =
-    (codedOutputStream: CodedOutputStream) =>
-      try {
-        f(codedOutputStream)
-        Right(codedOutputStream)
-      } catch {
-        case ex: IOException => Left(NonEmptyList.one(ex))
-    }
 
 }

@@ -6,8 +6,8 @@ import cats.implicits._
 import com.bones.argonaut.{ArgonautEncoderInterpreter, ArgonautValidatorInterpreter}
 import com.bones.bson.{BsonEncoderInterpreter, BsonValidatorInterpreter}
 import com.bones.circe.{CirceEncoderInterpreter, CirceValidatorInterpreter}
-import com.bones.protobuf.{ProtobufSequentialInputInterpreter, ProtobufSequentialOutputInterpreter}
-import com.bones.scalacheck.{Scalacheck, NoAlgebraGen}
+import com.bones.protobuf.{ProtobufSequentialInputInterpreter, ProtobufSequentialOutputInterpreter, UtcProtobufSequentialInputInterpreter, UtcProtobufSequentialOutputInterpreter}
+import com.bones.scalacheck.{NoAlgebraGen, Scalacheck}
 import com.bones.schemas.Schemas.allSupportCaseClass
 import com.bones.sjson.JsonStringEncoderInterpreter
 
@@ -30,8 +30,8 @@ object InterchangePerformanceTests extends App {
   val bsonValidator = BsonValidatorInterpreter.fromSchema(schema)
   val bsonEncoder = BsonEncoderInterpreter.fromSchema(schema)
 
-  val protoValidator = ProtobufSequentialInputInterpreter.fromBytes(schema)
-  val protoEncoder = ProtobufSequentialOutputInterpreter.encodeToBytes(schema)
+  val protoValidator = UtcProtobufSequentialInputInterpreter.fromBytes(schema)
+  val protoEncoder = UtcProtobufSequentialOutputInterpreter.encodeToBytes(schema)
 
 
 
