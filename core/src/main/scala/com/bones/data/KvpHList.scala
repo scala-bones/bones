@@ -21,10 +21,11 @@ sealed abstract class KvpHList[ALG[_], H <: HList, N <: Nat] {
 
   def convert[A: Manifest](implicit gen: Generic.Aux[A, H]): HListConvert[ALG, H, N, A] = convert[A]()
 
-  def tupled[Tup<:Product:Manifest](
-                                     implicit tupler: Tupler.Aux[H,Tup],
-                                     gen: Generic[Tup]
-                                   ): HListConvert[ALG, H,N,Tup] = tupled[Tup]()
+  def tupled[Tup<:Product:Manifest]
+  (
+    implicit tupler: Tupler.Aux[H,Tup],
+    gen: Generic[Tup]
+  ): HListConvert[ALG, H,N,Tup] = tupled[Tup]()
 
   def tupled[Tup<:Product:Manifest](tupledValidations: ValidationOp[Tup]*)(
     implicit tupler: Tupler.Aux[H,Tup],

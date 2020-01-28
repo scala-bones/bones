@@ -1,6 +1,6 @@
 package com.bones.data
 
-import java.time.{LocalDate, LocalDateTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util.UUID
 
 import com.bones.syntax.NoAlgebra
@@ -49,8 +49,6 @@ trait KeyValueDefinitionSugar {
 
 /** Starting point for obtaining a value definition. */
 trait Sugar {
-
-  import KeyValueDefinition._
 
   /** Indicates that the data tied to this key is a String type that must pass the specified validations */
   def string(validationOp: ValidationOp[String]*) =
@@ -121,6 +119,10 @@ trait Sugar {
   def localDate(v: ValidationOp[LocalDate]*) = LocalDateData(v.toList)
 
   val localDate: LocalDateData = LocalDateData(List.empty)
+
+  def localTime(v: ValidationOp[LocalTime]*): LocalTimeData = LocalTimeData(v.toList)
+
+  val localTime: LocalTimeData = localTime()
 
   /** Indicates that the data tied to this key is a BigDecimal that must pass the specified validations. */
   def bigDecimal(v: ValidationOp[BigDecimal]*) = BigDecimalData(v.toList)

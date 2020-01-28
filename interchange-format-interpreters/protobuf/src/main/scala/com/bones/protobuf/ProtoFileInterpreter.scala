@@ -45,9 +45,6 @@ object ProtoFileInterpreter {
   case object DoubleType extends DataType {
     val name = "double"
   }
-  case object PbString extends DataType {
-    val name = "string"
-  }
   case object Bytes extends DataType {
     val name = "bytes"
   }
@@ -144,14 +141,6 @@ object ProtoFileInterpreter {
      """.stripMargin
   }
 
-//  def oneOfToProtoFile(oneOf: One): String = {
-//    s"""
-//       |  oneof ${oneOf.name} {
-//       |${messageFieldsToProtoFile(oneOf.messageFields, "    ", false)}
-//       |  }
-//     """.stripMargin
-//  }
-
   def fromSchema[A](dc: BonesSchema[NoAlgebra, A]): Message =
     fromSchemaCustomAlgebra(dc, NoAlgebraCustomInterpreter)
 
@@ -225,6 +214,42 @@ object ProtoFileInterpreter {
       case Right(alg) => customerInterpreter.toMessageField(alg)
     }
 
+  def booleanMessageField(name: String, index: Int): (MessageField, Vector[NestedType], Int) =
+    (MessageField(Bool, true, false, name, index), Vector.empty, index)
+
+  def intMessageField(name: String, index: Int): (MessageField, Vector[NestedType], Int) =
+    (MessageField(Int32, true, false, name, index), Vector.empty, index)
+
+  def longMessageField(name: String, index: Int): (MessageField, Vector[NestedType], Int) =
+    (MessageField(Int64, true, false, name, index), Vector.empty, index)
+
+  def stringMessageField(name: String, index: Int): (MessageField, Vector[NestedType], Int) =
+    (MessageField(StringRequireUtf8, true, false, name, index), Vector.empty, index)
+
+  def byteArrayMessageField(name: String, index:Int): (MessageField, Vector[NestedType], Int) =
+    (MessageField(Bytes, true, false, name, index), Vector.empty, index)
+
+  def floatMessageField(name: String, index: Int): (MessageField, Vector[NestedType], Int) =
+    (MessageField(FloatType, true, false, name, index), Vector.empty, index)
+
+  def doubleMessageField(name: String, index: Int): (MessageField, Vector[NestedType], Int) =
+    (MessageField(DoubleType, true, false, name, index), Vector.empty, index)
+
+  def timestampMessageField(name: String, index: Int): (MessageField, Vector[NestedType], Int) = {
+    val messageFields: Vector[NestedMessage] =
+      Vector(
+        NestedMessage("Timestamp",
+          Vector(
+            MessageField(Int64, true, false, "seconds", 1),
+            MessageField(Int64, true, false, "nanos", 2)
+          )
+        )
+      )
+    (MessageField(NestedDataType("Timestamp"), true, false, name, index), messageFields, index)
+  }
+
+
+
   def valueDefinition[ALG[_], A](fgo: KvpValue[A], customerInterpreter: CustomInterpreter[ALG])
     : (Name, Int) => (MessageField, Vector[NestedType], Int) =
     (name, index) =>
@@ -232,41 +257,19 @@ object ProtoFileInterpreter {
         case op: OptionalKvpValueDefinition[ALG, a] @unchecked =>
           val result = determineValueDefinition(op.valueDefinitionOp, customerInterpreter)(name, index)
           (result._1.copy(required = false), result._2, index)
-        case ob: BooleanData =>
-          (MessageField(Bool, true, false, name, index), Vector.empty, index)
-        case rs: StringData =>
-          (MessageField(StringRequireUtf8, true, false, name, index),
-           Vector.empty, index)
-        case df: ShortData =>
-          (MessageField(Int32, true, false, name, index), Vector.empty, index)
-        case id: IntData =>
-          (MessageField(Int32, true, false, name, index), Vector.empty, index)
-        case ri: LongData =>
-          (MessageField(Int64, true, false, name, index), Vector.empty, index)
-        case uu: UuidData =>
-          (MessageField(PbString, true, false, name, index), Vector.empty, index)
-        case dd: LocalDateTimeData => {
-          val messageFields: Vector[NestedMessage] =
-            Vector(
-              NestedMessage("Timestamp",
-                Vector(
-                  MessageField(Int64, true, false, "seconds", 1),
-                  MessageField(Int64, true, false, "nanos", 2)
-                )
-              )
-            )
-          (MessageField(NestedDataType("Timestamp"), true, false, name, index), messageFields, index)
-        }
-        case dt: LocalDateData =>
-          (MessageField(Int64, true, false, name, index), Vector.empty, index)
-        case fd: FloatData =>
-          (MessageField(FloatType, true, false, name, index), Vector.empty, index)
-        case fd: DoubleData =>
-          (MessageField(DoubleType, true, false, name, index), Vector.empty, index)
-        case bd: BigDecimalData =>
-          (MessageField(PbString, true, false, name, index), Vector.empty, index)
-        case ba: ByteArrayData =>
-          (MessageField(Bytes, true, false, name, index), Vector.empty, index)
+        case ob: BooleanData => booleanMessageField(name, index)
+        case rs: StringData => stringMessageField(name, index)
+        case df: ShortData => intMessageField(name, index)
+        case id: IntData => intMessageField(name, index)
+        case ri: LongData => longMessageField(name, index)
+        case uu: UuidData => stringMessageField(name, index)
+        case dd: LocalDateTimeData => timestampMessageField(name, index)
+        case dt: LocalDateData => longMessageField(name, index)
+        case lt: LocalTimeData => longMessageField(name, index)
+        case fd: FloatData => floatMessageField(name, index)
+        case fd: DoubleData => doubleMessageField(name, index)
+        case bd: BigDecimalData => stringMessageField(name, index)
+        case ba: ByteArrayData => byteArrayMessageField(name, index)
         case ld: ListData[ALG, t] @unchecked =>
           val result = determineValueDefinition(ld.tDefinition, customerInterpreter)(name, index)
           (result._1.copy(repeated = true), result._2, index)
@@ -275,8 +278,7 @@ object ProtoFileInterpreter {
           val (messageFieldB, nestedTypesB, lastIndex) = determineValueDefinition(ed.definitionB, customerInterpreter)(s"${name}Right", nextIndex + 1)
           val oneOfName = toSnake(name.capitalize)
           (MessageField(EitherDataType(oneOfName, messageFieldA, messageFieldB), false, false, name, index), Vector.empty, lastIndex)
-        case esd: EnumerationData[e,a] =>
-          (MessageField(PbString, true, false, name, index), Vector.empty, index)
+        case esd: EnumerationData[e,a] => stringMessageField(name, index)
         case kvp: KvpCoproductValue[ALG, c] @unchecked =>
           val (fields, nestedTypes,nextIndex) = kvpCoproduct(kvp.kvpCoproduct, customerInterpreter)(index)
           val nestedMessageFields: Vector[MessageField] = nestedTypes.zipWithIndex.map(nt => MessageField(NestedDataType(nt._1.name), false, false, nt._1.name, index + nt._2))

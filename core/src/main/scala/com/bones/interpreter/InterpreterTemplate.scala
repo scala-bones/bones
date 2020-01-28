@@ -38,6 +38,7 @@ class InterpreterTemplate {
       case uu: UuidData => ???
       case dd: LocalDateTimeData => ???
       case ld: LocalDateData => ???
+      case lt: LocalTimeData => ???
       case fd: FloatData => ???
       case sd: ShortData => ???
       case id: DoubleData => ???

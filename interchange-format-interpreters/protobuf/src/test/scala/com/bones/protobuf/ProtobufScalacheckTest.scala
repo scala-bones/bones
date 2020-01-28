@@ -12,8 +12,8 @@ import org.scalatestplus.scalacheck.Checkers
 
 class ProtobufScalacheckTest extends FunSuite with Checkers {
 
-  val encode = ProtobufSequentialOutputInterpreter.encodeToBytes(Schemas.allSupportCaseClass)
-  val decode = ProtobufSequentialInputInterpreter.fromBytes(Schemas.allSupportCaseClass)
+  val encode = UtcProtobufSequentialOutputInterpreter.encodeToBytes(Schemas.allSupportCaseClass)
+  val decode = UtcProtobufSequentialInputInterpreter.fromBytes(Schemas.allSupportCaseClass)
 
 //  implicit override val generatorDrivenConfig =
 //    PropertyCheckConfiguration(minSuccessful = 10000, workers = 5)

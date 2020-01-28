@@ -34,12 +34,12 @@ class ProtobufSequentialInputInterpreterTest extends FunSuite with Checkers with
   ignore("single items") {
 
     val denver = Loc("Denver", "CO")
-    val bytes = ProtobufSequentialOutputInterpreter.encodeToBytes(loc)(denver)
+    val bytes = UtcProtobufSequentialOutputInterpreter.encodeToBytes(loc)(denver)
 
     val is = new ByteArrayInputStream(bytes)
     val cin: CodedInputStream = CodedInputStream.newInstance(is)
 
-    val isItDenver = ProtobufSequentialInputInterpreter.fromBytes(loc)(bytes)
+    val isItDenver = UtcProtobufSequentialInputInterpreter.fromBytes(loc)(bytes)
 
     isItDenver match {
       case Right(l) => l mustBe denver
@@ -59,11 +59,11 @@ class ProtobufSequentialInputInterpreterTest extends FunSuite with Checkers with
 
     val str = ProtoFileInterpreter.messageToProtoFile(result)
 
-    val bytes = ProtobufSequentialOutputInterpreter.encodeToBytes(person)(monica)
+    val bytes = UtcProtobufSequentialOutputInterpreter.encodeToBytes(person)(monica)
 
     println("result:" + Base64.getEncoder.encodeToString(bytes))
 
-    val isItMonica = ProtobufSequentialInputInterpreter.fromBytes(person)(bytes)
+    val isItMonica = UtcProtobufSequentialInputInterpreter.fromBytes(person)(bytes)
 
     isItMonica match {
       case Right(person) => person mustBe monica

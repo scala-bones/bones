@@ -24,7 +24,20 @@ class UtilTest extends FunSuite with Checkers with MustMatchers {
   }
   test("string to big decimal failure") {
     val input = "abcd"
-    Util.stringToBigDecimal(input, path) mustBe Left(NonEmptyList.one(CanNotConvert(path, input, classOf[BigDecimal])))
+    Util.stringToBigDecimal(input, path) match {
+      case Right(success) => fail(s"unexpected success ${success}")
+      case Left(err) => {
+        err.head match {
+          case cnc: CanNotConvert[_,_] => {
+            cnc.path mustBe path
+            cnc.input mustBe input
+            cnc.toType mustBe classOf[BigDecimal]
+            cnc.cause.isDefined mustBe true
+          }
+          case _ => fail(s"unexpected error: ${err}")
+        }
+      }
+    }
   }
 
   test("string to uuid success") {
@@ -34,7 +47,20 @@ class UtilTest extends FunSuite with Checkers with MustMatchers {
 
   test("string to uuid failure") {
     val input = "not uuid"
-    Util.stringToUuid(input, path) mustBe Left(NonEmptyList.one(CanNotConvert(path, input, classOf[ju.UUID])))
+    Util.stringToUuid(input, path) match {
+      case Right(success) => fail(s"unexpected success ${success}")
+      case Left(err) => {
+        err.head match {
+          case cnc: CanNotConvert[_,_] => {
+            cnc.path mustBe path
+            cnc.input mustBe input
+            cnc.toType mustBe classOf[ju.UUID]
+            cnc.cause.isDefined mustBe true
+          }
+          case _ => fail(s"unexpected error: ${err}")
+        }
+      }
+    }
   }
 
   test("string to local date success") {
@@ -46,7 +72,20 @@ class UtilTest extends FunSuite with Checkers with MustMatchers {
   test("string to local date failure") {
     val input = "2019-88-33"
     val dateFormat = DateTimeFormatter.ISO_LOCAL_DATE
-    Util.stringToLocalDate(input, dateFormat, path) mustBe Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDate])))
+    Util.stringToLocalDate(input, dateFormat, path) match {
+      case Right(success) => fail(s"unexpected success ${success}")
+      case Left(err) => {
+        err.head match {
+          case cnc: CanNotConvert[_, _] => {
+            cnc.path mustBe path
+            cnc.input mustBe input
+            cnc.toType mustBe classOf[LocalDate]
+            cnc.cause.isDefined mustBe true
+          }
+          case _ => fail(s"unexpected error: ${err}")
+        }
+      }
+    }
   }
 
   test("string to local date time success") {
@@ -58,11 +97,24 @@ class UtilTest extends FunSuite with Checkers with MustMatchers {
   test("string to local date time failure") {
     val input = "2019-3834"
     val dateFormat = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-    Util.stringToLocalDateTime(input, dateFormat, path) mustBe Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDateTime])))
+    Util.stringToLocalDateTime(input, dateFormat, path) match {
+      case Right(success) => fail(s"unexpected success ${success}")
+      case Left(err) => {
+        err.head match {
+          case cnc: CanNotConvert[_, _] => {
+            cnc.path mustBe path
+            cnc.input mustBe input
+            cnc.toType mustBe classOf[LocalDateTime]
+            cnc.cause.isDefined mustBe true
+          }
+          case _ => fail(s"unexpected error: ${err}")
+        }
+      }
+    }
   }
 
-  val error1 = CanNotConvert(path, "input1", classOf[LocalDate])
-  val error2 = CanNotConvert(path, "input2", classOf[LocalDate])
+  val error1 = CanNotConvert(path, "input1", classOf[LocalDate], Some(new Throwable()))
+  val error2 = CanNotConvert(path, "input2", classOf[LocalDate], Some(new Throwable()))
   test("eitherMap2 accumulate error") {
     val result = Util.eitherMap2(Left(NonEmptyList.one(error1)), Left(NonEmptyList.one(error2)))( (a,b) => ??? )
     result mustBe Left(NonEmptyList(error1, List(error2)))

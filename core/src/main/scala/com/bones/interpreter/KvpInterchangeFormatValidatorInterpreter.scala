@@ -300,7 +300,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
                 decoder.decode(str)
               }.toEither.left.map(thr =>
                 NonEmptyList.one(
-                  CanNotConvert(path, str, classOf[Array[Byte]])))
+                  CanNotConvert(path, str, classOf[Array[Byte]], None)))
             } yield arr
 
         case ed: EitherData[ALG, a, b] @unchecked =>
@@ -310,9 +310,9 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
             optionalA(in, path) match {
               case Left(err) =>
                 val nonWrongTypeError = err.toList.filter {
-                  case WrongTypeError(_, _, _) => false
+                  case WrongTypeError(_, _, _,_) => false
                   case RequiredData(_, _) => false
-                  case CanNotConvert(_, _, _) => false
+                  case CanNotConvert(_, _, _, _) => false
                   case _ => true
                 }
                 if (nonWrongTypeError.isEmpty) {
