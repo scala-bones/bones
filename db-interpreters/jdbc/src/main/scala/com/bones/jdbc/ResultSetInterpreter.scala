@@ -102,7 +102,7 @@ object ResultSetInterpreter {
       Path,
       FieldName) => ResultSet => Either[NonEmptyList[ExtractionError], A] =
     fgo match {
-      case op: OptionalKvpValueDefinition[ALG, a] =>
+      case op: OptionalKvpValueDefinition[ALG, a] @unchecked =>
         (path, fieldName) =>
           val child = determineValueDefinition(op.valueDefinitionOp, customInterpreter)(path, fieldName)
           rs => {
@@ -189,7 +189,7 @@ object ResultSetInterpreter {
             e <- stringToEnumeration[e,a](r, path, esd.enumeration)(esd.manifestOfA)
           } yield e.asInstanceOf[A]
         }:Either[NonEmptyList[com.bones.data.Error.ExtractionError], A]
-      case kvp: KvpHListValue[ALG, h, hl] =>
+      case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
         val groupF = kvpHList(kvp.kvpHList, customInterpreter)
         (path, _) => //Ignore fieldName here
           groupF(path).andThen(_.map(_.asInstanceOf[A]))

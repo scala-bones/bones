@@ -56,7 +56,7 @@ object BsonValidatorInterpreter
       case _: BSONDocument => classOf[Object]
       case _ => classOf[Any]
     }
-    Left(NonEmptyList.one(WrongTypeError(path, expected, invalid)))
+    Left(NonEmptyList.one(WrongTypeError(path, expected, invalid, None)))
   }
 
   override def headValue[ALG[_],A](
@@ -90,11 +90,11 @@ object BsonValidatorInterpreter
       case BSONInteger(i) =>
         Try({
           i.toShort
-        }).toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Short], classOf[Integer])))
+        }).toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Short], classOf[Integer], None)))
       case BSONLong(l) =>
         Try({
           l.toShort
-        }).toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Short], classOf[Long])))
+        }).toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Short], classOf[Long], None)))
       case x => invalidValue(x, classOf[Long], path)
     }
 
@@ -104,7 +104,7 @@ object BsonValidatorInterpreter
       case BSONLong(l) =>
         Try({
           l.toInt
-        }).toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Byte], classOf[Long])))
+        }).toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Byte], classOf[Long], None)))
       case x => invalidValue(x, classOf[Long], path)
     }
 
@@ -169,7 +169,7 @@ object BsonValidatorInterpreter
           .sequence.toEither match {
           case Right(s) => Right(s)
           case Left(_) =>
-            Left(NonEmptyList.one(CanNotConvert(path, arr, classOf[Seq[_]])))
+            Left(NonEmptyList.one(CanNotConvert(path, arr, classOf[Seq[_]], None)))
         }
       case x => invalidValue(x, classOf[Array[_]], path)
 
@@ -180,17 +180,17 @@ object BsonValidatorInterpreter
     in match {
       case BSONDouble(d) =>
         Try({d.toFloat})
-          .toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Float], classOf[Double])))
+          .toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Float], classOf[Double], None)))
       case dec:BSONDecimal =>
         BSONDecimal.toBigDecimal(dec)
           .flatMap(d => Try {d.toFloat} )
-          .toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Float], classOf[BSONDecimal])))
+          .toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Float], classOf[BSONDecimal], None)))
       case BSONInteger(i) =>
         Try({i.toFloat})
-          .toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Float], classOf[Int])))
+          .toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Float], classOf[Int], None)))
       case BSONLong(l) =>
         Try({l.toFloat})
-          .toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Float], classOf[Long])))
+          .toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Float], classOf[Long], None)))
       case x => invalidValue(x, classOf[Float], path)
     }
   }
@@ -202,13 +202,13 @@ object BsonValidatorInterpreter
       case dec:BSONDecimal =>
         BSONDecimal.toBigDecimal(dec)
           .flatMap(d => Try {d.toDouble} )
-          .toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Float], classOf[BSONDecimal])))
+          .toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Float], classOf[BSONDecimal], None)))
       case BSONInteger(i) =>
         Try({i.toDouble})
-          .toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Double], classOf[Int])))
+          .toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Double], classOf[Int], None)))
       case BSONLong(l) =>
         Try({l.toDouble})
-          .toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Double], classOf[Long])))
+          .toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, classOf[Double], classOf[Long], None)))
       case x => invalidValue(x, classOf[Float], path)
     }
 
@@ -223,8 +223,7 @@ object BsonValidatorInterpreter
         BSONDecimal
           .toBigDecimal(bd)
           .map(Right(_))
-          .getOrElse(Left(
-            NonEmptyList.one(CanNotConvert(path, in, classOf[BigDecimal]))))
+          .getOrElse(Left(NonEmptyList.one(CanNotConvert(path, in, classOf[BigDecimal], None))))
       case BSONInteger(i) => Right(BigDecimal(i))
       case BSONLong(l) => Right(BigDecimal(l))
       case x => invalidValue(x, classOf[BigDecimal], path)

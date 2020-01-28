@@ -18,7 +18,7 @@ import com.bones.oas3.SwaggerCoreInterpreter.CustomSwaggerInterpreter
 import com.bones.protobuf.ProtoFileInterpreter.Name
 import com.bones.protobuf.ProtobufSequentialInputInterpreter.ExtractFromProto
 import com.bones.protobuf.ProtobufSequentialOutputInterpreter.EncodeToProto
-import com.bones.protobuf.{ProtoFileInterpreter, ProtobufSequentialInputInterpreter, ProtobufSequentialOutputInterpreter}
+import com.bones.protobuf._
 import com.bones.syntax.NoAlgebra
 import fs2.Stream
 import io.circe.Json
@@ -224,25 +224,24 @@ object ClassicCrudInterpreter {
   * @tparam F An subclass of the Sync typeclass
   * @tparam ID The ID type.
   */
-case class ClassicCrudInterpreter[ALG[_],A,E,F[_], ID:Manifest](
-                                                                 path: String,
-                                                                 charset: java.nio.charset.Charset = StandardCharsets.UTF_8,
-                                                                 customJsonInterpreter: CustomInterpreter[ALG, Json],
-                                                                 customBsonInterpreter: CustomInterpreter[ALG, BSONValue],
-                                                                 customProtobufInterpreter: ProtobufInterpreter[ALG],
-                                                                 customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
-                                                                 schema: BonesSchema[ALG,A],
-                                                                 idDefinition: KeyValueDefinition[ALG,ID],
-                                                                 pathStringToId: String => Either[E,ID],
-                                                                 errorSchema: BonesSchema[ALG,E],
-                                                                 createF: Option[A => F[Either[E, (ID,A)]]] = None,
-                                                                 readF: Option[ID => F[Either[E,(ID,A)]]] = None,
-                                                                 updateF: Option[(ID,A) => F[Either[E,(ID,A)]]] = None,
-                                                                 deleteF: Option[ID => F[Either[E,(ID,A)]]] = None,
-                                                                 searchF: Option[() => Stream[F, (ID,A)]]
-                                         )(
-                              implicit F: Sync[F]
-                            ) {
+case class ClassicCrudInterpreter[ALG[_],A,E,F[_], ID:Manifest]
+(
+  path: String,
+  charset: java.nio.charset.Charset = StandardCharsets.UTF_8,
+  customJsonInterpreter: CustomInterpreter[ALG, Json],
+  customBsonInterpreter: CustomInterpreter[ALG, BSONValue],
+  customProtobufInterpreter: ProtobufInterpreter[ALG],
+  customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
+  schema: BonesSchema[ALG,A],
+  idDefinition: KeyValueDefinition[ALG,ID],
+  pathStringToId: String => Either[E,ID],
+  errorSchema: BonesSchema[ALG,E],
+  createF: Option[A => F[Either[E, (ID,A)]]] = None,
+  readF: Option[ID => F[Either[E,(ID,A)]]] = None,
+  updateF: Option[(ID,A) => F[Either[E,(ID,A)]]] = None,
+  deleteF: Option[ID => F[Either[E,(ID,A)]]] = None,
+  searchF: Option[() => Stream[F, (ID,A)]]
+)(implicit F: Sync[F]) {
 
   /** Add or overwrite the existing user defined function to create. Adding a create function
     * will ensure the creation of a Create(PUT) endpoint.
@@ -295,8 +294,12 @@ case class ClassicCrudInterpreter[ALG[_],A,E,F[_], ID:Manifest](
   val encodeToCirceInterpreter = CirceEncoderInterpreter.isoInterpreter
   val validatedFromCirceInterpreter = CirceValidatorInterpreter.isoInterpreter
 
-  case class DataTransformation[I, O, E](description: String,
-                                         f: I => Either[E, O])
+  val protobufSequentialInputInterpreter: ProtobufSequentialInputInterpreter =
+    UtcProtobufSequentialInputInterpreter
+  val protobufSequentialOutputInterpreter: ProtobufSequentialOutputInterpreter =
+    UtcProtobufSequentialOutputInterpreter
+
+  case class DataTransformation[I, O, E](description: String, f: I => Either[E, O])
 
 
   def createRoutes: HttpRoutes[F] = {
@@ -336,10 +339,10 @@ case class ClassicCrudInterpreter[ALG[_],A,E,F[_], ID:Manifest](
         )
 
         val pInputInterpreter =
-          ProtobufSequentialInputInterpreter.fromCustomBytes(schemaWithId, customProtobufInterpreter)
-        val pOutputEncoder = ProtobufSequentialOutputInterpreter.encodeToBytesCustomAlgebra[ALG,(ID,A)](
+          protobufSequentialInputInterpreter.fromCustomBytes(schemaWithId, customProtobufInterpreter)
+        val pOutputEncoder = protobufSequentialOutputInterpreter.encodeToBytesCustomAlgebra[ALG,(ID,A)](
           schemaWithId, customProtobufInterpreter)
-        val protobufErrorEncoder = ProtobufSequentialOutputInterpreter.encodeToBytesCustomAlgebra(
+        val protobufErrorEncoder = protobufSequentialOutputInterpreter.encodeToBytesCustomAlgebra(
           errorSchema, customProtobufInterpreter)
 
         val protoBuf = PutPostInterpreterGroup[(ID,A), (ID,A), E](
@@ -373,9 +376,9 @@ case class ClassicCrudInterpreter[ALG[_],A,E,F[_], ID:Manifest](
         re => BsonEncoderInterpreter.bsonResultToBytes(bErrorF(re))
       )
 
-      val pOutputF = ProtobufSequentialOutputInterpreter.encodeToBytesCustomAlgebra(schemaWithId, customProtobufInterpreter)
+      val pOutputF = protobufSequentialOutputInterpreter.encodeToBytesCustomAlgebra(schemaWithId, customProtobufInterpreter)
       val pErrorF =
-        ProtobufSequentialOutputInterpreter.encodeToBytesCustomAlgebra(errorSchema, customProtobufInterpreter)
+        protobufSequentialOutputInterpreter.encodeToBytesCustomAlgebra(errorSchema, customProtobufInterpreter)
       val protoBuf = GetInterpreterGroup[(ID,A), E](
         "application/protobuf",
         pOutputF,
@@ -440,11 +443,11 @@ case class ClassicCrudInterpreter[ALG[_],A,E,F[_], ID:Manifest](
         )
 
         val pInputF =
-          ProtobufSequentialInputInterpreter.fromCustomBytes(schema, customProtobufInterpreter)
-        val pOutputF = ProtobufSequentialOutputInterpreter
+          protobufSequentialInputInterpreter.fromCustomBytes(schema, customProtobufInterpreter)
+        val pOutputF = protobufSequentialOutputInterpreter
           .encodeToBytesCustomAlgebra(schemaWithId, customProtobufInterpreter)
         val pErrorF =
-          ProtobufSequentialOutputInterpreter.encodeToBytesCustomAlgebra(errorSchema, customProtobufInterpreter)
+          protobufSequentialOutputInterpreter.encodeToBytesCustomAlgebra(errorSchema, customProtobufInterpreter)
         val protoBuf = PutPostInterpreterGroup[A, (ID,A), E](
           "application/protobuf",
           pInputF,
@@ -478,9 +481,9 @@ case class ClassicCrudInterpreter[ALG[_],A,E,F[_], ID:Manifest](
         )
 
         val pOutputF =
-          ProtobufSequentialOutputInterpreter.encodeToBytesCustomAlgebra(schemaWithId, customProtobufInterpreter)
+          protobufSequentialOutputInterpreter.encodeToBytesCustomAlgebra(schemaWithId, customProtobufInterpreter)
         val pErrorF =
-          ProtobufSequentialOutputInterpreter.encodeToBytesCustomAlgebra(errorSchema, customProtobufInterpreter)
+          protobufSequentialOutputInterpreter.encodeToBytesCustomAlgebra(errorSchema, customProtobufInterpreter)
         val protobuf = DeleteInterpreterGroup[(ID,A), E](
           "application/protobuf",
           pOutputF,

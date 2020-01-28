@@ -1,20 +1,19 @@
-import com.google.protobuf.{ByteString, CodedInputStream}
-import java.io.ByteArrayOutputStream
-import java.io.IOException
+import java.io.{ByteArrayOutputStream, IOException}
 import java.math.BigDecimal
 import java.nio.charset.Charset
 import java.time.{LocalDate, LocalDateTime, ZoneOffset}
-import java.util.{Base64, Date, UUID}
+import java.util.{Base64, UUID}
 
-import com.bones.protobuf.{ProtobufSequentialInputInterpreter, ProtobufSequentialOutputInterpreter}
+import com.bones.protobuf.{UtcProtobufSequentialInputInterpreter, UtcProtobufSequentialOutputInterpreter}
 import com.bones.schemas.Schemas
 import com.bones.schemas.Schemas.Currency
+import com.google.protobuf.ByteString
 import org.scalatest.{FunSuite, MustMatchers}
 
 class AllSupportedOuterClassTest extends FunSuite with MustMatchers {
 
-  val encode = ProtobufSequentialOutputInterpreter.encodeToBytes(Schemas.allSupportCaseClass)
-  val decode = ProtobufSequentialInputInterpreter.fromBytes(Schemas.allSupportCaseClass)
+  val encode = UtcProtobufSequentialOutputInterpreter.encodeToBytes(Schemas.allSupportCaseClass)
+  val decode = UtcProtobufSequentialInputInterpreter.fromBytes(Schemas.allSupportCaseClass)
 
 
 

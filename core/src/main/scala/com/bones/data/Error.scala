@@ -29,7 +29,7 @@ object Error {
     * @param providedType What was actually provided.
     * @tparam T The expected type
     */
-  case class WrongTypeError[T](path: List[String], expectedType: Class[T], providedType: Class[_])
+  case class WrongTypeError[T](path: List[String], expectedType: Class[T], providedType: Class[_], cause: Option[Throwable])
       extends ExtractionError
 
   /**
@@ -42,7 +42,7 @@ object Error {
     * @tparam A Input type
     * @tparam T Type to convert to
     */
-  case class CanNotConvert[A, T](path: List[String], input: A, toType: Class[T])
+  case class CanNotConvert[A, T](path: List[String], input: A, toType: Class[T], cause: Option[Throwable])
       extends ExtractionError
 
   /** Used when a required piece of data is missing

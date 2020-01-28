@@ -82,7 +82,7 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
 
     in.obj
       .toRight[NonEmptyList[ExtractionError]](
-        NonEmptyList.one(WrongTypeError(path, classOf[Array[_]], in.getClass)))
+        NonEmptyList.one(WrongTypeError(path, classOf[Array[_]], in.getClass, None)))
       .flatMap(
         _.toList
           .find(f => f._1 === kv.key)
@@ -95,7 +95,7 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
       in: Json,
       path: List[String]): Either[NonEmptyList[ExtractionError], String] =
     in.string.toRight(
-      NonEmptyList.one(WrongTypeError(path, clazz, in.getClass)))
+      NonEmptyList.one(WrongTypeError(path, clazz, in.getClass, None)))
 
 
   override def extractShort[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: Json, path: Path):
@@ -103,7 +103,7 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
     in.number
     .flatMap(n => n.toShort)
       .toRight(
-        NonEmptyList.one(WrongTypeError(path, classOf[Short], in.getClass)))
+        NonEmptyList.one(WrongTypeError(path, classOf[Short], in.getClass, None)))
 
   override def extractInt[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: Json,
@@ -111,7 +111,7 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
     in.number
       .flatMap(n => n.toInt)
       .toRight(
-        NonEmptyList.one(WrongTypeError(path, classOf[Int], in.getClass)))
+        NonEmptyList.one(WrongTypeError(path, classOf[Int], in.getClass, None)))
 
   override def extractLong[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: Json,
@@ -119,47 +119,47 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
     in.number
       .flatMap(_.toLong)
       .toRight(
-        NonEmptyList.one(WrongTypeError(path, classOf[Long], in.getClass)))
+        NonEmptyList.one(WrongTypeError(path, classOf[Long], in.getClass, None)))
 
   override def extractBool[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: Json,
       path: List[String]): Either[NonEmptyList[ExtractionError], JsonBoolean] =
     in.bool.toRight(
-      NonEmptyList.one(WrongTypeError(path, classOf[Boolean], in.getClass)))
+      NonEmptyList.one(WrongTypeError(path, classOf[Boolean], in.getClass, None)))
 
   override def extractUuid[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: Json,
       path: List[String]): Either[NonEmptyList[ExtractionError], UUID] =
     in.string
       .toRight(
-        NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass)))
+        NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass, None)))
       .flatMap(stringToUuid(_, path))
 
   override def extractLocalDateTime[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: Json, path: List[String])
     : Either[NonEmptyList[ExtractionError], LocalDateTime] =
     in.string
       .toRight(
-        NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass)))
+        NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass, None)))
       .flatMap(stringToLocalDateTime(_, localDateTimeFormatter, path))
 
   override def extractLocalDate[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: Json, path: List[String])
     : Either[NonEmptyList[ExtractionError], LocalDate] =
     in.string
-      .toRight(NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass)))
+      .toRight(NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass, None)))
     .flatMap(stringToLocalDate(_,localDateFormatter, path))
 
 
   override def extractLocalTime[ALG[_], A](op: CoproductDataDefinition[ALG, A])(in: Json, path: Path)
     : Either[NonEmptyList[ExtractionError], LocalTime] =
     in.string
-      .toRight(NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass)))
+      .toRight(NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass, None)))
       .flatMap(stringToLocalTime(_,localTimeFormatter, path))
 
   override def extractArray[ALG[_],A](op: ListData[ALG,A])(
       in: Json,
       path: List[String]): Either[NonEmptyList[ExtractionError], Seq[Json]] =
     in.array.toRight(
-      NonEmptyList.one(WrongTypeError(path, classOf[Array[_]], in.getClass)))
+      NonEmptyList.one(WrongTypeError(path, classOf[Array[_]], in.getClass, None)))
 
   override def extractFloat[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: Json,
@@ -167,7 +167,7 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
     in.number
       .flatMap(n => n.toFloat)
       .toRight(
-        NonEmptyList.one(WrongTypeError(path, classOf[Byte], in.getClass)))
+        NonEmptyList.one(WrongTypeError(path, classOf[Byte], in.getClass, None)))
 
   override def extractDouble[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: Json,
@@ -175,7 +175,7 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
     in.number
       .flatMap(n => n.toDouble)
       .toRight(
-        NonEmptyList.one(WrongTypeError(path, classOf[Byte], in.getClass)))
+        NonEmptyList.one(WrongTypeError(path, classOf[Byte], in.getClass, None)))
 
   override def extractBigDecimal[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
       in: Json,
@@ -183,7 +183,7 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
     in.number
       .map(_.toBigDecimal)
       .toRight(NonEmptyList.one(
-        WrongTypeError(path, classOf[BigDecimal], in.getClass)))
+        WrongTypeError(path, classOf[BigDecimal], in.getClass, None)))
 
   override protected def invalidValue[T](
       in: Json,
@@ -197,7 +197,7 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
       _ => classOf[Array[_]],
       _ => classOf[Object]
     )
-    Left(NonEmptyList.one(WrongTypeError(path, expected, invalid)))
+    Left(NonEmptyList.one(WrongTypeError(path, expected, invalid, None)))
   }
 
   override def stringValue(in: Json, elementName: String): Option[String] =
