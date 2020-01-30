@@ -30,55 +30,68 @@ trait TimeValidator extends InterchangeFormatValidator[JavaTimeValue, Json] {
 
   val baseInterpreter = ArgonautValidatorInterpreter.isoInterpreter
 
-  private def errorHandleTimeParsing[A](path: List[String], f: String => A, input: String): Either[NonEmptyList[Error.ExtractionError], A] =
+  private def errorHandleTimeParsing[A](
+    path: List[String],
+    f: String => A,
+    input: String): Either[NonEmptyList[Error.ExtractionError], A] =
     try {
       Right(f(input))
     } catch {
-      case ex: DateTimeParseException => Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDateTime], Some(ex))))
-      case ex: IllegalArgumentException => Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDateTime], Some(ex))))
+      case ex: DateTimeParseException =>
+        Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDateTime], Some(ex))))
+      case ex: IllegalArgumentException =>
+        Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDateTime], Some(ex))))
     }
 
-  private def parseTime[A](alg: JavaTimeValue[A], clazz: Class[A], f: String => A): (Option[Json], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] = {
-    (jsonOpt:Option[Json], path: List[String]) => {
+  private def parseTime[A](alg: JavaTimeValue[A], clazz: Class[A], f: String => A)
+    : (Option[Json], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] = {
+    (jsonOpt: Option[Json], path: List[String]) =>
+      {
+        jsonOpt match {
+          case Some(json) =>
+            baseInterpreter
+              .extractString(Right(alg), clazz)(json, path)
+              .flatMap(result => errorHandleTimeParsing(path, f, result))
+          case None =>
+            Left(NonEmptyList.one(RequiredData(path, Right(alg))))
+        }
+      }
+  }
+
+  private def parseYear[A](alg: JavaTimeValue[A])
+    : (Option[Json], List[String]) => Either[NonEmptyList[Error.ExtractionError], Year] =
+    (jsonOpt: Option[Json], path: List[String]) => {
       jsonOpt match {
         case Some(json) =>
           baseInterpreter
-            .extractString(Right(alg), clazz)(json, path)
-            .flatMap(result => errorHandleTimeParsing(path, f, result))
+            .extractInt(Right(alg))(json, path)
+            .map(result => Year.of(result))
         case None =>
           Left(NonEmptyList.one(RequiredData(path, Right(alg))))
       }
     }
-  }
 
-  private def parseYear[A](alg: JavaTimeValue[A]): (Option[Json], List[String]) => Either[NonEmptyList[Error.ExtractionError], Year] = 
-    (jsonOpt:Option[Json], path: List[String]) => {
-      jsonOpt match {
-      case Some(json) =>
-        baseInterpreter
-          .extractInt(Right(alg))(json, path)
-          .map(result => Year.of(result))
-      case None =>
-        Left(NonEmptyList.one(RequiredData(path, Right(alg))))
-    }
-  }
-
-  override def validate[A](alg: JavaTimeValue[A]):
-  (Option[Json], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] = {
+  override def validate[A](alg: JavaTimeValue[A])
+    : (Option[Json], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] = {
     alg match {
-      case DateTimeExceptionData(_) => parseTime(alg, classOf[DateTimeException], input => new DateTimeException(input))
+      case DateTimeExceptionData(_) =>
+        parseTime(alg, classOf[DateTimeException], input => new DateTimeException(input))
       case DayOfWeekData(_) => parseTime(alg, classOf[DayOfWeek], DayOfWeek.valueOf)
-      case DurationData(_) => parseTime(alg, classOf[Duration], Duration.parse)
-      case InstantData(_) => parseTime(alg, classOf[Instant], input => Instant.from(instantFormatter.parse(input)))
-      case MonthData(_) => parseTime(alg, classOf[Month], Month.valueOf)
+      case DurationData(_)  => parseTime(alg, classOf[Duration], Duration.parse)
+      case InstantData(_) =>
+        parseTime(alg, classOf[Instant], input => Instant.from(instantFormatter.parse(input)))
+      case MonthData(_)    => parseTime(alg, classOf[Month], Month.valueOf)
       case MonthDayData(_) => parseTime(alg, classOf[MonthDay], MonthDay.parse)
-      case OffsetDateTimeData(_) => parseTime(alg, classOf[OffsetDateTime], OffsetDateTime.parse(_, offsetDateTimeFormatter))
-      case OffsetTimeData(_) => parseTime(alg, classOf[OffsetTime], OffsetTime.parse(_, offsetTimeFormatter))
-      case PeriodData(_) => parseTime(alg, classOf[Period], Period.parse)
-      case YearData(_) => parseYear(alg)
+      case OffsetDateTimeData(_) =>
+        parseTime(alg, classOf[OffsetDateTime], OffsetDateTime.parse(_, offsetDateTimeFormatter))
+      case OffsetTimeData(_) =>
+        parseTime(alg, classOf[OffsetTime], OffsetTime.parse(_, offsetTimeFormatter))
+      case PeriodData(_)    => parseTime(alg, classOf[Period], Period.parse)
+      case YearData(_)      => parseYear(alg)
       case YearMonthData(_) => parseTime(alg, classOf[YearMonth], YearMonth.parse)
-      case ZoneIdData(_) => parseTime(alg, classOf[ZoneId], ZoneId.of)
-      case ZonedDateTimeData(_) => parseTime(alg, classOf[ZonedDateTime], ZonedDateTime.parse(_, zonedDateTimeFormatter))
+      case ZoneIdData(_)    => parseTime(alg, classOf[ZoneId], ZoneId.of)
+      case ZonedDateTimeData(_) =>
+        parseTime(alg, classOf[ZonedDateTime], ZonedDateTime.parse(_, zonedDateTimeFormatter))
       case ZoneOffsetData(_) => parseTime(alg, classOf[ZoneOffset], ZoneOffset.of)
     }
   }

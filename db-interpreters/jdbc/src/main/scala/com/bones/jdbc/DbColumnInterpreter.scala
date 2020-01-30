@@ -23,10 +23,12 @@ object DbColumnInterpreter {
     def toColumns[A](alg: NoAlgebra[A]): ToColumns = sys.error("Unreachable code")
   }
 
-  def tableDefinition[A](bonesSchema: BonesSchema[NoAlgebra,A]): String =
+  def tableDefinition[A](bonesSchema: BonesSchema[NoAlgebra, A]): String =
     tableDefinitionCustomAlgebra(bonesSchema, NoAlgebraCustomInterpreter)
 
-  def tableDefinitionCustomAlgebra[ALG[_], A](bonesSchema: BonesSchema[ALG,A], customInterpreter: CustomInterpreter[ALG]): String = {
+  def tableDefinitionCustomAlgebra[ALG[_], A](
+    bonesSchema: BonesSchema[ALG, A],
+    customInterpreter: CustomInterpreter[ALG]): String = {
     def nullableString(nullable: Boolean) = if (nullable) "" else " not null"
     bonesSchema match {
       case x: HListConvert[ALG, h, n, b] @unchecked =>
@@ -34,15 +36,15 @@ object DbColumnInterpreter {
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
         val columnsWithId = Column("id", "SERIAL", false) :: result
         val columnString = columnsWithId
-          .map(c =>
-            s"${c.name} ${c.columnDefinition}${nullableString(c.nullable)}")
+          .map(c => s"${c.name} ${c.columnDefinition}${nullableString(c.nullable)}")
           .mkString("(", ", ", ")")
         s"create table $tableName $columnString"
     }
   }
 
   private def kvpHList[ALG[_], H <: HList, HL <: Nat](
-      group: KvpHList[ALG, H, HL], customInterpreter: CustomInterpreter[ALG]): List[Column] = {
+    group: KvpHList[ALG, H, HL],
+    customInterpreter: CustomInterpreter[ALG]): List[Column] = {
     group match {
       case nil: KvpNil[_] => List.empty
       case op: KvpSingleValueHead[ALG, h, t, tl, a] @unchecked =>
@@ -61,53 +63,62 @@ object DbColumnInterpreter {
     }
   }
 
-  private def bonesSchema[ALG[_], A](bonesSchema: BonesSchema[ALG, A], customInterpreter: CustomInterpreter[ALG]): List[Column] =
+  private def bonesSchema[ALG[_], A](
+    bonesSchema: BonesSchema[ALG, A],
+    customInterpreter: CustomInterpreter[ALG]): List[Column] =
     bonesSchema match {
-      case co: KvpCoproductConvert[ALG, c, a] @unchecked => valueDefinition(co, customInterpreter)("")
+      case co: KvpCoproductConvert[ALG, c, a] @unchecked =>
+        valueDefinition(co, customInterpreter)("")
       case co: HListConvert[ALG, h, n, a] @unchecked => valueDefinition(co, customInterpreter)("")
     }
 
   private def nameToColumn[A](columnDefinition: String): ToColumns =
     name => List(Column(DbUtil.camelToSnake(name), columnDefinition, false))
 
-  private def determineValueDefinition[ALG[_], A]
-    (
-      coDef: CoproductDataDefinition[ALG, A],
-      customInterpreter: CustomInterpreter[ALG]
-    ) : ToColumns = {
-      coDef match {
-        case Left(kvp) => valueDefinition(kvp, customInterpreter)
-        case Right(alg) => customInterpreter.toColumns(alg)
-      }
+  private def determineValueDefinition[ALG[_], A](
+    coDef: CoproductDataDefinition[ALG, A],
+    customInterpreter: CustomInterpreter[ALG]
+  ): ToColumns = {
+    coDef match {
+      case Left(kvp)  => valueDefinition(kvp, customInterpreter)
+      case Right(alg) => customInterpreter.toColumns(alg)
     }
+  }
 
-  private def valueDefinition[ALG[_], A](fgo: KvpValue[A], customInterpreter: CustomInterpreter[ALG]): ToColumns =
+  private def valueDefinition[ALG[_], A](
+    fgo: KvpValue[A],
+    customInterpreter: CustomInterpreter[ALG]): ToColumns =
     fgo match {
       case op: OptionalKvpValueDefinition[ALG, b] @unchecked =>
         key =>
           determineValueDefinition(op.valueDefinitionOp, customInterpreter)(key)
             .map(_.copy(nullable = true))
-      case ob: BooleanData               => nameToColumn("bool")
-      case rs: StringData                => nameToColumn("text")
-      case i:  ShortData                   => nameToColumn("int2")
-      case i:  IntData                   => nameToColumn("integer")
-      case ri: LongData                  => nameToColumn("int8")
-      case uu: UuidData                  => nameToColumn("text")
-      case dd: LocalDateData              => nameToColumn("date")
-      case dd: LocalDateTimeData              => nameToColumn("timestamp")
-      case fd: FloatData                 => nameToColumn("real")
-      case dd: DoubleData                => nameToColumn("double precision")
-      case bd: BigDecimalData            => nameToColumn("numeric")
-      case bd: ByteArrayData             => nameToColumn("bytea")
-      case ld: ListData[ALG,t] @unchecked  => ???
-      case ed: EitherData[ALG,a, b] @unchecked =>
-        name => {
-          determineValueDefinition(ed.definitionA, customInterpreter)(name) ::: determineValueDefinition(ed.definitionB, customInterpreter)(name)
-        }
-      case esd: EnumerationData[e,a] => nameToColumn("text")
+      case ob: BooleanData                 => nameToColumn("bool")
+      case rs: StringData                  => nameToColumn("text")
+      case i: ShortData                    => nameToColumn("int2")
+      case i: IntData                      => nameToColumn("integer")
+      case ri: LongData                    => nameToColumn("int8")
+      case uu: UuidData                    => nameToColumn("text")
+      case dd: LocalDateData               => nameToColumn("date")
+      case dd: LocalDateTimeData           => nameToColumn("timestamp")
+      case fd: FloatData                   => nameToColumn("real")
+      case dd: DoubleData                  => nameToColumn("double precision")
+      case bd: BigDecimalData              => nameToColumn("numeric")
+      case bd: ByteArrayData               => nameToColumn("bytea")
+      case ld: ListData[ALG, t] @unchecked => ???
+      case ed: EitherData[ALG, a, b] @unchecked =>
+        name =>
+          {
+            determineValueDefinition(ed.definitionA, customInterpreter)(name) ::: determineValueDefinition(
+              ed.definitionB,
+              customInterpreter)(name)
+          }
+      case esd: EnumerationData[e, a] => nameToColumn("text")
       case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
-        _ => kvpHList(kvp.kvpHList, customInterpreter)
+        _ =>
+          kvpHList(kvp.kvpHList, customInterpreter)
       case x: HListConvert[ALG, a, al, b] @unchecked =>
-        _ => kvpHList(x.from, customInterpreter)
+        _ =>
+          kvpHList(x.from, customInterpreter)
     }
 }

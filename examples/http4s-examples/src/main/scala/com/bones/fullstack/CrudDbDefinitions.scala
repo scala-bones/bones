@@ -12,9 +12,10 @@ import fs2.Stream
 import javax.sql.DataSource
 
 object CrudDbDefinitions {
-  def apply[A](schema: BonesSchema[NoAlgebra, A], ds: DataSource): CrudDbDefinitions[NoAlgebra,A] = 
-    CrudDbDefinitions[NoAlgebra,A](schema, NoAlgebraJdbCustomInterpreter, ds)
+  def apply[A](schema: BonesSchema[NoAlgebra, A], ds: DataSource): CrudDbDefinitions[NoAlgebra, A] =
+    CrudDbDefinitions[NoAlgebra, A](schema, NoAlgebraJdbCustomInterpreter, ds)
 }
+
 /**
   * For a given schema, this class provides the basic CRUD operations
   * for manipulating data in a Database.
@@ -22,7 +23,10 @@ object CrudDbDefinitions {
   * @param ds
   * @tparam A
   */
-case class CrudDbDefinitions[ALG[_],A](schema: BonesSchema[ALG,A], customInterpreter: JdbcCustomInterpreter[ALG], ds: DataSource) {
+case class CrudDbDefinitions[ALG[_], A](
+  schema: BonesSchema[ALG, A],
+  customInterpreter: JdbcCustomInterpreter[ALG],
+  ds: DataSource) {
 
   import CrudDbDefinitions._
 
@@ -31,11 +35,11 @@ case class CrudDbDefinitions[ALG[_],A](schema: BonesSchema[ALG,A], customInterpr
     DbSearch
       .getEntity(schema, customInterpreter)(ds)
       .flatMap({
-          case Left(errO) => Stream.empty
-          case Right(ro) =>
-            Stream {
-              ro
-            }
+        case Left(errO) => Stream.empty
+        case Right(ro) =>
+          Stream {
+            ro
+          }
       })
 
   def createF: A => IO[Either[ExtractionError, (Long, A)]] = {

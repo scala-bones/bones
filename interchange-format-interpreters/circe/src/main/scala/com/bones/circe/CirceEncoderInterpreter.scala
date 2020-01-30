@@ -88,10 +88,10 @@ trait CirceEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[Jso
 
   override def toOutList(list: List[Json]): Json = Json.fromValues(list)
 
-  override def enumerationToOut[E <: Enumeration, V: Manifest](op: EnumerationData[E, V]):
-    op.enumeration.Value => Json =
+  override def enumerationToOut[E <: Enumeration, V: Manifest](
+    op: EnumerationData[E, V]): op.enumeration.Value => Json =
     input => Json.fromString(input.toString)
 
   override def addStringField(element: Json, name: String, value: String): Json =
-    Json.obj((name, Json.fromString(value)) :: element.asObject.toList.flatMap(_.toList) :_*)
+    Json.obj((name, Json.fromString(value)) :: element.asObject.toList.flatMap(_.toList): _*)
 }

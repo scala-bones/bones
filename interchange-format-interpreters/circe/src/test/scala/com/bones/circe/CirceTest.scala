@@ -8,8 +8,6 @@ import org.scalacheck.Arbitrary
 import org.scalatest.{FunSuite, MustMatchers}
 import org.scalatestplus.scalacheck.Checkers
 
-
-
 class CirceTest extends FunSuite with Checkers with MustMatchers {
 
   implicit override val generatorDrivenConfig =
@@ -21,12 +19,14 @@ class CirceTest extends FunSuite with Checkers with MustMatchers {
 
   val interchangeFormatEncoder = CirceEncoderInterpreter.noAlgebraEncoder
 
-  val jsonToCc = validateFromCirce.byteArrayFuncFromSchema(allSupportCaseClass, Charset.forName("UTF8"), noAlgebraInterpreter )
+  val jsonToCc = validateFromCirce.byteArrayFuncFromSchema(
+    allSupportCaseClass,
+    Charset.forName("UTF8"),
+    noAlgebraInterpreter)
   val ccToJson = CirceEncoderInterpreter.isoInterpreter.fromSchema(allSupportCaseClass)
 
   implicit val arb = Arbitrary(Scalacheck.valueDefinition(allSupportCaseClass, NoAlgebraGen))
   val utf8 = Charset.forName("UTF8")
-
 
   test("scalacheck allSupport types - marshall then unmarshall") {
     check((cc: AllSupported) => {
@@ -35,7 +35,8 @@ class CirceTest extends FunSuite with Checkers with MustMatchers {
       val newCc = jsonToCc(jsonString)
       newCc match {
         case Left(x) =>
-          fail(s"expected success, received $x for JSON string ${io.circe.parser.parse(new String(jsonString, utf8))}")
+          fail(s"expected success, received $x for JSON string ${io.circe.parser
+            .parse(new String(jsonString, utf8))}")
         case Right(newCc2) =>
           newCc2.fancyEquals(cc)
       }
