@@ -17,8 +17,8 @@ object WaterfallDefinitions {
   case class Location(latitude: BigDecimal, longitude: BigDecimal)
 
   val imperialMeasurement = (
-    ("feet", long(lv.min(0))) ::
-      ("inches", long(lv.between(0, 12))) ::
+    ("feet", long(lv.min(0))) :<:
+      ("inches", long(lv.between(0, 12))) :<:
       kvpNil
     ).convert[ImperialMeasurement]
 
@@ -33,12 +33,12 @@ object WaterfallDefinitions {
                        /*wantToVisit: Boolean, description: String*/)
 
   val waterfallSchema = (
-    ("name", string(sv.max(200))) ::
-      ("latitude", bigDecimal(dv.min(-180), dv.max(180))) ::
-      ("longitude", bigDecimal(dv.min(-180), dv.max(180))) ::
-      ("cubicFeetPerMinute", bigDecimal(dv.positive).optional) ::
-      ("height", imperialMeasurement.optional) ::
-      ("waterVolume", enumeration[WaterVolume.type, WaterVolume.Value](WaterVolume)) ::
+    ("name", string(sv.max(200))) :<:
+      ("latitude", bigDecimal(dv.min(-180), dv.max(180))) :<:
+      ("longitude", bigDecimal(dv.min(-180), dv.max(180))) :<:
+      ("cubicFeetPerMinute", bigDecimal(dv.positive).optional) :<:
+      ("height", imperialMeasurement.optional) :<:
+      ("waterVolume", enumeration[WaterVolume.type, WaterVolume.Value](WaterVolume)) :<:
       //      kvp("discoveryDate", isoDateTime()) ::
 //      kvp("wantToVisit", boolean) ::
 //      kvp("description", string(sv.max(500))) ::
@@ -49,10 +49,10 @@ object WaterfallDefinitions {
   case class WaterfallVisit(waterfallId: Long, waterVolume: WaterVolume.Value, notes: Option[String])
 
   val waterfallVisitSchema = (
-    ("waterfallId", long(lv.min(1))) ::
+    ("waterfallId", long(lv.min(1))) :<:
       //      kvp("visitDate", isoDate()) ::
-      ("waterVolume", enumeration[WaterVolume.type, WaterVolume.Value](WaterVolume)) ::
-      ("notes", string.optional) ::
+      ("waterVolume", enumeration[WaterVolume.type, WaterVolume.Value](WaterVolume)) :<:
+      ("notes", string.optional) :<:
       kvpNil
     ).convert[WaterfallVisit]
 

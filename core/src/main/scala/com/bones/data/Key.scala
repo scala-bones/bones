@@ -14,13 +14,12 @@ import shapeless.{CNil, Coproduct, HList, Nat}
   * @tparam A
   * @tparam ALG Coprodcut Value
   */
-case class KeyValueDefinition[ALG[_], A]
-  (
-    key: String,
-    op: KeyValueDefinition.CoproductDataDefinition[ALG, A],
-    description: Option[String],
-    example: Option[A]
-  )
+case class KeyValueDefinition[ALG[_], A](
+  key: String,
+  op: KeyValueDefinition.CoproductDataDefinition[ALG, A],
+  description: Option[String],
+  example: Option[A]
+)
 
 object KeyValueDefinition {
   type CoproductDataDefinition[ALG[_], A] = Either[KvpValue[A], ALG[A]]
@@ -35,17 +34,17 @@ trait KeyValueDefinitionSugar {
   def kvpCov[ALG[_], A](key: String, valueDefinitionOp: ALG[A]) =
     KeyValueDefinition[ALG, A](key, Right(valueDefinitionOp), None, None)
 
-  def kvpHList[ALG[_], H <: HList: Manifest, HL <: Nat](key: String,
-                                                        kvpHList: KvpHList[ALG, H, HL]) =
+  def kvpHList[ALG[_], H <: HList: Manifest, HL <: Nat](
+    key: String,
+    kvpHList: KvpHList[ALG, H, HL]) =
     KeyValueDefinition[ALG, H](key, Left(KvpHListValue(kvpHList, List.empty)), None, None)
 
-  def kvpCoproduct[ALG[_], C<:Coproduct:Manifest](key: String,
-                                                  kvpCoproduct: KvpCoproduct[ALG, C]) =
+  def kvpCoproduct[ALG[_], C <: Coproduct: Manifest](
+    key: String,
+    kvpCoproduct: KvpCoproduct[ALG, C]) =
     KeyValueDefinition[ALG, C](key, Left(KvpCoproductValue(kvpCoproduct)), None, None)
 
 }
-
-
 
 /** Starting point for obtaining a value definition. */
 trait Sugar {
@@ -96,8 +95,7 @@ trait Sugar {
     * @tparam T The type of each element.  Can be an EitherFieldDefinition if more than one type is expected in the list.
     * @return
     */
-  def list[ALG[_], T: Manifest](dataDefinitionOp: KvpValue[T],
-                                v: ValidationOp[List[T]]*) =
+  def list[ALG[_], T: Manifest](dataDefinitionOp: KvpValue[T], v: ValidationOp[List[T]]*) =
     ListData[ALG, T](Left(dataDefinitionOp), v.toList)
 
   /** Indicates that the data tied to this key is an boolean type that must pass the specified validations. */
@@ -131,8 +129,7 @@ trait Sugar {
   val bigDecimal: BigDecimalData = bigDecimal()
 
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
-  def either[A: Manifest, B: Manifest](definitionA: KvpValue[A],
-                                       definitionB: KvpValue[B]) =
+  def either[A: Manifest, B: Manifest](definitionA: KvpValue[A], definitionB: KvpValue[B]) =
     EitherData(Left(definitionA), Left(definitionB))
 
   /** Expecting the type to be a Scala style enumeration
@@ -140,14 +137,14 @@ trait Sugar {
     * @param e The base enumeration type.
     * @tparam E The enumeration
     */
-  def enumeration[E<:Enumeration,V:Manifest](e: E): EnumerationData[E,V] = {
-    EnumerationData[E,V](e,List.empty)
+  def enumeration[E <: Enumeration, V: Manifest](e: E): EnumerationData[E, V] = {
+    EnumerationData[E, V](e, List.empty)
   }
 
-
   /** Indicates that the data is a list of Key Value pairs */
-  def kvpHList[H <: HList: Manifest, HL <: Nat, ALG[_]](kvpHList: KvpHList[ALG, H, HL],
-                                                        v: ValidationOp[H]*) =
+  def kvpHList[H <: HList: Manifest, HL <: Nat, ALG[_]](
+    kvpHList: KvpHList[ALG, H, HL],
+    v: ValidationOp[H]*) =
     KvpHListValue(kvpHList, v.toList)
 
   def kvpNil = new KvpNil[NoAlgebra]()

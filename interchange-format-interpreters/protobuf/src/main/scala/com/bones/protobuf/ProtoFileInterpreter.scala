@@ -69,17 +69,20 @@ object ProtoFileInterpreter {
   }
   case class NestedMessage(name: String, dataTypes: Vector[MessageField])
       extends NestedType
-//  case class NestedEnum(name: String, value: (String, Int)) extends NestedType
-  case class Message(name: String,
-                     messageFields: Vector[MessageField],
-                     nestedTypes: Vector[NestedType])
-      extends NestedType
-//  case class OneOf(name: String, messageFields: Vector[MessageField]) extends NestedType
 
-  def messageFieldsToProtoFile(
-      fields: Vector[ProtoFileInterpreter.MessageField],
-      indent: String,
-      allowRequired: Boolean): String = {
+  case class Message
+  (
+    name: String,
+    messageFields: Vector[MessageField],
+    nestedTypes: Vector[NestedType]
+  ) extends NestedType
+
+  def messageFieldsToProtoFile
+  (
+    fields: Vector[ProtoFileInterpreter.MessageField],
+    indent: String,
+    allowRequired: Boolean
+  ): String = {
     fields
       .sortBy(_.index)
       .map(field => {
@@ -115,7 +118,6 @@ object ProtoFileInterpreter {
       types: Vector[ProtoFileInterpreter.NestedType]): String = {
     types.map {
       case n: NestedMessage => nestedMessageToProtoFile(n)
-//      case e: NestedEnum    => ???
     } mkString ("\n")
   }
 

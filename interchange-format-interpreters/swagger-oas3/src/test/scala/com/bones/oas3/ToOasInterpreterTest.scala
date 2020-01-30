@@ -15,7 +15,7 @@ class ToOasInterpreterTest extends FunSuite {
 
   test("simpleTypeWorks") {
     case class Simple(id: Int, name: String)
-    val simpleBone = ( ("id", int) :: ("name", string) :: kvpNil).convert[Simple]
+    val simpleBone = ( ("id", int) :<: ("name", string) :<: kvpNil).convert[Simple]
     val simpleSwagger = interpreter.fromSchema(simpleBone)("root")
     val simpleStr = io.swagger.v3.core.util.Yaml.mapper().writeValueAsString(simpleSwagger.head._2)
 //    println(simpleStr)
