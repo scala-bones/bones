@@ -24,7 +24,7 @@ object LocalhostAllIOApp {
 
   case class BasicError(message: String)
   private val basicErrorSchema =
-    (("message", com.bones.syntax.string) :: kvpNil).convert[BasicError]
+    (("message", com.bones.syntax.string) :<: kvpNil).convert[BasicError]
 
   def extractionErrorToBasicError(extractionError: ExtractionError) : BasicError = {
     BasicError(extractionError.toString)

@@ -19,20 +19,23 @@ sealed abstract class KvpHList[ALG[_], H <: HList, N <: Nat] {
     implicit gen: Generic.Aux[A, H]): HListConvert[ALG, H, N, A] =
     HListConvert(this, gen.from, gen.to, validation.toList)
 
-  def convert[A: Manifest](implicit gen: Generic.Aux[A, H]): HListConvert[ALG, H, N, A] = convert[A]()
+  def convert[A: Manifest](implicit gen: Generic.Aux[A, H]): HListConvert[ALG, H, N, A] =
+    convert[A]()
 
-  def tupled[Tup<:Product:Manifest]
-  (
-    implicit tupler: Tupler.Aux[H,Tup],
+  def tupled[Tup <: Product: Manifest](
+    implicit tupler: Tupler.Aux[H, Tup],
     gen: Generic[Tup]
-  ): HListConvert[ALG, H,N,Tup] = tupled[Tup]()
+  ): HListConvert[ALG, H, N, Tup] = tupled[Tup]()
 
-  def tupled[Tup<:Product:Manifest](tupledValidations: ValidationOp[Tup]*)(
-    implicit tupler: Tupler.Aux[H,Tup],
+  def tupled[Tup <: Product: Manifest](tupledValidations: ValidationOp[Tup]*)(
+    implicit tupler: Tupler.Aux[H, Tup],
     gen: Generic[Tup]
-  ): HListConvert[ALG, H,N,Tup] =
-    HListConvert[ALG, H,N,Tup](this, (h: H) => tupler.apply(h), (t: Tup) => gen.to(t).asInstanceOf[H], tupledValidations.toList)
-
+  ): HListConvert[ALG, H, N, Tup] =
+    HListConvert[ALG, H, N, Tup](
+      this,
+      (h: H) => tupler.apply(h),
+      (t: Tup) => gen.to(t).asInstanceOf[H],
+      tupledValidations.toList)
 
   def xmap[A: Manifest](f: H => A, g: A => H, validations: ValidationOp[A]*) =
     HListConvert(this, f, g, validations.toList)
@@ -44,7 +47,8 @@ sealed abstract class KvpHList[ALG[_], H <: HList, N <: Nat] {
     split: Split.Aux[HO, NP, HP, H]
   ): KvpHList[ALG, HO, NO] = prependHList(kvp)
 
-  def prependSchema[A:Manifest](schema: BonesSchema[ALG,A])(implicit isHCons: IsHCons.Aux[A :: H, A, H]): KvpHList[ALG, A :: H, Succ[N]] = 
+  def prependSchema[A: Manifest](schema: BonesSchema[ALG, A])(
+    implicit isHCons: IsHCons.Aux[A :: H, A, H]): KvpHList[ALG, A :: H, Succ[N]] =
     KvpConcreteTypeHead[ALG, A, H, N](schema, List.empty, this, isHCons)
 
   def prependHList[HO <: HList, NO <: Nat, HP <: HList, NP <: Nat](kvp: KvpHList[ALG, HP, NP])(
@@ -54,12 +58,12 @@ sealed abstract class KvpHList[ALG[_], H <: HList, N <: Nat] {
     split: Split.Aux[HO, NP, HP, H]
   ): KvpHList[ALG, HO, NO]
 
-  def prependSingleValue[A](v: KeyValueDefinition[ALG, A])(implicit isHCons: IsHCons.Aux[A :: H, A, H]):
-  KvpSingleValueHead[ALG, A, H, N, A :: H]
+  def prependSingleValue[A](v: KeyValueDefinition[ALG, A])(
+    implicit isHCons: IsHCons.Aux[A :: H, A, H]): KvpSingleValueHead[ALG, A, H, N, A :: H]
 
-
-  def >>:[A](v: KeyValueDefinition[ALG, A])(implicit isHCons: IsHCons.Aux[A :: H, A, H]):
-  KvpSingleValueHead[ALG, A, H, N, A :: H] = prependSingleValue(v)
+  def >>:[A](v: KeyValueDefinition[ALG, A])(
+    implicit isHCons: IsHCons.Aux[A :: H, A, H]): KvpSingleValueHead[ALG, A, H, N, A :: H] =
+    prependSingleValue(v)
 
   /**
     * Use this operator when you want to prefix a custom algebra.
@@ -68,14 +72,14 @@ sealed abstract class KvpHList[ALG[_], H <: HList, N <: Nat] {
     * @tparam A
     * @return
     */
-  def :^:[A](input: (String, ALG[A]))(implicit isHCons: IsHCons.Aux[A :: H, A, H]):
-  KvpSingleValueHead[ALG, A, H, N, A :: H] =
+  def :>:[A](input: (String, ALG[A]))(
+    implicit isHCons: IsHCons.Aux[A :: H, A, H]): KvpSingleValueHead[ALG, A, H, N, A :: H] =
     prependSingleValue(KeyValueDefinition(input._1, Right(input._2), None, None))(isHCons)
 
-  def :^:[A](input: (String, ALG[A], String, A))(implicit isHCons: IsHCons.Aux[A :: H, A, H]):
-  KvpSingleValueHead[ALG, A, H, N, A :: H] =
-    prependSingleValue(KeyValueDefinition(input._1, Right(input._2), Some(input._3), Some(input._4)))(isHCons)
-
+  def :>:[A](input: (String, ALG[A], String, A))(
+    implicit isHCons: IsHCons.Aux[A :: H, A, H]): KvpSingleValueHead[ALG, A, H, N, A :: H] =
+    prependSingleValue(
+      KeyValueDefinition(input._1, Right(input._2), Some(input._3), Some(input._4)))(isHCons)
 
   /**
     *
@@ -84,32 +88,19 @@ sealed abstract class KvpHList[ALG[_], H <: HList, N <: Nat] {
     * @tparam A
     * @return
     */
-  def ::[A] ( input: (String, KvpValue[A]) )(implicit isHCons: Aux[A :: H, A, H]):
-  KvpSingleValueHead[ALG, A, H, N, A :: H] =
+  def :<:[A](input: (String, KvpValue[A]))(
+    implicit isHCons: Aux[A :: H, A, H]): KvpSingleValueHead[ALG, A, H, N, A :: H] =
     prependSingleValue(new KeyValueDefinition(input._1, Left(input._2), None, None))(isHCons)
 
-  def ::[A] ( input: (String, KvpValue[A], String, A) )(implicit isHCons: Aux[A :: H, A, H]):
-  KvpSingleValueHead[ALG, A, H, N, A :: H] =
-    prependSingleValue(new KeyValueDefinition(input._1, Left(input._2), Some(input._3), Some(input._4)))(isHCons)
+  def :<:[A](input: (String, KvpValue[A], String, A))(
+    implicit isHCons: Aux[A :: H, A, H]): KvpSingleValueHead[ALG, A, H, N, A :: H] =
+    prependSingleValue(
+      new KeyValueDefinition(input._1, Left(input._2), Some(input._3), Some(input._4)))(isHCons)
 
-
-
-  /* The ability to prefix an HListConvert (case class) to a KvpHList */
-//  def :><:[OUT2 <: HList, OUT2L <: Nat, A: Manifest, HX <: HList, NX <: Nat]
-//  (dc: HListConvert[ALG, HX, NX, A])
-//  (implicit isHCons: IsHCons.Aux[A :: H, A, H]): KvpConcreteTypeHead[ALG, A, H, N, A :: H, HX, NX] =
-//    KvpConcreteTypeHead[ALG, A, H, N, A :: H, HX, NX](dc, List.empty, this, isHCons)
-
-  def :><:[OUT2 <: HList, OUT2L <: Nat, A: Manifest, HX <: HList, NX <: Nat]
-  (dc: BonesSchema[ALG, A])
-  (implicit isHCons: IsHCons.Aux[A :: H, A, H]): KvpConcreteTypeHead[ALG, A, H, N] =
+  def :><:[OUT2 <: HList, OUT2L <: Nat, A: Manifest, HX <: HList, NX <: Nat](
+    dc: BonesSchema[ALG, A])(
+    implicit isHCons: IsHCons.Aux[A :: H, A, H]): KvpConcreteTypeHead[ALG, A, H, N] =
     KvpConcreteTypeHead[ALG, A, H, N](dc, List.empty, this, isHCons)
-
-
-
-
-
-
 
 }
 
@@ -118,20 +109,16 @@ sealed abstract class KvpHList[ALG[_], H <: HList, N <: Nat] {
 case class KvpNil[ALG[_]]() extends KvpHList[ALG, HNil, Nat._0] {
 
   override def prependHList[OUT2 <: HList, OUT2L <: Nat, P <: HList, PL <: Nat](
-                                                                                 kvp: KvpHList[ALG, P, PL])(
-                                                                                 implicit prepend: hlist.Prepend.Aux[P, HNil, OUT2],
-                                                                                 lengthP: Length.Aux[P, PL],
-                                                                                 length: Length.Aux[OUT2, OUT2L],
-                                                                                 split: Split.Aux[OUT2, PL, P, HNil]): KvpHList[ALG, OUT2, OUT2L] =
-    KvpHListHead[ALG, OUT2, OUT2L, P, PL, HNil, Nat._0](kvp,
-      this,
-      prepend,
-      split,
-      List.empty)
+    kvp: KvpHList[ALG, P, PL])(
+    implicit prepend: hlist.Prepend.Aux[P, HNil, OUT2],
+    lengthP: Length.Aux[P, PL],
+    length: Length.Aux[OUT2, OUT2L],
+    split: Split.Aux[OUT2, PL, P, HNil]): KvpHList[ALG, OUT2, OUT2L] =
+    KvpHListHead[ALG, OUT2, OUT2L, P, PL, HNil, Nat._0](kvp, this, prepend, split, List.empty)
 
-
-  override def prependSingleValue[H](v: KeyValueDefinition[ALG, H])(implicit isHCons: IsHCons.Aux[H :: HNil, H, HNil])
-  : KvpSingleValueHead[ALG, H, HNil, Nat._0, H :: HNil] =
+  override def prependSingleValue[H](v: KeyValueDefinition[ALG, H])(
+    implicit isHCons: IsHCons.Aux[H :: HNil, H, HNil])
+    : KvpSingleValueHead[ALG, H, HNil, Nat._0, H :: HNil] =
     KvpSingleValueHead(v, List.empty, this, isHCons)
 
 }
@@ -146,41 +133,37 @@ case class KvpNil[ALG[_]]() extends KvpHList[ALG, HNil, Nat._0] {
   * @tparam HT HList Tail
   * @tparam NT Nat length of tail
   */
-final case class KvpConcreteTypeHead[ALG[_],
-A: Manifest,
-HT <: HList,
-NT <: Nat](
-//         hListConvert: HListConvert[ALG, XL, XLL, A],
-         bonesSchema: BonesSchema[ALG,A],
-         validations: List[ValidationOp[A :: HT]],
-         tail: KvpHList[ALG, HT, NT],
-         isHCons: IsHCons.Aux[A :: HT, A, HT])
-  extends KvpHList[ALG, A :: HT, Succ[NT]] {
+final case class KvpConcreteTypeHead[ALG[_], A: Manifest, HT <: HList, NT <: Nat](
+  bonesSchema: BonesSchema[ALG, A],
+  validations: List[ValidationOp[A :: HT]],
+  tail: KvpHList[ALG, HT, NT],
+  isHCons: IsHCons.Aux[A :: HT, A, HT])
+    extends KvpHList[ALG, A :: HT, Succ[NT]] {
 
   val manifestOfA: Manifest[A] = manifest[A]
 
-  override def prependHList[HO2 <: HList, NO2 <: Nat, HP <: HList, NP <: Nat]
-  (kvp: KvpHList[ALG, HP, NP])
-  (implicit prepend: Prepend.Aux[HP, A :: HT, HO2],
-   lengthP: Length.Aux[HP, NP],
-   length: Length.Aux[HO2, NO2],
-   split: Split.Aux[HO2, NP, HP, A :: HT]
-  ): KvpHList[ALG, HO2, NO2] =
+  override def prependHList[HO2 <: HList, NO2 <: Nat, HP <: HList, NP <: Nat](
+    kvp: KvpHList[ALG, HP, NP])(
+    implicit prepend: Prepend.Aux[HP, A :: HT, HO2],
+    lengthP: Length.Aux[HP, NP],
+    length: Length.Aux[HO2, NO2],
+    split: Split.Aux[HO2, NP, HP, A :: HT]): KvpHList[ALG, HO2, NO2] =
     KvpHListHead[ALG, HO2, NO2, HP, NP, A :: HT, Succ[NT]](kvp, this, prepend, split, List.empty)
 
-
-  override def prependSingleValue[B](v: KeyValueDefinition[ALG, B])(implicit isHCons: Aux[B :: A :: HT, B, A :: HT]):
-  KvpSingleValueHead[ALG, B, A :: HT, Succ[NT], B :: A :: HT] = KvpSingleValueHead(v, List.empty, this, isHCons)
+  override def prependSingleValue[B](v: KeyValueDefinition[ALG, B])(
+    implicit isHCons: Aux[B :: A :: HT, B, A :: HT])
+    : KvpSingleValueHead[ALG, B, A :: HT, Succ[NT], B :: A :: HT] =
+    KvpSingleValueHead(v, List.empty, this, isHCons)
 
 }
 
 /** The head of the HList has a known KeyValueDefinition. */
 final case class KvpSingleValueHead[ALG[_], H, T <: HList, TL <: Nat, OUT <: H :: T](
-                                                                                      fieldDefinition: KeyValueDefinition[ALG, H],
-                                                                                      validations: List[ValidationOp[OUT]],
-                                                                                      tail: KvpHList[ALG, T, TL],
-                                                                                      isHCons: IsHCons.Aux[OUT, H, T]
-                                                                                    ) extends KvpHList[ALG, OUT, Succ[TL]] {
+  fieldDefinition: KeyValueDefinition[ALG, H],
+  validations: List[ValidationOp[OUT]],
+  tail: KvpHList[ALG, T, TL],
+  isHCons: IsHCons.Aux[OUT, H, T]
+) extends KvpHList[ALG, OUT, Succ[TL]] {
 
   /**
     *
@@ -191,38 +174,36 @@ final case class KvpSingleValueHead[ALG[_], H, T <: HList, TL <: Nat, OUT <: H :
     * @tparam P   The HList output type of kvp
     */
   override def prependHList[HO2 <: HList, NO2 <: Nat, P <: HList, PL <: Nat](
-                                                                              kvp: KvpHList[ALG, P, PL])(
-                                                                              implicit prepend: hlist.Prepend.Aux[P, OUT, HO2],
-                                                                              lengthP: Length.Aux[P, PL],
-                                                                              length: Length.Aux[HO2, NO2],
-                                                                              split: Split.Aux[HO2, PL, P, OUT]): KvpHList[ALG, HO2, NO2] =
-    KvpHListHead[ALG, HO2, NO2, P, PL, OUT, Succ[TL]](kvp,
-      this,
-      prepend,
-      split,
-      List.empty)
+    kvp: KvpHList[ALG, P, PL])(
+    implicit prepend: hlist.Prepend.Aux[P, OUT, HO2],
+    lengthP: Length.Aux[P, PL],
+    length: Length.Aux[HO2, NO2],
+    split: Split.Aux[HO2, PL, P, OUT]): KvpHList[ALG, HO2, NO2] =
+    KvpHListHead[ALG, HO2, NO2, P, PL, OUT, Succ[TL]](kvp, this, prepend, split, List.empty)
 
-  override def prependSingleValue[A](v: KeyValueDefinition[ALG, A])(implicit isHCons: Aux[A :: OUT, A, OUT]):
-  KvpSingleValueHead[ALG, A, OUT, Succ[TL], A :: OUT] = KvpSingleValueHead[ALG, A, OUT, Succ[TL], A :: OUT](v, List.empty, this, isHCons)
+  override def prependSingleValue[A](v: KeyValueDefinition[ALG, A])(
+    implicit isHCons: Aux[A :: OUT, A, OUT]): KvpSingleValueHead[ALG, A, OUT, Succ[TL], A :: OUT] =
+    KvpSingleValueHead[ALG, A, OUT, Succ[TL], A :: OUT](v, List.empty, this, isHCons)
 
   def validate(v: ValidationOp[OUT]): KvpSingleValueHead[ALG, H, T, TL, OUT] =
     this.copy(validations = v :: validations)
 }
 
 /** This is a group of KvpHList that are grouped and the validations match the entire group.  */
-final case class KvpHListHead[ALG[_],
-HO <: HList,
-NO <: Nat,
-H <: HList,
-HL <: Nat,
-T <: HList,
-TL <: Nat](
-         head: KvpHList[ALG, H, HL],
-         tail: KvpHList[ALG, T, TL],
-         prepend: Prepend.Aux[H, T, HO],
-         split: Split.Aux[HO, HL, H, T], // analogous: Split.Aux[prepend.OUT,HL,H,T] with lpLength: Length.Aux[H,HL],
-         validations: List[ValidationOp[HO]]
-       ) extends KvpHList[ALG, HO, NO] {
+final case class KvpHListHead[
+  ALG[_],
+  HO <: HList,
+  NO <: Nat,
+  H <: HList,
+  HL <: Nat,
+  T <: HList,
+  TL <: Nat](
+  head: KvpHList[ALG, H, HL],
+  tail: KvpHList[ALG, T, TL],
+  prepend: Prepend.Aux[H, T, HO],
+  split: Split.Aux[HO, HL, H, T], // analogous: Split.Aux[prepend.OUT,HL,H,T] with lpLength: Length.Aux[H,HL],
+  validations: List[ValidationOp[HO]]
+) extends KvpHList[ALG, HO, NO] {
 
   /**
     *
@@ -233,21 +214,17 @@ TL <: Nat](
     * @tparam P   The HList output type of the kvp group we are appending.
     */
   override def prependHList[HO2 <: HList, NO2 <: Nat, P <: HList, PL <: Nat](
-                                                                              kvp: KvpHList[ALG, P, PL])(
-                                                                              implicit prepend: Prepend.Aux[P, HO, HO2],
-                                                                              lengthP: Length.Aux[P, PL],
-                                                                              length: Length.Aux[HO2, NO2],
-                                                                              split: Split.Aux[HO2, PL, P, HO]
-                                                                            ): KvpHListHead[ALG, HO2, NO2, P, PL, HO, NO] =
-    KvpHListHead[ALG, HO2, NO2, P, PL, HO, NO](kvp,
-      this,
-      prepend,
-      split,
-      List.empty)
+    kvp: KvpHList[ALG, P, PL])(
+    implicit prepend: Prepend.Aux[P, HO, HO2],
+    lengthP: Length.Aux[P, PL],
+    length: Length.Aux[HO2, NO2],
+    split: Split.Aux[HO2, PL, P, HO]
+  ): KvpHListHead[ALG, HO2, NO2, P, PL, HO, NO] =
+    KvpHListHead[ALG, HO2, NO2, P, PL, HO, NO](kvp, this, prepend, split, List.empty)
 
-  override def prependSingleValue[A](kvd: KeyValueDefinition[ALG, A])(implicit isHCons: Aux[A :: HO, A, HO]):
-  KvpSingleValueHead[ALG, A, HO, NO, A :: HO] = KvpSingleValueHead[ALG, A, HO, NO, A :: HO](kvd, List.empty, this, isHCons)
-
+  override def prependSingleValue[A](kvd: KeyValueDefinition[ALG, A])(
+    implicit isHCons: Aux[A :: HO, A, HO]): KvpSingleValueHead[ALG, A, HO, NO, A :: HO] =
+    KvpSingleValueHead[ALG, A, HO, NO, A :: HO](kvd, List.empty, this, isHCons)
 
   def validate(v: ValidationOp[HO]): KvpHListHead[ALG, HO, NO, H, HL, T, TL] =
     this.copy(validations = v :: validations)
