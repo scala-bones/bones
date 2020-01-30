@@ -10,10 +10,10 @@ class CrudOasInterpreterTest extends FunSuite {
 
   val idDefinition = ("id", int)
 
-  val allSupportedWithId = (idDefinition :: Schemas.allSupportCaseClass :><: kvpNil).tupled[(Int, AllSupported)]
+  val allSupportedWithId = (idDefinition :<: Schemas.allSupportCaseClass :><: kvpNil).tupled[(Int, AllSupported)]
 
   case class Error(message: String)
-  val error = (("message", string) :: kvpNil).convert[Error]
+  val error = (("message", string) :<: kvpNil).convert[Error]
 
 
   test("all supported") {

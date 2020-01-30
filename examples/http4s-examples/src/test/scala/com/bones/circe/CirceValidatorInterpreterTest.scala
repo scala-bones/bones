@@ -29,7 +29,7 @@ class CirceValidatorInterpreterTest extends FunSuite {
 
 
   test("kvp String") {
-    val str = ("name", string(sv.length(3))) :: kvpNil
+    val str = ("name", string(sv.length(3))) :<: kvpNil
 
     CirceValidatorInterpreter
       .isoInterpreter
@@ -41,7 +41,7 @@ class CirceValidatorInterpreterTest extends FunSuite {
   }
 
   test( "kvp String fail validation") {
-    val str = ("name", string(sv.length(2))) :: kvpNil
+    val str = ("name", string(sv.length(2))) :<: kvpNil
 
     CirceValidatorInterpreter.isoInterpreter.kvpHList(str, KvpInterchangeFormatValidatorInterpreter.NoAlgebraValidator()).apply(circeDoc, List.empty) match {
       case Left(err) => succeed

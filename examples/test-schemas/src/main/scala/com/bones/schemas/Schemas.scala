@@ -58,8 +58,8 @@ object Schemas {
   }
 
   val ccExp = (
-    ("expMonth", long(lv.between(1,12))) ::
-    ("expYear", long(lv.between(1950, 9999))) ::
+    ("expMonth", long(lv.between(1,12))) :<:
+    ("expYear", long(lv.between(1950, 9999))) :<:
     kvpNil
   ).validate(HasNotExpired)
 
@@ -70,22 +70,22 @@ object Schemas {
 
   // Here we are defining our expected input data.  This definition will drive the interpreters.
   val ccObj = (
-    firstSix ::
-    lastFour ::
-    ("uuid", uuid, "The UUID is the ID of the Credit Card", UUID.randomUUID()) ::
-    ("token", uuid, "identifies the credit card number in the encrypted repository", UUID.randomUUID()) ::
-    ("ccType", ccTypeValue) ::
+    firstSix :<:
+    lastFour :<:
+    ("uuid", uuid, "The UUID is the ID of the Credit Card", UUID.randomUUID()) :<:
+    ("token", uuid, "identifies the credit card number in the encrypted repository", UUID.randomUUID()) :<:
+    ("ccType", ccTypeValue) :<:
     kvpNil
   ) ::: ccExp ::: (
-    ("cardHolder", string(sv.words)) ::
-      ("currencyIso", enumeration[Currency.type, Currency.Value](Currency)) ::
-      ("deletedAt", localDateTime.optional) ::
-      ("lastModifiedRequest", uuid) ::
+    ("cardHolder", string(sv.words)) :<:
+      ("currencyIso", enumeration[Currency.type, Currency.Value](Currency)) :<:
+      ("deletedAt", localDateTime.optional) :<:
+      ("lastModifiedRequest", uuid) :<:
       ("billingLocation", (
-        ("countryIso", string(sv.validVector(isoList))) ::
-        ("zipCode", string(sv.max(10)).optional) ::
+        ("countryIso", string(sv.validVector(isoList))) :<:
+        ("zipCode", string(sv.max(10)).optional) :<:
         kvpNil
-      ).convert[BillingLocation].optional) :: //TODO: Optional
+      ).convert[BillingLocation].optional) :<: //TODO: Optional
     kvpNil
   )
 
@@ -142,21 +142,21 @@ object Schemas {
 
 
 
-  val allSupportedOptionalSchema = ("boolean", boolean.optional) ::
-    ("int", int(iv.between(0,10)).optional) ::
-    ("long", long(lv.min(0)).optional) ::
-    ("listOfInt", list(int).optional) ::
-    ("string", string(sv.min(0), sv.words).optional) ::
-    ("float", float(fv.max(100)).optional) ::
-    ("short", short(shv.max(100)).optional) ::
-    ("double", double(dv.min(0)).optional) ::
-    ("byteArray", byteArray.optional) ::
-    ("localDate", localDate(ldv.min(LocalDate.of(1800,1,1))).optional) ::
-    ("localDateTime", localDateTime(ldtv.min(LocalDateTime.of(1800,Month.JANUARY,1, 0, 0))).optional) ::
-    ("uuid", uuid.optional) ::
-    ("enumeration", enumeration[Currency.type, Currency.Value](Currency).optional) ::
-    ("bigDecimal", bigDecimal(bdv.max(BigDecimal(100))).optional) ::
-    ("either", either(string(sv.words), int).optional) ::
+  val allSupportedOptionalSchema = ("boolean", boolean.optional) :<:
+    ("int", int(iv.between(0,10)).optional) :<:
+    ("long", long(lv.min(0)).optional) :<:
+    ("listOfInt", list(int).optional) :<:
+    ("string", string(sv.min(0), sv.words).optional) :<:
+    ("float", float(fv.max(100)).optional) :<:
+    ("short", short(shv.max(100)).optional) :<:
+    ("double", double(dv.min(0)).optional) :<:
+    ("byteArray", byteArray.optional) :<:
+    ("localDate", localDate(ldv.min(LocalDate.of(1800,1,1))).optional) :<:
+    ("localDateTime", localDateTime(ldtv.min(LocalDateTime.of(1800,Month.JANUARY,1, 0, 0))).optional) :<:
+    ("uuid", uuid.optional) :<:
+    ("enumeration", enumeration[Currency.type, Currency.Value](Currency).optional) :<:
+    ("bigDecimal", bigDecimal(bdv.max(BigDecimal(100))).optional) :<:
+    ("either", either(string(sv.words), int).optional) :<:
     kvpNil
 
   case class AllSupportedOptional(
@@ -178,24 +178,24 @@ object Schemas {
                                  )
 
   val allSupportedSchema =
-        ("boolean", boolean) ::
-        ("int", int(iv.between(0,10))) ::
-        ("long", long(lv.min(0))) ::
-        ("listOfInt", list(int)) ::
-        ("string", string(sv.min(0), sv.words)) ::
-        ("float", float(fv.max(100))) ::
-        ("short", short(shv.max(100))) ::
-        ("double", double(dv.min(0))) ::
-        ("byteArray", byteArray) ::
-        ("localDate", localDate(ldv.min(LocalDate.of(1800,1,1)))) ::
-        ("localDateTime", localDateTime(ldtv.min(LocalDateTime.of(1800,Month.JANUARY,1, 0, 0)))) ::
-        ("uuid", uuid) ::
-        ("enumeration", enumeration[Currency.type, Currency.Value](Currency)) ::
-        ("bigDecimal", bigDecimal(bdv.max(BigDecimal(100)))) ::
-        ("eitherField", either(string(sv.words), int)) ::
-        ("child", allSupportedOptionalSchema.convert[AllSupportedOptional]) ::
-        ("media", MusicMedium.bonesSchema) ::
-        ("int2", int(iv.between(Int.MinValue, Int.MinValue))) ::
+        ("boolean", boolean) :<:
+        ("int", int(iv.between(0,10))) :<:
+        ("long", long(lv.min(0))) :<:
+        ("listOfInt", list(int)) :<:
+        ("string", string(sv.min(0), sv.words)) :<:
+        ("float", float(fv.max(100))) :<:
+        ("short", short(shv.max(100))) :<:
+        ("double", double(dv.min(0))) :<:
+        ("byteArray", byteArray) :<:
+        ("localDate", localDate(ldv.min(LocalDate.of(1800,1,1)))) :<:
+        ("localDateTime", localDateTime(ldtv.min(LocalDateTime.of(1800,Month.JANUARY,1, 0, 0)))) :<:
+        ("uuid", uuid) :<:
+        ("enumeration", enumeration[Currency.type, Currency.Value](Currency)) :<:
+        ("bigDecimal", bigDecimal(bdv.max(BigDecimal(100)))) :<:
+        ("eitherField", either(string(sv.words), int)) :<:
+        ("child", allSupportedOptionalSchema.convert[AllSupportedOptional]) :<:
+        ("media", MusicMedium.bonesSchema) :<:
+        ("int2", int(iv.between(Int.MinValue, Int.MinValue))) :<:
         kvpNil
 
 
