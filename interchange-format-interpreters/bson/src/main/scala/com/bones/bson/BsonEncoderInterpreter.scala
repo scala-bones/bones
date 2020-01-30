@@ -8,7 +8,19 @@ import com.bones.data._
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
 import reactivemongo.bson.buffer.ArrayBSONBuffer
-import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDecimal, BSONDocument, BSONElement, BSONInteger, BSONLong, BSONNull, BSONString, BSONValue}
+import reactivemongo.bson.{
+  BSONArray,
+  BSONBoolean,
+  BSONDateTime,
+  BSONDecimal,
+  BSONDocument,
+  BSONElement,
+  BSONInteger,
+  BSONLong,
+  BSONNull,
+  BSONString,
+  BSONValue
+}
 
 /**
   * Responsible for creating functions to encode values to BSON data.
@@ -43,7 +55,6 @@ object BsonEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[BSO
   override def stringToOut(op: StringData): String => BSONValue =
     input => BSONString(input)
 
-
   override def shortToOut(sd: ShortData): Short => BSONValue =
     input => BSONInteger(input.toInt)
 
@@ -73,17 +84,15 @@ object BsonEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[BSO
 
   /** TODO:, need to propagate the error instead of hiding with the string conversion */
   override def bigDecimalToOut(op: BigDecimalData): BigDecimal => BSONValue =
-    input =>
-      BSONDecimal.fromBigDecimal(input).getOrElse(BSONString(input.toString))
+    input => BSONDecimal.fromBigDecimal(input).getOrElse(BSONString(input.toString))
 
   override def toOutList(list: List[BSONValue]): BSONValue = BSONArray(list)
 
   override def byteArrayToOut(ba: ByteArrayData): Array[Byte] => BSONValue =
-    input =>
-      BSONString(Base64.getEncoder.encodeToString(input))
+    input => BSONString(Base64.getEncoder.encodeToString(input))
 
-  override def enumerationToOut[E <: Enumeration, V: Manifest](op: EnumerationData[E, V]):
-    op.enumeration.Value => BSONValue =
+  override def enumerationToOut[E <: Enumeration, V: Manifest](
+    op: EnumerationData[E, V]): op.enumeration.Value => BSONValue =
     input => BSONString(input.toString)
 
   def toObj[ALG[_], A](kvDef: KeyValueDefinition[ALG, A], value: BSONValue): BSONValue =
@@ -92,6 +101,6 @@ object BsonEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[BSO
   override def addStringField(element: BSONValue, name: String, value: String): BSONValue =
     element match {
       case doc: BSONDocument => combine(doc, BSONDocument(BSONElement(name, BSONString(value))))
-      case _ => element
+      case _                 => element
     }
 }

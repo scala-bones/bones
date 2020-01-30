@@ -32,8 +32,7 @@ object DbUtil {
     go(Nil, name.toList).mkString.toLowerCase
   }
 
-  def withDataSource[A](ds: DataSource)(
-      f: Connection => Either[NonEmptyList[ExtractionError], A])
+  def withDataSource[A](ds: DataSource)(f: Connection => Either[NonEmptyList[ExtractionError], A])
     : Either[NonEmptyList[ExtractionError], A] =
     try {
       val con = ds.getConnection
@@ -46,15 +45,13 @@ object DbUtil {
     }
 
   def withStatement[A](con: CallableStatement)(
-      f: CallableStatement => Either[NonEmptyList[ExtractionError], A])
+    f: CallableStatement => Either[NonEmptyList[ExtractionError], A])
     : Either[NonEmptyList[ExtractionError], A] =
     try {
       f(con)
     } catch {
       case NonFatal(th) =>
-        Left(
-          NonEmptyList.one(
-            SystemError(th, Some("Error executing CallableStatement"))))
+        Left(NonEmptyList.one(SystemError(th, Some("Error executing CallableStatement"))))
     } finally {
       con.close()
     }

@@ -1,6 +1,5 @@
 package com.bones.fullstack
 
-
 import java.nio.charset.StandardCharsets
 import cats.data.{Kleisli, NonEmptyList}
 import cats.effect._
@@ -26,13 +25,12 @@ object LocalhostAllIOApp {
   private val basicErrorSchema =
     (("message", com.bones.syntax.string) :<: kvpNil).convert[BasicError]
 
-  def extractionErrorToBasicError(extractionError: ExtractionError) : BasicError = {
+  def extractionErrorToBasicError(extractionError: ExtractionError): BasicError = {
     BasicError(extractionError.toString)
   }
   def extractionErrorsToBasicError(extractionErrors: NonEmptyList[ExtractionError]): BasicError = {
     BasicError(extractionErrors.toList.mkString("."))
   }
-
 
   def localhostDataSource: HikariDataSource = {
     val config = new HikariConfig
@@ -46,11 +44,11 @@ object LocalhostAllIOApp {
     new HikariDataSource(config)
   }
 
-  def dbSchemaEndpoint[A](path: String, schema: BonesSchema[NoAlgebra,A]): HttpRoutes[IO] = {
-      val dbSchema = DbColumnInterpreter.tableDefinition(schema)
-      HttpRoutes.of[IO] {
-        case GET -> Root / "dbSchema" / path => Ok(dbSchema, Header("Content-Type", "text/plain"))
-      }
+  def dbSchemaEndpoint[A](path: String, schema: BonesSchema[NoAlgebra, A]): HttpRoutes[IO] = {
+    val dbSchema = DbColumnInterpreter.tableDefinition(schema)
+    HttpRoutes.of[IO] {
+      case GET -> Root / "dbSchema" / path => Ok(dbSchema, Header("Content-Type", "text/plain"))
+    }
   }
 
 //  def reactEndpoints(schemas: List[BonesSchema[_]]): HttpRoutes[IO] = {
@@ -61,24 +59,29 @@ object LocalhostAllIOApp {
 //    }
 //  }
 
-  def serviceRoutesWithCrudMiddleware[A](path: String, schema: BonesSchema[NoAlgebra,A],ds: DataSource
-                                                                             ): HttpRoutes[IO] = {
-
+  def serviceRoutesWithCrudMiddleware[A](
+    path: String,
+    schema: BonesSchema[NoAlgebra, A],
+    ds: DataSource): HttpRoutes[IO] = {
 
     val middleware = CrudDbDefinitions(schema, ds)
 
-
     /** Create the REST interpreter with full CRUD capabilities which write data to the database */
-    val interpreter = ClassicCrudInterpreter.allVerbs[A,BasicError,IO,Long](
+    val interpreter = ClassicCrudInterpreter.allVerbs[A, BasicError, IO, Long](
       path,
       StandardCharsets.UTF_8,
       schema,
       kvp("id", long(lv.min(1))),
-      str => Try(str.toLong).toEither.left.map(ex => BasicError("Could not convert parameter to a Long value")),
+      str =>
+        Try(str.toLong).toEither.left.map(ex =>
+          BasicError("Could not convert parameter to a Long value")),
       basicErrorSchema,
       Kleisli(middleware.createF).map(_.left.map(e => extractionErrorToBasicError(e))).run,
       Kleisli(middleware.readF).map(_.left.map(e => extractionErrorsToBasicError(e))).run,
-      Function.untupled(Kleisli(middleware.updateF.tupled).map(_.left.map(e => extractionErrorsToBasicError(e))).run),
+      Function.untupled(
+        Kleisli(middleware.updateF.tupled)
+          .map(_.left.map(e => extractionErrorsToBasicError(e)))
+          .run),
       Kleisli(middleware.deleteF).map(_.left.map(e => extractionErrorsToBasicError(e))).run,
       () => middleware.searchF
     )
@@ -98,14 +101,14 @@ abstract class LocalhostAllIOApp() extends IOApp {
 
     val allServices = services
 
-
-    BlazeBuilder[IO].bindHttp(8080, "localhost").mountService(CORS(allServices), "/")
+    BlazeBuilder[IO]
+      .bindHttp(8080, "localhost")
+      .mountService(CORS(allServices), "/")
       .serve
-      .compile.drain.as(ExitCode.Success)
+      .compile
+      .drain
+      .as(ExitCode.Success)
 
   }
 
 }
-
-
-

@@ -19,19 +19,24 @@ import shapeless.{HList, HNil, Nat}
 object ResultSetInterpreter {
 
   trait CustomInterpreter[ALG[_]] {
-    def resultSet[A](alg: ALG[A]): (Path, FieldName) => ResultSet => Either[NonEmptyList[ExtractionError], A]
+    def resultSet[A](
+      alg: ALG[A]): (Path, FieldName) => ResultSet => Either[NonEmptyList[ExtractionError], A]
   }
 
   case object CustomInterpreterNoAlgebra extends CustomInterpreter[NoAlgebra] {
-    def resultSet[A](alg: NoAlgebra[A]): (Path, FieldName) => ResultSet => Either[NonEmptyList[ExtractionError], A] =
+    def resultSet[A](alg: NoAlgebra[A])
+      : (Path, FieldName) => ResultSet => Either[NonEmptyList[ExtractionError], A] =
       sys.error("unreachable code")
   }
 
-  def kvpHList[ALG[_], H <: HList, N <: Nat](group: KvpHList[ALG, H, N], customInterpreter: CustomInterpreter[ALG])
+  def kvpHList[ALG[_], H <: HList, N <: Nat](
+    group: KvpHList[ALG, H, N],
+    customInterpreter: CustomInterpreter[ALG])
     : Path => ResultSet => Either[NonEmptyList[ExtractionError], H] =
     group match {
       case nil: KvpNil[_] =>
-        path => rs => Right(HNil)
+        path => rs =>
+          Right(HNil)
       case op: KvpSingleValueHead[ALG, h, t, tl, a] @unchecked =>
         path =>
           {
@@ -43,16 +48,16 @@ object ResultSetInterpreter {
             rs =>
               {
                 Util.eitherMap2(rsToHead(rs), rsToTail(rs))((l1: h, l2: t) => {
-                  op.isHCons.cons(l1,l2)
+                  op.isHCons.cons(l1, l2)
                 })
               }
           }
       case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked =>
-
-        def fromSchema[A](bonesSchema: BonesSchema[ALG,A]) : Path => ResultSet => Either[NonEmptyList[ExtractionError], A] =
+        def fromSchema[A](bonesSchema: BonesSchema[ALG, A])
+          : Path => ResultSet => Either[NonEmptyList[ExtractionError], A] =
           bonesSchema match {
-            case hList: HListConvert[ALG, hh, nn, A] @unchecked => {
-              path => resultSet => {
+            case hList: HListConvert[ALG, hh, nn, A] @unchecked => { path => resultSet =>
+              {
                 val resultHH = kvpHList(hList.from, customInterpreter)(path)(resultSet)
                 resultHH.map(hh => hList.fHtoA(hh))
               }
@@ -69,10 +74,9 @@ object ResultSetInterpreter {
             val rsToTail = tailF(path)
             rs =>
               {
-                Util.eitherMap2(rsToHead(rs), rsToTail(rs))(
-                  (l1: a, l2: ht) => {
-                    op.isHCons.cons(l1, l2)
-                  })
+                Util.eitherMap2(rsToHead(rs), rsToTail(rs))((l1: a, l2: ht) => {
+                  op.isHCons.cons(l1, l2)
+                })
               }
           }
       case op: KvpHListHead[ALG, a, al, h, hl, t, tl] @unchecked =>
@@ -91,32 +95,35 @@ object ResultSetInterpreter {
           }
     }
 
-  def determineValueDefinition[ALG[_], A](coproduct: CoproductDataDefinition[ALG, A], customInterpreter: CustomInterpreter[ALG]) : (Path, FieldName) =>
-    ResultSet => Either[NonEmptyList[ExtractionError], A]  =
+  def determineValueDefinition[ALG[_], A](
+    coproduct: CoproductDataDefinition[ALG, A],
+    customInterpreter: CustomInterpreter[ALG])
+    : (Path, FieldName) => ResultSet => Either[NonEmptyList[ExtractionError], A] =
     coproduct match {
-      case Left(kvp) => valueDefinition(kvp, customInterpreter)
+      case Left(kvp)  => valueDefinition(kvp, customInterpreter)
       case Right(alg) => customInterpreter.resultSet(alg)
     }
 
-  def valueDefinition[ALG[_], A](fgo: KvpValue[A], customInterpreter: CustomInterpreter[ALG]): (
-      Path,
-      FieldName) => ResultSet => Either[NonEmptyList[ExtractionError], A] =
+  def valueDefinition[ALG[_], A](fgo: KvpValue[A], customInterpreter: CustomInterpreter[ALG])
+    : (Path, FieldName) => ResultSet => Either[NonEmptyList[ExtractionError], A] =
     fgo match {
       case op: OptionalKvpValueDefinition[ALG, a] @unchecked =>
         (path, fieldName) =>
-          val child = determineValueDefinition(op.valueDefinitionOp, customInterpreter)(path, fieldName)
-          rs => {
-            child(rs) match {
-              case Left(errs) =>
-                if (errs.length == 1) errs.head match {
-                  case RequiredData(_, childOp) if childOp == op.valueDefinitionOp => Right(None)
-                  case _ => Left(errs)
-                } else {
-                  Left[NonEmptyList[ExtractionError], Option[a]](errs)
-                }
-              case Right(a) => Right(Some(a))
-            }
-          }: Either[NonEmptyList[ExtractionError], Option[a]]
+          val child =
+            determineValueDefinition(op.valueDefinitionOp, customInterpreter)(path, fieldName)
+          rs =>
+            {
+              child(rs) match {
+                case Left(errs) =>
+                  if (errs.length == 1) errs.head match {
+                    case RequiredData(_, childOp) if childOp == op.valueDefinitionOp => Right(None)
+                    case _                                                           => Left(errs)
+                  } else {
+                    Left[NonEmptyList[ExtractionError], Option[a]](errs)
+                  }
+                case Right(a) => Right(Some(a))
+              }
+            }: Either[NonEmptyList[ExtractionError], Option[a]]
       case ob: BooleanData =>
         (path, fieldName) => rs =>
           catchSql(rs.getBoolean(fieldName), path, ob)
@@ -139,15 +146,12 @@ object ResultSetInterpreter {
       case dd: LocalDateTimeData =>
         (path, fieldName) => rs =>
           catchSql(rs.getDate(fieldName, utcCalendar), path, dd)
-            .map(
-              date =>
-                LocalDateTime.ofInstant(new Date(date.getTime).toInstant,
-                                        ZoneId.of("UTC")))
+            .map(date =>
+              LocalDateTime.ofInstant(new Date(date.getTime).toInstant, ZoneId.of("UTC")))
       case ld: LocalDateData =>
         (path, fieldName) => rs =>
           catchSql(rs.getDate(fieldName, utcCalendar), path, ld)
-            .map(
-              date => date.toLocalDate)
+            .map(date => date.toLocalDate)
       case fd: FloatData =>
         (path, fieldName) => rs =>
           catchSql(rs.getFloat(fieldName), path, fd)
@@ -156,54 +160,59 @@ object ResultSetInterpreter {
           catchSql(rs.getDouble(fieldName), path, dd)
       case bd: BigDecimalData =>
         (path, fieldName) => rs =>
-          catchSql(rs.getBigDecimal(fieldName), path, bd).map(bd =>
-            BigDecimal(bd))
+          catchSql(rs.getBigDecimal(fieldName), path, bd).map(bd => BigDecimal(bd))
       case ba: ByteArrayData =>
         (path, fieldName) => rs =>
           catchSql(rs.getBytes(fieldName), path, ba)
-      case ld: ListData[ALG, t] @unchecked      => ???
+      case ld: ListData[ALG, t] @unchecked => ???
       case ed: EitherData[ALG, a, b] @unchecked =>
-        (path, fieldName) => rs => {
-          val result = determineValueDefinition(ed.definitionA, customInterpreter)(path, "left_" + fieldName)(rs) match {
-            //if the error is that the left is required, we will check the right.
-            case Left(nel) =>
-              if (nel.length == 1) {
-                nel.head match {
-                  case RequiredData(path, op) if op == ed.definitionA => {
-                    determineValueDefinition(ed.definitionB, customInterpreter)(path, "right_" + fieldName)(rs).map(Right(_))
+        (path, fieldName) => rs =>
+          {
+            val result = determineValueDefinition(ed.definitionA, customInterpreter)(
+              path,
+              "left_" + fieldName)(rs) match {
+              //if the error is that the left is required, we will check the right.
+              case Left(nel) =>
+                if (nel.length == 1) {
+                  nel.head match {
+                    case RequiredData(path, op) if op == ed.definitionA => {
+                      determineValueDefinition(ed.definitionB, customInterpreter)(
+                        path,
+                        "right_" + fieldName)(rs).map(Right(_))
+                    }
+                    case _ => Left(nel)
                   }
-                  case _ => Left(nel)
+                } else {
+                  Left(nel)
                 }
-              } else {
-                Left(nel)
-              }
-            case Right(v) => Right(Left(v))
+              case Right(v) => Right(Left(v))
+            }
+            result
           }
-          result
-        }
 
-      case esd: EnumerationData[e,a] =>
-        (path, fieldName) => rs => {
-          for {
-            r <- catchSql(rs.getString(fieldName), path, esd)
-            e <- stringToEnumeration[e,a](r, path, esd.enumeration)(esd.manifestOfA)
-          } yield e.asInstanceOf[A]
-        }:Either[NonEmptyList[com.bones.data.Error.ExtractionError], A]
+      case esd: EnumerationData[e, a] =>
+        (path, fieldName) => rs =>
+          {
+            for {
+              r <- catchSql(rs.getString(fieldName), path, esd)
+              e <- stringToEnumeration[e, a](r, path, esd.enumeration)(esd.manifestOfA)
+            } yield e.asInstanceOf[A]
+          }: Either[NonEmptyList[com.bones.data.Error.ExtractionError], A]
       case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
         val groupF = kvpHList(kvp.kvpHList, customInterpreter)
         (path, _) => //Ignore fieldName here
           groupF(path).andThen(_.map(_.asInstanceOf[A]))
 
-      case x: HListConvert[ALG, a, al, b] @unchecked=>
+      case x: HListConvert[ALG, a, al, b] @unchecked =>
         val groupF = kvpHList(x.from, customInterpreter)
         (path, _) =>
           groupF(path).andThen(_.map(x.fHtoA))
     }
 
   private def catchSql[A](
-      f: => A,
-      path: Path,
-      op: KvpValue[_]): Either[NonEmptyList[ExtractionError], A] =
+    f: => A,
+    path: Path,
+    op: KvpValue[_]): Either[NonEmptyList[ExtractionError], A] =
     try {
       val result = f
       if (result == null) {

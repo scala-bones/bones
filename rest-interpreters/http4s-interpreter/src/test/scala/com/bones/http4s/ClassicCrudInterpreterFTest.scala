@@ -4,7 +4,6 @@ import org.scalatest.FunSuite
 
 class ClassicCrudInterpreterFTest extends FunSuite {
 
-
 //  val interpeter = new ClassicCrudInterpreter[]()
 
 }

@@ -9,7 +9,6 @@ import com.bones.validation.ValidationDefinition.{LongValidation => iv, StringVa
 import com.zaxxer.hikari.HikariDataSource
 import org.http4s.HttpRoutes
 
-
 /** Example endpoint.  This creates a complete application which saves a person to a local database including:
   * JSON endpoints, Protobuf Endpoints, 5 CRUD Endpoints (Get, Put, Post, Delete, Search All),
   * Swagger, DB DDL.
@@ -25,8 +24,7 @@ object PersonEndpoint extends LocalhostAllIOApp {
       ("age", long(iv.min(0))) :<:
       ("gender", string.optional) :<:
       kvpNil
-    ).convert[Person]
-
+  ).convert[Person]
 
   override def services: HttpRoutes[IO] =
     serviceRoutesWithCrudMiddleware("person", personSchema, ds)
