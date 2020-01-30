@@ -7,7 +7,16 @@ import java.util.UUID
 
 import cats.implicits._
 
-import scala.math.Ordering.{BigDecimalOrdering, ByteOrdering, CharOrdering, DoubleOrdering, FloatOrdering, IntOrdering, LongOrdering, ShortOrdering}
+import scala.math.Ordering.{
+  BigDecimalOrdering,
+  ByteOrdering,
+  CharOrdering,
+  DoubleOrdering,
+  FloatOrdering,
+  IntOrdering,
+  LongOrdering,
+  ShortOrdering
+}
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
 import java.time.LocalDate
@@ -19,10 +28,13 @@ object ValidationDefinition {
 
   /** Represents a validations operation */
   trait ValidationOp[T] {
+
     /** Returns true if T passes the validation */
     def isValid: T => Boolean
+
     /** If t is not valid, this will return the error message in English. */
     def defaultError(t: T): String
+
     /** Gives an English text description of the validation. */
     def description: String
   }
@@ -52,14 +64,15 @@ object ValidationDefinition {
     def invalidVector(invalidValues: Vector[T]) = InvalidValue(invalidValues)
     def invalid(t: T*): InvalidValue[T] = invalidVector(t.toVector)
   }
-  
+
   /**
-   * A collection of ValidationOp[String] objects.
-   */
+    * A collection of ValidationOp[String] objects.
+    */
   object StringValidation extends BaseValidationOp[String] {
 
     val alphanumericRegexString = "^[a-zA-Z0-9]*$"
     val alphanumericRegex: Regex = alphanumericRegexString.r
+
     /** Uses regex to determine if the string is Alphanumeric */
     object IsAlphanumeric extends ValidationOp[String] {
       val isValid: String => Boolean =
@@ -72,13 +85,15 @@ object ValidationDefinition {
 
     val lettersWithSpaceRegexString = "^[a-zA-Z\\s]*$"
     val lettersWithSpaceRegex: Regex = lettersWithSpaceRegexString.r
+
     /** Uses regex to determine if the string only contains words and whitespace */
     object Words extends ValidationOp[String] {
 
       val isValid: String => Boolean =
         lettersWithSpaceRegex.findFirstMatchIn(_).isDefined
 
-      override def defaultError(t: String): String = s"$t contains characters other than letters and spaces"
+      override def defaultError(t: String): String =
+        s"$t contains characters other than letters and spaces"
 
       override def description: String = s"letters with space"
     }
@@ -95,9 +110,9 @@ object ValidationDefinition {
     }
 
     /**
-     * Defines min as the minimum length the string can be.
-     * @param min The minimum length the string can be.
-     */
+      * Defines min as the minimum length the string can be.
+      * @param min The minimum length the string can be.
+      */
     case class MinLength(min: Int) extends ValidationOp[String] {
       val isValid: String => Boolean = _.length >= min
 
@@ -133,21 +148,19 @@ object ValidationDefinition {
       override def description: String = s"lengthO of $length"
     }
 
-    /** A Custom validation for the stirng type. 
-     * Follow the values defined in [[ValidationOp]]
-     */
-    case class Custom(f: String => Boolean,
-                      defaultErrorF: String => String,
-                      description: String)
+    /** A Custom validation for the stirng type.
+      * Follow the values defined in [[ValidationOp]]
+      */
+    case class Custom(f: String => Boolean, defaultErrorF: String => String, description: String)
         extends ValidationOp[String] {
       val isValid: String => Boolean = f
 
       override def defaultError(t: String): String = defaultErrorF(t)
     }
 
-    /** Guid is a Globally unique identifier.  String is a Valid GUID if 
-     * it is parsable using [[java.util.UUID.fromString]]
-     */
+    /** Guid is a Globally unique identifier.  String is a Valid GUID if
+      * it is parsable using [[java.util.UUID.fromString]]
+      */
     object Guid extends ValidationOp[String] {
       val isValid: String => Boolean = str =>
         Try {
@@ -173,7 +186,8 @@ object ValidationDefinition {
     object Trimmed extends ValidationOp[String] {
       val isValid: String => Boolean = str => str.trim == str
 
-      override def defaultError(t: String): String = s"'$t' must not have any leading or trailing whitespace"
+      override def defaultError(t: String): String =
+        s"'$t' must not have any leading or trailing whitespace"
 
       override def description: String = "trimmed"
     }
@@ -305,9 +319,7 @@ object ValidationDefinition {
     val trimmed: Trimmed.type = Trimmed
 
     /** */
-    def custom(f: String => Boolean,
-               defaultErrorF: String => String,
-               description: String) =
+    def custom(f: String => Boolean, defaultErrorF: String => String, description: String) =
       Custom(f, defaultErrorF, description)
 
     /** String must be a guid */
@@ -342,6 +354,7 @@ object ValidationDefinition {
   }
 
   trait ZeroValidations[N] extends Ordering[N] {
+
     /** What is the zero Value of N.  Used for positive and negative comparisons */
     val zero: N
 
@@ -370,11 +383,11 @@ object ValidationDefinition {
   }
 
   /**
-   * Base trait for any type which has an ordering.  Must be extented with specific type.
-   * NOTE: Tried to just user context bound for each case class, however because of erasure,
-   * we can not match and know the type of the N.
+    * Base trait for any type which has an ordering.  Must be extented with specific type.
+    * NOTE: Tried to just user context bound for each case class, however because of erasure,
+    * we can not match and know the type of the N.
    **/
-  trait OrderingValidation[N] extends Ordering[N]{
+  trait OrderingValidation[N] extends Ordering[N] {
 
     case class Between(min: N, max: N) extends ValidationOp[N] {
       val isValid: N => Boolean = input => input >= min && input <= max
@@ -440,10 +453,10 @@ object ValidationDefinition {
 
   trait Modulo[N] extends ZeroValidations[N] {
 
-    val modulo: (N,N) => N
+    val modulo: (N, N) => N
 
     case class Multiple(multipleOf: N) extends ValidationOp[N] {
-      override def isValid: N => Boolean = n => modulo(n,multipleOf) == zero
+      override def isValid: N => Boolean = n => modulo(n, multipleOf) == zero
 
       override def defaultError(t: N): String =
         s"$t is not a multiple of $multipleOf"
@@ -454,39 +467,71 @@ object ValidationDefinition {
     def multiple(n: N) = Multiple(n)
   }
 
-  object CharValidation extends BaseValidationOp[Char] with OrderingValidation[Char] with ZeroValidations[Char] with CharOrdering {
+  object CharValidation
+      extends BaseValidationOp[Char]
+      with OrderingValidation[Char]
+      with ZeroValidations[Char]
+      with CharOrdering {
     override val zero: Char = 0
   }
 
-  object ByteValidation extends BaseValidationOp[Byte] with OrderingValidation[Byte] with Modulo[Byte] with ByteOrdering {
+  object ByteValidation
+      extends BaseValidationOp[Byte]
+      with OrderingValidation[Byte]
+      with Modulo[Byte]
+      with ByteOrdering {
     override val zero: Byte = 0
     override val modulo: (Byte, Byte) => Byte = (b1, b2) => (b1 % b2).byteValue()
   }
 
-  object ShortValidation extends BaseValidationOp[Short] with OrderingValidation[Short] with Modulo[Short] with ShortOrdering {
+  object ShortValidation
+      extends BaseValidationOp[Short]
+      with OrderingValidation[Short]
+      with Modulo[Short]
+      with ShortOrdering {
     override val modulo: (Short, Short) => Short = (i1, i2) => (i1 % i2).shortValue()
     val zero: Short = 0
   }
 
-  object IntValidation extends BaseValidationOp[Int] with OrderingValidation[Int] with Modulo[Int] with IntOrdering {
+  object IntValidation
+      extends BaseValidationOp[Int]
+      with OrderingValidation[Int]
+      with Modulo[Int]
+      with IntOrdering {
     override val modulo: (Int, Int) => Int = (i1, i2) => i1 % i2
     val zero = 0
   }
 
-  object LongValidation extends BaseValidationOp[Long] with OrderingValidation[Long] with Modulo[Long] with LongOrdering {
-    override val modulo: (Long, Long) => Long = (l1,l2) => l1 % l2
+  object LongValidation
+      extends BaseValidationOp[Long]
+      with OrderingValidation[Long]
+      with Modulo[Long]
+      with LongOrdering {
+    override val modulo: (Long, Long) => Long = (l1, l2) => l1 % l2
     val zero = 0l
   }
 
-  object DoubleValidation extends BaseValidationOp[Double] with OrderingValidation[Double] with ZeroValidations[Double] with DoubleOrdering {
+  object DoubleValidation
+      extends BaseValidationOp[Double]
+      with OrderingValidation[Double]
+      with ZeroValidations[Double]
+      with DoubleOrdering {
     override val zero: Double = 0
   }
 
-  object FloatValidation extends BaseValidationOp[Float] with OrderingValidation[Float] with ZeroValidations[Float] with FloatOrdering {
+  object FloatValidation
+      extends BaseValidationOp[Float]
+      with OrderingValidation[Float]
+      with ZeroValidations[Float]
+      with FloatOrdering {
     override val zero: Float = 0
   }
 
-  object BigDecimalValidation extends BaseValidationOp[BigDecimal] with OrderingValidation[BigDecimal] with ZeroValidations[BigDecimal] with BigDecimalOrdering {
+  object BigDecimalValidation
+      extends BaseValidationOp[BigDecimal]
+      with OrderingValidation[BigDecimal]
+      with ZeroValidations[BigDecimal]
+      with BigDecimalOrdering {
     val zero = BigDecimal(0)
   }
 
@@ -521,8 +566,7 @@ object ValidationDefinition {
 
   object LocalDateValidationInstances {
 
-    case class Min(minDate: LocalDate, format: DateTimeFormatter)
-        extends ValidationOp[LocalDate] {
+    case class Min(minDate: LocalDate, format: DateTimeFormatter) extends ValidationOp[LocalDate] {
       override def isValid: LocalDate => Boolean = _.isAfter(minDate)
 
       override def defaultError(t: LocalDate): String =
@@ -531,8 +575,7 @@ object ValidationDefinition {
       override def description: String = s"after ${format.format(minDate)}"
     }
 
-    case class Max(maxDate: LocalDate, format: DateTimeFormatter)
-        extends ValidationOp[LocalDate] {
+    case class Max(maxDate: LocalDate, format: DateTimeFormatter) extends ValidationOp[LocalDate] {
       override def isValid: LocalDate => Boolean = _.isBefore(maxDate)
 
       override def defaultError(t: LocalDate): String =
@@ -547,7 +590,6 @@ object ValidationDefinition {
     def max(maxDate: LocalDate, format: DateTimeFormatter) = Max(maxDate, format)
     def max(maxDate: LocalDate) = Max(maxDate, DateTimeFormatter.ISO_LOCAL_DATE)
 
-
-  }  
+  }
 
 }

@@ -4,12 +4,13 @@ import cats.effect.IO
 import com.bones.data.KvpNil
 import com.bones.fullstack.LocalhostAllIOApp
 import com.bones.syntax._
-import com.bones.validation.ValidationDefinition.{BigDecimalValidation => dv, StringValidation => sv}
+import com.bones.validation.ValidationDefinition.{
+  BigDecimalValidation => dv,
+  StringValidation => sv
+}
 import org.http4s.HttpRoutes
 import cats.effect._
 import cats.implicits._
-
-
 
 object Demo {
 
@@ -18,17 +19,17 @@ object Demo {
   case class Waterfall(name: String, location: Option[Location], height: Option[BigDecimal])
 
   val locationSchema = (
-      ("latitude", bigDecimal(dv.min(-180), dv.max(180))) :<:
+    ("latitude", bigDecimal(dv.min(-180), dv.max(180))) :<:
       ("longitude", bigDecimal(dv.min(-180), dv.max(180))) :<:
       kvpNil
-    ).convert[Location]
+  ).convert[Location]
 
   val waterfallSchema = (
-      ("name", string(sv.max(200), sv.trimmed, sv.words)) :<:
+    ("name", string(sv.max(200), sv.trimmed, sv.words)) :<:
       ("location", locationSchema.optional) :<:
       ("height", bigDecimal(dv.min(0)).optional) :<:
       kvpNil
-    ).convert[Waterfall]
+  ).convert[Waterfall]
 
 }
 
@@ -45,10 +46,3 @@ object DemoApp extends LocalhostAllIOApp() {
 //      reactEndpoints(List(waterfallSchema))
   }
 }
-
-
-
-
-
-
-

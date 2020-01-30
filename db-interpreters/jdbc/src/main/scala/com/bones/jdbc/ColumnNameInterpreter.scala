@@ -17,16 +17,20 @@ object ColumnNameInterpreter {
   }
 
   case object CustomInterpreterNoAlgebra extends CustomInterpreter[NoAlgebra] {
-    def keyToColumnNames[A](alg: NoAlgebra[A]): Key => List[ColumnName] = sys.error("unreachable code")
+    def keyToColumnNames[A](alg: NoAlgebra[A]): Key => List[ColumnName] =
+      sys.error("unreachable code")
   }
 
   def kvpHList[ALG[_], H <: HList, HL <: Nat](
-      group: KvpHList[ALG, H, HL], customInterpreter: CustomInterpreter[ALG]): List[ColumnName] = {
+    group: KvpHList[ALG, H, HL],
+    customInterpreter: CustomInterpreter[ALG]): List[ColumnName] = {
     group match {
       case nil: KvpNil[_] => List.empty
       case op: KvpSingleValueHead[ALG, h, t, tl, a] @unchecked =>
         val headList =
-          determineValueDefinition(op.fieldDefinition.op, customInterpreter: CustomInterpreter[ALG])(op.fieldDefinition.key)
+          determineValueDefinition(
+            op.fieldDefinition.op,
+            customInterpreter: CustomInterpreter[ALG])(op.fieldDefinition.key)
         val tailList = kvpHList(op.tail, customInterpreter: CustomInterpreter[ALG])
         headList ::: tailList
       case op: KvpHListHead[ALG, a, al, h, hl, t, tl] @unchecked =>
@@ -36,67 +40,77 @@ object ColumnNameInterpreter {
     }
   }
 
-  def fromBonesSchema[ALG[_], A](bonesSchema: BonesSchema[ALG, A], customInterpreter: CustomInterpreter[ALG]): List[ColumnName] =
+  def fromBonesSchema[ALG[_], A](
+    bonesSchema: BonesSchema[ALG, A],
+    customInterpreter: CustomInterpreter[ALG]): List[ColumnName] =
     bonesSchema match {
       case hList: HListConvert[ALG, h, n, a] @unchecked => kvpHList(hList.from, customInterpreter)
-      case co: KvpCoproductConvert[ALG, c, a] @unchecked => valueDefinition(co, customInterpreter)("")
+      case co: KvpCoproductConvert[ALG, c, a] @unchecked =>
+        valueDefinition(co, customInterpreter)("")
     }
-
 
   type CoproductName = String
 
-  protected def kvpCoproduct[ALG[_], C <: Coproduct](kvpCo: KvpCoproduct[ALG, C], customInterpreter: CustomInterpreter[ALG]): List[ColumnName] =
+  protected def kvpCoproduct[ALG[_], C <: Coproduct](
+    kvpCo: KvpCoproduct[ALG, C],
+    customInterpreter: CustomInterpreter[ALG]): List[ColumnName] =
     kvpCo match {
       case co: KvpCoNil[_] => List.empty
-      case co: KvpSingleValueLeft[ALG, l,r] =>
+      case co: KvpSingleValueLeft[ALG, l, r] =>
         val head = determineValueDefinition(co.kvpValue, customInterpreter)("")
         val tail = kvpCoproduct(co.kvpTail, customInterpreter)
         head ::: tail
     }
 
+  private val keyToColumNames: Key => List[ColumnName] = key => List(camelToSnake(key))
 
-  private val keyToColumNames: Key => List[ColumnName] = key =>
-    List(camelToSnake(key))
-
-  def determineValueDefinition[ALG[_], A](kvp: CoproductDataDefinition[ALG, A], customInterpreter: CustomInterpreter[ALG]) : Key => List[ColumnName] =
+  def determineValueDefinition[ALG[_], A](
+    kvp: CoproductDataDefinition[ALG, A],
+    customInterpreter: CustomInterpreter[ALG]): Key => List[ColumnName] =
     kvp match {
-      case Left(kvp) => valueDefinition(kvp, customInterpreter)
+      case Left(kvp)  => valueDefinition(kvp, customInterpreter)
       case Right(alg) => customInterpreter.keyToColumnNames(alg)
     }
 
-  def valueDefinition[ALG[_], A](fgo: KvpValue[A], customInterpreter: CustomInterpreter[ALG]): Key => List[ColumnName] =
+  def valueDefinition[ALG[_], A](
+    fgo: KvpValue[A],
+    customInterpreter: CustomInterpreter[ALG]): Key => List[ColumnName] =
     fgo match {
       case op: OptionalKvpValueDefinition[ALG, a] @unchecked =>
         determineValueDefinition(op.valueDefinitionOp, customInterpreter)
-      case ob: BooleanData               => keyToColumNames
-      case rs: StringData                => keyToColumNames
+      case ob: BooleanData                 => keyToColumNames
+      case rs: StringData                  => keyToColumNames
       case sd: ShortData                   => keyToColumNames
-      case id: IntData                   => keyToColumNames
-      case ri: LongData                  => keyToColumNames
-      case uu: UuidData                  => keyToColumNames
-      case ld: LocalDateData              => keyToColumNames
-      case dd: LocalDateTimeData              => keyToColumNames
-      case fd: FloatData                 => keyToColumNames
-      case dd: DoubleData                => keyToColumNames
-      case bd: BigDecimalData            => keyToColumNames
+      case id: IntData                     => keyToColumNames
+      case ri: LongData                    => keyToColumNames
+      case uu: UuidData                    => keyToColumNames
+      case ld: LocalDateData               => keyToColumNames
+      case dd: LocalDateTimeData           => keyToColumNames
+      case fd: FloatData                   => keyToColumNames
+      case dd: DoubleData                  => keyToColumNames
+      case bd: BigDecimalData              => keyToColumNames
       case ld: ListData[ALG, t] @unchecked => keyToColumNames
-      case ba: ByteArrayData             => keyToColumNames
+      case ba: ByteArrayData               => keyToColumNames
       case ed: EitherData[ALG, a, b] @unchecked =>
-        key => {
-          val baseName = camelToSnake(key)
-          List("left_" + baseName, "right_"+baseName)
-        }
-      case esd: EnumerationData[e,a] => keyToColumNames
+        key =>
+          {
+            val baseName = camelToSnake(key)
+            List("left_" + baseName, "right_" + baseName)
+          }
+      case esd: EnumerationData[e, a] => keyToColumNames
 
       case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
-        _ => kvpHList(kvp.kvpHList, customInterpreter)
+        _ =>
+          kvpHList(kvp.kvpHList, customInterpreter)
       case x: HListConvert[ALG, a, al, b] @unchecked =>
-        _ => kvpHList(x.from, customInterpreter)
-      case x: KvpCoproductConvert[ALG,c, a] @unchecked =>
-        _ => {
-          val columnNames = kvpCoproduct(x.from, customInterpreter)
-          "dtype" :: columnNames
-        }
+        _ =>
+          kvpHList(x.from, customInterpreter)
+      case x: KvpCoproductConvert[ALG, c, a] @unchecked =>
+        _ =>
+          {
+            val columnNames = kvpCoproduct(x.from, customInterpreter)
+            "dtype" :: columnNames
+          }
     }
 
 }

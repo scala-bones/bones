@@ -16,6 +16,7 @@ object ArgonautEncoderInterpreter {
     override def localTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_TIME
   }
 }
+
 /**
   * Module responsible for converting values to Argonaut JSON without validation.
   * The entry point for this class is [KvpInterchangeFormatEncoderInterpreter.fromSchema].
@@ -75,15 +76,15 @@ trait ArgonautEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[
     input => Json.jString(Base64.getEncoder.encodeToString(input))
 
   override def toOutList(list: List[Json]): Json =
-    Json.array(list :_*)
+    Json.array(list: _*)
 
   override def shortToOut(sd: ShortData): Short => Json =
     input => Json.jNumber(input.toInt)
 
-  override def enumerationToOut[E <: Enumeration, V: Manifest](op: EnumerationData[E, V]):
-    op.enumeration.Value => Json = input => Json.jString(input.toString)
+  override def enumerationToOut[E <: Enumeration, V: Manifest](
+    op: EnumerationData[E, V]): op.enumeration.Value => Json = input => Json.jString(input.toString)
 
   override def addStringField(element: Json, name: String, value: String): Json =
-    Json.obj((name, Json.jString(value)) :: element.obj.toList.flatMap(_.toList) :_*)
+    Json.obj((name, Json.jString(value)) :: element.obj.toList.flatMap(_.toList): _*)
 
 }
