@@ -80,7 +80,9 @@ trait AlgToCollectionData[ALG[_], B, SELF <: CustomAlgebraWithManifest[ALG, B]]
 /** Schema type for Boolean Data */
 final case class BooleanData(validations: List[ValidationOp[Boolean]])
     extends KvpValue[Boolean]
-    with ToCollectionData[Boolean]
+    with ToCollectionData[Boolean] {
+
+}
 
 final case class EitherData[ALG[_], A: Manifest, B: Manifest](
   definitionA: Either[KvpValue[A], ALG[A]],

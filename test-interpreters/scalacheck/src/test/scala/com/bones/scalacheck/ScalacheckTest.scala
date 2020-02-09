@@ -1,14 +1,13 @@
 package com.bones.scalacheck
 
-import com.bones.data.KvpNil
 import com.bones.schemas.Schemas
 import com.bones.schemas.Schemas.{AllSupported, CC}
-import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest.FunSuite
-import org.scalatestplus.scalacheck.Checkers
 import com.bones.syntax._
+import org.scalacheck.{Arbitrary, Gen}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.Checkers
 
-class ScalacheckTest extends FunSuite with Checkers {
+class ScalacheckTest extends AnyFunSuite with Checkers {
 
   test("int") {
     val intSchema = int(iv.between(0, 100))

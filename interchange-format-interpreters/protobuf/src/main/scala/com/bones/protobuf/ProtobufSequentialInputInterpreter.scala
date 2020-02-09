@@ -173,7 +173,7 @@ object ProtobufSequentialInputInterpreter {
             val (canReadResult, result) = cisFB(canReadTag, in)
             (canReadResult, result.map(Right(_)))
           } else {
-            (canReadTag, Left(NonEmptyList.one(RequiredData(path, Left(ed)))))
+            (canReadTag, Left(NonEmptyList.one(RequiredValue(path, Left(ed)))))
           }
         }: (CanReadTag, Either[NonEmptyList[ExtractionError], Either[B, C]]))
 
@@ -289,7 +289,7 @@ object ProtobufSequentialInputInterpreter {
         if (in.getLastTag == thisTag) {
           (true, convert(in, classOf[Boolean], path)(_.readBool()))
         } else {
-          (canReadTag, Left(NonEmptyList.one(RequiredData(path, coproductDataDefinition))))
+          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, coproductDataDefinition))))
         }
       }: (CanReadTag, Either[NonEmptyList[ExtractionError], Boolean]))
     }
@@ -312,7 +312,7 @@ object ProtobufSequentialInputInterpreter {
           val functionApplied = utfStringResult.flatMap(str => f(str, path))
           (true, functionApplied)
         } else {
-          (canReadTag, Left(NonEmptyList.one(RequiredData(path, coproductDataDefinition))))
+          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, coproductDataDefinition))))
         }
       }: (CanReadTag, Either[NonEmptyList[ExtractionError], A]))
     }
@@ -344,7 +344,7 @@ object ProtobufSequentialInputInterpreter {
           val intData = convert(in, classOf[Int], path)(_.readInt32())
           (true, intData.flatMap(i => f(i, path)))
         } else {
-          (canReadTag, Left(NonEmptyList.one(RequiredData(path, coproductDataDefinition))))
+          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, coproductDataDefinition))))
         }
       }: (CanReadTag, Either[NonEmptyList[ExtractionError], A]))
     }
@@ -363,7 +363,7 @@ object ProtobufSequentialInputInterpreter {
           val longResult = convert(in, classOf[Long], path)(_.readInt64())
           (true, longResult.flatMap(l => f(l, path)))
         } else {
-          (canReadTag, Left(NonEmptyList.one(RequiredData(path, coproductDataDefinition))))
+          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, coproductDataDefinition))))
         }
       }: (CanReadTag, Either[NonEmptyList[ExtractionError], A]))
     }
@@ -376,7 +376,7 @@ object ProtobufSequentialInputInterpreter {
         if (in.getLastTag == thisField) {
           (true, convert(in, classOf[Array[Byte]], path)(_.readByteArray()))
         } else {
-          (canReadTag, Left(NonEmptyList.one(RequiredData(path, coproductDataDefinition))))
+          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, coproductDataDefinition))))
         }
       }: (CanReadTag, Either[NonEmptyList[ExtractionError], Array[Byte]]))
     }
@@ -434,7 +434,7 @@ object ProtobufSequentialInputInterpreter {
         if (in.getLastTag == thisTag) {
           (true, convert[Float](in, classOf[Float], path)(_.readFloat()))
         } else {
-          (canReadTag, Left(NonEmptyList.one(RequiredData(path, coproductDataDefinition))))
+          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, coproductDataDefinition))))
         }
       }: (CanReadTag, Either[NonEmptyList[ExtractionError], Float]))
     }
@@ -447,7 +447,7 @@ object ProtobufSequentialInputInterpreter {
         if (in.getLastTag == thisTag) {
           (true, convert(in, classOf[Double], path)(_.readDouble()))
         } else {
-          (canReadTag, Left(NonEmptyList.one(RequiredData(path, coproductDataDefinition))))
+          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, coproductDataDefinition))))
         }
       }: (CanReadTag, Either[cats.data.NonEmptyList[com.bones.data.Error.ExtractionError], Double]))
     }
@@ -499,7 +499,7 @@ trait ProtobufSequentialInputInterpreter {
           (List.empty,
            lastFieldNumber,
            (canRead, _) =>
-             (canRead, Left(NonEmptyList.one(RequiredData(path, Left(kvpCoproductValue))))))
+             (canRead, Left(NonEmptyList.one(RequiredValue(path, Left(kvpCoproductValue))))))
       case op: KvpSingleValueLeft[ALG, l, r] @unchecked =>
         val vd = determineValueDefinition(op.kvpValue, valueDefinition, customInterpreter)
         (lastFieldNumber, path) =>

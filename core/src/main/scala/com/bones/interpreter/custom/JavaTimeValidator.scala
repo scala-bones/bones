@@ -1,34 +1,22 @@
-package com.bones.argonaut.custom
+package com.bones.interpreter.custom
 
 import java.time._
 import java.time.format.{DateTimeFormatter, DateTimeParseException}
 
-import argonaut.Json
 import cats.data.NonEmptyList
-import com.bones.argonaut.ArgonautValidatorInterpreter
 import com.bones.data.Error
-import com.bones.data.Error.{CanNotConvert, RequiredData}
+import com.bones.data.Error.{CanNotConvert, RequiredValue}
 import com.bones.data.custom._
+import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
-import com.bones.data.Error.ExtractionError
 
-/** Time validator, uses the ISO Specific formatters */
-trait IsoTimeValidator extends TimeValidator {
-  val instantFormatter: DateTimeFormatter = DateTimeFormatter.ISO_INSTANT
-  val offsetDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
-  val offsetTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_OFFSET_TIME
-  val zonedDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_ZONED_DATE_TIME
-
-}
-
-trait TimeValidator extends InterchangeFormatValidator[JavaTimeValue, Json] {
+trait JavaTimeValidator[OUT] extends InterchangeFormatValidator[JavaTimeValue, OUT] {
 
   val instantFormatter: DateTimeFormatter
   val offsetDateTimeFormatter: DateTimeFormatter
   val offsetTimeFormatter: DateTimeFormatter
   val zonedDateTimeFormatter: DateTimeFormatter
-
-  val baseInterpreter = ArgonautValidatorInterpreter.isoInterpreter
+  val baseValidator: KvpInterchangeFormatValidatorInterpreter[OUT]
 
   private def errorHandleTimeParsing[A](
     path: List[String],
@@ -44,35 +32,36 @@ trait TimeValidator extends InterchangeFormatValidator[JavaTimeValue, Json] {
     }
 
   private def parseTime[A](alg: JavaTimeValue[A], clazz: Class[A], f: String => A)
-    : (Option[Json], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] = {
-    (jsonOpt: Option[Json], path: List[String]) =>
+    : (Option[OUT], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] = {
+    (jsonOpt: Option[OUT], path: List[String]) =>
       {
         jsonOpt match {
           case Some(json) =>
-            baseInterpreter
+            baseValidator
               .extractString(Right(alg), clazz)(json, path)
               .flatMap(result => errorHandleTimeParsing(path, f, result))
           case None =>
-            Left(NonEmptyList.one(RequiredData(path, Right(alg))))
+            Left(NonEmptyList.one(RequiredValue(path, Right(alg))))
         }
       }
   }
 
   private def parseYear[A](alg: JavaTimeValue[A])
-    : (Option[Json], List[String]) => Either[NonEmptyList[Error.ExtractionError], Year] =
-    (jsonOpt: Option[Json], path: List[String]) => {
+    : (Option[OUT], List[String]) => Either[NonEmptyList[Error.ExtractionError], Year] =
+    (jsonOpt: Option[OUT], path: List[String]) => {
       jsonOpt match {
         case Some(json) =>
-          baseInterpreter
+          baseValidator
             .extractInt(Right(alg))(json, path)
             .map(result => Year.of(result))
         case None =>
-          Left(NonEmptyList.one(RequiredData(path, Right(alg))))
+          Left(NonEmptyList.one(RequiredValue(path, Right(alg))))
       }
     }
 
   override def validate[A](alg: JavaTimeValue[A])
-    : (Option[Json], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] = {
+    : (Option[OUT], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] = {
+
     alg match {
       case DateTimeExceptionData(_) =>
         parseTime(alg, classOf[DateTimeException], input => new DateTimeException(input))
@@ -95,4 +84,5 @@ trait TimeValidator extends InterchangeFormatValidator[JavaTimeValue, Json] {
       case ZoneOffsetData(_) => parseTime(alg, classOf[ZoneOffset], ZoneOffset.of)
     }
   }
+
 }

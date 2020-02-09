@@ -8,8 +8,11 @@ sealed abstract class KvpCoproduct[ALG[_], C <: Coproduct] { self =>
   def :+:[B: Manifest](head: Either[KvpValue[B], ALG[B]]): KvpSingleValueLeft[ALG, B, C] =
     KvpSingleValueLeft(head, this, manifest[B])
 
-  def :+:[B: Manifest](head: KvpValue[B]): KvpSingleValueLeft[ALG, B, C] =
+  def :<+:[B: Manifest](head: KvpValue[B]): KvpSingleValueLeft[ALG, B, C] =
     KvpSingleValueLeft(Left(head), this, manifest[B])
+
+  def :+>:[B:Manifest](head: ALG[B]): KvpSingleValueLeft[ALG,B,C] =
+    KvpSingleValueLeft(Right(head), this, manifest[B])
 
   /** Convert a Coproduct into an object with validation on the object. */
   def convert[A: Manifest](validation: ValidationOp[A]*)(

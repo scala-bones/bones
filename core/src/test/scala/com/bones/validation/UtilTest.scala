@@ -13,7 +13,7 @@ import java.{util => ju}
 import java.time.format.DateTimeFormatter
 import java.time.LocalDate
 import java.time.LocalDateTime
-import com.bones.data.Error.RequiredData
+import com.bones.data.Error.RequiredValue
 import com.bones.data.KvpValue
 
 class UtilTest extends FunSuite with Checkers with MustMatchers {

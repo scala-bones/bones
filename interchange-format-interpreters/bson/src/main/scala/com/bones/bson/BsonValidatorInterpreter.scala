@@ -34,6 +34,11 @@ import scala.util.Try
   */
 object BsonValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter[BSONValue] {
 
+
+  /** An additional string in the serialized format which states the coproduct type.
+    * TODO:  refactor this interpreter so this property can be overwritten. */
+  override val coproductTypeKey: String = "type"
+
   trait BsonValidator[ALG[_]] extends InterchangeFormatValidator[ALG, BSONValue]
 
   def fromByteArray(arr: Array[Byte]): Either[NonEmptyList[ExtractionError], BSONValue] = {
@@ -137,14 +142,6 @@ object BsonValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
       case x                 => invalidValue(x, classOf[Boolean], path)
     }
 
-  override def extractUuid[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
-    in: BSONValue,
-    path: List[String]): Either[NonEmptyList[ExtractionError], UUID] =
-    in match {
-      case BSONString(str) => stringToUuid(str, path)
-      case x               => invalidValue(x, classOf[UUID], path)
-    }
-
   override def extractLocalDateTime[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
     in: BSONValue,
     path: List[String]): Either[NonEmptyList[ExtractionError], LocalDateTime] =
@@ -164,7 +161,7 @@ object BsonValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
       case x => invalidValue(x, classOf[BSONDateTime], path)
     }
 
-  override protected def extractLocalTime[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
+  override def extractLocalTime[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
     in: BSONValue,
     path: Path): Either[NonEmptyList[ExtractionError], LocalTime] =
     in match {
