@@ -1,5 +1,6 @@
 package com.bones.circe
 
+import java.nio.charset.StandardCharsets
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId}
 import java.util.Locale
@@ -17,7 +18,7 @@ class CovCirceTest extends FunSuite with Checkers with MustMatchers {
     PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)
 
   test("scalacheck allSupport types - marshall then unmarshall with custom algebra") {
-    val validateFromCirce = CirceEncoderInterpreter.isoInterpreter
+    val validateFromCirce = IsoCirceEncoderAndValidatorInterpreter
 
     //  val jsonToCc = validateFromCirce.byteArrayFuncFromSchema(allSupportCaseClass, Charset.forName("UTF8"))
 
@@ -45,7 +46,7 @@ class CovCirceTest extends FunSuite with Checkers with MustMatchers {
 
     type CombinedAlgebra[A] = CustomAlgebra[A] :+: DateExtAlgebra[A] :+: CNil
 
-    case class BlogEncoder() extends InterchangeFormatEncoder[CombinedAlgebra, Json] {
+    object BlogEncoder extends InterchangeFormatEncoder[CombinedAlgebra, Json] {
 
       def encode[A](alg: CombinedAlgebra[A]): A => Json =
         alg match {
@@ -55,8 +56,8 @@ class CovCirceTest extends FunSuite with Checkers with MustMatchers {
         }
     }
 
-    val blogPostToJson = CirceEncoderInterpreter.isoInterpreter
-      .fromCustomSchema(BlogPost.blogPostSchema, BlogEncoder())
+    val blogPostToJson = IsoCirceEncoderAndValidatorInterpreter
+      .encoderFromCustomSchema(BlogPost.blogPostSchema, BlogEncoder)
 
     val blogPost = BlogPost(1, "title", List("tag1", "tag2"), Instant.now(), "Here is some content")
 

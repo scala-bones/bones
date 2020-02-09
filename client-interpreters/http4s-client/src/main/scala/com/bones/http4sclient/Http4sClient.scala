@@ -4,9 +4,9 @@ import java.nio.charset.Charset
 
 import cats.data.NonEmptyList
 import cats.effect.IO
-import com.bones.circe.CirceValidatorInterpreter
-import com.bones.data.Error.ExtractionError
+import com.bones.circe.IsoCirceEncoderAndValidatorInterpreter
 import com.bones.data.BonesSchema
+import com.bones.data.Error.ExtractionError
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
 import io.circe.Json
 import org.http4s.client.Client
@@ -23,7 +23,7 @@ object Http4sClient {
     validatorInterpreter: InterchangeFormatValidator[ALG, Json]
   ): Client[IO] => ID => IO[Either[Error[E], O]] = {
 
-    val f = CirceValidatorInterpreter.isoInterpreter
+    val f = IsoCirceEncoderAndValidatorInterpreter
       .byteArrayFuncFromSchema(outputSchema, Charset.forName("utf-8"), validatorInterpreter)
 
     httpClient => id =>

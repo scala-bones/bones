@@ -1,31 +1,16 @@
 package com.bones.argonaut
 
-import java.time.{LocalDate, LocalDateTime, LocalTime}
-import java.time.format.DateTimeFormatter
-import java.util.{Base64, UUID}
+import java.util.Base64
 
 import argonaut._
 import com.bones.data.KeyValueDefinition
-import com.bones.data._
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
-
-object ArgonautEncoderInterpreter {
-  val isoInterpreter = new ArgonautEncoderInterpreter {
-    override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
-    override def localDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-    override def localTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_TIME
-  }
-}
 
 /**
   * Module responsible for converting values to Argonaut JSON without validation.
-  * The entry point for this class is [KvpInterchangeFormatEncoderInterpreter.fromSchema].
+  * The entry point for this class is [KvpInterchangeFormatEncoderInterpreter.encoderFromSchema].
   */
 trait ArgonautEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[Json] {
-
-  def localDateFormatter: DateTimeFormatter
-  def localDateTimeFormatter: DateTimeFormatter
-  def localTimeFormatter: DateTimeFormatter
 
   override def none: Json = Json.jNull
 
@@ -40,49 +25,36 @@ trait ArgonautEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[
   override def toObj[ALG[_], A](kvDef: KeyValueDefinition[ALG, A], value: Json): Json =
     Json.obj((kvDef.key, value))
 
-  override def booleanToOut(op: BooleanData): Boolean => Json =
+  /** Create a function which converts a boolean into the specific OUT type */
+  override def booleanToOut: Boolean => Json =
     input => Json.jBool(input)
 
-  override def stringToOut(op: StringData): String => Json =
+  /** Create a function which converts a String into the specific OUT type */
+  override def stringToOut: String => Json =
     input => Json.jString(input)
 
-  override def intToOut(op: IntData): Int => Json = Json.jNumber
+  override def intToOut: Int => Json = Json.jNumber
 
-  override def longToOut(op: LongData): Long => Json =
+  override def longToOut: Long => Json =
     input => Json.jNumber(input)
 
-  override def uuidToOut(op: UuidData): UUID => Json =
-    input => Json.jString(input.toString)
-
-  override def dateTimeToOut(op: LocalDateTimeData): LocalDateTime => Json =
-    input => Json.jString(localDateTimeFormatter.format(input))
-
-  override def localDateToOut(op: LocalDateData): LocalDate => Json =
-    input => Json.jString(localDateFormatter.format(input))
-
-  override def localTimeToOut(op: LocalTimeData): LocalTime => Json =
-    input => Json.jString(localTimeFormatter.format(input))
-
-  override def floatToOut(op: FloatData): Float => Json =
+  override def floatToOut: Float => Json =
     input => Json.jNumber(input.toDouble)
 
-  override def doubleToOut(op: DoubleData): Double => Json =
+  override def doubleToOut: Double => Json =
     input => Json.jNumber(input)
 
-  override def bigDecimalToOut(op: BigDecimalData): BigDecimal => Json =
+  override def bigDecimalToOut: BigDecimal => Json =
     input => Json.jNumber(input)
 
-  override def byteArrayToOut(ba: ByteArrayData): Array[Byte] => Json =
+  override def byteArrayToOut: Array[Byte] => Json =
     input => Json.jString(Base64.getEncoder.encodeToString(input))
 
   override def toOutList(list: List[Json]): Json =
     Json.array(list: _*)
 
-  override def shortToOut(sd: ShortData): Short => Json =
+  override def shortToOut: Short => Json =
     input => Json.jNumber(input.toInt)
-
-  override def enumerationToOut[E <: Enumeration, V: Manifest](
-    op: EnumerationData[E, V]): op.enumeration.Value => Json = input => Json.jString(input.toString)
 
   override def addStringField(element: Json, name: String, value: String): Json =
     Json.obj((name, Json.jString(value)) :: element.obj.toList.flatMap(_.toList): _*)

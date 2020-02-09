@@ -62,7 +62,7 @@ object Error {
     * @param coproductDataDefinition The definition of the required value
     * @tparam A The type of the required value
     */
-  case class RequiredData[ALG[_], A](
+  case class RequiredValue[ALG[_], A](
     path: List[String],
     coproductDataDefinition: CoproductDataDefinition[ALG, A])
       extends ExtractionError

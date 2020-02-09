@@ -1,17 +1,15 @@
 package com.bones.interpreter
 
+import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, LocalDateTime, LocalTime}
-import java.util.UUID
 
 import cats.data.NonEmptyList
 import com.bones.data.Error.ExtractionError
-import com.bones.data.{KeyValueDefinition, KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
-import com.bones.data._
-import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.CoproductType
-import shapeless.{::, Coproduct, HList, Inl, Inr, Nat}
-import KvpInterchangeFormatValidatorInterpreter.coproductTypeKey
 import com.bones.data.KeyValueDefinition.CoproductDataDefinition
+import com.bones.data.{KeyValueDefinition, KvpCoNil, KvpCoproduct, KvpSingleValueLeft, _}
+import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.CoproductType
 import com.bones.syntax.NoAlgebra
+import shapeless.{Coproduct, HList, Inl, Inr, Nat}
 
 object KvpInterchangeFormatEncoderInterpreter {
   type FOUT[OUT, A] = A => Either[NonEmptyList[ExtractionError], A]
@@ -25,6 +23,30 @@ object KvpInterchangeFormatEncoderInterpreter {
       sys.error("Unreachable code")
   }
 
+
+  /**
+    * Convert the date types to a string using a date formatter and the output type becomes
+    * a string.  This is useful for all JSON encodings.
+    * @tparam OUT The JSON type from whatever library.
+    */
+  trait DateToStringEncoder[OUT] { self: KvpInterchangeFormatEncoderInterpreter[OUT] =>
+
+    def localDateTimeFormatter: DateTimeFormatter
+    def localDateFormatter: DateTimeFormatter
+    def localTimeFormatter: DateTimeFormatter
+
+
+    override def dateTimeToOut: LocalDateTime => OUT =
+      input => self.stringToOut(localDateTimeFormatter.format(input))
+
+    override def localTimeToOut: LocalTime => OUT =
+      input => self.stringToOut(localTimeFormatter.format(input))
+
+    override def localDateToOut: LocalDate => OUT =
+      input => self.stringToOut(localDateFormatter.format(input))
+
+  }
+
 }
 
 /**
@@ -34,6 +56,8 @@ object KvpInterchangeFormatEncoderInterpreter {
 trait KvpInterchangeFormatEncoderInterpreter[OUT] {
 
   import KvpInterchangeFormatEncoderInterpreter._
+
+  val coproductTypeKey: String
 
   /** This is the main entry point whose purpose is to convert
     * a schema into a function which expects the Type described by the schema (for example a case class)
@@ -45,15 +69,15 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
     * @tparam A
     * @return
     */
-  def fromCustomSchema[ALG[_], A](
+  def encoderFromCustomSchema[ALG[_], A](
     bonesSchema: BonesSchema[ALG, A],
     covEncoder: InterchangeFormatEncoder[ALG, OUT]
   ): A => OUT = bonesSchema match {
     case x: HListConvert[ALG, _, _, A] => valueDefinition(x, covEncoder)
   }
 
-  def fromSchema[A](bonesSchema: BonesSchema[NoAlgebra, A]) =
-    fromCustomSchema[NoAlgebra, A](bonesSchema, NoAlgebraEncoder[OUT]())
+  def encoderFromSchema[A](bonesSchema: BonesSchema[NoAlgebra, A]) =
+    encoderFromCustomSchema[NoAlgebra, A](bonesSchema, NoAlgebraEncoder[OUT]())
 
   def none: OUT
   def empty: OUT
@@ -68,35 +92,32 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
   def toObj[ALG[_], A](kvDef: KeyValueDefinition[ALG, A], value: OUT): OUT
 
   /** Create a function which converts a boolean into the specific OUT type */
-  def booleanToOut(op: BooleanData): Boolean => OUT
+  def booleanToOut: Boolean => OUT
 
   /** Create a function which converts a String into the specific OUT type */
-  def stringToOut(op: StringData): String => OUT
+  def stringToOut: String => OUT
 
   /** Create a function which converts an Int into the specific OUT type */
-  def intToOut(op: IntData): Int => OUT
+  def intToOut: Int => OUT
 
   /** Create a function which converts a Long into the specific OUT type */
-  def longToOut(op: LongData): Long => OUT
-
-  /** Create a function which converts a UUID into the specific OUT type */
-  def uuidToOut(op: UuidData): UUID => OUT
+  def longToOut: Long => OUT
 
   /** Create a function which converts a LocalDateTime into the specific OUT type */
-  def dateTimeToOut(op: LocalDateTimeData): LocalDateTime => OUT
-  def localDateToOut(op: LocalDateData): LocalDate => OUT
-  def localTimeToOut(op: LocalTimeData): LocalTime => OUT
-  def floatToOut(op: FloatData): Float => OUT
-  def doubleToOut(op: DoubleData): Double => OUT
-  def shortToOut(sd: ShortData): Short => OUT
-  def bigDecimalToOut(op: BigDecimalData): BigDecimal => OUT
-  def byteArrayToOut(ba: ByteArrayData): Array[Byte] => OUT
+  def dateTimeToOut: LocalDateTime => OUT
+  def localDateToOut: LocalDate => OUT
+  def localTimeToOut: LocalTime => OUT
+  def floatToOut: Float => OUT
+  def doubleToOut: Double => OUT
+  def shortToOut: Short => OUT
+  def bigDecimalToOut: BigDecimal => OUT
+  def byteArrayToOut: Array[Byte] => OUT
   def toOutList(list: List[OUT]): OUT
-  def enumerationToOut[E <: Enumeration, V: Manifest](
-    op: EnumerationData[E, V]): op.enumeration.Value => OUT
+//  def enumerationToOut[E <: Enumeration, V: Manifest](
+//    op: EnumerationData[E, V]): op.enumeration.Value => OUT
   def addStringField(element: OUT, name: String, value: String): OUT
 
-  protected def kvpCoproduct[ALG[_], C <: Coproduct](
+  def kvpCoproduct[ALG[_], C <: Coproduct](
     kvpCo: KvpCoproduct[ALG, C],
     encoder: InterchangeFormatEncoder[ALG, OUT]): C => (CoproductType, OUT) = {
     kvpCo match {
@@ -115,7 +136,7 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
   }
 
   /** Interpreter for the KvpHList type. */
-  protected def kvpHList[ALG[_], H <: HList, HL <: Nat](
+  def kvpHList[ALG[_], H <: HList, HL <: Nat](
     group: KvpHList[ALG, H, HL],
     encoder: InterchangeFormatEncoder[ALG, OUT]): H => OUT =
     group match {
@@ -143,7 +164,7 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
             combine(toObj(op.fieldDefinition, val1), tail)
           }
       case op: KvpConcreteTypeHead[ALG, H, ht, nt] @unchecked => {
-        val headF = fromCustomSchema(op.bonesSchema, encoder)
+        val headF = encoderFromCustomSchema(op.bonesSchema, encoder)
         val tailF = kvpHList(op.tail, encoder)
         implicit val hCons = op.isHCons
         (input: H) =>
@@ -177,19 +198,19 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
               case None    => none
             }
           }
-      case ob: BooleanData       => booleanToOut(ob)
-      case rs: StringData        => stringToOut(rs)
-      case id: IntData           => intToOut(id)
-      case ri: LongData          => longToOut(ri)
-      case uu: UuidData          => uuidToOut(uu)
-      case dd: LocalDateTimeData => dateTimeToOut(dd)
-      case ld: LocalDateData     => localDateToOut(ld)
-      case lt: LocalTimeData     => localTimeToOut(lt)
-      case fd: FloatData         => floatToOut(fd)
-      case dd: DoubleData        => doubleToOut(dd)
-      case sd: ShortData         => shortToOut(sd)
-      case bd: BigDecimalData    => bigDecimalToOut(bd)
-      case ba: ByteArrayData     => byteArrayToOut(ba)
+      case ob: BooleanData       => booleanToOut
+      case rs: StringData        => stringToOut
+      case id: IntData           => intToOut
+      case ri: LongData          => longToOut
+      case uu: UuidData          => uuid => stringToOut(uuid.toString)
+      case dd: LocalDateTimeData => dateTimeToOut
+      case ld: LocalDateData     => localDateToOut
+      case lt: LocalTimeData     => localTimeToOut
+      case fd: FloatData         => floatToOut
+      case dd: DoubleData        => doubleToOut
+      case sd: ShortData         => shortToOut
+      case bd: BigDecimalData    => bigDecimalToOut
+      case ba: ByteArrayData     => byteArrayToOut
       case ld: ListData[ALG, t] @unchecked => {
         val itemToOut = determineValueDefinition(ld.tDefinition, encoder)
         (input: List[t]) =>
@@ -210,7 +231,7 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
           }
       case e: EnumerationData[e, a] => {
         implicit val v = e.manifestOfA
-        enumerationToOut[e, a](e).asInstanceOf[A => OUT]
+        enum => stringToOut(enum.toString)
       }
       case gd: KvpHListValue[ALG, h, hl] @unchecked =>
         val fh = kvpHList(gd.kvpHList, encoder)

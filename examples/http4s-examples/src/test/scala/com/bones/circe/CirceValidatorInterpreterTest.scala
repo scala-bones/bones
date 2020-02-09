@@ -31,9 +31,8 @@ class CirceValidatorInterpreterTest extends FunSuite {
   test("kvp String") {
     val str = ("name", string(sv.length(3))) :<: kvpNil
 
-    CirceValidatorInterpreter
-      .isoInterpreter
-      .kvpHList(str, KvpInterchangeFormatValidatorInterpreter.NoAlgebraValidator()).apply(circeDoc, List.empty) match {
+    IsoCirceEncoderAndValidatorInterpreter
+      .kvpHList(str, com.bones.circe.noAlgebraValidator)(circeDoc, List.empty) match {
         case Left(err) => fail(s"expected success, received: ${err}")
         case Right(r) => assert(r.head === "Foo")
       }
@@ -43,7 +42,7 @@ class CirceValidatorInterpreterTest extends FunSuite {
   test( "kvp String fail validation") {
     val str = ("name", string(sv.length(2))) :<: kvpNil
 
-    CirceValidatorInterpreter.isoInterpreter.kvpHList(str, KvpInterchangeFormatValidatorInterpreter.NoAlgebraValidator()).apply(circeDoc, List.empty) match {
+    IsoCirceEncoderAndValidatorInterpreter.kvpHList(str, com.bones.circe.noAlgebraValidator).apply(circeDoc, List.empty) match {
       case Left(err) => succeed
       case Right(r) => fail(s"expected validation failure, received: ${r}")
     }
