@@ -7,7 +7,7 @@ import java.util.Date
 import cats.data.NonEmptyList
 import com.bones.Util
 import com.bones.Util.{stringToEnumeration, stringToUuid}
-import com.bones.data.Error.{ExtractionError, RequiredData, SystemError}
+import com.bones.data.Error.{ExtractionError, RequiredValue, SystemError}
 import com.bones.data._
 import com.bones.syntax.NoAlgebra
 import DbUtil.camelToSnake
@@ -116,7 +116,7 @@ object ResultSetInterpreter {
               child(rs) match {
                 case Left(errs) =>
                   if (errs.length == 1) errs.head match {
-                    case RequiredData(_, childOp) if childOp == op.valueDefinitionOp => Right(None)
+                    case RequiredValue(_, childOp) if childOp == op.valueDefinitionOp => Right(None)
                     case _                                                           => Left(errs)
                   } else {
                     Left[NonEmptyList[ExtractionError], Option[a]](errs)
@@ -175,7 +175,7 @@ object ResultSetInterpreter {
               case Left(nel) =>
                 if (nel.length == 1) {
                   nel.head match {
-                    case RequiredData(path, op) if op == ed.definitionA => {
+                    case RequiredValue(path, op) if op == ed.definitionA => {
                       determineValueDefinition(ed.definitionB, customInterpreter)(
                         path,
                         "right_" + fieldName)(rs).map(Right(_))
@@ -216,7 +216,7 @@ object ResultSetInterpreter {
     try {
       val result = f
       if (result == null) {
-        Left(NonEmptyList.one(RequiredData(path, Left(op))))
+        Left(NonEmptyList.one(RequiredValue(path, Left(op))))
       } else {
         Right(result)
       }

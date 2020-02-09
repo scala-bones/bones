@@ -6,7 +6,7 @@ import cats.data.{EitherT, NonEmptyList}
 import cats.effect._
 import cats.implicits._
 import com.bones.bson.{BsonEncoderInterpreter, BsonValidatorInterpreter}
-import com.bones.circe.{CirceEncoderInterpreter, CirceValidatorInterpreter}
+import com.bones.circe.{CirceEncoderInterpreter, CirceValidatorInterpreter, IsoCirceEncoderAndValidatorInterpreter}
 import com.bones.data.Error.ExtractionError
 import com.bones.data.KeyValueDefinition
 import com.bones.data.{BonesSchema, HListConvert}
@@ -294,8 +294,8 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
       (idDefinition >>: h :><: com.bones.syntax.kvpNilCov[ALG]).tupled[(ID, A)]
     }
   }
-  val encodeToCirceInterpreter = CirceEncoderInterpreter.isoInterpreter
-  val validatedFromCirceInterpreter = CirceValidatorInterpreter.isoInterpreter
+  val encodeToCirceInterpreter = IsoCirceEncoderAndValidatorInterpreter
+  val validatedFromCirceInterpreter = IsoCirceEncoderAndValidatorInterpreter
 
   val protobufSequentialInputInterpreter: ProtobufSequentialInputInterpreter =
     UtcProtobufSequentialInputInterpreter
@@ -311,28 +311,25 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
     val updateHttpService =
       updateF.toList.flatMap(update => {
         val inputValidation =
-          validatedFromCirceInterpreter.fromCustomSchema(schemaWithId, customJsonInterpreter)
+          validatedFromCirceInterpreter.byteArrayFuncFromSchema(schemaWithId, charset, customJsonInterpreter)
         val outputEncoder =
-          encodeToCirceInterpreter.fromCustomSchema(schemaWithId, customJsonInterpreter)
+          encodeToCirceInterpreter.encoderFromCustomSchema(schemaWithId, customJsonInterpreter)
         val errorEncoder =
-          encodeToCirceInterpreter.fromCustomSchema(errorSchema, customJsonInterpreter)
+          encodeToCirceInterpreter.encoderFromCustomSchema(errorSchema, customJsonInterpreter)
 
         val json = PutPostInterpreterGroup[(ID, A), (ID, A), E](
           "application/json",
-          bytes =>
-            validatedFromCirceInterpreter
-              .fromByteArray(bytes, charset)
-              .flatMap(json => inputValidation(json)),
+          inputValidation,
           uo => outputEncoder(uo).spaces2.getBytes(charset),
           ue => errorEncoder(ue).spaces2.getBytes(charset)
         )
 
         val bInputValidation =
-          BsonValidatorInterpreter.fromCustomSchema(schemaWithId, customBsonInterpreter)
+          BsonValidatorInterpreter.validatorFromCustomSchema(schemaWithId, customBsonInterpreter)
         val bOutputEncoder =
-          BsonEncoderInterpreter.fromCustomSchema(schemaWithId, customBsonInterpreter)
+          BsonEncoderInterpreter.encoderFromCustomSchema(schemaWithId, customBsonInterpreter)
         val bErrorEncoder =
-          BsonEncoderInterpreter.fromCustomSchema(errorSchema, customBsonInterpreter)
+          BsonEncoderInterpreter.encoderFromCustomSchema(errorSchema, customBsonInterpreter)
 
         val bson = PutPostInterpreterGroup[(ID, A), (ID, A), E](
           "application/ubjson",
@@ -367,16 +364,16 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
 
     val readHttpService = readF.toList.flatMap(read => {
       val outputF =
-        encodeToCirceInterpreter.fromCustomSchema(schemaWithId, customJsonInterpreter)
-      val errorF = encodeToCirceInterpreter.fromCustomSchema(errorSchema, customJsonInterpreter)
+        encodeToCirceInterpreter.encoderFromCustomSchema(schemaWithId, customJsonInterpreter)
+      val errorF = encodeToCirceInterpreter.encoderFromCustomSchema(errorSchema, customJsonInterpreter)
       val json = GetInterpreterGroup[(ID, A), E](
         "application/json",
         ro => outputF(ro).spaces2.getBytes(charset),
         re => errorF(re).spaces2.getBytes(charset)
       )
 
-      val bOutputF = BsonEncoderInterpreter.fromCustomSchema(schemaWithId, customBsonInterpreter)
-      val bErrorF = BsonEncoderInterpreter.fromCustomSchema(errorSchema, customBsonInterpreter)
+      val bOutputF = BsonEncoderInterpreter.encoderFromCustomSchema(schemaWithId, customBsonInterpreter)
+      val bErrorF = BsonEncoderInterpreter.encoderFromCustomSchema(errorSchema, customBsonInterpreter)
       val bson = GetInterpreterGroup[(ID, A), E](
         "application/ubjson",
         ro => BsonEncoderInterpreter.bsonResultToBytes(bOutputF(ro)),
@@ -403,7 +400,7 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
     val searchHttpService =
       searchF.toList.flatMap(search => {
         val outputF =
-          encodeToCirceInterpreter.fromCustomSchema(schemaWithId, customJsonInterpreter)
+          encodeToCirceInterpreter.encoderFromCustomSchema(schemaWithId, customJsonInterpreter)
 
         val jsonSearch = SearchInterpreterGroup[F, (ID, A)](
           "application/json",
@@ -420,24 +417,21 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
     val createHttpService =
       createF.toList.flatMap(create => {
         val inputF =
-          validatedFromCirceInterpreter.fromCustomSchema(schema, customJsonInterpreter)
-        val outputF = encodeToCirceInterpreter.fromCustomSchema(schemaWithId, customJsonInterpreter)
-        val errorF = encodeToCirceInterpreter.fromCustomSchema(errorSchema, customJsonInterpreter)
+          validatedFromCirceInterpreter.byteArrayFuncFromSchema(schema, charset, customJsonInterpreter)
+        val outputF = encodeToCirceInterpreter.encoderFromCustomSchema(schemaWithId, customJsonInterpreter)
+        val errorF = encodeToCirceInterpreter.encoderFromCustomSchema(errorSchema, customJsonInterpreter)
 
         val json = PutPostInterpreterGroup[A, (ID, A), E](
           "application/json",
-          bytes =>
-            validatedFromCirceInterpreter
-              .fromByteArray(bytes, charset)
-              .flatMap(json => inputF(json)),
+          bytes => inputF(bytes),
           uo => outputF(uo).spaces2.getBytes(charset),
           ue => errorF(ue).spaces2.getBytes(charset)
         )
 
         val bInputF =
-          BsonValidatorInterpreter.fromCustomSchema(schema, customBsonInterpreter)
-        val bOutputF = BsonEncoderInterpreter.fromCustomSchema(schemaWithId, customBsonInterpreter)
-        val bErrorF = BsonEncoderInterpreter.fromCustomSchema(errorSchema, customBsonInterpreter)
+          BsonValidatorInterpreter.validatorFromCustomSchema(schema, customBsonInterpreter)
+        val bOutputF = BsonEncoderInterpreter.encoderFromCustomSchema(schemaWithId, customBsonInterpreter)
+        val bErrorF = BsonEncoderInterpreter.encoderFromCustomSchema(errorSchema, customBsonInterpreter)
 
         val bson = PutPostInterpreterGroup[A, (ID, A), E](
           "application/ubjson",
@@ -470,16 +464,16 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
 
     val deleteHttpService =
       deleteF.toList.flatMap(del => {
-        val outputF = encodeToCirceInterpreter.fromCustomSchema(schemaWithId, customJsonInterpreter)
-        val errorF = encodeToCirceInterpreter.fromCustomSchema(errorSchema, customJsonInterpreter)
+        val outputF = encodeToCirceInterpreter.encoderFromCustomSchema(schemaWithId, customJsonInterpreter)
+        val errorF = encodeToCirceInterpreter.encoderFromCustomSchema(errorSchema, customJsonInterpreter)
         val json = DeleteInterpreterGroup[(ID, A), E](
           "application/json",
           dout => outputF(dout).spaces2.getBytes(charset),
           de => errorF(de).spaces2.getBytes(charset)
         )
 
-        val bOutputF = BsonEncoderInterpreter.fromCustomSchema(schemaWithId, customBsonInterpreter)
-        val bErrorF = BsonEncoderInterpreter.fromCustomSchema(errorSchema, customBsonInterpreter)
+        val bOutputF = BsonEncoderInterpreter.encoderFromCustomSchema(schemaWithId, customBsonInterpreter)
+        val bErrorF = BsonEncoderInterpreter.encoderFromCustomSchema(errorSchema, customBsonInterpreter)
         val bson = DeleteInterpreterGroup[(ID, A), E](
           "application/ubjson",
           dout => BsonEncoderInterpreter.bsonResultToBytes(bOutputF(dout)),

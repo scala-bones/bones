@@ -17,7 +17,7 @@ object CovSumTypeExample {
 
     // Note the order needs to be the order in which they are defined below
     val bonesSchema =
-      (Album.bonesSchema :+: CompactDisc.bonesSchema :+: Digital.bonesSchema :+: kvpCoNil)
+      (Album.bonesSchema :<+: CompactDisc.bonesSchema :<+: Digital.bonesSchema :<+: kvpCoNil)
         .convert[MusicMedium]
 //    type MusicMedium = Digital :+: CompactDisc :+: Album :+: CNil
   }

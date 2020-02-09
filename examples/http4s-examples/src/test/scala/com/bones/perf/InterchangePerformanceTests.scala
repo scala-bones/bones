@@ -5,11 +5,12 @@ import java.nio.charset.Charset
 import cats.implicits._
 import com.bones.argonaut.{ArgonautEncoderInterpreter, ArgonautValidatorInterpreter}
 import com.bones.bson.{BsonEncoderInterpreter, BsonValidatorInterpreter}
-import com.bones.circe.{CirceEncoderInterpreter, CirceValidatorInterpreter}
+import com.bones.circe.{CirceEncoderInterpreter, CirceValidatorInterpreter, IsoCirceEncoderAndValidatorInterpreter}
 import com.bones.protobuf.{ProtobufSequentialInputInterpreter, ProtobufSequentialOutputInterpreter, UtcProtobufSequentialInputInterpreter, UtcProtobufSequentialOutputInterpreter}
 import com.bones.scalacheck.{NoAlgebraGen, Scalacheck}
 import com.bones.schemas.Schemas.allSupportCaseClass
 import com.bones.sjson.JsonStringEncoderInterpreter
+import com.bones.circe._
 
 object InterchangePerformanceTests extends App {
 
@@ -17,18 +18,18 @@ object InterchangePerformanceTests extends App {
 
   val scalaCheckInterpreter = Scalacheck.valueDefinition(schema, NoAlgebraGen)
 
-  val directInterpreter = 
+  val directInterpreter =
     JsonStringEncoderInterpreter.isoEncoder.fAtoString(schema, JsonStringEncoderInterpreter.NoAlgebra)
 
-  val circeValidator = 
-    CirceValidatorInterpreter.isoInterpreter.byteArrayFuncFromSchema(schema, Charset.defaultCharset(), CirceValidatorInterpreter.noAlgebraInterpreter)
-  val circeEncoder = CirceEncoderInterpreter.isoInterpreter.fromSchema(schema)
+  val circeValidator =
+    IsoCirceEncoderAndValidatorInterpreter.byteArrayFuncFromSchema(schema, Charset.defaultCharset(), noAlgebraValidator)
+  val circeEncoder = IsoCirceEncoderAndValidatorInterpreter.encoderFromSchema(schema)
 
-  val argValidator = ArgonautValidatorInterpreter.isoInterpreter.byteArrayFuncFromSchema(schema, Charset.defaultCharset())
-  val argEncoder = ArgonautEncoderInterpreter.isoInterpreter.fromSchema(schema)
+  val argValidator = IsoCirceEncoderAndValidatorInterpreter.byteArrayFuncFromSchema(schema, Charset.defaultCharset(), noAlgebraValidator)
+  val argEncoder = IsoCirceEncoderAndValidatorInterpreter.encoderFromSchema(schema)
 
-  val bsonValidator = BsonValidatorInterpreter.fromSchema(schema)
-  val bsonEncoder = BsonEncoderInterpreter.fromSchema(schema)
+  val bsonValidator = BsonValidatorInterpreter.validatorFromSchema(schema)
+  val bsonEncoder = BsonEncoderInterpreter.encoderFromSchema(schema)
 
   val protoValidator = UtcProtobufSequentialInputInterpreter.fromBytes(schema)
   val protoEncoder = UtcProtobufSequentialOutputInterpreter.encodeToBytes(schema)
@@ -91,7 +92,7 @@ object InterchangePerformanceTests extends App {
   System.gc()
 
   val argoEncoderStart = System.currentTimeMillis()
-  objects.map(o => argEncoder.apply(o).nospaces)
+  objects.map(o => argEncoder.apply(o).noSpaces)
   val argEncoderEnd = System.currentTimeMillis()
   println(s"argo encoder time: ${argEncoderEnd - argoEncoderStart}")
   System.gc()

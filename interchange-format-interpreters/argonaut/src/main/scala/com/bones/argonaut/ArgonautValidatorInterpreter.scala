@@ -1,50 +1,26 @@
 package com.bones.argonaut
 
 import java.nio.charset.Charset
-import java.time.{LocalDate, LocalDateTime, LocalTime}
-import java.time.format.DateTimeFormatter
-import java.util.UUID
 
 import argonaut.Argonaut._
 import argonaut._
 import cats.data.NonEmptyList
 import cats.implicits._
-import com.bones.data.Error.{ExtractionError, ParsingError, RequiredData, WrongTypeError}
-import com.bones.data.KeyValueDefinition
-import com.bones.data._
-import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
-import com.bones.Util._
+import com.bones.data.Error.{ExtractionError, ParsingError, RequiredValue, WrongTypeError}
 import com.bones.data.KeyValueDefinition.CoproductDataDefinition
 import com.bones.data.KvpValue.Path
-import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.{
-  InterchangeFormatValidator,
-  NoAlgebraValidator
-}
+import com.bones.data.{KeyValueDefinition, _}
+import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
+import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.{InterchangeFormatValidator, NoAlgebraValidator}
 import com.bones.syntax.NoAlgebra
 
 import scala.util.control.NonFatal
 
-object ArgonautValidatorInterpreter {
-
-  /**
-    * An implementation of the ArgonautValidatorInterpreter where the date formats are ISO dates.
-    */
-  val isoInterpreter: ArgonautValidatorInterpreter = new ArgonautValidatorInterpreter {
-    override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
-    override def localDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-    override def localTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_TIME
-
-  }
-}
-
 /**
   * Module responsible for converting argonaut JSON input into values with validation checks.
-  * See [KvpInterchangeFormatValidatorInterpreter.fromSchema] for the entry point.
+  * See [KvpInterchangeFormatValidatorInterpreter.validatorFromSchema] for the entry point.
   */
 trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter[Json] {
-  def localDateFormatter: DateTimeFormatter
-  def localDateTimeFormatter: DateTimeFormatter
-  def localTimeFormatter: DateTimeFormatter
 
   override def isEmpty(json: Json): JsonBoolean = json.isNull
 
@@ -55,7 +31,7 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
     schema: BonesSchema[ALG, A],
     customValidator: InterchangeFormatValidator[ALG, Json],
     charset: Charset): Array[Byte] => Either[NonEmptyList[ExtractionError], A] = {
-    val fromSchemaFunction = fromCustomSchema(schema, customValidator)
+    val fromSchemaFunction = validatorFromCustomSchema(schema, customValidator)
     bytes =>
       {
         try {
@@ -87,7 +63,7 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
       .flatMap(
         _.toList
           .find(f => f._1 === kv.key)
-          .toRight[NonEmptyList[ExtractionError]](NonEmptyList.one(RequiredData(path, kv.op))))
+          .toRight[NonEmptyList[ExtractionError]](NonEmptyList.one(RequiredValue(path, kv.op))))
       .flatMap(j => headInterpreter.apply(Some(j._2), path))
   }
 
@@ -121,34 +97,6 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
     in: Json,
     path: List[String]): Either[NonEmptyList[ExtractionError], JsonBoolean] =
     in.bool.toRight(NonEmptyList.one(WrongTypeError(path, classOf[Boolean], in.getClass, None)))
-
-  override def extractUuid[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
-    in: Json,
-    path: List[String]): Either[NonEmptyList[ExtractionError], UUID] =
-    in.string
-      .toRight(NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass, None)))
-      .flatMap(stringToUuid(_, path))
-
-  override def extractLocalDateTime[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
-    in: Json,
-    path: List[String]): Either[NonEmptyList[ExtractionError], LocalDateTime] =
-    in.string
-      .toRight(NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass, None)))
-      .flatMap(stringToLocalDateTime(_, localDateTimeFormatter, path))
-
-  override def extractLocalDate[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
-    in: Json,
-    path: List[String]): Either[NonEmptyList[ExtractionError], LocalDate] =
-    in.string
-      .toRight(NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass, None)))
-      .flatMap(stringToLocalDate(_, localDateFormatter, path))
-
-  override def extractLocalTime[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
-    in: Json,
-    path: Path): Either[NonEmptyList[ExtractionError], LocalTime] =
-    in.string
-      .toRight(NonEmptyList.one(WrongTypeError(path, classOf[String], in.getClass, None)))
-      .flatMap(stringToLocalTime(_, localTimeFormatter, path))
 
   override def extractArray[ALG[_], A](op: ListData[ALG, A])(
     in: Json,
