@@ -6,14 +6,14 @@ import com.bones.scalacheck.Scalacheck
 import com.bones.schemas.Schemas
 import com.bones.schemas.Schemas.{AllSupported, CC, allSupportCaseClass}
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 
 
-class ProtobufScalacheckTest extends FunSuite with Checkers {
+class ProtobufScalacheckTest extends AnyFunSuite with Checkers {
 
-  val encode = UtcProtobufSequentialOutputInterpreter.encodeToBytes(Schemas.allSupportCaseClass)
-  val decode = UtcProtobufSequentialInputInterpreter.fromBytes(Schemas.allSupportCaseClass)
+  val encode = ProtobufUtcSequentialEncoderAndValidator.encodeToBytes(Schemas.allSupportCaseClass)
+  val decode = ProtobufUtcSequentialEncoderAndValidator.fromBytes(Schemas.allSupportCaseClass)
 
 //  implicit override val generatorDrivenConfig =
 //    PropertyCheckConfiguration(minSuccessful = 10000, workers = 5)
@@ -55,8 +55,8 @@ class ProtobufScalacheckTest extends FunSuite with Checkers {
 
   // Print the file, to be used with the protobufIntegrationTest
   ignore("print protofile") {
-    val message = ProtoFileInterpreter.fromSchema(allSupportCaseClass)
-    print(ProtoFileInterpreter.messageToProtoFile(message))
+    val message = ProtoFileGeneratorInterpreter.fromSchema(allSupportCaseClass)
+    print(ProtoFileGeneratorInterpreter.messageToProtoFile(message))
   }
 
 

@@ -58,7 +58,7 @@ object BsonValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
   type ValidatedFromJson[A] =
     BSONValue => Either[NonEmptyList[ExtractionError], A]
 
-  override protected def invalidValue[T](
+  override def invalidValue[T](
     bson: BSONValue,
     expected: Class[T],
     path: List[String]): Left[NonEmptyList[ExtractionError], Nothing] = {

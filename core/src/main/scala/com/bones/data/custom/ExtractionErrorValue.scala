@@ -9,7 +9,7 @@ sealed abstract class ExtractionErrorValue[T]
 case object CanNotConvertData extends ExtractionErrorValue[CanNotConvert[_, _]]
 case object NotFoundData extends ExtractionErrorValue[NotFound[_]]
 case object ParsingErrorData extends ExtractionErrorValue[ParsingError]
-case class RequiredValueData[ALG[_]]() extends ExtractionErrorValue[RequiredValue[ALG, _]]
+case object RequiredValueData extends ExtractionErrorValue[RequiredValue[_]]
 case object SumTypeErrorData extends ExtractionErrorValue[SumTypeError]
 case object SystemErrorData extends ExtractionErrorValue[SystemError]
 case object ValidationErrorData extends ExtractionErrorValue[ValidationError[_]]
@@ -20,7 +20,7 @@ trait ExtractionErrorValueSugar {
   val canNotConvert = CanNotConvertData
   val notFound = NotFoundData
   val parsingError = ParsingErrorData
-  def requiredValue[ALG[_]] = RequiredValueData[ALG]
+  val requiredValue = RequiredValueData
   val sumTypeError = SumTypeErrorData
   val validationError = ValidationErrorData
   val wrongTypeError = WrongTypeErrorData

@@ -5,10 +5,11 @@ import java.util.{Base64, UUID}
 
 import com.bones.syntax._
 import com.google.protobuf.{CodedInputStream, CodedOutputStream}
-import org.scalatest.{FunSuite, MustMatchers}
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 
-class ProtobufSequentialInputInterpreterTest extends FunSuite with Checkers with MustMatchers{
+class ProtobufSequentialInputInterpreterTest extends AnyFunSuite with Checkers with Matchers{
 
   case class Loc(city: String, state: String)
   case class Person(id: UUID, name: String, age: Long, location: Loc, knowsAboutGadt: Boolean, favoriteColor: Option[String])
@@ -34,12 +35,12 @@ class ProtobufSequentialInputInterpreterTest extends FunSuite with Checkers with
   ignore("single items") {
 
     val denver = Loc("Denver", "CO")
-    val bytes = UtcProtobufSequentialOutputInterpreter.encodeToBytes(loc)(denver)
+    val bytes = ProtobufUtcSequentialEncoderAndValidator.encodeToBytes(loc)(denver)
 
     val is = new ByteArrayInputStream(bytes)
     val cin: CodedInputStream = CodedInputStream.newInstance(is)
 
-    val isItDenver = UtcProtobufSequentialInputInterpreter.fromBytes(loc)(bytes)
+    val isItDenver = ProtobufUtcSequentialEncoderAndValidator.fromBytes(loc)(bytes)
 
     isItDenver match {
       case Right(l) => l mustBe denver
@@ -55,15 +56,15 @@ class ProtobufSequentialInputInterpreterTest extends FunSuite with Checkers with
     val os = new ByteArrayOutputStream()
     val cos: CodedOutputStream = CodedOutputStream.newInstance(os)
 
-    val result = ProtoFileInterpreter.fromSchema(person)
+    val result = ProtoFileGeneratorInterpreter.fromSchema(person)
 
-    val str = ProtoFileInterpreter.messageToProtoFile(result)
+    val str = ProtoFileGeneratorInterpreter.messageToProtoFile(result)
 
-    val bytes = UtcProtobufSequentialOutputInterpreter.encodeToBytes(person)(monica)
+    val bytes = ProtobufUtcSequentialEncoderAndValidator.encodeToBytes(person)(monica)
 
     println("result:" + Base64.getEncoder.encodeToString(bytes))
 
-    val isItMonica = UtcProtobufSequentialInputInterpreter.fromBytes(person)(bytes)
+    val isItMonica = ProtobufUtcSequentialEncoderAndValidator.fromBytes(person)(bytes)
 
     isItMonica match {
       case Right(person) => person mustBe monica

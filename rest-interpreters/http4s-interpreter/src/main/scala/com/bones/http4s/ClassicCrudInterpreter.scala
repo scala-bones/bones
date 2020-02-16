@@ -13,12 +13,12 @@ import com.bones.data.{BonesSchema, HListConvert}
 import com.bones.http4s.ClassicCrudInterpreter.{CustomInterpreter, ProtobufInterpreter}
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
-import com.bones.oas3.{CrudOasInterpreter, SwaggerCoreInterpreter}
-import com.bones.oas3.SwaggerCoreInterpreter.CustomSwaggerInterpreter
-import com.bones.protobuf.ProtoFileInterpreter.Name
-import com.bones.protobuf.ProtobufSequentialInputInterpreter.ExtractFromProto
-import com.bones.protobuf.ProtobufSequentialOutputInterpreter.EncodeToProto
+import com.bones.swagger.SwaggerCoreInterpreter.CustomSwaggerInterpreter
+import com.bones.protobuf.ProtoFileGeneratorInterpreter.Name
+import com.bones.protobuf.ProtobufSequentialValidatorInterpreter.ExtractFromProto
+import com.bones.protobuf.ProtobufSequentialEncoderInterpreter.EncodeToProto
 import com.bones.protobuf._
+import com.bones.swagger.{CrudOasInterpreter, SwaggerCoreInterpreter}
 import com.bones.syntax.NoAlgebra
 import fs2.Stream
 import io.circe.Json
@@ -47,9 +47,9 @@ object ClassicCrudInterpreter {
   }
 
   trait ProtobufInterpreter[ALG[_]]
-      extends ProtobufSequentialInputInterpreter.CustomInterpreter[ALG]
-      with ProtobufSequentialOutputInterpreter.CustomInterpreter[ALG]
-      with ProtoFileInterpreter.CustomInterpreter[ALG]
+      extends ProtobufSequentialValidatorInterpreter.CustomInterpreter[ALG]
+      with ProtobufSequentialEncoderInterpreter.CustomInterpreter[ALG]
+      with ProtoFileGeneratorInterpreter.CustomInterpreter[ALG]
 
   case object NoAlgebraProtobufInterpreter extends ProtobufInterpreter[NoAlgebra] {
     override def encodeToProto[A](alg: NoAlgebra[A]): EncodeToProto[A] =
@@ -60,7 +60,7 @@ object ClassicCrudInterpreter {
 
     override def toMessageField[A](alg: NoAlgebra[A]): (
       Name,
-      Int) => (ProtoFileInterpreter.MessageField, Vector[ProtoFileInterpreter.NestedType], Int) =
+      Int) => (ProtoFileGeneratorInterpreter.MessageField, Vector[ProtoFileGeneratorInterpreter.NestedType], Int) =
       sys.error("Unreachable code")
   }
 
@@ -297,10 +297,10 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
   val encodeToCirceInterpreter = IsoCirceEncoderAndValidatorInterpreter
   val validatedFromCirceInterpreter = IsoCirceEncoderAndValidatorInterpreter
 
-  val protobufSequentialInputInterpreter: ProtobufSequentialInputInterpreter =
-    UtcProtobufSequentialInputInterpreter
-  val protobufSequentialOutputInterpreter: ProtobufSequentialOutputInterpreter =
-    UtcProtobufSequentialOutputInterpreter
+  val protobufSequentialInputInterpreter: ProtobufSequentialValidatorInterpreter =
+    ProtobufUtcSequentialEncoderAndValidator
+  val protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter =
+    ProtobufUtcSequentialEncoderAndValidator
 
   case class DataTransformation[I, O, E](description: String, f: I => Either[E, O])
 
@@ -600,7 +600,7 @@ trait ClassicCrudInterpreterF[ALG[_], A, E, F[_], ID] extends Http4sDsl[F] {
     schemaWithId: BonesSchema[ALG, (ID, A)],
     errorSchema: BonesSchema[ALG, E])(implicit F: Sync[F]): HttpRoutes[F] = {
     def toFile[A] =
-      ProtoFileInterpreter
+      ProtoFileGeneratorInterpreter
         .fromSchemaToProtoFile[ALG, A](_: BonesSchema[ALG, A], customProtobufInterpreter)
 
     val text =
