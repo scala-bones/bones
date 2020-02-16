@@ -1,7 +1,8 @@
-package com.bones.oas3
+package com.bones.swagger
 
 import com.bones.data.BonesSchema
-import com.bones.oas3.SwaggerCoreInterpreter.CustomSwaggerInterpreter
+import com.bones.swagger.SwaggerCoreInterpreter.CustomSwaggerInterpreter
+import com.bones.swagger._
 import io.swagger.v3.oas.models._
 import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.media._
@@ -114,7 +115,7 @@ object CrudOasInterpreter {
     val outputEntityName = outputSchema._2
 
     val inputSchemas =
-      SwaggerCoreInterpreter.fromSchemaWithAlg(outputSchema._1, customAlgebraInterpreter)(
+      fromSchemaWithAlg(outputSchema._1, customAlgebraInterpreter)(
         outputEntityName)
 
     inputSchemas.foreach { schemas =>
@@ -155,7 +156,7 @@ object CrudOasInterpreter {
   ): OpenAPI => OpenAPI = { openAPI =>
     val outputEntityName = outputSchemaWithName._2
     val outputComponentSchema =
-      SwaggerCoreInterpreter.fromSchemaWithAlg(outputSchemaWithName._1, customAlgebraInterpreter)(
+      fromSchemaWithAlg(outputSchemaWithName._1, customAlgebraInterpreter)(
         outputEntityName)
 
     outputComponentSchema.foreach {
@@ -200,13 +201,13 @@ object CrudOasInterpreter {
     val errorEntityName = errorSchemaAndName._2
 
     val inputComponentSchemas =
-      SwaggerCoreInterpreter.fromSchemaWithAlg(inputSchemaAndName._1, customAlgebraInterpreter)(
+      fromSchemaWithAlg(inputSchemaAndName._1, customAlgebraInterpreter)(
         inputEntityName)
     val outputComponentSchemas =
-      SwaggerCoreInterpreter.fromSchemaWithAlg(outputSchemaAndName._1, customAlgebraInterpreter)(
+      fromSchemaWithAlg(outputSchemaAndName._1, customAlgebraInterpreter)(
         outputEntityName)
     val errorComponentSchemas =
-      SwaggerCoreInterpreter.fromSchemaWithAlg(errorSchemaAndName._1, customAlgebraInterpreter)(
+      fromSchemaWithAlg(errorSchemaAndName._1, customAlgebraInterpreter)(
         errorEntityName)
 
     (inputComponentSchemas ::: outputComponentSchemas ::: errorComponentSchemas)
@@ -276,13 +277,13 @@ object CrudOasInterpreter {
     val errorEntityName = errorSchemaAndName._2
 
     val inputComponentSchemas =
-      SwaggerCoreInterpreter.fromSchemaWithAlg(inputSchemaAndName._1, customAlgebraInterpreter)(
+      fromSchemaWithAlg(inputSchemaAndName._1, customAlgebraInterpreter)(
         inputEntityName)
     val outputComponentSchemas =
-      SwaggerCoreInterpreter.fromSchemaWithAlg(outputSchemaAndName._1, customAlgebraInterpreter)(
+      fromSchemaWithAlg(outputSchemaAndName._1, customAlgebraInterpreter)(
         outputEntityName)
     val errorComponentSchemas =
-      SwaggerCoreInterpreter.fromSchemaWithAlg(errorSchemaAndName._1, customAlgebraInterpreter)(
+      fromSchemaWithAlg(errorSchemaAndName._1, customAlgebraInterpreter)(
         errorEntityName)
 
     (inputComponentSchemas ::: outputComponentSchemas ::: errorComponentSchemas)

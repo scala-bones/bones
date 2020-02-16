@@ -3,14 +3,12 @@ package com.bones.perf
 import java.nio.charset.Charset
 
 import cats.implicits._
-import com.bones.argonaut.{ArgonautEncoderInterpreter, ArgonautValidatorInterpreter}
 import com.bones.bson.{BsonEncoderInterpreter, BsonValidatorInterpreter}
-import com.bones.circe.{CirceEncoderInterpreter, CirceValidatorInterpreter, IsoCirceEncoderAndValidatorInterpreter}
-import com.bones.protobuf.{ProtobufSequentialInputInterpreter, ProtobufSequentialOutputInterpreter, UtcProtobufSequentialInputInterpreter, UtcProtobufSequentialOutputInterpreter}
+import com.bones.circe.{IsoCirceEncoderAndValidatorInterpreter, _}
+import com.bones.protobuf.ProtobufUtcSequentialEncoderAndValidator
 import com.bones.scalacheck.{NoAlgebraGen, Scalacheck}
 import com.bones.schemas.Schemas.allSupportCaseClass
 import com.bones.sjson.JsonStringEncoderInterpreter
-import com.bones.circe._
 
 object InterchangePerformanceTests extends App {
 
@@ -31,12 +29,11 @@ object InterchangePerformanceTests extends App {
   val bsonValidator = BsonValidatorInterpreter.validatorFromSchema(schema)
   val bsonEncoder = BsonEncoderInterpreter.encoderFromSchema(schema)
 
-  val protoValidator = UtcProtobufSequentialInputInterpreter.fromBytes(schema)
-  val protoEncoder = UtcProtobufSequentialOutputInterpreter.encodeToBytes(schema)
+  val protoValidator = ProtobufUtcSequentialEncoderAndValidator.fromBytes(schema)
+  val protoEncoder = ProtobufUtcSequentialEncoderAndValidator.encodeToBytes(schema)
 
 
-
-  val objects = Range(0,5000).toList
+  val objects = Range(0, 5000).toList
     .flatMap(_ => scalaCheckInterpreter.sample)
 
   System.gc()
@@ -64,7 +61,8 @@ object InterchangePerformanceTests extends App {
       case (Some(o1), Some(o2)) => o1.fancyEquals(o2)
       case (None, None) => true
       case _ => false
-    }})
+    }
+  })
   val bsonSuccess = badBsonResults.isEmpty
   println(s"bson validator success: ${bsonSuccess} time: ${bsonEnd - bsonStart}")
   System.gc()
@@ -84,7 +82,8 @@ object InterchangePerformanceTests extends App {
       case (Some(o1), Some(o2)) => o1.fancyEquals(o2)
       case (None, None) => true
       case _ => false
-    }})
+    }
+  })
   val circeSuccess = badCirceResults.isEmpty
 
 
@@ -105,7 +104,8 @@ object InterchangePerformanceTests extends App {
       case (Some(o1), Some(o2)) => o1.fancyEquals(o2)
       case (None, None) => true
       case _ => false
-    }})
+    }
+  })
   val argoSuccess = badCirceResults.isEmpty
   println(s"Argo Validator Success: ${argoSuccess} Time: ${argoStop - argoStart}")
   System.gc()
@@ -122,12 +122,6 @@ object InterchangePerformanceTests extends App {
   val protoValidateEnd = System.currentTimeMillis()
   println(s"Proto Validate time: ${protoValidateEnd - protoValidateStart}")
   System.gc()
-
-
-
-
-
-
 
 
 }

@@ -8,7 +8,7 @@ import shapeless.{Coproduct, HList, Nat}
 /**
   * Create a Protobuf file descriptor based on the Kvp.
   */
-object ProtoFileInterpreter {
+object ProtoFileGeneratorInterpreter {
 
   type Required = Boolean
   type Repeated = Boolean
@@ -79,7 +79,7 @@ object ProtoFileInterpreter {
 
   def messageFieldsToProtoFile
   (
-    fields: Vector[ProtoFileInterpreter.MessageField],
+    fields: Vector[ProtoFileGeneratorInterpreter.MessageField],
     indent: String,
     allowRequired: Boolean
   ): String = {
@@ -115,7 +115,7 @@ object ProtoFileInterpreter {
   }
 
   def nestedTypeToProtoFile(
-      types: Vector[ProtoFileInterpreter.NestedType]): String = {
+      types: Vector[ProtoFileGeneratorInterpreter.NestedType]): String = {
     types.map {
       case n: NestedMessage => nestedMessageToProtoFile(n)
     } mkString ("\n")

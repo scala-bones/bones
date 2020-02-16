@@ -1,8 +1,8 @@
 package com.bones.gen
 
 import com.bones.data.KvpHListValue
-import com.bones.oas3.SwaggerCoreInterpreter
 import com.bones.scalacheck.GenGadt
+import com.bones.swagger.SwaggerCoreInterpreter
 import com.bones.syntax.NoAlgebra
 import io.swagger.v3.oas.models.media.{ObjectSchema, Schema}
 import org.scalacheck.{Arbitrary, Gen}

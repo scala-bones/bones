@@ -191,20 +191,20 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], BigDecimal]
   def stringValue(in: IN, elementName: String): Option[String]
-  protected def invalidValue[T](
+  def invalidValue[T](
     in: IN,
     expected: Class[T],
     path: Path): Left[NonEmptyList[ExtractionError], Nothing]
 
-  protected def required[A](
-    op: KvpValue[A],
+  def required[ALG[_], A](
+    coproductDataDefinition: CoproductDataDefinition[ALG, A],
     validations: List[ValidationOp[A]],
     f: (IN, List[String]) => Either[NonEmptyList[ExtractionError], A],
   ): (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A] =
     (inOpt: Option[IN], path: Path) =>
       for {
         json <- inOpt
-          .toRight(NonEmptyList.one(RequiredValue(path, Left(op))))
+          .toRight(NonEmptyList.one(RequiredValue(path, coproductDataDefinition)))
         a <- f(json, path)
         v <- vu.validate(validations)(a, path)
       } yield a
@@ -326,21 +326,21 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
               case some @ Some(json)     => applied(some, path).map(Some(_))
             }
         case op: StringData =>
-          required(op, op.validations, extractString(Left(fgo), classOf[String]))
+          required(Left(op), op.validations, extractString(Left(fgo), classOf[String]))
         case id: IntData =>
-          required(id, id.validations, extractInt(Left(fgo)))
+          required(Left(id), id.validations, extractInt(Left(fgo)))
         case op: LongData =>
-          required(op, op.validations, extractLong(Left(fgo)))
+          required(Left(op), op.validations, extractLong(Left(fgo)))
         case op: BooleanData =>
-          required(op, op.validations, extractBool(Left(fgo)))
+          required(Left(op), op.validations, extractBool(Left(fgo)))
         case op: UuidData =>
-          required(op, op.validations, extractUuid(Left(fgo)))
+          required(Left(op), op.validations, extractUuid(Left(fgo)))
         case op @ LocalDateTimeData(validations) =>
-          required(op, validations, extractLocalDateTime(Left(fgo)))
+          required(Left(op), validations, extractLocalDateTime(Left(fgo)))
         case op @ LocalDateData(validations) =>
-          required(op, validations, extractLocalDate(Left(fgo)))
+          required(Left(op), validations, extractLocalDate(Left(fgo)))
         case op @ LocalTimeData(validations) =>
-          required(op, validations, extractLocalTime(Left(fgo)))
+          required(Left(op), validations, extractLocalTime(Left(fgo)))
         case op @ ByteArrayData(validations) =>
           val decoder = Base64.getDecoder
           (inOpt: Option[IN], path: Path) =>
@@ -384,7 +384,6 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
           val valueF = determineValueDefinition(op.tDefinition, extendedValidator)
 
           def appendArrayInex(path: Path, index: Int): List[String] = {
-            val size = path.length
             if (path.length == 0) path
             else
               path.updated(path.length - 1, path(path.length - 1) + s"[${index}]")
@@ -416,13 +415,13 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
               } yield listOfIn
             }
         case fd: FloatData =>
-          required(fd, fd.validations, extractFloat(Left(fgo)))
+          required(Left(fd), fd.validations, extractFloat(Left(fgo)))
         case dd: DoubleData =>
-          required(dd, dd.validations, extractDouble(Left(fgo)))
+          required(Left(dd), dd.validations, extractDouble(Left(fgo)))
         case sd: ShortData =>
-          required(sd, sd.validations, extractShort(Left(fgo)))
+          required(Left(sd), sd.validations, extractShort(Left(fgo)))
         case op: BigDecimalData =>
-          required(op, op.validations, extractBigDecimal(Left(fgo)))
+          required(Left(op), op.validations, extractBigDecimal(Left(fgo)))
         case op: EnumerationData[e, A] =>
           (inOpt: Option[IN], path: Path) =>
             for {

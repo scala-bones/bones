@@ -124,7 +124,7 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
       .map(_.toBigDecimal)
       .toRight(NonEmptyList.one(WrongTypeError(path, classOf[BigDecimal], in.getClass, None)))
 
-  override protected def invalidValue[T](
+  override def invalidValue[T](
     in: Json,
     expected: Class[T],
     path: List[String]): Left[NonEmptyList[ExtractionError], Nothing] = {

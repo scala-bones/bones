@@ -1,15 +1,14 @@
 package com.bones.circe
 
-import com.bones.data.KvpNil
 import com.bones.syntax._
-import io.circe.{Json => CJson}
-import org.scalatest.FunSuite
 import io.circe.parser.parse
-import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
+import io.circe.{Json => CJson}
+import org.scalatest.funsuite.AnyFunSuite
 
-class CirceValidatorInterpreterTest extends FunSuite {
+class CirceValidatorInterpreterTest extends AnyFunSuite {
 
-  val json: String = """
+  val json: String =
+    """
   {
     "id": "c730433b-082c-4984-9d66-855c243266f0",
     "name": "Foo",
@@ -23,9 +22,7 @@ class CirceValidatorInterpreterTest extends FunSuite {
   """
   val circeDoc: CJson = parse(json).getOrElse(CJson.Null)
 
-//  val liftJson = net.liftweb.json.parse(""" { "numbers" : [1, 2, 3, 4] } """)
-
-
+  //  val liftJson = net.liftweb.json.parse(""" { "numbers" : [1, 2, 3, 4] } """)
 
 
   test("kvp String") {
@@ -33,13 +30,13 @@ class CirceValidatorInterpreterTest extends FunSuite {
 
     IsoCirceEncoderAndValidatorInterpreter
       .kvpHList(str, com.bones.circe.noAlgebraValidator)(circeDoc, List.empty) match {
-        case Left(err) => fail(s"expected success, received: ${err}")
-        case Right(r) => assert(r.head === "Foo")
-      }
+      case Left(err) => fail(s"expected success, received: ${err}")
+      case Right(r) => assert(r.head === "Foo")
+    }
 
   }
 
-  test( "kvp String fail validation") {
+  test("kvp String fail validation") {
     val str = ("name", string(sv.length(2))) :<: kvpNil
 
     IsoCirceEncoderAndValidatorInterpreter.kvpHList(str, com.bones.circe.noAlgebraValidator).apply(circeDoc, List.empty) match {
