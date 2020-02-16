@@ -44,7 +44,7 @@ trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
       .map(x => NonEmptyList.one(ParsingError(x.message)))
   }
 
-  protected def invalidValue[T](
+  override def invalidValue[T](
     json: Json,
     expected: Class[T],
     path: List[String]): Left[NonEmptyList[WrongTypeError[T]], Nothing] = {

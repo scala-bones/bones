@@ -4,16 +4,17 @@ import java.nio.charset.Charset
 import java.time.{LocalDate, LocalDateTime, ZoneOffset}
 import java.util.{Base64, UUID}
 
-import com.bones.protobuf.{UtcProtobufSequentialInputInterpreter, UtcProtobufSequentialOutputInterpreter}
+import com.bones.protobuf.ProtobufUtcSequentialEncoderAndValidator
 import com.bones.schemas.Schemas
 import com.bones.schemas.Schemas.Currency
 import com.google.protobuf.ByteString
-import org.scalatest.{FunSuite, MustMatchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.must.Matchers
 
-class AllSupportedOuterClassTest extends FunSuite with MustMatchers {
+class AllSupportedOuterClassTest extends AnyFunSuite with Matchers {
 
-  val encode = UtcProtobufSequentialOutputInterpreter.encodeToBytes(Schemas.allSupportCaseClass)
-  val decode = UtcProtobufSequentialInputInterpreter.fromBytes(Schemas.allSupportCaseClass)
+  val encode = ProtobufUtcSequentialEncoderAndValidator.encodeToBytes(Schemas.allSupportCaseClass)
+  val decode = ProtobufUtcSequentialEncoderAndValidator.fromBytes(Schemas.allSupportCaseClass)
 
 
 

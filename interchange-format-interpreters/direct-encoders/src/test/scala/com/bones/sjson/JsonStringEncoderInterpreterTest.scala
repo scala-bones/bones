@@ -6,36 +6,33 @@ import com.bones.scalacheck.{NoAlgebraGen, Scalacheck}
 import org.scalatestplus.scalacheck.Checkers
 import com.bones.schemas.Schemas.{AllSupported, allSupportCaseClass}
 import org.scalacheck.Arbitrary
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class JsonStringEncoderInterpreterTest extends FunSuite with Checkers {
+class JsonStringEncoderInterpreterTest extends AnyFunSuite with Checkers {
 
 
-  val interpreter = new JsonStringEncoderInterpreter {
-    override val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-    override val dateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
-  }
+  val interpreter = JsonStringEncoderInterpreter.isoEncoder
 
 
   val ccF = interpreter.valueDefinition(allSupportCaseClass, JsonStringEncoderInterpreter.NoAlgebra)
 
-  implicit val arb = Arbitrary(Scalacheck.valueDefinition(allSupportCaseClass, NoAlgebraGen))
+  implicit val arb: Arbitrary[AllSupported] = Arbitrary(Scalacheck.valueDefinition(allSupportCaseClass, NoAlgebraGen))
 
   test("to json") {
 
     check((cc: AllSupported) => {
       val json = ccF(cc)
-      json match {
-        case Some(str) =>
+      val result =
+        if (json.isEmpty)
+        fail("expected success")
+        else {
+          val str = json.mkString
           io.circe.parser.parse(str) match {
-            case Left(err) => {
-              fail(err.toString + str)
-            }
+            case Left(err) => fail(err.toString + str)
             case Right(_) => succeed
           }
-        case None => fail("expected success")
-      }
-      true
+        }
+      result === succeed
     })
   }
 

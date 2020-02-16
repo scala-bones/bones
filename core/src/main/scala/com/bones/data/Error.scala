@@ -59,13 +59,23 @@ object Error {
   /** Used when a required piece of data is missing
     *
     * @param path                    The path within the schema to the offending definition
-    * @param coproductDataDefinition The definition of the required value
+    * @param description The description of the required value
     * @tparam A The type of the required value
     */
-  case class RequiredValue[ALG[_], A](
+  case class RequiredValue[A](
     path: List[String],
-    coproductDataDefinition: CoproductDataDefinition[ALG, A])
+    description: String)
       extends ExtractionError
+
+  object RequiredValue {
+    def apply[ALG[_], A](path: List[String], alg: CoproductDataDefinition[ALG,A]): RequiredValue[A] = {
+      val description: String = alg match {
+        case Left(x) => x.manifestOfA.runtimeClass.getSimpleName
+        case Right(x) => x.getClass.getSimpleName
+      }
+      RequiredValue(path, description)
+    }
+  }
 
   case class SumTypeError(path: List[String], problem: String) extends ExtractionError
 

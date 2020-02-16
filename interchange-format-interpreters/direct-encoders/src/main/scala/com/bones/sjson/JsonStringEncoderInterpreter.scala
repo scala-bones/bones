@@ -18,18 +18,20 @@ object JsonStringEncoderInterpreter {
     * Implementation of the JsonStringEncoderInterpreter assuming dates are String with Iso format.
     */
   val isoEncoder = new JsonStringEncoderInterpreter {
-    override val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_DATE_TIME
-    override val dateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_DATE
+    override val localDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    override val localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+    override val localTiemFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_TIME
   }
 
   trait CustomToJsonStringInterpreter[ALG[_]] {
-    def toJsonString[A](alg: ALG[A]): A => Option[String]
+    def toJsonString[A](alg: ALG[A]): A => List[String]
   }
 
   object NoAlgebra extends CustomToJsonStringInterpreter[NoAlgebra] {
-    override def toJsonString[A](alg: NoAlgebra[A]): A => Option[String] =
+    override def toJsonString[A](alg: NoAlgebra[A]): A => List[String] =
       sys.error("unreachable code")
   }
+
 }
 
 /**
@@ -40,218 +42,220 @@ trait JsonStringEncoderInterpreter {
 
   import JsonStringEncoderInterpreter.CoproductType
 
-  val dateTimeFormatter: DateTimeFormatter
-  val dateFormatter: DateTimeFormatter
+  val localDateTimeFormatter: DateTimeFormatter
+  val localDateFormatter: DateTimeFormatter
+  val localTiemFormatter: DateTimeFormatter
 
   def fAtoString[ALG[_], A](
-    bonesSchema: BonesSchema[ALG, A],
-    customToJsonStringInterpreter: CustomToJsonStringInterpreter[ALG]): A => String =
+                             bonesSchema: BonesSchema[ALG, A],
+                             customToJsonStringInterpreter: CustomToJsonStringInterpreter[ALG]): A => String =
     bonesSchema match {
-      case kvp: HListConvert[ALG, h, n, a] @unchecked =>
-        valueDefinition(kvp, customToJsonStringInterpreter).andThen(_.getOrElse("{}"))
-      case kvp: KvpCoproductConvert[ALG, c, a] @unchecked =>
-        valueDefinition(kvp, customToJsonStringInterpreter).andThen(_.getOrElse("{}"))
+      case kvp: HListConvert[ALG, h, n, a]@unchecked =>
+        valueDefinition(kvp, customToJsonStringInterpreter).andThen(x =>
+          if (x.isEmpty) "{}" else x.mkString)
+      case kvp: KvpCoproductConvert[ALG, c, a]@unchecked =>
+        valueDefinition(kvp, customToJsonStringInterpreter).andThen(x =>
+          if (x.isEmpty) "{}" else x.mkString)
     }
 
   private def kvpCoproduct[ALG[_], C <: Coproduct](
-    kvp: KvpCoproduct[ALG, C],
-    customToJsonStringInterpreter: CustomToJsonStringInterpreter[ALG])
-    : C => (CoproductType, Option[String]) = {
+                                                    kvp: KvpCoproduct[ALG, C],
+                                                    customToJsonStringInterpreter: CustomToJsonStringInterpreter[ALG])
+  : C => (CoproductType, List[String]) = {
     kvp match {
       case nil: KvpCoNil[_] =>
         _ =>
-          ("", None)
-      case op: KvpSingleValueLeft[ALG, l, r] @unchecked =>
+          ("", List.empty)
+      case op: KvpSingleValueLeft[ALG, l, r]@unchecked =>
         val valueF = determineValueDefinition[ALG, l](op.kvpValue, customToJsonStringInterpreter)
         val valueT = kvpCoproduct(op.kvpTail, customToJsonStringInterpreter)
-        (input: C) =>
-          {
-            input match {
-              case Inl(left)  => (op.manifestL.runtimeClass.getSimpleName, valueF(left))
-              case Inr(right) => valueT(right)
-            }
+        (input: C) => {
+          input match {
+            case Inl(left) => (op.manifestL.runtimeClass.getSimpleName, valueF(left))
+            case Inr(right) => valueT(right)
           }
+        }
     }
   }
+
   private def kvpHList[ALG[_], H <: HList, HL <: Nat](
-    group: KvpHList[ALG, H, HL],
-    customInterpreter: CustomToJsonStringInterpreter[ALG]
-  ): H => Option[String] = {
+                                                       group: KvpHList[ALG, H, HL],
+                                                       customInterpreter: CustomToJsonStringInterpreter[ALG]
+                                                     ): H => List[String] = {
 
     group match {
       case nil: KvpNil[_] =>
         _ =>
-          None
-      case op: KvpSingleValueHead[ALG, h, t, tl, a] @unchecked =>
+          List.empty
+      case op: KvpSingleValueHead[ALG, h, t, tl, a]@unchecked =>
         val valueF = determineValueDefinition(op.fieldDefinition.op, customInterpreter)
         val tailF = kvpHList(op.tail, customInterpreter)
         implicit val hCons = op.isHCons
-        (inputH: H) =>
-          {
-            val input = inputH.asInstanceOf[a]
-            val val1 = valueF(input.head).map("\"" + op.fieldDefinition.key + "\":" + _)
-            val tail = tailF(input.tail)
-            (val1, tail) match {
-              case (Some(v), Some(t)) => Some(v + "," + t)
-              case (None, _)          => tail
-              case (_, None)          => val1
-            }
-          }
-      case op: KvpHListHead[ALG, a, al, h, hl, t, tl] @unchecked =>
+        (inputH: H) => {
+          val input = inputH.asInstanceOf[a]
+          val val1 = valueF(input.head)
+          val valWithKey =
+            if (val1.isEmpty) val1
+            else  List("\"", op.fieldDefinition.key, "\":") ::: val1
+          val tail = tailF(input.tail)
+          if (!valWithKey.isEmpty && !tail.isEmpty)
+            valWithKey ::: "," :: tail
+          else
+            valWithKey ::: tail
+
+        }
+      case op: KvpHListHead[ALG, a, al, h, hl, t, tl]@unchecked =>
         val headF = kvpHList(op.head, customInterpreter)
         val tailF = kvpHList[ALG, t, tl](op.tail, customInterpreter)
-        (input: H) =>
-          {
-            val l = op.split(input)
-            val headOut = headF(l._1)
-            val tailOut = tailF(l._2)
-            (headOut, tailOut) match {
-              case (Some(h), Some(t)) => Some(h + "," + t)
-              case (None, _)          => tailOut
-              case (_, None)          => headOut
-            }
-          }
+        (input: H) => {
+          val l = op.split(input)
+          val headOut = headF(l._1)
+          val tailOut = tailF(l._2)
+          if (!headOut.isEmpty && !tailOut.isEmpty)
+            headOut ::: "," :: tailOut
+          else
+            headOut ::: tailOut
+        }
 
-      case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked =>
-        val headF: a => Option[String] = fromBonesSchema(op.bonesSchema, customInterpreter)
+      case op: KvpConcreteTypeHead[ALG, a, ht, nt]@unchecked =>
+        val headF: a => List[String] = fromBonesSchema(op.bonesSchema, customInterpreter)
         val tailF = kvpHList(op.tail, customInterpreter)
         implicit val hCons = op.isHCons
-        (input: a :: ht) =>
-          {
-            val head = headF(input.head)
-            val tail = tailF(input.tail)
-            (head, tail) match {
-              case (Some(h), Some(t)) => Some(h + t)
-              case (None, _)          => tail
-              case (_, None)          => head
-            }
-          }
+        (input: a :: ht) => {
+          val head = headF(input.head)
+          val tail = tailF(input.tail)
+          head ::: tail
+        }
     }
   }
 
   def fromBonesSchema[ALG[_], A](
-    bonesSchema: BonesSchema[ALG, A],
-    customToJsonStringInterpreter: CustomToJsonStringInterpreter[ALG]
-  ): A => Option[String] = {
+                                  bonesSchema: BonesSchema[ALG, A],
+                                  customToJsonStringInterpreter: CustomToJsonStringInterpreter[ALG]
+                                ): A => List[String] = {
     bonesSchema match {
       case kvp: KvpCoproductConvert[ALG, c, a] =>
         val f = kvpCoproduct(kvp.from, customToJsonStringInterpreter)
-        (input: A) =>
-          {
-            val (coproductType, json) = f(kvp.aToC(input))
-            Some(s""" "type": "${coproductType}", ${json} """)
-          }
+        (input: A) => {
+          val (coproductType, json) = f(kvp.aToC(input))
+          List(s""" "type": "${coproductType}", ${json} """)
+        }
       case hListConvert: HListConvert[ALG, h, n, a] =>
         val f = kvpHList(hListConvert.from, customToJsonStringInterpreter)
-        (input: A) =>
-          {
-            f(hListConvert.fAtoH(input))
-          }
+        (input: A) => {
+          f(hListConvert.fAtoH(input))
+        }
     }
   }
 
   def determineValueDefinition[ALG[_], A](
-    kvpValue: Either[KvpValue[A], ALG[A]],
-    customInterpreter: CustomToJsonStringInterpreter[ALG]
-  ): A => Option[String] = {
+                                           kvpValue: Either[KvpValue[A], ALG[A]],
+                                           customInterpreter: CustomToJsonStringInterpreter[ALG]
+                                         ): A => List[String] = {
     kvpValue match {
-      case Left(kvp)  => valueDefinition(kvp, customInterpreter)
+      case Left(kvp) => valueDefinition(kvp, customInterpreter)
       case Right(alg) => customInterpreter.toJsonString(alg)
     }
   }
 
   def valueDefinition[ALG[_], A](
-    fgo: KvpValue[A],
-    customToJsonStringInterpreter: CustomToJsonStringInterpreter[ALG]): A => Option[String] =
+                                  fgo: KvpValue[A],
+                                  customToJsonStringInterpreter: CustomToJsonStringInterpreter[ALG]): A => List[String] =
     fgo match {
-      case op: OptionalKvpValueDefinition[ALG, a] @unchecked =>
+      case op: OptionalKvpValueDefinition[ALG, a]@unchecked =>
         val someF = determineValueDefinition(op.valueDefinitionOp, customToJsonStringInterpreter)
         _ match {
           case Some(s) => someF(s)
-          case None    => None
+          case None => List.empty
         }
       case ob: BooleanData =>
         b =>
-          if (b) Some("true") else Some("false")
+          if (b) List("true") else List("false")
       case rs: StringData =>
         s =>
-          Some("\"" + escapeJson(s) + "\"")
+          List("\"" + escapeJson(s) + "\"")
       case ri: LongData =>
         l =>
-          Some(l.toString)
+          List(l.toString)
       case uu: UuidData =>
         u =>
-          Some("\"" + u.toString + "\"")
+          List("\"" + u.toString + "\"")
       case ld: LocalDateData =>
         d =>
-          Some("\"" + escapeJson(dateFormatter.format(d)) + "\"")
+          List("\"" + escapeJson(localDateFormatter.format(d)) + "\"")
       case dd: LocalDateTimeData =>
         d =>
-          Some("\"" + escapeJson(dateTimeFormatter.format(d)) + "\"")
+          List("\"" + escapeJson(localDateTimeFormatter.format(d)) + "\"")
+      case lt: LocalTimeData =>
+        d =>
+          List("\"" + escapeJson(localTiemFormatter.format(d)) + "\"")
       case bd: BigDecimalData =>
         bd =>
-          Some(bd.toString)
-      case ld: ListData[ALG, t] @unchecked =>
+          List(bd.toString)
+      case ld: ListData[ALG, t]@unchecked =>
         l =>
           val tDef = determineValueDefinition(ld.tDefinition, customToJsonStringInterpreter)
-          Some(l.flatMap(t => tDef(t)).mkString("[", ",", "]"))
+          List(l.flatMap(t => tDef(t)).mkString("[", ",", "]"))
       case dd: DoubleData =>
         d =>
-          Some(d.toString)
+          List(d.toString)
       case fd: FloatData =>
         f =>
-          Some(f.toString)
+          List(f.toString)
       case id: IntData =>
         i =>
-          Some(i.toString)
+          List(i.toString)
       case sd: ShortData =>
         s =>
-          Some(s.toString)
-      case ed: EitherData[ALG, a, b] @unchecked =>
-        val aDef: a => Option[String] =
+          List(s.toString)
+      case ed: EitherData[ALG, a, b]@unchecked =>
+        val aDef: a => List[String] =
           determineValueDefinition(ed.definitionA, customToJsonStringInterpreter)
-        val bDef: b => Option[String] =
+        val bDef: b => List[String] =
           determineValueDefinition(ed.definitionB, customToJsonStringInterpreter)
         _ match {
-          case Left(l)  => aDef(l)
+          case Left(l) => aDef(l)
           case Right(r) => bDef(r)
         }
       case ba: ByteArrayData =>
         (input: Array[Byte]) =>
-          Some("\"" + escapeJson(Base64.getEncoder.encodeToString(input)) + "\"")
+          List("\"", escapeJson(Base64.getEncoder.encodeToString(input)), "\"")
       case esd: EnumerationData[e, a] =>
         e =>
-          Some("\"" + escapeJson(e.toString) + "\"")
-      case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
+          List("\"", escapeJson(e.toString), "\"")
+      case kvp: KvpHListValue[ALG, h, hl]@unchecked =>
         val hListDef = kvpHList(kvp.kvpHList, customToJsonStringInterpreter)
         (input: A) =>
-          hListDef(input.asInstanceOf[h]).map("{" + _ + "}")
-      case kvp: KvpCoproductValue[ALG, c] @unchecked =>
+          hListDef(input.asInstanceOf[h]).flatMap(x => List("{", x, "}"))
+      case kvp: KvpCoproductValue[ALG, c]@unchecked =>
         val coproductDef = kvpCoproduct(kvp.kvpCoproduct, customToJsonStringInterpreter)
-        (input: A) =>
-          {
-            val (coproductType, json) = coproductDef(input.asInstanceOf[c])
-            json
-              .map(str => {
-                s"""{"type":"${coproductType}", ${str.substring(1)} """
-              })
-              .orElse(Some(s"""{"type":"${coproductType}"}"""))
+        (input: A) => {
+          val (coproductType, json) = coproductDef(input.asInstanceOf[c])
+          if (json.isEmpty)
+            List(s"""{"type":"${coproductType}"}""")
+          else {
+            val dropOpeningBracket = json.headOption.map(_.substring(1)).toList ::: json.tail
+            List("""{"type":"""", coproductType, """", """) ::: dropOpeningBracket ::: " " :: Nil
           }
-      case x: HListConvert[ALG, a, al, b] @unchecked =>
+        }
+      case x: HListConvert[ALG, a, al, b]@unchecked =>
         val fromDef = kvpHList(x.from, customToJsonStringInterpreter)
-        (input: A) =>
-          fromDef(x.fAtoH(input)).map("{" + _ + "}")
-      case co: KvpCoproductConvert[ALG, c, a] @unchecked =>
+        (input: A) => {
+          val h = x.fAtoH(input)
+          "{" :: fromDef(h) ::: "}" :: Nil
+        }
+      case co: KvpCoproductConvert[ALG, c, a]@unchecked =>
         val fromDef = kvpCoproduct(co.from, customToJsonStringInterpreter)
-        (input: A) =>
-          {
-            val (coproductType, json) = fromDef(co.aToC(input))
-            json
-              .map(str => {
-                s"""{"type":"${coproductType}", ${str.substring(1)} """
-              })
-              .orElse(Some(s"""{"type":"${coproductType}"}"""))
+        (input: A) => {
+          val (coproductType, json) = fromDef(co.aToC(input))
+          if (json.isEmpty)
+            List(s"""{"type":"${coproductType}"}""")
+          else {
+            val dropOpeningBracket = json.headOption.map(_.substring(1)).toList ::: json.tail
+            List("""{"type":"""", coproductType, """", """) ::: dropOpeningBracket ::: " " :: Nil
           }
+
+        }
     }
 
 }

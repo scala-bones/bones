@@ -13,11 +13,7 @@ import com.bones.syntax.NoAlgebra
 import com.google.protobuf.{CodedOutputStream, Timestamp}
 import shapeless._
 
-object UtcProtobufSequentialOutputInterpreter extends ProtobufSequentialOutputInterpreter {
-  override val zoneOffset: ZoneOffset = ZoneOffset.UTC
-}
-
-object ProtobufSequentialOutputInterpreter {
+object ProtobufSequentialEncoderInterpreter {
   trait CustomInterpreter[ALG[_]] {
     def encodeToProto[A](alg: ALG[A]) : EncodeToProto[A]
   }
@@ -220,15 +216,14 @@ object ProtobufSequentialOutputInterpreter {
 }
 /**
   * Notes:
-  * An Option[List] where the data is a some of empty list: Some(List()) becomes a None when using ProtobufSequentialInputInterpreter.
+  * An Option[List] where the data is a some of empty list: Some(List()) becomes a None when using ProtobufSequentialValidatorInterpreter.
   *
   */
-trait ProtobufSequentialOutputInterpreter {
+trait ProtobufSequentialEncoderInterpreter {
 
-  import ProtobufSequentialOutputInterpreter._
+  import ProtobufSequentialEncoderInterpreter._
 
   val zoneOffset: ZoneOffset
-
 
   def encodeToBytes[A](dc: BonesSchema[NoAlgebra,A]): A => Array[Byte] =
   encodeToBytesCustomAlgebra[NoAlgebra, A](dc, NoAlgebraCustomInterpreter)
