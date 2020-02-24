@@ -16,7 +16,7 @@ package object swagger {
     */
   object SwaggerIsoInterpreter extends SwaggerCoreInterpreter {
     override def localDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-
+    override def localTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_TIME
     override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
   }
 

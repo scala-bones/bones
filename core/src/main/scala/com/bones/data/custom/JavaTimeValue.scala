@@ -12,112 +12,112 @@ sealed abstract class JavaTimeValue[A: Manifest] extends HasManifest[A] {
 /** Note that Deserializing DateTimeException, although support throughout, will contain a misleading stack trace.  This is because
   * it is impossible to create a new DateTimeException without suppressing the stack trace.  This class is type
   * is mainly here for Serialization. */
-final case class DateTimeExceptionData(validationOp: List[ValidationOp[DateTimeException]])
+final case class DateTimeExceptionData(validations: List[ValidationOp[DateTimeException]])
     extends JavaTimeValue[DateTimeException]
     with AlgToCollectionData[JavaTimeValue, DateTimeException, DateTimeExceptionData]
 
-final case class DayOfWeekData(validationOp: List[ValidationOp[DayOfWeek]])
+final case class DayOfWeekData(validations: List[ValidationOp[DayOfWeek]])
     extends JavaTimeValue[DayOfWeek]
     with AlgToCollectionData[JavaTimeValue, DayOfWeek, DayOfWeekData]
 
-final case class DurationData(validationOp: List[ValidationOp[Duration]])
+final case class DurationData(validations: List[ValidationOp[Duration]])
     extends JavaTimeValue[Duration]
     with AlgToCollectionData[JavaTimeValue, Duration, DurationData]
 
-final case class InstantData(validationOp: List[ValidationOp[Instant]])
+final case class InstantData(validations: List[ValidationOp[Instant]])
     extends JavaTimeValue[Instant]
     with AlgToCollectionData[JavaTimeValue, Instant, InstantData]
 
-final case class MonthData(validationOp: List[ValidationOp[Month]])
+final case class MonthData(validations: List[ValidationOp[Month]])
     extends JavaTimeValue[Month]
     with AlgToCollectionData[JavaTimeValue, Month, MonthData]
 
-final case class MonthDayData(validationOp: List[ValidationOp[MonthDay]])
+final case class MonthDayData(validations: List[ValidationOp[MonthDay]])
     extends JavaTimeValue[MonthDay]
     with AlgToCollectionData[JavaTimeValue, MonthDay, MonthDayData]
 
-final case class OffsetDateTimeData(validationOp: List[ValidationOp[OffsetDateTime]])
+final case class OffsetDateTimeData(validations: List[ValidationOp[OffsetDateTime]])
     extends JavaTimeValue[OffsetDateTime]
     with AlgToCollectionData[JavaTimeValue, OffsetDateTime, OffsetDateTimeData]
 
-final case class OffsetTimeData(validationOp: List[ValidationOp[OffsetTime]])
+final case class OffsetTimeData(validations: List[ValidationOp[OffsetTime]])
     extends JavaTimeValue[OffsetTime]
     with AlgToCollectionData[JavaTimeValue, OffsetTime, OffsetTimeData]
 
-final case class PeriodData(validationOp: List[ValidationOp[Period]])
+final case class PeriodData(validations: List[ValidationOp[Period]])
     extends JavaTimeValue[Period]
     with AlgToCollectionData[JavaTimeValue, Period, PeriodData]
 
-final case class YearData(validationOp: List[ValidationOp[Year]])
+final case class YearData(validations: List[ValidationOp[Year]])
     extends JavaTimeValue[Year]
     with AlgToCollectionData[JavaTimeValue, Year, YearData]
 
-final case class YearMonthData(validationOp: List[ValidationOp[YearMonth]])
+final case class YearMonthData(validations: List[ValidationOp[YearMonth]])
     extends JavaTimeValue[YearMonth]
     with AlgToCollectionData[JavaTimeValue, YearMonth, YearMonthData]
 
-final case class ZonedDateTimeData(validationOp: List[ValidationOp[ZonedDateTime]])
+final case class ZonedDateTimeData(validations: List[ValidationOp[ZonedDateTime]])
     extends JavaTimeValue[ZonedDateTime]
     with AlgToCollectionData[JavaTimeValue, ZonedDateTime, ZonedDateTimeData]
 
-final case class ZoneIdData(validationOp: List[ValidationOp[ZoneId]])
+final case class ZoneIdData(validations: List[ValidationOp[ZoneId]])
     extends JavaTimeValue[ZoneId]
     with AlgToCollectionData[JavaTimeValue, ZoneId, ZoneIdData]
 
-final case class ZoneOffsetData(validationOp: List[ValidationOp[ZoneOffset]])
+final case class ZoneOffsetData(validations: List[ValidationOp[ZoneOffset]])
     extends JavaTimeValue[ZoneOffset]
     with AlgToCollectionData[JavaTimeValue, ZoneOffset, ZoneOffsetData]
 
 trait JavaTimeValueSugar {
-  def dateTimeException(validationOp: ValidationOp[DateTimeException]*): DateTimeExceptionData =
-    DateTimeExceptionData(validationOp.toList)
+  def dateTimeException(validations: ValidationOp[DateTimeException]*): DateTimeExceptionData =
+    DateTimeExceptionData(validations.toList)
 
   val dateTimeException: DateTimeExceptionData = dateTimeException()
 
-  def dayOfWeek(validationOp: ValidationOp[DayOfWeek]*): DayOfWeekData =
-    DayOfWeekData(validationOp.toList)
+  def dayOfWeek(validations: ValidationOp[DayOfWeek]*): DayOfWeekData =
+    DayOfWeekData(validations.toList)
   val dayOfWeek: DayOfWeekData = dayOfWeek()
 
-  def duration(validationOp: ValidationOp[Duration]*): DurationData =
-    DurationData(validationOp.toList)
+  def duration(validations: ValidationOp[Duration]*): DurationData =
+    DurationData(validations.toList)
   val duration: DurationData = duration()
 
-  def instant(validationOp: ValidationOp[Instant]*): InstantData = InstantData(validationOp.toList)
+  def instant(validations: ValidationOp[Instant]*): InstantData = InstantData(validations.toList)
   val instant: InstantData = instant()
 
-  def month(validationOp: ValidationOp[Month]*): MonthData = MonthData(validationOp.toList)
+  def month(validations: ValidationOp[Month]*): MonthData = MonthData(validations.toList)
   val month: MonthData = month()
 
-  def monthDay(validationOp: ValidationOp[MonthDay]*): MonthDayData =
-    MonthDayData(validationOp.toList)
+  def monthDay(validations: ValidationOp[MonthDay]*): MonthDayData =
+    MonthDayData(validations.toList)
   val monthDay: MonthDayData = monthDay()
 
-  def offsetDateTime(validationOp: ValidationOp[OffsetDateTime]*): OffsetDateTimeData =
-    OffsetDateTimeData(validationOp.toList)
+  def offsetDateTime(validations: ValidationOp[OffsetDateTime]*): OffsetDateTimeData =
+    OffsetDateTimeData(validations.toList)
   val offsetDateTime: OffsetDateTimeData = offsetDateTime()
 
-  def offsetTime(validationOp: ValidationOp[OffsetTime]*): OffsetTimeData =
-    OffsetTimeData(validationOp.toList)
+  def offsetTime(validations: ValidationOp[OffsetTime]*): OffsetTimeData =
+    OffsetTimeData(validations.toList)
   val offsetTime: OffsetTimeData = offsetTime()
 
-  def period(validationOp: ValidationOp[Period]*): PeriodData = PeriodData(validationOp.toList)
+  def period(validations: ValidationOp[Period]*): PeriodData = PeriodData(validations.toList)
   val period: PeriodData = period()
 
-  def year(validationOp: ValidationOp[Year]*): YearData = YearData(validationOp.toList)
+  def year(validations: ValidationOp[Year]*): YearData = YearData(validations.toList)
   val year: YearData = year()
 
-  def yearMonth(validationOp: ValidationOp[YearMonth]*): YearMonthData =
-    YearMonthData(validationOp.toList)
+  def yearMonth(validations: ValidationOp[YearMonth]*): YearMonthData =
+    YearMonthData(validations.toList)
   val yearMonth: YearMonthData = yearMonth()
 
-  def zonedDateTime(validationOp: ValidationOp[ZonedDateTime]*): ZonedDateTimeData =
-    ZonedDateTimeData(validationOp.toList)
+  def zonedDateTime(validations: ValidationOp[ZonedDateTime]*): ZonedDateTimeData =
+    ZonedDateTimeData(validations.toList)
   val zonedDateTime: ZonedDateTimeData = zonedDateTime()
 
-  def zoneId(validationOp: ValidationOp[ZoneId]*): ZoneIdData = ZoneIdData(validationOp.toList)
+  def zoneId(validations: ValidationOp[ZoneId]*): ZoneIdData = ZoneIdData(validations.toList)
   val zoneId: ZoneIdData = zoneId()
 
-  def zoneOffset(validationOp: ValidationOp[ZoneOffset]*): ZoneOffsetData =
-    ZoneOffsetData(validationOp.toList)
+  def zoneOffset(validations: ValidationOp[ZoneOffset]*): ZoneOffsetData =
+    ZoneOffsetData(validations.toList)
   val zoneOffset: ZoneOffsetData = zoneOffset()
 }

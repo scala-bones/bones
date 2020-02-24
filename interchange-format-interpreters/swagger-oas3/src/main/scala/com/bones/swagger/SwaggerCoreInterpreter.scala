@@ -138,6 +138,8 @@ trait SwaggerCoreInterpreter {
 
   def localDateFormatter: DateTimeFormatter
 
+  def localTimeFormatter: DateTimeFormatter
+
   private def localDateExample = LocalDate.of(1970, 1, 1)
 
   private def localTimeExample = LocalTime.of(12, 0, 0, 0)
@@ -265,7 +267,7 @@ trait SwaggerCoreInterpreter {
         name =>
           addStringSchema(
             name,
-            localDateFormatter.format(example.getOrElse(localDateTimeExample)),
+            localDateTimeFormatter.format(example.getOrElse(localDateTimeExample)),
             description.getOrElse("value of type local date time")
           )
       case _: LocalDateData =>
@@ -274,6 +276,13 @@ trait SwaggerCoreInterpreter {
             name,
             localDateFormatter.format(example.getOrElse(localDateExample)),
             description.getOrElse("value of type local date")
+          )
+      case LocalTimeData(_) =>
+        name =>
+          addStringSchema(
+            name,
+            localTimeFormatter.format(example.getOrElse(localTimeExample)),
+            description.getOrElse("value of type local time")
           )
       case DoubleData(_) =>
         name => addNumberSchema(name, example.map(_.toString).getOrElse("3.14"), description.getOrElse("value of type double"))
