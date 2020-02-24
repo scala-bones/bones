@@ -3,10 +3,11 @@ package com.bones.validation
 import java.util.UUID
 
 import com.bones.validation.ValidationDefinition.StringValidation._
-import org.scalatest.FunSuite
+import com.bones.validation.ValidationDefinition.StringValidation.{custom => customStrValidation}
+import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 
-class ValidationDefinitionTest extends FunSuite with Checkers {
+class ValidationDefinitionTest extends AnyFunSuite with Checkers {
 
   test("valid values") {
     val validValues = Vector("The", "Quick", "Brown", "Fox")
@@ -57,12 +58,12 @@ class ValidationDefinitionTest extends FunSuite with Checkers {
   }
 
   test("custom") {
-    val v = custom(_ => true, (v: String) => s"${v} default", "description")
+    val v = customStrValidation(_ => true, (v: String) => s"${v} default", "description")
     assert(v.isValid("x") === true)
     assert(v.defaultError("test") === "test default")
     assert(v.description === "description")
 
-    val v2 = custom(_ => false, identity, "")
+    val v2 = customStrValidation(_ => false, identity, "")
     assert(v2.isValid("x") === false)
 
   }

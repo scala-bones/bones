@@ -1,25 +1,15 @@
 package com.bones.validation
 
 import java.net.URI
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util.UUID
 
 import cats.implicits._
 
-import scala.math.Ordering.{
-  BigDecimalOrdering,
-  ByteOrdering,
-  CharOrdering,
-  DoubleOrdering,
-  FloatOrdering,
-  IntOrdering,
-  LongOrdering,
-  ShortOrdering
-}
+import scala.math.Ordering.{BigDecimalOrdering, ByteOrdering, CharOrdering, DoubleOrdering, FloatOrdering, IntOrdering, LongOrdering, ShortOrdering}
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
-import java.time.LocalDate
 
 /**
   * A collection of validation definition natively supported by Bones.
@@ -42,17 +32,23 @@ object ValidationDefinition {
   /** Input must be one of the specified validValues. */
   case class ValidValue[T](validValues: Vector[T]) extends ValidationOp[T] {
     override def isValid: T => Boolean = validValues.contains
+
     override def defaultError(t: T): String =
       s"DataClass $t must be one of ${validValues.mkString("('", "','", "')")}"
+
     override def description: String =
       s"one of ${validValues.mkString("('", "','", "')")}"
   }
 
   /** Input must not be one of the invalidValues. */
   case class InvalidValue[T](invalidValues: Vector[T]) extends ValidationOp[T] {
-    override def isValid: T => Boolean = str => { !invalidValues.contains(str) }
+    override def isValid: T => Boolean = str => {
+      !invalidValues.contains(str)
+    }
+
     override def defaultError(t: T): String =
       s"DataClass $t must not be one of ${invalidValues.mkString("('", "','", "')")}"
+
     override def description: String =
       s"not one of ${invalidValues.mkString("('", "','", "')")}"
   }
@@ -60,8 +56,11 @@ object ValidationDefinition {
   /** Base trait for validation as to include valid and invalid values */
   trait BaseValidationOp[T] {
     def validVector(validValues: Vector[T]) = ValidValue(validValues)
+
     def valid(t: T*): ValidValue[T] = validVector(t.toVector)
+
     def invalidVector(invalidValues: Vector[T]) = InvalidValue(invalidValues)
+
     def invalid(t: T*): InvalidValue[T] = invalidVector(t.toVector)
   }
 
@@ -100,6 +99,7 @@ object ValidationDefinition {
 
     val sentenceRegexString = "^[A-Za-z,;'\"\\s]+[.?!]$"
     val sentenceRegex: Regex = sentenceRegexString.r
+
     object Sentence extends ValidationOp[String] {
       val isValid: String => Boolean =
         sentenceRegex.findFirstMatchIn(_).isDefined
@@ -111,6 +111,7 @@ object ValidationDefinition {
 
     /**
       * Defines min as the minimum length the string can be.
+      *
       * @param min The minimum length the string can be.
       */
     case class MinLength(min: Int) extends ValidationOp[String] {
@@ -152,7 +153,7 @@ object ValidationDefinition {
       * Follow the values defined in [[ValidationOp]]
       */
     case class Custom(f: String => Boolean, defaultErrorF: String => String, description: String)
-        extends ValidationOp[String] {
+      extends ValidationOp[String] {
       val isValid: String => Boolean = f
 
       override def defaultError(t: String): String = defaultErrorF(t)
@@ -168,7 +169,7 @@ object ValidationDefinition {
         } match {
           case Success(_) => true
           case Failure(_) => false
-      }
+        }
 
       override def defaultError(t: String): String = s"$t is not a GUID"
 
@@ -349,7 +350,7 @@ object ValidationDefinition {
     /** String must be a Uri */
     val uri: Uri.type = Uri
 
-    /** String must be a valid credit card number*/
+    /** String must be a valid credit card number */
     val creditCard: CreditCard.type = CreditCard
   }
 
@@ -383,10 +384,8 @@ object ValidationDefinition {
   }
 
   /**
-    * Base trait for any type which has an ordering.  Must be extented with specific type.
-    * NOTE: Tried to just user context bound for each case class, however because of erasure,
-    * we can not match and know the type of the N.
-   **/
+    * Base trait for any type which has an ordering.  Must be extended with specific type.
+    **/
   trait OrderingValidation[N] extends Ordering[N] {
 
     case class Between(min: N, max: N) extends ValidationOp[N] {
@@ -451,6 +450,8 @@ object ValidationDefinition {
 
   }
 
+  /** If we can define modulo for the type N and we can use ZeroValidations,
+    * then we can calculate multipes of type N */
   trait Modulo[N] extends ZeroValidations[N] {
 
     val modulo: (N, N) => N
@@ -468,7 +469,7 @@ object ValidationDefinition {
   }
 
   object CharValidation
-      extends BaseValidationOp[Char]
+    extends BaseValidationOp[Char]
       with OrderingValidation[Char]
       with ZeroValidations[Char]
       with CharOrdering {
@@ -476,7 +477,7 @@ object ValidationDefinition {
   }
 
   object ByteValidation
-      extends BaseValidationOp[Byte]
+    extends BaseValidationOp[Byte]
       with OrderingValidation[Byte]
       with Modulo[Byte]
       with ByteOrdering {
@@ -485,7 +486,7 @@ object ValidationDefinition {
   }
 
   object ShortValidation
-      extends BaseValidationOp[Short]
+    extends BaseValidationOp[Short]
       with OrderingValidation[Short]
       with Modulo[Short]
       with ShortOrdering {
@@ -494,7 +495,7 @@ object ValidationDefinition {
   }
 
   object IntValidation
-      extends BaseValidationOp[Int]
+    extends BaseValidationOp[Int]
       with OrderingValidation[Int]
       with Modulo[Int]
       with IntOrdering {
@@ -503,7 +504,7 @@ object ValidationDefinition {
   }
 
   object LongValidation
-      extends BaseValidationOp[Long]
+    extends BaseValidationOp[Long]
       with OrderingValidation[Long]
       with Modulo[Long]
       with LongOrdering {
@@ -512,7 +513,7 @@ object ValidationDefinition {
   }
 
   object DoubleValidation
-      extends BaseValidationOp[Double]
+    extends BaseValidationOp[Double]
       with OrderingValidation[Double]
       with ZeroValidations[Double]
       with DoubleOrdering {
@@ -520,7 +521,7 @@ object ValidationDefinition {
   }
 
   object FloatValidation
-      extends BaseValidationOp[Float]
+    extends BaseValidationOp[Float]
       with OrderingValidation[Float]
       with ZeroValidations[Float]
       with FloatOrdering {
@@ -528,68 +529,79 @@ object ValidationDefinition {
   }
 
   object BigDecimalValidation
-      extends BaseValidationOp[BigDecimal]
+    extends BaseValidationOp[BigDecimal]
       with OrderingValidation[BigDecimal]
       with ZeroValidations[BigDecimal]
       with BigDecimalOrdering {
     val zero = BigDecimal(0)
   }
 
-  object LocalDateTimeValidationInstances {
+  trait BaseDateValidation[A] extends BaseValidationOp[A] with Ordering[A] {
 
-    case class Min(minDate: LocalDateTime, format: DateTimeFormatter)
-        extends ValidationOp[LocalDateTime] {
-      override def isValid: LocalDateTime => Boolean = _.isAfter(minDate)
+    def defaultFormatToString(f: A): String
+    /** Used in the error string to describe the type.  For instance: 'date' */
+    val instantDescription: String
 
-      override def defaultError(t: LocalDateTime): String =
-        s"specified date ${format.format(t)} must be after ${format.format(minDate)}"
+    case class MinTime(minDate: A, formatToString: A => String, instantDescription: String, ordering: Ordering[A])
+      extends ValidationOp[A] {
+      override def isValid: A => Boolean = (a: A) => ordering.compare(minDate, a) <= 0
 
-      override def description: String = s"after ${format.format(minDate)}"
+      override def defaultError(t: A): String =
+        s"specified ${instantDescription} ${formatToString(t)} must be after ${formatToString(minDate)}"
+
+      override def description: String = s"after ${formatToString(minDate)}"
     }
 
-    case class Max(maxDate: LocalDateTime, format: DateTimeFormatter)
-        extends ValidationOp[LocalDateTime] {
-      override def isValid: LocalDateTime => Boolean = _.isBefore(maxDate)
+    case class MaxTime(maxDate: A, formatToString: A => String, instantDescription: String, ordering: Ordering[A])
+      extends ValidationOp[A] {
+      override def isValid: A => Boolean = a => ordering.compare(a, maxDate) <= 0
 
-      override def defaultError(t: LocalDateTime): String =
-        s"specified date ${format.format(t)} must be before ${format.format(maxDate)}"
+      override def defaultError(t: A): String =
+        s"specified ${instantDescription} ${formatToString(t)} must be before ${formatToString(maxDate)}"
 
-      override def description: String = s"before ${format.format(maxDate)}"
+      override def description: String = s"before ${formatToString(maxDate)}"
     }
 
-    def min(minDate: LocalDateTime, format: DateTimeFormatter) = Min(minDate, format)
-    def min(minDate: LocalDateTime) = Min(minDate, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+    def min(minDate: A, format: A => String): MinTime = MinTime(minDate, format(_), instantDescription, this)
 
-    def max(maxDate: LocalDateTime, format: DateTimeFormatter) = Max(maxDate, format)
-    def max(maxDate: LocalDateTime) = Max(maxDate, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+    def min(minDate: A): MinTime = MinTime(minDate, defaultFormatToString, instantDescription, this)
+
+    def max(maxDate: A, format: A => String) = MaxTime(maxDate, format(_), instantDescription, this)
+
+    def max(maxDate: A): MaxTime = MaxTime(maxDate, defaultFormatToString, instantDescription, this)
+
+
   }
 
-  object LocalDateValidationInstances {
+  object LocalDateTimeValidationInstances
+    extends BaseDateValidation[LocalDateTime]
+      with Ordering[LocalDateTime] {
+    override def defaultFormatToString(f: LocalDateTime): String = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(f)
 
-    case class Min(minDate: LocalDate, format: DateTimeFormatter) extends ValidationOp[LocalDate] {
-      override def isValid: LocalDate => Boolean = _.isAfter(minDate)
+    override val instantDescription: String = "date/time"
 
-      override def defaultError(t: LocalDate): String =
-        s"specified date ${format.format(t)} must be after ${format.format(minDate)}"
+    override def compare(x: LocalDateTime, y: LocalDateTime): Int = x.compareTo(y)
+  }
 
-      override def description: String = s"after ${format.format(minDate)}"
-    }
+  object LocalTimeValidationInstances
+    extends BaseDateValidation[LocalTime]
+      with Ordering[LocalTime] {
+    override def defaultFormatToString(f: LocalTime): String = DateTimeFormatter.ISO_LOCAL_TIME.format(f)
 
-    case class Max(maxDate: LocalDate, format: DateTimeFormatter) extends ValidationOp[LocalDate] {
-      override def isValid: LocalDate => Boolean = _.isBefore(maxDate)
+    /** Used in the error string to describe the type.  For instance: 'date' */
+    override val instantDescription: String = "time"
 
-      override def defaultError(t: LocalDate): String =
-        s"specified date ${format.format(t)} must be before ${format.format(maxDate)}"
+    override def compare(x: LocalTime, y: LocalTime): Int = x.compareTo(y)
+  }
 
-      override def description: String = s"before ${format.format(maxDate)}"
-    }
+  object LocalDateValidationInstances extends BaseDateValidation[LocalDate] with Ordering[LocalDate] {
 
-    def min(minDate: LocalDate, format: DateTimeFormatter) = Min(minDate, format)
-    def min(minDate: LocalDate) = Min(minDate, DateTimeFormatter.ISO_LOCAL_DATE)
+    override def defaultFormatToString(f: LocalDate): String = DateTimeFormatter.ISO_LOCAL_DATE.format(f)
 
-    def max(maxDate: LocalDate, format: DateTimeFormatter) = Max(maxDate, format)
-    def max(maxDate: LocalDate) = Max(maxDate, DateTimeFormatter.ISO_LOCAL_DATE)
+    /** Used in the error string to describe the type.  For instance: 'date' */
+    override val instantDescription: String = "date"
 
+    override def compare(x: LocalDate, y: LocalDate): Int = x.compareTo(y)
   }
 
 }
