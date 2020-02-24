@@ -105,7 +105,7 @@ object ExtractionErrorEncoder {
 
   val wrongTypeErrorSchema =
     (
-      ("path", string) :<:
+      ("path", string(sv.words)) :<:
         ("providedType", string) :<:
         ("expectedType", string) :<:
         ("errorMessage", string.optional) :<:

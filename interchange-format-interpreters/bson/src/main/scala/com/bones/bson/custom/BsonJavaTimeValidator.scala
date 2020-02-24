@@ -34,7 +34,7 @@ trait BsonJavaTimeValidator extends InterchangeFormatValidator[JavaTimeValue, BS
               Right(Instant.ofEpochMilli(date))
             case x => baseValidator.invalidValue(x, classOf[BSONDateTime], path)
           }
-        baseValidator.required(Right(id), id.validationOp, f)
+        baseValidator.required(Right(id), id.validations, f)
       case MonthData(_) => parseTime(baseValidator, alg, classOf[Month], Month.valueOf)
       case MonthDayData(_) => parseTime(baseValidator, alg, classOf[MonthDay], MonthDay.parse)
       case OffsetDateTimeData(_) =>
