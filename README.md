@@ -2,9 +2,9 @@
 
 ** Please note that the Bones project is currently a work in progress. **
 However, the core library is now essentially feature complete for what will eventually be 
-version 1.0.  I would love to have some feedback.
+version 1.0.  I would love to get some feedback.
 
-One fo the simplest ways to get started is to generate your test data
+One of the simplest ways to get started is to generate your test data
 by defining a Bones Schema and using the Scalatest Interpreter to produce an
 Arbitrary[A] where A is your class which is to be generated with data that conforms to the 
 Schema definition.
@@ -14,11 +14,13 @@ See a [Scalacheck Example](https://github.com/OleTraveler/bones/blob/master/test
 
 ## Purpose
 
-The purpose of this library is to remove as much boilerplate as possible out of a CRUD/REST application.
-There are 3 steps to create a new CRUD application.
- * Define the input and output and error schema
- * Pass the schemas to an interpreter
- * Provide methods to execute create/read/update/delete operations against a data store.
+The purpose of this library is to remove boilerplate for anything which processes Data that requires validation.
+ 
+The current targets are:
+ * Generate Arbitrary Test data based on a schema.
+ * Validate interchange format data (such as Json, Protobuf) based on a schema.
+ * Remove boilerplate for Data Conversion in a REST Application.
+ * Remove boilerplate for Generating REST specifications (such as OpenAPI format). 
  
  
 ## Data Types.
