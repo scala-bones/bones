@@ -314,8 +314,9 @@ trait SwaggerCoreInterpreter {
             .name(name)
           SwaggerSchemas(composedSchema, a.referenceSchemas ::: b.referenceSchemas)
       case esd: EnumerationData[e, a]@unchecked =>
-        name => addEnumerationData(name, example.getOrElse(esd.enumeration.values.head).toString, description.getOrElse(
-          s"enumeration of type ${esd.manifestOfA.getClass.getSimpleName}"), esd.enumeration.values.toList.map(_.toString))
+        name =>
+          addEnumerationData(name, example.getOrElse(esd.enumeration.values.head).toString, description.getOrElse(
+            s"enumeration of type ${esd.manifestOfA.getClass.getSimpleName}"), esd.enumeration.values.toList.map(_.toString))
       case gd: KvpHListValue[ALG, h, hl]@unchecked =>
         name =>
           val schemas = fromKvpHList(gd.kvpHList, customInterpreter)

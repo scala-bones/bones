@@ -1,0 +1,53 @@
+package com.bones.scalacheck
+
+import org.scalacheck.Arbitrary
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatestplus.scalacheck.Checkers
+
+class ScalacheckExample extends AnyFunSuite with Checkers {
+
+  //import for syntax
+  import com.bones.syntax._
+
+  // First we define a case class.  This is already be defined in your application.
+  object EyeColor extends Enumeration {
+    type EyeColor = Value
+    val Amber, Blue, Brown, Grey, Green, Hazel, Red = Value
+  }
+
+  case class PersonalTraits(height: Int, weight: Double, eyeColor: EyeColor.EyeColor, correctiveVision: Boolean)
+
+  // Second we define our "Bones Schema" with data constraints
+  val personalTraitsSchema = (
+    ("height", int(iv.min(12), iv.max(240))) :<:
+      ("weight", double(dv.min(4), dv.max(9999)), "Weight in Pounds", 205.5) :<:
+      ("eyeColor", enumeration[EyeColor.type, EyeColor.EyeColor](EyeColor)) :<:
+      ("correctiveVision", boolean) :<:
+      kvpNil
+    ).convert[PersonalTraits]
+
+  //Use the Scalacheck interpreter to generate an Arbitrary which will produce data within the range of the schema provided above.
+  implicit val arb = Arbitrary(Scalacheck.createGen(personalTraitsSchema))
+
+
+  //Write your tests
+  test("user generator") {
+    check( (personalTraits: PersonalTraits) => {
+
+      personalTraits.height >= 12 &&
+        personalTraits.height <=240 &&
+        personalTraits.weight >= 4 &&
+        personalTraits.weight <= 9999 &&
+        EyeColor.values.contains(personalTraits.eyeColor) &&
+        List(true, false).contains(personalTraits.correctiveVision)
+
+    })
+  }
+
+
+
+
+
+
+
+}
