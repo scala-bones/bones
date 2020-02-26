@@ -6,10 +6,10 @@ import org.scalatestplus.scalacheck.Checkers
 
 class ScalacheckExample extends AnyFunSuite with Checkers {
 
-  //import for syntax
+  //import for Bones DSL syntax
   import com.bones.syntax._
 
-  // First we define a case class.  This is already be defined in your application.
+  // Define a case class.  This is already be defined in your application.
   object EyeColor extends Enumeration {
     type EyeColor = Value
     val Amber, Blue, Brown, Grey, Green, Hazel, Red = Value
@@ -17,7 +17,7 @@ class ScalacheckExample extends AnyFunSuite with Checkers {
 
   case class PersonalTraits(height: Int, weight: Double, eyeColor: EyeColor.EyeColor, correctiveVision: Boolean)
 
-  // Second we define our "Bones Schema" with data constraints
+  // Define our "Bones Schema" with data constraints
   val personalTraitsSchema = (
     ("height", int(iv.min(12), iv.max(240))) :<:
       ("weight", double(dv.min(4), dv.max(9999)), "Weight in Pounds", 205.5) :<:
