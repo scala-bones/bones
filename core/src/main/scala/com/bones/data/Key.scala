@@ -137,9 +137,8 @@ trait Sugar {
     * @param e The base enumeration type.
     * @tparam E The enumeration
     */
-  def enumeration[E <: Enumeration, V: Manifest](e: E): EnumerationData[E, V] = {
-    EnumerationData[E, V](e, List.empty)
-  }
+  def enumeration[E <: Enumeration, V: Manifest](e: E, validationOp: ValidationOp[V]*) =
+    EnumerationData[E,V](e, validationOp.toList)
 
   /** Indicates that the data is a list of Key Value pairs */
   def kvpHList[H <: HList: Manifest, HL <: Nat, ALG[_]](
