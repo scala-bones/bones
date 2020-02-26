@@ -179,7 +179,7 @@ object Schemas {
 
   val allSupportedSchema =
         ("boolean", boolean) :<:
-        ("int", int(iv.between(0,10))) :<:
+        ("int", int(iv.between(0,4000))) :<:
         ("long", long(lv.min(0))) :<:
         ("listOfInt", list(int)) :<:
         ("string", string(sv.min(0), sv.words)) :<:
@@ -195,7 +195,7 @@ object Schemas {
         ("eitherField", either(string(sv.words), int)) :<:
         ("child", allSupportedOptionalSchema.convert[AllSupportedOptional]) :<:
         ("media", MusicMedium.bonesSchema) :<:
-        ("int2", int(iv.between(Int.MinValue, Int.MinValue))) :<:
+        ("int2", int(iv.between(Int.MinValue, Int.MaxValue))) :<:
         kvpNil
 
 
