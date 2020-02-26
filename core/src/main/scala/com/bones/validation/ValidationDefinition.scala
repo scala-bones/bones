@@ -501,6 +501,11 @@ object ValidationDefinition {
       with IntOrdering {
     override val modulo: (Int, Int) => Int = (i1, i2) => i1 % i2
     val zero = 0
+
+    case class InRanges(ranges: List[Range])
+
+    def inRanges(range: Range*) = InRanges(range.toList)
+
   }
 
   object LongValidation

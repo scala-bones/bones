@@ -1,6 +1,16 @@
 # Bones
 
 ** Please note that the Bones project is currently a work in progress. **
+However, the core library is now essentially feature complete for what will eventually be 
+version 1.0.  I would love to have some feedback.
+
+One fo the simplest ways to get started is to start generating your test data
+by defining a Bones Schema and using the Scalatest Interpreter to produce an
+Arbitrary[A] where A is your class filled with data which conforms to the 
+Schema definition.
+
+See a [Scalacheck Example](https://github.com/OleTraveler/bones/blob/master/test-interpreters/scalacheck/src/test/scala/com/bones/scalacheck/ScalacheckExample.scala)
+
 
 ## Purpose
 
@@ -8,7 +18,7 @@ The purpose of this library is to remove as much boilerplate as possible out of 
 There are 3 steps to create a new CRUD application.
  * Define the input and output and error schema
  * Pass the schemas to an interpreter
- * Provide methods for to create/read/update/delete data from a data store.
+ * Provide methods to execute create/read/update/delete operations against a data store.
  
  
 ## Data Types.
@@ -23,7 +33,7 @@ LocalDate, UUID, Enumeration
 ```
 
 ### Custom Types
-Custom types allow a user to define their own Algebra.  There are a few nice use cases for this.
+Custom types allow a user to define their own Algebra.  There are a few use cases for this.
 
 Custom types allow us to create Algebra for types not supported natively above.  For instance, there is a
 package com.bones.data.custom.JavaTimeValue which contains an Algebra to support types found
@@ -32,7 +42,8 @@ forcing them to be supported in all custom interpreters.
 
 Custom types allow for a user to create types that are context specific.  For instance, a
 type of `Markdown` would be a string that, when used in the context of a web application, would display a
-markdown editor for the user to enter in data.  And in the context of a JSON API, would
+markdown editor for the user to enter in data.  And in the context of a JSON API, would validate that the
+markdown is valid.
 
 Custom types allow a project or an organization to cherry-pick custom algebras and context specific algabras
 for a standard project/organization wide vocabulary.
@@ -78,7 +89,7 @@ The power in creating a GADT structure, is that we can provide different interpr
 Once the basic functionality of the interpreter is created, we can reuse the interpreter passing in different schemas
 to create common functionality.
 
-I other words, if services perform similar behavior, 
+In other words, if services perform similar behavior, 
 such as validate HTTP requests and write to Kafka, S3, a Database or an external services, the boilerplate code can be reduced by using GADTs.
 This project is to provide a common vocabulary for any service, however this project is currently focused on 
 REST CRUD apps.
@@ -116,13 +127,12 @@ object PersonEndpoint extends LocalhostAllIOApp {
 
 ### List of Interpreters
 
-Serializer / Marhsaller Interpreters
+Serializer / Marshaller Interpreters
 * [Circe](interchange-format-interpreters/circe/README.md)
 * [BSON](interchange-format-interpreters/bson/README.md)
 * [Argonaut](interchange-format-interpreters/argonaut/README.md)
-* [lift-json](interchange-format-interpreters/lift-json/README.md)
 * [protobuf](interchange-format-interpreters/protobuf/README.md)
-* [scalatest](test-interpreters/scalacheck/README.md)
+* [scalacheck](test-interpreters/scalacheck/README.md)
 
 HTTP REST Interpreters
 * [http4s](rest-interpreters/http4s-interpreter/README.md)
@@ -140,7 +150,7 @@ Version 0.5.0 includes validation, CRUD and the http4s REST Interpreter.
 
 
 #### Getting Started with Http4s Circe Interpreter
-Basic CRUD capabilities implemented with http4s, circe and doobie.
+Basic CRUD capabilities implemented with http4s, circe and JDBC.
 
 ```libraryDependencies += "com.github.oletraveler" %% "examples" % "0.5.0"```
 
