@@ -9,7 +9,7 @@ class ScalacheckExample extends AnyFunSuite with Checkers {
   //import for Bones DSL syntax
   import com.bones.syntax._
 
-  // Define a case class.  This is already be defined in your application.
+  // Define a case class.  This is probably already be defined in your application.
   object EyeColor extends Enumeration {
     type EyeColor = Value
     val Amber, Blue, Brown, Grey, Green, Hazel, Red = Value

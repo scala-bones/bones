@@ -4,9 +4,9 @@
 However, the core library is now essentially feature complete for what will eventually be 
 version 1.0.  I would love to have some feedback.
 
-One fo the simplest ways to get started is to start generating your test data
+One fo the simplest ways to get started is to generate your test data
 by defining a Bones Schema and using the Scalatest Interpreter to produce an
-Arbitrary[A] where A is your class filled with data which conforms to the 
+Arbitrary[A] where A is your class which is to be generated with data that conforms to the 
 Schema definition.
 
 See a [Scalacheck Example](https://github.com/OleTraveler/bones/blob/master/test-interpreters/scalacheck/src/test/scala/com/bones/scalacheck/ScalacheckExample.scala)
