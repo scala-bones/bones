@@ -28,7 +28,9 @@ object NoAlgebraGen extends GenAlg[NoAlgebra] {
   override def gen[A](ag: NoAlgebra[A]): Gen[A] = sys.error("Unreachable code")
 }
 
-object Scalacheck {
+object Scalacheck extends ScalacheckBase
+
+trait ScalacheckBase {
 
   implicit val chooseLocalDate = new Choose[LocalDate] {
     override def choose(min: LocalDate, max: LocalDate): Gen[LocalDate] =

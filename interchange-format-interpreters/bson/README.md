@@ -18,3 +18,10 @@ def encode[A]: A => Array[Byte] // Where Array[Byte] is a valid byte encoding of
 
 def validate[A]: Array[Byte] => Either[ExtractionError,A] // Where Array[Byte] is a valid byte encoding of a BSON docuemnt. 
 ```
+
+
+
+# Limitations
+
+BSONDateTime only supports up to millisecond.  Therefor when we serialize/deserialize a LocalDateTime, we will
+loose some significance.

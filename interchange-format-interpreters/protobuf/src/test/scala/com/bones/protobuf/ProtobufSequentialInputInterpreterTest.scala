@@ -62,8 +62,6 @@ class ProtobufSequentialInputInterpreterTest extends AnyFunSuite with Checkers w
 
     val bytes = ProtobufUtcSequentialEncoderAndValidator.encodeToBytes(person)(monica)
 
-    println("result:" + Base64.getEncoder.encodeToString(bytes))
-
     val isItMonica = ProtobufUtcSequentialEncoderAndValidator.fromBytes(person)(bytes)
 
     isItMonica match {

@@ -14,7 +14,7 @@ See a [Scalacheck Example](https://github.com/OleTraveler/bones/blob/master/test
 
 ## Purpose
 
-The purpose of this library is to remove boilerplate for anything which processes Data that requires validation.
+The purpose of this library is to remove boilerplate for anything which processes Data and requires validation.
  
 The current targets are:
  * Generate Arbitrary Test data based on a schema.
@@ -50,10 +50,9 @@ markdown is valid.
 Custom types allow a project or an organization to cherry-pick custom algebras and context specific algabras
 for a standard project/organization wide vocabulary.
 
-### Product Types
-Product Types (Shapeless HList/ Case classes) and Sum Types (traits/case classes or 
+### Product Types / Sum Types
+Product Types (Case classes / Shapeless HList) and Sum Types (traits/case classes or 
 Shapeless Coproducts) are also supported for collections of both Native types and Custom types.
-
 
 
   
@@ -61,8 +60,8 @@ Shapeless Coproducts) are also supported for collections of both Native types an
 ### Schema DSL
 Bones defines a Domain Specific Language (DSL) for describing CRUD applications with validation.
 
-Using the DSL will result in creating a Generalized Algebraic Data Type (GADT) tree-like data structure.
-The GADT structure describes the data, validation and available Create/Read/Update/Delete (CRUD) actions.
+Using the DSL will result in a Generalized Algebraic Data Type (GADT) tree-like data structure,
+where each leaf node represent a single data type and internal nodes represent a collection of data types. 
  
 As an example, we will describe a Person CRUD application.  For a complete running service writing to the Database,
 refer to the [Example](https://github.com/OleTraveler/bones/blob/master/examples/http4s-examples/src/main/scala/com/bones/PersonEndpoint.scala
@@ -72,13 +71,14 @@ refer to the [Example](https://github.com/OleTraveler/bones/blob/master/examples
 
 import com.bones.syntax._
 
-case class Person(name: String, age: Int)
+  case class Person(name: String, age: Int, gender: Option[String])
 
-val personSchema = (
-  kvp("name", string(sv.matchesRegex("^[a-zA-Z ]*$".r))) ::  // The name must be alphanumeric
-  kvp("age", int(iv.min(0))) ::                              // Age must be >= 0
-  KvpNil
-).convert[Person]
+  val personSchema = (
+    ("name", string(sv.matchesRegex("^[a-zA-Z ]*$".r)), "The name of the person must be alphanumeric", "John Doe") :<:
+      ("age", int(iv.min(0)), "The Age, In years, of the person.", 21) :<:
+      ("gender", string.optional) :<:
+      kvpNil
+  ).convert[Person]
 
 case class Error(error: String)
   
@@ -87,7 +87,7 @@ case class Error(error: String)
 
 ### Interpreters
 
-The power in creating a GADT structure, is that we can provide different interpreters for the defined Schema.
+The power in creating a GADT data structure, is that we can feed it as input to different interpreters.
 Once the basic functionality of the interpreter is created, we can reuse the interpreter passing in different schemas
 to create common functionality.
 
