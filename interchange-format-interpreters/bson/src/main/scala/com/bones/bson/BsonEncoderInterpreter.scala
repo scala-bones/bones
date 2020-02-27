@@ -54,7 +54,10 @@ object BsonEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[BSO
     input => BSONLong(input)
 
   override def dateTimeToOut: LocalDateTime => BSONValue =
-    input => BSONDateTime(input.toInstant(ZoneOffset.UTC).toEpochMilli)
+    input => {
+      val date = input.toInstant(ZoneOffset.UTC).toEpochMilli
+      BSONDateTime(date)
+    }
 
   override def localTimeToOut: LocalTime => BSONValue =
     input => BSONLong(input.toNanoOfDay)

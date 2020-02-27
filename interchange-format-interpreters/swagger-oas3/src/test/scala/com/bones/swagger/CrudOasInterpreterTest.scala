@@ -2,7 +2,6 @@ package com.bones.swagger
 
 import com.bones.schemas.Schemas
 import com.bones.schemas.Schemas.AllSupported
-import com.bones.swagger.{CrudOasInterpreter, SwaggerCoreInterpreter}
 import org.scalatest.FunSuite
 import com.bones.syntax._
 import io.swagger.v3.oas.models.OpenAPI

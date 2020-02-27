@@ -61,12 +61,11 @@ class CovCirceTest extends FunSuite with Checkers with MustMatchers {
 
     val blogPost = BlogPost(1, "title", List("tag1", "tag2"), Instant.now(), "Here is some content")
 
-    println("about to marshall")
 
     val json = blogPostToJson.apply(blogPost)
     val jsonString = json.spaces2
 
-    println(jsonString)
+//    println(jsonString)
 
 //    val newCc = jsonToCc(jsonString)
 //    newCc match {
