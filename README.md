@@ -5,7 +5,7 @@ However, the core library is now essentially feature complete for what will even
 version 1.0.  I would love to get some feedback.
 
 One of the simplest ways to get started is to generate your test data
-by defining a Bones Schema and using the Scalatest Interpreter to produce an
+by defining a Bones Schema and using the Scalacheck Interpreter to produce an
 Arbitrary[A] where A is your class which is to be generated with data that conforms to the 
 Schema definition.
 
