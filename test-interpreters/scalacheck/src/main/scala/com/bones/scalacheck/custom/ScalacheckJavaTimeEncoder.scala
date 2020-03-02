@@ -169,7 +169,7 @@ class ScalacheckJavaTimeEncoder extends GenAlg[JavaTimeValue] {
   override def gen[A](alg: JavaTimeValue[A]): Gen[A] =
     alg match {
       case dte: DateTimeExceptionData =>
-        Scalacheck.loremIpsumSentencesGen.map(word => new DateTimeException(word))
+        Scalacheck.wordsGen.map(word => new DateTimeException(word))
       case dow: DayOfWeekData =>
         val values = dow.validations.collectFirst[Seq[DayOfWeek]]({
           case v: ValidValue[A] => v.validValues

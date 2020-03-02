@@ -22,10 +22,14 @@ import scala.util.control.NonFatal
   */
 object BsonScalacheck extends ScalacheckBase {
 
+
+  override val wordsGen: Gen[String] = Scalacheck.wordsGen
+  override val sentencesGen: Gen[String] = Scalacheck.sentencesGen
+
   /** Bson DateTime doesn't support nano seconds, so we will truncate them for this test */
   val chooseMillis = new Choose[LocalDateTime] {
     override def choose(min: LocalDateTime, max: LocalDateTime): Gen[LocalDateTime] =
-      chooseLocalDateTime.choose(min,max).map(localDate => {
+      Scalacheck.chooseLocalDateTime.choose(min,max).map(localDate => {
         val millis = localDate.toInstant(ZoneOffset.UTC).toEpochMilli
         LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
       })
@@ -33,7 +37,7 @@ object BsonScalacheck extends ScalacheckBase {
 
   override def valueDefinition[ALG[_], A](fgo: KvpValue[A], genAlg: GenAlg[ALG]): Gen[A] = fgo match {
     case dd: LocalDateTimeData =>
-      genTime(
+      Scalacheck.genTime(
         dd.validations,
         LocalDateTimeValidationInstances,
         LocalDateTime.of(LocalDate.ofEpochDay(Int.MinValue), LocalTime.MIN), // toEpochMilli in LocalDateTime doesn't work if the value is outside of the Int range
