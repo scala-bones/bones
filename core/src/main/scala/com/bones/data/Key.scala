@@ -87,7 +87,7 @@ trait Sugar {
   val long: LongData = long()
 
   /**
-    * Indicates that the data tied to this key is a list (JSON Array) type.  All values are type
+    * Indicates that the data tied to this key is a list (JSON Array) type.  AllCustomAlgebras values are type
     * T and all values must pass the list of validations.
     *
     * @param dataDefinitionOp - One of the supported KvpValue types.

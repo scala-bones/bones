@@ -5,13 +5,14 @@ import java.nio.charset.Charset
 import com.bones.scalacheck.Scalacheck
 import com.bones.schemas.Schemas._
 import org.scalacheck.Arbitrary
-import org.scalatest.{FunSuite, MustMatchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.scalacheck.Checkers
 
 import scala.util.control.NonFatal
 
 
-class ArgonautTest extends FunSuite with Checkers with MustMatchers {
+class ArgonautTest extends AnyFunSuite with Checkers with Matchers {
 
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)
