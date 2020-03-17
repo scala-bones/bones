@@ -10,11 +10,12 @@ import com.bones.Util.{stringToLocalDate, stringToLocalDateTime, stringToLocalTi
 import com.bones.data.Error._
 import com.bones.data.KeyValueDefinition.CoproductDataDefinition
 import com.bones.data.KvpValue.Path
+import com.bones.data.custom.CNilF
 import com.bones.data.{KeyValueDefinition, KvpCoNil, KvpCoproduct, KvpSingleValueLeft, _}
 import com.bones.syntax.NoAlgebra
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.{ValidationUtil => vu}
-import shapeless.{::, Coproduct, HList, HNil, Inl, Inr, Nat}
+import shapeless.{:+:, ::, Coproduct, HList, HNil, Inl, Inr, Nat}
 
 import scala.util.Try
 
@@ -22,6 +23,32 @@ object KvpInterchangeFormatValidatorInterpreter {
 
   /** Represents a path to an element, such as List("someClass", "someMember", "someField") */
   type CoproductType = String
+
+  object InterchangeFormatValidator {
+    /** using kind projector allows us to create a new interpreter by merging two existing interpreters */
+    def merge[L[_], R[_] <: Coproduct, A, OUT](
+                                                li: InterchangeFormatValidator[L, OUT],
+                                                ri: InterchangeFormatValidator[R, OUT]
+                                              ): InterchangeFormatValidator[Lambda[A => L[A] :+: R[A]] , OUT] =
+      new InterchangeFormatValidator[Lambda[A => L[A] :+: R[A]] , OUT] {
+        override def validate[A](lr: L[A] :+: R[A]): (Option[OUT], List[String]) => Either[NonEmptyList[ExtractionError], A] = lr match {
+          case Inl(l) => li.validate(l)
+          case Inr(r) => ri.validate(r)
+        }
+
+      }
+
+    implicit class InterpreterOps[ALG[_], OUT](val base: InterchangeFormatValidator[ALG, OUT]) extends AnyVal {
+      def ++ [R[_] <: Coproduct](r: InterchangeFormatValidator[R, OUT]): InterchangeFormatValidator[Lambda[A => ALG[A] :+: R[A]] , OUT] =
+        merge(base, r)
+
+    }
+
+    case class CNilInterchangeFormatValidator[OUT]() extends InterchangeFormatValidator[CNilF, OUT] {
+      override def validate[A](alg: CNilF[A]): (Option[OUT], List[String]) => Either[NonEmptyList[ExtractionError], A] =
+        sys.error("Unreachable code")
+    }
+  }
 
   trait InterchangeFormatValidator[ALG[_], IN] {
     def validate[A](

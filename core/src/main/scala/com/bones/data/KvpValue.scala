@@ -70,8 +70,11 @@ trait ToCollectionData[B] extends ToOptionalData[B] with ToListData[B] { self: K
 
 }
 
-/** Combines AlgToOptionalData and AlgToListData for convenience.  They are separate because
-  * a List data types can not be wrapped this way. */
+/** Combines AlgToOptionalData and AlgToListData for convenience.
+  * @tparam ALG This is the base GADT Trait for the Custom Algebra
+  * @tparam B This is the type being wrapped by SELF
+  * @tparam SELF The is the concrete data class which extends ALG
+  */
 trait AlgToCollectionData[ALG[_], B, SELF <: CustomAlgebraWithManifest[ALG, B]]
     extends AlgToOptionalData[ALG, B, SELF]
     with AlgToListData[ALG, B, SELF] { self: SELF =>

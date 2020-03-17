@@ -82,14 +82,14 @@ object ValidationDefinition {
       override def description: String = s"alphanumeric"
     }
 
-    val lettersWithSpaceRegexString = "^[a-zA-Z\\s]*$"
-    val lettersWithSpaceRegex: Regex = lettersWithSpaceRegexString.r
+    val wordsWithSpaceRegexString = "^[a-zA-Z\\s]*$"
+    val wordsWithSpaceRegex: Regex = wordsWithSpaceRegexString.r
 
     /** Uses regex to determine if the string only contains words and whitespace */
     object Words extends ValidationOp[String] {
 
       val isValid: String => Boolean =
-        lettersWithSpaceRegex.findFirstMatchIn(_).isDefined
+        wordsWithSpaceRegex.findFirstMatchIn(_).isDefined
 
       override def defaultError(t: String): String =
         s"$t contains characters other than letters and spaces"
@@ -149,7 +149,7 @@ object ValidationDefinition {
       override def description: String = s"lengthO of $length"
     }
 
-    /** A Custom validation for the stirng type.
+    /** A Custom validation for the string type.
       * Follow the values defined in [[ValidationOp]]
       */
     case class Custom(f: String => Boolean, defaultErrorF: String => String, description: String)
@@ -159,22 +159,6 @@ object ValidationDefinition {
       override def defaultError(t: String): String = defaultErrorF(t)
     }
 
-    /** Guid is a Globally unique identifier.  String is a Valid GUID if
-      * it is parsable using [[java.util.UUID.fromString]]
-      */
-    object Guid extends ValidationOp[String] {
-      val isValid: String => Boolean = str =>
-        Try {
-          UUID.fromString(str)
-        } match {
-          case Success(_) => true
-          case Failure(_) => false
-        }
-
-      override def defaultError(t: String): String = s"$t is not a GUID"
-
-      override def description: String = "be a GUID"
-    }
 
     object Uppercase extends ValidationOp[String] {
       val isValid: String => Boolean = str => str.toUpperCase === str
@@ -193,16 +177,6 @@ object ValidationDefinition {
       override def description: String = "trimmed"
     }
 
-    object CreditCard extends ValidationOp[String] {
-      override def isValid: String => Boolean =
-        input => ValidationUtil.luhnCheck(10, input)
-
-      override def defaultError(t: String): String =
-        s"$t is not a valid credit card number"
-
-      override def description: String = "valid credit card number"
-    }
-
     val tokenRegex: Regex = "^[a-zA-Z0-9_]*$".r
 
     object Token extends ValidationOp[String] {
@@ -214,65 +188,6 @@ object ValidationDefinition {
       override def description: String = "token"
     }
 
-    // From https://stackoverflow.com/questions/13912597/validate-email-one-liner-in-scala
-    val emailRegex: Regex =
-      """^[a-zA-Z0-9\.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$""".r
-
-    object Email extends ValidationOp[String] {
-      override def isValid: String => Boolean =
-        emailRegex.findFirstMatchIn(_).isDefined
-
-      override def defaultError(t: String): String = s"$t is not a valid email"
-
-      override def description: String = "email"
-    }
-
-    val hexRegex: Regex = "^[0-9A-F]+$".r
-
-    object Hex extends ValidationOp[String] {
-      override def isValid: String => Boolean =
-        hexRegex.findFirstMatchIn(_).isDefined
-
-      override def defaultError(t: String): String = s"$t is not hexadecimal"
-
-      override def description: String = "hexadecimal"
-    }
-
-    val base64Regex: Regex =
-      "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$".r
-
-    object Base64 extends ValidationOp[String] {
-      override def isValid: String => Boolean =
-        input => base64Regex.findFirstMatchIn(input.trim).isDefined
-
-      override def defaultError(t: String): String = s"$t is not Base64"
-
-      override def description: String = "Base64"
-    }
-
-    val hostnameRegex: Regex =
-      "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$".r
-
-    object Hostname extends ValidationOp[String] {
-      override def isValid: String => Boolean =
-        hostnameRegex.findFirstMatchIn(_).isDefined
-
-      override def defaultError(t: String): String = s"$t is not a hostname"
-
-      override def description: String = "RFC1123 hostname"
-    }
-
-    val ipv4Regex: Regex =
-      "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$".r
-
-    object Ipv4 extends ValidationOp[String] {
-      override def isValid: String => Boolean =
-        ipv4Regex.findFirstMatchIn(_).isDefined
-
-      override def defaultError(t: String): String = s"$t is not an ipv4"
-
-      override def description: String = "IPv4"
-    }
 
     object Lowercase extends ValidationOp[String] {
       override def isValid: String => Boolean = str => str.toLowerCase === str
@@ -280,18 +195,6 @@ object ValidationDefinition {
       override def defaultError(t: String): String = s"$t is not all lowercase"
 
       override def description: String = "lowercase"
-    }
-
-    object Uri extends ValidationOp[String] {
-      override def isValid: String => Boolean =
-        input =>
-          Try {
-            URI.create(input)
-          }.isSuccess
-
-      override def defaultError(t: String): String = s"$t is not a Uri"
-
-      override def description: String = "URI"
     }
 
     val words: Words.type = Words
@@ -319,39 +222,17 @@ object ValidationDefinition {
     /** string must be trimmed (no leading or trailing whitespace). */
     val trimmed: Trimmed.type = Trimmed
 
+    /** String must be all lowercase, that is all letters in the string must be lowercase. */
+    val lowercase: Lowercase.type = Lowercase
+
     /** */
     def custom(f: String => Boolean, defaultErrorF: String => String, description: String) =
       Custom(f, defaultErrorF, description)
 
-    /** String must be a guid */
-    val guid: Guid.type = Guid
-
-    /** String must be a valid email format */
-    val email: Email.type = Email
-
     /** String must be a token, which is alpha numeric with underscore. */
     val token: Token.type = Token
 
-    /** String must be a valid hexadecimal String */
-    val hex: Hex.type = Hex
 
-    /** String must be in base64 */
-    val base64: Base64.type = Base64
-
-    /** String must be a hostname */
-    val hostname: Hostname.type = Hostname
-
-    /** String must be an IPv4 */
-    val iPv4: Ipv4.type = Ipv4
-
-    /** String must be all lowercase, that is all letters in the string must be lowercase. */
-    val lowercase: Lowercase.type = Lowercase
-
-    /** String must be a Uri */
-    val uri: Uri.type = Uri
-
-    /** String must be a valid credit card number */
-    val creditCard: CreditCard.type = CreditCard
   }
 
   trait ZeroValidations[N] extends Ordering[N] {
