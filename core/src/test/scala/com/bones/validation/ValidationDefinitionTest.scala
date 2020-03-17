@@ -1,9 +1,6 @@
 package com.bones.validation
 
-import java.util.UUID
-
-import com.bones.validation.ValidationDefinition.StringValidation._
-import com.bones.validation.ValidationDefinition.StringValidation.{custom => customStrValidation}
+import com.bones.validation.ValidationDefinition.StringValidation.{custom => customStrValidation, _}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 
@@ -68,65 +65,16 @@ class ValidationDefinitionTest extends AnyFunSuite with Checkers {
 
   }
 
-  test("guid") {
-    val v = guid
-    assert(v.isValid(UUID.randomUUID().toString) === true)
-    assert(v.isValid("123") === false)
-  }
-
-  test("email") {
-    val e = email
-    assert(e.isValid("billy.blanks@example.com") === true)
-    assert(e.isValid("the quick brown fox") === false)
-  }
-
   test("token") {
     val v = token
     assert(v.isValid("the_quick_brown_fox") === true)
     assert(v.isValid("the quick brown fox") === false)
   }
 
-  test("hex") {
-    val v = hex
-    assert(hex.isValid("A1B2C3E4F567890") === true)
-    assert(hex.isValid("ABCG") === false)
-  }
-
-  test("base64") {
-    pending
-    val v = base64
-    assert(v.isValid("A1B2C3E4F567890$") === true)
-    assert(v.isValid("¢¢£") === false)
-  }
-
-  test("hostname") {
-    val v = hostname
-    assert(v.isValid("www.oletraveler.com") === true)
-    assert(v.isValid("the quick brown fox") === false)
-  }
-
-  test("ipv4") {
-    val v = iPv4
-    assert(v.isValid("1.1.1.1") === true)
-    assert(v.isValid("the quick") === false)
-  }
-
   test("lowercase") {
     val v = lowercase
     assert(v.isValid("a quick brown fox!") === true)
     assert(v.isValid("a Quick Brown Fox!") === false)
-  }
-
-  test("uri") {
-    val v = uri
-    assert(v.isValid("https://www.oletraveler.com") === true)
-    assert(v.isValid("the quick brown fox") === false)
-  }
-
-  test("creditCard") {
-    val v = creditCard
-    assert(v.isValid("5454545454545454") === true)
-    assert(v.isValid("the quick") === false)
   }
 
   test("words") {
@@ -139,4 +87,6 @@ class ValidationDefinitionTest extends AnyFunSuite with Checkers {
     assert(sentence.isValid("The quick brown fox jumps over the lazy dog.") === true)
     assert(sentence.isValid("ljdlfjas0808934@#$F") === false)
   }
+
+
 }

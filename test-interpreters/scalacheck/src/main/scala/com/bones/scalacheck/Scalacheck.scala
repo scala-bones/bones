@@ -342,15 +342,8 @@ trait ScalacheckBase {
           case Sentence => sentencesGen
           case IsAlphanumeric => Gen.alphaNumStr
           case MatchesRegex(r) => RegexpGen.from(r.pattern.pattern())
-          case Guid => Gen.uuid.map(_.toString)
           case Uppercase => Gen.alphaUpperStr
-          case CreditCard => creditCardGen
           case Token => RegexpGen.from(StringValidation.tokenRegex.pattern.pattern())
-          case Email => RegexpGen.from(StringValidation.emailRegex.pattern.pattern())
-          case Hex => RegexpGen.from(StringValidation.hexRegex.pattern.pattern())
-          case Base64 => RegexpGen.from(StringValidation.base64Regex.pattern.pattern())
-          case Hostname => RegexpGen.from(StringValidation.hostnameRegex.pattern.pattern())
-          case Ipv4 => RegexpGen.from(StringValidation.ipv4Regex.pattern.pattern())
           case Lowercase => Gen.alphaLowerStr
           case ValidValue(valid) => Gen.oneOf(valid)
         }

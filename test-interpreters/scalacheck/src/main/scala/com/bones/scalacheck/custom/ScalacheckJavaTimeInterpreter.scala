@@ -11,7 +11,7 @@ import org.scalacheck.Gen.Choose
 
 import scala.collection.JavaConverters
 
-class ScalacheckJavaTimeEncoder extends GenAlg[JavaTimeValue] {
+class ScalacheckJavaTimeInterpreter extends GenAlg[JavaTimeValue] {
 
   implicit val chooseInstant = new Choose[Instant] {
 

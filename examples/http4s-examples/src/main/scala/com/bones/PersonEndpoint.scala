@@ -9,7 +9,7 @@ import com.zaxxer.hikari.HikariDataSource
 import org.http4s.HttpRoutes
 
 /** Example endpoint.  This creates a complete application which saves a person to a local database including:
-  * JSON endpoints, Protobuf Endpoints, 5 CRUD Endpoints (Get, Put, Post, Delete, Search All),
+  * JSON endpoints, Protobuf Endpoints, 5 CRUD Endpoints (Get, Put, Post, Delete, Search AllCustomAlgebras),
   * Swagger, DB DDL.
   */
 object PersonEndpoint extends LocalhostAllIOApp {
