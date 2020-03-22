@@ -1,15 +1,12 @@
 package com.bones.validation
 
-import java.net.URI
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, LocalDateTime, LocalTime}
-import java.util.UUID
 
 import cats.implicits._
 
 import scala.math.Ordering.{BigDecimalOrdering, ByteOrdering, CharOrdering, DoubleOrdering, FloatOrdering, IntOrdering, LongOrdering, ShortOrdering}
 import scala.util.matching.Regex
-import scala.util.{Failure, Success, Try}
 
 /**
   * A collection of validation definition natively supported by Bones.
@@ -332,7 +329,7 @@ object ValidationDefinition {
   }
 
   /** If we can define modulo for the type N and we can use ZeroValidations,
-    * then we can calculate multipes of type N */
+    * then we can calculate multiples of type N */
   trait Modulo[N] extends ZeroValidations[N] {
 
     val modulo: (N, N) => N

@@ -3,6 +3,7 @@ package com.bones.data.custom
 import java.net.{URI, URL}
 import java.util.UUID
 
+import com.bones.data.custom.CustomStringValue._
 import com.bones.data.{AlgToCollectionData, HasManifest}
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.ValidationUtil
@@ -228,8 +229,22 @@ final case class IpV6Data(validations: List[ValidationOp[String]])
   override val example: String = "::1"
 }
 
+trait CustomStringAlgebraSugar {
 
-trait CustomStringValueSugar {
+  val cs_e = EmailDataValidationOp
+  val cs_g = GuidDataValidationOp
+  val cs_cc = CreditCardValidationOp
+  val cs_hex = HexStringValidationOp
+  val cs_b = Base64ValidationOp
+  val cs_hn = HostnameValidationOp
+  val cs_uri = UriValidationOp
+  val cs_url = UrlValidationOp
+  val cs_ipv4 = Ipv4ValidationOp
+  val cs_ipv6 = Ipv6ValidationOp
+}
+
+
+trait CustomStringValueSugar extends CustomStringAlgebraSugar {
 
   /** String must be a guid */
   def guid(validationOp: ValidationOp[String]*): GuidData = GuidData(validationOp.toList)
@@ -275,7 +290,7 @@ trait CustomStringValueSugar {
 
 
 /** Adds smart constructors to lift our GADT into a multi-alebra system */
-trait CustomStringValueSugarInjected[ALG[_]<:Coproduct] {
+trait CustomStringValueSugarInjected[ALG[_]<:Coproduct] extends CustomStringAlgebraSugar {
 
   def stringValueInject[String]: Inject[ALG[String], CustomStringValue[String]]
 

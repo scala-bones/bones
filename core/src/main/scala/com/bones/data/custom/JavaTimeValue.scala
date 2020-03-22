@@ -4,7 +4,7 @@ import java.time._
 
 import com.bones.data.{AlgToCollectionData, HasManifest}
 import com.bones.validation.ValidationDefinition.ValidationOp
-import com.bones.validation.custom.JavaTimeValidation.InstantValidation
+import com.bones.validation.custom.JavaTimeValidation._
 import shapeless.Coproduct
 import shapeless.ops.coproduct.Inject
 
@@ -71,7 +71,27 @@ final case class ZoneOffsetData(validations: List[ValidationOp[ZoneOffset]])
     extends JavaTimeValue[ZoneOffset]
     with AlgToCollectionData[JavaTimeValue, ZoneOffset, ZoneOffsetData]
 
-trait JavaTimeValueSugar {
+trait JavaTimeValidationSugar {
+
+  val jt_dow = DayOfWeekValidation
+  val jt_d = DurationValidation
+  val jt_i = InstantValidation
+  val jt_m = MonthValidations
+  val jt_md = MonthDayValidations
+  val jt_odt = OffsetDateTimeValidations
+  val jt_ot = OffsetTimeValidations
+  val jt_p = PeriodValidations
+  val jt_y = YearValidations
+  val jt_ym = YearMonthValidations
+  val jt_zdt = ZonedDateTimeValidations
+  val jt_zi= ZoneIdValidations
+  val jt_zo = ZoneOffsetValidations
+
+
+}
+
+
+trait JavaTimeValueSugar extends JavaTimeValidationSugar {
   def dateTimeException(validations: ValidationOp[DateTimeException]*): DateTimeExceptionData =
     DateTimeExceptionData(validations.toList)
 
@@ -125,10 +145,9 @@ trait JavaTimeValueSugar {
   val zoneOffset: ZoneOffsetData = zoneOffset()
 }
 
-/** Adds smart constructors to lift our GADT into a multi-algebra coproduct */
-trait JavaTimeValueSugarInjected[ALG[_]<:Coproduct] {
 
-  val jtiv = InstantValidation
+/** Adds smart constructors to lift our GADT into a multi-algebra coproduct */
+trait JavaTimeValueSugarInjected[ALG[_]<:Coproduct] extends JavaTimeValidationSugar{
 
   def javaTimeInject[A]: Inject[ALG[A], JavaTimeValue[A]]
 
