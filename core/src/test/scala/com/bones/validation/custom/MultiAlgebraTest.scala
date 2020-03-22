@@ -15,7 +15,7 @@ class MultiAlgebraTest extends AnyFunSuite with Checkers {
 
   val multiAlgebraBase =
     ("email", email()) :>:
-    ("instant", instant(jtiv.min(Instant.parse("2007-12-03T10:15:30.00Z")))) :>:
+    ("instant", instant(jt_i.min(Instant.parse("2007-12-03T10:15:30.00Z")))) :>:
     ("description", string) :<:
     kvpNilCov[AllCustomAlgebras]
 
