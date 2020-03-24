@@ -6,7 +6,7 @@ import cats.data.NonEmptyList
 import com.bones.data.Error.{CanNotConvert, ExtractionError}
 import com.bones.data.{HListConvert, KvpValue, Sugar}
 import com.bones.data.custom._
-import com.bones.protobuf.ProtobufSequentialValidatorInterpreter.{ExtractFromProto, LastFieldNumber, Path, CustomInterpreter => CustomSequentialInterpreter}
+import com.bones.protobuf.ProtobufSequentialValidatorInterpreter.{ExtractFromProto, LastFieldNumber, Path, CustomValidatorInterpreter => CustomSequentialInterpreter}
 import com.bones.protobuf.{ProtoFileGeneratorInterpreter, ProtobufSequentialEncoderInterpreter, ProtobufSequentialValidatorInterpreter}
 import com.bones.syntax.NoAlgebra
 import com.bones.validation.ValidationDefinition.ValidationOp

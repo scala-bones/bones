@@ -25,3 +25,6 @@ def validate[A]: Array[Byte] => Either[ExtractionError,A] // Where Array[Byte] i
 
 BSONDateTime only supports up to millisecond.  Therefor when we serialize/deserialize a LocalDateTime, we will
 loose some significance.
+
+TODO validators need to validate
+

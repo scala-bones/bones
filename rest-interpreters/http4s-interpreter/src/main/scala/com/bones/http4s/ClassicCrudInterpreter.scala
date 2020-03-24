@@ -10,7 +10,7 @@ import com.bones.circe.{CirceEncoderInterpreter, CirceValidatorInterpreter, IsoC
 import com.bones.data.Error.ExtractionError
 import com.bones.data.KeyValueDefinition
 import com.bones.data.{BonesSchema, HListConvert}
-import com.bones.http4s.ClassicCrudInterpreter.{CustomInterpreter, ProtobufInterpreter}
+import com.bones.http4s.ClassicCrudInterpreter.{CustomInterpreter, ProtobufEncoderInterpreter}
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
 import com.bones.swagger.SwaggerCoreInterpreter.CustomSwaggerInterpreter
@@ -46,12 +46,12 @@ object ClassicCrudInterpreter {
       sys.error("Unreachable code")
   }
 
-  trait ProtobufInterpreter[ALG[_]]
-      extends ProtobufSequentialValidatorInterpreter.CustomInterpreter[ALG]
-      with ProtobufSequentialEncoderInterpreter.CustomInterpreter[ALG]
+  trait ProtobufEncoderInterpreter[ALG[_]]
+      extends ProtobufSequentialValidatorInterpreter.CustomValidatorInterpreter[ALG]
+      with ProtobufSequentialEncoderInterpreter.CustomEncoderInterpreter[ALG]
       with ProtoFileGeneratorInterpreter.CustomInterpreter[ALG]
 
-  case object NoAlgebraProtobufInterpreter extends ProtobufInterpreter[NoAlgebra] {
+  case object NoAlgebraProtobufEncoderInterpreter$ extends ProtobufEncoderInterpreter[NoAlgebra] {
     override def encodeToProto[A](alg: NoAlgebra[A]): EncodeToProto[A] =
       sys.error("Unreachable code")
 
@@ -65,23 +65,23 @@ object ClassicCrudInterpreter {
   }
 
   def empty[A, E, F[_], ID: Manifest](
-    path: String,
-    charset: java.nio.charset.Charset = StandardCharsets.UTF_8,
-    customJsonInterpreter: CustomInterpreter[NoAlgebra, Json],
-    customBsonInterpreter: CustomInterpreter[NoAlgebra, BSONValue],
-    customProtobufInterpreter: ProtobufInterpreter[NoAlgebra],
-    customSwaggerInterpreter: CustomSwaggerInterpreter[NoAlgebra],
-    schema: BonesSchema[NoAlgebra, A],
-    idDefinition: KeyValueDefinition[NoAlgebra, ID],
-    pathStringToId: String => Either[E, ID],
-    errorSchema: BonesSchema[NoAlgebra, E],
+                                       path: String,
+                                       charset: java.nio.charset.Charset = StandardCharsets.UTF_8,
+                                       customJsonInterpreter: CustomInterpreter[NoAlgebra, Json],
+                                       customBsonInterpreter: CustomInterpreter[NoAlgebra, BSONValue],
+                                       customProtobufInterpreter: ProtobufEncoderInterpreter[NoAlgebra],
+                                       customSwaggerInterpreter: CustomSwaggerInterpreter[NoAlgebra],
+                                       schema: BonesSchema[NoAlgebra, A],
+                                       idDefinition: KeyValueDefinition[NoAlgebra, ID],
+                                       pathStringToId: String => Either[E, ID],
+                                       errorSchema: BonesSchema[NoAlgebra, E],
   )(implicit F: Sync[F]): ClassicCrudInterpreter[NoAlgebra, A, E, F, ID] =
     emptyCustomAlgebra[NoAlgebra, A, E, F, ID](
       path,
       charset,
       NoAlgebraCustomInterpreter[Json](),
       NoAlgebraCustomInterpreter[BSONValue](),
-      NoAlgebraProtobufInterpreter,
+      NoAlgebraProtobufEncoderInterpreter$,
       SwaggerCoreInterpreter.noAlgebraInterpreter,
       schema,
       idDefinition,
@@ -97,16 +97,16 @@ object ClassicCrudInterpreter {
     *   See [ClassicCrudInterpreter] for details on the parameters.
     */
   def emptyCustomAlgebra[ALG[_], A, E, F[_], ID: Manifest](
-    path: String,
-    charset: java.nio.charset.Charset = StandardCharsets.UTF_8,
-    customJsonInterpreter: CustomInterpreter[ALG, Json],
-    customBsonInterpreter: CustomInterpreter[ALG, BSONValue],
-    customProtobufInterpreter: ProtobufInterpreter[ALG],
-    customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
-    schema: BonesSchema[ALG, A],
-    idDefinition: KeyValueDefinition[ALG, ID],
-    pathStringToId: String => Either[E, ID],
-    errorSchema: BonesSchema[ALG, E],
+                                                            path: String,
+                                                            charset: java.nio.charset.Charset = StandardCharsets.UTF_8,
+                                                            customJsonInterpreter: CustomInterpreter[ALG, Json],
+                                                            customBsonInterpreter: CustomInterpreter[ALG, BSONValue],
+                                                            customProtobufInterpreter: ProtobufEncoderInterpreter[ALG],
+                                                            customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
+                                                            schema: BonesSchema[ALG, A],
+                                                            idDefinition: KeyValueDefinition[ALG, ID],
+                                                            pathStringToId: String => Either[E, ID],
+                                                            errorSchema: BonesSchema[ALG, E],
   )(
     implicit F: Sync[F]
   ): ClassicCrudInterpreter[ALG, A, E, F, ID] =
@@ -147,7 +147,7 @@ object ClassicCrudInterpreter {
     charset,
     NoAlgebraCustomInterpreter[Json](),
     NoAlgebraCustomInterpreter[BSONValue](),
-    NoAlgebraProtobufInterpreter,
+    NoAlgebraProtobufEncoderInterpreter$,
     SwaggerCoreInterpreter.noAlgebraInterpreter,
     schema,
     idDefinition,
@@ -166,21 +166,21 @@ object ClassicCrudInterpreter {
     *   See [ClassicCrudInterpreter] for details on the parameters.
     */
   def allVerbsCustomAlgebra[ALG[_], A, E, F[_], ID: Manifest](
-    path: String,
-    charset: java.nio.charset.Charset = StandardCharsets.UTF_8,
-    customJsonInterpreter: CustomInterpreter[ALG, Json],
-    customBsonInterpreter: CustomInterpreter[ALG, BSONValue],
-    customProtobufInterpreter: ProtobufInterpreter[ALG],
-    customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
-    schema: BonesSchema[ALG, A],
-    idDefinition: KeyValueDefinition[ALG, ID],
-    pathStringToId: String => Either[E, ID],
-    errorSchema: BonesSchema[ALG, E],
-    createF: A => F[Either[E, (ID, A)]],
-    readF: ID => F[Either[E, (ID, A)]],
-    updateF: (ID, A) => F[Either[E, (ID, A)]],
-    deleteF: ID => F[Either[E, (ID, A)]],
-    searchF: () => Stream[F, (ID, A)]
+                                                               path: String,
+                                                               charset: java.nio.charset.Charset = StandardCharsets.UTF_8,
+                                                               customJsonInterpreter: CustomInterpreter[ALG, Json],
+                                                               customBsonInterpreter: CustomInterpreter[ALG, BSONValue],
+                                                               customProtobufInterpreter: ProtobufEncoderInterpreter[ALG],
+                                                               customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
+                                                               schema: BonesSchema[ALG, A],
+                                                               idDefinition: KeyValueDefinition[ALG, ID],
+                                                               pathStringToId: String => Either[E, ID],
+                                                               errorSchema: BonesSchema[ALG, E],
+                                                               createF: A => F[Either[E, (ID, A)]],
+                                                               readF: ID => F[Either[E, (ID, A)]],
+                                                               updateF: (ID, A) => F[Either[E, (ID, A)]],
+                                                               deleteF: ID => F[Either[E, (ID, A)]],
+                                                               searchF: () => Stream[F, (ID, A)]
   )(
     implicit F: Sync[F]
   ) = ClassicCrudInterpreter(
@@ -230,21 +230,21 @@ object ClassicCrudInterpreter {
   * @tparam ID The ID type.
   */
 case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
-  path: String,
-  charset: java.nio.charset.Charset = StandardCharsets.UTF_8,
-  customJsonInterpreter: CustomInterpreter[ALG, Json],
-  customBsonInterpreter: CustomInterpreter[ALG, BSONValue],
-  customProtobufInterpreter: ProtobufInterpreter[ALG],
-  customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
-  schema: BonesSchema[ALG, A],
-  idDefinition: KeyValueDefinition[ALG, ID],
-  pathStringToId: String => Either[E, ID],
-  errorSchema: BonesSchema[ALG, E],
-  createF: Option[A => F[Either[E, (ID, A)]]] = None,
-  readF: Option[ID => F[Either[E, (ID, A)]]] = None,
-  updateF: Option[(ID, A) => F[Either[E, (ID, A)]]] = None,
-  deleteF: Option[ID => F[Either[E, (ID, A)]]] = None,
-  searchF: Option[() => Stream[F, (ID, A)]]
+                                                                     path: String,
+                                                                     charset: java.nio.charset.Charset = StandardCharsets.UTF_8,
+                                                                     customJsonInterpreter: CustomInterpreter[ALG, Json],
+                                                                     customBsonInterpreter: CustomInterpreter[ALG, BSONValue],
+                                                                     customProtobufInterpreter: ProtobufEncoderInterpreter[ALG],
+                                                                     customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
+                                                                     schema: BonesSchema[ALG, A],
+                                                                     idDefinition: KeyValueDefinition[ALG, ID],
+                                                                     pathStringToId: String => Either[E, ID],
+                                                                     errorSchema: BonesSchema[ALG, E],
+                                                                     createF: Option[A => F[Either[E, (ID, A)]]] = None,
+                                                                     readF: Option[ID => F[Either[E, (ID, A)]]] = None,
+                                                                     updateF: Option[(ID, A) => F[Either[E, (ID, A)]]] = None,
+                                                                     deleteF: Option[ID => F[Either[E, (ID, A)]]] = None,
+                                                                     searchF: Option[() => Stream[F, (ID, A)]]
 )(implicit F: Sync[F]) {
 
   /** Add or overwrite the existing user defined function to create. Adding a create function
@@ -594,11 +594,11 @@ trait ClassicCrudInterpreterF[ALG[_], A, E, F[_], ID] extends Http4sDsl[F] {
 
   /** Create an endpoint to display the protobuf schema for each endpoint */
   def protoBuff(
-    path: String,
-    customProtobufInterpreter: ProtobufInterpreter[ALG],
-    schema: BonesSchema[ALG, A],
-    schemaWithId: BonesSchema[ALG, (ID, A)],
-    errorSchema: BonesSchema[ALG, E])(implicit F: Sync[F]): HttpRoutes[F] = {
+                 path: String,
+                 customProtobufInterpreter: ProtobufEncoderInterpreter[ALG],
+                 schema: BonesSchema[ALG, A],
+                 schemaWithId: BonesSchema[ALG, (ID, A)],
+                 errorSchema: BonesSchema[ALG, E])(implicit F: Sync[F]): HttpRoutes[F] = {
     def toFile[A] =
       ProtoFileGeneratorInterpreter
         .fromSchemaToProtoFile[ALG, A](_: BonesSchema[ALG, A], customProtobufInterpreter)

@@ -5,7 +5,7 @@ import java.time._
 import com.bones.data.custom._
 import com.bones.protobuf.ProtobufSequentialEncoderInterpreter
 
-trait JavaTimeEncoderInterpreter extends ProtobufSequentialEncoderInterpreter.CustomInterpreter[JavaTimeValue] {
+trait JavaTimeEncoderEncoderInterpreter extends ProtobufSequentialEncoderInterpreter.CustomEncoderInterpreter[JavaTimeValue] {
 
   import JavaTimeValidatorInterpreter._
   import ProtobufSequentialEncoderInterpreter._

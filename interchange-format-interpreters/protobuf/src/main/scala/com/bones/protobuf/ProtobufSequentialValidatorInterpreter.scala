@@ -8,23 +8,48 @@ import cats.implicits._
 import com.bones.Util
 import com.bones.data.Error._
 import com.bones.data.KeyValueDefinition.CoproductDataDefinition
+import com.bones.data.custom.CNilF
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft, _}
 import com.bones.syntax.NoAlgebra
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.{ValidationUtil => vu}
 import com.google.protobuf.{CodedInputStream, InvalidProtocolBufferException, Timestamp}
-import shapeless.{Coproduct, HList, HNil, Inl, Inr, Nat}
+import shapeless.{:+:, Coproduct, HList, HNil, Inl, Inr, Nat}
 
 import scala.annotation.tailrec
 import scala.util.Try
 
 object ProtobufSequentialValidatorInterpreter {
 
-  trait CustomInterpreter[ALG[_]] {
+  object CustomValidatorInterpreter {
+    /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
+      * see https://stackoverflow.com/a/60561575/387094
+      * */
+    def merge[L[_], R[_] <: Coproduct, A](li: CustomValidatorInterpreter[L],
+                                          ri: CustomValidatorInterpreter[R]
+                                         ): CustomValidatorInterpreter[Lambda[A => L[A] :+: R[A]]] =
+      new CustomValidatorInterpreter[Lambda[A => L[A] :+: R[A]]] {
+        override def extractFromProto[A](lr: L[A] :+: R[A]): ExtractFromProto[A] = lr match {
+          case Inl(l) => li.extractFromProto(l)
+          case Inr(r) => ri.extractFromProto(r)
+        }
+      }
+
+    implicit class InterpreterOps[ALG[_]](val base: CustomValidatorInterpreter[ALG]) extends AnyVal {
+      def ++[R[_] <: Coproduct](r: CustomValidatorInterpreter[R]): CustomValidatorInterpreter[Lambda[A => ALG[A] :+: R[A]]] =
+        merge(base, r)
+    }
+
+    object CNilCustomValidatorEncoder extends CustomValidatorInterpreter[CNilF] {
+      override def extractFromProto[A](alg: CNilF[A]): ExtractFromProto[A] = sys.error("Unreachable code")
+    }
+  }
+
+  trait CustomValidatorInterpreter[ALG[_]] {
     def extractFromProto[A](alg: ALG[A]): ExtractFromProto[A]
   }
 
-  object NoAlgebraInterpreter extends CustomInterpreter[NoAlgebra] {
+  object NoAlgebraInterpreter extends CustomValidatorInterpreter[NoAlgebra] {
     override def extractFromProto[A](alg: NoAlgebra[A]): ExtractFromProto[A] =
       sys.error("Unreachable code")
   }
@@ -64,8 +89,8 @@ object ProtobufSequentialValidatorInterpreter {
   /** Determine if we use the core algebra or the custom algebra and then pass control to the appropriate interpreter */
   def determineValueDefinition[ALG[_], A](
                                            definition: Either[KvpValue[A], ALG[A]],
-                                           valueDefinition: (KvpValue[A], CustomInterpreter[ALG]) => ExtractFromProto[A],
-                                           customInterpreter: CustomInterpreter[ALG]
+                                           valueDefinition: (KvpValue[A], CustomValidatorInterpreter[ALG]) => ExtractFromProto[A],
+                                           customInterpreter: CustomValidatorInterpreter[ALG]
                                          ): ExtractFromProto[A] =
     definition match {
       case Left(kvp) => valueDefinition(kvp, customInterpreter)
@@ -95,8 +120,8 @@ object ProtobufSequentialValidatorInterpreter {
 
   def optionalKvpValueDefinition[ALG[_], B](
                                              op: OptionalKvpValueDefinition[ALG, B],
-                                             valueDefinition: (KvpValue[B], CustomInterpreter[ALG]) => ExtractFromProto[B],
-                                             customInterpreter: CustomInterpreter[ALG]
+                                             valueDefinition: (KvpValue[B], CustomValidatorInterpreter[ALG]) => ExtractFromProto[B],
+                                             customInterpreter: CustomValidatorInterpreter[ALG]
                                            ): ExtractFromProto[Option[B]] = {
     val vd = determineValueDefinition(op.valueDefinitionOp, valueDefinition, customInterpreter)
     (fieldNumber: LastFieldNumber, path: Path) => {
@@ -114,8 +139,8 @@ object ProtobufSequentialValidatorInterpreter {
 
   def listData[ALG[_], B](
                            ld: ListData[ALG, B],
-                           valueDefinition: (KvpValue[B], CustomInterpreter[ALG]) => ExtractFromProto[B],
-                           customInterpreter: CustomInterpreter[ALG],
+                           valueDefinition: (KvpValue[B], CustomValidatorInterpreter[ALG]) => ExtractFromProto[B],
+                           customInterpreter: CustomValidatorInterpreter[ALG],
                            validations: List[ValidationOp[List[B]]]
                          ): ExtractFromProto[List[B]] = {
     val child = determineValueDefinition[ALG, B](ld.tDefinition, valueDefinition, customInterpreter)
@@ -155,9 +180,9 @@ object ProtobufSequentialValidatorInterpreter {
 
   def eitherData[ALG[_], B, C](
                                 ed: EitherData[ALG, B, C],
-                                valueDefinitionB: (KvpValue[B], CustomInterpreter[ALG]) => ExtractFromProto[B],
-                                valueDefinitionC: (KvpValue[C], CustomInterpreter[ALG]) => ExtractFromProto[C],
-                                customInterpreter: CustomInterpreter[ALG],
+                                valueDefinitionB: (KvpValue[B], CustomValidatorInterpreter[ALG]) => ExtractFromProto[B],
+                                valueDefinitionC: (KvpValue[C], CustomValidatorInterpreter[ALG]) => ExtractFromProto[C],
+                                customInterpreter: CustomValidatorInterpreter[ALG],
                               ): ExtractFromProto[Either[B, C]] = {
     val extractA: ExtractFromProto[B] =
       determineValueDefinition[ALG, B](ed.definitionA, valueDefinitionB, customInterpreter)
@@ -185,8 +210,8 @@ object ProtobufSequentialValidatorInterpreter {
                                                         kvp: KvpCoproductValue[ALG, C],
                                                         kvpCoproduct: (KvpCoproduct[ALG, C],
                                                           KvpValue[C],
-                                                          CustomInterpreter[ALG]) => ExtractProductFromProto[C],
-                                                        customInterpreter: CustomInterpreter[ALG]
+                                                          CustomValidatorInterpreter[ALG]) => ExtractProductFromProto[C],
+                                                        customInterpreter: CustomValidatorInterpreter[ALG]
                                                       ): ExtractFromProto[A] = {
     val group = kvpCoproduct(kvp.kvpCoproduct, kvp, customInterpreter)
     (last: LastFieldNumber, path: Path) => {
@@ -201,8 +226,8 @@ object ProtobufSequentialValidatorInterpreter {
 
   def kvpHListValue[ALG[_], A, H <: HList, HL <: Nat](
                                                        kvp: KvpHListValue[ALG, H, HL],
-                                                       kvpHList: (KvpHList[ALG, H, HL], CustomInterpreter[ALG]) => ExtractHListFromProto[H],
-                                                       customInterpreter: CustomInterpreter[ALG]
+                                                       kvpHList: (KvpHList[ALG, H, HL], CustomValidatorInterpreter[ALG]) => ExtractHListFromProto[H],
+                                                       customInterpreter: CustomValidatorInterpreter[ALG]
                                                      ): ExtractFromProto[A] = {
     val groupExtract = kvpHList(kvp.kvpHList, customInterpreter)
     (last: LastFieldNumber, path: Path) => {
@@ -229,8 +254,8 @@ object ProtobufSequentialValidatorInterpreter {
 
   def hListConvert[ALG[_], A, H <: HList, HL <: Nat](
                                                       kvp: HListConvert[ALG, H, HL, A],
-                                                      kvpHList: (KvpHList[ALG, H, HL], CustomInterpreter[ALG]) => ExtractHListFromProto[H],
-                                                      customInterpreter: CustomInterpreter[ALG]
+                                                      kvpHList: (KvpHList[ALG, H, HL], CustomValidatorInterpreter[ALG]) => ExtractHListFromProto[H],
+                                                      customInterpreter: CustomValidatorInterpreter[ALG]
                                                     ): ExtractFromProto[A] = {
     val groupExtract = kvpHList(kvp.from, customInterpreter)
     (last: LastFieldNumber, path: Path) => {
@@ -264,8 +289,8 @@ object ProtobufSequentialValidatorInterpreter {
                                                       co: KvpCoproductConvert[ALG, C, A],
                                                       kvpCoproduct: (KvpCoproduct[ALG, C],
                                                         KvpValue[A],
-                                                        CustomInterpreter[ALG]) => ExtractProductFromProto[C],
-                                                      customInterpreter: CustomInterpreter[ALG]
+                                                        CustomValidatorInterpreter[ALG]) => ExtractProductFromProto[C],
+                                                      customInterpreter: CustomValidatorInterpreter[ALG]
                                                     ): ExtractFromProto[A] = {
     val coExtract = kvpCoproduct(co.from, co, customInterpreter)
     (last: LastFieldNumber, path: Path) => {
@@ -488,7 +513,7 @@ trait ProtobufSequentialValidatorInterpreter {
                     dc: BonesSchema[NoAlgebra, A]): Array[Byte] => Either[NonEmptyList[ExtractionError], A] =
     fromCustomBytes(dc, NoAlgebraInterpreter)
 
-  def fromCustomBytes[ALG[_], A](dc: BonesSchema[ALG, A], customInterpreter: CustomInterpreter[ALG])
+  def fromCustomBytes[ALG[_], A](dc: BonesSchema[ALG, A], customInterpreter: CustomValidatorInterpreter[ALG])
   : Array[Byte] => Either[NonEmptyList[ExtractionError], A] = dc match {
     case x: HListConvert[ALG, _, _, A]@unchecked => {
       val (lastFieldNumber, f) =
@@ -507,7 +532,7 @@ trait ProtobufSequentialValidatorInterpreter {
   protected def kvpCoproduct[ALG[_], C <: Coproduct, A](
                                                          kvp: KvpCoproduct[ALG, C],
                                                          kvpCoproductValue: KvpValue[A],
-                                                         customInterpreter: CustomInterpreter[ALG]
+                                                         customInterpreter: CustomValidatorInterpreter[ALG]
                                                        ): ExtractProductFromProto[C] = {
 
     kvp match {
@@ -539,7 +564,7 @@ trait ProtobufSequentialValidatorInterpreter {
 
   protected def kvpHList[ALG[_], H <: HList, HL <: Nat](
                                                          group: KvpHList[ALG, H, HL],
-                                                         customInterpreter: CustomInterpreter[ALG]): ExtractHListFromProto[H] = {
+                                                         customInterpreter: CustomValidatorInterpreter[ALG]): ExtractHListFromProto[H] = {
     group match {
       case nil: KvpNil[_] =>
         (lastFieldNumber, path) =>
@@ -617,8 +642,8 @@ trait ProtobufSequentialValidatorInterpreter {
     }
   }
 
-  def valueDefinition[ALG[_], A]: (KvpValue[A], CustomInterpreter[ALG]) => ExtractFromProto[A] =
-    (fgo: KvpValue[A], customInterpreter: CustomInterpreter[ALG]) =>
+  def valueDefinition[ALG[_], A]: (KvpValue[A], CustomValidatorInterpreter[ALG]) => ExtractFromProto[A] =
+    (fgo: KvpValue[A], customInterpreter: CustomValidatorInterpreter[ALG]) =>
       fgo match {
         case op: OptionalKvpValueDefinition[ALG, a]@unchecked =>
           optionalKvpValueDefinition[ALG, a](op, valueDefinition, customInterpreter)

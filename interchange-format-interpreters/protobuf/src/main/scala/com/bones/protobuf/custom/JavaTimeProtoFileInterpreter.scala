@@ -3,7 +3,7 @@ package com.bones.protobuf.custom
 import com.bones.data.custom._
 import com.bones.protobuf.ProtoFileGeneratorInterpreter
 
-trait JavaTimeProtoFileInterpreter extends ProtoFileGeneratorInterpreter.CustomInterpreter[JavaTimeValue] {
+object JavaTimeProtoFileInterpreter extends ProtoFileGeneratorInterpreter.CustomInterpreter[JavaTimeValue] {
 
   import JavaTimeValidatorInterpreter._
   import ProtoFileGeneratorInterpreter._

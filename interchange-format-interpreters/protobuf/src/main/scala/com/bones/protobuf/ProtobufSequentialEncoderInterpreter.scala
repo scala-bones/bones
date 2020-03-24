@@ -8,17 +8,44 @@ import cats.Applicative
 import cats.data.NonEmptyList
 import cats.implicits._
 import com.bones.data.KeyValueDefinition.CoproductDataDefinition
-import com.bones.data.{KeyValueDefinition, KvpCoNil, KvpCoproduct, KvpSingleValueLeft, _}
+import com.bones.data.custom.CNilF
+import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft, _}
 import com.bones.syntax.NoAlgebra
 import com.google.protobuf.{CodedOutputStream, Timestamp}
 import shapeless._
 
 object ProtobufSequentialEncoderInterpreter {
-  trait CustomInterpreter[ALG[_]] {
+
+
+  object CustomEncoderInterpreter {
+    /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
+      * see https://stackoverflow.com/a/60561575/387094
+      * */
+    def merge[L[_], R[_] <: Coproduct, A](li: CustomEncoderInterpreter[L],
+                                          ri: CustomEncoderInterpreter[R]
+                                              ): CustomEncoderInterpreter[Lambda[A => L[A] :+: R[A]]] =
+      new CustomEncoderInterpreter[Lambda[A => L[A] :+: R[A]]] {
+        override def encodeToProto[A](lr: L[A] :+: R[A]): EncodeToProto[A] = lr match {
+          case Inl(l) => li.encodeToProto(l)
+          case Inr(r) => ri.encodeToProto(r)
+        }
+      }
+
+    implicit class InterpreterOps[ALG[_]](val base: CustomEncoderInterpreter[ALG]) extends AnyVal {
+      def ++[R[_] <: Coproduct](r: CustomEncoderInterpreter[R]): CustomEncoderInterpreter[Lambda[A => ALG[A] :+: R[A]]] =
+        merge(base, r)
+    }
+
+    object CNilCustomEncoder extends CustomEncoderInterpreter[CNilF] {
+      override def encodeToProto[A](alg: CNilF[A]): EncodeToProto[A] = sys.error("Unreachable code")
+    }
+  }
+
+  trait CustomEncoderInterpreter[ALG[_]] {
     def encodeToProto[A](alg: ALG[A]) : EncodeToProto[A]
   }
 
-  object NoAlgebraCustomInterpreter extends CustomInterpreter[NoAlgebra] {
+  object NoAlgebraCustomEncoderInterpreter$ extends CustomEncoderInterpreter[NoAlgebra] {
     def encodeToProto[A](alg: NoAlgebra[A]): EncodeToProto[A] = sys.error("Unreachable code")
   }
 
@@ -49,8 +76,8 @@ object ProtobufSequentialEncoderInterpreter {
   def determineValueDefinition[ALG[_], A]
   (
     kvp: CoproductDataDefinition[ALG, A],
-    valueDefinition: (KvpValue[A], CustomInterpreter[ALG]) => EncodeToProto[A],
-    customInterpreter: CustomInterpreter[ALG]
+    valueDefinition: (KvpValue[A], CustomEncoderInterpreter[ALG]) => EncodeToProto[A],
+    customInterpreter: CustomEncoderInterpreter[ALG]
   ): EncodeToProto[A] =
     kvp match {
       case Left(kvp) => valueDefinition(kvp, customInterpreter)
@@ -60,9 +87,9 @@ object ProtobufSequentialEncoderInterpreter {
 
 
   def optionalKvpValueDefinition[ALG[_],B](
-    op: OptionalKvpValueDefinition[ALG, B],
-    valueDefinition: (KvpValue[B], CustomInterpreter[ALG]) => EncodeToProto[B],
-    customInterpreter: CustomInterpreter[ALG]
+                                            op: OptionalKvpValueDefinition[ALG, B],
+                                            valueDefinition: (KvpValue[B], CustomEncoderInterpreter[ALG]) => EncodeToProto[B],
+                                            customInterpreter: CustomEncoderInterpreter[ALG]
   ): EncodeToProto[Option[B]] = {
     (fieldNumber: FieldNumber) =>
       val (lastFieldNumber, fa) = determineValueDefinition(op.valueDefinitionOp, valueDefinition, customInterpreter)(fieldNumber)
@@ -226,9 +253,9 @@ trait ProtobufSequentialEncoderInterpreter {
   val zoneOffset: ZoneOffset
 
   def encodeToBytes[A](dc: BonesSchema[NoAlgebra,A]): A => Array[Byte] =
-  encodeToBytesCustomAlgebra[NoAlgebra, A](dc, NoAlgebraCustomInterpreter)
+  encodeToBytesCustomAlgebra[NoAlgebra, A](dc, NoAlgebraCustomEncoderInterpreter$)
 
-  def encodeToBytesCustomAlgebra[ALG[_], A](dc: BonesSchema[ALG,A], customInterpreter: CustomInterpreter[ALG]): A => Array[Byte] = dc match {
+  def encodeToBytesCustomAlgebra[ALG[_], A](dc: BonesSchema[ALG,A], customInterpreter: CustomEncoderInterpreter[ALG]): A => Array[Byte] = dc match {
     case x: HListConvert[ALG, _, _, A] @unchecked => {
       val (_, group) = kvpHList(x.from, customInterpreter).apply(1)
       (a: A) =>
@@ -249,7 +276,7 @@ trait ProtobufSequentialEncoderInterpreter {
   protected def kvpCoproduct[ALG[_], C<:Coproduct]
   (
     co: KvpCoproduct[ALG, C],
-    customInterpreter: CustomInterpreter[ALG]
+    customInterpreter: CustomEncoderInterpreter[ALG]
   ): EncodeCoproductToProto[C] = {
     co match {
       case nil: KvpCoNil[_] =>
@@ -277,7 +304,7 @@ trait ProtobufSequentialEncoderInterpreter {
   }
 
   protected def kvpHList[ALG[_], H <: HList, HL <: Nat](
-      group: KvpHList[ALG, H, HL], customInterpreter: CustomInterpreter[ALG]): EncodeHListToProto[H] = {
+      group: KvpHList[ALG, H, HL], customInterpreter: CustomEncoderInterpreter[ALG]): EncodeHListToProto[H] = {
     group match {
       case nil: KvpNil[_] =>
         (fieldNumber: FieldNumber) => (
@@ -383,7 +410,7 @@ trait ProtobufSequentialEncoderInterpreter {
     }
   }
 
-  def valueDefinition[ALG[_], A](fgo: KvpValue[A], customInterpreter: CustomInterpreter[ALG]): EncodeToProto[A] = {
+  def valueDefinition[ALG[_], A](fgo: KvpValue[A], customInterpreter: CustomEncoderInterpreter[ALG]): EncodeToProto[A] = {
     fgo match {
       case op: OptionalKvpValueDefinition[ALG, a] @unchecked => optionalKvpValueDefinition[ALG,a](op, valueDefinition, customInterpreter)
       case ob: BooleanData => booleanData

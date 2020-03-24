@@ -16,18 +16,19 @@ package object custom {
 
   val allEncoders: InterchangeFormatEncoder[AllCustomAlgebras, BSONValue] =
     IsoBsonJavaTimeEncoder ++
-      (BsonCustomStringEncoder ++ CNilInterchangeFormatEncoder[BSONValue](): InterchangeFormatEncoder[CustomStringCoproduct, BSONValue])
+      (DefaultBsonCustomStringEncoder ++ CNilInterchangeFormatEncoder[BSONValue](): InterchangeFormatEncoder[CustomStringCoproduct, BSONValue])
 
   val allValidators: InterchangeFormatValidator[AllCustomAlgebras, BSONValue] =
     IsoBsonJavaTimeValidator ++
-      (BsonCustomStringValidator ++ CNilInterchangeFormatValidator[BSONValue](): InterchangeFormatValidator[CustomStringCoproduct, BSONValue])
+      (DefaultBsonCustomStringValidator ++ CNilInterchangeFormatValidator[BSONValue](): InterchangeFormatValidator[CustomStringCoproduct, BSONValue])
 
-
-  object BsonCustomStringEncoder extends CustomStringEncoder[BSONValue]  {
+  /** Uses the default encoder interpreter for BSON */
+  object DefaultBsonCustomStringEncoder extends CustomStringEncoder[BSONValue]  {
     override val baseEncoder: KvpInterchangeFormatEncoderInterpreter[BSONValue] = BsonEncoderInterpreter
   }
 
-  object BsonCustomStringValidator extends CustomStringValidator[BSONValue] {
+  /** Uses the default validator interpreter for BSON */
+  object DefaultBsonCustomStringValidator extends CustomStringValidator[BSONValue] {
     override val baseValidator: KvpInterchangeFormatValidatorInterpreter[BSONValue] = BsonValidatorInterpreter
   }
 
