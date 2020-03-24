@@ -51,8 +51,7 @@ object KvpInterchangeFormatValidatorInterpreter {
   }
 
   trait InterchangeFormatValidator[ALG[_], IN] {
-    def validate[A](
-      alg: ALG[A]): (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A]
+    def validate[A](alg: ALG[A]): (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A]
   }
 
   case class NoAlgebraValidator[IN]() extends InterchangeFormatValidator[NoAlgebra, IN] {
