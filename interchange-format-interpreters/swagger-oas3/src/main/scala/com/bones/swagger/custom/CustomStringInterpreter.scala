@@ -3,7 +3,6 @@ package com.bones.swagger.custom
 import com.bones.data.custom._
 import com.bones.swagger.SwaggerCoreInterpreter
 import com.bones.swagger.SwaggerCoreInterpreter.{CustomSwaggerInterpreter, Name}
-import com.bones.validation.ValidationDefinition.ValidationOp
 import io.swagger.v3.oas.models.media.{EmailSchema, Schema}
 
 trait CustomStringInterpreter extends CustomSwaggerInterpreter[CustomStringValue] {
@@ -33,12 +32,8 @@ trait CustomStringInterpreter extends CustomSwaggerInterpreter[CustomStringValue
     }
 
 
-
   override def toSchema[A](alg: CustomStringValue[A], description: Option[String], example: Option[A]):
-    Name => SwaggerCoreInterpreter.SwaggerSchemas[Schema[_]] = name => {
-
-
+  Name => SwaggerCoreInterpreter.SwaggerSchemas[Schema[_]] = name =>
     SwaggerCoreInterpreter.addStringSchema(name, alg.customValidation.description, alg.example.toString, withSchema(alg))
 
-  }
 }

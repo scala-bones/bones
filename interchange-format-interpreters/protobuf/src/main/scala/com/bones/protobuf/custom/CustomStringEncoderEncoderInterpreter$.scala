@@ -2,12 +2,12 @@ package com.bones.protobuf.custom
 
 import com.bones.data.custom.CustomStringValue
 import com.bones.protobuf.ProtobufSequentialEncoderInterpreter
-import com.bones.protobuf.ProtobufSequentialEncoderInterpreter.{ComputeSize, Encode, EncodeToProto}
+import com.bones.protobuf.ProtobufSequentialEncoderInterpreter.EncodeToProto
 
-trait CustomStringEncoderInterpreter extends ProtobufSequentialEncoderInterpreter.CustomInterpreter[CustomStringValue] {
+object CustomStringEncoderInterpreter extends ProtobufSequentialEncoderInterpreter.CustomEncoderInterpreter[CustomStringValue] {
 
   /**
-    *  Encode using thee same mechansim as string.
+    *  Encode using the same mechanism as string encoder.
     */
   override def encodeToProto[A](alg: CustomStringValue[A]): EncodeToProto[A] =
     ProtobufSequentialEncoderInterpreter.stringData.asInstanceOf[EncodeToProto[A]]
