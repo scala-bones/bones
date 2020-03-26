@@ -4,11 +4,12 @@ import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util.{Base64, UUID}
 
+import com.bones.data.custom.CNilF
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft, _}
 import com.bones.syntax.NoAlgebra
 import com.bones.validation.ValidationDefinition.{InvalidValue, ValidValue, ValidationOp, BigDecimalValidation => bdv, LongValidation => iv, StringValidation => sv}
 import io.swagger.v3.oas.models.media._
-import shapeless.{Coproduct, HList, Nat}
+import shapeless.{:+:, Coproduct, HList, Inl, Inr, Nat}
 
 object SwaggerCoreInterpreter {
 
@@ -25,6 +26,35 @@ object SwaggerCoreInterpreter {
   case class SwaggerSchemas[+S <: Schema[_]](mainSchema: S,
                                              referenceSchemas: List[(String, Schema[_])])
 
+  object CustomSwaggerInterpreter {
+
+    /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
+      * see https://stackoverflow.com/a/60561575/387094
+      * */
+    def merge[L[_], R[_] <: Coproduct, A, OUT](li: CustomSwaggerInterpreter[L],
+                                               ri: CustomSwaggerInterpreter[R]
+                                              ): CustomSwaggerInterpreter[Lambda[A => L[A] :+: R[A]]] =
+      new CustomSwaggerInterpreter[Lambda[A => L[A] :+: R[A]]] {
+
+
+        override def toSchema[A](lr: L[A] :+: R[A], description: Option[String], example: Option[A]): Name => SwaggerSchemas[Schema[_]] =
+          lr match {
+            case Inl(l) => li.toSchema(l, description, example)
+            case Inr(r) => ri.toSchema(r, description, example)
+          }
+      }
+
+    implicit class InterpreterOps[ALG[_]](val base: CustomSwaggerInterpreter[ALG]) extends AnyVal {
+      def ++[R[_] <: Coproduct](r: CustomSwaggerInterpreter[R]): CustomSwaggerInterpreter[Lambda[A => ALG[A] :+: R[A]]] =
+        merge(base, r)
+    }
+
+    object CNilCustomSwaggerInterpreter extends CustomSwaggerInterpreter[CNilF] {
+      override def toSchema[A](vd: CNilF[A], description: Option[String], example: Option[A]): Name => SwaggerSchemas[Schema[_]] =
+        sys.error("Unreachable code")
+    }
+
+  }
 
   trait CustomSwaggerInterpreter[ALG[_]] {
     def toSchema[A](vd: ALG[A], description: Option[String], example: Option[A]): Name => SwaggerSchemas[Schema[_]]
@@ -64,7 +94,6 @@ object SwaggerCoreInterpreter {
     val mainWithValidation = applyValidationDescription(date)
     SwaggerSchemas(mainWithValidation)
   }
-
 
 
   def addStringSchema(name: String, description: String, example: String, applyValidationDescription: Schema[_] => Schema[_]) = {
@@ -286,7 +315,7 @@ trait SwaggerCoreInterpreter {
     vd match {
       case op: OptionalKvpValueDefinition[ALG, b]@unchecked =>
         name =>
-          val oasSchema = determineValueDefinition[ALG,b](op.valueDefinitionOp, customInterpreter, description, None)(name)
+          val oasSchema = determineValueDefinition[ALG, b](op.valueDefinitionOp, customInterpreter, description, None)(name)
           oasSchema.copy(mainSchema = oasSchema.mainSchema.nullable(true))
       case bd: BooleanData =>
         name => addBooleanSchema(name, description, example, validations(bd.validations))
@@ -351,19 +380,21 @@ trait SwaggerCoreInterpreter {
             validations(dd.validations)
           )
       case fd: FloatData =>
-        name => addNumberSchema(
-          name,
-          description.getOrElse("value of type float"),
-          example.map(_.toString).getOrElse("3.14"),
-          validations(fd.validations)
-        )
+        name =>
+          addNumberSchema(
+            name,
+            description.getOrElse("value of type float"),
+            example.map(_.toString).getOrElse("3.14"),
+            validations(fd.validations)
+          )
       case bd: BigDecimalData =>
-        name => addStringSchema(
-          name,
-          description.getOrElse("value fo type big decimal"),
-          example.getOrElse(BigDecimal("3.14")).toString,
-          validations(bd.validations)
-        )
+        name =>
+          addStringSchema(
+            name,
+            description.getOrElse("value fo type big decimal"),
+            example.getOrElse(BigDecimal("3.14")).toString,
+            validations(bd.validations)
+          )
       case ba: ByteArrayData =>
         name =>
           addBase64ByteArraySchema(
@@ -384,9 +415,9 @@ trait SwaggerCoreInterpreter {
       case ed: EitherData[ALG, a, b]@unchecked =>
         name =>
           val a =
-            determineValueDefinition[ALG,a](ed.definitionA, customInterpreter, description, None)("left" + name.capitalize)
+            determineValueDefinition[ALG, a](ed.definitionA, customInterpreter, description, None)("left" + name.capitalize)
           val b =
-            determineValueDefinition[ALG,b](ed.definitionB, customInterpreter, description, None)("right" + name.capitalize)
+            determineValueDefinition[ALG, b](ed.definitionB, customInterpreter, description, None)("right" + name.capitalize)
           val composedSchema = new ComposedSchema()
             .addAnyOfItem(a.mainSchema)
             .addAnyOfItem(b.mainSchema)
