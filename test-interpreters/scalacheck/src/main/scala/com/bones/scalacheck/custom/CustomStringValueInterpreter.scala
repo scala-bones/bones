@@ -9,9 +9,6 @@ import org.scalacheck.Gen
 
 class CustomStringValueInterpreter extends GenAlg[CustomStringValue] {
 
-
-
-
   def checkValid[A](ag: CustomStringValue[A]): A => Boolean = input =>
     ValidationUtil.validate(ag.customValidation :: ag.validations)(input.asInstanceOf[String], List.empty).isRight
 

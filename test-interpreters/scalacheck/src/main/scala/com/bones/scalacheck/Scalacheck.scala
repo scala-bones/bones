@@ -1,10 +1,11 @@
 package com.bones.scalacheck
 
 import java.time._
-import java.util.{Calendar, Date, UUID}
+import java.util.UUID
 
-import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
-import com.bones.data._
+import com.bones.data.custom.CNilF
+import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft, _}
+import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
 import com.bones.syntax.NoAlgebra
 import com.bones.validation.ValidationDefinition.StringValidation._
 import com.bones.validation.ValidationDefinition._
@@ -12,8 +13,32 @@ import com.bones.validation.ValidationUtil
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen.Choose
 import org.scalacheck._
-import shapeless.{CNil, Coproduct, HList, HNil, Inl, Inr, Nat}
+import shapeless.{:+:, Coproduct, HList, HNil, Inl, Inr, Nat}
 import wolfendale.scalacheck.regexp.RegexpGen
+
+object GenAlg {
+  /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
+    * see https://stackoverflow.com/a/60561575/387094
+    * */
+  def merge[L[_], R[_] <: Coproduct, A](li: GenAlg[L], ri: GenAlg[R]): GenAlg[Lambda[A => L[A] :+: R[A]]] =
+    new GenAlg[Lambda[A => L[A] :+: R[A]]] {
+
+      override def gen[A](lr: L[A] :+: R[A]): Gen[A] = lr match {
+        case Inl(l) => li.gen(l)
+        case Inr(r) => ri.gen(r)
+      }
+    }
+
+  implicit class InterpreterOps[ALG[_], OUT](val base: GenAlg[ALG]) extends AnyVal {
+    def ++[R[_] <: Coproduct](r: GenAlg[R]): GenAlg[Lambda[A => ALG[A] :+: R[A]]] =
+      merge(base, r)
+  }
+
+  object CNilGenEncoder extends GenAlg[CNilF] {
+    override def gen[A](ag: CNilF[A]): Gen[A] = sys.error("Unreachable code")
+  }
+
+}
 
 /**
   * Implement this to support a custom Algebra.
@@ -388,7 +413,6 @@ trait ScalacheckBase {
       .getOrElse(regexWithMax)
 
   }
-
 
 
 }
