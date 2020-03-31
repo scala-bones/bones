@@ -7,10 +7,48 @@ import java.util.UUID
 import cats.data.NonEmptyList
 import com.bones.data.Error.{CanNotConvert, ExtractionError}
 
+import scala.util.Try
+
 /**
   * A collection of helper functions used by Bones.
   */
 object Util {
+
+  def allValidCars(str: String, isNegative: Boolean) =
+    if (isNegative) str.drop(1).forall(Character.isDigit)
+    else str.forall(Character.isDigit)
+
+
+  val maxLongLength = 19 // "9223372036854775807".size
+  /** Convert to long trying to avoid stack dump for most common cases */
+  def stringToLong(str: String): Option[Long] = {
+    val isNegative = str.charAt(0) == '-'
+    def isValidLength =
+      if (isNegative) str.length < maxLongLength
+      else str.length < maxLongLength + 1
+
+    if (! str.isEmpty && isValidLength && allValidCars(str, isNegative)) {
+      Try(str.toLong).toOption
+    } else {
+      None
+    }
+  }
+
+  val maxShortLength = 5
+
+  /** Convert to long trying to avoid stack dump for most common cases */
+  def stringToShort(str: String): Option[Short] = {
+    val isNegative = str.charAt(0) == '-'
+    def isValidLength =
+      if (isNegative) str.length < maxShortLength
+      else str.length < maxShortLength + 1
+
+    if (! str.isEmpty && isValidLength && allValidCars(str, isNegative)) {
+      Try(str.toShort).toOption
+    } else {
+      None
+    }
+  }
 
   /** Convert a String to a UUID returning Left[NoneEmptyList[ExtractionError],UUID]
     * if there is a failure in conversion */
