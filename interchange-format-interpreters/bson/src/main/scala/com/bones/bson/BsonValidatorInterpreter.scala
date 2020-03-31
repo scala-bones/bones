@@ -5,6 +5,7 @@ import java.util.UUID
 
 import cats.data.NonEmptyList
 import cats.implicits._
+import com.bones.Util
 import com.bones.data.Error._
 import com.bones.data._
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
@@ -13,19 +14,7 @@ import com.bones.data.KeyValueDefinition.CoproductDataDefinition
 import com.bones.data.KvpValue.Path
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
 import reactivemongo.bson.buffer.ArrayReadableBuffer
-import reactivemongo.bson.{
-  BSONArray,
-  BSONBoolean,
-  BSONDateTime,
-  BSONDecimal,
-  BSONDocument,
-  BSONDouble,
-  BSONInteger,
-  BSONLong,
-  BSONNull,
-  BSONString,
-  BSONValue
-}
+import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDecimal, BSONDocument, BSONDouble, BSONInteger, BSONLong, BSONNull, BSONString, BSONValue}
 
 import scala.util.Try
 
