@@ -6,8 +6,8 @@ import com.bones.scalacheck.GenAlg.CNilGenEncoder
 package object custom {
 
   val allInterpreters: GenAlg[AllCustomAlgebras] =
-    ScalacheckJavaTimeInstances ++
-      (DefaultCustomStringValueInterpreter :: CNilGenEncoder:GenAlg[CustomStringCoproduct])
+    DefaultScalacheckJavaTimeInterpreter ++
+      (DefaultCustomStringValueInterpreter ++ CNilGenEncoder:GenAlg[CustomStringCoproduct])
 
 
   object DefaultScalacheckJavaTimeInterpreter extends ScalacheckJavaTimeInterpreter

@@ -1,15 +1,17 @@
 package com.bones.fullstack
 
 import java.nio.charset.StandardCharsets
+
 import cats.data.{Kleisli, NonEmptyList}
 import cats.effect._
 import cats.implicits._
+import com.bones.Util
 import com.bones.data.Error.ExtractionError
-import com.bones.data.{BonesSchema}
+import com.bones.data.BonesSchema
 import com.bones.syntax.NoAlgebra
 import com.bones.http4s.ClassicCrudInterpreter
 import com.bones.jdbc.{DbColumnInterpreter, DbUtil}
-import com.bones.syntax.{kvp, long, lv, kvpNil}
+import com.bones.syntax.{kvp, kvpNil, long, lv}
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import javax.sql.DataSource
 import org.http4s.dsl.io._
@@ -73,8 +75,7 @@ object LocalhostAllIOApp {
       schema,
       kvp("id", long(lv.min(1))),
       str =>
-        Try(str.toLong).toEither.left.map(ex =>
-          BasicError("Could not convert parameter to a Long value")),
+        Util.stringToLong(str).toRight(BasicError("Could not convert parameter to a Long value")),
       basicErrorSchema,
       Kleisli(middleware.createF).map(_.left.map(e => extractionErrorToBasicError(e))).run,
       Kleisli(middleware.readF).map(_.left.map(e => extractionErrorsToBasicError(e))).run,
