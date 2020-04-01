@@ -145,7 +145,7 @@ trait ScalacheckBase {
       case ni: KvpNil[_] => Gen.const(HNil)
       case op: KvpSingleValueHead[ALG, h, t, tl, a]@unchecked =>
         implicit val isHCons = op.isHCons
-        val headGen = determineValueDefinition(op.fieldDefinition.op, genAlg)
+        val headGen = determineValueDefinition(op.fieldDefinition.dataDefinition, genAlg)
         val tailGen = kvpHList(op.tail, genAlg)
         val result: Gen[H] = for {
           head <- headGen

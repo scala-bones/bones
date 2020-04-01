@@ -571,7 +571,7 @@ trait ProtobufSequentialValidatorInterpreter {
           (lastFieldNumber, (canRead, _) => (canRead, Right(HNil)))
 
       case op: KvpSingleValueHead[ALG, h, t, tl, a]@unchecked =>
-        val vd = determineValueDefinition(op.fieldDefinition.op, valueDefinition, customInterpreter)
+        val vd = determineValueDefinition(op.fieldDefinition.dataDefinition, valueDefinition, customInterpreter)
         (lastFieldNumber, path) => {
           val (tag, headFieldNumber, fHead) =
             vd(lastFieldNumber, path :+ op.fieldDefinition.key)

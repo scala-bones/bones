@@ -29,7 +29,7 @@ object ColumnNameInterpreter {
       case op: KvpSingleValueHead[ALG, h, t, tl, a] @unchecked =>
         val headList =
           determineValueDefinition(
-            op.fieldDefinition.op,
+            op.fieldDefinition.dataDefinition,
             customInterpreter: CustomInterpreter[ALG])(op.fieldDefinition.key)
         val tailList = kvpHList(op.tail, customInterpreter: CustomInterpreter[ALG])
         headList ::: tailList

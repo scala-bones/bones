@@ -97,7 +97,7 @@ object DbUpdateValues {
         i =>
           DefinitionResult(i, List.empty, (h: HNil) => List.empty)
       case op: KvpSingleValueHead[ALG, h, t, tl, a] => {
-        val headF = determineValueDefinition(op.fieldDefinition.op, customDbUpdateInterpreter)
+        val headF = determineValueDefinition(op.fieldDefinition.dataDefinition, customDbUpdateInterpreter)
         val tailF = kvpHList(op.tail, customDbUpdateInterpreter)
         (i: Index) =>
           {

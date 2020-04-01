@@ -18,7 +18,7 @@ object CustomStringValue {
   object EmailDataValidationOp extends ValidationOp[String] {
     // From https://stackoverflow.com/questions/13912597/validate-email-one-liner-in-scala
     val emailRegex: Regex =
-      """^[a-zA-Z0-9\.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$""".r
+      """^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$""".r
 
     override val isValid: String => Boolean =
       emailRegex.findFirstMatchIn(_).isDefined
@@ -57,7 +57,6 @@ object CustomStringValue {
   object HexStringValidationOp extends ValidationOp[String] {
     val upperHexRegex: Regex = "^[0-9A-F]+$".r
     val lowerHexRegex: Regex = "^[0-9a-f]+$".r
-
 
     override val isValid: String => Boolean = input =>
       upperHexRegex.findFirstMatchIn(input).isDefined || lowerHexRegex.findFirstMatchIn(input).isDefined
@@ -231,16 +230,16 @@ final case class IpV6Data(validations: List[ValidationOp[String]])
 
 trait CustomStringAlgebraSugar {
 
-  val cs_e = EmailDataValidationOp
-  val cs_g = GuidDataValidationOp
-  val cs_cc = CreditCardValidationOp
-  val cs_hex = HexStringValidationOp
-  val cs_b = Base64ValidationOp
-  val cs_hn = HostnameValidationOp
-  val cs_uri = UriValidationOp
-  val cs_url = UrlValidationOp
-  val cs_ipv4 = Ipv4ValidationOp
-  val cs_ipv6 = Ipv6ValidationOp
+  val cs_e: CustomStringValue.EmailDataValidationOp.type = EmailDataValidationOp
+  val cs_g: CustomStringValue.GuidDataValidationOp.type = GuidDataValidationOp
+  val cs_cc: CustomStringValue.CreditCardValidationOp.type = CreditCardValidationOp
+  val cs_hex: CustomStringValue.HexStringValidationOp.type = HexStringValidationOp
+  val cs_b: CustomStringValue.Base64ValidationOp.type = Base64ValidationOp
+  val cs_hn: CustomStringValue.HostnameValidationOp.type = HostnameValidationOp
+  val cs_uri: CustomStringValue.UriValidationOp.type = UriValidationOp
+  val cs_url: CustomStringValue.UrlValidationOp.type = UrlValidationOp
+  val cs_ipv4: CustomStringValue.Ipv4ValidationOp.type = Ipv4ValidationOp
+  val cs_ipv6: CustomStringValue.Ipv6ValidationOp.type = Ipv6ValidationOp
 }
 
 

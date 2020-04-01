@@ -4,6 +4,7 @@ import java.time._
 
 import com.bones.data.{AlgToCollectionData, HasManifest}
 import com.bones.validation.ValidationDefinition.ValidationOp
+import com.bones.validation.custom.JavaTimeValidation
 import com.bones.validation.custom.JavaTimeValidation._
 import shapeless.Coproduct
 import shapeless.ops.coproduct.Inject
@@ -73,24 +74,25 @@ final case class ZoneOffsetData(validations: List[ValidationOp[ZoneOffset]])
 
 trait JavaTimeValidationSugar {
 
-  val jt_dow = DayOfWeekValidation
-  val jt_d = DurationValidation
-  val jt_i = InstantValidation
-  val jt_m = MonthValidations
-  val jt_md = MonthDayValidations
-  val jt_odt = OffsetDateTimeValidations
-  val jt_ot = OffsetTimeValidations
-  val jt_p = PeriodValidations
-  val jt_y = YearValidations
-  val jt_ym = YearMonthValidations
-  val jt_zdt = ZonedDateTimeValidations
-  val jt_zi= ZoneIdValidations
-  val jt_zo = ZoneOffsetValidations
+  val jt_dow: JavaTimeValidation.DayOfWeekValidation.type = DayOfWeekValidation
+  val jt_d: JavaTimeValidation.DurationValidation.type = DurationValidation
+  val jt_i: JavaTimeValidation.InstantValidation.type = InstantValidation
+  val jt_m: JavaTimeValidation.MonthValidations.type = MonthValidations
+  val jt_md: JavaTimeValidation.MonthDayValidations.type = MonthDayValidations
+  val jt_odt: JavaTimeValidation.OffsetDateTimeValidations.type = OffsetDateTimeValidations
+  val jt_ot: JavaTimeValidation.OffsetTimeValidations.type = OffsetTimeValidations
+  val jt_p: JavaTimeValidation.PeriodValidations.type = PeriodValidations
+  val jt_y: JavaTimeValidation.YearValidations.type = YearValidations
+  val jt_ym: JavaTimeValidation.YearMonthValidations.type = YearMonthValidations
+  val jt_zdt: JavaTimeValidation.ZonedDateTimeValidations.type = ZonedDateTimeValidations
+  val jt_zi: JavaTimeValidation.ZoneIdValidations.type = ZoneIdValidations
+  val jt_zo: JavaTimeValidation.ZoneOffsetValidations.type = ZoneOffsetValidations
 
 
 }
 
-
+/** convenient methods for creating GADTs when this is the only custom algebra being used.  If using multiple custom
+ * algebras, use [[JavaTimeValueSugarInjected]] to inject into a Coproduct context. */
 trait JavaTimeValueSugar extends JavaTimeValidationSugar {
   def dateTimeException(validations: ValidationOp[DateTimeException]*): DateTimeExceptionData =
     DateTimeExceptionData(validations.toList)
