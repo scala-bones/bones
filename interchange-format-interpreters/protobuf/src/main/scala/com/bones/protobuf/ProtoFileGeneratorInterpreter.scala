@@ -199,7 +199,7 @@ object ProtoFileGeneratorInterpreter {
       case nil: KvpNil[_] => (Vector.empty, Vector.empty, lastIndex)
       case op: KvpSingleValueHead[ALG, h, t, tl, a] @unchecked => {
         val thisIndex = lastIndex + 1
-        val r = determineValueDefinition(op.fieldDefinition.op, customerInterpreter)(op.fieldDefinition.key,
+        val r = determineValueDefinition(op.fieldDefinition.dataDefinition, customerInterpreter)(op.fieldDefinition.key,
                                                        thisIndex)
         val (messageFields, nestedTypes, lastUsedIndex) =
           kvpHList(op.tail, customerInterpreter)(r._3)

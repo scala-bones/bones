@@ -102,7 +102,7 @@ object DbInsertValues {
           (i, List.empty)
       case op: KvpSingleValueHead[ALG, h, t, tl, H] @unchecked => {
         val headF =
-          determineValueDefinition(op.fieldDefinition.op, customInterpreter)(op.fieldDefinition.key)
+          determineValueDefinition(op.fieldDefinition.dataDefinition, customInterpreter)(op.fieldDefinition.key)
         val tailF = kvpHList(op.tail, customInterpreter)
         implicit val hCons = op.isHCons
         (i: Index, h: H) =>

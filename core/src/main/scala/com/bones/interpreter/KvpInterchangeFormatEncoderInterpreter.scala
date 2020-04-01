@@ -17,9 +17,10 @@ object KvpInterchangeFormatEncoderInterpreter {
     /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
       * see https://stackoverflow.com/a/60561575/387094
       * */
-    def merge[L[_], R[_] <: Coproduct, A, OUT](li: InterchangeFormatEncoder[L, OUT],
-                                               ri: InterchangeFormatEncoder[R, OUT]
-                                              ): InterchangeFormatEncoder[Lambda[A => L[A] :+: R[A]], OUT] =
+    def merge[L[_], R[_] <: Coproduct, A, OUT](
+      li: InterchangeFormatEncoder[L, OUT],
+      ri: InterchangeFormatEncoder[R, OUT]
+    ): InterchangeFormatEncoder[Lambda[A => L[A] :+: R[A]], OUT] =
       new InterchangeFormatEncoder[Lambda[A => L[A] :+: R[A]], OUT] {
         override def encode[A](lr: L[A] :+: R[A]): A => OUT = lr match {
           case Inl(l) => li.encode(l)
@@ -27,8 +28,11 @@ object KvpInterchangeFormatEncoderInterpreter {
         }
       }
 
-    implicit class InterpreterOps[ALG[_], OUT](val base: InterchangeFormatEncoder[ALG, OUT]) extends AnyVal {
-      def ++[R[_] <: Coproduct](r: InterchangeFormatEncoder[R, OUT]): InterchangeFormatEncoder[Lambda[A => ALG[A] :+: R[A]], OUT] =
+    implicit class InterpreterOps[ALG[_], OUT](val base: InterchangeFormatEncoder[ALG, OUT])
+        extends AnyVal {
+      def ++[R[_] <: Coproduct](
+        r: InterchangeFormatEncoder[R, OUT]
+      ): InterchangeFormatEncoder[Lambda[A => ALG[A] :+: R[A]], OUT] =
         merge(base, r)
     }
 
@@ -47,7 +51,6 @@ object KvpInterchangeFormatEncoderInterpreter {
       sys.error("Unreachable code")
   }
 
-
   /**
     * Convert the date types to a string using a date formatter and the output type becomes
     * a string.  This is useful for all JSON encodings.
@@ -62,7 +65,6 @@ object KvpInterchangeFormatEncoderInterpreter {
     def localDateFormatter: DateTimeFormatter
 
     def localTimeFormatter: DateTimeFormatter
-
 
     override def dateTimeToOut: LocalDateTime => OUT =
       input => self.stringToOut(localDateTimeFormatter.format(input))
@@ -99,9 +101,9 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
     * @return
     */
   def encoderFromCustomSchema[ALG[_], A](
-                                          bonesSchema: BonesSchema[ALG, A],
-                                          covEncoder: InterchangeFormatEncoder[ALG, OUT]
-                                        ): A => OUT = bonesSchema match {
+    bonesSchema: BonesSchema[ALG, A],
+    covEncoder: InterchangeFormatEncoder[ALG, OUT]
+  ): A => OUT = bonesSchema match {
     case x: HListConvert[ALG, _, _, A] => valueDefinition(x, covEncoder)
   }
 
@@ -155,12 +157,12 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
   def addStringField(element: OUT, name: String, value: String): OUT
 
   def kvpCoproduct[ALG[_], C <: Coproduct](
-                                            kvpCo: KvpCoproduct[ALG, C],
-                                            encoder: InterchangeFormatEncoder[ALG, OUT]): C => (CoproductType, OUT) = {
+    kvpCo: KvpCoproduct[ALG, C],
+    encoder: InterchangeFormatEncoder[ALG, OUT]
+  ): C => (CoproductType, OUT) = {
     kvpCo match {
       case co: KvpCoNil[_] =>
-        (input: C) =>
-          ("", empty)
+        (input: C) => ("", empty)
       case co: KvpSingleValueLeft[ALG, l, r] =>
         val fl: l => OUT = determineValueDefinition(co.kvpValue, encoder)
         val fr: r => (CoproductType, OUT) = kvpCoproduct(co.kvpTail, encoder)
@@ -174,12 +176,12 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
 
   /** Interpreter for the KvpHList type. */
   def kvpHList[ALG[_], H <: HList, HL <: Nat](
-                                               group: KvpHList[ALG, H, HL],
-                                               encoder: InterchangeFormatEncoder[ALG, OUT]): H => OUT =
+    group: KvpHList[ALG, H, HL],
+    encoder: InterchangeFormatEncoder[ALG, OUT]
+  ): H => OUT =
     group match {
       case nil: KvpNil[_] =>
-        (input: H) =>
-          empty
+        (input: H) => empty
       case op: KvpHListHead[ALG, out, l, h, hl, t, tl] =>
         val headF = kvpHList(op.head, encoder)
         val tailF = kvpHList[ALG, t, tl](op.tail, encoder)
@@ -190,7 +192,7 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
           combine(headOut, tailOut)
         }
       case op: KvpSingleValueHead[ALG, h, t, tl, H] =>
-        val valueF = determineValueDefinition(op.fieldDefinition.op, encoder)
+        val valueF = determineValueDefinition(op.fieldDefinition.dataDefinition, encoder)
         val tailF = kvpHList(op.tail, encoder)
         implicit val hCons = op.isHCons
         (input: H) => {
@@ -198,7 +200,7 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
           val tail = tailF(input.tail)
           combine(toObj(op.fieldDefinition, val1), tail)
         }
-      case op: KvpConcreteTypeHead[ALG, H, ht, nt]@unchecked => {
+      case op: KvpConcreteTypeHead[ALG, H, ht, nt] @unchecked => {
         val headF = encoderFromCustomSchema(op.bonesSchema, encoder)
         val tailF = kvpHList(op.tail, encoder)
         implicit val hCons = op.isHCons
@@ -211,52 +213,54 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
     }
 
   protected def determineValueDefinition[ALG[_], A](
-                                                     value: CoproductDataDefinition[ALG, A],
-                                                     algEncoder: InterchangeFormatEncoder[ALG, OUT]): A => OUT = {
-    value match {
-      case Left(kvp) => valueDefinition(kvp, algEncoder)
+    dataDefinition: Either[KvpValue[A], ALG[A]],
+    algEncoder: InterchangeFormatEncoder[ALG, OUT]
+  ): A => OUT = {
+    dataDefinition match {
+      case Left(kvp)  => valueDefinition(kvp, algEncoder)
       case Right(cov) => algEncoder.encode[A](cov)
     }
   }
 
   protected def valueDefinition[ALG[_], A](
-                                            fgo: KvpValue[A],
-                                            encoder: InterchangeFormatEncoder[ALG, OUT]): A => OUT =
+    fgo: KvpValue[A],
+    encoder: InterchangeFormatEncoder[ALG, OUT]
+  ): A => OUT =
     fgo match {
-      case op: OptionalKvpValueDefinition[ALG, b]@unchecked =>
+      case op: OptionalKvpValueDefinition[ALG, b] @unchecked =>
         val valueF = determineValueDefinition(op.valueDefinitionOp, encoder)
         (input: A) => {
           input match {
             case Some(x) => valueF(x)
-            case None => none
+            case None    => none
           }
         }
-      case ob: BooleanData => booleanToOut
-      case rs: StringData => stringToOut
-      case id: IntData => intToOut
-      case ri: LongData => longToOut
-      case uu: UuidData => uuid => stringToOut(uuid.toString)
+      case ob: BooleanData       => booleanToOut
+      case rs: StringData        => stringToOut
+      case id: IntData           => intToOut
+      case ri: LongData          => longToOut
+      case uu: UuidData          => uuid => stringToOut(uuid.toString)
       case dd: LocalDateTimeData => dateTimeToOut
-      case ld: LocalDateData => localDateToOut
-      case lt: LocalTimeData => localTimeToOut
-      case fd: FloatData => floatToOut
-      case dd: DoubleData => doubleToOut
-      case sd: ShortData => shortToOut
-      case bd: BigDecimalData => bigDecimalToOut
-      case ba: ByteArrayData => byteArrayToOut
-      case ld: ListData[ALG, t]@unchecked => {
+      case ld: LocalDateData     => localDateToOut
+      case lt: LocalTimeData     => localTimeToOut
+      case fd: FloatData         => floatToOut
+      case dd: DoubleData        => doubleToOut
+      case sd: ShortData         => shortToOut
+      case bd: BigDecimalData    => bigDecimalToOut
+      case ba: ByteArrayData     => byteArrayToOut
+      case ld: ListData[ALG, t] @unchecked => {
         val itemToOut = determineValueDefinition(ld.tDefinition, encoder)
         (input: List[t]) => {
           val listOfJson = input.map(itemToOut)
           toOutList(listOfJson)
         }
       }
-      case either: EitherData[ALG, a, b]@unchecked =>
+      case either: EitherData[ALG, a, b] @unchecked =>
         val aF = determineValueDefinition(either.definitionA, encoder)
         val bF = determineValueDefinition(either.definitionB, encoder)
         (input: A) => {
           input match {
-            case Left(aInput) => aF(aInput)
+            case Left(aInput)  => aF(aInput)
             case Right(bInput) => bF(bInput)
           }
         }
@@ -264,21 +268,20 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
         implicit val v = e.manifestOfA
         enum => stringToOut(enum.toString)
       }
-      case gd: KvpHListValue[ALG, h, hl]@unchecked =>
+      case gd: KvpHListValue[ALG, h, hl] @unchecked =>
         val fh = kvpHList(gd.kvpHList, encoder)
-        input =>
-          fh(input.asInstanceOf[h])
-      case x: HListConvert[ALG, h, hl, A]@unchecked =>
+        input => fh(input.asInstanceOf[h])
+      case x: HListConvert[ALG, h, hl, A] @unchecked =>
         val fh = kvpHList(x.from, encoder)
         input: A => {
           fh(x.fAtoH(input))
         }
-      case c: KvpCoproductValue[ALG, c]@unchecked =>
+      case c: KvpCoproductValue[ALG, c] @unchecked =>
         val fc = kvpCoproduct(c.kvpCoproduct, encoder)
         input =>
           val (name, out) = fc.apply(input.asInstanceOf[c])
           addStringField(out, coproductTypeKey, name)
-      case c: KvpCoproductConvert[ALG, c, a]@unchecked =>
+      case c: KvpCoproductConvert[ALG, c, a] @unchecked =>
         val fc = kvpCoproduct(c.from, encoder)
         input: A => {
           val (name, out) = fc(c.aToC(input))

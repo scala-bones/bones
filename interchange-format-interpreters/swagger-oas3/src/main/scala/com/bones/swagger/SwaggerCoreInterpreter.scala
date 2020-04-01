@@ -268,7 +268,7 @@ trait SwaggerCoreInterpreter {
       case op: KvpSingleValueHead[ALG, h, t, tl, o] =>
         val headSchemas =
           determineValueDefinition(
-            op.fieldDefinition.op,
+            op.fieldDefinition.dataDefinition,
             customInterpreter,
             op.fieldDefinition.description,
             op.fieldDefinition.example

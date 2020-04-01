@@ -3,6 +3,7 @@ package com.bones.data.custom
 import com.bones.data.Error._
 import com.bones.data.KvpSingleValueLeft
 import com.bones.syntax.kvpCoNilCov
+import shapeless.{:+:, CNil}
 
 sealed abstract class ExtractionErrorValue[T]
 
@@ -15,17 +16,23 @@ case object SystemErrorData extends ExtractionErrorValue[SystemError]
 case object ValidationErrorData extends ExtractionErrorValue[ValidationError[_]]
 case object WrongTypeErrorData extends ExtractionErrorValue[WrongTypeError[_]]
 
+/**
+  * Provides convenience methods fro creating ExtractionErrorValue types.
+  */
 trait ExtractionErrorValueSugar {
 
-  val canNotConvert = CanNotConvertData
-  val notFound = NotFoundData
-  val parsingError = ParsingErrorData
-  val requiredValue = RequiredValueData
-  val sumTypeError = SumTypeErrorData
-  val validationError = ValidationErrorData
-  val wrongTypeError = WrongTypeErrorData
+  val canNotConvert: ExtractionErrorValue[CanNotConvert[_, _]] = CanNotConvertData
+  val notFound: ExtractionErrorValue[NotFound[_]] = NotFoundData
+  val parsingError: ExtractionErrorValue[ParsingError] = ParsingErrorData
+  val requiredValue: ExtractionErrorValue[RequiredValue[_]] = RequiredValueData
+  val sumTypeError: ExtractionErrorValue[SumTypeError] = SumTypeErrorData
+  val validationError: ExtractionErrorValue[ValidationError[_]] = ValidationErrorData
+  val wrongTypeError: ExtractionErrorValue[WrongTypeError[_]] = WrongTypeErrorData
 
-  def extractionErrors =
+  def extractionErrors
+    : KvpSingleValueLeft[ExtractionErrorValue, CanNotConvert[_, _], NotFound[_] :+: ParsingError :+: RequiredValue[
+      _
+    ] :+: SumTypeError :+: ValidationError[_] :+: WrongTypeError[_] :+: CNil] =
     canNotConvert :+>: notFound :+>: parsingError :+>: requiredValue :+>: sumTypeError :+>:
       validationError :+>: wrongTypeError :+>: kvpCoNilCov[ExtractionErrorValue]
 
