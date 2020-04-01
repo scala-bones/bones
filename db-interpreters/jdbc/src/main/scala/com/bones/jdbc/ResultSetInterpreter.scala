@@ -41,7 +41,7 @@ object ResultSetInterpreter {
         path =>
           {
             val newPath = op.fieldDefinition.key :: path
-            val rsToHead = determineValueDefinition(op.fieldDefinition.op, customInterpreter)(
+            val rsToHead = determineValueDefinition(op.fieldDefinition.dataDefinition, customInterpreter)(
               newPath,
               camelToSnake(op.fieldDefinition.key))
             val rsToTail = kvpHList(op.tail, customInterpreter)(path)

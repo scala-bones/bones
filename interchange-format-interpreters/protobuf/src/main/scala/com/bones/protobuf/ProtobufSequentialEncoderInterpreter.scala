@@ -314,7 +314,7 @@ trait ProtobufSequentialEncoderInterpreter {
           )
       case op: KvpSingleValueHead[ALG, h, t, tl, o] =>
         (fieldNumber: FieldNumber) =>
-          val (nextFieldHead, headF) = determineValueDefinition[ALG,h](op.fieldDefinition.op, valueDefinition[ALG,h], customInterpreter)(fieldNumber)
+          val (nextFieldHead, headF) = determineValueDefinition[ALG,h](op.fieldDefinition.dataDefinition, valueDefinition[ALG,h], customInterpreter)(fieldNumber)
           val (nextFieldTail, tailF) = kvpHList(op.tail, customInterpreter)(nextFieldHead)
           implicit val isHCons = op.isHCons
           (

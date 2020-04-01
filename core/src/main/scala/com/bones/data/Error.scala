@@ -68,8 +68,8 @@ object Error {
       extends ExtractionError
 
   object RequiredValue {
-    def apply[ALG[_], A](path: List[String], alg: CoproductDataDefinition[ALG,A]): RequiredValue[A] = {
-      val description: String = alg match {
+    def apply[ALG[_], A](path: List[String], dataDefinition: Either[KvpValue[A], ALG[A]]): RequiredValue[A] = {
+      val description: String = dataDefinition match {
         case Left(x) => x.manifestOfA.runtimeClass.getSimpleName
         case Right(x) => x.getClass.getSimpleName
       }

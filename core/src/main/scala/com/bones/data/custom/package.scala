@@ -13,12 +13,17 @@ package object custom {
 
   /** This is to allow smart constructors for each custom algebra, so that the data structure is lifted into the
     * context of AllCustomAlgebras type.  For example, the smart constructor `email` for creating an email data type would
+   *  become Inr(Inl(EmailData()) which satisfies the AllCustomAlgebras definition.
     * */
-  object AllCustomSyntax extends JavaTimeValueSugarInjected[AllCustomAlgebras] with CustomStringValueSugarInjected[AllCustomAlgebras] {
+  object AllCustomSyntax
+      extends JavaTimeValueSugarInjected[AllCustomAlgebras]
+      with CustomStringValueSugarInjected[AllCustomAlgebras] {
 
-    override def javaTimeInject[A]: coproduct.Inject[AllCustomAlgebras[A], JavaTimeValue[A]] = Inl(_)
+    override def javaTimeInject[A]: coproduct.Inject[AllCustomAlgebras[A], JavaTimeValue[A]] =
+      Inl(_)
 
-    override def stringValueInject[String]: coproduct.Inject[AllCustomAlgebras[String], CustomStringValue[String]] = i => Inr(Inl(i))
+    override def stringValueInject[String]
+      : coproduct.Inject[AllCustomAlgebras[String], CustomStringValue[String]] = i => Inr(Inl(i))
   }
 
 }

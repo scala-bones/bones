@@ -88,7 +88,7 @@ trait JsonStringEncoderInterpreter {
         _ =>
           List.empty
       case op: KvpSingleValueHead[ALG, h, t, tl, a]@unchecked =>
-        val valueF = determineValueDefinition(op.fieldDefinition.op, customInterpreter)
+        val valueF = determineValueDefinition(op.fieldDefinition.dataDefinition, customInterpreter)
         val tailF = kvpHList(op.tail, customInterpreter)
         implicit val hCons = op.isHCons
         (inputH: H) => {

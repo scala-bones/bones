@@ -72,24 +72,24 @@ object KvpInterchangeFormatValidatorInterpreter {
     def localTimeFormatter: DateTimeFormatter
 
 
-    override def extractLocalDateTime[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
+    override def extractLocalDateTime[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
       in: OUT,
       path: Path): Either[NonEmptyList[ExtractionError], LocalDateTime] = {
-      extractString(op, classOf[LocalDateTime])(in, path)
+      extractString(dataDefinition, classOf[LocalDateTime])(in, path)
         .flatMap(stringToLocalDateTime(_, localDateTimeFormatter, path))
     }
 
-    override def extractLocalDate[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
+    override def extractLocalDate[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
       in: OUT,
       path: Path): Either[NonEmptyList[ExtractionError], LocalDate] = {
-      extractString(op, classOf[LocalDate])(in, path)
+      extractString(dataDefinition, classOf[LocalDate])(in, path)
         .flatMap(stringToLocalDate(_, localDateFormatter, path))
     }
 
-    override def extractLocalTime[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
+    override def extractLocalTime[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
       in: OUT,
       path: Path): Either[NonEmptyList[ExtractionError], LocalTime] = {
-      extractString(op, classOf[LocalTime])(in, path)
+      extractString(dataDefinition, classOf[LocalTime])(in, path)
         .flatMap(stringToLocalTime(_, localTimeFormatter, path))
     }
   }
@@ -176,44 +176,44 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
     * @tparam A The expected resulting type, eg String or Enumerated Type which we are trying to extract from a string.
     * @return The extracted String or an Error
     */
-  def extractString[ALG[_], A](op: CoproductDataDefinition[ALG, A], clazz: Class[_])(
+  def extractString[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]], clazz: Class[_])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], String]
-  def extractInt[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
+  def extractInt[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], Int]
-  def extractLong[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
+  def extractLong[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], Long]
-  def extractBool[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
+  def extractBool[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], Boolean]
-  def extractUuid[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
+  def extractUuid[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], UUID] = {
-    extractString(op, classOf[UUID])(in, path).flatMap(stringToUuid(_, path))
+    extractString(dataDefinition, classOf[UUID])(in, path).flatMap(stringToUuid(_, path))
   }
-  def extractLocalDateTime[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
+  def extractLocalDateTime[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], LocalDateTime]
-  def extractLocalDate[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
+  def extractLocalDate[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], LocalDate]
-  def extractLocalTime[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
+  def extractLocalTime[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], LocalTime]
   def extractArray[ALG[_], A](
     op: ListData[ALG, A])(in: IN, path: Path): Either[NonEmptyList[ExtractionError], Seq[IN]]
-  def extractFloat[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
+  def extractFloat[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], Float]
-  def extractDouble[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
+  def extractDouble[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], Double]
-  def extractShort[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
+  def extractShort[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], Short]
-  def extractBigDecimal[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
+  def extractBigDecimal[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], BigDecimal]
   def stringValue(in: IN, elementName: String): Option[String]
@@ -301,7 +301,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
 
       case op: KvpSingleValueHead[ALG, h, t, tl, a] => {
 
-        val headInterpreter = determineValueDefinition(op.fieldDefinition.op, validator)
+        val headInterpreter = determineValueDefinition(op.fieldDefinition.dataDefinition, validator)
         val tailInterpreter = kvpHList(op.tail, validator)
 
         (in: IN, path: Path) =>
