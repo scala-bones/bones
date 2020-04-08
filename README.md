@@ -9,7 +9,7 @@ by defining a Bones Schema and using the Scalacheck Interpreter to produce an
 Arbitrary[A] where A is your class which is to be generated with data that conforms to the 
 Schema definition.
 
-See a [Scalacheck Example](https://github.com/OleTraveler/bones/blob/master/test-interpreters/scalacheck/src/test/scala/com/bones/scalacheck/ScalacheckExample.scala)
+See a [Scalacheck Example](https://github.com/scala-bones/bones/blob/master/test-interpreters/scalacheck/src/test/scala/com/bones/scalacheck/ScalacheckExample.scala)
 
 
 ## Purpose
@@ -64,7 +64,7 @@ Using the DSL will result in a Generalized Algebraic Data Type (GADT) tree-like 
 where each leaf node represent a single data type and internal nodes represent a collection of data types. 
  
 As an example, we will describe a Person CRUD application.  For a complete running service writing to the Database,
-refer to the [Example](https://github.com/OleTraveler/bones/blob/master/examples/http4s-examples/src/main/scala/com/bones/PersonEndpoint.scala
+refer to the [Example](https://github.com/scala-bones/bones/blob/master/examples/http4s-examples/src/main/scala/com/bones/PersonEndpoint.scala
 )
 
 ```$scala
@@ -160,7 +160,7 @@ Then check out the [LocalhostAll Example](examples/http4s-examples/src/main/scal
 and the 
 
 ### CI
-[![Build Status](https://travis-ci.org/OleTraveler/bones.svg?branch=master)](https://travis-ci.org/OleTraveler/bones)
+[![Build Status](https://travis-ci.org/scala-bones/bones.svg?branch=master)](https://travis-ci.org/scala-bones/bones)
 
 
 
