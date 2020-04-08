@@ -19,7 +19,7 @@ Using the DSL will result in creating a Generalized Algebraic Data Type (GADT) d
 The GADT structure describes the data, validation and available Create/Read/Update/Delete (CRUD) actions.
  
 As an example, we will describe a Person CRUD application.  For a complete running service writing to the Database,
-refer to the [Example](https://github.com/OleTraveler/bones/blob/master/examples/src/main/scala/com/bones/PersonEndpoint.scala
+refer to the [Example](https://github.com/scala-bones/bones/blob/master/examples/src/main/scala/com/bones/PersonEndpoint.scala
 )
 
 ```$scala
@@ -109,7 +109,7 @@ Version 0.5.0-SNAPSHOT includes validation, CRUD and the http4s REST Interpreter
 
 
 ### CI
-[![Build Status](https://travis-ci.org/OleTraveler/bones.svg?branch=master)](https://travis-ci.org/OleTraveler/bones)
+[![Build Status](https://travis-ci.org/scala-bones/bones.svg?branch=master)](https://travis-ci.org/scala-bones/bones)
 
 
 #### Http4s Circe Interpreter (currently the only interpreter)
