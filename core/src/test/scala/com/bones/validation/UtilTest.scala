@@ -2,10 +2,9 @@ package com.bones.validation
 
 import com.bones.validation.ValidationDefinition.BigDecimalValidation._
 import org.scalacheck.Prop._
-import org.scalatest.FunSuite
 import org.scalatestplus.scalacheck.Checkers
 import com.bones.validation.ValidationDefinition.ValidValue
-import org.scalatest.MustMatchers
+import org.scalatest.matchers.must.Matchers
 import com.bones.Util
 import cats.data.NonEmptyList
 import com.bones.data.Error.CanNotConvert
@@ -13,10 +12,12 @@ import java.{util => ju}
 import java.time.format.DateTimeFormatter
 import java.time.LocalDate
 import java.time.LocalDateTime
+
 import com.bones.data.Error.RequiredValue
 import com.bones.data.KvpValue
+import org.scalatest.funsuite.AnyFunSuite
 
-class UtilTest extends FunSuite with Checkers with MustMatchers {
+class UtilTest extends AnyFunSuite with Checkers with Matchers {
   val path = List("a","b")
 
   test("string to big decimal success") {
