@@ -61,6 +61,8 @@ object ValidationDefinition {
     def invalid(t: T*): InvalidValue[T] = invalidVector(t.toVector)
   }
 
+  case class EnumerationValidation[E<:Enumeration]() extends BaseValidationOp[E]
+
   /**
     * A collection of ValidationOp[String] objects.
     */

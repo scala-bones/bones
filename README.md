@@ -11,6 +11,8 @@ Schema definition.
 
 See a [Scalacheck Example](https://github.com/scala-bones/bones/blob/master/test-interpreters/scalacheck/src/test/scala/com/bones/scalacheck/ScalacheckExample.scala)
 
+See the [Bones Scalacheck Readme](http://github.com/scala-bones/bones//tree/master/test-interpreters/scalacheck) on how to get started.
+
 
 ## Purpose
 
