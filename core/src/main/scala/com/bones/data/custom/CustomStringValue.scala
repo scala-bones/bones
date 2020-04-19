@@ -23,12 +23,9 @@ object CustomStringValue {
     override val isValid: String => Boolean =
       emailRegex.findFirstMatchIn(_).isDefined
 
-    override def defaultError(t: String): String
+    override def defaultError(t: String): String = s"$t is not a valid email"
 
-    = s"$t is not a valid email"
-
-    override val description: String =
-      "email"
+    override val description: String = "email"
   }
 
   object GuidDataValidationOp extends ValidationOp[String] {
@@ -281,6 +278,10 @@ trait CustomStringValueSugar extends CustomStringAlgebraSugar {
 
   val uri: UriData = uri()
 
+  def url(validationOp: ValidationOp[String]*): UrlData = UrlData(validationOp.toList)
+
+  val url: UrlData = url()
+
   /** String must be a valid credit card number */
   def creditCard(validationOp: ValidationOp[String]*): CreditCardData = CreditCardData(validationOp.toList)
 
@@ -328,6 +329,10 @@ trait CustomStringValueSugarInjected[ALG[_]<:Coproduct] extends CustomStringAlge
   def uri(validationOp: ValidationOp[String]*): ALG[String] = stringValueInject(UriData(validationOp.toList))
 
   val uri: ALG[String] = uri()
+
+  def url(validationOp: ValidationOp[String]*): ALG[String] = stringValueInject(UrlData(validationOp.toList))
+
+  val url: ALG[String] = url()
 
   /** String must be a valid credit card number */
   def creditCard(validationOp: ValidationOp[String]*): ALG[String] = stringValueInject(CreditCardData(validationOp.toList))

@@ -169,7 +169,7 @@ lazy val http4sVersion = "0.20.9"
 lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
   .settings(
     commonSettings,
-    name := "Bones Http4s Circe",
+    name := "Bones Http4s Server",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-dsl" % http4sVersion,
       "org.http4s" %% "http4s-blaze-server" % http4sVersion,
