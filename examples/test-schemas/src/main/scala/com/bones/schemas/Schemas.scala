@@ -85,7 +85,7 @@ object Schemas {
         ("countryIso", string(sv.validVector(isoList))) :<:
         ("zipCode", string(sv.max(10)).optional) :<:
         kvpNil
-      ).convert[BillingLocation].optional) :<: //TODO: Optional
+      ).convert[BillingLocation].optional) :<:
     kvpNil
   )
 

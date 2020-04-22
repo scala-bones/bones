@@ -63,13 +63,9 @@ object ClassicCrudInterpreter {
       sys.error("Unreachable code")
   }
 
-  def empty[A, E, F[_], ID: Manifest](
+  def emptyCoreAlgebra[A, E, F[_], ID: Manifest](
     path: String,
     charset: java.nio.charset.Charset = StandardCharsets.UTF_8,
-    customJsonInterpreter: CustomInterpreter[NoAlgebra, Json],
-    customBsonInterpreter: CustomInterpreter[NoAlgebra, BSONValue],
-    customProtobufInterpreter: ProtobufEncoderInterpreter[NoAlgebra],
-    customSwaggerInterpreter: CustomSwaggerInterpreter[NoAlgebra],
     schema: BonesSchema[NoAlgebra, A],
     idDefinition: KeyValueDefinition[NoAlgebra, ID],
     pathStringToId: String => Either[E, ID],
@@ -161,7 +157,7 @@ object ClassicCrudInterpreter {
 
   /**
     * Creates a CRUD definition so that all CRUD verbs (GET, POST, PUT, DELETE) are supported.  If only a sub-set of Verbs
-    * are desired, see [empty].
+    * are desired, see [emptyCoreAlgebra].
     *   See [ClassicCrudInterpreter] for details on the parameters.
     */
   def allVerbsCustomAlgebra[ALG[_], A, E, F[_], ID: Manifest](

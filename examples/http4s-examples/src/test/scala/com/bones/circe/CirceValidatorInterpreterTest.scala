@@ -50,7 +50,7 @@ class CirceValidatorInterpreterTest extends AnyFunSuite {
   //   val bd =
   //     ("values", ("baz", bigDecimal(bdv.Min(BigDecimal(0)))) :: kvpNil ) ::: kvpNil
 
-  //   CirceValidatorInterpreter.isoInterpreter.kvpHList(bd, KvpInterchangeFormatValidatorInterpreter.NoAlgebraValidator()).apply(circeDoc, List.empty) match {
+  //   CirceValidatorInterpreter.isoInterpreter.kvpHList(bd, KvpInterchangeFormatValidatorInterpreter.NoAlgebraValidator()).apply(circeDoc, List.emptyCoreAlgebra) match {
   //     case Left(err) => fail(s"expected success, received: ${err}")
   //     case Right(r) => assert(r.head.head == BigDecimal(100.001))
   //   }
