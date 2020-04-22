@@ -1,10 +1,10 @@
 # Overview
 
-This module is used to provide Http4s routes for a schema.
+This module provides Http4s routes for a schema.
 
-Currently supported is a CRUD interface for a given Schema.
+Currently supported, is a CRUD interface for a given Schema.
 
-For instance, if a schema is defined as such:
+For instance, if a schema definition is:
 
 ```scala
 case class User(name: String, age: Int)
@@ -27,3 +27,9 @@ application/json
 application/bson
 application/protobuf
 ```
+
+# Library dependencies
+`libraryDependencies += "com.github.oletraveler" %% "bones-http4s-server" % "0.6.0-SNAPSHOT"`
+
+Don't forget to add snapshot resolver:
+`resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"`
