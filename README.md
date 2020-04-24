@@ -2,7 +2,7 @@
 
 ** Please note that the Bones project is currently a work in progress. **
 However, the core library is now essentially feature complete for what will eventually be 
-version 1.0.  I would love to get some feedback.
+version 0.6.  I would love to get some feedback.
 
 One of the simplest ways to get started is to generate your test data
 by defining a Bones Schema and using the Scalacheck Interpreter to produce an
@@ -98,9 +98,9 @@ such as validate HTTP requests and write to Kafka, S3, a Database or an external
 This project is to provide a common vocabulary for any service, however this project is currently focused on 
 REST CRUD apps.
  
-This example uses the Scala http4s with schema defined above and for less than 11 LINES OF CODE, provides full CRUD functionality writing to 
-a JDBC datasource.  It provides 3 interchange formats: JSON, BSON and Protobuf (yes, protobuf!), 
-and finally a protofile describing the data and OAS3 compliant Schema.  
+This example uses the Scala http4s with the schema defined above and for less than 11 LINES OF CODE, provides full CRUD functionality writing to 
+a JDBC data source.  It provides 3 interchange formats: JSON, BSON and Protobuf (yes, protobuf!), 
+and finally a Protobuf file describing the data and OAS3 compliant Schema.  
 The idea is that this will work for any Bones Schema Values.
 
 
@@ -135,22 +135,22 @@ Serializer / Marshaller Interpreters
 * [Circe](interchange-format-interpreters/circe/README.md)
 * [BSON](interchange-format-interpreters/bson/README.md)
 * [Argonaut](interchange-format-interpreters/argonaut/README.md)
-* [protobuf](interchange-format-interpreters/protobuf/README.md)
-* [scalacheck](test-interpreters/scalacheck/README.md)
+* [Protobuf](interchange-format-interpreters/protobuf/README.md)
+* [Scalacheck](test-interpreters/scalacheck/README.md)
+* [swagger](interchange-format-interpreters/swagger-oas3/README.md)
 
 HTTP REST Interpreters
 * [http4s](rest-interpreters/http4s-interpreter/README.md)
 
 Incomplete Interpreters
-* [swagger](interchange-format-interpreters/swagger-oas3/README.md) - Does not currently support Coproduc (FIXED!!! in master, not released)
-* [dbJdbc](db-interpreters/jdbc/README.md) - Does not currently support coproducts
-* [React](client-interpreters/react/README.md) - This is more of a POC.  Does not currently support Coproducts
+* [dbJdbc](db-interpreters/jdbc/README.md) - Does not currently support coproduct
+* [React](client-interpreters/react/README.md) - This is more of a POC.  Does not currently support coproduct
 * [http4s-client](client-interpreters/http4s-client/README.md) - Not Implemented 
 
 
 ## Download
 
-Version 0.5.0 includes validation, CRUD and the http4s REST Interpreter.
+Version 0.6.0 includes validation, CRUD and the http4s REST Interpreter.
 
 
 #### Getting Started with Http4s Circe Interpreter
@@ -159,7 +159,6 @@ Basic CRUD capabilities implemented with http4s, circe and JDBC.
 ```libraryDependencies += "com.github.oletraveler" %% "examples" % "0.6.0-SNAPSHOT"```
 
 Then check out the [LocalhostAll Example](examples/http4s-examples/src/main/scala/com/bones/fullstack/LocalhostAll.scala)
-and the 
 
 ### CI
 [![Build Status](https://travis-ci.org/scala-bones/bones.svg?branch=master)](https://travis-ci.org/scala-bones/bones)
@@ -168,11 +167,11 @@ and the
 
 ## Credits
 
-* "Your bones got a little machine" - Black Francis
-* The API for this project is adapted from the [Joi Project](https://github.com/hapijs/joi) .
+* The API for this project is influenced by the [Joi Project](https://github.com/hapijs/joi) .
 * John De Goes [Free Applicative Talk](https://www.youtube.com/watch?v=H28QqxO7Ihc)
 * Kris Knuttycombe's [Xenomorph Library](https://github.com/nuttycom/xenomorph) is similar to this.
 * Scodec is an amazing library.  I learned a lot from that library.
+* "Your bones got a little machine" - Black Francis
 
 
 
