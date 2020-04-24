@@ -1,7 +1,7 @@
 package com.bones.data
 
 import com.bones.validation.ValidationDefinition.ValidationOp
-import shapeless.{::, Coproduct, Generic, HList, HNil, Nat, Succ}
+import shapeless.{::, Generic, HList, HNil, Nat, Succ}
 import shapeless.ops.hlist
 import shapeless.ops.hlist.IsHCons.Aux
 import shapeless.ops.hlist.{IsHCons, Length, Prepend, Split, Tupler}
@@ -37,7 +37,10 @@ sealed abstract class KvpHList[ALG[_], H <: HList, N <: Nat] {
       (t: Tup) => gen.to(t).asInstanceOf[H],
       tupledValidations.toList)
 
-  def xmap[A: Manifest](f: H => A, g: A => H, validations: ValidationOp[A]*) =
+  def xmap[A: Manifest](
+    f: H => A,
+    g: A => H,
+    validations: ValidationOp[A]*): HListConvert[ALG, H, N, A] =
     HListConvert(this, f, g, validations.toList)
 
   def :::[HO <: HList, NO <: Nat, HP <: HList, NP <: Nat](kvp: KvpHList[ALG, HP, NP])(
@@ -67,26 +70,33 @@ sealed abstract class KvpHList[ALG[_], H <: HList, N <: Nat] {
 
   /**
     * Use this operator when you want to prefix a custom algebra.
-    * @param input
-    * @param isHCons
-    * @tparam A
-    * @return
+    * @param input The Key, Value Pair to Add to the front of the KvpHList
+    * @param isHCons The implied ability to cons (and unapply) A to and from H
+    * @tparam A The wrapped type
+    * @return KvpSingleValueHead prefixed to this HList
     */
   def :>:[A](input: (String, ALG[A]))(
     implicit isHCons: IsHCons.Aux[A :: H, A, H]): KvpSingleValueHead[ALG, A, H, N, A :: H] =
     prependSingleValue(KeyValueDefinition(input._1, Right(input._2), None, None))(isHCons)
 
+  /**
+    * Use this operator when you want to prefix a custom algebra with a description
+    * @param input The Key, Value Pair and Description, Example to Add to the front of the KvpHList
+    * @param isHCons The implied ability to cons (and unapply) A to and from H
+    * @tparam A The wrapped type
+    * @return KvpSingleValueHead prefixed to this HList
+    */
   def :>:[A](input: (String, ALG[A], String, A))(
     implicit isHCons: IsHCons.Aux[A :: H, A, H]): KvpSingleValueHead[ALG, A, H, N, A :: H] =
     prependSingleValue(
       KeyValueDefinition(input._1, Right(input._2), Some(input._3), Some(input._4)))(isHCons)
 
   /**
-    *
-    * @param input
-    * @param isHCons
-    * @tparam A
-    * @return
+    * Prefixes a one of the core types to this HLIst
+    * @param input The Key, Value Pair to Add to the front of the KvpHList
+    * @param isHCons The implied ability to cons (and unapply) A to and from H
+    * @tparam A The wrapped type
+    * @return KvpSingleValueHead prefixed to this HList
     */
   def :<:[A](input: (String, KvpValue[A]))(
     implicit isHCons: Aux[A :: H, A, H]): KvpSingleValueHead[ALG, A, H, N, A :: H] =

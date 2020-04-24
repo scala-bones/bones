@@ -10,7 +10,7 @@ import shapeless.{Coproduct, Generic, HList, Nat}
 
 /**
   * If a custom algera mixin in this trait, it's subtypes can mix in AlgToCollectionData.
-  * @tparam A
+  * @tparam A The type of the Wrapped Value
   */
 trait HasManifest[A] {
   val manifestOfA: Manifest[A]
@@ -83,9 +83,7 @@ trait AlgToCollectionData[ALG[_], B, SELF <: CustomAlgebraWithManifest[ALG, B]]
 /** Schema type for Boolean Data */
 final case class BooleanData(validations: List[ValidationOp[Boolean]])
     extends KvpValue[Boolean]
-    with ToCollectionData[Boolean] {
-
-}
+    with ToCollectionData[Boolean] {}
 
 final case class EitherData[ALG[_], A: Manifest, B: Manifest](
   definitionA: Either[KvpValue[A], ALG[A]],

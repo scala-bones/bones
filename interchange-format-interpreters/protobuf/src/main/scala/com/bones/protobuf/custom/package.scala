@@ -10,28 +10,29 @@ import com.bones.protobuf.ProtobufSequentialValidatorInterpreter.CustomValidator
 
 package object custom {
 
-
   def allEncoders[A]: CustomEncoderInterpreter[AllCustomAlgebras] =
     ProtobufUtcJavaTimeEncoder ++
-      (CustomStringEncoderInterpreter ++ CNilCustomEncoder: CustomEncoderInterpreter[CustomStringCoproduct])
+      (CustomStringEncoderInterpreter ++ CNilCustomEncoder: CustomEncoderInterpreter[
+        CustomStringCoproduct])
 
   val allValidators: CustomValidatorInterpreter[AllCustomAlgebras] =
     ProtobufUtcJavaTimeValidator ++
-      (CustomStringValidatorInterpreter ++ CNilCustomValidatorEncoder: CustomValidatorInterpreter[CustomStringCoproduct])
+      (CustomStringValidatorInterpreter ++ CNilCustomValidatorEncoder: CustomValidatorInterpreter[
+        CustomStringCoproduct])
 
   val allProtoFiles: ProtoFileGeneratorInterpreter.CustomInterpreter[AllCustomAlgebras] =
     JavaTimeProtoFileInterpreter ++
-      (CustomStringProtoFileInterpreter ++ CNilProtoFileCustomInterpreterEncoder: CustomInterpreter[CustomStringCoproduct])
+      (CustomStringProtoFileInterpreter ++ CNilProtoFileCustomInterpreterEncoder: CustomInterpreter[
+        CustomStringCoproduct])
 
-
-  object ProtobufUtcJavaTimeEncoder
-    extends JavaTimeEncoderEncoderInterpreter {
-    override val coreProtobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter = ProtobufUtcSequentialEncoderAndValidator
+  object ProtobufUtcJavaTimeEncoder extends JavaTimeEncoderEncoderInterpreter {
+    override val coreProtobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter =
+      ProtobufUtcSequentialEncoderAndValidator
   }
 
   object ProtobufUtcJavaTimeValidator extends JavaTimeValidatorInterpreter {
-    override val coreProtobufSequentialInputInterpreter: ProtobufSequentialValidatorInterpreter = ProtobufUtcSequentialEncoderAndValidator
+    override val coreProtobufSequentialInputInterpreter: ProtobufSequentialValidatorInterpreter =
+      ProtobufUtcSequentialEncoderAndValidator
   }
-
 
 }

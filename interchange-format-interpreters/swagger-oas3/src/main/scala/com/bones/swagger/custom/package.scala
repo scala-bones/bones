@@ -9,7 +9,8 @@ package object custom {
 
   val allInterpreters: CustomSwaggerInterpreter[AllCustomAlgebras] =
     SwaggerIsoJavaTimeInterpreter ++
-      (DefaultCustomStringInterpreter ++ CNilCustomSwaggerInterpreter: CustomSwaggerInterpreter[CustomStringCoproduct])
+      (DefaultCustomStringInterpreter ++ CNilCustomSwaggerInterpreter: CustomSwaggerInterpreter[
+        CustomStringCoproduct])
 
   object DefaultCustomStringInterpreter extends CustomStringInterpreter
 

@@ -18,7 +18,6 @@ object Util {
     if (isNegative) str.drop(1).forall(Character.isDigit)
     else str.forall(Character.isDigit)
 
-
   val maxLongLength = 19 // "9223372036854775807".size
   /** Convert to long trying to avoid stack dump for most common cases */
   def stringToLong(str: String): Option[Long] = {
@@ -27,7 +26,7 @@ object Util {
       if (isNegative) str.length < maxLongLength
       else str.length < maxLongLength + 1
 
-    if (! str.isEmpty && isValidLength && allValidCars(str, isNegative)) {
+    if (!str.isEmpty && isValidLength && allValidCars(str, isNegative)) {
       Try(str.toLong).toOption
     } else {
       None
@@ -43,7 +42,7 @@ object Util {
       if (isNegative) str.length < maxShortLength
       else str.length < maxShortLength + 1
 
-    if (! str.isEmpty && isValidLength && allValidCars(str, isNegative)) {
+    if (!str.isEmpty && isValidLength && allValidCars(str, isNegative)) {
       Try(str.toShort).toOption
     } else {
       None

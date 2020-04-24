@@ -28,15 +28,18 @@ trait JavaTimeInterpreter extends CustomSwaggerInterpreter[JavaTimeValue] {
   // TODO add validation descriptions
   def validations[A](list: List[ValidationOp[A]]): Schema[_] => Schema[_] = identity
 
-  override def toSchema[A](alg: JavaTimeValue[A], description: Option[String], example: Option[A]): Name => SwaggerCoreInterpreter.SwaggerSchemas[Schema[_]] =
+  override def toSchema[A](
+    alg: JavaTimeValue[A],
+    description: Option[String],
+    example: Option[A]): Name => SwaggerCoreInterpreter.SwaggerSchemas[Schema[_]] =
     alg match {
       case dte: DateTimeExceptionData =>
         name =>
-          addStringSchema(name,
+          addStringSchema(
+            name,
             description.getOrElse("Error With Date Time"),
             example.getOrElse(exception).toString,
-            validations(dte.validations)
-          )
+            validations(dte.validations))
       case dow: DayOfWeekData =>
         name =>
           addEnumerationData(
@@ -84,7 +87,8 @@ trait JavaTimeInterpreter extends CustomSwaggerInterpreter[JavaTimeValue] {
           addDateTimeSchema(
             name,
             description.getOrElse("string value of an offset date/time"),
-            offsetDateTimeFormatter.format(example.getOrElse(offsetDateTimeExample).asInstanceOf[OffsetDateTime]),
+            offsetDateTimeFormatter.format(
+              example.getOrElse(offsetDateTimeExample).asInstanceOf[OffsetDateTime]),
             validations(od.validations)
           )
       case od: OffsetTimeData =>
@@ -92,7 +96,8 @@ trait JavaTimeInterpreter extends CustomSwaggerInterpreter[JavaTimeValue] {
           addStringSchema(
             name,
             description.getOrElse("string value of an offset time"),
-            offsetTimeFormatter.format(example.getOrElse(offsetDateTimeExample.toOffsetTime).asInstanceOf[OffsetTime]),
+            offsetTimeFormatter.format(
+              example.getOrElse(offsetDateTimeExample.toOffsetTime).asInstanceOf[OffsetTime]),
             validations(od.validations)
           )
       case pd: PeriodData =>

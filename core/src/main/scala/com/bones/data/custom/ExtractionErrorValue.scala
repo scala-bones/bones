@@ -29,8 +29,10 @@ trait ExtractionErrorValueSugar {
   val validationError: ExtractionErrorValue[ValidationError[_]] = ValidationErrorData
   val wrongTypeError: ExtractionErrorValue[WrongTypeError[_]] = WrongTypeErrorData
 
-  def extractionErrors
-    : KvpSingleValueLeft[ExtractionErrorValue, CanNotConvert[_, _], NotFound[_] :+: ParsingError :+: RequiredValue[
+  def extractionErrors: KvpSingleValueLeft[
+    ExtractionErrorValue,
+    CanNotConvert[_, _],
+    NotFound[_] :+: ParsingError :+: RequiredValue[
       _
     ] :+: SumTypeError :+: ValidationError[_] :+: WrongTypeError[_] :+: CNil] =
     canNotConvert :+>: notFound :+>: parsingError :+>: requiredValue :+>: sumTypeError :+>:

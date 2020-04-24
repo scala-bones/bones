@@ -115,8 +115,7 @@ object CrudOasInterpreter {
     val outputEntityName = outputSchema._2
 
     val inputSchemas =
-      fromSchemaWithAlg(outputSchema._1, customAlgebraInterpreter)(
-        outputEntityName)
+      fromSchemaWithAlg(outputSchema._1, customAlgebraInterpreter)(outputEntityName)
 
     inputSchemas.foreach { schemas =>
       upsertComponent(openAPI, schemas._1, schemas._2)
@@ -156,8 +155,7 @@ object CrudOasInterpreter {
   ): OpenAPI => OpenAPI = { openAPI =>
     val outputEntityName = outputSchemaWithName._2
     val outputComponentSchema =
-      fromSchemaWithAlg(outputSchemaWithName._1, customAlgebraInterpreter)(
-        outputEntityName)
+      fromSchemaWithAlg(outputSchemaWithName._1, customAlgebraInterpreter)(outputEntityName)
 
     outputComponentSchema.foreach {
       case (name, schema) => upsertComponent(openAPI, name, schema)
@@ -201,14 +199,11 @@ object CrudOasInterpreter {
     val errorEntityName = errorSchemaAndName._2
 
     val inputComponentSchemas =
-      fromSchemaWithAlg(inputSchemaAndName._1, customAlgebraInterpreter)(
-        inputEntityName)
+      fromSchemaWithAlg(inputSchemaAndName._1, customAlgebraInterpreter)(inputEntityName)
     val outputComponentSchemas =
-      fromSchemaWithAlg(outputSchemaAndName._1, customAlgebraInterpreter)(
-        outputEntityName)
+      fromSchemaWithAlg(outputSchemaAndName._1, customAlgebraInterpreter)(outputEntityName)
     val errorComponentSchemas =
-      fromSchemaWithAlg(errorSchemaAndName._1, customAlgebraInterpreter)(
-        errorEntityName)
+      fromSchemaWithAlg(errorSchemaAndName._1, customAlgebraInterpreter)(errorEntityName)
 
     (inputComponentSchemas ::: outputComponentSchemas ::: errorComponentSchemas)
       .foreach { case (name, schema) => upsertComponent(openAPI, name, schema) }
@@ -277,14 +272,11 @@ object CrudOasInterpreter {
     val errorEntityName = errorSchemaAndName._2
 
     val inputComponentSchemas =
-      fromSchemaWithAlg(inputSchemaAndName._1, customAlgebraInterpreter)(
-        inputEntityName)
+      fromSchemaWithAlg(inputSchemaAndName._1, customAlgebraInterpreter)(inputEntityName)
     val outputComponentSchemas =
-      fromSchemaWithAlg(outputSchemaAndName._1, customAlgebraInterpreter)(
-        outputEntityName)
+      fromSchemaWithAlg(outputSchemaAndName._1, customAlgebraInterpreter)(outputEntityName)
     val errorComponentSchemas =
-      fromSchemaWithAlg(errorSchemaAndName._1, customAlgebraInterpreter)(
-        errorEntityName)
+      fromSchemaWithAlg(errorSchemaAndName._1, customAlgebraInterpreter)(errorEntityName)
 
     (inputComponentSchemas ::: outputComponentSchemas ::: errorComponentSchemas)
       .foreach { case (name, schema) => upsertComponent(openAPI, name, schema) }

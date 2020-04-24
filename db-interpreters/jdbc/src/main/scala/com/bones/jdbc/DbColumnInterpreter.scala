@@ -49,7 +49,8 @@ object DbColumnInterpreter {
       case nil: KvpNil[_] => List.empty
       case op: KvpSingleValueHead[ALG, h, t, tl, a] @unchecked =>
         val headResult =
-          determineValueDefinition(op.fieldDefinition.dataDefinition, customInterpreter)(op.fieldDefinition.key)
+          determineValueDefinition(op.fieldDefinition.dataDefinition, customInterpreter)(
+            op.fieldDefinition.key)
         val tailResult = kvpHList(op.tail, customInterpreter)
         headResult ::: tailResult
       case op: KvpHListHead[ALG, a, al, h, hl, t, tl] @unchecked =>

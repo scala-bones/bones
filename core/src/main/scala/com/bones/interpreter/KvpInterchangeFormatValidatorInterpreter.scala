@@ -25,33 +25,40 @@ object KvpInterchangeFormatValidatorInterpreter {
   type CoproductType = String
 
   object InterchangeFormatValidator {
+
     /** using kind projector allows us to create a new interpreter by merging two existing interpreters */
     def merge[L[_], R[_] <: Coproduct, A, OUT](
-                                                li: InterchangeFormatValidator[L, OUT],
-                                                ri: InterchangeFormatValidator[R, OUT]
-                                              ): InterchangeFormatValidator[Lambda[A => L[A] :+: R[A]] , OUT] =
-      new InterchangeFormatValidator[Lambda[A => L[A] :+: R[A]] , OUT] {
-        override def validate[A](lr: L[A] :+: R[A]): (Option[OUT], List[String]) => Either[NonEmptyList[ExtractionError], A] = lr match {
+      li: InterchangeFormatValidator[L, OUT],
+      ri: InterchangeFormatValidator[R, OUT]
+    ): InterchangeFormatValidator[Lambda[A => L[A] :+: R[A]], OUT] =
+      new InterchangeFormatValidator[Lambda[A => L[A] :+: R[A]], OUT] {
+        override def validate[A](lr: L[A] :+: R[A])
+          : (Option[OUT], List[String]) => Either[NonEmptyList[ExtractionError], A] = lr match {
           case Inl(l) => li.validate(l)
           case Inr(r) => ri.validate(r)
         }
 
       }
 
-    implicit class InterpreterOps[ALG[_], OUT](val base: InterchangeFormatValidator[ALG, OUT]) extends AnyVal {
-      def ++ [R[_] <: Coproduct](r: InterchangeFormatValidator[R, OUT]): InterchangeFormatValidator[Lambda[A => ALG[A] :+: R[A]] , OUT] =
+    implicit class InterpreterOps[ALG[_], OUT](val base: InterchangeFormatValidator[ALG, OUT])
+        extends AnyVal {
+      def ++[R[_] <: Coproduct](r: InterchangeFormatValidator[R, OUT])
+        : InterchangeFormatValidator[Lambda[A => ALG[A] :+: R[A]], OUT] =
         merge(base, r)
 
     }
 
-    case class CNilInterchangeFormatValidator[OUT]() extends InterchangeFormatValidator[CNilF, OUT] {
-      override def validate[A](alg: CNilF[A]): (Option[OUT], List[String]) => Either[NonEmptyList[ExtractionError], A] =
+    case class CNilInterchangeFormatValidator[OUT]()
+        extends InterchangeFormatValidator[CNilF, OUT] {
+      override def validate[A](
+        alg: CNilF[A]): (Option[OUT], List[String]) => Either[NonEmptyList[ExtractionError], A] =
         sys.error("Unreachable code")
     }
   }
 
   trait InterchangeFormatValidator[ALG[_], IN] {
-    def validate[A](alg: ALG[A]): (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A]
+    def validate[A](
+      alg: ALG[A]): (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A]
   }
 
   case class NoAlgebraValidator[IN]() extends InterchangeFormatValidator[NoAlgebra, IN] {
@@ -71,22 +78,21 @@ object KvpInterchangeFormatValidatorInterpreter {
     def localDateFormatter: DateTimeFormatter
     def localTimeFormatter: DateTimeFormatter
 
-
-    override def extractLocalDateTime[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
+    override def extractLocalDateTime[ALG[_], A](dataDefinition: Either[KvpValue[A], ALG[A]])(
       in: OUT,
       path: Path): Either[NonEmptyList[ExtractionError], LocalDateTime] = {
       extractString(dataDefinition, classOf[LocalDateTime])(in, path)
         .flatMap(stringToLocalDateTime(_, localDateTimeFormatter, path))
     }
 
-    override def extractLocalDate[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
+    override def extractLocalDate[ALG[_], A](dataDefinition: Either[KvpValue[A], ALG[A]])(
       in: OUT,
       path: Path): Either[NonEmptyList[ExtractionError], LocalDate] = {
       extractString(dataDefinition, classOf[LocalDate])(in, path)
         .flatMap(stringToLocalDate(_, localDateFormatter, path))
     }
 
-    override def extractLocalTime[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
+    override def extractLocalTime[ALG[_], A](dataDefinition: Either[KvpValue[A], ALG[A]])(
       in: OUT,
       path: Path): Either[NonEmptyList[ExtractionError], LocalTime] = {
       extractString(dataDefinition, classOf[LocalTime])(in, path)
@@ -104,7 +110,6 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
 
   /** An additional string in the serialized format which states the coproduct type */
   val coproductTypeKey: String
-
 
   import KvpInterchangeFormatValidatorInterpreter._
   import Util._
@@ -176,44 +181,44 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
     * @tparam A The expected resulting type, eg String or Enumerated Type which we are trying to extract from a string.
     * @return The extracted String or an Error
     */
-  def extractString[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]], clazz: Class[_])(
+  def extractString[ALG[_], A](dataDefinition: Either[KvpValue[A], ALG[A]], clazz: Class[_])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], String]
-  def extractInt[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
+  def extractInt[ALG[_], A](dataDefinition: Either[KvpValue[A], ALG[A]])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], Int]
-  def extractLong[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
+  def extractLong[ALG[_], A](dataDefinition: Either[KvpValue[A], ALG[A]])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], Long]
-  def extractBool[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
+  def extractBool[ALG[_], A](dataDefinition: Either[KvpValue[A], ALG[A]])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], Boolean]
-  def extractUuid[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
+  def extractUuid[ALG[_], A](dataDefinition: Either[KvpValue[A], ALG[A]])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], UUID] = {
     extractString(dataDefinition, classOf[UUID])(in, path).flatMap(stringToUuid(_, path))
   }
-  def extractLocalDateTime[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
+  def extractLocalDateTime[ALG[_], A](dataDefinition: Either[KvpValue[A], ALG[A]])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], LocalDateTime]
-  def extractLocalDate[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
+  def extractLocalDate[ALG[_], A](dataDefinition: Either[KvpValue[A], ALG[A]])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], LocalDate]
-  def extractLocalTime[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
+  def extractLocalTime[ALG[_], A](dataDefinition: Either[KvpValue[A], ALG[A]])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], LocalTime]
   def extractArray[ALG[_], A](
     op: ListData[ALG, A])(in: IN, path: Path): Either[NonEmptyList[ExtractionError], Seq[IN]]
-  def extractFloat[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
+  def extractFloat[ALG[_], A](dataDefinition: Either[KvpValue[A], ALG[A]])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], Float]
-  def extractDouble[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
+  def extractDouble[ALG[_], A](dataDefinition: Either[KvpValue[A], ALG[A]])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], Double]
-  def extractShort[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
+  def extractShort[ALG[_], A](dataDefinition: Either[KvpValue[A], ALG[A]])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], Short]
-  def extractBigDecimal[ALG[_], A](dataDefinition: Either[KvpValue[A],ALG[A]])(
+  def extractBigDecimal[ALG[_], A](dataDefinition: Either[KvpValue[A], ALG[A]])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], BigDecimal]
   def stringValue(in: IN, elementName: String): Option[String]
@@ -389,7 +394,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
                 case Left(err) =>
                   val nonWrongTypeError = err.toList.filter {
                     case WrongTypeError(_, _, _, _) => false
-                    case RequiredValue(_, _)         => false
+                    case RequiredValue(_, _)        => false
                     case CanNotConvert(_, _, _, _)  => false
                     case _                          => true
                   }

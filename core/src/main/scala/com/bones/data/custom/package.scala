@@ -13,7 +13,7 @@ package object custom {
 
   /** This is to allow smart constructors for each custom algebra, so that the data structure is lifted into the
     * context of AllCustomAlgebras type.  For example, the smart constructor `email` for creating an email data type would
-   *  become Inr(Inl(EmailData()) which satisfies the AllCustomAlgebras definition.
+    *  become Inr(Inl(EmailData()) which satisfies the AllCustomAlgebras definition.
     * */
   object AllCustomSyntax
       extends JavaTimeValueSugarInjected[AllCustomAlgebras]

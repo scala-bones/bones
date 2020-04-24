@@ -56,7 +56,9 @@ object CustomStringValue {
     val lowerHexRegex: Regex = "^[0-9a-f]+$".r
 
     override val isValid: String => Boolean = input =>
-      upperHexRegex.findFirstMatchIn(input).isDefined || lowerHexRegex.findFirstMatchIn(input).isDefined
+      upperHexRegex.findFirstMatchIn(input).isDefined || lowerHexRegex
+        .findFirstMatchIn(input)
+        .isDefined
 
     override def defaultError(t: String): String = s"$t is not hexadecimal"
 
@@ -128,7 +130,7 @@ object CustomStringValue {
     // https://stackoverflow.com/a/17871737/387094
 
     val ip46Regex: Regex =
-      "(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))".r
+      "(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]+|::(ffff(:0{1,4})?:)?((25[0-5]|(2[0-4]|1?[0-9])?[0-9])\\.){3}(25[0-5]|(2[0-4]|1?[0-9])?[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1?[0-9])?[0-9])\\.){3}(25[0-5]|(2[0-4]|1?[0-9])?[0-9]))".r
 
     override val isValid: String => Boolean =
       ip46Regex.findFirstMatchIn(_).isDefined
@@ -140,7 +142,7 @@ object CustomStringValue {
 
 }
 
-sealed abstract class CustomStringValue[A:Manifest] extends HasManifest[String] {
+sealed abstract class CustomStringValue[A: Manifest] extends HasManifest[String] {
   val manifestOfA: Manifest[String] = manifest[String]
 
   val validations: List[ValidationOp[String]]
@@ -152,7 +154,7 @@ sealed abstract class CustomStringValue[A:Manifest] extends HasManifest[String] 
 }
 
 final case class EmailData(validations: List[ValidationOp[String]])
-  extends CustomStringValue[String]
+    extends CustomStringValue[String]
     with AlgToCollectionData[CustomStringValue, String, EmailData] {
 
   override val customValidation: ValidationOp[String] = CustomStringValue.EmailDataValidationOp
@@ -160,7 +162,7 @@ final case class EmailData(validations: List[ValidationOp[String]])
 }
 
 final case class GuidData(validations: List[ValidationOp[String]])
-  extends CustomStringValue[String]
+    extends CustomStringValue[String]
     with AlgToCollectionData[CustomStringValue, String, GuidData] {
   override val customValidation: ValidationOp[String] = CustomStringValue.GuidDataValidationOp
 
@@ -169,57 +171,58 @@ final case class GuidData(validations: List[ValidationOp[String]])
 }
 
 final case class CreditCardData(validations: List[ValidationOp[String]])
-  extends CustomStringValue[String]
+    extends CustomStringValue[String]
     with AlgToCollectionData[CustomStringValue, String, CreditCardData] {
   override val customValidation: ValidationOp[String] = CustomStringValue.CreditCardValidationOp
   override val example: String = "5454545454545454"
 }
 
-
 final case class HexStringData(validations: List[ValidationOp[String]])
-  extends CustomStringValue[String]
+    extends CustomStringValue[String]
     with AlgToCollectionData[CustomStringValue, String, HexStringData] {
   override val customValidation: ValidationOp[String] = CustomStringValue.HexStringValidationOp
   override val example: String = "0123456789abcdef"
 }
 
 final case class Base64Data(validations: List[ValidationOp[String]])
-  extends CustomStringValue[String]
+    extends CustomStringValue[String]
     with AlgToCollectionData[CustomStringValue, String, Base64Data] {
   override val customValidation: ValidationOp[String] = CustomStringValue.Base64ValidationOp
   override val example: String = "A1B2C3E4F567890$"
 }
 
 final case class HostnameData(validations: List[ValidationOp[String]])
-  extends CustomStringValue[String]
+    extends CustomStringValue[String]
     with AlgToCollectionData[CustomStringValue, String, HostnameData] {
   override val customValidation: ValidationOp[String] = CustomStringValue.HostnameValidationOp
   override val example: String = "www.example.com"
 }
 
 final case class UriData(validations: List[ValidationOp[String]])
-  extends CustomStringValue[String]
+    extends CustomStringValue[String]
     with AlgToCollectionData[CustomStringValue, String, UriData] {
   override val customValidation: ValidationOp[String] = CustomStringValue.UriValidationOp
-  override val example: String = URI.create("http://www.math.uio.no/faq/compression-faq/part1.html").toString
+  override val example: String =
+    URI.create("http://www.math.uio.no/faq/compression-faq/part1.html").toString
 }
 
 final case class UrlData(validations: List[ValidationOp[String]])
-  extends CustomStringValue[String]
+    extends CustomStringValue[String]
     with AlgToCollectionData[CustomStringValue, String, UrlData] {
   override val customValidation: ValidationOp[String] = CustomStringValue.UrlValidationOp
-  override val example: String = new URL("http://www.math.uio.no/faq/compression-faq/part1.html").toExternalForm
+  override val example
+    : String = new URL("http://www.math.uio.no/faq/compression-faq/part1.html").toExternalForm
 }
 
 final case class IpV4Data(validations: List[ValidationOp[String]])
-  extends CustomStringValue[String]
+    extends CustomStringValue[String]
     with AlgToCollectionData[CustomStringValue, String, IpV4Data] {
   override val customValidation: ValidationOp[String] = CustomStringValue.Ipv4ValidationOp
   override val example: String = "10.0.0.1"
 }
 
 final case class IpV6Data(validations: List[ValidationOp[String]])
-  extends CustomStringValue[String]
+    extends CustomStringValue[String]
     with AlgToCollectionData[CustomStringValue, String, IpV6Data] {
   override val customValidation: ValidationOp[String] = CustomStringValue.Ipv6ValidationOp
   override val example: String = "::1"
@@ -239,7 +242,6 @@ trait CustomStringAlgebraSugar {
   val cs_ipv6: CustomStringValue.Ipv6ValidationOp.type = Ipv6ValidationOp
 }
 
-
 trait CustomStringValueSugar extends CustomStringAlgebraSugar {
 
   /** String must be a guid */
@@ -252,7 +254,6 @@ trait CustomStringValueSugar extends CustomStringAlgebraSugar {
 
   val email: EmailData = email()
 
-
   /** String must be a valid hexadecimal String */
   def hex(validationOp: ValidationOp[String]*): HexStringData = HexStringData(validationOp.toList)
 
@@ -264,7 +265,8 @@ trait CustomStringValueSugar extends CustomStringAlgebraSugar {
   val base64: Base64Data = base64()
 
   /** String must be a hostname */
-  def hostname(validationOp: ValidationOp[String]*): HostnameData = HostnameData(validationOp.toList)
+  def hostname(validationOp: ValidationOp[String]*): HostnameData =
+    HostnameData(validationOp.toList)
 
   val hostname: HostnameData = hostname()
 
@@ -283,65 +285,67 @@ trait CustomStringValueSugar extends CustomStringAlgebraSugar {
   val url: UrlData = url()
 
   /** String must be a valid credit card number */
-  def creditCard(validationOp: ValidationOp[String]*): CreditCardData = CreditCardData(validationOp.toList)
+  def creditCard(validationOp: ValidationOp[String]*): CreditCardData =
+    CreditCardData(validationOp.toList)
 
   val creditCard: CreditCardData = creditCard()
 }
 
-
-/** Adds smart constructors to lift our GADT into a multi-alebra system */
-trait CustomStringValueSugarInjected[ALG[_]<:Coproduct] extends CustomStringAlgebraSugar {
+/** Adds smart constructors to lift our GADT into a multi-algebra system */
+trait CustomStringValueSugarInjected[ALG[_] <: Coproduct] extends CustomStringAlgebraSugar {
 
   def stringValueInject[String]: Inject[ALG[String], CustomStringValue[String]]
 
   /** String must be a guid */
-  def guid(validationOp: ValidationOp[String]*): ALG[String] = stringValueInject(GuidData(validationOp.toList))
+  def guid(validationOp: ValidationOp[String]*): ALG[String] =
+    stringValueInject(GuidData(validationOp.toList))
 
   val guid: ALG[String] = guid()
 
   /** String must be a valid email format */
-  def email(validationOp: ValidationOp[String]*): ALG[String] = stringValueInject(EmailData(validationOp.toList))
+  def email(validationOp: ValidationOp[String]*): ALG[String] =
+    stringValueInject(EmailData(validationOp.toList))
 
   val email: ALG[String] = email()
 
-
   /** String must be a valid hexadecimal String */
-  def hex(validationOp: ValidationOp[String]*): ALG[String] = stringValueInject(HexStringData(validationOp.toList))
+  def hex(validationOp: ValidationOp[String]*): ALG[String] =
+    stringValueInject(HexStringData(validationOp.toList))
 
   val hex: ALG[String] = hex()
 
   /** String must be in base64 */
-  def base64(validationOp: ValidationOp[String]*): ALG[String] = stringValueInject(Base64Data(validationOp.toList))
+  def base64(validationOp: ValidationOp[String]*): ALG[String] =
+    stringValueInject(Base64Data(validationOp.toList))
 
   val base64: ALG[String] = base64()
 
   /** String must be a hostname */
-  def hostname(validationOp: ValidationOp[String]*): ALG[String] = stringValueInject(HostnameData(validationOp.toList))
+  def hostname(validationOp: ValidationOp[String]*): ALG[String] =
+    stringValueInject(HostnameData(validationOp.toList))
 
   val hostname: ALG[String] = hostname()
 
   /** String must be an IPv4 */
-  def iPv4(validationOp: ValidationOp[String]*): ALG[String] = stringValueInject(IpV4Data(validationOp.toList))
+  def iPv4(validationOp: ValidationOp[String]*): ALG[String] =
+    stringValueInject(IpV4Data(validationOp.toList))
 
   val iPv4: ALG[String] = iPv4()
 
   /** String must be a Uri */
-  def uri(validationOp: ValidationOp[String]*): ALG[String] = stringValueInject(UriData(validationOp.toList))
+  def uri(validationOp: ValidationOp[String]*): ALG[String] =
+    stringValueInject(UriData(validationOp.toList))
 
   val uri: ALG[String] = uri()
 
-  def url(validationOp: ValidationOp[String]*): ALG[String] = stringValueInject(UrlData(validationOp.toList))
+  def url(validationOp: ValidationOp[String]*): ALG[String] =
+    stringValueInject(UrlData(validationOp.toList))
 
   val url: ALG[String] = url()
 
   /** String must be a valid credit card number */
-  def creditCard(validationOp: ValidationOp[String]*): ALG[String] = stringValueInject(CreditCardData(validationOp.toList))
+  def creditCard(validationOp: ValidationOp[String]*): ALG[String] =
+    stringValueInject(CreditCardData(validationOp.toList))
 
   val creditCard: ALG[String] = creditCard()
 }
-
-
-
-
-
-

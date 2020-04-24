@@ -3,12 +3,15 @@ package com.bones
 import java.time.format.DateTimeFormatter
 
 import com.bones.data.BonesSchema
-import com.bones.swagger.SwaggerCoreInterpreter.{CustomSwaggerInterpreter, Name, noAlgebraInterpreter}
+import com.bones.swagger.SwaggerCoreInterpreter.{
+  CustomSwaggerInterpreter,
+  Name,
+  noAlgebraInterpreter
+}
 import com.bones.syntax.NoAlgebra
 import io.swagger.v3.oas.models.media.Schema
 
 package object swagger {
-
 
   /**
     * An implementation of the SwaggerCoreInterpreter using
@@ -20,8 +23,9 @@ package object swagger {
     override def localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
   }
 
-  def fromSchemaWithAlg[ALG[_], A](gd: BonesSchema[ALG, A],
-                                   customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]): Name => List[(Name, Schema[_])] =
+  def fromSchemaWithAlg[ALG[_], A](
+    gd: BonesSchema[ALG, A],
+    customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]): Name => List[(Name, Schema[_])] =
     SwaggerIsoInterpreter.fromSchemaWithAlg(gd, customAlgebraInterpreter)
 
   def fromSchema[ALG[_], A](gd: BonesSchema[NoAlgebra, A]): Name => List[(Name, Schema[_])] =
