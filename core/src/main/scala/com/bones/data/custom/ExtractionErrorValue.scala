@@ -17,7 +17,7 @@ case object ValidationErrorData extends ExtractionErrorValue[ValidationError[_]]
 case object WrongTypeErrorData extends ExtractionErrorValue[WrongTypeError[_]]
 
 /**
-  * Provides convenience methods fro creating ExtractionErrorValue types.
+  * Provides convenience methods for creating ExtractionErrorValue types.
   */
 trait ExtractionErrorValueSugar {
 

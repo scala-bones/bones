@@ -45,7 +45,7 @@ object ProtobufSequentialEncoderInterpreter {
     def encodeToProto[A](alg: ALG[A]) : EncodeToProto[A]
   }
 
-  object NoAlgebraCustomEncoderInterpreter$ extends CustomEncoderInterpreter[NoAlgebra] {
+  object NoAlgebraCustomEncoderInterpreter extends CustomEncoderInterpreter[NoAlgebra] {
     def encodeToProto[A](alg: NoAlgebra[A]): EncodeToProto[A] = sys.error("Unreachable code")
   }
 
@@ -253,7 +253,7 @@ trait ProtobufSequentialEncoderInterpreter {
   val zoneOffset: ZoneOffset
 
   def encodeToBytes[A](dc: BonesSchema[NoAlgebra,A]): A => Array[Byte] =
-  encodeToBytesCustomAlgebra[NoAlgebra, A](dc, NoAlgebraCustomEncoderInterpreter$)
+  encodeToBytesCustomAlgebra[NoAlgebra, A](dc, NoAlgebraCustomEncoderInterpreter)
 
   def encodeToBytesCustomAlgebra[ALG[_], A](dc: BonesSchema[ALG,A], customInterpreter: CustomEncoderInterpreter[ALG]): A => Array[Byte] = dc match {
     case x: HListConvert[ALG, _, _, A] @unchecked => {

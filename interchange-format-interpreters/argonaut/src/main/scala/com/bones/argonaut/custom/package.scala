@@ -8,7 +8,7 @@ import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeF
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder.CNilInterchangeFormatEncoder
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator.CNilInterchangeFormatValidator
-import com.bones.interpreter.custom.{CustomStringEncoder, CustomStringValidator, JavaTimeEncoder, JavaTimeValidator}
+import com.bones.interpreter.custom.{CustomStringEncoder, CustomStringValidator, ExtractionErrorEncoder, JavaTimeEncoder, JavaTimeValidator}
 import com.bones.interpreter.{KvpInterchangeFormatEncoderInterpreter, KvpInterchangeFormatValidatorInterpreter}
 
 package object custom {
@@ -61,6 +61,12 @@ package object custom {
     override val baseEncoder: KvpInterchangeFormatEncoderInterpreter[Json] =
       IsoArgonautEncoderAndValidatorInterpreter
   }
+
+  object BaseExtractionErrorEncoder extends ExtractionErrorEncoder[Json] {
+    override val defaultEncoder: KvpInterchangeFormatEncoderInterpreter[Json] =
+      IsoArgonautEncoderAndValidatorInterpreter
+  }
+
 
 
 }
