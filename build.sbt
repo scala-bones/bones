@@ -165,7 +165,7 @@ lazy val dbJdbc = (project in file("db-interpreters/jdbc"))
     )
   )
   .dependsOn(core, testSchemas % "test->compile")
-lazy val http4sVersion = "0.20.9"
+lazy val http4sVersion = "0.21.3"
 lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
   .settings(
     commonSettings,
@@ -174,6 +174,17 @@ lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
       "org.http4s" %% "http4s-dsl" % http4sVersion,
       "org.http4s" %% "http4s-blaze-server" % http4sVersion,
       "org.http4s" %% "http4s-circe" % http4sVersion,
+      "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
+      "org.scalatest" %% "scalatest" % "3.1.0" % Test,
+      "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
+    )
+  )
+  .dependsOn(core, jsonCirce, swaggerOas3, protobuf, bson)
+lazy val awsLambda = (project in file("rest-interpreters/aws-lambda"))
+  .settings(
+    commonSettings,
+    name := "Bones AWS Lambda Server",
+    libraryDependencies ++= Seq(
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
       "org.scalatest" %% "scalatest" % "3.1.0" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test

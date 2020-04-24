@@ -2,7 +2,7 @@ package com.bones.http4s
 
 import java.nio.charset.StandardCharsets
 
-import cats.data.{EitherT, NonEmptyList}
+import cats.data.NonEmptyList
 import cats.effect._
 import cats.implicits._
 import com.bones.bson.{BsonEncoderInterpreter, BsonValidatorInterpreter}
@@ -23,11 +23,9 @@ import fs2.Stream
 import io.circe.Json
 import io.circe.syntax._
 import io.swagger.v3.oas.models.OpenAPI
-import org.http4s.circe._
-import org.http4s.dsl.Http4sDsl
-import reactivemongo.bson.BSONValue
 import org.http4s._
-import org.http4s.util.CaseInsensitiveString
+import org.http4s.dsl.impl.Path
+import reactivemongo.bson.BSONValue
 
 object ClassicCrudInterpreter {
 
@@ -48,7 +46,7 @@ object ClassicCrudInterpreter {
       with ProtobufSequentialEncoderInterpreter.CustomEncoderInterpreter[ALG]
       with ProtoFileGeneratorInterpreter.CustomInterpreter[ALG]
 
-  case object NoAlgebraProtobufEncoderInterpreter$ extends ProtobufEncoderInterpreter[NoAlgebra] {
+  case object NoAlgebraProtobufEncoderInterpreter extends ProtobufEncoderInterpreter[NoAlgebra] {
     override def encodeToProto[A](alg: NoAlgebra[A]): EncodeToProto[A] =
       sys.error("Unreachable code")
 
@@ -76,7 +74,7 @@ object ClassicCrudInterpreter {
       charset,
       NoAlgebraCustomInterpreter[Json](),
       NoAlgebraCustomInterpreter[BSONValue](),
-      NoAlgebraProtobufEncoderInterpreter$,
+      NoAlgebraProtobufEncoderInterpreter,
       SwaggerCoreInterpreter.noAlgebraInterpreter,
       schema,
       idDefinition,
@@ -142,7 +140,7 @@ object ClassicCrudInterpreter {
     charset,
     NoAlgebraCustomInterpreter[Json](),
     NoAlgebraCustomInterpreter[BSONValue](),
-    NoAlgebraProtobufEncoderInterpreter$,
+    NoAlgebraProtobufEncoderInterpreter,
     SwaggerCoreInterpreter.noAlgebraInterpreter,
     schema,
     idDefinition,
@@ -282,7 +280,7 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
   def withSearch(search: () => Stream[F, (ID, A)]): ClassicCrudInterpreter[ALG, A, E, F, ID] =
     this.copy(searchF = Some(search))
 
-  import ClassicCrudInterpreterDescription._
+  import CrudInterpreterDescription._
   val schemaWithId = schema match {
     case h: HListConvert[ALG, _, _, A] @unchecked => {
       implicit val manifest = h.manifestOfA
@@ -301,7 +299,7 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
 
   def createRoutes: HttpRoutes[F] = {
 
-    object http extends ClassicCrudInterpreterF[ALG, A, E, F, ID]
+    object http extends BaseCrudInterpreter[ALG, A, E, F, ID]
 
     val updateHttpService =
       updateF.toList.flatMap(update => {
@@ -507,7 +505,7 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
       })
 
     val contentTypes = "application/json" :: "application/ubjson" :: "application/protobuf" :: Nil
-    val swagger = http.swaggerDoc(
+    val swaggerHtml = swaggerDoc(
       contentTypes,
       customSwaggerInterpreter,
       schema,
@@ -515,6 +513,8 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
       errorSchema,
       path
     )
+
+    val swagger = http.htmlEndpoint(Path(s"swagger/$path"), swaggerHtml)
 
     val services: List[HttpRoutes[F]] =
       http.protoBuff(path, customProtobufInterpreter, schema, schemaWithId, errorSchema) :: swagger :: createHttpService ::: readHttpService ::: updateHttpService ::: deleteHttpService ::: searchHttpService
@@ -525,59 +525,15 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
 
   }
 
-}
-
-object ClassicCrudInterpreterDescription {
-
-  /** Collection of items used to to create a Post endpoint in this HttpInterpreter. */
-  case class PutPostInterpreterGroup[UI, UO, UE](
-    contentType: String,
-    inInterpreter: Array[Byte] => Either[NonEmptyList[ExtractionError], UI],
-    outInterpreter: UO => Array[Byte],
-    errorInterpreter: UE => Array[Byte]
-  )
-
-  /** Collection of items used to to get a Post endpoint in this HttpInterpreter. */
-  case class GetInterpreterGroup[RO, RE](
-    contentType: String,
-    outInterpreter: RO => Array[Byte],
-    errorInterpreter: RE => Array[Byte]
-  )
-
-  /** Collection of items used to to create a Delete endpoint in this HttpInterpreter. */
-  case class DeleteInterpreterGroup[DO, DE](
-    contentType: String,
-    outInterpreter: DO => Array[Byte],
-    errorInterpreter: DE => Array[Byte]
-  )
-
-  /** Collection of items used to to create a Search endpoint in this HttpInterpreter. */
-  case class SearchInterpreterGroup[F[_], SO](
-    contentType: String,
-    outInterpreter: Stream[F, SO] => Stream[F, Array[Byte]]
-  )
-}
-
-trait ClassicCrudInterpreterF[ALG[_], A, E, F[_], ID] extends Http4sDsl[F] {
-
-  import ClassicCrudInterpreter._
-  import ClassicCrudInterpreterDescription._
-
-  def eeToOut(ee: NonEmptyList[ExtractionError])(implicit F: Sync[F]): F[Response[F]] = {
-
-    val errors = ee.map(_.toString)
-    BadRequest(Json.obj(("success", "false".asJson), ("errors", errors.asJson)))
-  }
-
-  /** Create an endpoint to display the swagger doc for for this type.  Endpoint is /swagger/'entityName' */
-  def swaggerDoc[ALG[_]](
-    contentTypes: List[String],
-    customInterpreter: CustomSwaggerInterpreter[ALG],
-    schema: BonesSchema[ALG, A],
-    schemaWithId: BonesSchema[ALG, (ID, A)],
-    errorSchema: BonesSchema[ALG, E],
-    path: String
-  )(implicit F: Sync[F]): HttpRoutes[F] = {
+  /** Create an endpoint to display the swagger doc for classic Crud this type. */
+  def swaggerDoc(
+                  contentTypes: List[String],
+                  customInterpreter: CustomSwaggerInterpreter[ALG],
+                  schema: BonesSchema[ALG, A],
+                  schemaWithId: BonesSchema[ALG, (ID, A)],
+                  errorSchema: BonesSchema[ALG, E],
+                  path: String
+                ): String = {
 
     val openApi =
       CrudOasInterpreter.jsonApiForService(
@@ -589,229 +545,17 @@ trait ClassicCrudInterpreterF[ALG[_], A, E, F[_], ID] extends Http4sDsl[F] {
         schemaWithId,
         errorSchema,
         customInterpreter,
-        true,
-        true,
-        true,
-        true,
-        true
+        createF.isDefined,
+        readF.isDefined,
+        updateF.isDefined,
+        deleteF.isDefined,
+        searchF.isDefined
       )(new OpenAPI())
-    val html = io.swagger.v3.core.util.Json.mapper().writeValueAsString(openApi)
+    io.swagger.v3.core.util.Json.mapper().writeValueAsString(openApi)
 
-    HttpRoutes.of[F] {
-      case GET -> Root / "swagger" / path =>
-        Ok(html, Header("Content-Type", "text/html"))(F, implicitly[EntityEncoder[F, String]])
-    }
-  }
-
-  /** Create an endpoint to display the protobuf schema for each endpoint */
-  def protoBuff(
-    path: String,
-    customProtobufInterpreter: ProtobufEncoderInterpreter[ALG],
-    schema: BonesSchema[ALG, A],
-    schemaWithId: BonesSchema[ALG, (ID, A)],
-    errorSchema: BonesSchema[ALG, E]
-  )(implicit F: Sync[F]): HttpRoutes[F] = {
-    def toFile[A] =
-      ProtoFileGeneratorInterpreter
-        .fromSchemaToProtoFile[ALG, A](_: BonesSchema[ALG, A], customProtobufInterpreter)
-
-    val text =
-      s"""
-           | // Base Schema, Used for input on Create Only
-           | ${toFile(schema)}
-           |
-           | // Base Schema with ID, Used for other CRUD operations besides input on Create
-           | ${toFile(schemaWithId)}
-           |
-           | // Error Output Message
-           | ${toFile(errorSchema)}
-           |
-        """.stripMargin
-
-    HttpRoutes.of[F] {
-      case GET -> Root / "proto" / path =>
-        Ok(text, Header("Content-Type", "text/plain"))
-    }
 
   }
 
-  /** Crate delete routes from interpreter group */
-  def delete(
-    path: String,
-    interpreterGroup: DeleteInterpreterGroup[(ID, A), E],
-    stringParamToId: String => Either[E, ID],
-    deleteF: ID => F[Either[E, (ID, A)]]
-  )(implicit F: Sync[F]): HttpRoutes[F] = HttpRoutes.of[F] {
-    case req @ Method.DELETE -> Root / path / idParam => {
-      val result = for {
-        id <- EitherT.fromEither[F] {
-          stringParamToId(idParam)
-        }
-        entity <- EitherT[F, E, (ID, A)] {
-          deleteF(id)
-        }
-      } yield Ok(
-        interpreterGroup.outInterpreter(entity),
-        Header("Content-Type", interpreterGroup.contentType)
-      )
-
-      result.value.flatMap(either => {
-        either.left
-          .map(
-            de =>
-              InternalServerError(
-                interpreterGroup.errorInterpreter(de),
-                Header("Content-Type", interpreterGroup.contentType)
-              )
-          )
-          .merge
-      })
-    }
-  }
-
-  /** Get content type from the Request Headers if it exists */
-  def contentType(req: Request[F]): Option[String] =
-    req.headers
-      .find(header => header.name == CaseInsensitiveString("Content-Type"))
-      .map(_.value)
-
-  /** Create search endpoints form the Interpreter Group */
-  def search[CO](
-    path: String,
-    interpreterGroup: SearchInterpreterGroup[F, CO],
-    searchF: () => fs2.Stream[F, CO]
-  )(implicit F: Sync[F]): HttpRoutes[F] = {
-    HttpRoutes.of[F] {
-      case req @ Method.GET -> Root / path
-          if contentType(req).contains(interpreterGroup.contentType) => {
-        Ok(
-          interpreterGroup.outInterpreter(searchF()),
-          Header("Content-Type", "application/json")
-        )
-      }
-    }
-  }
-
-  /** Crate the post endpoint from the Interpreter Group */
-  def post[CI, CO, CE](
-    path: String,
-    interpreterGroup: PutPostInterpreterGroup[CI, CO, CE],
-    createF: CI => F[Either[CE, CO]]
-  )(implicit F: Sync[F]): HttpRoutes[F] =
-    HttpRoutes.of[F] {
-      case req @ Method.POST -> Root / path
-          if contentType(req).contains(interpreterGroup.contentType) => {
-        val result: EitherT[F, F[Response[F]], F[Response[F]]] = for {
-          body <- EitherT[F, F[Response[F]], Array[Byte]] {
-            req.as[Array[Byte]].map(Right(_))
-          }
-          in <- EitherT.fromEither[F] {
-            interpreterGroup.inInterpreter(body).left.map(x => eeToOut(x))
-          }
-          out <- EitherT[F, F[Response[F]], CO] {
-            createF(in)
-              .map(_.left.map(ce => {
-                val out = interpreterGroup.errorInterpreter(ce)
-                InternalServerError(out, Header("Content-Type", interpreterGroup.contentType))
-              }))
-          }
-        } yield {
-          Ok(
-            interpreterGroup.outInterpreter(out),
-            Header("Content-Type", interpreterGroup.contentType)
-          )
-        }
-        result.value.flatMap(_.merge)
-      }
-    }
-
-  /**
-    * Create a get endpoint.
-    */
-  def get(
-    path: String,
-    interpreterGroup: GetInterpreterGroup[(ID, A), E],
-    stringParamToId: String => Either[E, ID],
-    readF: ID => F[Either[E, (ID, A)]]
-  )(implicit F: Sync[F]): HttpRoutes[F] = {
-    HttpRoutes.of[F] {
-      case req @ Method.GET -> Root / path / idParam
-          if contentType(req).contains(interpreterGroup.contentType) => {
-        stringParamToId(idParam).left
-          .map(re => {
-            val entityEncoder = implicitly[EntityEncoder[F, Array[Byte]]]
-            BadRequest.apply[Array[Byte]](
-              interpreterGroup.errorInterpreter(re),
-              Header("Content-Type", interpreterGroup.contentType)
-            )(F, entityEncoder)
-          })
-          .map(id => {
-            readF(id)
-              .flatMap({
-                case Left(re) =>
-                  val entityEncoder = implicitly[EntityEncoder[F, Array[Byte]]]
-                  BadRequest.apply[Array[Byte]](
-                    interpreterGroup.errorInterpreter(re),
-                    Header("Content-Type", interpreterGroup.contentType)
-                  )(F, entityEncoder)
-                case Right(ro) =>
-                  Ok(
-                    interpreterGroup.outInterpreter(ro),
-                    Header("Content-Type", interpreterGroup.contentType)
-                  )
-              })
-          })
-          .merge
-      }
-    }
-  }
-
-  /**
-    * Create a PUT endpoint given serialization functors and business logic.
-    *
-    * @param interpreterGroup contains functions to and from Array[Byte]
-    * @param updateF          Business logic to execute after
-    * @return
-    */
-  def put(
-    path: String,
-    interpreterGroup: PutPostInterpreterGroup[(ID, A), (ID, A), E],
-    stringToId: String => Either[E, ID],
-    updateF: (ID, A) => F[Either[E, (ID, A)]]
-  )(implicit F: Sync[F]): HttpRoutes[F] = {
-
-    HttpRoutes.of[F] {
-      case req @ Method.PUT -> Root / path / idParam
-          if contentType(req).contains(interpreterGroup.contentType) => {
-        val result: EitherT[F, F[Response[F]], F[Response[F]]] = for {
-          body <- EitherT[F, F[Response[F]], Array[Byte]] {
-            req.as[Array[Byte]].map(Right(_))
-          }
-          id <- EitherT.fromEither[F] {
-            stringToId(idParam).left.map(
-              e =>
-                BadRequest(
-                  interpreterGroup.errorInterpreter(e),
-                  Header("Content-Type", interpreterGroup.contentType)
-                )
-            )
-          }
-          in <- EitherT.fromEither[F] {
-            interpreterGroup.inInterpreter(body).left.map(x => eeToOut(x))
-          }
-          out <- EitherT[F, F[Response[F]], (ID, A)] {
-            updateF
-              .tupled(in)
-              .map(_.left.map(ce => InternalServerError(interpreterGroup.errorInterpreter(ce))))
-          }
-        } yield {
-          Ok(
-            interpreterGroup.outInterpreter(out),
-            Header("Content-Type", interpreterGroup.contentType)
-          )
-        }
-        result.value.flatMap(_.merge)
-      }
-    }
-  }
 }
+
+

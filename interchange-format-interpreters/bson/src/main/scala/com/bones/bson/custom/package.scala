@@ -8,7 +8,7 @@ import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeF
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator.CNilInterchangeFormatValidator
 import com.bones.interpreter.{KvpInterchangeFormatEncoderInterpreter, KvpInterchangeFormatValidatorInterpreter}
-import com.bones.interpreter.custom.{CustomStringEncoder, CustomStringValidator}
+import com.bones.interpreter.custom.{CustomStringEncoder, CustomStringValidator, ExtractionErrorEncoder}
 import reactivemongo.bson.BSONValue
 
 package object custom {
@@ -45,5 +45,11 @@ package object custom {
     override val offsetTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_OFFSET_TIME
     override val zonedDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_ZONED_DATE_TIME
   }
+
+  object DefaultBsonErrorEncoder extends ExtractionErrorEncoder[BSONValue] {
+    override val defaultEncoder: KvpInterchangeFormatEncoderInterpreter[BSONValue] =
+      BsonEncoderInterpreter
+  }
+
 
 }
