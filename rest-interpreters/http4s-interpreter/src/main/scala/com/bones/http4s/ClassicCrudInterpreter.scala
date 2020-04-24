@@ -305,13 +305,13 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
       updateF.toList.flatMap(update => {
         val inputValidation =
           validatedFromCirceInterpreter
-            .byteArrayFuncFromSchema(schemaWithId, charset, customJsonInterpreter)
+            .byteArrayFuncFromSchema(schema, charset, customJsonInterpreter)
         val outputEncoder =
           encodeToCirceInterpreter.encoderFromCustomSchema(schemaWithId, customJsonInterpreter)
         val errorEncoder =
           encodeToCirceInterpreter.encoderFromCustomSchema(errorSchema, customJsonInterpreter)
 
-        val json = PutPostInterpreterGroup[(ID, A), (ID, A), E](
+        val jsonPut = PutPostInterpreterGroup[A, (ID, A), E](
           "application/json",
           inputValidation,
           uo => outputEncoder(uo).spaces2.getBytes(charset),
@@ -319,13 +319,13 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
         )
 
         val bInputValidation =
-          BsonValidatorInterpreter.validatorFromCustomSchema(schemaWithId, customBsonInterpreter)
+          BsonValidatorInterpreter.validatorFromCustomSchema(schema, customBsonInterpreter)
         val bOutputEncoder =
           BsonEncoderInterpreter.encoderFromCustomSchema(schemaWithId, customBsonInterpreter)
         val bErrorEncoder =
           BsonEncoderInterpreter.encoderFromCustomSchema(errorSchema, customBsonInterpreter)
 
-        val bson = PutPostInterpreterGroup[(ID, A), (ID, A), E](
+        val bsonPut = PutPostInterpreterGroup[A, (ID, A), E](
           "application/ubjson",
           byte =>
             BsonValidatorInterpreter
@@ -337,22 +337,22 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
 
         val pInputInterpreter =
           protobufSequentialInputInterpreter
-            .fromCustomBytes(schemaWithId, customProtobufInterpreter)
+            .fromCustomBytes(schema, customProtobufInterpreter)
         val pOutputEncoder = protobufSequentialOutputInterpreter
           .encodeToBytesCustomAlgebra[ALG, (ID, A)](schemaWithId, customProtobufInterpreter)
         val protobufErrorEncoder = protobufSequentialOutputInterpreter
           .encodeToBytesCustomAlgebra(errorSchema, customProtobufInterpreter)
 
-        val protoBuf = PutPostInterpreterGroup[(ID, A), (ID, A), E](
+        val protoBufPut = PutPostInterpreterGroup[A, (ID, A), E](
           "application/protobuf",
           bytes => pInputInterpreter(bytes),
           uo => pOutputEncoder(uo),
           ue => protobufErrorEncoder(ue)
         )
 
-        http.put(path, json, pathStringToId, update) ::
-          http.put(path, bson, pathStringToId, update) ::
-          http.put(path, protoBuf, pathStringToId, update) ::
+        http.put(path, jsonPut, pathStringToId, update) ::
+          http.put(path, bsonPut, pathStringToId, update) ::
+          http.put(path, protoBufPut, pathStringToId, update) ::
           Nil
       })
 
