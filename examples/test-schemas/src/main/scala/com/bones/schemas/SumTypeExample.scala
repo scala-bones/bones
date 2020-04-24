@@ -15,7 +15,7 @@ object SumTypeExample {
   object MusicMedium {
     val baseFields =
       ("name", string(sv.words)) :<:
-      kvpNil
+        kvpNil
 
     // Note the order needs to be the order in which they are defined below
     val bonesSchema =
@@ -30,9 +30,9 @@ object SumTypeExample {
   object Album {
     private val fields =
       MusicMedium.baseFields :::
-      ("albumQuality", Quality.bonesSchema) :<:
-      ("coverQuality", Quality.bonesSchema) :<:
-      kvpNil
+        ("albumQuality", Quality.bonesSchema) :<:
+        ("coverQuality", Quality.bonesSchema) :<:
+        kvpNil
 
     val bonesSchema = fields.convert[Album]
   }
@@ -41,9 +41,9 @@ object SumTypeExample {
   object CompactDisc {
     private val fields =
       MusicMedium.baseFields :::
-      ("cdQuality", Quality.bonesSchema) :<:
-      ("caseQuality", Quality.bonesSchema) :<:
-      kvpNil
+        ("cdQuality", Quality.bonesSchema) :<:
+        ("caseQuality", Quality.bonesSchema) :<:
+        kvpNil
 
     val bonesSchema = fields.convert[CompactDisc]
   }
@@ -53,22 +53,19 @@ object SumTypeExample {
   object Digital {
     private val fields =
       MusicMedium.baseFields :::
-      ("format", string()) :<:
-      kvpNil
+        ("format", string()) :<:
+        kvpNil
     val bonesSchema = fields.convert[Digital]
   }
   case class Digital(name: String, format: String) extends MusicMedium
-
-
 
   object Item {
     val fields =
       ("artist", string(sv.words)) :<:
 //      ("medium", MusicMedium.bonesSchema) ::
-      kvpNil
+        kvpNil
 //    val bonesSchema = fields.convert[Item]
   }
   case class Item(artist: String, medium: MusicMedium)
-
 
 }

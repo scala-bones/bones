@@ -19,7 +19,11 @@ object PersonEndpoint extends LocalhostAllIOApp {
   case class Person(name: String, age: Int, gender: Option[String])
 
   val personSchema = (
-    ("name", string(sv.matchesRegex("^[a-zA-Z ]*$".r)), "The name of the person must be alphanumeric", "John Doe") :<:
+    (
+      "name",
+      string(sv.matchesRegex("^[a-zA-Z ]*$".r)),
+      "The name of the person must be alphanumeric",
+      "John Doe") :<:
       ("age", int(iv.min(0)), "The Age, In years, of the person.", 21) :<:
       ("gender", string.optional) :<:
       kvpNil

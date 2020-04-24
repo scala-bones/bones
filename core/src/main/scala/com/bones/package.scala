@@ -47,7 +47,7 @@ package object bones {
     /** ldv = LocalDateValidationInstances */
     val ldv = LocalDateValidationInstances
 
-    def ev[E<:Enumeration] = EnumerationValidation[E]
+    def ev[E <: Enumeration] = EnumerationValidation[E]
 
   }
 

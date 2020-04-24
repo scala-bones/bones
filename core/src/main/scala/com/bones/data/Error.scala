@@ -61,15 +61,14 @@ object Error {
     * @param description The description of the required value
     * @tparam A The type of the required value
     */
-  final case class RequiredValue[A](
-    path: List[String],
-    description: String)
-      extends ExtractionError
+  final case class RequiredValue[A](path: List[String], description: String) extends ExtractionError
 
   object RequiredValue {
-    def apply[ALG[_], A](path: List[String], dataDefinition: Either[KvpValue[A], ALG[A]]): RequiredValue[A] = {
+    def apply[ALG[_], A](
+      path: List[String],
+      dataDefinition: Either[KvpValue[A], ALG[A]]): RequiredValue[A] = {
       val description: String = dataDefinition match {
-        case Left(x) => x.manifestOfA.runtimeClass.getSimpleName
+        case Left(x)  => x.manifestOfA.runtimeClass.getSimpleName
         case Right(x) => x.getClass.getSimpleName
       }
       RequiredValue(path, description)
@@ -114,6 +113,7 @@ object Error {
     * @param path       The path to the entity
     * @tparam ID The type of the ID (such as Long or UUID)
     */
-  final case class NotFound[ID](id: ID, entityName: String, path: List[String]) extends ExtractionError
+  final case class NotFound[ID](id: ID, entityName: String, path: List[String])
+      extends ExtractionError
 
 }

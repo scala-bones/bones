@@ -4,7 +4,7 @@ import java.time.ZoneOffset
 package object protobuf {
 
   object ProtobufUtcSequentialEncoderAndValidator
-    extends ProtobufSequentialEncoderInterpreter
+      extends ProtobufSequentialEncoderInterpreter
       with ProtobufSequentialValidatorInterpreter {
     override val zoneOffset: ZoneOffset = ZoneOffset.UTC
   }
