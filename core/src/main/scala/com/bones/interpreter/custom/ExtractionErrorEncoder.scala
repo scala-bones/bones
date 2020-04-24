@@ -5,7 +5,7 @@ import com.bones.data.custom._
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.{InterchangeFormatEncoder, NoAlgebraEncoder}
 import com.bones.syntax._
-import shapeless.{::, HNil}
+import shapeless.{:+:, ::, CNil, Generic, HNil, Inl, Inr}
 import shapeless.syntax.std.tuple._
 
 object ExtractionErrorEncoder {
@@ -35,7 +35,7 @@ object ExtractionErrorEncoder {
   }
 
   val notFoundDataSchema =
-    (//  case class NotFound[ID](id: ID, entityName: String, path: List[String]) extends ExtractionError
+    (
 
       ("id", string) :<:
         ("entityName", string) :<:
@@ -94,6 +94,11 @@ object ExtractionErrorEncoder {
         kvpNil
       ).xmap[ValidationError[_]](_ => sys.error("Mapping to a ValidationError is not supported"), validationErrorToHList)
 
+  def requiredValueHList(requiredValue: RequiredValue[_]):
+    String :: String :: HNil = {
+      requiredValue.path.mkString(".") :: requiredValue.description :: HNil
+  }
+
   def wrongTypeToHList(wrongTypeError: WrongTypeError[_]): String :: String :: String :: Option[String] :: Option[String] :: HNil = {
     wrongTypeError.path.mkString(".") ::
       wrongTypeError.providedType.getSimpleName ::
@@ -113,9 +118,65 @@ object ExtractionErrorEncoder {
       kvpNil
     ).xmap[WrongTypeError[_]](_ => sys.error("Mapping to a WrongTypeError is not supported"), wrongTypeToHList)
 
+  val requiredValueSchema =
+    (
+      ("path", string(sv.words)) :<:
+      ("description", string) :<:
+      kvpNil
+    ).xmap[RequiredValue[_]](_ => sys.error("Mapping to a Required Value is not supported"), requiredValueHList)
+
+  type ExtractionErrorGeneric = ValidationError[_] :+:
+    WrongTypeError[_] :+:
+    CanNotConvert[_,_] :+:
+    RequiredValue[_] :+:
+    SumTypeError :+:
+    ParsingError :+:
+    SystemError :+:
+    NotFound[_] :+:
+    CNil
+
+  val extractionErrorGeneric = new Generic[ExtractionError] {
+    override type Repr = ExtractionErrorGeneric
+
+    override def to(t: ExtractionError): ExtractionErrorGeneric =
+      t match {
+        case v: ValidationError[_] => Inl(v)
+        case w: WrongTypeError[_] => Inr(Inl(w))
+        case c: CanNotConvert[_,_] => Inr(Inr(Inl(c)))
+        case r: RequiredValue[_] => Inr(Inr(Inr(Inl(r))))
+        case s: SumTypeError => Inr(Inr(Inr(Inr(Inl(s)))))
+        case p: ParsingError => Inr(Inr(Inr(Inr(Inr(Inl(p))))))
+        case s: SystemError => Inr(Inr(Inr(Inr(Inr(Inr(Inl(s)))))))
+        case n: NotFound[_] => Inr(Inr(Inr(Inr(Inr(Inr(Inr(Inl(n))))))))
+      }
+
+    override def from(r: ExtractionErrorGeneric): ExtractionError = r match {
+      case Inl(v) => v
+      case Inr(Inl(w)) => w
+      case Inr(Inr(Inl(c))) => c
+      case Inr(Inr(Inr(Inl(r)))) => r
+      case Inr(Inr(Inr(Inr(Inl(s))))) => s
+      case Inr(Inr(Inr(Inr(Inr(Inl(p)))))) => p
+      case Inr(Inr(Inr(Inr(Inr(Inr(Inl(s))))))) => s
+      case Inr(Inr(Inr(Inr(Inr(Inr(Inr(Inl(n)))))))) => n
+      case Inr(Inr(Inr(Inr(Inr(Inr(Inr(Inr(_)))))))) => sys.error("Unreachable Code")
+    }
+  }
+
+  val extractionErrorSchema =
+    validationErrorSchema :<+:
+      wrongTypeErrorSchema :<+:
+      canNotConvertSchema :<+:
+      requiredValueSchema :<+:
+      sumTypeErrorSchema :<+:
+      parsingErrorSchema :<+:
+      systemErrorSchema :<+:
+      notFoundDataSchema :<+:
+      kvpCoNil
+
 }
 
-trait ExtractionErrorEncoder[OUT,ALG[_]] extends InterchangeFormatEncoder[ExtractionErrorValue, OUT] {
+trait ExtractionErrorEncoder[OUT] extends InterchangeFormatEncoder[ExtractionErrorValue, OUT] {
 
   import ExtractionErrorEncoder._
 

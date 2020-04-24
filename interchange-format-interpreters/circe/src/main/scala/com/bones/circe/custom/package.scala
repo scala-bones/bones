@@ -2,13 +2,13 @@ package com.bones.circe
 
 import java.time.format.DateTimeFormatter
 
-import com.bones.data.custom.{AllCustomAlgebras, CustomStringCoproduct }
+import com.bones.data.custom.{AllCustomAlgebras, CustomStringCoproduct}
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder.CNilInterchangeFormatEncoder
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator.CNilInterchangeFormatValidator
 import com.bones.interpreter.{KvpInterchangeFormatEncoderInterpreter, KvpInterchangeFormatValidatorInterpreter}
-import com.bones.interpreter.custom.{CustomStringEncoder, CustomStringValidator, JavaTimeEncoder, JavaTimeValidator}
+import com.bones.interpreter.custom.{CustomStringEncoder, CustomStringValidator, ExtractionErrorEncoder, JavaTimeEncoder, JavaTimeValidator}
 import io.circe.Json
 
 package object custom {
@@ -57,7 +57,11 @@ package object custom {
   object CustomStringEncoder extends CustomStringEncoder[Json] {
     override val baseEncoder: KvpInterchangeFormatEncoderInterpreter[Json] =
       IsoCirceEncoderAndValidatorInterpreter
+  }
 
+  object BaseExtractionErrorEncoder extends ExtractionErrorEncoder[Json] {
+    override val defaultEncoder: KvpInterchangeFormatEncoderInterpreter[Json] =
+      IsoCirceEncoderAndValidatorInterpreter
   }
 
 }

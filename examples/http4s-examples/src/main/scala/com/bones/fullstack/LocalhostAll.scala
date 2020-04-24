@@ -53,14 +53,6 @@ object LocalhostAllIOApp {
     }
   }
 
-//  def reactEndpoints(schemas: List[BonesSchema[_]]): HttpRoutes[IO] = {
-//    val (indexJs, indexHtml, library) = CreateReactFiles.fromSchemas(schemas)
-//    HttpRoutes.of[IO] {
-//      case GET -> Root / "webapp" / "index.html" => Ok(indexHtml, Header("Content-Type", "text/html"))
-//      case GET -> Root / "webapp" / "index.js" => Ok(library + "\n" + indexJs, Header("Content-Type", "text/javascript"))
-//    }
-//  }
-
   def serviceRoutesWithCrudMiddleware[A](
     path: String,
     schema: BonesSchema[NoAlgebra, A],
