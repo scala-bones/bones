@@ -14,8 +14,8 @@ object ValidationUtil {
 
   /** Validate the input with all specified validations.  If any failed then Left, else Right(input) */
   def validate[L](validations: List[ValidationOp[L]])(
-      input: L,
-      path: List[String]): Either[NonEmptyList[ValidationError[L]], L] = {
+    input: L,
+    path: List[String]): Either[NonEmptyList[ValidationError[L]], L] = {
     validations.flatMap(validation => {
       if (validation.isValid(input)) None
       else Some(ValidationError(path, validation, input))
@@ -43,9 +43,7 @@ object ValidationUtil {
     str match {
       case Nil => sum
       case x :: xs =>
-        luhnSum(xs,
-                sum + doubleSum(digitToInt(x) * multiplier),
-                nextMulti(multiplier))
+        luhnSum(xs, sum + doubleSum(digitToInt(x) * multiplier), nextMulti(multiplier))
     }
   }
 }

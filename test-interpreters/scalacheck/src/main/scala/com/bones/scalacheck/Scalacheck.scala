@@ -17,10 +17,13 @@ import shapeless.{:+:, Coproduct, HList, HNil, Inl, Inr, Nat}
 import wolfendale.scalacheck.regexp.RegexpGen
 
 object GenAlg {
+
   /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
     * see https://stackoverflow.com/a/60561575/387094
     * */
-  def merge[L[_], R[_] <: Coproduct, A](li: GenAlg[L], ri: GenAlg[R]): GenAlg[Lambda[A => L[A] :+: R[A]]] =
+  def merge[L[_], R[_] <: Coproduct, A](
+    li: GenAlg[L],
+    ri: GenAlg[R]): GenAlg[Lambda[A => L[A] :+: R[A]]] =
     new GenAlg[Lambda[A => L[A] :+: R[A]]] {
 
       override def gen[A](lr: L[A] :+: R[A]): Gen[A] = lr match {
@@ -101,7 +104,12 @@ trait ScalacheckBase {
       } yield (LocalDateTime.of(localDate, localTime))
   }
 
-  def genTime[A](validations: List[ValidationOp[A]], validation: BaseDateValidation[A], globalMin: A, globalMax: A, choose: Gen.Choose[A]): Gen[A] = {
+  def genTime[A](
+    validations: List[ValidationOp[A]],
+    validation: BaseDateValidation[A],
+    globalMin: A,
+    globalMax: A,
+    choose: Gen.Choose[A]): Gen[A] = {
     // Using calendar results in invalid leap years, so we'll use Int instead
     val min = validations
       .collectFirst({
@@ -116,22 +124,21 @@ trait ScalacheckBase {
     choose.choose(min, max)
   }
 
-
   def createCustomGen[ALG[_], A](bonesSchema: BonesSchema[ALG, A], genAlg: GenAlg[ALG]): Gen[A] =
     bonesSchema match {
       case co: KvpCoproductConvert[ALG, c, a] => valueDefinition(co, genAlg)
-      case co: HListConvert[ALG, h, n, a] => valueDefinition(co, genAlg)
+      case co: HListConvert[ALG, h, n, a]     => valueDefinition(co, genAlg)
     }
 
   def createGen[A](bonesSchema: BonesSchema[NoAlgebra, A]): Gen[A] =
     createCustomGen[NoAlgebra, A](bonesSchema, NoAlgebraGen)
 
   def kvpCoproduct[ALG[_], C <: Coproduct](
-                                            co: KvpCoproduct[ALG, C],
-                                            genAlg: GenAlg[ALG]): List[Gen[C]] = {
+    co: KvpCoproduct[ALG, C],
+    genAlg: GenAlg[ALG]): List[Gen[C]] = {
     co match {
       case nil: KvpCoNil[_] => List.empty
-      case co: KvpSingleValueLeft[ALG, a, r]@unchecked =>
+      case co: KvpSingleValueLeft[ALG, a, r] @unchecked =>
         val head = determineValueDefinition[ALG, a](co.kvpValue, genAlg).map(Inl(_))
         val tail = kvpCoproduct(co.kvpTail, genAlg).map(gen => gen.map(Inr(_)))
         head :: tail
@@ -139,11 +146,11 @@ trait ScalacheckBase {
   }
 
   def kvpHList[ALG[_], H <: HList, HL <: Nat](
-                                               group: KvpHList[ALG, H, HL],
-                                               genAlg: GenAlg[ALG]): Gen[H] = {
+    group: KvpHList[ALG, H, HL],
+    genAlg: GenAlg[ALG]): Gen[H] = {
     group match {
       case ni: KvpNil[_] => Gen.const(HNil)
-      case op: KvpSingleValueHead[ALG, h, t, tl, a]@unchecked =>
+      case op: KvpSingleValueHead[ALG, h, t, tl, a] @unchecked =>
         implicit val isHCons = op.isHCons
         val headGen = determineValueDefinition(op.fieldDefinition.dataDefinition, genAlg)
         val tailGen = kvpHList(op.tail, genAlg)
@@ -154,7 +161,7 @@ trait ScalacheckBase {
           op.isHCons.cons(head, tail)
         }
         result
-      case op: KvpHListHead[ALG, a, al, h, hl, t, tl]@unchecked =>
+      case op: KvpHListHead[ALG, a, al, h, hl, t, tl] @unchecked =>
         implicit val prepend = op.prepend
         val headGen = kvpHList(op.head, genAlg)
         val tailGen = kvpHList(op.tail, genAlg)
@@ -164,7 +171,7 @@ trait ScalacheckBase {
         } yield {
           head ::: tail
         }
-      case op: KvpConcreteTypeHead[ALG, a, ht, nt]@unchecked =>
+      case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked =>
         val headGen = fromCustomSchema(op.bonesSchema, genAlg)
         val tailGen = kvpHList(op.tail, genAlg)
         for {
@@ -190,17 +197,17 @@ trait ScalacheckBase {
   }
 
   def determineValueDefinition[ALG[_], A](
-                                           value: Either[KvpValue[A], ALG[A]],
-                                           genAlg: GenAlg[ALG]): Gen[A] = {
+    value: Either[KvpValue[A], ALG[A]],
+    genAlg: GenAlg[ALG]): Gen[A] = {
     value match {
-      case Left(kvp) => valueDefinition(kvp, genAlg)
+      case Left(kvp)  => valueDefinition(kvp, genAlg)
       case Right(alg) => genAlg.gen(alg)
     }
   }
 
   def valueDefinition[ALG[_], A](fgo: KvpValue[A], genAlg: GenAlg[ALG]): Gen[A] =
     fgo match {
-      case op: OptionalKvpValueDefinition[ALG, a]@unchecked => {
+      case op: OptionalKvpValueDefinition[ALG, a] @unchecked => {
         val optionalGen = determineValueDefinition(op.valueDefinitionOp, genAlg).map(Some(_))
         Gen.frequency(
           (9, optionalGen),
@@ -208,7 +215,7 @@ trait ScalacheckBase {
         )
       }
       case ob: BooleanData => arbitrary[Boolean]
-      case rs: StringData => stringConstraints(rs.validations)
+      case rs: StringData  => stringConstraints(rs.validations)
       case sd: ShortData => {
         val one: Short = 1
         validationConstraints[Short](
@@ -237,17 +244,28 @@ trait ScalacheckBase {
           Long.MaxValue)
       case uu: UuidData => arbitrary[UUID]
       case dd: LocalDateData =>
-        genTime(dd.validations, LocalDateValidationInstances, LocalDate.MIN, LocalDate.MAX, chooseLocalDate)
+        genTime(
+          dd.validations,
+          LocalDateValidationInstances,
+          LocalDate.MIN,
+          LocalDate.MAX,
+          chooseLocalDate)
       case dd: LocalDateTimeData =>
         genTime(
           dd.validations,
           LocalDateTimeValidationInstances,
-          LocalDateTime.of(LocalDate.ofEpochDay(Int.MinValue), LocalTime.MIN), // toEpochMilli in LocalDateTime doesn't work if the value is outside of the Int range
+          LocalDateTime
+            .of(LocalDate.ofEpochDay(Int.MinValue), LocalTime.MIN), // toEpochMilli in LocalDateTime doesn't work if the value is outside of the Int range
           LocalDateTime.of(LocalDate.ofEpochDay(Int.MaxValue), LocalTime.MAX),
           chooseLocalDateTime
         )
       case dt: LocalTimeData =>
-        genTime(dt.validations, LocalTimeValidationInstances, LocalTime.MIN, LocalTime.MAX, chooseLocalTime)
+        genTime(
+          dt.validations,
+          LocalTimeValidationInstances,
+          LocalTime.MIN,
+          LocalTime.MAX,
+          chooseLocalTime)
       case fd: FloatData =>
         validationConstraints[Float](
           fd.validations,
@@ -274,13 +292,13 @@ trait ScalacheckBase {
           BigDecimal(Double.MaxValue))(
           Choose.xmap[Double, BigDecimal](d => BigDecimal(d), _.toDouble)
         )
-      case ld: ListData[ALG, t]@unchecked =>
+      case ld: ListData[ALG, t] @unchecked =>
         implicit val elemGenerator = determineValueDefinition(ld.tDefinition, genAlg)
         for {
           numElems <- Gen.choose(1, 500)
           elem <- Gen.listOfN(numElems, elemGenerator)
         } yield elem
-      case ed: EitherData[ALG, a, b]@unchecked => {
+      case ed: EitherData[ALG, a, b] @unchecked => {
         val left = determineValueDefinition(ed.definitionA, genAlg).map(Left(_))
         val right = determineValueDefinition(ed.definitionB, genAlg).map(Right(_))
         Gen.frequency((1, left), (1, right))
@@ -289,35 +307,35 @@ trait ScalacheckBase {
       case esd: EnumerationData[e, A] => {
         Gen.oneOf(esd.enumeration.values.toSeq.map(_.asInstanceOf[A]))
       }
-      case kvp: KvpHListValue[ALG, h, hl]@unchecked =>
+      case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
         kvpHList(kvp.kvpHList, genAlg).map(_.asInstanceOf[A])
-      case co: KvpCoproductValue[ALG, c]@unchecked =>
+      case co: KvpCoproductValue[ALG, c] @unchecked =>
         // Get a list of coproduct and gen them with equal frequency (1)
         val gens = kvpCoproduct(co.kvpCoproduct, genAlg).map(_.map(_.asInstanceOf[A])).map((1, _))
         Gen.frequency(gens: _*)
-      case x: HListConvert[ALG, a, al, b]@unchecked =>
+      case x: HListConvert[ALG, a, al, b] @unchecked =>
         kvpHList(x.from, genAlg).map(hList => x.fHtoA(hList))
-      case co: KvpCoproductConvert[ALG, c, a]@unchecked =>
+      case co: KvpCoproductConvert[ALG, c, a] @unchecked =>
         val gens = kvpCoproduct(co.from, genAlg).map((1, _))
         Gen.frequency(gens: _*).map(coproduct => co.cToA(coproduct))
     }
 
   case class NumberConstraints[N](
-                                   valid: Option[List[N]],
-                                   invalid: Option[List[N]],
-                                   max: Option[N],
-                                   maxIsInclusive: Boolean,
-                                   min: Option[N],
-                                   minIsInclusive: Boolean)
+    valid: Option[List[N]],
+    invalid: Option[List[N]],
+    max: Option[N],
+    maxIsInclusive: Boolean,
+    min: Option[N],
+    minIsInclusive: Boolean)
 
   /** Uses known Bones validations to create a Number which passes validation */
   def validationConstraints[A](
-                                ops: List[ValidationOp[A]],
-                                vop: BaseValidationOp[A] with OrderingValidation[A] with ZeroValidations[A],
-                                incrementF: A => A,
-                                decrementF: A => A,
-                                min: A,
-                                max: A)(implicit c: Gen.Choose[A]): Gen[A] = {
+    ops: List[ValidationOp[A]],
+    vop: BaseValidationOp[A] with OrderingValidation[A] with ZeroValidations[A],
+    incrementF: A => A,
+    decrementF: A => A,
+    min: A,
+    max: A)(implicit c: Gen.Choose[A]): Gen[A] = {
     val constraints = ops.foldLeft(NumberConstraints[A](None, None, None, true, None, true)) {
       (nc, op) =>
         op match {
@@ -328,11 +346,11 @@ trait ScalacheckBase {
               maxIsInclusive = true,
               minIsInclusive = true)
           case vop.Greater(min) => nc.copy(min = Some(min), minIsInclusive = false)
-          case vop.Less(max) => nc.copy(max = Some(max), maxIsInclusive = false)
-          case vop.Positive => nc.copy(min = Some(vop.zero), minIsInclusive = false)
-          case vop.Max(max) => nc.copy(max = Some(max), maxIsInclusive = true)
-          case vop.Min(min) => nc.copy(min = Some(min), minIsInclusive = true)
-          case vop.Negative => nc.copy(max = Some(vop.zero), maxIsInclusive = false)
+          case vop.Less(max)    => nc.copy(max = Some(max), maxIsInclusive = false)
+          case vop.Positive     => nc.copy(min = Some(vop.zero), minIsInclusive = false)
+          case vop.Max(max)     => nc.copy(max = Some(max), maxIsInclusive = true)
+          case vop.Min(min)     => nc.copy(min = Some(min), minIsInclusive = true)
+          case vop.Negative     => nc.copy(max = Some(vop.zero), maxIsInclusive = false)
         }
     }
 
@@ -364,12 +382,12 @@ trait ScalacheckBase {
               len <- Gen.choose(0, 20)
               str <- Gen.listOfN(len, wordsGen)
             } yield str.mkString(" ")
-          case Sentence => sentencesGen
-          case IsAlphanumeric => Gen.alphaNumStr
-          case MatchesRegex(r) => RegexpGen.from(r.pattern.pattern())
-          case Uppercase => Gen.alphaUpperStr
-          case Token => RegexpGen.from(StringValidation.tokenRegex.pattern.pattern())
-          case Lowercase => Gen.alphaLowerStr
+          case Sentence          => sentencesGen
+          case IsAlphanumeric    => Gen.alphaNumStr
+          case MatchesRegex(r)   => RegexpGen.from(r.pattern.pattern())
+          case Uppercase         => Gen.alphaUpperStr
+          case Token             => RegexpGen.from(StringValidation.tokenRegex.pattern.pattern())
+          case Lowercase         => Gen.alphaLowerStr
           case ValidValue(valid) => Gen.oneOf(valid)
         }
         .getOrElse(Gen.asciiStr)
@@ -377,7 +395,7 @@ trait ScalacheckBase {
     val regexWithMin: Gen[String] = ops
       .collectFirst {
         case MinLength(i) => i
-        case Length(l) => l
+        case Length(l)    => l
       }
       .map(min => {
         regex.flatMap(str => {
@@ -413,6 +431,5 @@ trait ScalacheckBase {
       .getOrElse(regexWithMax)
 
   }
-
 
 }

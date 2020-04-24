@@ -6,8 +6,17 @@ import cats.data.NonEmptyList
 import com.bones.data.Error.{CanNotConvert, ExtractionError}
 import com.bones.data.{HListConvert, KvpValue, Sugar}
 import com.bones.data.custom._
-import com.bones.protobuf.ProtobufSequentialValidatorInterpreter.{ExtractFromProto, LastFieldNumber, Path, CustomValidatorInterpreter => CustomSequentialInterpreter}
-import com.bones.protobuf.{ProtoFileGeneratorInterpreter, ProtobufSequentialEncoderInterpreter, ProtobufSequentialValidatorInterpreter}
+import com.bones.protobuf.ProtobufSequentialValidatorInterpreter.{
+  ExtractFromProto,
+  LastFieldNumber,
+  Path,
+  CustomValidatorInterpreter => CustomSequentialInterpreter
+}
+import com.bones.protobuf.{
+  ProtoFileGeneratorInterpreter,
+  ProtobufSequentialEncoderInterpreter,
+  ProtobufSequentialValidatorInterpreter
+}
 import com.bones.syntax.NoAlgebra
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.ValidationUtil
@@ -135,7 +144,6 @@ object JavaTimeValidatorInterpreter extends JavaTimeValueSugar with Sugar {
         zonedDateTime => zonedDateTime.toLocalDateTime :: zonedDateTime.getZone :: HNil
       )
 
-
 }
 
 /** Custom interpreter for JavaTimeData */
@@ -146,29 +154,33 @@ trait JavaTimeValidatorInterpreter extends CustomSequentialInterpreter[JavaTimeV
 
   val coreProtobufSequentialInputInterpreter: ProtobufSequentialValidatorInterpreter
 
-  def valueDefThenValidation[A](kvpValue: KvpValue[A], validations: List[ValidationOp[A]]): ExtractFromProto[A] = {
-    (last: LastFieldNumber, path: Path) => {
-      val (tags, lastField, f) = coreProtobufSequentialInputInterpreter.valueDefinition(kvpValue, this)(last, path)
-      def newF(canRead: CanReadTag, inputStream: CodedInputStream) = {
-        val fResult = f(canRead, inputStream)
-        val newResult2 = fResult._2.flatMap(i => ValidationUtil.validate(validations)(i, path))
-        (fResult._1, newResult2)
+  def valueDefThenValidation[A](
+    kvpValue: KvpValue[A],
+    validations: List[ValidationOp[A]]): ExtractFromProto[A] = {
+    (last: LastFieldNumber, path: Path) =>
+      {
+        val (tags, lastField, f) =
+          coreProtobufSequentialInputInterpreter.valueDefinition(kvpValue, this)(last, path)
+        def newF(canRead: CanReadTag, inputStream: CodedInputStream) = {
+          val fResult = f(canRead, inputStream)
+          val newResult2 = fResult._2.flatMap(i => ValidationUtil.validate(validations)(i, path))
+          (fResult._1, newResult2)
+        }
+        (tags, lastField, newF)
       }
-      (tags, lastField, newF)
-    }
   }
-
 
   override def extractFromProto[A](alg: JavaTimeValue[A]): ExtractFromProto[A] =
     alg match {
-      case dt: DateTimeExceptionData => stringDataWithFlatMap(Right(dt), stringToDateTimeException, dt.validations)
-      case dt: DayOfWeekData         => intDataWithFlatMap(Right(dt), intToDayOfWeek, dt.validations)
-      case dd: DurationData          => stringDataWithFlatMap(Right(dd), stringToDuration, dd.validations)
-      case id: InstantData           => timestampWithMap(Right(id), timestampToInstant, id.validations)
-      case md: MonthData             => intDataWithFlatMap(Right(md), intToMonth, md.validations)
-      case md: MonthDayData          => intDataWithFlatMap(Right(md), intToMonthDay, md.validations)
+      case dt: DateTimeExceptionData =>
+        stringDataWithFlatMap(Right(dt), stringToDateTimeException, dt.validations)
+      case dt: DayOfWeekData => intDataWithFlatMap(Right(dt), intToDayOfWeek, dt.validations)
+      case dd: DurationData  => stringDataWithFlatMap(Right(dd), stringToDuration, dd.validations)
+      case id: InstantData   => timestampWithMap(Right(id), timestampToInstant, id.validations)
+      case md: MonthData     => intDataWithFlatMap(Right(md), intToMonth, md.validations)
+      case md: MonthDayData  => intDataWithFlatMap(Right(md), intToMonthDay, md.validations)
       case dt: OffsetDateTimeData =>
-          valueDefThenValidation(offsetDateTimeSchema, dt.validations)
+        valueDefThenValidation(offsetDateTimeSchema, dt.validations)
       case dt: OffsetTimeData =>
         valueDefThenValidation(offsetTimeSchema, dt.validations)
       case pd: PeriodData    => stringDataWithFlatMap(Right(pd), stringToPeriod, pd.validations)
@@ -181,5 +193,3 @@ trait JavaTimeValidatorInterpreter extends CustomSequentialInterpreter[JavaTimeV
     }
 
 }
-
-

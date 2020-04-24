@@ -11,7 +11,7 @@ sealed abstract class KvpCoproduct[ALG[_], C <: Coproduct] { self =>
   def :<+:[B: Manifest](head: KvpValue[B]): KvpSingleValueLeft[ALG, B, C] =
     KvpSingleValueLeft(Left(head), this, manifest[B])
 
-  def :+>:[B:Manifest](head: ALG[B]): KvpSingleValueLeft[ALG,B,C] =
+  def :+>:[B: Manifest](head: ALG[B]): KvpSingleValueLeft[ALG, B, C] =
     KvpSingleValueLeft(Right(head), this, manifest[B])
 
   /** Convert a Coproduct into an object with validation on the object. */
@@ -29,10 +29,10 @@ case class KvpCoNil[ALG[_]]() extends KvpCoproduct[ALG, CNil]
 
 /**
   *
-  * @param kvpValue
-  * @param kvpTail
-  * @param manifestL
-  * @tparam ALG Custom algebra (Or Nothing)
+  * @param kvpValue The head of the coproduct
+  * @param kvpTail The rest of the coproduct
+  * @param manifestL The manifest of the Left value, A
+  * @tparam ALG Custom algebra (Or NoAlgebra)
   * @tparam A The head (or most left part) of the coproduct (of the values of Coproduct, the one in particular this instance represents)
   * @tparam R The remaining part of the coproduct.  This class
   */

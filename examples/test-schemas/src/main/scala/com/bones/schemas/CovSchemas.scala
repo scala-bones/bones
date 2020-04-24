@@ -9,7 +9,6 @@ import com.bones.schemas.Schemas.AllSupported
 import com.bones.validation.ValidationDefinition.ValidationOp
 import shapeless.{:+:, CNil, HNil, Inl, Inr}
 
-
 object CovSchemas {
 
   object CreditCardType extends Enumeration {
@@ -17,7 +16,6 @@ object CovSchemas {
     val Visa, Mastercard, Amex, Discover = Value
 
   }
-
 
   case class BillingLocation(countryIso: String, zipCode: Option[String])
 
@@ -28,18 +26,23 @@ object CovSchemas {
     val GBP = Value("GBP")
   }
 
-
-
-  case class CC(firstSix: String, lastFour: String, uuid: UUID, token: UUID, ccType: CreditCardType.Value,
-                expMonth: Long, expYear: Long, cardholder: String, currency: Currency.Value, deletedAt: Option[LocalDateTime],
-                lastModifiedRequest: UUID, billingLocation: Option[BillingLocation])
+  case class CC(
+    firstSix: String,
+    lastFour: String,
+    uuid: UUID,
+    token: UUID,
+    ccType: CreditCardType.Value,
+    expMonth: Long,
+    expYear: Long,
+    cardholder: String,
+    currency: Currency.Value,
+    deletedAt: Option[LocalDateTime],
+    lastModifiedRequest: UUID,
+    billingLocation: Option[BillingLocation])
 
   val isoList = Vector("US", "CA", "MX")
 
-
-
   /** **** Begin Real Example ******/
-
   import shapeless.::
 
   object HasNotExpired extends ValidationOp[Long :: Long :: HNil] {
@@ -59,30 +62,31 @@ object CovSchemas {
   }
 
   val ccExp = (
-    ("expMonth", long(lv.between(1,12))) :<:
-    ("expYear", long(lv.between(1950, 9999))) :<:
-    kvpNil
+    ("expMonth", long(lv.between(1, 12))) :<:
+      ("expYear", long(lv.between(1950, 9999))) :<:
+      kvpNil
   ).validate(HasNotExpired)
 
   val ccTypeValue = enumeration[CreditCardType.type, CreditCardType.Value](CreditCardType)
 
-
   // Here we are defining our expected input data.  This definition will drive the interpreters.
   val ccObj = (
     ("firstSix", string(sv.length(6), sv.matchesRegex("[0-9]{6}".r))) :<:
-    ("lastFour", string(sv.length(4), sv.matchesRegex("[0-9]{4}".r))) :<:
-    ("uuid", uuid) :<:
-    ("token", uuid) :<:
-    ("ccType", ccTypeValue) :<:
-    kvpNil
+      ("lastFour", string(sv.length(4), sv.matchesRegex("[0-9]{4}".r))) :<:
+      ("uuid", uuid) :<:
+      ("token", uuid) :<:
+      ("ccType", ccTypeValue) :<:
+      kvpNil
   ) ::: ccExp ::: (
     ("cardHolder", string(sv.words)) :<:
       ("currencyIso", enumeration[Currency.type, Currency.Value](Currency)) :<:
       ("deletedAt", localDateTime.optional) :<:
       ("lastModifiedRequest", uuid) :<:
-      ("billingLocation", (
+      (
+      "billingLocation",
+      (
         ("countryIso", string(sv.validVector(isoList))) :<:
-        ("zipCode", string(sv.max(10)).optional) :<:
+          ("zipCode", string(sv.max(10)).optional) :<:
           kvpNil
       ).convert[BillingLocation].optional) :<: //TODO: Optional
       kvpNil
@@ -137,12 +141,23 @@ object CovSchemas {
       |}
     """.stripMargin
 
-  val exampleCreditCard = CC("12345", "7890", UUID.randomUUID(), UUID.randomUUID(), CreditCardType.Mastercard, 8, 2020, "Kurt Vonnegut", Currency.CAD, None, UUID.randomUUID(), Some(BillingLocation("US", None)))
-
-
+  val exampleCreditCard = CC(
+    "12345",
+    "7890",
+    UUID.randomUUID(),
+    UUID.randomUUID(),
+    CreditCardType.Mastercard,
+    8,
+    2020,
+    "Kurt Vonnegut",
+    Currency.CAD,
+    None,
+    UUID.randomUUID(),
+    Some(BillingLocation("US", None))
+  )
 
   val allSupportedOptionalSchema = ("boolean", boolean.optional) :<:
-    ("int", int(iv.between(0,10)).optional) :<:
+    ("int", int(iv.between(0, 10)).optional) :<:
     ("long", long(lv.min(0)).optional) :<:
     ("listOfInt", list(int).optional) :<:
     ("string", string(sv.min(0), sv.words).optional) :<:
@@ -150,8 +165,10 @@ object CovSchemas {
     ("short", short(shv.max(100)).optional) :<:
     ("double", double(dv.min(0)).optional) :<:
     ("byteArray", byteArray.optional) :<:
-    ("localDate", localDate(ldv.min(LocalDate.of(1800,1,1))).optional) :<:
-    ("localDateTime", localDateTime(ldtv.min(LocalDateTime.of(1800,Month.JANUARY,1, 0, 0))).optional) :<:
+    ("localDate", localDate(ldv.min(LocalDate.of(1800, 1, 1))).optional) :<:
+    (
+    "localDateTime",
+    localDateTime(ldtv.min(LocalDateTime.of(1800, Month.JANUARY, 1, 0, 0))).optional) :<:
     ("uuid", uuid.optional) :<:
     ("enumeration", enumeration[Currency.type, Currency.Value](Currency).optional) :<:
     ("bigDecimal", bigDecimal(bdv.max(BigDecimal(100))).optional) :<:
@@ -159,66 +176,64 @@ object CovSchemas {
     kvpNil
 
   case class AllSupportedOptional(
-                                   b: Option[Boolean],
-                                   i: Option[Int],
-                                   l: Option[Long],
-                                   ls: Option[List[Int]],
-                                   str: Option[String],
-                                   f: Option[Float],
-                                   s: Option[Short],
-                                   d: Option[Double],
-                                   ba: Option[Array[Byte]],
-                                   ld: Option[LocalDate],
-                                   ldt: Option[LocalDateTime],
-                                   uuid: Option[UUID],
-                                   currency: Option[Currency.Value],
-                                   bd: Option[BigDecimal],
-                                   e: Option[Either[String,Int]]
-                                 )
+    b: Option[Boolean],
+    i: Option[Int],
+    l: Option[Long],
+    ls: Option[List[Int]],
+    str: Option[String],
+    f: Option[Float],
+    s: Option[Short],
+    d: Option[Double],
+    ba: Option[Array[Byte]],
+    ld: Option[LocalDate],
+    ldt: Option[LocalDateTime],
+    uuid: Option[UUID],
+    currency: Option[Currency.Value],
+    bd: Option[BigDecimal],
+    e: Option[Either[String, Int]]
+  )
 
   val allSupportedSchema =
-        ("boolean", boolean) :<:
-        ("int", int(iv.between(0,10))) :<:
-        ("long", long(lv.min(0))) :<:
-        ("listOfInt", list(int)) :<:
-        ("string", string(sv.min(0), sv.words)) :<:
-        ("float", float(fv.max(100))) :<:
-        ("short", short(shv.max(100))) :<:
-        ("double", double(dv.min(0))) :<:
-        ("byteArray", byteArray) :<:
-        ("localDate", localDate(ldv.min(LocalDate.of(1800,1,1)))) :<:
-        ("localDateTime", localDateTime(ldtv.min(LocalDateTime.of(1800,Month.JANUARY,1, 0, 0)))) :<:
-        ("uuid", uuid) :<:
-        ("enumeration", enumeration[Currency.type, Currency.Value](Currency)) :<:
-        ("bigDecimal", bigDecimal(bdv.max(BigDecimal(100)))) :<:
-        ("eitherField", either(string(sv.words), int)) :<:
-        ("child", allSupportedOptionalSchema.convert[AllSupportedOptional]) :<:
-        ("media", MusicMedium.bonesSchema) :<:
-        ("int2", int(iv.between(Int.MinValue, Int.MinValue))) :<:
-        kvpNil
-
-
+    ("boolean", boolean) :<:
+      ("int", int(iv.between(0, 10))) :<:
+      ("long", long(lv.min(0))) :<:
+      ("listOfInt", list(int)) :<:
+      ("string", string(sv.min(0), sv.words)) :<:
+      ("float", float(fv.max(100))) :<:
+      ("short", short(shv.max(100))) :<:
+      ("double", double(dv.min(0))) :<:
+      ("byteArray", byteArray) :<:
+      ("localDate", localDate(ldv.min(LocalDate.of(1800, 1, 1)))) :<:
+      ("localDateTime", localDateTime(ldtv.min(LocalDateTime.of(1800, Month.JANUARY, 1, 0, 0)))) :<:
+      ("uuid", uuid) :<:
+      ("enumeration", enumeration[Currency.type, Currency.Value](Currency)) :<:
+      ("bigDecimal", bigDecimal(bdv.max(BigDecimal(100)))) :<:
+      ("eitherField", either(string(sv.words), int)) :<:
+      ("child", allSupportedOptionalSchema.convert[AllSupportedOptional]) :<:
+      ("media", MusicMedium.bonesSchema) :<:
+      ("int2", int(iv.between(Int.MinValue, Int.MinValue))) :<:
+      kvpNil
 
   case class AllSupported(
-                           b: Boolean,
-                           i: Int,
-                           l: Long,
-                           ls: List[Int],
-                           str: String,
-                           f: Float,
-                           s: Short,
-                           d: Double,
-                           ba: Array[Byte],
-                           ld: LocalDate,
-                           ldt: LocalDateTime,
-                           uuid: UUID,
-                           currency: Currency.Value,
-                           bd: BigDecimal,
-                           either: Either[String,Int],
-                           child: AllSupportedOptional,
-                           media: MusicMedium,
-                           int2: Int
-                         ) {
+    b: Boolean,
+    i: Int,
+    l: Long,
+    ls: List[Int],
+    str: String,
+    f: Float,
+    s: Short,
+    d: Double,
+    ba: Array[Byte],
+    ld: LocalDate,
+    ldt: LocalDateTime,
+    uuid: UUID,
+    currency: Currency.Value,
+    bd: BigDecimal,
+    either: Either[String, Int],
+    child: AllSupportedOptional,
+    media: MusicMedium,
+    int2: Int
+  ) {
 
     /** Adds special test to accommodate Array[Byte] */
     def fancyEquals(that: AllSupported): Boolean = {
@@ -230,27 +245,57 @@ object CovSchemas {
       val thisEqualsThat = newThis == newThat
       val arraysAreEqual = java.util.Arrays.equals(this.ba, that.ba)
       val childArrayIsEqual = (this.child.ba, that.child.ba) match {
-        case (None, None) => true
+        case (None, None)         => true
         case (Some(a1), Some(a2)) => java.util.Arrays.equals(a1, a2)
-        case _ => false
+        case _                    => false
       }
 
       thisEqualsThat &&
-        arraysAreEqual &&
-        childArrayIsEqual
+      arraysAreEqual &&
+      childArrayIsEqual
     }
 
   }
 
-
   val allSupportCaseClass = allSupportedSchema.convert[AllSupported]
 
-  val allSupporedOptionalInstance = AllSupportedOptional(None, None, None, None, None, None, None, None, None, None,
-    None, None, None, None, None)
+  val allSupporedOptionalInstance = AllSupportedOptional(
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None,
+    None)
 
-  val allSupportedInstance = AllSupported(true, 0, 0l, List(1), "str", 3.3f, 3, 3.4, "hello".getBytes,
-    LocalDate.now, LocalDateTime.now, UUID.randomUUID(), Currency.CAD, BigDecimal("5.0"),
-    Left("Hello"), allSupporedOptionalInstance, Digital("em pee three", "mp3"), 7)
+  val allSupportedInstance = AllSupported(
+    true,
+    0,
+    0l,
+    List(1),
+    "str",
+    3.3f,
+    3,
+    3.4,
+    "hello".getBytes,
+    LocalDate.now,
+    LocalDateTime.now,
+    UUID.randomUUID(),
+    Currency.CAD,
+    BigDecimal("5.0"),
+    Left("Hello"),
+    allSupporedOptionalInstance,
+    Digital("em pee three", "mp3"),
+    7
+  )
 
   trait CustomAlgebra[A]
   case object MarkdownData extends CustomAlgebra[String]
@@ -260,28 +305,36 @@ object CovSchemas {
   case object InstantData extends DateExtAlgebra[Instant]
   val instant = InstantData
 
-  case class BlogPost(id: Int, title: String, tags: List[String], publishDate: Instant, content: String)
+  case class BlogPost(
+    id: Int,
+    title: String,
+    tags: List[String],
+    publishDate: Instant,
+    content: String)
 
   object BlogPost {
     type BlogAlgebra[A] = CustomAlgebra[A] :+: DateExtAlgebra[A] :+: CNil
-    def a1[A](customAlgebra: CustomAlgebra[A]) : BlogAlgebra[A] =
+    def a1[A](customAlgebra: CustomAlgebra[A]): BlogAlgebra[A] =
       Inl(customAlgebra)
 
-    def a2[A](instantData: DateExtAlgebra[A]) : BlogAlgebra[A] = Inr(Inl(instantData))
+    def a2[A](instantData: DateExtAlgebra[A]): BlogAlgebra[A] = Inr(Inl(instantData))
 
     val baseSchema =
       ("id", int(iv.min(1))) :<:
-      ("title", string(sv.max(50))) :<:
-      ("tags", list(string())) :<:
-      ("publishDate", a2(instant)) :>:
-      ("content", a1(markdown)) :>:
-      kvpNilCov[BlogAlgebra]
+        ("title", string(sv.max(50))) :<:
+        ("tags", list(string())) :<:
+        ("publishDate", a2(instant)) :>:
+        ("content", a1(markdown)) :>:
+        kvpNilCov[BlogAlgebra]
 
     val blogPostSchema = baseSchema.convert[BlogPost]
   }
 
-  val blogPostInstant = BlogPost(1, "My Blog Post", List("music", "household goods"), Instant.now(), "Ipsum Plurbus Unum")
-
-
+  val blogPostInstant = BlogPost(
+    1,
+    "My Blog Post",
+    List("music", "household goods"),
+    Instant.now(),
+    "Ipsum Plurbus Unum")
 
 }

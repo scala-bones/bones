@@ -4,7 +4,8 @@ import com.bones.data.custom.CustomStringValue
 import com.bones.protobuf.ProtobufSequentialEncoderInterpreter
 import com.bones.protobuf.ProtobufSequentialEncoderInterpreter.EncodeToProto
 
-object CustomStringEncoderInterpreter extends ProtobufSequentialEncoderInterpreter.CustomEncoderInterpreter[CustomStringValue] {
+object CustomStringEncoderInterpreter
+    extends ProtobufSequentialEncoderInterpreter.CustomEncoderInterpreter[CustomStringValue] {
 
   /**
     *  Encode using the same mechanism as string encoder.

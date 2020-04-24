@@ -5,7 +5,16 @@ import java.time.{LocalDate, LocalDateTime, LocalTime}
 
 import cats.implicits._
 
-import scala.math.Ordering.{BigDecimalOrdering, ByteOrdering, CharOrdering, DoubleOrdering, FloatOrdering, IntOrdering, LongOrdering, ShortOrdering}
+import scala.math.Ordering.{
+  BigDecimalOrdering,
+  ByteOrdering,
+  CharOrdering,
+  DoubleOrdering,
+  FloatOrdering,
+  IntOrdering,
+  LongOrdering,
+  ShortOrdering
+}
 import scala.util.matching.Regex
 
 /**
@@ -61,7 +70,7 @@ object ValidationDefinition {
     def invalid(t: T*): InvalidValue[T] = invalidVector(t.toVector)
   }
 
-  case class EnumerationValidation[E<:Enumeration]() extends BaseValidationOp[E]
+  case class EnumerationValidation[E <: Enumeration]() extends BaseValidationOp[E]
 
   /**
     * A collection of ValidationOp[String] objects.
@@ -152,12 +161,11 @@ object ValidationDefinition {
       * Follow the values defined in [[ValidationOp]]
       */
     case class Custom(f: String => Boolean, defaultErrorF: String => String, description: String)
-      extends ValidationOp[String] {
+        extends ValidationOp[String] {
       val isValid: String => Boolean = f
 
       override def defaultError(t: String): String = defaultErrorF(t)
     }
-
 
     object Uppercase extends ValidationOp[String] {
       val isValid: String => Boolean = str => str.toUpperCase === str
@@ -186,7 +194,6 @@ object ValidationDefinition {
 
       override def description: String = "token"
     }
-
 
     object Lowercase extends ValidationOp[String] {
       override def isValid: String => Boolean = str => str.toLowerCase === str
@@ -230,7 +237,6 @@ object ValidationDefinition {
 
     /** String must be a token, which is alpha numeric with underscore. */
     val token: Token.type = Token
-
 
   }
 
@@ -349,7 +355,7 @@ object ValidationDefinition {
   }
 
   object CharValidation
-    extends BaseValidationOp[Char]
+      extends BaseValidationOp[Char]
       with OrderingValidation[Char]
       with ZeroValidations[Char]
       with CharOrdering {
@@ -357,7 +363,7 @@ object ValidationDefinition {
   }
 
   object ByteValidation
-    extends BaseValidationOp[Byte]
+      extends BaseValidationOp[Byte]
       with OrderingValidation[Byte]
       with Modulo[Byte]
       with ByteOrdering {
@@ -366,7 +372,7 @@ object ValidationDefinition {
   }
 
   object ShortValidation
-    extends BaseValidationOp[Short]
+      extends BaseValidationOp[Short]
       with OrderingValidation[Short]
       with Modulo[Short]
       with ShortOrdering {
@@ -375,7 +381,7 @@ object ValidationDefinition {
   }
 
   object IntValidation
-    extends BaseValidationOp[Int]
+      extends BaseValidationOp[Int]
       with OrderingValidation[Int]
       with Modulo[Int]
       with IntOrdering {
@@ -389,7 +395,7 @@ object ValidationDefinition {
   }
 
   object LongValidation
-    extends BaseValidationOp[Long]
+      extends BaseValidationOp[Long]
       with OrderingValidation[Long]
       with Modulo[Long]
       with LongOrdering {
@@ -398,7 +404,7 @@ object ValidationDefinition {
   }
 
   object DoubleValidation
-    extends BaseValidationOp[Double]
+      extends BaseValidationOp[Double]
       with OrderingValidation[Double]
       with ZeroValidations[Double]
       with DoubleOrdering {
@@ -406,7 +412,7 @@ object ValidationDefinition {
   }
 
   object FloatValidation
-    extends BaseValidationOp[Float]
+      extends BaseValidationOp[Float]
       with OrderingValidation[Float]
       with ZeroValidations[Float]
       with FloatOrdering {
@@ -414,7 +420,7 @@ object ValidationDefinition {
   }
 
   object BigDecimalValidation
-    extends BaseValidationOp[BigDecimal]
+      extends BaseValidationOp[BigDecimal]
       with OrderingValidation[BigDecimal]
       with ZeroValidations[BigDecimal]
       with BigDecimalOrdering {
@@ -424,11 +430,16 @@ object ValidationDefinition {
   trait BaseDateValidation[A] extends BaseValidationOp[A] with Ordering[A] {
 
     def defaultFormatToString(f: A): String
+
     /** Used in the error string to describe the type.  For instance: 'date' */
     val instantDescription: String
 
-    case class MinTime(minDate: A, formatToString: A => String, instantDescription: String, ordering: Ordering[A])
-      extends ValidationOp[A] {
+    case class MinTime(
+      minDate: A,
+      formatToString: A => String,
+      instantDescription: String,
+      ordering: Ordering[A])
+        extends ValidationOp[A] {
       override def isValid: A => Boolean = (a: A) => ordering.compare(minDate, a) <= 0
 
       override def defaultError(t: A): String =
@@ -437,8 +448,12 @@ object ValidationDefinition {
       override def description: String = s"after ${formatToString(minDate)}"
     }
 
-    case class MaxTime(maxDate: A, formatToString: A => String, instantDescription: String, ordering: Ordering[A])
-      extends ValidationOp[A] {
+    case class MaxTime(
+      maxDate: A,
+      formatToString: A => String,
+      instantDescription: String,
+      ordering: Ordering[A])
+        extends ValidationOp[A] {
       override def isValid: A => Boolean = a => ordering.compare(a, maxDate) <= 0
 
       override def defaultError(t: A): String =
@@ -447,7 +462,8 @@ object ValidationDefinition {
       override def description: String = s"before ${formatToString(maxDate)}"
     }
 
-    def min(minDate: A, format: A => String): MinTime = MinTime(minDate, format(_), instantDescription, this)
+    def min(minDate: A, format: A => String): MinTime =
+      MinTime(minDate, format(_), instantDescription, this)
 
     def min(minDate: A): MinTime = MinTime(minDate, defaultFormatToString, instantDescription, this)
 
@@ -455,13 +471,13 @@ object ValidationDefinition {
 
     def max(maxDate: A): MaxTime = MaxTime(maxDate, defaultFormatToString, instantDescription, this)
 
-
   }
 
   object LocalDateTimeValidationInstances
-    extends BaseDateValidation[LocalDateTime]
+      extends BaseDateValidation[LocalDateTime]
       with Ordering[LocalDateTime] {
-    override def defaultFormatToString(f: LocalDateTime): String = DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(f)
+    override def defaultFormatToString(f: LocalDateTime): String =
+      DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(f)
 
     override val instantDescription: String = "date/time"
 
@@ -469,9 +485,10 @@ object ValidationDefinition {
   }
 
   object LocalTimeValidationInstances
-    extends BaseDateValidation[LocalTime]
+      extends BaseDateValidation[LocalTime]
       with Ordering[LocalTime] {
-    override def defaultFormatToString(f: LocalTime): String = DateTimeFormatter.ISO_LOCAL_TIME.format(f)
+    override def defaultFormatToString(f: LocalTime): String =
+      DateTimeFormatter.ISO_LOCAL_TIME.format(f)
 
     /** Used in the error string to describe the type.  For instance: 'date' */
     override val instantDescription: String = "time"
@@ -479,9 +496,12 @@ object ValidationDefinition {
     override def compare(x: LocalTime, y: LocalTime): Int = x.compareTo(y)
   }
 
-  object LocalDateValidationInstances extends BaseDateValidation[LocalDate] with Ordering[LocalDate] {
+  object LocalDateValidationInstances
+      extends BaseDateValidation[LocalDate]
+      with Ordering[LocalDate] {
 
-    override def defaultFormatToString(f: LocalDate): String = DateTimeFormatter.ISO_LOCAL_DATE.format(f)
+    override def defaultFormatToString(f: LocalDate): String =
+      DateTimeFormatter.ISO_LOCAL_DATE.format(f)
 
     /** Used in the error string to describe the type.  For instance: 'date' */
     override val instantDescription: String = "date"

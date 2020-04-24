@@ -88,11 +88,10 @@ trait JavaTimeValidationSugar {
   val jt_zi: JavaTimeValidation.ZoneIdValidations.type = ZoneIdValidations
   val jt_zo: JavaTimeValidation.ZoneOffsetValidations.type = ZoneOffsetValidations
 
-
 }
 
 /** convenient methods for creating GADTs when this is the only custom algebra being used.  If using multiple custom
- * algebras, use [[JavaTimeValueSugarInjected]] to inject into a Coproduct context. */
+  * algebras, use [[JavaTimeValueSugarInjected]] to inject into a Coproduct context. */
 trait JavaTimeValueSugar extends JavaTimeValidationSugar {
   def dateTimeException(validations: ValidationOp[DateTimeException]*): DateTimeExceptionData =
     DateTimeExceptionData(validations.toList)
@@ -147,9 +146,8 @@ trait JavaTimeValueSugar extends JavaTimeValidationSugar {
   val zoneOffset: ZoneOffsetData = zoneOffset()
 }
 
-
 /** Adds smart constructors to lift our GADT into a multi-algebra coproduct */
-trait JavaTimeValueSugarInjected[ALG[_]<:Coproduct] extends JavaTimeValidationSugar{
+trait JavaTimeValueSugarInjected[ALG[_] <: Coproduct] extends JavaTimeValidationSugar {
 
   def javaTimeInject[A]: Inject[ALG[A], JavaTimeValue[A]]
 
@@ -167,10 +165,12 @@ trait JavaTimeValueSugarInjected[ALG[_]<:Coproduct] extends JavaTimeValidationSu
     javaTimeInject(DurationData(validations.toList))
   val duration: ALG[Duration] = duration()
 
-  def instant(validations: ValidationOp[Instant]*): ALG[Instant] = javaTimeInject(InstantData(validations.toList))
+  def instant(validations: ValidationOp[Instant]*): ALG[Instant] =
+    javaTimeInject(InstantData(validations.toList))
   val instant: ALG[Instant] = instant()
 
-  def month(validations: ValidationOp[Month]*): ALG[Month] = javaTimeInject(MonthData(validations.toList))
+  def month(validations: ValidationOp[Month]*): ALG[Month] =
+    javaTimeInject(MonthData(validations.toList))
   val month: ALG[Month] = month()
 
   def monthDay(validations: ValidationOp[MonthDay]*): ALG[MonthDay] =
@@ -185,10 +185,12 @@ trait JavaTimeValueSugarInjected[ALG[_]<:Coproduct] extends JavaTimeValidationSu
     javaTimeInject(OffsetTimeData(validations.toList))
   val offsetTime: ALG[OffsetTime] = offsetTime()
 
-  def period(validations: ValidationOp[Period]*): ALG[Period] = javaTimeInject(PeriodData(validations.toList))
+  def period(validations: ValidationOp[Period]*): ALG[Period] =
+    javaTimeInject(PeriodData(validations.toList))
   val period: ALG[Period] = period()
 
-  def year(validations: ValidationOp[Year]*): ALG[Year] = javaTimeInject(YearData(validations.toList))
+  def year(validations: ValidationOp[Year]*): ALG[Year] =
+    javaTimeInject(YearData(validations.toList))
   val year: ALG[Year] = year()
 
   def yearMonth(validations: ValidationOp[YearMonth]*): ALG[YearMonth] =
@@ -199,7 +201,8 @@ trait JavaTimeValueSugarInjected[ALG[_]<:Coproduct] extends JavaTimeValidationSu
     javaTimeInject(ZonedDateTimeData(validations.toList))
   val zonedDateTime: ALG[ZonedDateTime] = zonedDateTime()
 
-  def zoneId(validations: ValidationOp[ZoneId]*): ALG[ZoneId] = javaTimeInject(ZoneIdData(validations.toList))
+  def zoneId(validations: ValidationOp[ZoneId]*): ALG[ZoneId] =
+    javaTimeInject(ZoneIdData(validations.toList))
   val zoneId: ALG[ZoneId] = zoneId()
 
   def zoneOffset(validations: ValidationOp[ZoneOffset]*): ALG[ZoneOffset] =

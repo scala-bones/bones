@@ -9,10 +9,7 @@ import com.bones.data.BonesSchema
 import com.bones.data.Error.ExtractionError
 import com.bones.data.custom.ExtractionErrorValue
 import com.bones.interpreter.custom.ExtractionErrorEncoder
-import com.bones.protobuf.{
-  ProtoFileGeneratorInterpreter,
-  ProtobufUtcSequentialEncoderAndValidator
-}
+import com.bones.protobuf.{ProtoFileGeneratorInterpreter, ProtobufUtcSequentialEncoderAndValidator}
 import io.circe.Json
 import org.http4s.dsl.Http4sDsl
 import org.http4s.util.CaseInsensitiveString
@@ -27,13 +24,14 @@ trait BaseCrudInterpreter[ALG[_], A, E, F[_], ID] extends Http4sDsl[F] {
     import com.bones.syntax._
 
     private val errorResponseHList =
-      ("errors",
-       list(
-         ExtractionErrorEncoder.extractionErrorSchema
-           .convert[ExtractionError](
-             manifest[ExtractionError],
-             ExtractionErrorEncoder.extractionErrorGeneric)
-       )) :<: kvpNilCov[ExtractionErrorValue]
+      (
+        "errors",
+        list(
+          ExtractionErrorEncoder.extractionErrorSchema
+            .convert[ExtractionError](
+              manifest[ExtractionError],
+              ExtractionErrorEncoder.extractionErrorGeneric)
+        )) :<: kvpNilCov[ExtractionErrorValue]
 
     val errorResponseSchema = errorResponseHList.convert[ErrorResponse]
   }
@@ -59,8 +57,8 @@ trait BaseCrudInterpreter[ALG[_], A, E, F[_], ID] extends Http4sDsl[F] {
     * @return Response with the errors encoded appropriatley
     */
   def eeToOut(ee: NonEmptyList[ExtractionError], contentType: String)(
-      implicit F: Sync[F],
-      H: Http4sDsl[F]): F[Response[F]] = {
+    implicit F: Sync[F],
+    H: Http4sDsl[F]): F[Response[F]] = {
     val errorResponse = ErrorResponse(ee.toList)
     contentType match {
       case "application/ubjson" =>
@@ -81,27 +79,23 @@ trait BaseCrudInterpreter[ALG[_], A, E, F[_], ID] extends Http4sDsl[F] {
     }
   }
 
-  def htmlEndpoint(customPath: Path, html: String)(
-      implicit F: Sync[F]): HttpRoutes[F] =
+  def htmlEndpoint(customPath: Path, html: String)(implicit F: Sync[F]): HttpRoutes[F] =
     HttpRoutes.of[F] {
       case GET -> Root / customPath / path =>
-        Ok(html, Header("Content-Type", "text/html"))(
-          F,
-          implicitly[EntityEncoder[F, String]])
+        Ok(html, Header("Content-Type", "text/html"))(F, implicitly[EntityEncoder[F, String]])
     }
 
   /** Create an endpoint to display the protobuf schema for each endpoint */
   def protoBuff(
-      path: String,
-      customProtobufInterpreter: ProtobufEncoderInterpreter[ALG],
-      schema: BonesSchema[ALG, A],
-      schemaWithId: BonesSchema[ALG, (ID, A)],
-      errorSchema: BonesSchema[ALG, E]
+    path: String,
+    customProtobufInterpreter: ProtobufEncoderInterpreter[ALG],
+    schema: BonesSchema[ALG, A],
+    schemaWithId: BonesSchema[ALG, (ID, A)],
+    errorSchema: BonesSchema[ALG, E]
   )(implicit F: Sync[F]): HttpRoutes[F] = {
     def toFile[B] =
       ProtoFileGeneratorInterpreter
-        .fromSchemaToProtoFile[ALG, B](_: BonesSchema[ALG, B],
-                                       customProtobufInterpreter)
+        .fromSchemaToProtoFile[ALG, B](_: BonesSchema[ALG, B], customProtobufInterpreter)
 
     val text =
       s"""
@@ -125,10 +119,10 @@ trait BaseCrudInterpreter[ALG[_], A, E, F[_], ID] extends Http4sDsl[F] {
 
   /** Create delete routes from interpreter group */
   def delete[DO](
-      path: String,
-      interpreterGroup: DeleteInterpreterGroup[DO, E],
-      stringParamToId: String => Either[E, ID],
-      deleteF: ID => F[Either[E, DO]]
+    path: String,
+    interpreterGroup: DeleteInterpreterGroup[DO, E],
+    stringParamToId: String => Either[E, ID],
+    deleteF: ID => F[Either[E, DO]]
   )(implicit F: Sync[F]): HttpRoutes[F] = HttpRoutes.of[F] {
     case Method.DELETE -> Root / path / idParam =>
       val result = for {
@@ -165,9 +159,9 @@ trait BaseCrudInterpreter[ALG[_], A, E, F[_], ID] extends Http4sDsl[F] {
 
   /** Create search endpoints form the Interpreter Group */
   def search[CO](
-      path: String,
-      interpreterGroup: SearchInterpreterGroup[F, CO],
-      searchF: () => fs2.Stream[F, CO]
+    path: String,
+    interpreterGroup: SearchInterpreterGroup[F, CO],
+    searchF: () => fs2.Stream[F, CO]
   )(implicit F: Sync[F]): HttpRoutes[F] = {
     HttpRoutes.of[F] {
       case req @ Method.GET -> Root / path
@@ -181,9 +175,9 @@ trait BaseCrudInterpreter[ALG[_], A, E, F[_], ID] extends Http4sDsl[F] {
 
   /** Create the post endpoint from the Interpreter Group */
   def post[CI, CO, CE](
-      path: String,
-      interpreterGroup: PutPostInterpreterGroup[CI, CO, CE],
-      createF: CI => F[Either[CE, CO]]
+    path: String,
+    interpreterGroup: PutPostInterpreterGroup[CI, CO, CE],
+    createF: CI => F[Either[CE, CO]]
   )(implicit F: Sync[F]): HttpRoutes[F] =
     HttpRoutes.of[F] {
       case req @ Method.POST -> Root / path
@@ -202,9 +196,7 @@ trait BaseCrudInterpreter[ALG[_], A, E, F[_], ID] extends Http4sDsl[F] {
             createF(in)
               .map(_.left.map(ce => {
                 val out = interpreterGroup.errorInterpreter(ce)
-                InternalServerError(out,
-                                    Header("Content-Type",
-                                           interpreterGroup.contentType))
+                InternalServerError(out, Header("Content-Type", interpreterGroup.contentType))
               }))
           }
         } yield {
@@ -220,10 +212,10 @@ trait BaseCrudInterpreter[ALG[_], A, E, F[_], ID] extends Http4sDsl[F] {
     * Create a get endpoint.
     */
   def get(
-      path: String,
-      interpreterGroup: GetInterpreterGroup[(ID, A), E],
-      stringParamToId: String => Either[E, ID],
-      readF: ID => F[Either[E, (ID, A)]]
+    path: String,
+    interpreterGroup: GetInterpreterGroup[(ID, A), E],
+    stringParamToId: String => Either[E, ID],
+    readF: ID => F[Either[E, (ID, A)]]
   )(implicit F: Sync[F]): HttpRoutes[F] = {
     val entityEncoder = implicitly[EntityEncoder[F, Array[Byte]]]
     HttpRoutes.of[F] {
@@ -263,10 +255,10 @@ trait BaseCrudInterpreter[ALG[_], A, E, F[_], ID] extends Http4sDsl[F] {
     * @return
     */
   def put(
-      path: String,
-      interpreterGroup: PutPostInterpreterGroup[A, (ID, A), E],
-      stringToId: String => Either[E, ID],
-      updateF: (ID, A) => F[Either[E, (ID, A)]]
+    path: String,
+    interpreterGroup: PutPostInterpreterGroup[A, (ID, A), E],
+    stringToId: String => Either[E, ID],
+    updateF: (ID, A) => F[Either[E, (ID, A)]]
   )(implicit F: Sync[F]): HttpRoutes[F] = {
 
     HttpRoutes.of[F] {
@@ -292,9 +284,9 @@ trait BaseCrudInterpreter[ALG[_], A, E, F[_], ID] extends Http4sDsl[F] {
               .map(x => eeToOut(x, interpreterGroup.contentType)(F, this))
           }
           out <- EitherT[F, F[Response[F]], (ID, A)] {
-            updateF.apply(id, in)
-              .map(_.left.map(ce =>
-                InternalServerError(interpreterGroup.errorInterpreter(ce))))
+            updateF
+              .apply(id, in)
+              .map(_.left.map(ce => InternalServerError(interpreterGroup.errorInterpreter(ce))))
           }
         } yield {
           Ok(

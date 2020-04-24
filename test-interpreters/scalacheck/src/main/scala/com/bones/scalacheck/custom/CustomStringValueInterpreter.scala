@@ -9,8 +9,11 @@ import org.scalacheck.Gen
 
 class CustomStringValueInterpreter extends GenAlg[CustomStringValue] {
 
-  def checkValid[A](ag: CustomStringValue[A]): A => Boolean = input =>
-    ValidationUtil.validate(ag.customValidation :: ag.validations)(input.asInstanceOf[String], List.empty).isRight
+  def checkValid[A](ag: CustomStringValue[A]): A => Boolean =
+    input =>
+      ValidationUtil
+        .validate(ag.customValidation :: ag.validations)(input.asInstanceOf[String], List.empty)
+        .isRight
 
   val hostnameGen: Gen[String] = for {
     host <- Scalacheck.wordsGen
@@ -21,7 +24,7 @@ class CustomStringValueInterpreter extends GenAlg[CustomStringValue] {
   val urlGen: Gen[String] =
     for {
       hostname <- hostnameGen
-      paths <- Gen.choose(0,10)
+      paths <- Gen.choose(0, 10)
       dirs <- Gen.listOfN(paths, Scalacheck.wordsGen)
     } yield s"https://$hostname/${dirs.mkString("/")}"
 
@@ -46,10 +49,10 @@ class CustomStringValueInterpreter extends GenAlg[CustomStringValue] {
             java.util.Base64.getEncoder.encodeToString(str.getBytes(StandardCharsets.UTF_8))
           })
         case _: HostnameData => hostnameGen
-        case uri: UriData => urlGen.retryUntil(uri.customValidation.isValid)
-        case url: UrlData => urlGen.retryUntil(url.customValidation.isValid)
+        case uri: UriData    => urlGen.retryUntil(uri.customValidation.isValid)
+        case url: UrlData    => urlGen.retryUntil(url.customValidation.isValid)
         case ip: IpV4Data =>
-          Gen.listOfN(4,Gen.choose(0,255)).map(_.mkString("."))
+          Gen.listOfN(4, Gen.choose(0, 255)).map(_.mkString("."))
         case ip: IpV6Data =>
           Gen.listOfN(8, Gen.listOfN(4, Gen.hexChar).map(_.mkString)).map(_.mkString(":"))
       }
@@ -57,7 +60,6 @@ class CustomStringValueInterpreter extends GenAlg[CustomStringValue] {
     gen.retryUntil(s => checkValid(ag)(s))
 
   }
-
 
   val testCreditCardNumbers = Seq(
     // VISA:
@@ -103,7 +105,7 @@ class CustomStringValueInterpreter extends GenAlg[CustomStringValue] {
     // InstaPayment:
     "6375434321527660",
     "6389763355873754",
-    "6378660019698788")
-
+    "6378660019698788"
+  )
 
 }
