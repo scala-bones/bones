@@ -7,7 +7,7 @@ import fs2.Stream
 object CrudInterpreterDescription {
 
   /** Collection of items used to to create a Post endpoint in this HttpInterpreter. */
-  case class PutPostInterpreterGroup[UI, UO, UE](
+  case class PutPostInterpreterGroup[UI, UE, UO](
     contentType: String,
     inInterpreter: Array[Byte] => Either[NonEmptyList[ExtractionError], UI],
     outInterpreter: UO => Array[Byte],
@@ -15,14 +15,14 @@ object CrudInterpreterDescription {
   )
 
   /** Collection of items used to to get a Post endpoint in this HttpInterpreter. */
-  case class GetInterpreterGroup[RO, RE](
+  case class GetInterpreterGroup[RE, RO](
     contentType: String,
     outInterpreter: RO => Array[Byte],
     errorInterpreter: RE => Array[Byte]
   )
 
   /** Collection of items used to to create a Delete endpoint in this HttpInterpreter. */
-  case class DeleteInterpreterGroup[DO, DE](
+  case class DeleteInterpreterGroup[DE, DO](
     contentType: String,
     outInterpreter: DO => Array[Byte],
     errorInterpreter: DE => Array[Byte]
