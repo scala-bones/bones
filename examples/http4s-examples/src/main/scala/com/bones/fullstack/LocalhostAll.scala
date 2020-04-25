@@ -6,12 +6,11 @@ import cats.data.{Kleisli, NonEmptyList}
 import cats.effect._
 import cats.implicits._
 import com.bones.Util
-import com.bones.data.Error.ExtractionError
 import com.bones.data.BonesSchema
-import com.bones.syntax.NoAlgebra
+import com.bones.data.Error.ExtractionError
 import com.bones.http4s.ClassicCrudInterpreter
-import com.bones.jdbc.{DbColumnInterpreter, DbUtil}
-import com.bones.syntax.{kvp, kvpNil, long, lv}
+import com.bones.jdbc.DbColumnInterpreter
+import com.bones.syntax._
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import javax.sql.DataSource
 import org.http4s.dsl.io._
@@ -19,9 +18,9 @@ import org.http4s.server.blaze._
 import org.http4s.server.middleware.CORS
 import org.http4s.{Header, HttpRoutes}
 
-import scala.util.Try
-
 object LocalhostAllIOApp {
+
+  implicit val dsl = org.http4s.dsl.io
 
   case class BasicError(message: String)
   private val basicErrorSchema =
@@ -63,7 +62,6 @@ object LocalhostAllIOApp {
     /** Create the REST interpreter with full CRUD capabilities which write data to the database */
     val interpreter = ClassicCrudInterpreter.allVerbs[A, BasicError, IO, Long](
       path,
-      StandardCharsets.UTF_8,
       schema,
       kvp("id", long(lv.min(1))),
       str =>
@@ -76,7 +74,8 @@ object LocalhostAllIOApp {
           .map(_.left.map(e => extractionErrorsToBasicError(e)))
           .run),
       Kleisli(middleware.deleteF).map(_.left.map(e => extractionErrorsToBasicError(e))).run,
-      () => middleware.searchF
+      () => middleware.searchF,
+      StandardCharsets.UTF_8
     )
 
     val dbRoutes = dbSchemaEndpoint(path, schema)
