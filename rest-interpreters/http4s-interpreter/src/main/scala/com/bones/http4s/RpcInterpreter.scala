@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets
 import cats.effect.Sync
 import com.bones.circe.IsoCirceEncoderAndValidatorInterpreter
 import com.bones.data.BonesSchema
+import com.bones.http4s.BaseCrudInterpreter.StringToIdError
 import com.bones.http4s.ClassicCrudInterpreter.{CustomInterpreter, ProtobufEncoderInterpreter}
 import com.bones.protobuf.{ProtobufSequentialEncoderInterpreter, ProtobufSequentialValidatorInterpreter, ProtobufUtcSequentialEncoderAndValidator}
 import io.circe.Json
@@ -19,14 +20,14 @@ class RpcInterpreter[ALG[_], E, F[_], ID: Manifest](
   customBsonInterpreter: CustomInterpreter[ALG, BSONValue],
   customProtobufInterpreter: ProtobufEncoderInterpreter[ALG],
 //  customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
-  pathStringToId: String => Either[E, ID]
+  pathStringToId: String => Either[StringToIdError, ID]
 ) {
 
-  val encodeToCirceInterpreter = IsoCirceEncoderAndValidatorInterpreter
-  val validatedFromCirceInterpreter = IsoCirceEncoderAndValidatorInterpreter
-  val protobufSequentialInputInterpreter: ProtobufSequentialValidatorInterpreter =
+  private val encodeToCirceInterpreter = IsoCirceEncoderAndValidatorInterpreter
+  private val validatedFromCirceInterpreter = IsoCirceEncoderAndValidatorInterpreter
+  private val protobufSequentialInputInterpreter: ProtobufSequentialValidatorInterpreter =
     ProtobufUtcSequentialEncoderAndValidator
-  val protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter =
+  private val protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter =
     ProtobufUtcSequentialEncoderAndValidator
 
 
@@ -38,7 +39,6 @@ class RpcInterpreter[ALG[_], E, F[_], ID: Manifest](
   )(implicit F: Sync[F], H: Http4sDsl[F]): List[HttpRoutes[F]] =
     BaseCrudInterpreter.httpPostRoutes(
       path,
-      pathStringToId,
       createF,
       inputSchema,
       errorSchema,

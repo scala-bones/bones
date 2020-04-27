@@ -4,21 +4,12 @@ import cats.data.{EitherT, NonEmptyList}
 import cats.effect.Sync
 import cats.implicits._
 import com.bones.bson.{BsonEncoderInterpreter, BsonValidatorInterpreter}
-import com.bones.circe.{
-  CirceEncoderInterpreter,
-  CirceValidatorInterpreter,
-  IsoCirceEncoderAndValidatorInterpreter
-}
+import com.bones.circe.{CirceEncoderInterpreter, CirceValidatorInterpreter, IsoCirceEncoderAndValidatorInterpreter}
 import com.bones.data.BonesSchema
 import com.bones.data.Error.ExtractionError
 import com.bones.data.custom.ExtractionErrorValue
 import com.bones.interpreter.custom.ExtractionErrorEncoder
-import com.bones.protobuf.{
-  ProtoFileGeneratorInterpreter,
-  ProtobufSequentialEncoderInterpreter,
-  ProtobufSequentialValidatorInterpreter,
-  ProtobufUtcSequentialEncoderAndValidator
-}
+import com.bones.protobuf.{ProtoFileGeneratorInterpreter, ProtobufSequentialEncoderInterpreter, ProtobufSequentialValidatorInterpreter, ProtobufUtcSequentialEncoderAndValidator}
 import io.circe.Json
 import org.http4s.dsl.Http4sDsl
 import org.http4s.util.CaseInsensitiveString
@@ -27,14 +18,62 @@ import ClassicCrudInterpreter.{CustomInterpreter, _}
 import CrudInterpreterDescription._
 import java.nio.charset.Charset
 
+import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.NoAlgebraEncoder
 import fs2.Stream
 import reactivemongo.bson.BSONValue
 
 object BaseCrudInterpreter {
   import com.bones.syntax._
+
+  object StringToIdError {
+    private val stringToIdErrorHList =
+      ("input", string()) :<:
+        ("errorMessage", string()) :<:
+        kvpNilCov[NoAlgebra]
+
+    val stringToIdErrorSchema =
+      stringToIdErrorHList.convert[StringToIdError]
+  }
+  case class StringToIdError(input: String, errorMessage: String)
+
+  private val stringToIdErrorJsonEncoder =
+    IsoCirceEncoderAndValidatorInterpreter.encoderFromCustomSchema(
+      StringToIdError.stringToIdErrorSchema,
+      NoAlgebraEncoder[Json])
+  private val stringToIdErrorBsonEncoder = BsonEncoderInterpreter.encoderFromCustomSchema(
+    StringToIdError.stringToIdErrorSchema,
+    NoAlgebraEncoder[BSONValue])
+  private val stringToIdProtoEncoder =
+    ProtobufUtcSequentialEncoderAndValidator.encodeToBytesCustomAlgebra(
+      StringToIdError.stringToIdErrorSchema,
+      ProtobufSequentialEncoderInterpreter.NoAlgebraCustomEncoderInterpreter)
+
+  def stringToIdErrorToResponse[F[_]](stringToIdError: StringToIdError, contentType: String)(
+    implicit F: Sync[F], H: Http4sDsl[F]): F[Response[F]] = {
+    import H._
+    contentType match {
+      case "application/ubjson" =>
+        val bson = stringToIdErrorBsonEncoder(stringToIdError)
+        val bytes = BsonEncoderInterpreter.bsonResultToBytes(bson)
+        H.BadRequest(bytes)
+      case "application/protobuf" =>
+        val bytes = stringToIdProtoEncoder(stringToIdError)
+        H.BadRequest(bytes)
+      case _ => // including application/json
+        val str = stringToIdErrorJsonEncoder(stringToIdError).noSpaces
+        H.BadRequest(str)
+    }
+  }
+
+//  def responseContext[F[_],ID](stringParamToId: String => Either[StringToIdError, ID]):
+//    Either[F[Response[F]],ID] = {
+//    stringParamToId.left.map
+//  }
+
+
   object ErrorResponse {
 
-    val errorResponseHList =
+    private val errorResponseHList =
       (
         "errors",
         list(
@@ -94,7 +133,7 @@ object BaseCrudInterpreter {
 
   def httpDeleteRoutes[F[_], ALG[_], A, E, B, ID](
     path: String,
-    pathStringToId: String => Either[E, ID],
+    pathStringToId: String => Either[StringToIdError, ID],
     del: ID => F[Either[E, B]],
     encodeToCirceInterpreter: CirceEncoderInterpreter,
     errorSchema: BonesSchema[ALG, E],
@@ -146,41 +185,30 @@ object BaseCrudInterpreter {
   def delete[F[_], ALG[_], E, B, ID](
     path: String,
     interpreterGroup: DeleteInterpreterGroup[E, B],
-    stringParamToId: String => Either[E, ID],
+    stringParamToId: String => Either[StringToIdError, ID],
     deleteF: ID => F[Either[E, B]]
   )(implicit F: Sync[F], H: Http4sDsl[F]): HttpRoutes[F] = {
     import H._
     HttpRoutes.of[F] {
       case Method.DELETE -> Root / path / idParam =>
-        val result = for {
-          id <- EitherT.fromEither[F] {
-            stringParamToId(idParam)
-          }
-          entity <- EitherT[F, E, B] {
-            deleteF(id)
-          }
-        } yield
-          Ok(
-            interpreterGroup.outInterpreter(entity),
-            Header("Content-Type", interpreterGroup.contentType)
-          )
-        result.value.flatMap(either => {
-          either.left
-            .map(
-              de =>
-                InternalServerError.apply(
-                  interpreterGroup.errorInterpreter(de),
-                  Header("Content-Type", interpreterGroup.contentType)
+          stringParamToId(idParam).leftMap(e => stringToIdErrorToResponse(e,interpreterGroup.contentType))
+          .map(id => {
+            deleteF(id).flatMap {
+              case Right(entity) => Ok(
+                interpreterGroup.outInterpreter(entity),
+                Header("Content-Type", interpreterGroup.contentType)
               )
-            )
-            .merge
-        })
+              case Left(de) => InternalServerError.apply(
+                interpreterGroup.errorInterpreter(de),
+                Header("Content-Type", interpreterGroup.contentType)
+              )
+            }
+          }).merge
     }
   }
 
   def httpPostRoutes[F[_], ALG[_], A, E, B, ID](
     path: String,
-    pathStringToId: String => Either[E, ID],
     create: A => F[Either[E, B]],
     inputSchema: BonesSchema[ALG, A],
     errorSchema: BonesSchema[ALG, E],
@@ -194,7 +222,6 @@ object BaseCrudInterpreter {
     customProtobufInterpreter: ProtobufEncoderInterpreter[ALG],
     charset: Charset
   )(implicit F: Sync[F], H: Http4sDsl[F]) = {
-    import H._
     val inputF =
       validatedFromCirceInterpreter
         .byteArrayFuncFromSchema(inputSchema, charset, customJsonInterpreter)
@@ -286,7 +313,7 @@ object BaseCrudInterpreter {
 
   def httpGetRoute[F[_], ALG[_], E, B, ID](
     path: String,
-    pathStringToId: String => Either[E, ID],
+    pathStringToId: String => Either[StringToIdError, ID],
     read: ID => F[Either[E, B]],
     encodeToCirceInterpreter: CirceEncoderInterpreter,
     errorSchema: BonesSchema[ALG, E],
@@ -333,13 +360,14 @@ object BaseCrudInterpreter {
       Nil
   }
 
+
   /**
     * Create a get endpoint.
     */
-  def get[F[_], ALG[_], E, B, ID](
+  def get[F[_], E, B, ID](
     path: String,
     interpreterGroup: GetInterpreterGroup[E, B],
-    stringParamToId: String => Either[E, ID],
+    stringParamToId: String => Either[StringToIdError, ID],
     readF: ID => F[Either[E, B]]
   )(implicit F: Sync[F], H: Http4sDsl[F]): HttpRoutes[F] = {
     import H._
@@ -347,13 +375,7 @@ object BaseCrudInterpreter {
     HttpRoutes.of[F] {
       case req @ Method.GET -> Root / path / idParam
           if contentType(req).contains(interpreterGroup.contentType) =>
-        stringParamToId(idParam).left
-          .map(re => {
-            BadRequest.apply[Array[Byte]](
-              interpreterGroup.errorInterpreter(re),
-              Header("Content-Type", interpreterGroup.contentType)
-            )(F, entityEncoder)
-          })
+        stringParamToId(idParam).leftMap(e => stringToIdErrorToResponse(e,interpreterGroup.contentType))
           .map(id => {
             readF(id)
               .flatMap({
@@ -378,7 +400,7 @@ object BaseCrudInterpreter {
     */
   def updateRoute[F[_], ALG[_], A, E, B, ID](
     path: String,
-    pathStringToId: String => Either[E, ID],
+    pathStringToId: String => Either[StringToIdError, ID],
     updateF: (ID, A) => F[Either[E, B]],
     inputSchema: BonesSchema[ALG, A],
     errorSchema: BonesSchema[ALG, E],
@@ -455,7 +477,7 @@ object BaseCrudInterpreter {
   def put[F[_], ALG[_], A, E, B, ID](
     path: String,
     interpreterGroup: PutPostInterpreterGroup[A, E, B],
-    stringToId: String => Either[E, ID],
+    stringParamToId: String => Either[StringToIdError, ID],
     updateF: (ID, A) => F[Either[E, B]]
   )(implicit F: Sync[F], H: Http4sDsl[F]): HttpRoutes[F] = {
     import H._
@@ -468,13 +490,7 @@ object BaseCrudInterpreter {
             req.as[Array[Byte]].map(Right(_))
           }
           id <- EitherT.fromEither[F] {
-            stringToId(idParam).left.map(
-              e =>
-                BadRequest(
-                  interpreterGroup.errorInterpreter(e),
-                  Header("Content-Type", interpreterGroup.contentType)
-              )
-            )
+            stringParamToId(idParam).leftMap(e => stringToIdErrorToResponse(e,interpreterGroup.contentType))
           }
           in <- EitherT.fromEither[F] {
             interpreterGroup
