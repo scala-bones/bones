@@ -8,6 +8,7 @@ import cats.implicits._
 import com.bones.circe.IsoCirceEncoderAndValidatorInterpreter
 import com.bones.data.Error.ExtractionError
 import com.bones.data.{BonesSchema, HListConvert, KeyValueDefinition}
+import com.bones.http4s.BaseCrudInterpreter.StringToIdError
 import com.bones.http4s.ClassicCrudInterpreter.{CustomInterpreter, ProtobufEncoderInterpreter}
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
@@ -65,7 +66,7 @@ object ClassicCrudInterpreter {
     charset: java.nio.charset.Charset = StandardCharsets.UTF_8,
     schema: BonesSchema[NoAlgebra, A],
     idDefinition: KeyValueDefinition[NoAlgebra, ID],
-    pathStringToId: String => Either[E, ID],
+    pathStringToId: String => Either[StringToIdError, ID],
     errorSchema: BonesSchema[NoAlgebra, E]
   )(implicit F: Sync[F], H: Http4sDsl[F]): ClassicCrudInterpreter[NoAlgebra, A, E, F, ID] =
     emptyCustomAlgebra[NoAlgebra, A, E, F, ID](
@@ -96,7 +97,7 @@ object ClassicCrudInterpreter {
     customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
     schema: BonesSchema[ALG, A],
     idDefinition: KeyValueDefinition[ALG, ID],
-    pathStringToId: String => Either[E, ID],
+    pathStringToId: String => Either[StringToIdError, ID],
     errorSchema: BonesSchema[ALG, E],
     charset: java.nio.charset.Charset = StandardCharsets.UTF_8
   )(
@@ -125,7 +126,7 @@ object ClassicCrudInterpreter {
     path: String,
     schema: BonesSchema[NoAlgebra, A],
     idDefinition: KeyValueDefinition[NoAlgebra, ID],
-    pathStringToId: String => Either[E, ID],
+    pathStringToId: String => Either[StringToIdError, ID],
     errorSchema: BonesSchema[NoAlgebra, E],
     createF: A => F[Either[E, (ID, A)]],
     readF: ID => F[Either[E, (ID, A)]],
@@ -167,7 +168,7 @@ object ClassicCrudInterpreter {
     customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
     schema: BonesSchema[ALG, A],
     idDefinition: KeyValueDefinition[ALG, ID],
-    pathStringToId: String => Either[E, ID],
+    pathStringToId: String => Either[StringToIdError, ID],
     errorSchema: BonesSchema[ALG, E],
     createF: A => F[Either[E, (ID, A)]],
     readF: ID => F[Either[E, (ID, A)]],
@@ -232,7 +233,7 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
   customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
   schema: BonesSchema[ALG, A],
   idDefinition: KeyValueDefinition[ALG, ID],
-  pathStringToId: String => Either[E, ID],
+  pathStringToId: String => Either[StringToIdError, ID],
   errorSchema: BonesSchema[ALG, E],
   createF: Option[A => F[Either[E, (ID, A)]]] = None,
   readF: Option[ID => F[Either[E, (ID, A)]]] = None,
@@ -352,7 +353,6 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
     val createHttpService = createF.toList.flatMap(create => {
       BaseCrudInterpreter.httpPostRoutes(
         path,
-        pathStringToId,
         create,
         schema,
         errorSchema,

@@ -8,6 +8,7 @@ import cats.implicits._
 import com.bones.Util
 import com.bones.data.BonesSchema
 import com.bones.data.Error.ExtractionError
+import com.bones.http4s.BaseCrudInterpreter.StringToIdError
 import com.bones.http4s.ClassicCrudInterpreter
 import com.bones.jdbc.DbColumnInterpreter
 import com.bones.syntax._
@@ -65,7 +66,7 @@ object LocalhostAllIOApp {
       schema,
       kvp("id", long(lv.min(1))),
       str =>
-        Util.stringToLong(str).toRight(BasicError("Could not convert parameter to a Long value")),
+        Util.stringToLong(str).toRight(StringToIdError(str,"Could not convert parameter to a Long value")),
       basicErrorSchema,
       Kleisli(middleware.createF).map(_.left.map(e => extractionErrorToBasicError(e))).run,
       Kleisli(middleware.readF).map(_.left.map(e => extractionErrorsToBasicError(e))).run,
