@@ -5,7 +5,7 @@ import cats.effect.Sync
 import cats.implicits._
 import com.bones.bson.{BsonEncoderInterpreter, BsonValidatorInterpreter}
 import com.bones.circe.{CirceEncoderInterpreter, CirceValidatorInterpreter, IsoCirceEncoderAndValidatorInterpreter}
-import com.bones.data.BonesSchema
+import com.bones.data.{BonesSchema, HListConvert, KeyValueDefinition, KvpCoproductConvert}
 import com.bones.data.Error.ExtractionError
 import com.bones.data.custom.ExtractionErrorValue
 import com.bones.interpreter.custom.ExtractionErrorEncoder
@@ -17,10 +17,14 @@ import org.http4s._
 import ClassicCrudInterpreter.{CustomInterpreter, _}
 import CrudInterpreterDescription._
 import java.nio.charset.Charset
+import java.util.UUID
 
+import com.bones.Util
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.NoAlgebraEncoder
 import fs2.Stream
 import reactivemongo.bson.BSONValue
+
+import scala.util.Try
 
 object BaseCrudInterpreter {
   import com.bones.syntax._
@@ -48,8 +52,25 @@ object BaseCrudInterpreter {
       StringToIdError.stringToIdErrorSchema,
       ProtobufSequentialEncoderInterpreter.NoAlgebraCustomEncoderInterpreter)
 
+  val intParam: String => Either[StringToIdError, Int] = param => {
+    Try { param.toInt }.toOption
+      .toRight(StringToIdError(param, s"Could not convert parameter '${param}' to Int"))
+  }
+
+  val longParam: String => Either[StringToIdError, Long] = param => {
+    Util
+      .stringToLong(param)
+      .toRight(StringToIdError(param, s"Could not convert parameter '${param}' to Long"))
+  }
+
+  val uuidParam: String => Either[StringToIdError, UUID] = param => {
+    Try { UUID.fromString(param) }.toOption
+      .toRight(StringToIdError(param, s"Could not convert parameter '${param}' to UUID"))
+  }
+
   def stringToIdErrorToResponse[F[_]](stringToIdError: StringToIdError, contentType: String)(
-    implicit F: Sync[F], H: Http4sDsl[F]): F[Response[F]] = {
+    implicit F: Sync[F],
+    H: Http4sDsl[F]): F[Response[F]] = {
     import H._
     contentType match {
       case "application/ubjson" =>
@@ -69,7 +90,6 @@ object BaseCrudInterpreter {
 //    Either[F[Response[F]],ID] = {
 //    stringParamToId.left.map
 //  }
-
 
   object ErrorResponse {
 
@@ -131,6 +151,18 @@ object BaseCrudInterpreter {
     }
   }
 
+  def schemaWithId[ALG[_], A, ID:Manifest](
+    idDefinition: KeyValueDefinition[ALG, ID],
+    schema: BonesSchema[ALG, A]) = schema match {
+      case h: HListConvert[ALG, _, _, A] @unchecked =>
+        implicit val manifest: Manifest[A] = h.manifestOfA
+        (idDefinition >>: h :><: com.bones.syntax.kvpNilCov[ALG]).tupled[(ID, A)]
+      case co: KvpCoproductConvert[ALG, _, A] @unchecked =>
+        implicit val manifest: Manifest[A] = co.manifestOfA
+        (idDefinition >>: co :><: com.bones.syntax.kvpNilCov[ALG]).tupled[(ID, A)]
+
+    }
+
   def httpDeleteRoutes[F[_], ALG[_], A, E, B, ID](
     path: String,
     pathStringToId: String => Either[StringToIdError, ID],
@@ -191,19 +223,23 @@ object BaseCrudInterpreter {
     import H._
     HttpRoutes.of[F] {
       case Method.DELETE -> Root / path / idParam =>
-          stringParamToId(idParam).leftMap(e => stringToIdErrorToResponse(e,interpreterGroup.contentType))
+        stringParamToId(idParam)
+          .leftMap(e => stringToIdErrorToResponse(e, interpreterGroup.contentType))
           .map(id => {
             deleteF(id).flatMap {
-              case Right(entity) => Ok(
-                interpreterGroup.outInterpreter(entity),
-                Header("Content-Type", interpreterGroup.contentType)
-              )
-              case Left(de) => InternalServerError.apply(
-                interpreterGroup.errorInterpreter(de),
-                Header("Content-Type", interpreterGroup.contentType)
-              )
+              case Right(entity) =>
+                Ok(
+                  interpreterGroup.outInterpreter(entity),
+                  Header("Content-Type", interpreterGroup.contentType)
+                )
+              case Left(de) =>
+                InternalServerError.apply(
+                  interpreterGroup.errorInterpreter(de),
+                  Header("Content-Type", interpreterGroup.contentType)
+                )
             }
-          }).merge
+          })
+          .merge
     }
   }
 
@@ -360,7 +396,6 @@ object BaseCrudInterpreter {
       Nil
   }
 
-
   /**
     * Create a get endpoint.
     */
@@ -375,7 +410,8 @@ object BaseCrudInterpreter {
     HttpRoutes.of[F] {
       case req @ Method.GET -> Root / path / idParam
           if contentType(req).contains(interpreterGroup.contentType) =>
-        stringParamToId(idParam).leftMap(e => stringToIdErrorToResponse(e,interpreterGroup.contentType))
+        stringParamToId(idParam)
+          .leftMap(e => stringToIdErrorToResponse(e, interpreterGroup.contentType))
           .map(id => {
             readF(id)
               .flatMap({
@@ -490,7 +526,8 @@ object BaseCrudInterpreter {
             req.as[Array[Byte]].map(Right(_))
           }
           id <- EitherT.fromEither[F] {
-            stringParamToId(idParam).leftMap(e => stringToIdErrorToResponse(e,interpreterGroup.contentType))
+            stringParamToId(idParam).leftMap(e =>
+              stringToIdErrorToResponse(e, interpreterGroup.contentType))
           }
           in <- EitherT.fromEither[F] {
             interpreterGroup

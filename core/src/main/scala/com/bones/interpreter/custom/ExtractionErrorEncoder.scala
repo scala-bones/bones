@@ -198,7 +198,7 @@ trait ExtractionErrorEncoder[OUT] extends InterchangeFormatEncoder[ExtractionErr
 
   import ExtractionErrorEncoder._
 
-  val defaultEncoder: KvpInterchangeFormatEncoderInterpreter[OUT]
+  def defaultEncoder: KvpInterchangeFormatEncoderInterpreter[OUT]
 
   def requiredValueToHList(requiredValue: RequiredValue[_]): String :: String :: HNil = {
     requiredValue.path.mkString(".") :: requiredValue.description :: HNil
@@ -213,24 +213,28 @@ trait ExtractionErrorEncoder[OUT] extends InterchangeFormatEncoder[ExtractionErr
       h => sys.error("Mapping to an RequiredValue is not supported"),
       requiredValueToHList)
 
-  val canNotConvertEncoder = defaultEncoder
-    .encoderFromCustomSchema[NoAlgebra, CanNotConvert[_, _]](
-      canNotConvertSchema,
-      NoAlgebraEncoder[OUT])
-  val notFoundEncoder = defaultEncoder
+  val noAlgebraEncoder = NoAlgebraEncoder[OUT]()
+
+  def canNotConvertEncoder =
+      defaultEncoder
+        .encoderFromCustomSchema[NoAlgebra, CanNotConvert[_, _]](
+          canNotConvertSchema,
+          noAlgebraEncoder)
+
+  def notFoundEncoder = defaultEncoder
     .encoderFromCustomSchema[NoAlgebra, NotFound[_]](notFoundDataSchema, NoAlgebraEncoder[OUT])
-  val parsingErrorEncoder = defaultEncoder
+  def parsingErrorEncoder = defaultEncoder
     .encoderFromCustomSchema[NoAlgebra, ParsingError](parsingErrorSchema, NoAlgebraEncoder[OUT])
   def requiredValueEncoder =
     defaultEncoder
       .encoderFromSchema[RequiredValue[_]](requiredValueSchema)
-  val sumTypeErrorEncoder = defaultEncoder
+  def sumTypeErrorEncoder = defaultEncoder
     .encoderFromSchema[SumTypeError](sumTypeErrorSchema)
-  val systemErrorEncoder = defaultEncoder
+  def systemErrorEncoder = defaultEncoder
     .encoderFromSchema[SystemError](systemErrorSchema)
-  val validationErrorEncoder = defaultEncoder
+  def validationErrorEncoder = defaultEncoder
     .encoderFromSchema[ValidationError[_]](validationErrorSchema)
-  val wrongTypeErrorEncoder = defaultEncoder
+  def wrongTypeErrorEncoder = defaultEncoder
     .encoderFromSchema[WrongTypeError[_]](wrongTypeErrorSchema)
 
   override def encode[A](alg: ExtractionErrorValue[A]): A => OUT =
