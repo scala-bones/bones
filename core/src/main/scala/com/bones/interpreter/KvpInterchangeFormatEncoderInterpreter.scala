@@ -200,8 +200,9 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
         implicit val hCons = op.isHCons
         (input: H) =>
           {
-            val val1 = valueF(input.head)
-            val tail = tailF(input.tail)
+            val val1 = valueF(hCons.head(input))
+            val tailCons = hCons.tail(input)
+            val tail = tailF(tailCons)
             combine(toObj(op.fieldDefinition, val1), tail)
           }
       case op: KvpConcreteTypeHead[ALG, H, ht, nt] @unchecked => {
@@ -210,7 +211,7 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
         implicit val hCons = op.isHCons
         (input: H) =>
           {
-            val head = headF(input)
+            val head = headF(hCons.head(input))
             val tail = tailF(hCons.tail(input))
             combine(head, tail)
           }

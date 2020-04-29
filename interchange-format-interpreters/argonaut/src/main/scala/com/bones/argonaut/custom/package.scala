@@ -63,7 +63,7 @@ package object custom {
   }
 
   object BaseExtractionErrorEncoder extends ExtractionErrorEncoder[Json] {
-    override val defaultEncoder: KvpInterchangeFormatEncoderInterpreter[Json] =
+    override def defaultEncoder: KvpInterchangeFormatEncoderInterpreter[Json] =
       IsoArgonautEncoderAndValidatorInterpreter
   }
 

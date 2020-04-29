@@ -61,7 +61,7 @@ object ClassicCrudInterpreter {
       sys.error("Unreachable code")
   }
 
-  def emptyCoreAlgebra[A, E, F[_], ID: Manifest](
+  def emptyCoreAlgebraNoAlgebra[A, E, F[_], ID: Manifest](
     path: String,
     charset: java.nio.charset.Charset = StandardCharsets.UTF_8,
     schema: BonesSchema[NoAlgebra, A],

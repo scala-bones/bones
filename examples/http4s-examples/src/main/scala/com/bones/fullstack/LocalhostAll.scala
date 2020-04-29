@@ -66,7 +66,9 @@ object LocalhostAllIOApp {
       schema,
       kvp("id", long(lv.min(1))),
       str =>
-        Util.stringToLong(str).toRight(StringToIdError(str,"Could not convert parameter to a Long value")),
+        Util
+          .stringToLong(str)
+          .toRight(StringToIdError(str, "Could not convert parameter to a Long value")),
       basicErrorSchema,
       Kleisli(middleware.createF).map(_.left.map(e => extractionErrorToBasicError(e))).run,
       Kleisli(middleware.readF).map(_.left.map(e => extractionErrorsToBasicError(e))).run,
@@ -78,9 +80,7 @@ object LocalhostAllIOApp {
       () => middleware.searchF,
       StandardCharsets.UTF_8
     )
-
     val dbRoutes = dbSchemaEndpoint(path, schema)
-
     interpreter.createRoutes <+> dbRoutes
 
   }
