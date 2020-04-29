@@ -5,6 +5,7 @@ import shapeless.{::, Generic, HList, HNil, Nat, Succ}
 import shapeless.ops.hlist
 import shapeless.ops.hlist.IsHCons.Aux
 import shapeless.ops.hlist.{IsHCons, Length, Prepend, Split, Tupler}
+import shapeless.syntax.std.tuple._
 
 /**
   * Base trait of a ValueDefinition where the value is a list of data.
@@ -34,7 +35,10 @@ sealed abstract class KvpHList[ALG[_], H <: HList, N <: Nat] {
     HListConvert[ALG, H, N, Tup](
       this,
       (h: H) => tupler.apply(h),
-      (t: Tup) => gen.to(t).asInstanceOf[H],
+      (t: Tup) => {
+        val out = gen.to(t).asInstanceOf[H]
+        out
+      },
       tupledValidations.toList)
 
   def xmap[A: Manifest](
