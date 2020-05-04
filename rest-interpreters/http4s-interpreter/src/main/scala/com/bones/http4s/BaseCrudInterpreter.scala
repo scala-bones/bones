@@ -215,15 +215,16 @@ object BaseCrudInterpreter {
 
   /** Create delete routes from interpreter group */
   def delete[F[_], ALG[_], E, B, ID](
-    path: String,
+    expectedPath: String,
     interpreterGroup: DeleteInterpreterGroup[E, B],
     stringParamToId: String => Either[StringToIdError, ID],
     deleteF: ID => F[Either[E, B]]
   )(implicit F: Sync[F], H: Http4sDsl[F]): HttpRoutes[F] = {
     import H._
     HttpRoutes.of[F] {
-      case Method.DELETE -> Root / path / idParam =>
-        stringParamToId(idParam)
+      case req @ Method.DELETE -> Root / path / idParam
+        if (expectedPath == path && contentType(req).contains(interpreterGroup.contentType)) =>
+          stringParamToId(idParam)
           .leftMap(e => stringToIdErrorToResponse(e, interpreterGroup.contentType))
           .map(id => {
             deleteF(id).flatMap {
@@ -311,15 +312,15 @@ object BaseCrudInterpreter {
   }
 
   /** Create the post endpoint from the Interpreter Group */
-  def post[F[_], ALG[_], A, E, B, ID](
-    path: String,
+  def post[F[_], A, E, B, ID](
+    expectedPath: String,
     interpreterGroup: PutPostInterpreterGroup[A, E, B],
     createF: A => F[Either[E, B]]
   )(implicit F: Sync[F], H: Http4sDsl[F]): HttpRoutes[F] = {
     import H._
     HttpRoutes.of[F] {
       case req @ Method.POST -> Root / path
-          if contentType(req).contains(interpreterGroup.contentType) =>
+          if (expectedPath == path && contentType(req).contains(interpreterGroup.contentType)) =>
         val result: EitherT[F, F[Response[F]], F[Response[F]]] = for {
           body <- EitherT[F, F[Response[F]], Array[Byte]] {
             req.as[Array[Byte]].map(Right(_))
@@ -400,7 +401,7 @@ object BaseCrudInterpreter {
     * Create a get endpoint.
     */
   def get[F[_], E, B, ID](
-    path: String,
+    expectedPath: String,
     interpreterGroup: GetInterpreterGroup[E, B],
     stringParamToId: String => Either[StringToIdError, ID],
     readF: ID => F[Either[E, B]]
@@ -409,7 +410,7 @@ object BaseCrudInterpreter {
     val entityEncoder = implicitly[EntityEncoder[F, Array[Byte]]]
     HttpRoutes.of[F] {
       case req @ Method.GET -> Root / path / idParam
-          if contentType(req).contains(interpreterGroup.contentType) =>
+          if expectedPath == path && contentType(req).contains(interpreterGroup.contentType) =>
         stringParamToId(idParam)
           .leftMap(e => stringToIdErrorToResponse(e, interpreterGroup.contentType))
           .map(id => {
@@ -511,7 +512,7 @@ object BaseCrudInterpreter {
     * @return
     */
   def put[F[_], ALG[_], A, E, B, ID](
-    path: String,
+    expectedPath: String,
     interpreterGroup: PutPostInterpreterGroup[A, E, B],
     stringParamToId: String => Either[StringToIdError, ID],
     updateF: (ID, A) => F[Either[E, B]]
@@ -520,7 +521,7 @@ object BaseCrudInterpreter {
 
     HttpRoutes.of[F] {
       case req @ Method.PUT -> Root / path / idParam
-          if contentType(req).contains(interpreterGroup.contentType) =>
+          if expectedPath == path && contentType(req).contains(interpreterGroup.contentType) =>
         val result: EitherT[F, F[Response[F]], F[Response[F]]] = for {
           body <- EitherT[F, F[Response[F]], Array[Byte]] {
             req.as[Array[Byte]].map(Right(_))
