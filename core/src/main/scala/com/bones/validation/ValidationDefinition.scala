@@ -9,12 +9,12 @@ import scala.math.Ordering.{
   BigDecimalOrdering,
   ByteOrdering,
   CharOrdering,
-  DoubleOrdering,
-  FloatOrdering,
   IntOrdering,
   LongOrdering,
   ShortOrdering
 }
+import scala.math.Ordering.Float.{TotalOrdering => FloatOrdering}
+import scala.math.Ordering.Double.{TotalOrdering => DoubleOrdering }
 import scala.util.matching.Regex
 
 /**
