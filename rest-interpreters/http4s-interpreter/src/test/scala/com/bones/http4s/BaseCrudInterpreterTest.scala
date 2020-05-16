@@ -94,7 +94,7 @@ class BaseCrudInterpreterTest extends AnyFunSuite {
       PutPostInterpreterGroup("application/test",
         _ => Right(EndpointTwo("endpointTwo")),
         (result: Output) => s"Output: ${result.result}".getBytes,
-        (err: Error) => s"Error: ${err.message}"getBytes
+        (err: Error) => s"Error: ${err.message}".getBytes
       )
 
 
