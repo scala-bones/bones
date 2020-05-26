@@ -608,7 +608,7 @@ trait BaseCrudInterpreter[ALG[_], A, E, B, F[_], ID] extends Http4sDsl[F] {
 
   def htmlEndpoint(customPath: Path, html: String)(implicit F: Sync[F]): HttpRoutes[F] =
     HttpRoutes.of[F] {
-      case GET -> Root / customPath / path =>
+      case GET -> Root / path if customPath.toList == Path(path).toList =>
         Ok(html, Header("Content-Type", "text/html"))(F, implicitly[EntityEncoder[F, String]])
     }
 
