@@ -156,7 +156,7 @@ lazy val dbJdbc = (project in file("db-interpreters/jdbc"))
     name := "Bones JDBC",
     libraryDependencies ++= Seq(
       "org.postgresql" % "postgresql" % "42.2.13",
-      "co.fs2" %% "fs2-core" % "2.4.0",
+      "co.fs2" %% "fs2-core" % "2.4.1",
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
       "org.scalatest" %% "scalatest" % "3.1.2" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
