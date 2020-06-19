@@ -3,9 +3,9 @@ package com.bones.jdbc
 import java.util.Properties
 
 import com.bones.schemas.Schemas
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class DbGetTest extends FunSuite {
+class DbGetTest extends AnyFunSuite {
 
   import java.sql.Connection
   import java.sql.DriverManager
