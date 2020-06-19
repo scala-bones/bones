@@ -7,11 +7,11 @@ import com.bones.syntax.NoAlgebra
 import io.swagger.v3.oas.models.media.{ObjectSchema, Schema}
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalacheck.Prop.forAllNoShrink
-import org.scalatest.FunSuite
 import org.scalatestplus.scalacheck.Checkers
 import shapeless.{HList, Nat}
+import org.scalatest.funsuite.AnyFunSuite
 
-class GenSchema extends FunSuite with Checkers {
+class GenSchema extends AnyFunSuite with Checkers {
 
   implicit val hListValueGen: Gen[KvpHListValue[NoAlgebra,_<:HList,_<:Nat]] = GenGadt.genHListValue()
 

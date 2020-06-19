@@ -41,7 +41,7 @@ lazy val core = (project in file("core"))
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
       "org.scalatest" %% "scalatest" % "3.1.2" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test,
-      "org.scalatest" %% "scalatest-mustmatchers" % "3.1.0-M2" % Test
+      "org.scalatest" %% "scalatest-mustmatchers" % "3.2.0" % Test
     ),
     description := "DSL for Data Description using ASTs and interpreters"
   )

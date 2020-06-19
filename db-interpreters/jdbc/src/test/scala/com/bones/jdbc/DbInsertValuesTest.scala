@@ -4,10 +4,10 @@ import java.util.{Properties, UUID}
 
 import com.bones.schemas.Schemas
 import com.bones.schemas.Schemas._
-import org.scalatest.FunSuite
 import shapeless.{Inl, Inr}
+import org.scalatest.funsuite.AnyFunSuite
 
-class DbInsertValuesTest extends FunSuite {
+class DbInsertValuesTest extends AnyFunSuite {
 
 
   ignore("Insert into db test") {

@@ -8,11 +8,12 @@ import java.util.Locale
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
 import com.bones.schemas.CovSchemas._
 import io.circe.Json
-import org.scalatest.{FunSuite, MustMatchers}
 import org.scalatestplus.scalacheck.Checkers
 import shapeless.{:+:, CNil, Inl, Inr}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.must.Matchers
 
-class CovCirceTest extends FunSuite with Checkers with MustMatchers {
+class CovCirceTest extends AnyFunSuite with Checkers with Matchers {
 
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)

@@ -2,11 +2,11 @@ package com.bones.swagger
 
 import com.bones.schemas.Schemas
 import com.bones.schemas.Schemas.AllSupported
-import org.scalatest.FunSuite
 import com.bones.syntax._
 import io.swagger.v3.oas.models.OpenAPI
+import org.scalatest.funsuite.AnyFunSuite
 
-class CrudOasInterpreterTest extends FunSuite {
+class CrudOasInterpreterTest extends AnyFunSuite {
 
   val idDefinition = ("id", int)
 
