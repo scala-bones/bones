@@ -142,8 +142,8 @@ lazy val bson = (project in file("interchange-format-interpreters/bson"))
     commonSettings,
     name := "Bones Bson",
     libraryDependencies ++= Seq(
-      "org.reactivemongo" %% "reactivemongo-bson" % "0.18.8",
-      "org.reactivemongo" %% "reactivemongo" % "0.18.8",
+      "org.reactivemongo" %% "reactivemongo-bson" % "0.20.11",
+      "org.reactivemongo" %% "reactivemongo" % "0.20.11",
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
       "org.scalatest" %% "scalatest" % "3.1.2" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
@@ -155,8 +155,8 @@ lazy val dbJdbc = (project in file("db-interpreters/jdbc"))
     commonSettings,
     name := "Bones JDBC",
     libraryDependencies ++= Seq(
-      "org.postgresql" % "postgresql" % "42.2.13",
-      "co.fs2" %% "fs2-core" % "2.3.0",
+      "org.postgresql" % "postgresql" % "42.2.14",
+      "co.fs2" %% "fs2-core" % "2.4.2",
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
       "org.scalatest" %% "scalatest" % "3.1.2" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
