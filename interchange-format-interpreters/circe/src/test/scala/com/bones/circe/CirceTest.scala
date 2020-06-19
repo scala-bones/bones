@@ -6,10 +6,11 @@ import com.bones.scalacheck.{NoAlgebraGen, Scalacheck}
 import com.bones.schemas.Schemas.{AllSupported, allSupportCaseClass}
 import com.bones.syntax.NoAlgebra
 import org.scalacheck.Arbitrary
-import org.scalatest.{FunSuite, MustMatchers}
 import org.scalatestplus.scalacheck.Checkers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.must.Matchers
 
-class CirceTest extends FunSuite with Checkers with MustMatchers {
+class CirceTest extends AnyFunSuite with Checkers with Matchers {
 
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)

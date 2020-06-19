@@ -2,9 +2,9 @@ package com.bones.proto
 
 import com.bones.protobuf.ProtoFileGeneratorInterpreter
 import com.bones.schemas.Schemas
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class ProtbufFileInterpreterTest extends FunSuite {
+class ProtbufFileInterpreterTest extends AnyFunSuite {
 
   val result = ProtoFileGeneratorInterpreter.fromSchema(Schemas.creditCardSchema)
 
