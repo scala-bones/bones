@@ -1,22 +1,14 @@
 package com.bones.swagger
 
-import java.time.format.DateTimeFormatter
-import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.util.{Base64, UUID}
 
 import com.bones.data.custom.CNilF
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft, _}
-import com.bones.syntax.NoAlgebra
-import com.bones.validation.ValidationDefinition.{
-  InvalidValue,
-  ValidValue,
-  ValidationOp,
-  BigDecimalValidation => bdv,
-  LongValidation => iv,
-  StringValidation => sv
-}
+import com.bones.validation.ValidationDefinition.{InvalidValue, ValidValue, ValidationOp, BigDecimalValidation => bdv, LongValidation => iv, StringValidation => sv}
 import io.swagger.v3.oas.models.media._
 import shapeless.{:+:, Coproduct, HList, Inl, Inr, Nat}
+
+import scala.jdk.CollectionConverters._
 
 object SwaggerCoreInterpreter {
 
@@ -75,14 +67,6 @@ object SwaggerCoreInterpreter {
       vd: ALG[A],
       description: Option[String],
       example: Option[A]): Name => SwaggerSchemas[Schema[_]]
-  }
-
-  val noAlgebraInterpreter = new CustomSwaggerInterpreter[NoAlgebra] {
-    override def toSchema[A](
-      vd: NoAlgebra[A],
-      description: Option[String],
-      example: Option[A]): Nothing =
-      sys.error("Unreachable code")
   }
 
   def addBooleanSchema(
@@ -249,6 +233,83 @@ object SwaggerCoreInterpreter {
     SwaggerSchemas(withValidation)
 
   }
+
+  def validations[A](list: List[ValidationOp[A]]): Schema[_] => Schema[_] = schema => {
+    list.map(v => validation(v).apply(schema))
+    schema
+  }
+
+  /**
+   * Responsible for adding validation specific details to the SwaggerCore files.
+   *
+   * @param op The validation from we will add to the
+   * @tparam A The type which is to be validated.
+   * @return
+   */
+  def validation[A](op: ValidationOp[A]): Schema[_] => Schema[_] = {
+    op match {
+      case ValidValue(values) =>
+        schema =>
+        {
+          val typedSchema = schema.asInstanceOf[Schema[A]]
+          values.foreach(typedSchema.addEnumItemObject)
+          typedSchema
+        }
+      case InvalidValue(values) =>
+        val invalidDescription =
+          s"These values are not allowed: ${values.mkString("('", ",", "')")}."
+        schema =>
+        {
+          val description = schema.getDescription
+          val newDescription =
+            if (description.isEmpty) invalidDescription
+            else description + " " + invalidDescription
+          schema.setDescription(newDescription)
+          schema
+        }
+      case sv.IsAlphanumeric =>
+        schema =>
+          schema.pattern("^[:alnum:]+$"); schema
+      case sv.MinLength(min) =>
+        schema =>
+          schema.minLength(min)
+      case sv.MaxLength(max) =>
+        schema =>
+          schema.maxLength(max)
+      case sv.MatchesRegex(r) =>
+        schema =>
+          schema.pattern(r.toString())
+      case sv.Length(l) =>
+        schema =>
+          schema.minLength(l).maxLength(l)
+      case sv.Custom(_, _, _) => identity
+      case sv.Uppercase       => identity
+      case sv.Token           => identity
+      case sv.Lowercase       => identity
+
+      case iv.Between(min, max) =>
+        _.exclusiveMinimum(true)
+          .exclusiveMaximum(true)
+          .minimum(new java.math.BigDecimal(min))
+          .maximum(new java.math.BigDecimal(max))
+      case iv.Greater(gt) =>
+        _.minimum(new java.math.BigDecimal(gt)).exclusiveMinimum(true)
+      case iv.Less(lt) =>
+        _.maximum(new java.math.BigDecimal(lt)).exclusiveMaximum(true)
+      case iv.Max(max)    => _.maximum(new java.math.BigDecimal(max))
+      case iv.Min(min)    => _.minimum(new java.math.BigDecimal(min))
+      case iv.Multiple(x) => _.multipleOf(new java.math.BigDecimal(x))
+      case iv.Negative =>
+        _.exclusiveMaximum(true).maximum(java.math.BigDecimal.ZERO)
+      case iv.Positive =>
+        _.exclusiveMinimum(true).minimum(java.math.BigDecimal.ZERO)
+      case bdv.Max(max) => _.maximum(max.bigDecimal)
+      case bdv.Min(min) => _.minimum(min.bigDecimal)
+
+      case _ => identity
+
+    }
+  }
 }
 
 /**
@@ -258,19 +319,6 @@ trait SwaggerCoreInterpreter {
 
   import SwaggerCoreInterpreter._
 
-  def localDateTimeFormatter: DateTimeFormatter
-
-  def localDateFormatter: DateTimeFormatter
-
-  def localTimeFormatter: DateTimeFormatter
-
-  private def localDateExample = LocalDate.of(1970, 1, 1)
-
-  private def localTimeExample = LocalTime.of(12, 0, 0, 0)
-
-  private def localDateTimeExample = LocalDateTime.of(localDateExample, localTimeExample)
-
-  import scala.collection.JavaConverters._
 
   private def copySchema(head: Schema[_], tail: ObjectSchema): ObjectSchema = {
     Option(head.getProperties).foreach(_.asScala.toList.foreach(prop =>
@@ -291,11 +339,6 @@ trait SwaggerCoreInterpreter {
     }
     (name, schemas.mainSchema) :: schemas.referenceSchemas
   }
-
-  def fromSchema[A](
-    gd: BonesSchema[NoAlgebra, A]
-  ): Name => List[(Name, Schema[_])] =
-    fromSchemaWithAlg(gd, SwaggerCoreInterpreter.noAlgebraInterpreter)
 
   private def fromKvpCoproduct[ALG[_], C <: Coproduct](
     co: KvpCoproduct[ALG, C],
@@ -356,10 +399,10 @@ trait SwaggerCoreInterpreter {
   }
 
   def determineValueDefinition[ALG[_], A](
-    value: Either[KvpValue[A], ALG[A]],
-    customInterpreter: CustomSwaggerInterpreter[ALG],
-    description: Option[String],
-    example: Option[A]
+                                           value: Either[KvpCollection[ALG, A], ALG[A]],
+                                           customInterpreter: CustomSwaggerInterpreter[ALG],
+                                           description: Option[String],
+                                           example: Option[A]
   ): Name => SwaggerSchemas[Schema[_]] =
     value match {
       case Left(kvp)  => valueDefinition(kvp, customInterpreter, description, example)
@@ -372,10 +415,10 @@ trait SwaggerCoreInterpreter {
     * @param vd The DataClass definition to convert to a Schema
     **/
   def valueDefinition[ALG[_], A](
-    vd: KvpValue[A],
-    customInterpreter: CustomSwaggerInterpreter[ALG],
-    description: Option[String],
-    example: Option[A]): Name => SwaggerSchemas[Schema[_]] = {
+                                  vd: KvpCollection[ALG,A],
+                                  customInterpreter: CustomSwaggerInterpreter[ALG],
+                                  description: Option[String],
+                                  example: Option[A]): Name => SwaggerSchemas[Schema[_]] = {
     vd match {
       case op: OptionalKvpValueDefinition[ALG, b] @unchecked =>
         name =>
@@ -385,105 +428,8 @@ trait SwaggerCoreInterpreter {
             description,
             None)(name)
           oasSchema.copy(mainSchema = oasSchema.mainSchema.nullable(true))
-      case bd: BooleanData =>
-        name =>
-          addBooleanSchema(name, description, example, validations(bd.validations))
-      case sd: StringData =>
-        name =>
-          addStringSchema(
-            name,
-            description.getOrElse("value of type string"),
-            example.getOrElse("ABC"),
-            validations(sd.validations))
-      case sd: ShortData =>
-        name =>
-          {
-            addShortSchema(
-              name,
-              description.getOrElse("value of type short"),
-              example.asInstanceOf[Option[Short]].getOrElse((123: Short)),
-              validations(sd.validations))
-          }
-      case id: IntData =>
-        name =>
-          addIntSchema(
-            name,
-            description.getOrElse("value of type integer"),
-            example.asInstanceOf[Option[Int]].getOrElse(123),
-            validations(id.validations)
-          )
-      case ld: LongData =>
-        name =>
-          addLongSchema(
-            name,
-            description.getOrElse("value of type long"),
-            example.asInstanceOf[Option[Long]].getOrElse(123l),
-            validations(ld.validations)
-          )
-      case ud: UuidData =>
-        name =>
-          addUuidSchema(
-            name,
-            description.getOrElse("value of type UUID"),
-            example.getOrElse(exampleUuid),
-            validations(ud.validations))
-      case ldt: LocalDateTimeData =>
-        name =>
-          addStringSchema(
-            name,
-            description.getOrElse("value of type local date time"),
-            localDateTimeFormatter.format(
-              example.getOrElse(localDateTimeExample).asInstanceOf[LocalDateTime]),
-            validations(ldt.validations)
-          )
-      case ld: LocalDateData =>
-        name =>
-          addDateSchema(
-            name,
-            description.getOrElse("value of type local date"),
-            localDateFormatter.format(example.getOrElse(localDateExample).asInstanceOf[LocalDate]),
-            validations(ld.validations)
-          )
-      case lt: LocalTimeData =>
-        name =>
-          addStringSchema(
-            name,
-            description.getOrElse("value of type local time"),
-            localTimeFormatter.format(example.getOrElse(localTimeExample).asInstanceOf[LocalTime]),
-            validations(lt.validations)
-          )
-      case dd: DoubleData =>
-        name =>
-          addNumberSchema(
-            name,
-            description.getOrElse("value of type double"),
-            example.map(_.toString).getOrElse("3.14"),
-            validations(dd.validations)
-          )
-      case fd: FloatData =>
-        name =>
-          addNumberSchema(
-            name,
-            description.getOrElse("value of type float"),
-            example.map(_.toString).getOrElse("3.14"),
-            validations(fd.validations)
-          )
-      case bd: BigDecimalData =>
-        name =>
-          addStringSchema(
-            name,
-            description.getOrElse("value fo type big decimal"),
-            example.getOrElse(BigDecimal("3.14")).toString,
-            validations(bd.validations)
-          )
-      case ba: ByteArrayData =>
-        name =>
-          addBase64ByteArraySchema(
-            name,
-            description.getOrElse("base64 encoded byte array"),
-            example.getOrElse("0123456789abcdef".getBytes).asInstanceOf[Array[Byte]],
-            validations(ba.validations)
-          )
+
+
       case ld: ListData[ALG, t] @unchecked =>
         name =>
           val itemSchema =
@@ -509,15 +455,6 @@ trait SwaggerCoreInterpreter {
             .description(description.getOrElse("value of type either"))
             .name(name)
           SwaggerSchemas(composedSchema, a.referenceSchemas ::: b.referenceSchemas)
-      case esd: EnumerationData[e, a] @unchecked =>
-        name =>
-          addEnumerationData(
-            name.toString,
-            description.getOrElse(s"enumeration of type ${esd.manifestOfA.getClass.getSimpleName}"),
-            example.orElse(esd.enumeration.values.headOption).map(_.toString).getOrElse(""),
-            esd.enumeration.values.toList.map(_.toString),
-            validations(esd.validations)
-          )
       case gd: KvpHListValue[ALG, h, hl] @unchecked =>
         name =>
           val schemas = fromKvpHList(gd.kvpHList, customInterpreter)
@@ -551,81 +488,6 @@ trait SwaggerCoreInterpreter {
     }
   }
 
-  def validations[A](list: List[ValidationOp[A]]): Schema[_] => Schema[_] = schema => {
-    list.map(v => validation(v).apply(schema))
-    schema
-  }
 
-  /**
-    * Responsible for adding validation specific details to the SwaggerCore files.
-    *
-    * @param op The validation from we will add to the
-    * @tparam A The type which is to be validated.
-    * @return
-    */
-  def validation[A](op: ValidationOp[A]): Schema[_] => Schema[_] = {
-    op match {
-      case ValidValue(values) =>
-        schema =>
-          {
-            val typedSchema = schema.asInstanceOf[Schema[A]]
-            values.foreach(typedSchema.addEnumItemObject)
-            typedSchema
-          }
-      case InvalidValue(values) =>
-        val invalidDescription =
-          s"These values are not allowed: ${values.mkString("('", ",", "')")}."
-        schema =>
-          {
-            val description = schema.getDescription
-            val newDescription =
-              if (description.isEmpty) invalidDescription
-              else description + " " + invalidDescription
-            schema.setDescription(newDescription)
-            schema
-          }
-      case sv.IsAlphanumeric =>
-        schema =>
-          schema.pattern("^[:alnum:]+$"); schema
-      case sv.MinLength(min) =>
-        schema =>
-          schema.minLength(min)
-      case sv.MaxLength(max) =>
-        schema =>
-          schema.maxLength(max)
-      case sv.MatchesRegex(r) =>
-        schema =>
-          schema.pattern(r.toString())
-      case sv.Length(l) =>
-        schema =>
-          schema.minLength(l).maxLength(l)
-      case sv.Custom(_, _, _) => identity
-      case sv.Uppercase       => identity
-      case sv.Token           => identity
-      case sv.Lowercase       => identity
-
-      case iv.Between(min, max) =>
-        _.exclusiveMinimum(true)
-          .exclusiveMaximum(true)
-          .minimum(new java.math.BigDecimal(min))
-          .maximum(new java.math.BigDecimal(max))
-      case iv.Greater(gt) =>
-        _.minimum(new java.math.BigDecimal(gt)).exclusiveMinimum(true)
-      case iv.Less(lt) =>
-        _.maximum(new java.math.BigDecimal(lt)).exclusiveMaximum(true)
-      case iv.Max(max)    => _.maximum(new java.math.BigDecimal(max))
-      case iv.Min(min)    => _.minimum(new java.math.BigDecimal(min))
-      case iv.Multiple(x) => _.multipleOf(new java.math.BigDecimal(x))
-      case iv.Negative =>
-        _.exclusiveMaximum(true).maximum(java.math.BigDecimal.ZERO)
-      case iv.Positive =>
-        _.exclusiveMinimum(true).minimum(java.math.BigDecimal.ZERO)
-      case bdv.Max(max) => _.maximum(max.bigDecimal)
-      case bdv.Min(min) => _.minimum(min.bigDecimal)
-
-      case _ => identity
-
-    }
-  }
 
 }

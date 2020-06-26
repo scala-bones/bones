@@ -20,11 +20,11 @@ class BaseCrudInterpreterTest extends AnyFunSuite {
   case class Output(result: Int)
   case class Error(message: String)
 
-  val endpointOneSchema = (("oneName", string) :<: kvpNil).convert[EndpointOne]
-  val endpointTwoSchema = (("twoName", string) :<: kvpNil).convert[EndpointTwo]
-  val endpointThreeSchema = (("threeName", string) :<: kvpNil).convert[EndpointThree]
-  val outputSchema = (("result", int) :<: kvpNil).convert[Output]
-  val error = (("message", string) :<: kvpNil).convert[Error]
+  val endpointOneSchema = (("oneName", string) :: kvpNil).convert[EndpointOne]
+  val endpointTwoSchema = (("twoName", string) :: kvpNil).convert[EndpointTwo]
+  val endpointThreeSchema = (("threeName", string) :: kvpNil).convert[EndpointThree]
+  val outputSchema = (("result", int) :: kvpNil).convert[Output]
+  val error = (("message", string) :: kvpNil).convert[Error]
 
 
   test("path matches appropriately when there are multiple get endpoints") {

@@ -6,11 +6,10 @@ import java.time.format.DateTimeFormatter
 import cats.data.NonEmptyList
 import com.bones.bson.BsonValidatorInterpreter
 import com.bones.data.Error
-import com.bones.data.Error.ExtractionError
 import com.bones.data.custom._
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
 import com.bones.interpreter.custom.JavaTimeValidator.{parseTime, parseYear}
-import reactivemongo.bson.{BSONDateTime, BSONValue}
+import reactivemongo.bson.{BSONDateTime, BSONLong, BSONValue}
 
 trait BsonJavaTimeValidator extends InterchangeFormatValidator[JavaTimeValue, BSONValue] {
 
@@ -19,6 +18,33 @@ trait BsonJavaTimeValidator extends InterchangeFormatValidator[JavaTimeValue, BS
   val offsetDateTimeFormatter: DateTimeFormatter
   val offsetTimeFormatter: DateTimeFormatter
   val zonedDateTimeFormatter: DateTimeFormatter
+
+  def extractLocalDateTime[ALG[_], A](op: ALG[A])(
+    in: BSONValue,
+    path: List[String]): Either[NonEmptyList[Error.ExtractionError], LocalDateTime] =
+    in match {
+      case BSONDateTime(date) =>
+        val i = Instant.ofEpochMilli(date)
+        Right(LocalDateTime.ofInstant(i, ZoneOffset.UTC))
+      case x => BsonValidatorInterpreter.invalidValue(x, classOf[BSONDateTime], path)
+    }
+
+  def extractLocalDate[ALG[_], A](op: ALG[A])(
+    in: BSONValue,
+    path: List[String]): Either[NonEmptyList[Error.ExtractionError], LocalDate] =
+    in match {
+      case BSONDateTime(date) =>
+        Right(LocalDate.ofEpochDay(date))
+      case x => BsonValidatorInterpreter.invalidValue(x, classOf[BSONDateTime], path)
+    }
+
+  def extractLocalTime[ALG[_], A](op: ALG[A])(
+    in: BSONValue,
+    path: List[String]): Either[NonEmptyList[Error.ExtractionError], LocalTime] =
+    in match {
+      case BSONLong(time) => Right(LocalTime.ofNanoOfDay(time))
+      case x              => BsonValidatorInterpreter.invalidValue(x, classOf[BSONLong], path)
+    }
 
   override def validate[A](alg: JavaTimeValue[A]): (Option[BSONValue], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] =
     alg match {
@@ -35,6 +61,9 @@ trait BsonJavaTimeValidator extends InterchangeFormatValidator[JavaTimeValue, BS
             case x => baseValidator.invalidValue(x, classOf[BSONDateTime], path)
           }
         baseValidator.required(Right(id), id.validations, f)
+      case ld: LocalDateTimeData => baseValidator.required(Right(ld), ld.validations, extractLocalDateTime(ld))
+      case ld: LocalDateData => baseValidator.required(Right(ld), ld.validations, extractLocalDate(ld))
+      case lt: LocalTimeData => baseValidator.required(Right(lt), lt.validations, extractLocalTime(lt))
       case md: MonthData => parseTime(baseValidator, alg, classOf[Month], Month.valueOf, md.validations)
       case md: MonthDayData => parseTime(baseValidator, alg, classOf[MonthDay], MonthDay.parse, md.validations)
       case od: OffsetDateTimeData =>

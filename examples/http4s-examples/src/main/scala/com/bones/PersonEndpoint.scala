@@ -23,12 +23,12 @@ object PersonEndpoint extends LocalhostAllIOApp {
       "name",
       string(sv.matchesRegex("^[a-zA-Z ]*$".r)),
       "The name of the person must be alphanumeric",
-      "John Doe") :<:
-      ("age", int(iv.min(0)), "The Age, In years, of the person.", 21) :<:
+      "John Doe") ::
+      ("age", int(iv.min(0)), "The Age, In years, of the person.", 21) ::
       ("gender", string.optional) :<:
       kvpNil
   ).convert[Person]
 
   override def services: HttpRoutes[IO] =
-    serviceRoutesWithCrudMiddleware("person", personSchema, ds)
+    serviceRoutesWithCrudMiddleware("person", personSchema, idDef, parseIdF, com.bones.jdbc.defaultJdbcColumnInterpreter, ds)
 }

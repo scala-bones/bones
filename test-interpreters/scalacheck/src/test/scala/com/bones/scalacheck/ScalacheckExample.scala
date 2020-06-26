@@ -3,11 +3,10 @@ package com.bones.scalacheck
 import org.scalacheck.Arbitrary
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
+import com.bones.syntax._
 
 class ScalacheckExample extends AnyFunSuite with Checkers {
 
-  //import for Bones DSL syntax
-  import com.bones.syntax._
 
   // Define a case class.  This is probably already be defined in your application.
   object EyeColor extends Enumeration {
@@ -19,15 +18,15 @@ class ScalacheckExample extends AnyFunSuite with Checkers {
 
   // Define our "Bones Schema" with data constraints
   val personalTraitsSchema = (
-    ("height", int(iv.min(12), iv.max(240))) :<:
-      ("weight", double(dv.min(4), dv.max(9999)), "Weight in Pounds", 205.5) :<:
-      ("eyeColor", enumeration[EyeColor.type, EyeColor.EyeColor](EyeColor)) :<:
-      ("correctiveVision", boolean) :<:
+    ("height", int(iv.min(12), iv.max(240))) ::
+      ("weight", double(dv.min(4), dv.max(9999)), "Weight in Pounds", 205.5) ::
+      ("eyeColor", enumeration[EyeColor.type, EyeColor.EyeColor](EyeColor)) ::
+      ("correctiveVision", boolean) ::
       kvpNil
     ).convert[PersonalTraits]
 
   //Use the Scalacheck interpreter to generate an Arbitrary which will produce data within the range of the schema provided above.
-  implicit val arb = Arbitrary(Scalacheck.createGen(personalTraitsSchema))
+  implicit val arb = Arbitrary(Scalacheck.createCustomGen(personalTraitsSchema, com.bones.scalacheck.custom.allInterpreters))
 
 
   //Write your tests

@@ -8,13 +8,13 @@ import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
 import com.bones.validation.ValidationUtil
 
-trait CustomStringValidator[OUT] extends InterchangeFormatValidator[CustomStringValue, OUT] {
+trait CustomStringValidator[IN] extends InterchangeFormatValidator[CustomStringValue, IN] {
 
-  val baseValidator: KvpInterchangeFormatValidatorInterpreter[OUT]
+  val baseValidator: KvpInterchangeFormatValidatorInterpreter[IN]
 
   override def validate[A](alg: CustomStringValue[A])
-    : (Option[OUT], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] = {
-    (in: Option[OUT], path: List[String]) =>
+    : (Option[IN], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] = {
+    (in: Option[IN], path: List[String]) =>
       {
         in match {
           case Some(json) =>

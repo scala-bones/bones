@@ -7,7 +7,7 @@ This is the core library for the data definition and validation definitions.  Cu
 `String, Int, Boolean, Either, Long, List, Short, Float, Double, BigDecimal, Byte Array, LocalDateTime,
 LocalDate, UUID, Enumeration, Product Types and Sum Types`
 
-See the [Value](src/main/scala/com/bones/data/KvpValue.scala) file for more information.
+See the [Value](src/main/scala/com/bones/data/KvpCollection.scala) file for more information.
 
 # Supported Validation
 

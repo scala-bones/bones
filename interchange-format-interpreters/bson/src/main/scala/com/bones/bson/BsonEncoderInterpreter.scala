@@ -53,18 +53,6 @@ object BsonEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[BSO
   override def longToOut: Long => BSONValue =
     input => BSONLong(input)
 
-  override def dateTimeToOut: LocalDateTime => BSONValue =
-    input => {
-      val date = input.toInstant(ZoneOffset.UTC).toEpochMilli
-      BSONDateTime(date)
-    }
-
-  override def localTimeToOut: LocalTime => BSONValue =
-    input => BSONLong(input.toNanoOfDay)
-
-  override def localDateToOut: LocalDate => BSONValue =
-    input => BSONDateTime(input.toEpochDay)
-
   override def floatToOut: Float => BSONValue =
     input => BSONDecimal.fromBigDecimal(BigDecimal(input)).getOrElse(BSONString(input.toString))
 

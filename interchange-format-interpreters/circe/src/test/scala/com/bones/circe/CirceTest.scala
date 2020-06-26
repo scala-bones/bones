@@ -2,26 +2,28 @@ package com.bones.circe
 
 import java.nio.charset.{Charset, StandardCharsets}
 
-import com.bones.scalacheck.{NoAlgebraGen, Scalacheck}
+import com.bones.data.custom.AllCustomAlgebras
+import com.bones.scalacheck.Scalacheck
 import com.bones.schemas.Schemas.{AllSupported, allSupportCaseClass}
-import com.bones.syntax.NoAlgebra
 import org.scalacheck.Arbitrary
 import org.scalatestplus.scalacheck.Checkers
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers
+import com.bones.circe.custom._
+import com.bones.scalacheck.custom._
 
 class CirceTest extends AnyFunSuite with Checkers with Matchers {
 
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)
 
-  val jsonToCc = IsoCirceEncoderAndValidatorInterpreter.byteArrayFuncFromSchema[NoAlgebra,AllSupported](
+  val jsonToCc = IsoCirceEncoderAndValidatorInterpreter.byteArrayFuncFromSchema[AllCustomAlgebras,AllSupported](
     allSupportCaseClass,
     StandardCharsets.UTF_8,
-    noAlgebraValidator)
-  val ccToJson = IsoCirceEncoderAndValidatorInterpreter.encoderFromSchema(allSupportCaseClass)
+    allValidators)
+  val ccToJson = IsoCirceEncoderAndValidatorInterpreter.encoderFromCustomSchema(allSupportCaseClass, allEncoders)
 
-  implicit val arb = Arbitrary(Scalacheck.valueDefinition(allSupportCaseClass, NoAlgebraGen))
+  implicit val arb = Arbitrary(Scalacheck.valueDefinition(allSupportCaseClass, allInterpreters))
   val utf8 = Charset.forName("UTF8")
 
   test("scalacheck allSupport types - marshall then unmarshall") {

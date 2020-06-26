@@ -13,6 +13,10 @@ trait JavaTimeEncoder[OUT] extends InterchangeFormatEncoder[JavaTimeValue, OUT] 
   val offsetDateTimeFormatter: DateTimeFormatter
   val offsetTimeFormatter: DateTimeFormatter
   val zonedDateTimeFormatter: DateTimeFormatter
+  val localDateTimeFormatter: DateTimeFormatter
+  val localDateFormatter: DateTimeFormatter
+  val localTimeFormatter: DateTimeFormatter
+
 
   override def encode[A](alg: JavaTimeValue[A]): A => OUT =
     alg match {
@@ -32,6 +36,15 @@ trait JavaTimeEncoder[OUT] extends InterchangeFormatEncoder[JavaTimeValue, OUT] 
         val f = baseEncoder.stringToOut
         instant =>
           f(instantFormatter.format(instant))
+      case LocalDateTimeData(_) =>
+        input =>
+          baseEncoder.stringToOut(localDateTimeFormatter.format(input))
+      case LocalDateData(_)     =>
+        input =>
+          baseEncoder.stringToOut(localDateFormatter.format(input))
+      case LocalTimeData(_)     =>
+        input =>
+          baseEncoder.stringToOut(localTimeFormatter.format(input))
       case MonthData(_) =>
         val f = baseEncoder.stringToOut
         month =>

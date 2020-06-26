@@ -2,11 +2,11 @@ package com.bones.bson
 
 import java.time._
 
-import com.bones.data.{KvpValue, LocalDateTimeData}
-import com.bones.scalacheck.{GenAlg, Scalacheck, ScalacheckBase}
+import com.bones.data.custom.{AllCustomAlgebras, JavaTimeValue, LocalDateTimeData}
+import com.bones.scalacheck.GenAlg.CNilGenEncoder
+import com.bones.scalacheck.custom.{DefaultCustomStringValueInterpreter, DefaultScalacheckJavaUtilInterpreter, DefaultScalacheckScalaCoreInterpreter, ScalacheckJavaTimeInterpreter}
+import com.bones.scalacheck.{GenAlg, ScalacheckBase}
 import com.bones.schemas.Schemas._
-import com.bones.validation.ValidationDefinition.LocalDateTimeValidationInstances
-import org.scalacheck.Gen.Choose
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers
@@ -22,30 +22,25 @@ import scala.util.control.NonFatal
   */
 object BsonScalacheck extends ScalacheckBase {
 
+  val allInterpreters: GenAlg[AllCustomAlgebras] =
+    DefaultScalacheckScalaCoreInterpreter ++
+      (DefaultCustomStringValueInterpreter ++
+        (OverrideJavaTimeInterpreter ++
+          (DefaultScalacheckJavaUtilInterpreter ++
+            CNilGenEncoder)))
 
-  override val wordsGen: Gen[String] = Scalacheck.wordsGen
-  override val sentencesGen: Gen[String] = Scalacheck.sentencesGen
-
-  /** Bson DateTime doesn't support nano seconds, so we will truncate them for this test */
-  val chooseMillis = new Choose[LocalDateTime] {
-    override def choose(min: LocalDateTime, max: LocalDateTime): Gen[LocalDateTime] =
-      Scalacheck.chooseLocalDateTime.choose(min,max).map(localDate => {
-        val millis = localDate.toInstant(ZoneOffset.UTC).toEpochMilli
-        LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
-      })
-  }
-
-  override def valueDefinition[ALG[_], A](fgo: KvpValue[A], genAlg: GenAlg[ALG]): Gen[A] = fgo match {
-    case dd: LocalDateTimeData =>
-      Scalacheck.genTime(
-        dd.validations,
-        LocalDateTimeValidationInstances,
-        LocalDateTime.of(LocalDate.ofEpochDay(Int.MinValue), LocalTime.MIN), // toEpochMilli in LocalDateTime doesn't work if the value is outside of the Int range
-        LocalDateTime.of(LocalDate.ofEpochDay(Int.MaxValue), LocalTime.MAX),
-        chooseMillis
-      )
-
-    case _ => super.valueDefinition(fgo, genAlg)
+  object OverrideJavaTimeInterpreter extends ScalacheckJavaTimeInterpreter {
+    override def gen[A](alg: JavaTimeValue[A]): Gen[A] = {
+      alg match {
+        case LocalDateTimeData(_) => {
+          super.gen(alg).map((localDate: LocalDateTime) => {
+            val millis = localDate.toInstant(ZoneOffset.UTC).toEpochMilli
+            LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
+          })
+        }
+        case _ => super.gen(alg)
+      }
+    }
   }
 }
 
@@ -54,11 +49,11 @@ class BsonTest extends AnyFunSuite with Checkers with Matchers {
   //  implicit override val generatorDrivenConfig =
   //    PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)
 
-  val bsonToCc = BsonValidatorInterpreter.validatorFromSchema(allSupportCaseClass)
+  val bsonToCc = BsonValidatorInterpreter.validatorFromCustomSchema(allSupportCaseClass, com.bones.bson.custom.allValidators)
 
-  val ccToBson = BsonEncoderInterpreter.encoderFromSchema(allSupportCaseClass)
+  val ccToBson = BsonEncoderInterpreter.encoderFromCustomSchema(allSupportCaseClass, com.bones.bson.custom.allEncoders)
 
-  implicit val arb = Arbitrary(BsonScalacheck.fromBonesSchema(allSupportCaseClass))
+  implicit val arb = Arbitrary(BsonScalacheck.fromCustomSchema(allSupportCaseClass, BsonScalacheck.allInterpreters))
 
   test("scalacheck allSupport types - marshall then marshall") {
     check((cc: AllSupported) => {

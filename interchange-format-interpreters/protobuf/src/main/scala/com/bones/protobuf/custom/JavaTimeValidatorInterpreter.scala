@@ -3,36 +3,22 @@ package com.bones.protobuf.custom
 import java.time._
 
 import cats.data.NonEmptyList
+import com.bones.Util
+import com.bones.Util.{longToLocalDate, longToLocalTime}
 import com.bones.data.Error.{CanNotConvert, ExtractionError}
-import com.bones.data.{HListConvert, KvpValue, Sugar}
+import com.bones.data.KvpCollection
 import com.bones.data.custom._
-import com.bones.protobuf.ProtobufSequentialValidatorInterpreter.{
-  ExtractFromProto,
-  LastFieldNumber,
-  Path,
-  CustomValidatorInterpreter => CustomSequentialInterpreter
-}
-import com.bones.protobuf.{
-  ProtoFileGeneratorInterpreter,
-  ProtobufSequentialEncoderInterpreter,
-  ProtobufSequentialValidatorInterpreter
-}
-import com.bones.syntax.NoAlgebra
+import com.bones.protobuf.ProtobufSequentialValidatorInterpreter
+import com.bones.protobuf.ProtobufSequentialValidatorInterpreter._
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.ValidationUtil
 import com.google.protobuf.CodedInputStream
-import shapeless.HNil
 
 import scala.util.Try
 
-/**
-  * This object contains various functions which map data to and from primitive values which
-  * are supported by our Coded Input Stream serializer.
-  */
-object JavaTimeValidatorInterpreter extends JavaTimeValueSugar with Sugar {
-
+object JavaTimeValidatorInterpreter {
   val stringToDateTimeException
-    : (String, List[String]) => Either[NonEmptyList[ExtractionError], DateTimeException] =
+  : (String, List[String]) => Either[NonEmptyList[ExtractionError], DateTimeException] =
     (str, _) => Right(new DateTimeException(str))
 
   val intToDayOfWeek: (Int, List[String]) => Either[NonEmptyList[ExtractionError], DayOfWeek] =
@@ -44,7 +30,7 @@ object JavaTimeValidatorInterpreter extends JavaTimeValueSugar with Sugar {
         .map(th => NonEmptyList.one(CanNotConvert(path, str, classOf[Duration], Some(th))))
 
   val timestampToInstant
-    : (Long, Int, List[String]) => Either[NonEmptyList[ExtractionError], Instant] =
+  : (Long, Int, List[String]) => Either[NonEmptyList[ExtractionError], Instant] =
     (seconds, nanos, path) =>
       Try { Instant.ofEpochSecond(seconds, nanos) }.toEither.left
         .map(th =>
@@ -68,7 +54,7 @@ object JavaTimeValidatorInterpreter extends JavaTimeValueSugar with Sugar {
       }.toEither.left.map(th =>
         NonEmptyList.one(CanNotConvert(path, int, classOf[MonthDay], Some(th))))
 
-  /** Month day is encoded into a single int, this function splits them into, essentually, two short values */
+  /** Month day is encoded into a single int, this function splits them into two short values */
   val monthDayToInt: MonthDay => Int =
     monthDay => {
       val month = monthDay.getMonth.getValue
@@ -114,82 +100,130 @@ object JavaTimeValidatorInterpreter extends JavaTimeValueSugar with Sugar {
       Try { ZoneId.of(string) }.toEither.left.map(th =>
         NonEmptyList.one(CanNotConvert(path, string, classOf[ZoneId], Some(th))))
 
-  /** Define an OffsetDateTime in terms of a schema using both natively supported values and JavaTime values
-    * supported already.
-    */
-  val offsetDateTimeSchema =
-    (("localDateTime", localDateTime) :<: ("zoneOffset", zoneOffset) :>: kvpNilCov[JavaTimeValue])
-      .xmap[OffsetDateTime](
-        offsetFields => OffsetDateTime.of(offsetFields.head, offsetFields.tail.head),
-        offset => offset.toLocalDateTime :: offset.getOffset :: HNil
-      )
-
-  /** Define OffsetTime in terms of a schema using both natvely supported types and JavaTime values
-    * supported already.
-    */
-  val offsetTimeSchema =
-    (("localDateTime", localTime) :<: ("zoneOffset", zoneOffset) :>: kvpNilCov[JavaTimeValue])
-      .xmap[OffsetTime](
-        offsetFields => OffsetTime.of(offsetFields.head, offsetFields.tail.head),
-        offset => offset.toLocalTime :: offset.getOffset :: HNil
-      )
-
-  /** Define ZonedDateTime in terms of a schema using both natvely supported types and JavaTime values
-    * supported already.
-    */
-  val zonedDateTimeSchema =
-    (("localDateTime", localDateTime) :<: ("zoneId", zoneId) :>: kvpNilCov[JavaTimeValue])
-      .xmap[ZonedDateTime](
-        zonedFields => ZonedDateTime.of(zonedFields.head, zonedFields.tail.head),
-        zonedDateTime => zonedDateTime.toLocalDateTime :: zonedDateTime.getZone :: HNil
-      )
-
 }
 
-/** Custom interpreter for JavaTimeData */
-trait JavaTimeValidatorInterpreter extends CustomSequentialInterpreter[JavaTimeValue] {
+/** Custom interpreter for JavaTimeData.
+ *  Because JavaTimeValidator relies
+ *
+ **/
+trait JavaTimeValidatorInterpreter extends CustomValidatorInterpreter[JavaTimeValue] {
+
+  import JavaTimeValidatorInterpreter._
+
+
+
+
+//  def offsetDateTime(lt: OffsetDateTimeData): ExtractFromProto[OffsetDateTime] = {
+//
+//    val timeAsLongExtract = timestampWithMap[(Long,Int)]( (l,i,_) => Right( (l,i) ), List.empty)
+//    val zoneOffsetExtract = intDataWithFlatMap(lt, intToZoneOffset, List.empty)
+//
+//    (lastFieldNumber, path) => {
+//      val ldtResult = timeAsLongExtract(lastFieldNumber, path)
+//      val zoneResult = zoneOffsetExtract(ldtResult._2, path)
+//
+//      val tags = ldtResult._1 ::: zoneResult._1
+//      val f: (CanReadTag, CodedInputStream) => (CanReadTag, Either[NonEmptyList[ExtractionError], OffsetDateTime]) =
+//        (canReadTag, is) => {
+//          val ldtReadResult: (CanReadTag, Either[NonEmptyList[ExtractionError], (Long, Int)]) =
+//            ldtResult._3.apply(canReadTag, is)
+//          val zoneReadResult = zoneResult._3(ldtReadResult._1, is)
+//          val offsetDateTimeResult = Util.eitherMap2(ldtReadResult._2, zoneReadResult._2)( (ldt, zone) => {
+//            OffsetDateTime.of(LocalDateTime.ofEpochSecond(ldt._1, ldt._2, defaultZoneOffset), zone)
+//          })
+//          val offsetDateTimeValidated = offsetDateTimeResult.flatMap(ValidationUtil.validate(lt.validations))
+//          (zoneReadResult._1, offsetDateTimeResult)
+//        }
+//
+//      (tags, zoneResult._2, f)
+//    }
+//
+//  }
+
+  /** Define OffsetTime in terms of a schema using both natively supported types and JavaTime values
+    * supported already.
+    */
+//  val offsetTimeSchema =
+//    (("localDateTime", localTime) :: ("zoneOffset", zoneOffset) :: kvpNil)
+//      .xmap[OffsetTime](
+//        offsetFields => OffsetTime.of(offsetFields.head, offsetFields.tail.head),
+//        offset => offset.toLocalTime :: offset.getOffset :: HNil
+//      )
+
+  /** Define ZonedDateTime in terms of a schema using both natively supported types and JavaTime values
+    * supported already.
+    */
+//  val zonedDateTimeSchema =
+//    (("localDateTime", localDateTime) :: ("zoneId", zoneId) :: kvpNil)
+//      .xmap[ZonedDateTime](
+//        zonedFields => ZonedDateTime.of(zonedFields.head, zonedFields.tail.head),
+//        zonedDateTime => zonedDateTime.toLocalDateTime :: zonedDateTime.getZone :: HNil
+//      )
 
   import com.bones.protobuf.ProtobufSequentialValidatorInterpreter._
-  import JavaTimeValidatorInterpreter._
+
+  val defaultZoneOffset: ZoneOffset
 
   val coreProtobufSequentialInputInterpreter: ProtobufSequentialValidatorInterpreter
 
-  def valueDefThenValidation[A](
-    kvpValue: KvpValue[A],
-    validations: List[ValidationOp[A]]): ExtractFromProto[A] = {
-    (last: LastFieldNumber, path: Path) =>
-      {
-        val (tags, lastField, f) =
-          coreProtobufSequentialInputInterpreter.valueDefinition(kvpValue, this)(last, path)
-        def newF(canRead: CanReadTag, inputStream: CodedInputStream) = {
-          val fResult = f(canRead, inputStream)
-          val newResult2 = fResult._2.flatMap(i => ValidationUtil.validate(validations)(i, path))
-          (fResult._1, newResult2)
-        }
-        (tags, lastField, newF)
-      }
+//  def valueDefThenValidation[ALG[_], A](
+//                                 kvpValue: KvpCollection[ALG,A],
+//                                 validations: List[ValidationOp[A]]): ExtractFromProto[A] = {
+//    (last: LastFieldNumber, path: Path) =>
+//      {
+//        val (tags, lastField, f) =
+//          coreProtobufSequentialInputInterpreter.valueDefinition[ALG, A](kvpValue, this)(last, path)
+//        def newF(canRead: CanReadTag, inputStream: CodedInputStream) = {
+//          val fResult = f(canRead, inputStream)
+//          val newResult2 = fResult._2.flatMap(i => ValidationUtil.validate(validations)(i, path))
+//          (fResult._1, newResult2)
+//        }
+//        (tags, lastField, newF)
+//      }
+//  }
+
+  def localDateTimeData[ALG[_], A](
+    alg: ALG[LocalDateTime],
+    zoneOffset: ZoneOffset,
+    validations: List[ValidationOp[LocalDateTime]]): ExtractFromProto[LocalDateTime] = {
+    def f(
+      seconds: Long,
+      nanos: Int,
+      path: Path): Either[NonEmptyList[ExtractionError], LocalDateTime] =
+      Try {
+        LocalDateTime.ofEpochSecond(seconds, nanos, zoneOffset)
+      }.toEither.left
+        .map(err =>
+          NonEmptyList.one(
+            CanNotConvert(path, (seconds, nanos), classOf[LocalDateTime], Some(err))))
+        .flatMap(i => ValidationUtil.validate(validations)(i, path))
+
+    timestampWithMap(f, validations)
   }
 
   override def extractFromProto[A](alg: JavaTimeValue[A]): ExtractFromProto[A] =
     alg match {
       case dt: DateTimeExceptionData =>
-        stringDataWithFlatMap(Right(dt), stringToDateTimeException, dt.validations)
-      case dt: DayOfWeekData => intDataWithFlatMap(Right(dt), intToDayOfWeek, dt.validations)
-      case dd: DurationData  => stringDataWithFlatMap(Right(dd), stringToDuration, dd.validations)
-      case id: InstantData   => timestampWithMap(Right(id), timestampToInstant, id.validations)
-      case md: MonthData     => intDataWithFlatMap(Right(md), intToMonth, md.validations)
-      case md: MonthDayData  => intDataWithFlatMap(Right(md), intToMonthDay, md.validations)
-      case dt: OffsetDateTimeData =>
-        valueDefThenValidation(offsetDateTimeSchema, dt.validations)
-      case dt: OffsetTimeData =>
-        valueDefThenValidation(offsetTimeSchema, dt.validations)
-      case pd: PeriodData    => stringDataWithFlatMap(Right(pd), stringToPeriod, pd.validations)
-      case yd: YearData      => intDataWithFlatMap(Right(yd), intToYear, yd.validations)
-      case ym: YearMonthData => longDataWithFlatMap(Right(ym), longToYearMonth, ym.validations)
-      case zd: ZonedDateTimeData =>
-        valueDefThenValidation(zonedDateTimeSchema, zd.validations)
-      case zi: ZoneIdData     => stringDataWithFlatMap(Right(zi), stringToZoneId, zi.validations)
-      case zo: ZoneOffsetData => intDataWithFlatMap(Right(zo), intToZoneOffset, zo.validations)
+        stringDataWithFlatMap(dt, stringToDateTimeException, dt.validations)
+      case dt: DayOfWeekData     => intDataWithFlatMap(dt, intToDayOfWeek, dt.validations)
+      case dd: DurationData      => stringDataWithFlatMap(dd, stringToDuration, dd.validations)
+      case id: InstantData       => timestampWithMap(timestampToInstant, id.validations)
+      case dd: LocalDateTimeData => localDateTimeData(dd, defaultZoneOffset, dd.validations)
+      case dt: LocalDateData     => longDataWithFlatMap(dt, longToLocalDate, dt.validations)
+      case lt: LocalTimeData     => longDataWithFlatMap(lt, longToLocalTime, lt.validations)
+      case md: MonthData         => intDataWithFlatMap(md, intToMonth, md.validations)
+      case md: MonthDayData      => intDataWithFlatMap(md, intToMonthDay, md.validations)
+//      case dt: OffsetDateTimeData =>
+//        valueDefThenValidation(offsetDateTimeSchema, dt.validations)
+//      case dt: OffsetTimeData =>
+//        valueDefThenValidation(offsetTimeSchema, dt.validations)
+      case pd: PeriodData    => stringDataWithFlatMap(pd, stringToPeriod, pd.validations)
+      case yd: YearData      => intDataWithFlatMap(yd, intToYear, yd.validations)
+      case ym: YearMonthData => longDataWithFlatMap(ym, longToYearMonth, ym.validations)
+//      case zd: ZonedDateTimeData =>
+//        valueDefThenValidation(zonedDateTimeSchema, zd.validations)
+      case zi: ZoneIdData     => stringDataWithFlatMap(zi, stringToZoneId, zi.validations)
+      case zo: ZoneOffsetData => intDataWithFlatMap(zo, intToZoneOffset, zo.validations)
     }
 
 }

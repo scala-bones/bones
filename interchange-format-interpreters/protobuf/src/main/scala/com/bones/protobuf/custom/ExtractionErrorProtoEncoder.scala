@@ -2,49 +2,45 @@ package com.bones.protobuf.custom
 
 import com.bones.data.custom._
 import com.bones.interpreter.custom.ExtractionErrorEncoder
-import com.bones.protobuf.ProtobufSequentialEncoderInterpreter.{
-  CustomEncoderInterpreter,
-  EncodeToProto,
-  NoAlgebraCustomEncoderInterpreter
-}
+import com.bones.protobuf.ProtobufSequentialEncoderInterpreter.{CustomEncoderInterpreter, EncodeToProto}
 import com.bones.protobuf.ProtobufUtcSequentialEncoderAndValidator
 
 object ExtractionErrorProtoEncoder extends CustomEncoderInterpreter[ExtractionErrorValue] {
   private val encoder = ProtobufUtcSequentialEncoderAndValidator
+  val scalaCoreCustomInterpreter = ProtobufScalaCoreEncoder
 
   override def encodeToProto[A](alg: ExtractionErrorValue[A]): EncodeToProto[A] =
     alg match {
       case CanNotConvertData =>
         encoder.valueDefinition(
-          ExtractionErrorEncoder.canNotConvertSchema,
-          NoAlgebraCustomEncoderInterpreter)
+          ExtractionErrorEncoder.canNotConvertSchema, scalaCoreCustomInterpreter)
       case NotFoundData =>
         encoder.valueDefinition(
           ExtractionErrorEncoder.notFoundDataSchema,
-          NoAlgebraCustomEncoderInterpreter)
+          scalaCoreCustomInterpreter)
       case ParsingErrorData =>
         encoder.valueDefinition(
           ExtractionErrorEncoder.parsingErrorSchema,
-          NoAlgebraCustomEncoderInterpreter)
+          scalaCoreCustomInterpreter)
       case RequiredValueData =>
         encoder.valueDefinition(
           ExtractionErrorEncoder.requiredValueSchema,
-          NoAlgebraCustomEncoderInterpreter)
+          scalaCoreCustomInterpreter)
       case SumTypeErrorData =>
         encoder.valueDefinition(
           ExtractionErrorEncoder.sumTypeErrorSchema,
-          NoAlgebraCustomEncoderInterpreter)
+          scalaCoreCustomInterpreter)
       case SystemErrorData =>
         encoder.valueDefinition(
           ExtractionErrorEncoder.systemErrorSchema,
-          NoAlgebraCustomEncoderInterpreter)
+          scalaCoreCustomInterpreter)
       case ValidationErrorData =>
         encoder.valueDefinition(
           ExtractionErrorEncoder.validationErrorSchema,
-          NoAlgebraCustomEncoderInterpreter)
+          scalaCoreCustomInterpreter)
       case WrongTypeErrorData =>
         encoder.valueDefinition(
           ExtractionErrorEncoder.wrongTypeErrorSchema,
-          NoAlgebraCustomEncoderInterpreter)
+          scalaCoreCustomInterpreter)
     }
 }
