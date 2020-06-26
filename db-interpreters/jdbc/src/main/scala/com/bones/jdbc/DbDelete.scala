@@ -5,37 +5,45 @@ import java.sql.Connection
 import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionError, SystemError}
 import com.bones.data.{BonesSchema, HListConvert}
-import com.bones.jdbc.ColumnNameInterpreter.{CustomInterpreter => CustomColumnNameInterpeter}
-import com.bones.jdbc.ResultSetInterpreter.{CustomInterpreter => CustomResultSetInterpeter}
-import com.bones.jdbc.DbInsertValues.ID
 import com.bones.jdbc.DbUtil.{camelToSnake, withDataSource, withStatement}
+import com.bones.jdbc.rs.ResultSetValueInterpreter
+import com.bones.jdbc.update.DbUpdateValues
+import com.bones.jdbc.update.DbUpdateValues.CustomDbUpdateInterpreter
 import javax.sql.DataSource
 
 import scala.util.control.NonFatal
 
 object DbDelete {
 
-  type DbDeleteCustomInterpreter[ALG[_]] = CustomColumnNameInterpeter[ALG]
-    with CustomResultSetInterpeter[ALG]
-
-  def delete[ALG[_], A](
+  def delete[ALG[_], A, ID](
     schema: BonesSchema[ALG, A],
-    customInterpreter: DbDeleteCustomInterpreter[ALG]
-  ): DataSource => ID => Either[NonEmptyList[ExtractionError], (Long, A)] = {
-    val withConnection = deleteWithConnect(schema, customInterpreter)
+    resultSetCustomInterpreter: ResultSetValueInterpreter[ALG],
+    idDef: IdDefinition[ALG, ID],
+    customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG]
+  ): DataSource => ID => Either[NonEmptyList[ExtractionError], (ID, A)] = {
+    val withConnection =
+      deleteWithConnect(schema, resultSetCustomInterpreter, idDef, customDbUpdateInterpreter)
     ds => id =>
       withDataSource(ds)(con => withConnection(id)(con))
   }
 
-  def deleteWithConnect[ALG[_], A](
+  def deleteWithConnect[ALG[_], A, ID](
     schema: BonesSchema[ALG, A],
-    customInterpreter: DbDeleteCustomInterpreter[ALG]
-  ): ID => Connection => Either[NonEmptyList[ExtractionError], (Long, A)] = {
+    resultSetCustomInterpreter: ResultSetValueInterpreter[ALG],
+    idDef: IdDefinition[ALG, ID],
+    customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG]
+  ): ID => Connection => Either[NonEmptyList[ExtractionError], (ID, A)] = {
     schema match {
       case x: HListConvert[ALG, _, _, _] => {
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
-        val sql = s"delete from ${tableName} where id = ?"
-        val getEntity = DbGet.getEntityWithConnectionCustomAlgebra(schema, customInterpreter)
+        val updateF =
+          DbUpdateValues.valueDefinition(idDef.asSchema, customDbUpdateInterpreter)(1, idDef.key)
+        val sql = s"delete from ${tableName} where ${updateF.assignmentStatements.map(_._1).mkString(" AND ")}"
+        val getEntity = DbGet.getEntityWithConnectionCustomAlgebra(
+          schema,
+          idDef,
+          resultSetCustomInterpreter,
+          customDbUpdateInterpreter)
         id => con =>
           {
             try {
@@ -43,7 +51,7 @@ object DbDelete {
                 entity <- getEntity(id)(con)
                 _ <- {
                   withStatement[Boolean](con.prepareCall(sql))(statement => {
-                    statement.setLong(1, id)
+                    updateF.predicates(id).foreach(_.apply(statement))
                     Right(statement.execute())
                   })
                 }

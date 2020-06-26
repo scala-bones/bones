@@ -17,17 +17,17 @@ class ProtobufSequentialInputInterpreterTest extends AnyFunSuite with Checkers w
   val monica = Person(UUID.randomUUID(), "Monica", 44l, Loc("Denver", "CO"), true, Some("black"))
 
   val loc = (
-      ("city", string) :<:
-      ("state", string) :<:
+      ("city", string) ::
+      ("state", string) ::
       kvpNil
   ).convert[Loc]
 
   val person = (
-    ("id", uuid) :<:
-    ("name", string) :<:
-    ("age", long) :<:
+    ("id", uuid) ::
+    ("name", string) ::
+    ("age", long) ::
     ("location", loc) :<:
-    ("knowsAboutGadt", boolean) :<:
+    ("knowsAboutGadt", boolean) ::
     ("favoriteColor", string.optional) :<:
     kvpNil
   ).convert[Person]
@@ -35,12 +35,12 @@ class ProtobufSequentialInputInterpreterTest extends AnyFunSuite with Checkers w
   ignore("single items") {
 
     val denver = Loc("Denver", "CO")
-    val bytes = ProtobufUtcSequentialEncoderAndValidator.encodeToBytes(loc)(denver)
+    val bytes = ProtobufUtcSequentialEncoderAndValidator.encodeToBytesCustomAlgebra(loc, com.bones.protobuf.custom.allEncoders)(denver)
 
     val is = new ByteArrayInputStream(bytes)
     val cin: CodedInputStream = CodedInputStream.newInstance(is)
 
-    val isItDenver = ProtobufUtcSequentialEncoderAndValidator.fromBytes(loc)(bytes)
+    val isItDenver = ProtobufUtcSequentialEncoderAndValidator.fromCustomBytes(loc, com.bones.protobuf.custom.allValidators)(bytes)
 
     isItDenver match {
       case Right(l) => l mustBe denver
@@ -56,13 +56,13 @@ class ProtobufSequentialInputInterpreterTest extends AnyFunSuite with Checkers w
     val os = new ByteArrayOutputStream()
     val cos: CodedOutputStream = CodedOutputStream.newInstance(os)
 
-    val result = ProtoFileGeneratorInterpreter.fromSchema(person)
+    val result = ProtoFileGeneratorInterpreter.fromSchemaCustomAlgebra(person, com.bones.protobuf.custom.allProtoFiles)
 
     val str = ProtoFileGeneratorInterpreter.messageToProtoFile(result)
 
-    val bytes = ProtobufUtcSequentialEncoderAndValidator.encodeToBytes(person)(monica)
+    val bytes = ProtobufUtcSequentialEncoderAndValidator.encodeToBytesCustomAlgebra(person, com.bones.protobuf.custom.allEncoders)(monica)
 
-    val isItMonica = ProtobufUtcSequentialEncoderAndValidator.fromBytes(person)(bytes)
+    val isItMonica = ProtobufUtcSequentialEncoderAndValidator.fromCustomBytes(person, com.bones.protobuf.custom.allValidators)(bytes)
 
     isItMonica match {
       case Right(person) => person mustBe monica

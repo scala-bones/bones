@@ -2,14 +2,14 @@ package com.bones.data.custom
 
 import java.time._
 
-import com.bones.data.{AlgToCollectionData, HasManifest}
+import com.bones.data.{AlgToCollectionData, KvpValue}
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.custom.JavaTimeValidation
 import com.bones.validation.custom.JavaTimeValidation._
 import shapeless.Coproduct
 import shapeless.ops.coproduct.Inject
 
-sealed abstract class JavaTimeValue[A: Manifest] extends HasManifest[A] {
+sealed abstract class JavaTimeValue[A: Manifest] extends KvpValue[A] {
   val manifestOfA: Manifest[A] = manifest[A]
 }
 
@@ -31,6 +31,18 @@ final case class DurationData(validations: List[ValidationOp[Duration]])
 final case class InstantData(validations: List[ValidationOp[Instant]])
     extends JavaTimeValue[Instant]
     with AlgToCollectionData[JavaTimeValue, Instant, InstantData]
+
+final case class LocalDateTimeData(validations: List[ValidationOp[LocalDateTime]])
+  extends JavaTimeValue[LocalDateTime]
+    with AlgToCollectionData[JavaTimeValue, LocalDateTime, LocalDateTimeData]
+
+final case class LocalDateData(validations: List[ValidationOp[LocalDate]])
+  extends JavaTimeValue[LocalDate]
+    with AlgToCollectionData[JavaTimeValue, LocalDate, LocalDateData]
+
+final case class LocalTimeData(validations: List[ValidationOp[LocalTime]])
+  extends JavaTimeValue[LocalTime]
+    with AlgToCollectionData[JavaTimeValue, LocalTime, LocalTimeData]
 
 final case class MonthData(validations: List[ValidationOp[Month]])
     extends JavaTimeValue[Month]
@@ -79,6 +91,9 @@ trait JavaTimeValidationSugar {
   val jt_i: JavaTimeValidation.InstantValidation.type = InstantValidation
   val jt_m: JavaTimeValidation.MonthValidations.type = MonthValidations
   val jt_md: JavaTimeValidation.MonthDayValidations.type = MonthDayValidations
+  val jt_ldt: JavaTimeValidation.LocalDateTimeValidation.type = LocalDateTimeValidation
+  val jt_ld: JavaTimeValidation.LocalDateValidation.type = LocalDateValidation
+  val jt_lt: JavaTimeValidation.LocalTimeValidation.type = LocalTimeValidation
   val jt_odt: JavaTimeValidation.OffsetDateTimeValidations.type = OffsetDateTimeValidations
   val jt_ot: JavaTimeValidation.OffsetTimeValidations.type = OffsetTimeValidations
   val jt_p: JavaTimeValidation.PeriodValidations.type = PeriodValidations
@@ -108,6 +123,20 @@ trait JavaTimeValueSugar extends JavaTimeValidationSugar {
 
   def instant(validations: ValidationOp[Instant]*): InstantData = InstantData(validations.toList)
   val instant: InstantData = instant()
+
+  /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
+  def localDateTime(v: ValidationOp[LocalDateTime]*): LocalDateTimeData =
+    LocalDateTimeData(v.toList)
+
+  val localDateTime: LocalDateTimeData = LocalDateTimeData(List.empty)
+
+  def localDate(v: ValidationOp[LocalDate]*): LocalDateData = LocalDateData(v.toList)
+
+  val localDate: LocalDateData = LocalDateData(List.empty)
+
+  def localTime(v: ValidationOp[LocalTime]*): LocalTimeData = LocalTimeData(v.toList)
+
+  val localTime: LocalTimeData = localTime()
 
   def month(validations: ValidationOp[Month]*): MonthData = MonthData(validations.toList)
   val month: MonthData = month()
@@ -168,6 +197,22 @@ trait JavaTimeValueSugarInjected[ALG[_] <: Coproduct] extends JavaTimeValidation
   def instant(validations: ValidationOp[Instant]*): ALG[Instant] =
     javaTimeInject(InstantData(validations.toList))
   val instant: ALG[Instant] = instant()
+
+  /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
+  def localDateTime(v: ValidationOp[LocalDateTime]*): ALG[LocalDateTime] =
+    javaTimeInject(LocalDateTimeData(v.toList))
+
+  val localDateTime: ALG[LocalDateTime] = localDateTime()
+
+  def localDate(v: ValidationOp[LocalDate]*): ALG[LocalDate] =
+    javaTimeInject(LocalDateData(v.toList))
+
+  val localDate: ALG[LocalDate] = localDate()
+
+  def localTime(v: ValidationOp[LocalTime]*): ALG[LocalTime] =
+    javaTimeInject(LocalTimeData(v.toList))
+
+  val localTime: ALG[LocalTime] = localTime()
 
   def month(validations: ValidationOp[Month]*): ALG[Month] =
     javaTimeInject(MonthData(validations.toList))

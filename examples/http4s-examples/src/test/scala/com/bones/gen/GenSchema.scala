@@ -1,19 +1,15 @@
 package com.bones.gen
 
 import com.bones.data.KvpHListValue
-import com.bones.scalacheck.GenGadt
-import com.bones.swagger.SwaggerCoreInterpreter
-import com.bones.syntax.NoAlgebra
-import io.swagger.v3.oas.models.media.{ObjectSchema, Schema}
-import org.scalacheck.{Arbitrary, Gen}
-import org.scalacheck.Prop.forAllNoShrink
+import com.bones.data.custom.AllCustomAlgebras
+import org.scalacheck.Gen
+import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 import shapeless.{HList, Nat}
-import org.scalatest.funsuite.AnyFunSuite
 
 class GenSchema extends AnyFunSuite with Checkers {
 
-  implicit val hListValueGen: Gen[KvpHListValue[NoAlgebra,_<:HList,_<:Nat]] = GenGadt.genHListValue()
+//  implicit val hListValueGen: Gen[KvpHListValue[AllCustomAlgebras,_<:HList,_<:Nat]] = ???
 
   // TODO uncomment when HListValue becomes a bones schema subtype.
 

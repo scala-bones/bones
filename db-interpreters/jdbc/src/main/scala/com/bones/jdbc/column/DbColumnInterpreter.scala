@@ -1,10 +1,11 @@
-package com.bones.jdbc
+package com.bones.jdbc.column
 
 import com.bones.data.KeyValueDefinition.CoproductDataDefinition
-import com.bones.data.{KeyValueDefinition, _}
+import com.bones.data._
+import com.bones.data.custom.CNilF
+import com.bones.jdbc.DbUtil
 import com.bones.jdbc.DbUtil.camelToSnake
-import shapeless.{HList, Inl, Inr, Nat}
-import com.bones.syntax.NoAlgebra
+import shapeless.{:+:, Coproduct, HList, Inl, Inr, Nat}
 
 /** Responsible for getting a list of columns for the select or insert clause */
 object DbColumnInterpreter {
@@ -15,24 +16,47 @@ object DbColumnInterpreter {
   type Key = String
   type ToColumns = Key => List[Column]
 
-  trait CustomInterpreter[ALG[A]] {
+  object ColumnInterpreter {
+
+    /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
+      * see https://stackoverflow.com/a/60561575/387094
+      * */
+    def merge[L[_], R[_] <: Coproduct, A, OUT](
+      li: ColumnInterpreter[L],
+      ri: ColumnInterpreter[R]
+    ): ColumnInterpreter[Lambda[A => L[A] :+: R[A]]] =
+      new ColumnInterpreter[Lambda[A => L[A] :+: R[A]]] {
+
+        override def toColumns[A](alg: L[A] :+: R[A]): ToColumns = alg match {
+          case Inl(l) => li.toColumns(l)
+          case Inr(r) => ri.toColumns(r)
+        }
+      }
+
+    implicit class InterpreterOps[ALG[_], OUT](val base: ColumnInterpreter[ALG]) extends AnyVal {
+      def ++[R[_] <: Coproduct](
+        r: ColumnInterpreter[R]
+      ): ColumnInterpreter[Lambda[A => ALG[A] :+: R[A]]] =
+        merge(base, r)
+
+    }
+
+    object CNilColumnInterpreter extends ColumnInterpreter[CNilF] {
+      override def toColumns[A](alg: CNilF[A]): ToColumns = sys.error("Unreachable code")
+    }
+  }
+
+  trait ColumnInterpreter[ALG[_]] {
     def toColumns[A](alg: ALG[A]): ToColumns
   }
 
-  object NoAlgebraCustomInterpreter extends CustomInterpreter[NoAlgebra] {
-    def toColumns[A](alg: NoAlgebra[A]): ToColumns = sys.error("Unreachable code")
-  }
-
-  def tableDefinition[A](bonesSchema: BonesSchema[NoAlgebra, A]): String =
-    tableDefinitionCustomAlgebra(bonesSchema, NoAlgebraCustomInterpreter)
-
   def tableDefinitionCustomAlgebra[ALG[_], A](
     bonesSchema: BonesSchema[ALG, A],
-    customInterpreter: CustomInterpreter[ALG]): String = {
+    columnInterpreter: ColumnInterpreter[ALG]): String = {
     def nullableString(nullable: Boolean) = if (nullable) "" else " not null"
     bonesSchema match {
       case x: HListConvert[ALG, h, n, b] @unchecked =>
-        val result = valueDefinition(x, customInterpreter)("")
+        val result = valueDefinition(x, columnInterpreter)("")
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
         val columnsWithId = Column("id", "SERIAL", false) :: result
         val columnString = columnsWithId
@@ -44,7 +68,7 @@ object DbColumnInterpreter {
 
   private def kvpHList[ALG[_], H <: HList, HL <: Nat](
     group: KvpHList[ALG, H, HL],
-    customInterpreter: CustomInterpreter[ALG]): List[Column] = {
+    customInterpreter: ColumnInterpreter[ALG]): List[Column] = {
     group match {
       case nil: KvpNil[_] => List.empty
       case op: KvpSingleValueHead[ALG, h, t, tl, a] @unchecked =>
@@ -66,19 +90,19 @@ object DbColumnInterpreter {
 
   private def bonesSchema[ALG[_], A](
     bonesSchema: BonesSchema[ALG, A],
-    customInterpreter: CustomInterpreter[ALG]): List[Column] =
+    customInterpreter: ColumnInterpreter[ALG]): List[Column] =
     bonesSchema match {
       case co: KvpCoproductConvert[ALG, c, a] @unchecked =>
         valueDefinition(co, customInterpreter)("")
       case co: HListConvert[ALG, h, n, a] @unchecked => valueDefinition(co, customInterpreter)("")
     }
 
-  private def nameToColumn[A](columnDefinition: String): ToColumns =
+  def nameToColumn(columnDefinition: String): ToColumns =
     name => List(Column(DbUtil.camelToSnake(name), columnDefinition, false))
 
   private def determineValueDefinition[ALG[_], A](
     coDef: CoproductDataDefinition[ALG, A],
-    customInterpreter: CustomInterpreter[ALG]
+    customInterpreter: ColumnInterpreter[ALG]
   ): ToColumns = {
     coDef match {
       case Left(kvp)  => valueDefinition(kvp, customInterpreter)
@@ -87,25 +111,13 @@ object DbColumnInterpreter {
   }
 
   private def valueDefinition[ALG[_], A](
-    fgo: KvpValue[A],
-    customInterpreter: CustomInterpreter[ALG]): ToColumns =
+    fgo: KvpCollection[ALG,A],
+    customInterpreter: ColumnInterpreter[ALG]): ToColumns =
     fgo match {
       case op: OptionalKvpValueDefinition[ALG, b] @unchecked =>
         key =>
           determineValueDefinition(op.valueDefinitionOp, customInterpreter)(key)
             .map(_.copy(nullable = true))
-      case ob: BooleanData                 => nameToColumn("bool")
-      case rs: StringData                  => nameToColumn("text")
-      case i: ShortData                    => nameToColumn("int2")
-      case i: IntData                      => nameToColumn("integer")
-      case ri: LongData                    => nameToColumn("int8")
-      case uu: UuidData                    => nameToColumn("text")
-      case dd: LocalDateData               => nameToColumn("date")
-      case dd: LocalDateTimeData           => nameToColumn("timestamp")
-      case fd: FloatData                   => nameToColumn("real")
-      case dd: DoubleData                  => nameToColumn("double precision")
-      case bd: BigDecimalData              => nameToColumn("numeric")
-      case bd: ByteArrayData               => nameToColumn("bytea")
       case ld: ListData[ALG, t] @unchecked => ???
       case ed: EitherData[ALG, a, b] @unchecked =>
         name =>
@@ -114,7 +126,6 @@ object DbColumnInterpreter {
               ed.definitionB,
               customInterpreter)(name)
           }
-      case esd: EnumerationData[e, a] => nameToColumn("text")
       case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
         _ =>
           kvpHList(kvp.kvpHList, customInterpreter)

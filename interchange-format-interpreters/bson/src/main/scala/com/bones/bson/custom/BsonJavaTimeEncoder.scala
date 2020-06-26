@@ -1,12 +1,12 @@
 package com.bones.bson.custom
 
 import java.time.format.DateTimeFormatter
-import java.time.{Instant, OffsetDateTime, OffsetTime}
+import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, OffsetDateTime, OffsetTime, ZoneOffset}
 
 import com.bones.bson.BsonEncoderInterpreter
 import com.bones.data.custom._
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
-import reactivemongo.bson.{BSONDateTime, BSONValue}
+import reactivemongo.bson.{BSONDateTime, BSONLong, BSONValue}
 
 trait BsonJavaTimeEncoder extends InterchangeFormatEncoder[JavaTimeValue, BSONValue] {
 
@@ -31,6 +31,14 @@ trait BsonJavaTimeEncoder extends InterchangeFormatEncoder[JavaTimeValue, BSONVa
           f(duration.toString)
       case InstantData(_) =>
         (input: Instant) => BSONDateTime(input.toEpochMilli)
+      case LocalDateTimeData(_) =>
+        (input: LocalDateTime) =>
+          val date = input.toInstant(ZoneOffset.UTC).toEpochMilli
+          BSONDateTime(date)
+      case LocalTimeData(_) =>
+        (input: LocalTime) => BSONLong(input.toNanoOfDay)
+      case LocalDateData(_) =>
+        (input: LocalDate) => BSONDateTime(input.toEpochDay)
       case MonthData(_) =>
         val f = baseEncoder.stringToOut
         month =>

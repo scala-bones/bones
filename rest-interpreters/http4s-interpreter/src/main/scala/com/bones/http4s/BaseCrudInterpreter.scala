@@ -4,36 +4,54 @@ import cats.data.{EitherT, NonEmptyList}
 import cats.effect.Sync
 import cats.implicits._
 import com.bones.bson.{BsonEncoderInterpreter, BsonValidatorInterpreter}
-import com.bones.circe.{CirceEncoderInterpreter, CirceValidatorInterpreter, IsoCirceEncoderAndValidatorInterpreter}
-import com.bones.data.{BonesSchema, HListConvert, KeyValueDefinition, KvpCoproductConvert}
+import com.bones.circe.{
+  CirceEncoderInterpreter,
+  CirceValidatorInterpreter,
+  IsoCirceEncoderAndValidatorInterpreter
+}
+import com.bones.data.{
+  BonesSchema,
+  HListConvert,
+  KeyValueDefinition,
+  KvpCoproductConvert,
+  KvpNil,
+  ListData
+}
 import com.bones.data.Error.ExtractionError
-import com.bones.data.custom.ExtractionErrorValue
+import com.bones.data.custom.{AllCustomAlgebras, ExtractionErrorValue, ScalaCoreValue}
 import com.bones.interpreter.custom.ExtractionErrorEncoder
-import com.bones.protobuf.{ProtoFileGeneratorInterpreter, ProtobufSequentialEncoderInterpreter, ProtobufSequentialValidatorInterpreter, ProtobufUtcSequentialEncoderAndValidator}
+import com.bones.protobuf.{
+  ProtoFileGeneratorInterpreter,
+  ProtobufSequentialEncoderInterpreter,
+  ProtobufSequentialValidatorInterpreter,
+  ProtobufUtcSequentialEncoderAndValidator
+}
 import io.circe.Json
 import org.http4s.dsl.Http4sDsl
 import org.http4s.util.CaseInsensitiveString
 import org.http4s._
-import ClassicCrudInterpreter.{CustomInterpreter, _}
+import ClassicCrudInterpreter._
 import CrudInterpreterDescription._
 import java.nio.charset.Charset
 import java.util.UUID
 
 import com.bones.Util
-import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.NoAlgebraEncoder
+import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
+import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
+import com.bones.swagger.SwaggerCoreInterpreter.CustomSwaggerInterpreter
 import fs2.Stream
 import reactivemongo.bson.BSONValue
 
 import scala.util.Try
+import com.bones.syntax._
 
 object BaseCrudInterpreter {
-  import com.bones.syntax._
 
   object StringToIdError {
     private val stringToIdErrorHList =
-      ("input", string()) :<:
-        ("errorMessage", string()) :<:
-        kvpNilCov[NoAlgebra]
+      ("input", string()) ::
+        ("errorMessage", string()) ::
+        kvpNil
 
     val stringToIdErrorSchema =
       stringToIdErrorHList.convert[StringToIdError]
@@ -43,14 +61,14 @@ object BaseCrudInterpreter {
   private val stringToIdErrorJsonEncoder =
     IsoCirceEncoderAndValidatorInterpreter.encoderFromCustomSchema(
       StringToIdError.stringToIdErrorSchema,
-      NoAlgebraEncoder[Json])
+      com.bones.circe.custom.allEncoders)
   private val stringToIdErrorBsonEncoder = BsonEncoderInterpreter.encoderFromCustomSchema(
     StringToIdError.stringToIdErrorSchema,
-    NoAlgebraEncoder[BSONValue])
+    com.bones.bson.custom.allEncoders)
   private val stringToIdProtoEncoder =
     ProtobufUtcSequentialEncoderAndValidator.encodeToBytesCustomAlgebra(
       StringToIdError.stringToIdErrorSchema,
-      ProtobufSequentialEncoderInterpreter.NoAlgebraCustomEncoderInterpreter)
+      com.bones.protobuf.custom.allEncoders)
 
   val intParam: String => Either[StringToIdError, Int] = param => {
     Try { param.toInt }.toOption
@@ -93,15 +111,14 @@ object BaseCrudInterpreter {
 
   object ErrorResponse {
 
+    val error = ExtractionErrorEncoder.extractionErrorSchema
+      .convert[ExtractionError](
+        manifest[ExtractionError],
+        ExtractionErrorEncoder.extractionErrorGeneric)
+
     private val errorResponseHList =
-      (
-        "errors",
-        list(
-          ExtractionErrorEncoder.extractionErrorSchema
-            .convert[ExtractionError](
-              manifest[ExtractionError],
-              ExtractionErrorEncoder.extractionErrorGeneric)
-        )) :<: kvpNilCov[ExtractionErrorValue]
+      ("errors", ListData[ScalaCoreValue, ExtractionError](Left(error), List.empty)) :<:
+        new KvpNil[ScalaCoreValue]
 
     val errorResponseSchema = errorResponseHList.convert[ErrorResponse]
   }
@@ -109,14 +126,14 @@ object BaseCrudInterpreter {
   private val jsonEncoder =
     IsoCirceEncoderAndValidatorInterpreter.encoderFromCustomSchema(
       ErrorResponse.errorResponseSchema,
-      com.bones.circe.custom.BaseExtractionErrorEncoder)
+      com.bones.circe.custom.BaseScalaCoreEncoder)
   private val bsonEncoder = BsonEncoderInterpreter.encoderFromCustomSchema(
     ErrorResponse.errorResponseSchema,
-    com.bones.bson.custom.DefaultBsonErrorEncoder)
+    com.bones.bson.custom.BsonScalaCoreEncoder)
   private val protoEncoder =
     ProtobufUtcSequentialEncoderAndValidator.encodeToBytesCustomAlgebra(
       ErrorResponse.errorResponseSchema,
-      com.bones.protobuf.custom.ExtractionErrorProtoEncoder)
+      com.bones.protobuf.custom.ProtobufScalaCoreEncoder)
 
   /**
     * Return the error encoded based on the content type
@@ -151,15 +168,14 @@ object BaseCrudInterpreter {
     }
   }
 
-  def schemaWithId[ALG[_], A, ID:Manifest](
-    idDefinition: KeyValueDefinition[ALG, ID],
-    schema: BonesSchema[ALG, A]) = schema match {
+  def schemaWithId[ALG[_], A, ID: Manifest](idDefinition: ALG[ID], schema: BonesSchema[ALG, A]) =
+    schema match {
       case h: HListConvert[ALG, _, _, A] @unchecked =>
         implicit val manifest: Manifest[A] = h.manifestOfA
-        (idDefinition >>: h :><: com.bones.syntax.kvpNilCov[ALG]).tupled[(ID, A)]
+        (("id", idDefinition) :: h :><: new KvpNil[ALG]).tupled[(ID, A)]
       case co: KvpCoproductConvert[ALG, _, A] @unchecked =>
         implicit val manifest: Manifest[A] = co.manifestOfA
-        (idDefinition >>: co :><: com.bones.syntax.kvpNilCov[ALG]).tupled[(ID, A)]
+        (("id", idDefinition) :: co :><: new KvpNil[ALG]).tupled[(ID, A)]
 
     }
 
@@ -170,15 +186,15 @@ object BaseCrudInterpreter {
     encodeToCirceInterpreter: CirceEncoderInterpreter,
     errorSchema: BonesSchema[ALG, E],
     outputSchema: BonesSchema[ALG, B],
-    customJsonInterpreter: CustomInterpreter[ALG, Json],
-    customBsonInterpreter: CustomInterpreter[ALG, BSONValue],
-    customProtobufInterpreter: ProtobufEncoderInterpreter[ALG],
+    jsonEncoder: InterchangeFormatEncoder[ALG, Json],
+    bsonEncoder: InterchangeFormatEncoder[ALG, BSONValue],
+    protobufEncoder: ProtobufSequentialEncoderInterpreter.CustomEncoderInterpreter[ALG],
     protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter,
     charset: Charset)(implicit F: Sync[F], H: Http4sDsl[F]) = {
     val outputF =
-      encodeToCirceInterpreter.encoderFromCustomSchema(outputSchema, customJsonInterpreter)
+      encodeToCirceInterpreter.encoderFromCustomSchema(outputSchema, jsonEncoder)
     val errorF =
-      encodeToCirceInterpreter.encoderFromCustomSchema(errorSchema, customJsonInterpreter)
+      encodeToCirceInterpreter.encoderFromCustomSchema(errorSchema, jsonEncoder)
     val json = DeleteInterpreterGroup[E, B](
       "application/json",
       dout => outputF(dout).spaces2.getBytes(charset),
@@ -186,9 +202,9 @@ object BaseCrudInterpreter {
     )
 
     val bOutputF =
-      BsonEncoderInterpreter.encoderFromCustomSchema(outputSchema, customBsonInterpreter)
+      BsonEncoderInterpreter.encoderFromCustomSchema(outputSchema, bsonEncoder)
     val bErrorF =
-      BsonEncoderInterpreter.encoderFromCustomSchema(errorSchema, customBsonInterpreter)
+      BsonEncoderInterpreter.encoderFromCustomSchema(errorSchema, bsonEncoder)
     val bson = DeleteInterpreterGroup[E, B](
       "application/ubjson",
       dout => BsonEncoderInterpreter.bsonResultToBytes(bOutputF(dout)),
@@ -197,10 +213,10 @@ object BaseCrudInterpreter {
 
     val pOutputF =
       protobufSequentialOutputInterpreter
-        .encodeToBytesCustomAlgebra(outputSchema, customProtobufInterpreter)
+        .encodeToBytesCustomAlgebra(outputSchema, protobufEncoder)
     val pErrorF =
       protobufSequentialOutputInterpreter
-        .encodeToBytesCustomAlgebra(errorSchema, customProtobufInterpreter)
+        .encodeToBytesCustomAlgebra(errorSchema, protobufEncoder)
     val protobuf = DeleteInterpreterGroup[E, B](
       "application/protobuf",
       pOutputF,
@@ -223,8 +239,8 @@ object BaseCrudInterpreter {
     import H._
     HttpRoutes.of[F] {
       case req @ Method.DELETE -> Root / path / idParam
-        if (expectedPath == path && contentType(req).contains(interpreterGroup.contentType)) =>
-          stringParamToId(idParam)
+          if (expectedPath == path && contentType(req).contains(interpreterGroup.contentType)) =>
+        stringParamToId(idParam)
           .leftMap(e => stringToIdErrorToResponse(e, interpreterGroup.contentType))
           .map(id => {
             deleteF(id).flatMap {
@@ -254,18 +270,21 @@ object BaseCrudInterpreter {
     encodeToCirceInterpreter: CirceEncoderInterpreter,
     protobufSequentialInputInterpreter: ProtobufSequentialValidatorInterpreter,
     protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter,
-    customJsonInterpreter: CustomInterpreter[ALG, Json],
-    customBsonInterpreter: CustomInterpreter[ALG, BSONValue],
-    customProtobufInterpreter: ProtobufEncoderInterpreter[ALG],
+    jsonValidator: InterchangeFormatValidator[ALG, Json],
+    jsonEncoder: InterchangeFormatEncoder[ALG, Json],
+    bsonValidator: InterchangeFormatValidator[ALG, BSONValue],
+    bsonEncoder: InterchangeFormatEncoder[ALG, BSONValue],
+    protobufValidator: ProtobufSequentialValidatorInterpreter.CustomValidatorInterpreter[ALG],
+    protobufEncoder: ProtobufSequentialEncoderInterpreter.CustomEncoderInterpreter[ALG],
     charset: Charset
   )(implicit F: Sync[F], H: Http4sDsl[F]) = {
     val inputF =
       validatedFromCirceInterpreter
-        .byteArrayFuncFromSchema(inputSchema, charset, customJsonInterpreter)
+        .byteArrayFuncFromSchema(inputSchema, charset, jsonValidator)
     val outputF =
-      encodeToCirceInterpreter.encoderFromCustomSchema(outputSchema, customJsonInterpreter)
+      encodeToCirceInterpreter.encoderFromCustomSchema(outputSchema, jsonEncoder)
     val errorF =
-      encodeToCirceInterpreter.encoderFromCustomSchema(errorSchema, customJsonInterpreter)
+      encodeToCirceInterpreter.encoderFromCustomSchema(errorSchema, jsonEncoder)
 
     val json = PutPostInterpreterGroup[A, E, B](
       "application/json",
@@ -275,11 +294,11 @@ object BaseCrudInterpreter {
     )
 
     val bInputF =
-      BsonValidatorInterpreter.validatorFromCustomSchema(inputSchema, customBsonInterpreter)
+      BsonValidatorInterpreter.validatorFromCustomSchema(inputSchema, bsonValidator)
     val bOutputF =
-      BsonEncoderInterpreter.encoderFromCustomSchema(outputSchema, customBsonInterpreter)
+      BsonEncoderInterpreter.encoderFromCustomSchema(outputSchema, bsonEncoder)
     val bErrorF =
-      BsonEncoderInterpreter.encoderFromCustomSchema(errorSchema, customBsonInterpreter)
+      BsonEncoderInterpreter.encoderFromCustomSchema(errorSchema, bsonEncoder)
 
     val bson = PutPostInterpreterGroup[A, E, B](
       "application/ubjson",
@@ -292,12 +311,12 @@ object BaseCrudInterpreter {
     )
 
     val pInputF =
-      protobufSequentialInputInterpreter.fromCustomBytes(inputSchema, customProtobufInterpreter)
+      protobufSequentialInputInterpreter.fromCustomBytes(inputSchema, protobufValidator)
     val pOutputF = protobufSequentialOutputInterpreter
-      .encodeToBytesCustomAlgebra(outputSchema, customProtobufInterpreter)
+      .encodeToBytesCustomAlgebra(outputSchema, protobufEncoder)
     val pErrorF =
       protobufSequentialOutputInterpreter
-        .encodeToBytesCustomAlgebra(errorSchema, customProtobufInterpreter)
+        .encodeToBytesCustomAlgebra(errorSchema, protobufEncoder)
     val protoBuf = PutPostInterpreterGroup[A, E, B](
       "application/protobuf",
       pInputF,
@@ -355,25 +374,27 @@ object BaseCrudInterpreter {
     encodeToCirceInterpreter: CirceEncoderInterpreter,
     errorSchema: BonesSchema[ALG, E],
     outputSchema: BonesSchema[ALG, B],
-    customJsonInterpreter: CustomInterpreter[ALG, Json],
-    customBsonInterpreter: CustomInterpreter[ALG, BSONValue],
-    customProtobufInterpreter: ProtobufEncoderInterpreter[ALG],
+    jsonEncoder: InterchangeFormatEncoder[ALG, Json],
+    bsonEncoder: InterchangeFormatEncoder[ALG, BSONValue],
+    protobufEncoder: ProtobufSequentialEncoderInterpreter.CustomEncoderInterpreter[ALG],
     protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter,
     charset: Charset)(implicit F: Sync[F], H: Http4sDsl[F]) = {
     val outputF =
-      encodeToCirceInterpreter.encoderFromCustomSchema(outputSchema, customJsonInterpreter)
+      encodeToCirceInterpreter.encoderFromCustomSchema(outputSchema, jsonEncoder)
     val errorF =
-      encodeToCirceInterpreter.encoderFromCustomSchema(errorSchema, customJsonInterpreter)
+      encodeToCirceInterpreter.encoderFromCustomSchema(errorSchema, jsonEncoder)
     val json = GetInterpreterGroup[E, B](
       "application/json",
-      ro => outputF(ro).spaces2.getBytes(charset),
+      ro => {
+        outputF(ro).spaces2.getBytes(charset)
+      },
       re => errorF(re).spaces2.getBytes(charset)
     )
 
     val bOutputF =
-      BsonEncoderInterpreter.encoderFromCustomSchema(outputSchema, customBsonInterpreter)
+      BsonEncoderInterpreter.encoderFromCustomSchema(outputSchema, bsonEncoder)
     val bErrorF =
-      BsonEncoderInterpreter.encoderFromCustomSchema(errorSchema, customBsonInterpreter)
+      BsonEncoderInterpreter.encoderFromCustomSchema(errorSchema, bsonEncoder)
     val bson = GetInterpreterGroup[E, B](
       "application/ubjson",
       ro => BsonEncoderInterpreter.bsonResultToBytes(bOutputF(ro)),
@@ -381,10 +402,10 @@ object BaseCrudInterpreter {
     )
 
     val pOutputF = protobufSequentialOutputInterpreter
-      .encodeToBytesCustomAlgebra(outputSchema, customProtobufInterpreter)
+      .encodeToBytesCustomAlgebra(outputSchema, protobufEncoder)
     val pErrorF =
       protobufSequentialOutputInterpreter
-        .encodeToBytesCustomAlgebra(errorSchema, customProtobufInterpreter)
+        .encodeToBytesCustomAlgebra(errorSchema, protobufEncoder)
     val protoBuf = GetInterpreterGroup[E, B](
       "application/protobuf",
       pOutputF,
@@ -446,18 +467,21 @@ object BaseCrudInterpreter {
     encodeToCirceInterpreter: CirceEncoderInterpreter,
     protobufSequentialInputInterpreter: ProtobufSequentialValidatorInterpreter,
     protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter,
-    customJsonInterpreter: CustomInterpreter[ALG, Json],
-    customBsonInterpreter: CustomInterpreter[ALG, BSONValue],
-    customProtobufInterpreter: ProtobufEncoderInterpreter[ALG],
+    jsonValidator: InterchangeFormatValidator[ALG, Json],
+    jsonEncoder: InterchangeFormatEncoder[ALG, Json],
+    bsonValidator: InterchangeFormatValidator[ALG, BSONValue],
+    bsonEncoder: InterchangeFormatEncoder[ALG, BSONValue],
+    protobufValidator: ProtobufSequentialValidatorInterpreter.CustomValidatorInterpreter[ALG],
+    protobufEncoder: ProtobufSequentialEncoderInterpreter.CustomEncoderInterpreter[ALG],
     charset: Charset
   )(implicit F: Sync[F], H: Http4sDsl[F]): List[HttpRoutes[F]] = {
     val inputValidation =
       validatedFromCirceInterpreter
-        .byteArrayFuncFromSchema(inputSchema, charset, customJsonInterpreter)
+        .byteArrayFuncFromSchema(inputSchema, charset, jsonValidator)
     val outputEncoder =
-      encodeToCirceInterpreter.encoderFromCustomSchema(outputSchema, customJsonInterpreter)
+      encodeToCirceInterpreter.encoderFromCustomSchema(outputSchema, jsonEncoder)
     val errorEncoder =
-      encodeToCirceInterpreter.encoderFromCustomSchema(errorSchema, customJsonInterpreter)
+      encodeToCirceInterpreter.encoderFromCustomSchema(errorSchema, jsonEncoder)
 
     val jsonPut = PutPostInterpreterGroup[A, E, B](
       "application/json",
@@ -467,11 +491,11 @@ object BaseCrudInterpreter {
     )
 
     val bInputValidation =
-      BsonValidatorInterpreter.validatorFromCustomSchema(inputSchema, customBsonInterpreter)
+      BsonValidatorInterpreter.validatorFromCustomSchema(inputSchema, bsonValidator)
     val bOutputEncoder =
-      BsonEncoderInterpreter.encoderFromCustomSchema(outputSchema, customBsonInterpreter)
+      BsonEncoderInterpreter.encoderFromCustomSchema(outputSchema, bsonEncoder)
     val bErrorEncoder =
-      BsonEncoderInterpreter.encoderFromCustomSchema(errorSchema, customBsonInterpreter)
+      BsonEncoderInterpreter.encoderFromCustomSchema(errorSchema, bsonEncoder)
 
     val bsonPut = PutPostInterpreterGroup[A, E, B](
       "application/ubjson",
@@ -485,11 +509,11 @@ object BaseCrudInterpreter {
 
     val pInputInterpreter =
       protobufSequentialInputInterpreter
-        .fromCustomBytes(inputSchema, customProtobufInterpreter)
+        .fromCustomBytes(inputSchema, protobufValidator)
     val pOutputEncoder = protobufSequentialOutputInterpreter
-      .encodeToBytesCustomAlgebra[ALG, B](outputSchema, customProtobufInterpreter)
+      .encodeToBytesCustomAlgebra[ALG, B](outputSchema, protobufEncoder)
     val protobufErrorEncoder = protobufSequentialOutputInterpreter
-      .encodeToBytesCustomAlgebra(errorSchema, customProtobufInterpreter)
+      .encodeToBytesCustomAlgebra(errorSchema, protobufEncoder)
 
     val protoBufPut = PutPostInterpreterGroup[A, E, B](
       "application/protobuf",
@@ -557,14 +581,17 @@ object BaseCrudInterpreter {
     encodeToCirceInterpreter: CirceEncoderInterpreter,
     errorSchema: BonesSchema[ALG, E],
     outputSchema: BonesSchema[ALG, B],
-    customJsonInterpreter: CustomInterpreter[ALG, Json],
-    customBsonInterpreter: CustomInterpreter[ALG, BSONValue],
-    customProtobufInterpreter: ProtobufEncoderInterpreter[ALG],
+    jsonValidator: InterchangeFormatValidator[ALG, Json],
+    jsonEncoder: InterchangeFormatEncoder[ALG, Json],
+    bsonValidator: InterchangeFormatValidator[ALG, BSONValue],
+    bsonEncoder: InterchangeFormatEncoder[ALG, BSONValue],
+    protobufValidator: ProtobufSequentialValidatorInterpreter.CustomValidatorInterpreter[ALG],
+    protobufEncoder: ProtobufSequentialEncoderInterpreter.CustomEncoderInterpreter[ALG],
     protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter,
     charset: Charset
   )(implicit F: Sync[F], H: Http4sDsl[F]) = {
     val outputF =
-      encodeToCirceInterpreter.encoderFromCustomSchema(outputSchema, customJsonInterpreter)
+      encodeToCirceInterpreter.encoderFromCustomSchema(outputSchema, jsonEncoder)
 
     val jsonSearch = SearchInterpreterGroup[F, B](
       "application/json",
@@ -615,7 +642,7 @@ trait BaseCrudInterpreter[ALG[_], A, E, B, F[_], ID] extends Http4sDsl[F] {
   /** Create an endpoint to display the protobuf schema for each endpoint */
   def protoBuff(
     path: String,
-    customProtobufInterpreter: ProtobufEncoderInterpreter[ALG],
+    customProtobufInterpreter: ProtoFileGeneratorInterpreter.CustomInterpreter[ALG],
     schema: BonesSchema[ALG, A],
     schemaWithId: BonesSchema[ALG, (ID, A)],
     errorSchema: BonesSchema[ALG, E]

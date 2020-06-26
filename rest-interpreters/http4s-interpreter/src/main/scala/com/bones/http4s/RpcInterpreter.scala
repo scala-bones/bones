@@ -6,42 +6,26 @@ import cats.effect.Sync
 import com.bones.circe.IsoCirceEncoderAndValidatorInterpreter
 import com.bones.data.BonesSchema
 import com.bones.http4s.BaseCrudInterpreter.StringToIdError
-import com.bones.http4s.ClassicCrudInterpreter.{
-  CustomInterpreter,
-  NoAlgebraCustomInterpreter,
-  NoAlgebraProtobufEncoderInterpreter,
-  ProtobufEncoderInterpreter
-}
+import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
+import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
 import com.bones.protobuf.{
   ProtobufSequentialEncoderInterpreter,
   ProtobufSequentialValidatorInterpreter,
   ProtobufUtcSequentialEncoderAndValidator
 }
-import com.bones.syntax.NoAlgebra
 import io.circe.Json
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 import reactivemongo.bson.BSONValue
 
-object RpcInterpreter {
-  def noAlgebra[ID:Manifest](
-    path: String,
-    pathStringToId: String => Either[StringToIdError, ID],
-    charset: java.nio.charset.Charset = StandardCharsets.UTF_8
-  ) = new RpcInterpreter[NoAlgebra, ID](
-    path,
-    NoAlgebraCustomInterpreter[Json],
-    NoAlgebraCustomInterpreter[BSONValue],
-    NoAlgebraProtobufEncoderInterpreter,
-    pathStringToId,
-    charset
-  )
-}
 class RpcInterpreter[ALG[_], ID: Manifest](
   path: String,
-  customJsonInterpreter: CustomInterpreter[ALG, Json],
-  customBsonInterpreter: CustomInterpreter[ALG, BSONValue],
-  customProtobufInterpreter: ProtobufEncoderInterpreter[ALG],
+  jsonValidator: InterchangeFormatValidator[ALG, Json],
+  jsonEncoder: InterchangeFormatEncoder[ALG, Json],
+  bsonValidator: InterchangeFormatValidator[ALG, BSONValue],
+  bsonEncoder: InterchangeFormatEncoder[ALG, BSONValue],
+  protobufValidator: ProtobufSequentialValidatorInterpreter.CustomValidatorInterpreter[ALG],
+  protobufEncoder: ProtobufSequentialEncoderInterpreter.CustomEncoderInterpreter[ALG],
 //  customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
   pathStringToId: String => Either[StringToIdError, ID],
   charset: java.nio.charset.Charset = StandardCharsets.UTF_8
@@ -70,9 +54,12 @@ class RpcInterpreter[ALG[_], ID: Manifest](
       encodeToCirceInterpreter,
       protobufSequentialInputInterpreter,
       protobufSequentialOutputInterpreter,
-      customJsonInterpreter,
-      customBsonInterpreter,
-      customProtobufInterpreter,
+      jsonValidator,
+      jsonEncoder,
+      bsonValidator,
+      bsonEncoder,
+      protobufValidator,
+      protobufEncoder,
       charset
     )
 

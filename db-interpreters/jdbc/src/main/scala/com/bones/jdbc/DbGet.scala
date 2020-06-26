@@ -4,79 +4,60 @@ import java.sql.Connection
 
 import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionError, NotFound, SystemError}
-import com.bones.data.{BonesSchema, HListConvert}
-import com.bones.jdbc.ColumnNameInterpreter.{CustomInterpreter => ColumnNameCustomInterpreter}
-import com.bones.jdbc.ResultSetInterpreter.{CustomInterpreter => ResultSetCustomInterpreter}
+import com.bones.data.{BonesSchema, HListConvert, KvpNil}
 import com.bones.jdbc.DbUtil.{camelToSnake, withStatement}
-import com.bones.syntax.NoAlgebra
+import com.bones.jdbc.column.ColumnNameInterpreter
+import com.bones.jdbc.rs.{ResultSetInterpreter, ResultSetValueInterpreter => ResultSetCustomInterpreter}
+import com.bones.jdbc.update.DbUpdateValues
+import com.bones.jdbc.update.DbUpdateValues.CustomDbUpdateInterpreter
 import javax.sql.DataSource
 
 import scala.util.control.NonFatal
-import java.sql.ResultSet
 
 object DbGet {
 
-  type DbGetCustomInterpreter[ALG[_]] = ColumnNameCustomInterpreter[ALG]
-    with ResultSetCustomInterpreter[ALG]
-
-  object NoAlgebraDbGetCustomInterpreter
-      extends ColumnNameCustomInterpreter[NoAlgebra]
-      with ResultSetCustomInterpreter[NoAlgebra] {
-    def keyToColumnNames[A](
-      alg: NoAlgebra[A]): ColumnNameInterpreter.Key => List[ColumnNameInterpreter.ColumnName] =
-      sys.error("Unreachable code")
-    def resultSet[A](
-      alg: NoAlgebra[A]): (FindInterpreter.Path, FindInterpreter.FieldName) => ResultSet => Either[
-      NonEmptyList[com.bones.data.Error.ExtractionError],
-      A] =
-      sys.error("Unreachable code")
-  }
-
-  def getEntity[ALG[_], A](
+  def getEntity[ALG[_], A, ID](
     schema: BonesSchema[ALG, A],
-    columnInterpreter: DbGetCustomInterpreter[ALG]
-  ): DataSource => Long => Either[NonEmptyList[ExtractionError], (Long, A)] = {
-    val withConnection = getEntityWithConnectionCustomAlgebra(schema, columnInterpreter)
+    idDefinition: IdDefinition[ALG,ID],
+    resultSetCustomInterpreter: ResultSetCustomInterpreter[ALG],
+    customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG]
+  ): DataSource => ID => Either[NonEmptyList[ExtractionError], (ID, A)] = {
+    val withConnection = getEntityWithConnectionCustomAlgebra(schema, idDefinition, resultSetCustomInterpreter, customDbUpdateInterpreter)
     ds =>
-      { id =>
-        {
-          DbUtil.withDataSource(ds)(con => withConnection(id)(con))
-        }
-      }
+      { id => DbUtil.withDataSource(ds)(con => withConnection(id)(con)) }
   }
 
-  def getEntityWithConnection[A](schema: BonesSchema[NoAlgebra, A])
-    : Long => Connection => Either[NonEmptyList[ExtractionError], (Long, A)] =
-    getEntityWithConnectionCustomAlgebra(schema, NoAlgebraDbGetCustomInterpreter)
-
-  def getEntityWithConnectionCustomAlgebra[ALG[_], A](
+  def getEntityWithConnectionCustomAlgebra[ALG[_], A, ID](
     schema: BonesSchema[ALG, A],
-    columnInterpreter: DbGetCustomInterpreter[ALG]
-  ): Long => Connection => Either[NonEmptyList[ExtractionError], (Long, A)] = {
+    idDefinition: IdDefinition[ALG,ID],
+    resultSetCustomInterpreter: ResultSetCustomInterpreter[ALG],
+    customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG]
+  ): ID => Connection => Either[NonEmptyList[ExtractionError], (ID, A)] = {
     schema match {
       case xMap: HListConvert[ALG, a, al, b] => {
-        implicit val x = xMap.manifestOfA
-        val schemaWithId =
-          (DbUtil.longIdKeyValueDef[ALG] >>: schema :><: com.bones.syntax.kvpNilCov[ALG])
-            .tupled[(Long, A)]
-
+        val schemaWithId = idDefinition.prependSchema(schema)
         id =>
           {
             val tableName = camelToSnake(xMap.manifestOfA.runtimeClass.getSimpleName)
             val resultSetF =
-              ResultSetInterpreter.valueDefinition(schemaWithId, columnInterpreter)(List.empty, "")
+              ResultSetInterpreter.fromBonesSchema(schema, resultSetCustomInterpreter)
+              .apply(List.empty)
 
-            val fields = ColumnNameInterpreter.valueDefinition(schemaWithId, columnInterpreter)("")
+            val fields = ColumnNameInterpreter.fromBonesSchema(schema)
+            val idMeta =
+              DbUpdateValues.determineValueDefinition(Right(idDefinition.value), customDbUpdateInterpreter)(1,"id")
+
             val sql =
               s"select ${fields.mkString(",")} from $tableName where id = ?"
             con =>
               {
                 try {
                   withStatement(con.prepareCall(sql))(statement => {
-                    statement.setLong(1, id)
+                    idMeta.predicates(id).foreach(_.apply(statement))
                     val rs = statement.executeQuery()
                     if (rs.next()) {
-                      resultSetF(rs)
+                      val x = resultSetF(rs).map( (id, _))
+                      x
                     } else {
                       Left(
                         NonEmptyList.one(

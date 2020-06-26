@@ -1,26 +1,17 @@
-package com.bones.jdbc
+package com.bones.jdbc.insert
 
 import java.sql._
-import java.time.{LocalDate, LocalDateTime, ZoneOffset}
-import java.util.UUID
 
-import com.bones.data.Error.SystemError
+import cats.data.NonEmptyList
+import com.bones.data.Error.{ExtractionError, SystemError}
 import com.bones.data.KeyValueDefinition.CoproductDataDefinition
 import com.bones.data._
 import com.bones.jdbc.DbUtil._
-import com.bones.syntax.NoAlgebra
+import com.bones.jdbc.rs.{ResultSetInterpreter, ResultSetValueInterpreter}
 import javax.sql.DataSource
-import shapeless.{HList, Nat, ::}
+import shapeless.{::, HList, Nat}
 
 object DbInsertValues {
-
-  trait CustomInterpreter[ALG[_]] {
-    def insertPair[A](alg: ALG[A]): InsertPair[A]
-  }
-
-  case object NoAlgebraCustomInterpreter extends CustomInterpreter[NoAlgebra] {
-    def insertPair[A](alg: NoAlgebra[A]): InsertPair[A] = sys.error("unreachable code")
-  }
 
   type FieldName = String
   type FieldValue = String
@@ -29,13 +20,14 @@ object DbInsertValues {
   type SetValue = PreparedStatement => Unit
   type SetNull = PreparedStatement => Unit
   type Index = Int
-  type ID = Long
   type InsertPair[A] = Key => (Index, A) => (Index, List[(ColumnName, SetValue)])
 
-  def insertQuery[ALG[_], A](
+  def insertQuery[ALG[_], A, ID](
     bonesSchema: BonesSchema[ALG, A],
-    customInterpreter: CustomInterpreter[ALG]): DataSource => A => Either[SystemError, (ID, A)] = {
-    val iq = insertQueryWithConnectionCustomAlgebra(bonesSchema, customInterpreter)
+    idSchema: KvpCollection[ALG, ID],
+    customInterpreter: CustomInterpreter[ALG],
+    resultSetValueInterpreter: ResultSetValueInterpreter[ALG]): DataSource => A => Either[NonEmptyList[ExtractionError], (ID, A)] = {
+    val iq = insertQueryWithConnectionCustomAlgebra(bonesSchema, idSchema, customInterpreter, resultSetValueInterpreter)
     ds =>
       { a =>
         {
@@ -46,23 +38,22 @@ object DbInsertValues {
             result
           } catch {
             case ex: SQLException =>
-              Left(SystemError(List.empty, ex, Some("Error retrieving connection")))
+              Left(NonEmptyList.one(SystemError(List.empty, ex, Some("Error retrieving connection"))))
           }
         }
       }
   }
 
-  def insertQueryWithConnection[ALG[_], A](
-    bonesSchema: BonesSchema[NoAlgebra, A]): A => Connection => Either[SystemError, (ID, A)] =
-    insertQueryWithConnectionCustomAlgebra(bonesSchema, NoAlgebraCustomInterpreter)
-
-  def insertQueryWithConnectionCustomAlgebra[ALG[_], A](
+  def insertQueryWithConnectionCustomAlgebra[ALG[_], A, ID](
     bonesSchema: BonesSchema[ALG, A],
-    customInterpreter: CustomInterpreter[ALG]): A => Connection => Either[SystemError, (ID, A)] =
+    idSchema: KvpCollection[ALG, ID],
+    customInterpreter: CustomInterpreter[ALG],
+    resultSetInterpreter: ResultSetValueInterpreter[ALG]): A => Connection => Either[NonEmptyList[ExtractionError], (ID, A)] =
     bonesSchema match {
       case x: HListConvert[ALG, h, n, b] @unchecked => {
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
         val updates = kvpHList(x.from, customInterpreter)
+        val rs = ResultSetInterpreter.determineValueDefinition(Left(idSchema), resultSetInterpreter)
         a: A =>
           {
             val result = updates(1, x.fAtoH(a))
@@ -76,14 +67,15 @@ object DbInsertValues {
                   result._2.map(_._2).foreach(f => f(statement))
                   statement.executeUpdate()
                   val generatedKeys = statement.getGeneratedKeys
+
                   try {
-                    if (generatedKeys.next) Right((generatedKeys.getLong(1), a))
+                    if (generatedKeys.next) rs.apply(List.empty, "id").apply(generatedKeys).map((_,a))
                     else throw new SQLException("Creating user failed, no ID obtained.")
                   } finally {
                     generatedKeys.close()
                   }
                 } catch {
-                  case e: SQLException => Left(SystemError(e, Some("SQL Statement: " + sql)))
+                  case e: SQLException => Left(NonEmptyList.one(SystemError(e, Some("SQL Statement: " + sql))))
                 } finally {
                   statement.close()
                 }
@@ -156,7 +148,7 @@ object DbInsertValues {
   }
 
   /** Create the return type for valueDefinition given the arguments */
-  private def psF[A](f: (PreparedStatement, Index, A) => Unit): InsertPair[A] =
+  def psF[A](f: (PreparedStatement, Index, A) => Unit): InsertPair[A] =
     key => {
       val columnName = camelToSnake(key)
       (index: Index, a: A) =>
@@ -178,7 +170,7 @@ object DbInsertValues {
   }
 
   def valueDefinition[ALG[_], A](
-    fgo: KvpValue[A],
+    fgo: KvpCollection[ALG,A],
     customInterpreter: CustomInterpreter[ALG]): InsertPair[A] =
     fgo match {
       case op: OptionalKvpValueDefinition[ALG, b] @unchecked =>
@@ -192,36 +184,8 @@ object DbInsertValues {
               }
             }
           }
-      case ob: BooleanData =>
-        psF[Boolean]((ps, i, a) => ps.setBoolean(i, a))
-      case rs: StringData =>
-        psF[String]((ps, i, a) => ps.setString(i, a))
-      case id: ShortData =>
-        psF[Short]((ps, i, a) => ps.setShort(i, a))
-      case id: IntData =>
-        psF[Int]((ps, i, a) => ps.setInt(i, a))
-      case ri: LongData =>
-        psF[Long]((ps, i, a) => ps.setLong(i, a))
-      case uu: UuidData =>
-        psF[UUID]((ps, i, a) => ps.setString(i, a.toString))
-      case dd: LocalDateTimeData =>
-        psF[LocalDateTime]((ps, i, a) =>
-          ps.setDate(i, new java.sql.Date(a.toInstant(ZoneOffset.UTC).toEpochMilli)))
-      case ld: LocalDateData =>
-        psF[LocalDate]((ps, i, a) =>
-          ps.setDate(i, new java.sql.Date(a.atStartOfDay().toEpochSecond(ZoneOffset.UTC))))
-      case bd: BigDecimalData =>
-        psF[BigDecimal]((ps, i, a) => ps.setBigDecimal(i, a.underlying))
-      case fd: FloatData =>
-        psF[Float]((ps, i, a) => ps.setFloat(i, a))
-      case dd: DoubleData =>
-        psF[Double]((ps, i, a) => ps.setDouble(i, a))
-      case ba: ByteArrayData =>
-        psF[scala.Array[Byte]]((ps, i, a) => ps.setBytes(i, a))
       case ld: ListData[ALG, t] @unchecked      => ???
       case ed: EitherData[ALG, a, b] @unchecked => ???
-      case esd: EnumerationData[e, a] =>
-        psF[A]((ps, i, a) => ps.setString(i, a.toString))
       case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
         val groupF = kvpHList(kvp.kvpHList, customInterpreter)
         k =>

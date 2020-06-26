@@ -3,7 +3,7 @@ package com.bones.scalacheck.custom
 import java.nio.charset.StandardCharsets
 
 import com.bones.data.custom._
-import com.bones.scalacheck.{GenAlg, Scalacheck}
+import com.bones.scalacheck.GenAlg
 import com.bones.validation.ValidationUtil
 import org.scalacheck.Gen
 
@@ -16,8 +16,8 @@ class CustomStringValueInterpreter extends GenAlg[CustomStringValue] {
         .isRight
 
   val hostnameGen: Gen[String] = for {
-    host <- Scalacheck.wordsGen
-    domain <- Scalacheck.wordsGen
+    host <- ScalacheckScalaCoreInterpreter.wordsGen
+    domain <- ScalacheckScalaCoreInterpreter.wordsGen
     domainSuffix <- Gen.oneOf("com", "org", "com.uk")
   } yield s"$host.$domain.$domainSuffix"
 
@@ -25,7 +25,7 @@ class CustomStringValueInterpreter extends GenAlg[CustomStringValue] {
     for {
       hostname <- hostnameGen
       paths <- Gen.choose(0, 10)
-      dirs <- Gen.listOfN(paths, Scalacheck.wordsGen)
+      dirs <- Gen.listOfN(paths, ScalacheckScalaCoreInterpreter.wordsGen)
     } yield s"https://$hostname/${dirs.mkString("/")}"
 
   override def gen[A](ag: CustomStringValue[A]): Gen[A] = {
@@ -33,9 +33,9 @@ class CustomStringValueInterpreter extends GenAlg[CustomStringValue] {
       ag match {
         case _: EmailData =>
           for {
-            recipient <- Scalacheck.wordsGen
+            recipient <- ScalacheckScalaCoreInterpreter.wordsGen
             num <- Gen.choose(0, 5000).map(_.toString)
-            domain <- Scalacheck.wordsGen
+            domain <- ScalacheckScalaCoreInterpreter.wordsGen
             domainSuffix <- Gen.oneOf("com", "org", "com.uk")
           } yield s"$recipient$num@$domain.$domainSuffix"
         case _: GuidData =>
@@ -45,7 +45,7 @@ class CustomStringValueInterpreter extends GenAlg[CustomStringValue] {
         case _: HexStringData =>
           Gen.hexStr
         case _: Base64Data =>
-          Scalacheck.sentencesGen.map(str => {
+          ScalacheckScalaCoreInterpreter.sentencesGen.map(str => {
             java.util.Base64.getEncoder.encodeToString(str.getBytes(StandardCharsets.UTF_8))
           })
         case _: HostnameData => hostnameGen

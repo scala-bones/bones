@@ -1,24 +1,21 @@
 package com.bones.protobuf
 
-import java.util.Base64
-
 import com.bones.scalacheck.Scalacheck
 import com.bones.schemas.Schemas
-import com.bones.schemas.Schemas.{AllSupported, CC, allSupportCaseClass}
-import org.scalacheck.{Arbitrary, Gen}
+import com.bones.schemas.Schemas.{AllSupported, allSupportCaseClass}
+import org.scalacheck.Arbitrary
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 
 
 class ProtobufScalacheckTest extends AnyFunSuite with Checkers {
 
-  val encode = ProtobufUtcSequentialEncoderAndValidator.encodeToBytes(Schemas.allSupportCaseClass)
-  val decode = ProtobufUtcSequentialEncoderAndValidator.fromBytes(Schemas.allSupportCaseClass)
+  val encode = ProtobufUtcSequentialEncoderAndValidator
+    .encodeToBytesCustomAlgebra(Schemas.allSupportCaseClass, com.bones.protobuf.custom.allEncoders)
+  val decode = ProtobufUtcSequentialEncoderAndValidator
+    .fromCustomBytes(Schemas.allSupportCaseClass, com.bones.protobuf.custom.allValidators)
 
-//  implicit override val generatorDrivenConfig =
-//    PropertyCheckConfiguration(minSuccessful = 10000, workers = 5)
-
-  implicit val arb = Arbitrary(Scalacheck.fromBonesSchema(allSupportCaseClass))
+  implicit val arb = Arbitrary(Scalacheck.fromCustomSchema(allSupportCaseClass, com.bones.scalacheck.custom.allInterpreters))
 
   test("scalacheck allSupport types - marshall then marshall") {
     check((cc: AllSupported) => {
@@ -55,7 +52,8 @@ class ProtobufScalacheckTest extends AnyFunSuite with Checkers {
 
   // Print the file, to be used with the protobufIntegrationTest
   ignore("print protofile") {
-    val message = ProtoFileGeneratorInterpreter.fromSchema(allSupportCaseClass)
+    val message = ProtoFileGeneratorInterpreter
+      .fromSchemaCustomAlgebra(allSupportCaseClass, com.bones.protobuf.custom.allProtoFiles)
     print(ProtoFileGeneratorInterpreter.messageToProtoFile(message))
   }
 

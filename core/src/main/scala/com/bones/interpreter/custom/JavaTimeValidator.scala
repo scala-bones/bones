@@ -27,6 +27,7 @@ object JavaTimeValidator {
         Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDateTime], Some(ex))))
     }
 
+
   def parseTime[A, OUT](
     baseValidator: KvpInterchangeFormatValidatorInterpreter[OUT],
     alg: JavaTimeValue[A],
@@ -66,18 +67,21 @@ object JavaTimeValidator {
     }
 }
 
-trait JavaTimeValidator[OUT] extends InterchangeFormatValidator[JavaTimeValue, OUT] {
+trait JavaTimeValidator[IN] extends InterchangeFormatValidator[JavaTimeValue, IN] {
 
   import JavaTimeValidator._
 
+  val localDateFormatter: DateTimeFormatter
+  val localDateTimeFormatter: DateTimeFormatter
+  val localTimeFormatter: DateTimeFormatter
   val instantFormatter: DateTimeFormatter
   val offsetDateTimeFormatter: DateTimeFormatter
   val offsetTimeFormatter: DateTimeFormatter
   val zonedDateTimeFormatter: DateTimeFormatter
-  val baseValidator: KvpInterchangeFormatValidatorInterpreter[OUT]
+  val baseValidator: KvpInterchangeFormatValidatorInterpreter[IN]
 
   override def validate[A](alg: JavaTimeValue[A])
-    : (Option[OUT], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] = {
+    : (Option[IN], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] = {
 
     alg match {
       case d: DateTimeExceptionData =>
@@ -98,6 +102,30 @@ trait JavaTimeValidator[OUT] extends InterchangeFormatValidator[JavaTimeValue, O
           classOf[Instant],
           input => Instant.from(instantFormatter.parse(input)),
           i.validations)
+      case op @ LocalDateTimeData(validations) =>
+        parseTime(
+          baseValidator,
+          alg,
+          classOf[LocalDateTime],
+          LocalDateTime.parse(_, localDateTimeFormatter),
+          op.validations
+        )
+      case op @ LocalDateData(validations) =>
+        parseTime(
+          baseValidator,
+          alg,
+          classOf[LocalDate],
+          LocalDate.parse(_, localDateFormatter),
+          op.validations
+        )
+      case op @ LocalTimeData(validations) =>
+        parseTime(
+          baseValidator,
+          alg,
+          classOf[LocalTime],
+          LocalTime.parse(_, localTimeFormatter),
+          op.validations
+        )
       case m: MonthData =>
         parseTime(baseValidator, alg, classOf[Month], Month.valueOf, m.validations)
       case m: MonthDayData =>

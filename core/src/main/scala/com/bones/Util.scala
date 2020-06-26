@@ -1,7 +1,7 @@
 package com.bones
 
-import java.time.{LocalDate, LocalDateTime, LocalTime}
 import java.time.format.{DateTimeFormatter, DateTimeParseException}
+import java.time.{LocalDate, LocalTime}
 import java.util.UUID
 
 import cats.data.NonEmptyList
@@ -86,19 +86,7 @@ object Util {
         Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDate], Some(e))))
     }
 
-  /** Convert the String to a LocalDateTime.
-    *  @return Left[NonEmptyList[ExtractionError],String]
-    */
-  def stringToLocalDateTime(
-    input: String,
-    dateFormat: DateTimeFormatter,
-    path: List[String]): Either[NonEmptyList[ExtractionError], LocalDateTime] =
-    try {
-      Right(LocalDateTime.parse(input, dateFormat))
-    } catch {
-      case e: DateTimeParseException =>
-        Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDateTime], Some(e))))
-    }
+
 
   /**
     * Convert the String to a BigDecimal returning Either[NonEmptyList[ExtractionError],BigDecimal]
