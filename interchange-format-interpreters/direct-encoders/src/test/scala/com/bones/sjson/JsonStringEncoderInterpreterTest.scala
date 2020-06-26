@@ -2,7 +2,7 @@ package com.bones.sjson
 
 import java.time.format.DateTimeFormatter
 
-import com.bones.scalacheck.{NoAlgebraGen, Scalacheck}
+import com.bones.scalacheck.{Scalacheck}
 import org.scalatestplus.scalacheck.Checkers
 import com.bones.schemas.Schemas.{AllSupported, allSupportCaseClass}
 import org.scalacheck.Arbitrary
@@ -10,13 +10,12 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class JsonStringEncoderInterpreterTest extends AnyFunSuite with Checkers {
 
-
   val interpreter = JsonStringEncoderInterpreter.isoEncoder
 
+  val ccF = interpreter.valueDefinition(allSupportCaseClass, com.bones.sjson.algebra.allEncoders)
 
-  val ccF = interpreter.valueDefinition(allSupportCaseClass, JsonStringEncoderInterpreter.NoAlgebra)
-
-  implicit val arb: Arbitrary[AllSupported] = Arbitrary(Scalacheck.valueDefinition(allSupportCaseClass, NoAlgebraGen))
+  implicit val arb: Arbitrary[AllSupported] = Arbitrary(
+    Scalacheck.valueDefinition(allSupportCaseClass, com.bones.scalacheck.custom.allInterpreters))
 
   test("to json") {
 
@@ -24,12 +23,12 @@ class JsonStringEncoderInterpreterTest extends AnyFunSuite with Checkers {
       val json = ccF(cc)
       val result =
         if (json.isEmpty)
-        fail("expected success")
+          fail("expected success")
         else {
           val str = json.mkString
           io.circe.parser.parse(str) match {
             case Left(err) => fail(err.toString + str)
-            case Right(_) => succeed
+            case Right(_)  => succeed
           }
         }
       result === succeed

@@ -3,6 +3,7 @@ package com.bones.schemas
 import java.time.{Instant, LocalDate, LocalDateTime, Month}
 import java.util.UUID
 
+import com.bones.data.custom.{AllCustomAlgebras, ScalaCoreValue}
 import com.bones.schemas.CovSumTypeExample.{Digital, MusicMedium}
 import com.bones.syntax._
 import com.bones.schemas.Schemas.AllSupported
@@ -62,8 +63,8 @@ object CovSchemas {
   }
 
   val ccExp = (
-    ("expMonth", long(lv.between(1, 12))) :<:
-      ("expYear", long(lv.between(1950, 9999))) :<:
+    ("expMonth", long(lv.between(1, 12))) ::
+      ("expYear", long(lv.between(1950, 9999))) ::
       kvpNil
   ).validate(HasNotExpired)
 
@@ -71,24 +72,24 @@ object CovSchemas {
 
   // Here we are defining our expected input data.  This definition will drive the interpreters.
   val ccObj = (
-    ("firstSix", string(sv.length(6), sv.matchesRegex("[0-9]{6}".r))) :<:
-      ("lastFour", string(sv.length(4), sv.matchesRegex("[0-9]{4}".r))) :<:
-      ("uuid", uuid) :<:
-      ("token", uuid) :<:
-      ("ccType", ccTypeValue) :<:
+    ("firstSix", string(sv.length(6), sv.matchesRegex("[0-9]{6}".r))) ::
+      ("lastFour", string(sv.length(4), sv.matchesRegex("[0-9]{4}".r))) ::
+      ("uuid", uuid) ::
+      ("token", uuid) ::
+      ("ccType", ccTypeValue) ::
       kvpNil
   ) ::: ccExp ::: (
-    ("cardHolder", string(sv.words)) :<:
-      ("currencyIso", enumeration[Currency.type, Currency.Value](Currency)) :<:
+    ("cardHolder", string(sv.words)) ::
+      ("currencyIso", enumeration[Currency.type, Currency.Value](Currency)) ::
       ("deletedAt", localDateTime.optional) :<:
-      ("lastModifiedRequest", uuid) :<:
+      ("lastModifiedRequest", uuid) ::
       (
       "billingLocation",
       (
-        ("countryIso", string(sv.validVector(isoList))) :<:
+        ("countryIso", string(sv.validVector(isoList))) ::
           ("zipCode", string(sv.max(10)).optional) :<:
           kvpNil
-      ).convert[BillingLocation].optional) :<: //TODO: Optional
+      ).convert[BillingLocation].optional) :<:
       kvpNil
   )
 
@@ -165,10 +166,9 @@ object CovSchemas {
     ("short", short(shv.max(100)).optional) :<:
     ("double", double(dv.min(0)).optional) :<:
     ("byteArray", byteArray.optional) :<:
-    ("localDate", localDate(ldv.min(LocalDate.of(1800, 1, 1))).optional) :<:
-    (
-    "localDateTime",
-    localDateTime(ldtv.min(LocalDateTime.of(1800, Month.JANUARY, 1, 0, 0))).optional) :<:
+    ("localDate", localDate(jt_ld.min(LocalDate.of(1800, 1, 1))).optional) :<:
+    ("localDateTime",
+    localDateTime(jt_ldt.min(LocalDateTime.of(1800, Month.JANUARY, 1, 0, 0))).optional) :<:
     ("uuid", uuid.optional) :<:
     ("enumeration", enumeration[Currency.type, Currency.Value](Currency).optional) :<:
     ("bigDecimal", bigDecimal(bdv.max(BigDecimal(100))).optional) :<:
@@ -194,24 +194,24 @@ object CovSchemas {
   )
 
   val allSupportedSchema =
-    ("boolean", boolean) :<:
-      ("int", int(iv.between(0, 10))) :<:
-      ("long", long(lv.min(0))) :<:
+    ("boolean", boolean) ::
+      ("int", int(iv.between(0, 10))) ::
+      ("long", long(lv.min(0))) ::
       ("listOfInt", list(int)) :<:
-      ("string", string(sv.min(0), sv.words)) :<:
-      ("float", float(fv.max(100))) :<:
-      ("short", short(shv.max(100))) :<:
-      ("double", double(dv.min(0))) :<:
-      ("byteArray", byteArray) :<:
-      ("localDate", localDate(ldv.min(LocalDate.of(1800, 1, 1)))) :<:
-      ("localDateTime", localDateTime(ldtv.min(LocalDateTime.of(1800, Month.JANUARY, 1, 0, 0)))) :<:
-      ("uuid", uuid) :<:
-      ("enumeration", enumeration[Currency.type, Currency.Value](Currency)) :<:
-      ("bigDecimal", bigDecimal(bdv.max(BigDecimal(100)))) :<:
+      ("string", string(sv.min(0), sv.words)) ::
+      ("float", float(fv.max(100))) ::
+      ("short", short(shv.max(100))) ::
+      ("double", double(dv.min(0))) ::
+      ("byteArray", byteArray) ::
+      ("localDate", localDate(jt_ld.min(LocalDate.of(1800, 1, 1)))) ::
+      ("localDateTime", localDateTime(jt_ldt.min(LocalDateTime.of(1800, Month.JANUARY, 1, 0, 0)))) ::
+      ("uuid", uuid) ::
+      ("enumeration", enumeration[Currency.type, Currency.Value](Currency)) ::
+      ("bigDecimal", bigDecimal(bdv.max(BigDecimal(100)))) ::
       ("eitherField", either(string(sv.words), int)) :<:
       ("child", allSupportedOptionalSchema.convert[AllSupportedOptional]) :<:
       ("media", MusicMedium.bonesSchema) :<:
-      ("int2", int(iv.between(Int.MinValue, Int.MinValue))) :<:
+      ("int2", int(iv.between(Int.MinValue, Int.MinValue))) ::
       kvpNil
 
   case class AllSupported(
@@ -297,44 +297,5 @@ object CovSchemas {
     7
   )
 
-  trait CustomAlgebra[A]
-  case object MarkdownData extends CustomAlgebra[String]
-  val markdown = MarkdownData
-
-  trait DateExtAlgebra[A]
-  case object InstantData extends DateExtAlgebra[Instant]
-  val instant = InstantData
-
-  case class BlogPost(
-    id: Int,
-    title: String,
-    tags: List[String],
-    publishDate: Instant,
-    content: String)
-
-  object BlogPost {
-    type BlogAlgebra[A] = CustomAlgebra[A] :+: DateExtAlgebra[A] :+: CNil
-    def a1[A](customAlgebra: CustomAlgebra[A]): BlogAlgebra[A] =
-      Inl(customAlgebra)
-
-    def a2[A](instantData: DateExtAlgebra[A]): BlogAlgebra[A] = Inr(Inl(instantData))
-
-    val baseSchema =
-      ("id", int(iv.min(1))) :<:
-        ("title", string(sv.max(50))) :<:
-        ("tags", list(string())) :<:
-        ("publishDate", a2(instant)) :>:
-        ("content", a1(markdown)) :>:
-        kvpNilCov[BlogAlgebra]
-
-    val blogPostSchema = baseSchema.convert[BlogPost]
-  }
-
-  val blogPostInstant = BlogPost(
-    1,
-    "My Blog Post",
-    List("music", "household goods"),
-    Instant.now(),
-    "Ipsum Plurbus Unum")
 
 }

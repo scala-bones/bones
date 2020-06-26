@@ -5,10 +5,10 @@ import shapeless.{:+:, CNil, Coproduct, Generic}
 
 sealed abstract class KvpCoproduct[ALG[_], C <: Coproduct] { self =>
 
-  def :+:[B: Manifest](head: Either[KvpValue[B], ALG[B]]): KvpSingleValueLeft[ALG, B, C] =
+  def :+:[B: Manifest](head: Either[KvpCollection[ALG, B], ALG[B]]): KvpSingleValueLeft[ALG, B, C] =
     KvpSingleValueLeft(head, this, manifest[B])
 
-  def :<+:[B: Manifest](head: KvpValue[B]): KvpSingleValueLeft[ALG, B, C] =
+  def :<+:[B: Manifest](head: KvpCollection[ALG, B]): KvpSingleValueLeft[ALG, B, C] =
     KvpSingleValueLeft(Left(head), this, manifest[B])
 
   def :+>:[B: Manifest](head: ALG[B]): KvpSingleValueLeft[ALG, B, C] =
@@ -37,7 +37,7 @@ case class KvpCoNil[ALG[_]]() extends KvpCoproduct[ALG, CNil]
   * @tparam R The remaining part of the coproduct.  This class
   */
 case class KvpSingleValueLeft[ALG[_], A, R <: Coproduct](
-  kvpValue: Either[KvpValue[A], ALG[A]],
+  kvpValue: Either[KvpCollection[ALG, A], ALG[A]],
   kvpTail: KvpCoproduct[ALG, R],
   manifestL: Manifest[A]
 ) extends KvpCoproduct[ALG, A :+: R] {}

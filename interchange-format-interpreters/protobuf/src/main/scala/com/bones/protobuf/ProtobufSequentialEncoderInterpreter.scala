@@ -10,7 +10,6 @@ import cats.implicits._
 import com.bones.data.KeyValueDefinition.CoproductDataDefinition
 import com.bones.data.custom.CNilF
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft, _}
-import com.bones.syntax.NoAlgebra
 import com.google.protobuf.{CodedOutputStream, Timestamp}
 import shapeless._
 
@@ -46,10 +45,6 @@ object ProtobufSequentialEncoderInterpreter {
     def encodeToProto[A](alg: ALG[A]): EncodeToProto[A]
   }
 
-  object NoAlgebraCustomEncoderInterpreter extends CustomEncoderInterpreter[NoAlgebra] {
-    def encodeToProto[A](alg: NoAlgebra[A]): EncodeToProto[A] = sys.error("Unreachable code")
-  }
-
   type Path = Vector[String]
   type FieldNumber = Int
   type LastFieldNumber = Int
@@ -74,9 +69,9 @@ object ProtobufSequentialEncoderInterpreter {
     }
 
   def determineValueDefinition[ALG[_], A](
-    kvp: CoproductDataDefinition[ALG, A],
-    valueDefinition: (KvpValue[A], CustomEncoderInterpreter[ALG]) => EncodeToProto[A],
-    customInterpreter: CustomEncoderInterpreter[ALG]
+                                           kvp: CoproductDataDefinition[ALG, A],
+                                           valueDefinition: (KvpCollection[ALG, A], CustomEncoderInterpreter[ALG]) => EncodeToProto[A],
+                                           customInterpreter: CustomEncoderInterpreter[ALG]
   ): EncodeToProto[A] =
     kvp match {
       case Left(kvp) => valueDefinition(kvp, customInterpreter)
@@ -84,9 +79,9 @@ object ProtobufSequentialEncoderInterpreter {
     }
 
   def optionalKvpValueDefinition[ALG[_], B](
-    op: OptionalKvpValueDefinition[ALG, B],
-    valueDefinition: (KvpValue[B], CustomEncoderInterpreter[ALG]) => EncodeToProto[B],
-    customInterpreter: CustomEncoderInterpreter[ALG]
+                                             op: OptionalKvpValueDefinition[ALG, B],
+                                             valueDefinition: (KvpCollection[ALG, B], CustomEncoderInterpreter[ALG]) => EncodeToProto[B],
+                                             customInterpreter: CustomEncoderInterpreter[ALG]
   ): EncodeToProto[Option[B]] = { (fieldNumber: FieldNumber) =>
     val (lastFieldNumber, fa) =
       determineValueDefinition(op.valueDefinitionOp, valueDefinition, customInterpreter)(
@@ -156,13 +151,8 @@ object ProtobufSequentialEncoderInterpreter {
         }
     )
 
-  val uuidData: EncodeToProto[UUID] = stringDataFromMap(_.toString)
-
   def localDateTimeToSecondsNanos(zoneOffset: ZoneOffset): LocalDateTime => (Long, Int) =
     localDateTime => (localDateTime.toEpochSecond(zoneOffset), localDateTime.getNano)
-
-  def localDateTimeData(zoneOffset: ZoneOffset) =
-    timestampFromMap(localDateTimeToSecondsNanos(zoneOffset))
 
   def timestampFromMap[A](f: A => (Long, Int)): EncodeToProto[A] = { (fieldNumber: FieldNumber) =>
     (
@@ -193,9 +183,6 @@ object ProtobufSequentialEncoderInterpreter {
       }
     )
   }
-
-  val localDateData: EncodeToProto[LocalDate] = longDataFromMap[LocalDate](_.toEpochDay)
-  val localTimeData: EncodeToProto[LocalTime] = longDataFromMap[LocalTime](_.toNanoOfDay)
 
   val floatData: EncodeToProto[Float] =
     (fieldNumber: FieldNumber) =>
@@ -243,11 +230,6 @@ object ProtobufSequentialEncoderInterpreter {
 trait ProtobufSequentialEncoderInterpreter {
 
   import ProtobufSequentialEncoderInterpreter._
-
-  val zoneOffset: ZoneOffset
-
-  def encodeToBytes[A](dc: BonesSchema[NoAlgebra, A]): A => Array[Byte] =
-    encodeToBytesCustomAlgebra[NoAlgebra, A](dc, NoAlgebraCustomEncoderInterpreter)
 
   def encodeToBytesCustomAlgebra[ALG[_], A](
     dc: BonesSchema[ALG, A],
@@ -409,25 +391,11 @@ trait ProtobufSequentialEncoderInterpreter {
   }
 
   def valueDefinition[ALG[_], A](
-    fgo: KvpValue[A],
-    customInterpreter: CustomEncoderInterpreter[ALG]): EncodeToProto[A] = {
+                                  fgo: KvpCollection[ALG,A],
+                                  customInterpreter: CustomEncoderInterpreter[ALG]): EncodeToProto[A] = {
     fgo match {
       case op: OptionalKvpValueDefinition[ALG, a] @unchecked =>
         optionalKvpValueDefinition[ALG, a](op, valueDefinition, customInterpreter)
-      case ob: BooleanData            => booleanData
-      case rs: StringData             => stringData
-      case id: ShortData              => shortData
-      case id: IntData                => intData
-      case ri: LongData               => longData
-      case uu: UuidData               => uuidData
-      case dd: LocalDateTimeData      => localDateTimeData(zoneOffset)
-      case dt: LocalDateData          => localDateData
-      case lt: LocalTimeData          => localTimeData
-      case fd: FloatData              => floatData
-      case dd: DoubleData             => doubleData
-      case bd: BigDecimalData         => bigDecimalData
-      case ba: ByteArrayData          => byteArrayData
-      case esd: EnumerationData[e, a] => enumerationData
 
       case ld: ListData[ALG, t] @unchecked =>
         (fieldNumber: FieldNumber) =>

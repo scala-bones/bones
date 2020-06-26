@@ -5,7 +5,7 @@ import java.time.format.DateTimeFormatter
 
 import com.bones.data.custom._
 import com.bones.swagger.SwaggerCoreInterpreter
-import com.bones.swagger.SwaggerCoreInterpreter.{CustomSwaggerInterpreter, Name}
+import com.bones.swagger.SwaggerCoreInterpreter.{CustomSwaggerInterpreter, Name, validations}
 import com.bones.validation.ValidationDefinition.ValidationOp
 import io.swagger.v3.oas.models.media.Schema
 
@@ -19,6 +19,16 @@ trait JavaTimeInterpreter extends CustomSwaggerInterpreter[JavaTimeValue] {
   val offsetDateTimeFormatter: DateTimeFormatter
   val offsetTimeFormatter: DateTimeFormatter
   val zonedDateTimeFormatter: DateTimeFormatter
+  val localDateTimeFormatter: DateTimeFormatter
+  val localDateFormatter: DateTimeFormatter
+  val localTimeFormatter: DateTimeFormatter
+
+  private def localDateExample = LocalDate.of(1970, 1, 1)
+
+  private def localTimeExample = LocalTime.of(12, 0, 0, 0)
+
+  private def localDateTimeExample = LocalDateTime.of(localDateExample, localTimeExample)
+
 
   val instantExample = Instant.ofEpochSecond(1581349194)
   val offsetDateTimeExample = OffsetDateTime.ofInstant(instantExample, ZoneId.of("Z"))
@@ -64,6 +74,31 @@ trait JavaTimeInterpreter extends CustomSwaggerInterpreter[JavaTimeValue] {
             description.getOrElse("string value of an instant"),
             instantFormatter.format(example.getOrElse(instantExample).asInstanceOf[Instant]),
             validations(id.validations)
+          )
+      case ldt: LocalDateTimeData =>
+        name =>
+          addStringSchema(
+            name,
+            description.getOrElse("value of type local date time"),
+            localDateTimeFormatter.format(
+              example.getOrElse(localDateTimeExample).asInstanceOf[LocalDateTime]),
+            validations(ldt.validations)
+          )
+      case ld: LocalDateData =>
+        name =>
+          addDateSchema(
+            name,
+            description.getOrElse("value of type local date"),
+            localDateFormatter.format(example.getOrElse(localDateExample).asInstanceOf[LocalDate]),
+            validations(ld.validations)
+          )
+      case lt: LocalTimeData =>
+        name =>
+          addStringSchema(
+            name,
+            description.getOrElse("value of type local time"),
+            localTimeFormatter.format(example.getOrElse(localTimeExample).asInstanceOf[LocalTime]),
+            validations(lt.validations)
           )
       case md: MonthData =>
         name =>

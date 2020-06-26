@@ -19,13 +19,13 @@ object Demo {
   case class Waterfall(name: String, location: Option[Location], height: Option[BigDecimal])
 
   val locationSchema = (
-    ("latitude", bigDecimal(dv.min(-180), dv.max(180))) :<:
-      ("longitude", bigDecimal(dv.min(-180), dv.max(180))) :<:
+    ("latitude", bigDecimal(dv.min(-180), dv.max(180))) ::
+      ("longitude", bigDecimal(dv.min(-180), dv.max(180))) ::
       kvpNil
   ).convert[Location]
 
   val waterfallSchema = (
-    ("name", string(sv.max(200), sv.trimmed, sv.words)) :<:
+    ("name", string(sv.max(200), sv.trimmed, sv.words)) ::
       ("location", locationSchema.optional) :<:
       ("height", bigDecimal(dv.min(0)).optional) :<:
       kvpNil
@@ -41,7 +41,7 @@ object DemoApp extends LocalhostAllIOApp() {
   val ds = localhostDataSource
 
   override def services: HttpRoutes[IO] = {
-    serviceRoutesWithCrudMiddleware("waterfall", waterfallSchema, ds) <+>
+    serviceRoutesWithCrudMiddleware("waterfall", waterfallSchema, idDef, parseIdF, com.bones.jdbc.defaultJdbcColumnInterpreter, ds) <+>
       dbSchemaEndpoint("waterfall", waterfallSchema)
 //      reactEndpoints(List(waterfallSchema))
   }

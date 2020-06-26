@@ -5,9 +5,9 @@ import java.util.Base64
 
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
 import com.bones.data._
+import com.bones.data.custom.CNilF
 import com.bones.sjson.JsonStringEncoderInterpreter.CustomToJsonStringInterpreter
-import com.bones.syntax.NoAlgebra
-import shapeless.{::, Coproduct, HList, Inl, Inr, Nat}
+import shapeless.{:+:, ::, Coproduct, HList, Inl, Inr, Nat}
 import org.apache.commons.text.StringEscapeUtils.escapeJson
 
 object JsonStringEncoderInterpreter {
@@ -20,16 +20,39 @@ object JsonStringEncoderInterpreter {
   val isoEncoder = new JsonStringEncoderInterpreter {
     override val localDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
     override val localDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
-    override val localTiemFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_TIME
+    override val localTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_TIME
+  }
+
+  object CustomToJsonStringInterpreter {
+
+    /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
+      * see https://stackoverflow.com/a/60561575/387094
+      * */
+    def merge[L[_], R[_] <: Coproduct, A](
+      li: CustomToJsonStringInterpreter[L],
+      ri: CustomToJsonStringInterpreter[R])
+      : CustomToJsonStringInterpreter[Lambda[A => L[A] :+: R[A]]] =
+      new CustomToJsonStringInterpreter[Lambda[A => L[A] :+: R[A]]] {
+        override def toJsonString[A](lr: L[A] :+: R[A]): A => List[String] = lr match {
+          case Inl(l) => li.toJsonString(l)
+          case Inr(r) => ri.toJsonString(r)
+        }
+      }
+
+    implicit class InterpreterOps[ALG[_]](val base: CustomToJsonStringInterpreter[ALG])
+        extends AnyVal {
+      def ++[R[_] <: Coproduct](r: CustomToJsonStringInterpreter[R])
+        : CustomToJsonStringInterpreter[Lambda[A => ALG[A] :+: R[A]]] =
+        merge(base, r)
+    }
+
+    object CNilCustomEncoder extends CustomToJsonStringInterpreter[CNilF] {
+      override def toJsonString[A](alg: CNilF[A]): A => List[String] = sys.error("Unreachable code")
+    }
   }
 
   trait CustomToJsonStringInterpreter[ALG[_]] {
     def toJsonString[A](alg: ALG[A]): A => List[String]
-  }
-
-  object NoAlgebra extends CustomToJsonStringInterpreter[NoAlgebra] {
-    override def toJsonString[A](alg: NoAlgebra[A]): A => List[String] =
-      sys.error("unreachable code")
   }
 
 }
@@ -44,7 +67,7 @@ trait JsonStringEncoderInterpreter {
 
   val localDateTimeFormatter: DateTimeFormatter
   val localDateFormatter: DateTimeFormatter
-  val localTiemFormatter: DateTimeFormatter
+  val localTimeFormatter: DateTimeFormatter
 
   def fAtoString[ALG[_], A](
     bonesSchema: BonesSchema[ALG, A],
@@ -155,8 +178,8 @@ trait JsonStringEncoderInterpreter {
   }
 
   def determineValueDefinition[ALG[_], A](
-    kvpValue: Either[KvpValue[A], ALG[A]],
-    customInterpreter: CustomToJsonStringInterpreter[ALG]
+                                           kvpValue: Either[KvpCollection[ALG, A], ALG[A]],
+                                           customInterpreter: CustomToJsonStringInterpreter[ALG]
   ): A => List[String] = {
     kvpValue match {
       case Left(kvp)  => valueDefinition(kvp, customInterpreter)
@@ -165,8 +188,8 @@ trait JsonStringEncoderInterpreter {
   }
 
   def valueDefinition[ALG[_], A](
-    fgo: KvpValue[A],
-    customToJsonStringInterpreter: CustomToJsonStringInterpreter[ALG]): A => List[String] =
+                                  fgo: KvpCollection[ALG, A],
+                                  customToJsonStringInterpreter: CustomToJsonStringInterpreter[ALG]): A => List[String] =
     fgo match {
       case op: OptionalKvpValueDefinition[ALG, a] @unchecked =>
         val someF = determineValueDefinition(op.valueDefinitionOp, customToJsonStringInterpreter)
@@ -174,46 +197,10 @@ trait JsonStringEncoderInterpreter {
           case Some(s) => someF(s)
           case None    => List.empty
         }
-      case ob: BooleanData =>
-        b =>
-          if (b) List("true") else List("false")
-      case rs: StringData =>
-        s =>
-          List("\"" + escapeJson(s) + "\"")
-      case ri: LongData =>
-        l =>
-          List(l.toString)
-      case uu: UuidData =>
-        u =>
-          List("\"" + u.toString + "\"")
-      case ld: LocalDateData =>
-        d =>
-          List("\"" + escapeJson(localDateFormatter.format(d)) + "\"")
-      case dd: LocalDateTimeData =>
-        d =>
-          List("\"" + escapeJson(localDateTimeFormatter.format(d)) + "\"")
-      case lt: LocalTimeData =>
-        d =>
-          List("\"" + escapeJson(localTiemFormatter.format(d)) + "\"")
-      case bd: BigDecimalData =>
-        bd =>
-          List(bd.toString)
       case ld: ListData[ALG, t] @unchecked =>
         l =>
           val tDef = determineValueDefinition(ld.tDefinition, customToJsonStringInterpreter)
           List(l.flatMap(t => tDef(t)).mkString("[", ",", "]"))
-      case dd: DoubleData =>
-        d =>
-          List(d.toString)
-      case fd: FloatData =>
-        f =>
-          List(f.toString)
-      case id: IntData =>
-        i =>
-          List(i.toString)
-      case sd: ShortData =>
-        s =>
-          List(s.toString)
       case ed: EitherData[ALG, a, b] @unchecked =>
         val aDef: a => List[String] =
           determineValueDefinition(ed.definitionA, customToJsonStringInterpreter)
@@ -223,12 +210,6 @@ trait JsonStringEncoderInterpreter {
           case Left(l)  => aDef(l)
           case Right(r) => bDef(r)
         }
-      case ba: ByteArrayData =>
-        (input: Array[Byte]) =>
-          List("\"", escapeJson(Base64.getEncoder.encodeToString(input)), "\"")
-      case esd: EnumerationData[e, a] =>
-        e =>
-          List("\"", escapeJson(e.toString), "\"")
       case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
         val hListDef = kvpHList(kvp.kvpHList, customToJsonStringInterpreter)
         (input: A) =>

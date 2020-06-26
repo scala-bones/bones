@@ -4,7 +4,7 @@ import java.net.{URI, URL}
 import java.util.UUID
 
 import com.bones.data.custom.CustomStringValue._
-import com.bones.data.{AlgToCollectionData, HasManifest}
+import com.bones.data.{AlgToCollectionData, KvpValue}
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.ValidationUtil
 import shapeless.Coproduct
@@ -142,7 +142,7 @@ object CustomStringValue {
 
 }
 
-sealed abstract class CustomStringValue[A: Manifest] extends HasManifest[String] {
+sealed abstract class CustomStringValue[A: Manifest] extends KvpValue[String] {
   val manifestOfA: Manifest[String] = manifest[String]
 
   val validations: List[ValidationOp[String]]

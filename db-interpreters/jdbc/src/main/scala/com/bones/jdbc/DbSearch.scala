@@ -5,24 +5,25 @@ import java.sql.{Connection, ResultSet}
 import cats.data.NonEmptyList
 import cats.effect.IO
 import com.bones.data.Error.ExtractionError
-import com.bones.data.{BonesSchema, HListConvert}
-import com.bones.jdbc.ColumnNameInterpreter.{CustomInterpreter => ColumnNameCustomInterpreter}
-import com.bones.jdbc.ResultSetInterpreter.{CustomInterpreter => ResultSetCustomInterpreter}
+import com.bones.data.{BonesSchema, HListConvert, KvpNil}
 import com.bones.jdbc.DbUtil.camelToSnake
+import com.bones.jdbc.column.ColumnNameInterpreter
+import com.bones.jdbc.rs.{
+  ResultSetInterpreter,
+  ResultSetValueInterpreter => ResultSetCustomInterpreter
+}
 import fs2.Stream
 import fs2.Stream.bracket
 import javax.sql.DataSource
 
 object DbSearch {
 
-  type DbSearchCustomInterpreter[ALG[_]] = ColumnNameCustomInterpreter[ALG]
-    with ResultSetCustomInterpreter[ALG]
-
-  def getEntity[ALG[_], A](
+  def getEntity[ALG[_], A, ID](
     schema: BonesSchema[ALG, A],
-    customInterpreter: DbSearchCustomInterpreter[ALG]
-  ): DataSource => Stream[IO, Either[NonEmptyList[ExtractionError], (Long, A)]] = {
-    val withConnection = searchEntityWithConnection[ALG, A](schema, customInterpreter)
+    customInterpreter: ResultSetCustomInterpreter[ALG],
+    idDef: IdDefinition[ALG, ID]
+  ): DataSource => Stream[IO, Either[NonEmptyList[ExtractionError], (ID, A)]] = {
+    val withConnection = searchEntityWithConnection(schema, customInterpreter, idDef)
     ds =>
       {
         bracket(IO { ds.getConnection })(con => IO { con.close() })
@@ -30,10 +31,10 @@ object DbSearch {
       }
   }
 
-  private def extractToStream[A](
+  private def extractToStream[A, ID](
     rs: ResultSet,
-    resultSetF: ResultSet => Either[NonEmptyList[ExtractionError], (Long, A)])
-    : Stream[IO, Either[NonEmptyList[ExtractionError], (Long, A)]] = {
+    resultSetF: ResultSet => Either[NonEmptyList[ExtractionError], (ID, A)])
+    : Stream[IO, Either[NonEmptyList[ExtractionError], (ID, A)]] = {
     if (rs.next()) {
       val next = resultSetF(rs)
       Stream(next) ++ extractToStream(rs, resultSetF)
@@ -42,22 +43,20 @@ object DbSearch {
     }
   }
 
-  def searchEntityWithConnection[ALG[_], A](
+  def searchEntityWithConnection[ALG[_], A, ID](
     schema: BonesSchema[ALG, A],
-    customInterpreter: DbSearchCustomInterpreter[ALG]
-  ): Connection => Stream[IO, Either[NonEmptyList[ExtractionError], (Long, A)]] = {
+    customInterpreter: ResultSetCustomInterpreter[ALG],
+    idDef: IdDefinition[ALG, ID]
+  ): Connection => Stream[IO, Either[NonEmptyList[ExtractionError], (ID, A)]] = {
     schema match {
       case x: HListConvert[ALG, h, n, b] @unchecked =>
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
-        implicit val manifest: Manifest[b] = x.manifestOfA
-        val schemaWithId =
-          (DbUtil.longIdKeyValueDef[ALG] >>: x :><: com.bones.syntax.kvpNilCov[ALG])
-            .tupled[(Long, A)]
+        val schemaWithId = idDef.prependSchema(schema)
 
-        val resultSetF: ResultSet => Either[NonEmptyList[ExtractionError], (Long, A)] =
+        val resultSetF: ResultSet => Either[NonEmptyList[ExtractionError], (ID, A)] =
           ResultSetInterpreter.valueDefinition(schemaWithId, customInterpreter)(List.empty, "")
 
-        val fields = ColumnNameInterpreter.valueDefinition(schemaWithId, customInterpreter)("")
+        val fields = ColumnNameInterpreter.valueDefinition(schemaWithId)("")
         val sql = s"""select ${fields.mkString(",")} from $tableName limit 50"""
         con =>
           {

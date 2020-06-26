@@ -1,20 +1,14 @@
 package com.bones.bson
 
-import java.time._
-import java.util.UUID
-
 import cats.data.NonEmptyList
 import cats.implicits._
-import com.bones.Util
 import com.bones.data.Error._
+import com.bones.data.KeyValueDefinition.CoproductDataDefinition
 import com.bones.data._
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
-import com.bones.Util._
-import com.bones.data.KeyValueDefinition.CoproductDataDefinition
-import com.bones.data.KvpValue.Path
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
 import reactivemongo.bson.buffer.ArrayReadableBuffer
-import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDecimal, BSONDocument, BSONDouble, BSONInteger, BSONLong, BSONNull, BSONString, BSONValue}
+import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDecimal, BSONDocument, BSONDouble, BSONInteger, BSONLong, BSONNull, BSONString, BSONValue}
 
 import scala.util.Try
 
@@ -76,7 +70,7 @@ object BsonValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
 
   }
 
-  override def extractString[ALG[_], A](op: CoproductDataDefinition[ALG, A], clazz: Class[_])(
+  override def extractString[ALG[_], A](op: ALG[A], clazz: Class[_])(
     in: BSONValue,
     path: List[String]): Either[NonEmptyList[ExtractionError], String] =
     in match {
@@ -84,9 +78,9 @@ object BsonValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
       case x               => invalidValue(x, clazz, path)
     }
 
-  override def extractShort[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
+  override def extractShort[ALG[_], A](op: ALG[A])(
     in: BSONValue,
-    path: Path): Either[NonEmptyList[ExtractionError], Short] =
+    path: List[String]): Either[NonEmptyList[ExtractionError], Short] =
     in match {
       case BSONInteger(i) =>
         Try({
@@ -101,7 +95,7 @@ object BsonValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
       case x => invalidValue(x, classOf[Long], path)
     }
 
-  override def extractInt[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
+  override def extractInt[ALG[_], A](op: ALG[A])(
     in: BSONValue,
     path: List[String]): Either[NonEmptyList[ExtractionError], Int] =
     in match {
@@ -114,7 +108,7 @@ object BsonValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
       case x => invalidValue(x, classOf[Long], path)
     }
 
-  override def extractLong[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
+  override def extractLong[ALG[_], A](op: ALG[A])(
     in: BSONValue,
     path: List[String]): Either[NonEmptyList[ExtractionError], Long] =
     in match {
@@ -123,7 +117,7 @@ object BsonValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
       case x              => invalidValue(x, classOf[Long], path)
     }
 
-  override def extractBool[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
+  override def extractBool[ALG[_], A](op: ALG[A])(
     in: BSONValue,
     path: List[String]): Either[NonEmptyList[ExtractionError], Boolean] =
     in match {
@@ -131,32 +125,7 @@ object BsonValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
       case x                 => invalidValue(x, classOf[Boolean], path)
     }
 
-  override def extractLocalDateTime[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
-    in: BSONValue,
-    path: List[String]): Either[NonEmptyList[ExtractionError], LocalDateTime] =
-    in match {
-      case BSONDateTime(date) =>
-        val i = Instant.ofEpochMilli(date)
-        Right(LocalDateTime.ofInstant(i, ZoneOffset.UTC))
-      case x => invalidValue(x, classOf[BSONDateTime], path)
-    }
 
-  override def extractLocalDate[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
-    in: BSONValue,
-    path: List[String]): Either[NonEmptyList[ExtractionError], LocalDate] =
-    in match {
-      case BSONDateTime(date) =>
-        Right(LocalDate.ofEpochDay(date))
-      case x => invalidValue(x, classOf[BSONDateTime], path)
-    }
-
-  override def extractLocalTime[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
-    in: BSONValue,
-    path: Path): Either[NonEmptyList[ExtractionError], LocalTime] =
-    in match {
-      case BSONLong(time) => Right(LocalTime.ofNanoOfDay(time))
-      case x              => invalidValue(x, classOf[BSONLong], path)
-    }
 
   override def extractArray[ALG[_], A](op: ListData[ALG, A])(
     in: BSONValue,
@@ -175,7 +144,7 @@ object BsonValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
 
     }
 
-  override def extractFloat[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
+  override def extractFloat[ALG[_], A](op: ALG[A])(
     in: BSONValue,
     path: List[String]): Either[NonEmptyList[ExtractionError], Float] = {
     in match {
@@ -200,7 +169,7 @@ object BsonValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
     }
   }
 
-  override def extractDouble[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
+  override def extractDouble[ALG[_], A](op: ALG[A])(
     in: BSONValue,
     path: List[String]): Either[NonEmptyList[ExtractionError], Double] =
     in match {
@@ -223,7 +192,7 @@ object BsonValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
       case x => invalidValue(x, classOf[Float], path)
     }
 
-  override def extractBigDecimal[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
+  override def extractBigDecimal[ALG[_], A](op: ALG[A])(
     in: BSONValue,
     path: List[String]): Either[NonEmptyList[ExtractionError], BigDecimal] =
     in match {

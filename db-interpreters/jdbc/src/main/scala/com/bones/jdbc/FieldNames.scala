@@ -3,8 +3,8 @@ package com.bones.jdbc
 import java.util.{Calendar, TimeZone}
 
 import com.bones.data._
+import com.bones.data.custom.AnyAlg
 import com.bones.jdbc.DbUtil.camelToSnake
-import com.bones.syntax.NoAlgebra
 import shapeless.{HList, Nat}
 
 object FindInterpreter {
@@ -28,13 +28,6 @@ object FieldNames {
   trait CustomFieldNamesInterpreter[ALG[_]] {
     def fieldNames[A](alg: ALG[A]): List[String]
   }
-
-  object NoAlgebraInterpreter extends CustomFieldNamesInterpreter[NoAlgebra] {
-    override def fieldNames[A](alg: NoAlgebra[A]): List[String] = sys.error("unreachable code")
-  }
-
-  def fromSchema[A](dc: BonesSchema[NoAlgebra, A]): List[String] =
-    fromCustomSchema(dc, NoAlgebraInterpreter)
 
   def fromCustomSchema[ALG[_], A](
     dc: BonesSchema[ALG, A],
@@ -68,34 +61,21 @@ object FieldNames {
     }
 
   def determineValueDefinition[ALG[_], A](
-    valueDefinitionOp: Either[KvpValue[A], ALG[A]],
+    valueDefinitionOp: Either[KvpCollection[ALG,A], AnyAlg[A]],
     customFieldNamesInterpreter: CustomFieldNamesInterpreter[ALG]): List[String] =
     valueDefinitionOp match {
       case Left(kvp)  => valueDefinition(kvp, customFieldNamesInterpreter)
-      case Right(alg) => customFieldNamesInterpreter.fieldNames(alg)
+      case Right(_) => List.empty
     }
 
   def valueDefinition[ALG[_], A](
-    fgo: KvpValue[A],
+    fgo: KvpCollection[ALG,A],
     customFieldNamesInterpreter: CustomFieldNamesInterpreter[ALG]): List[String] =
     fgo match {
       case op: OptionalKvpValueDefinition[ALG, a] @unchecked =>
         determineValueDefinition(op.valueDefinitionOp, customFieldNamesInterpreter)
-      case ob: BooleanData                      => List.empty
-      case rs: StringData                       => List.empty
-      case id: ShortData                        => List.empty
-      case id: IntData                          => List.empty
-      case ri: LongData                         => List.empty
-      case uu: UuidData                         => List.empty
-      case dd: LocalDateData                    => List.empty
-      case dd: LocalDateTimeData                => List.empty
-      case bd: BigDecimalData                   => List.empty
-      case fd: FloatData                        => List.empty
-      case dd: DoubleData                       => List.empty
-      case ba: ByteArrayData                    => List.empty
       case ld: ListData[ALG, t] @unchecked      => List.empty
       case ed: EitherData[ALG, a, b] @unchecked => List.empty
-      case esd: EnumerationData[e, a]           => List.empty
       case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
         kvpHList(kvp.kvpHList, customFieldNamesInterpreter)
       case x: HListConvert[ALG, _, _, _] @unchecked => kvpHList(x.from, customFieldNamesInterpreter)

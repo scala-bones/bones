@@ -7,17 +7,14 @@ import cats.data.NonEmptyList
 import cats.implicits._
 import com.bones.Util
 import com.bones.data.Error._
-import com.bones.data.KeyValueDefinition.CoproductDataDefinition
 import com.bones.data.custom.CNilF
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft, _}
-import com.bones.syntax.NoAlgebra
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.{ValidationUtil => vu}
 import com.google.protobuf.{CodedInputStream, InvalidProtocolBufferException, Timestamp}
 import shapeless.{:+:, Coproduct, HList, HNil, Inl, Inr, Nat}
 
 import scala.annotation.tailrec
-import scala.util.Try
 
 object ProtobufSequentialValidatorInterpreter {
 
@@ -53,11 +50,6 @@ object ProtobufSequentialValidatorInterpreter {
     def extractFromProto[A](alg: ALG[A]): ExtractFromProto[A]
   }
 
-  object NoAlgebraInterpreter extends CustomValidatorInterpreter[NoAlgebra] {
-    override def extractFromProto[A](alg: NoAlgebra[A]): ExtractFromProto[A] =
-      sys.error("Unreachable code")
-  }
-
   /** Path to the value -- list of keys */
   type Path = List[String]
   type LastFieldNumber = Int
@@ -90,9 +82,9 @@ object ProtobufSequentialValidatorInterpreter {
 
   /** Determine if we use the core algebra or the custom algebra and then pass control to the appropriate interpreter */
   def determineValueDefinition[ALG[_], A](
-    definition: Either[KvpValue[A], ALG[A]],
-    valueDefinition: (KvpValue[A], CustomValidatorInterpreter[ALG]) => ExtractFromProto[A],
-    customInterpreter: CustomValidatorInterpreter[ALG]
+                                           definition: Either[KvpCollection[ALG,A], ALG[A]],
+                                           valueDefinition: (KvpCollection[ALG,A], CustomValidatorInterpreter[ALG]) => ExtractFromProto[A],
+                                           customInterpreter: CustomValidatorInterpreter[ALG]
   ): ExtractFromProto[A] =
     definition match {
       case Left(kvp)  => valueDefinition(kvp, customInterpreter)
@@ -121,9 +113,9 @@ object ProtobufSequentialValidatorInterpreter {
   def identitySuccess[A]: (A, Path) => Either[NonEmptyList[ExtractionError], A] = (a, _) => Right(a)
 
   def optionalKvpValueDefinition[ALG[_], B](
-    op: OptionalKvpValueDefinition[ALG, B],
-    valueDefinition: (KvpValue[B], CustomValidatorInterpreter[ALG]) => ExtractFromProto[B],
-    customInterpreter: CustomValidatorInterpreter[ALG]
+                                             op: OptionalKvpValueDefinition[ALG, B],
+                                             valueDefinition: (KvpCollection[ALG, B], CustomValidatorInterpreter[ALG]) => ExtractFromProto[B],
+                                             customInterpreter: CustomValidatorInterpreter[ALG]
   ): ExtractFromProto[Option[B]] = {
     val vd = determineValueDefinition(op.valueDefinitionOp, valueDefinition, customInterpreter)
     (fieldNumber: LastFieldNumber, path: Path) =>
@@ -141,10 +133,10 @@ object ProtobufSequentialValidatorInterpreter {
   }
 
   def listData[ALG[_], B](
-    ld: ListData[ALG, B],
-    valueDefinition: (KvpValue[B], CustomValidatorInterpreter[ALG]) => ExtractFromProto[B],
-    customInterpreter: CustomValidatorInterpreter[ALG],
-    validations: List[ValidationOp[List[B]]]
+                           ld: ListData[ALG, B],
+                           valueDefinition: (KvpCollection[ALG, B], CustomValidatorInterpreter[ALG]) => ExtractFromProto[B],
+                           customInterpreter: CustomValidatorInterpreter[ALG],
+                           validations: List[ValidationOp[List[B]]]
   ): ExtractFromProto[List[B]] = {
     val child = determineValueDefinition[ALG, B](ld.tDefinition, valueDefinition, customInterpreter)
 
@@ -182,10 +174,10 @@ object ProtobufSequentialValidatorInterpreter {
   }
 
   def eitherData[ALG[_], B, C](
-    ed: EitherData[ALG, B, C],
-    valueDefinitionB: (KvpValue[B], CustomValidatorInterpreter[ALG]) => ExtractFromProto[B],
-    valueDefinitionC: (KvpValue[C], CustomValidatorInterpreter[ALG]) => ExtractFromProto[C],
-    customInterpreter: CustomValidatorInterpreter[ALG],
+                                ed: EitherData[ALG, B, C],
+                                valueDefinitionB: (KvpCollection[ALG, B], CustomValidatorInterpreter[ALG]) => ExtractFromProto[B],
+                                valueDefinitionC: (KvpCollection[ALG, C], CustomValidatorInterpreter[ALG]) => ExtractFromProto[C],
+                                customInterpreter: CustomValidatorInterpreter[ALG],
   ): ExtractFromProto[Either[B, C]] = {
     val extractA: ExtractFromProto[B] =
       determineValueDefinition[ALG, B](ed.definitionA, valueDefinitionB, customInterpreter)
@@ -214,7 +206,7 @@ object ProtobufSequentialValidatorInterpreter {
     kvp: KvpCoproductValue[ALG, C],
     kvpCoproduct: (
       KvpCoproduct[ALG, C],
-      KvpValue[C],
+      KvpCollection[ALG, C],
       CustomValidatorInterpreter[ALG]) => ExtractProductFromProto[C],
     customInterpreter: CustomValidatorInterpreter[ALG]
   ): ExtractFromProto[A] = {
@@ -302,7 +294,7 @@ object ProtobufSequentialValidatorInterpreter {
     co: KvpCoproductConvert[ALG, C, A],
     kvpCoproduct: (
       KvpCoproduct[ALG, C],
-      KvpValue[A],
+      KvpCollection[ALG,A],
       CustomValidatorInterpreter[ALG]) => ExtractProductFromProto[C],
     customInterpreter: CustomValidatorInterpreter[ALG]
   ): ExtractFromProto[A] = {
@@ -324,7 +316,7 @@ object ProtobufSequentialValidatorInterpreter {
 
   /** Returns a function reads boolean data from the codedInputStream */
   def booleanData[ALG[_], A](
-    coproductDataDefinition: CoproductDataDefinition[ALG, A],
+    coproductDataDefinition: ALG[A],
     validations: List[ValidationOp[Boolean]]): ExtractFromProto[Boolean] =
     (fieldNumber: LastFieldNumber, path: Path) => {
       val thisTag = fieldNumber << 3 | VARINT
@@ -335,19 +327,19 @@ object ProtobufSequentialValidatorInterpreter {
             convert(in, classOf[Boolean], path)(_.readBool()).flatMap(bool =>
               vu.validate(validations)(bool, path)))
         } else {
-          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, coproductDataDefinition))))
+          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, Right(coproductDataDefinition)))))
         }
       }: (CanReadTag, Either[NonEmptyList[ExtractionError], Boolean]))
     }
 
   /** Returns a function which reads String data as UTF from the CodedInputStream */
   def stringData[ALG[_]](
-    coproductDataDefinition: CoproductDataDefinition[ALG, String],
+    alg: ALG[String],
     validations: List[ValidationOp[String]]): ExtractFromProto[String] =
-    stringDataWithFlatMap(coproductDataDefinition, identitySuccess, validations)
+    stringDataWithFlatMap(alg, identitySuccess, validations)
 
   def stringDataWithFlatMap[ALG[_], A](
-    coproductDataDefinition: CoproductDataDefinition[ALG, A],
+    alg: ALG[A],
     f: (String, Path) => Either[NonEmptyList[ExtractionError], A],
     validations: List[ValidationOp[A]]): ExtractFromProto[A] =
     (fieldNumber: LastFieldNumber, path: Path) => {
@@ -362,7 +354,7 @@ object ProtobufSequentialValidatorInterpreter {
             .flatMap(bool => vu.validate(validations)(bool, path))
           (true, functionApplied)
         } else {
-          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, coproductDataDefinition))))
+          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, Right(alg)))))
         }
       }: (CanReadTag, Either[NonEmptyList[ExtractionError], A]))
     }
@@ -372,7 +364,7 @@ object ProtobufSequentialValidatorInterpreter {
     * The returned function returns an error if the value is not a short.
     */
   def shortData[ALG[_]](
-    coproductDataDefinition: CoproductDataDefinition[ALG, Short],
+    coproductDataDefinition: ALG[Short],
     validations: List[ValidationOp[Short]]): ExtractFromProto[Short] =
     intDataWithFlatMap(coproductDataDefinition, (a, _) => Right(a.toShort), validations)
 
@@ -381,14 +373,14 @@ object ProtobufSequentialValidatorInterpreter {
     * The returned function returns an ExtractionError if the value is not an Int.
     */
   def intData[ALG[_]](
-    coproductDataDefinition: CoproductDataDefinition[ALG, Int],
+    coproductDataDefinition: ALG[Int],
     validations: List[ValidationOp[Int]]): ExtractFromProto[Int] =
     intDataWithFlatMap(coproductDataDefinition, identitySuccess, validations)
 
   def intDataWithFlatMap[ALG[_], A](
-    coproductDataDefinition: CoproductDataDefinition[ALG, A],
-    f: (Int, Path) => Either[NonEmptyList[ExtractionError], A],
-    validations: List[ValidationOp[A]]
+                                     alg: ALG[A],
+                                     f: (Int, Path) => Either[NonEmptyList[ExtractionError], A],
+                                     validations: List[ValidationOp[A]]
   ): ExtractFromProto[A] =
     (fieldNumber: LastFieldNumber, path: Path) => {
       val thisTag = fieldNumber << 3 | VARINT
@@ -397,20 +389,20 @@ object ProtobufSequentialValidatorInterpreter {
           val intData = convert(in, classOf[Int], path)(_.readInt32())
           (true, intData.flatMap(i => f(i, path)).flatMap(i => vu.validate(validations)(i, path)))
         } else {
-          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, coproductDataDefinition))))
+          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, Right(alg)))))
         }
       }: (CanReadTag, Either[NonEmptyList[ExtractionError], A]))
     }
 
   def longData[ALG[_]](
-    coproductDataDefinition: CoproductDataDefinition[ALG, Long],
+    alg: ALG[Long],
     validations: List[ValidationOp[Long]]): ExtractFromProto[Long] =
-    longDataWithFlatMap(coproductDataDefinition, identitySuccess, validations)
+    longDataWithFlatMap(alg, identitySuccess, validations)
 
   def longDataWithFlatMap[ALG[_], A](
-    coproductDataDefinition: CoproductDataDefinition[ALG, A],
-    f: (Long, Path) => Either[NonEmptyList[ExtractionError], A],
-    validations: List[ValidationOp[A]]): ExtractFromProto[A] =
+                                      alg: ALG[A],
+                                      f: (Long, Path) => Either[NonEmptyList[ExtractionError], A],
+                                      validations: List[ValidationOp[A]]): ExtractFromProto[A] =
     (fieldNumber: LastFieldNumber, path: Path) => {
       val thisTag = fieldNumber << 3 | VARINT
       (List(thisTag), fieldNumber + 1, (canReadTag, in) => {
@@ -420,14 +412,14 @@ object ProtobufSequentialValidatorInterpreter {
             true,
             longResult.flatMap(l => f(l, path)).flatMap(a => vu.validate(validations)(a, path)))
         } else {
-          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, coproductDataDefinition))))
+          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, Right(alg)))))
         }
       }: (CanReadTag, Either[NonEmptyList[ExtractionError], A]))
     }
 
   def byteArrayData[ALG[_], A](
-    coproductDataDefinition: CoproductDataDefinition[ALG, A],
-    validations: List[ValidationOp[Array[Byte]]]): ExtractFromProto[Array[Byte]] =
+                                alg: ALG[A],
+                                validations: List[ValidationOp[Array[Byte]]]): ExtractFromProto[Array[Byte]] =
     (fieldNumber: LastFieldNumber, path: Path) => {
       val thisField = fieldNumber << 3 | LENGTH_DELIMITED
       (List(thisField), fieldNumber + 1, (canReadTag, in) => {
@@ -436,32 +428,14 @@ object ProtobufSequentialValidatorInterpreter {
             .flatMap(i => vu.validate(validations)(i, path))
           (true, result)
         } else {
-          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, coproductDataDefinition))))
+          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, Right(alg)))))
         }
       }: (CanReadTag, Either[NonEmptyList[ExtractionError], Array[Byte]]))
     }
 
-  def localDateTimeData[ALG[_]](
-    coproductDataDefinition: CoproductDataDefinition[ALG, LocalDateTime],
-    zoneOffset: ZoneOffset,
-    validations: List[ValidationOp[LocalDateTime]]): ExtractFromProto[LocalDateTime] = {
-    def f(
-      seconds: Long,
-      nanos: Int,
-      path: Path): Either[NonEmptyList[ExtractionError], LocalDateTime] =
-      Try {
-        LocalDateTime.ofEpochSecond(seconds, nanos, zoneOffset)
-      }.toEither.left
-        .map(err =>
-          NonEmptyList.one(
-            CanNotConvert(path, (seconds, nanos), classOf[LocalDateTime], Some(err))))
-        .flatMap(i => vu.validate(validations)(i, path))
 
-    timestampWithMap(coproductDataDefinition, f, validations)
-  }
 
-  def timestampWithMap[ALG[_], A](
-    coproductDataDefinition: CoproductDataDefinition[ALG, A],
+  def timestampWithMap[A](
     f: (Long, Int, Path) => Either[NonEmptyList[ExtractionError], A],
     validations: List[ValidationOp[A]]
   ): ExtractFromProto[A] =
@@ -497,8 +471,8 @@ object ProtobufSequentialValidatorInterpreter {
     }
 
   def floatData[ALG[_], A](
-    coproductDataDefinition: CoproductDataDefinition[ALG, A],
-    validations: List[ValidationOp[Float]]): ExtractFromProto[Float] =
+                            alg: ALG[A],
+                            validations: List[ValidationOp[Float]]): ExtractFromProto[Float] =
     (fieldNumber: LastFieldNumber, path: Path) => {
       val thisTag = fieldNumber << 3 | BIT32
       (List(thisTag), fieldNumber + 1, (canReadTag, in) => {
@@ -508,13 +482,13 @@ object ProtobufSequentialValidatorInterpreter {
             convert[Float](in, classOf[Float], path)(_.readFloat()).flatMap(i =>
               vu.validate(validations)(i, path)))
         } else {
-          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, coproductDataDefinition))))
+          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, Right(alg)))))
         }
       }: (CanReadTag, Either[NonEmptyList[ExtractionError], Float]))
     }
 
   def doubleData[ALG[_], A](
-    coproductDataDefinition: CoproductDataDefinition[ALG, A],
+    coproductDataDefinition: ALG[A],
     validations: List[ValidationOp[Double]]): ExtractFromProto[Double] =
     (fieldNumber: LastFieldNumber, path: Path) => {
       val thisTag = fieldNumber << 3 | BIT64
@@ -524,7 +498,7 @@ object ProtobufSequentialValidatorInterpreter {
             .flatMap(i => vu.validate(validations)(i, path))
           (true, result)
         } else {
-          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, coproductDataDefinition))))
+          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, Right(coproductDataDefinition)))))
         }
       }: (CanReadTag, Either[cats.data.NonEmptyList[com.bones.data.Error.ExtractionError], Double]))
     }
@@ -536,13 +510,8 @@ object ProtobufSequentialValidatorInterpreter {
 trait ProtobufSequentialValidatorInterpreter {
 
   import ProtobufSequentialValidatorInterpreter._
-  import com.bones.Util._
 
   val zoneOffset: ZoneOffset
-
-  def fromBytes[A](
-    dc: BonesSchema[NoAlgebra, A]): Array[Byte] => Either[NonEmptyList[ExtractionError], A] =
-    fromCustomBytes(dc, NoAlgebraInterpreter)
 
   def fromCustomBytes[ALG[_], A](
     dc: BonesSchema[ALG, A],
@@ -564,9 +533,9 @@ trait ProtobufSequentialValidatorInterpreter {
   }
 
   protected def kvpCoproduct[ALG[_], C <: Coproduct, A](
-    kvp: KvpCoproduct[ALG, C],
-    kvpCoproductValue: KvpValue[A],
-    customInterpreter: CustomValidatorInterpreter[ALG]
+                                                         kvp: KvpCoproduct[ALG, C],
+                                                         kvpCoproductValue: KvpCollection[ALG,A],
+                                                         customInterpreter: CustomValidatorInterpreter[ALG]
   ): ExtractProductFromProto[C] = {
 
     kvp match {
@@ -684,34 +653,15 @@ trait ProtobufSequentialValidatorInterpreter {
   }
 
   def valueDefinition[ALG[_], A]
-    : (KvpValue[A], CustomValidatorInterpreter[ALG]) => ExtractFromProto[A] =
-    (fgo: KvpValue[A], customInterpreter: CustomValidatorInterpreter[ALG]) =>
+    : (KvpCollection[ALG,A], CustomValidatorInterpreter[ALG]) => ExtractFromProto[A] =
+    (fgo: KvpCollection[ALG,A], customInterpreter: CustomValidatorInterpreter[ALG]) =>
       fgo match {
         case op: OptionalKvpValueDefinition[ALG, a] @unchecked =>
           optionalKvpValueDefinition[ALG, a](op, valueDefinition, customInterpreter)
-        case bd: BooleanData       => booleanData(Left(bd), bd.validations)
-        case rs: StringData        => stringData(Left(rs), rs.validations)
-        case sd: ShortData         => shortData(Left(sd), sd.validations)
-        case id: IntData           => intData(Left(id), id.validations)
-        case ld: LongData          => longData(Left(ld), ld.validations)
-        case ba: ByteArrayData     => byteArrayData(Left(ba), ba.validations)
-        case uu: UuidData          => stringDataWithFlatMap(Left(uu), stringToUuid, uu.validations)
-        case dd: LocalDateTimeData => localDateTimeData(Left(dd), zoneOffset, dd.validations)
-        case dt: LocalDateData     => longDataWithFlatMap(Left(dt), longToLocalDate, dt.validations)
-        case lt: LocalTimeData     => longDataWithFlatMap(Left(lt), longToLocalTime, lt.validations)
-        case fd: FloatData         => floatData(Left(fd), fd.validations)
-        case dd: DoubleData        => doubleData(Left(dd), dd.validations)
-        case bd: BigDecimalData =>
-          stringDataWithFlatMap(Left(bd), stringToBigDecimal, bd.validations)
         case ld: ListData[ALG, t] @unchecked =>
           listData[ALG, t](ld, valueDefinition, customInterpreter, ld.validations)
         case ed: EitherData[ALG, a, b] @unchecked =>
           eitherData[ALG, a, b](ed, valueDefinition, valueDefinition, customInterpreter)
-        case esd: EnumerationData[e, a] =>
-          stringDataWithFlatMap(Left(esd), (str, path) => {
-            stringToEnumeration(str, path, esd.enumeration)(esd.manifestOfA)
-              .map(_.asInstanceOf[A])
-          }, esd.validations)
         case kvp: KvpCoproductValue[ALG, c] @unchecked =>
           kvpCoproductValueData[ALG, A, c](kvp, kvpCoproduct, customInterpreter)
         case kvp: KvpHListValue[ALG, h, hl] @unchecked =>

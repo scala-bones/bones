@@ -1,19 +1,13 @@
 package com.bones.circe
 
 import java.nio.charset.Charset
-import java.time.{LocalDate, LocalDateTime, LocalTime}
-import java.time.format.DateTimeFormatter
 
 import cats.data.NonEmptyList
+import com.bones.Path
 import com.bones.data.Error.{ExtractionError, ParsingError, RequiredValue, WrongTypeError}
-import com.bones.data.KeyValueDefinition.CoproductDataDefinition
-import com.bones.data.KvpValue.Path
 import com.bones.data.{KeyValueDefinition, _}
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
-import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.{
-  InterchangeFormatValidator,
-  NoAlgebraValidator
-}
+import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
 import io.circe.Json
 
 /**
@@ -61,11 +55,11 @@ trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
 
   protected def determineError[ALG[_], A](
     in: Json,
-    op: CoproductDataDefinition[ALG, A],
+    op: ALG[A],
     expectedType: Class[_],
     path: List[String]): NonEmptyList[ExtractionError] = {
     val error =
-      if (in.isNull) RequiredValue(path, op)
+      if (in.isNull) RequiredValue(path, Right(op))
       else WrongTypeError(path, expectedType, in.getClass, None)
     NonEmptyList.one(error)
   }
@@ -83,60 +77,52 @@ trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
         Left(NonEmptyList.one(WrongTypeError(path, classOf[Object], in.getClass, None)))
     }
 
-  override def extractString[ALG[_], A](op: CoproductDataDefinition[ALG, A], clazz: Class[_])(
+  override def extractString[ALG[_], A](op: ALG[A], clazz: Class[_])(
     in: Json,
     path: List[String]): Either[NonEmptyList[ExtractionError], String] =
     in.asString.toRight(determineError(in, op, clazz, path))
 
-  override def extractInt[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
-    in: Json,
-    path: List[String]): Either[NonEmptyList[ExtractionError], Int] =
+  override def extractInt[ALG[_], A](
+    op: ALG[A])(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Int] =
     in.asNumber
       .flatMap(_.toInt)
       .toRight(NonEmptyList.one(WrongTypeError(path, classOf[Int], in.getClass, None)))
 
-  override def extractFloat[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
-    in: Json,
-    path: List[String]): Either[NonEmptyList[ExtractionError], Float] =
+  override def extractFloat[ALG[_], A](
+    op: ALG[A])(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Float] =
     in.asNumber
       .map(_.toDouble.toFloat)
       .toRight(NonEmptyList.one(WrongTypeError(path, classOf[Float], in.getClass, None)))
 
-  override def extractDouble[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
-    in: Json,
-    path: List[String]): Either[NonEmptyList[ExtractionError], Double] =
+  override def extractDouble[ALG[_], A](
+    op: ALG[A])(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Double] =
     in.asNumber
       .map(_.toDouble)
       .toRight(NonEmptyList.one(WrongTypeError(path, classOf[Double], in.getClass, None)))
 
-  override def extractLong[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
-    in: Json,
-    path: List[String]): Either[NonEmptyList[WrongTypeError[Long]], Long] =
+  override def extractLong[ALG[_], A](
+    op: ALG[A])(in: Json, path: List[String]): Either[NonEmptyList[WrongTypeError[Long]], Long] =
     in.asNumber
       .flatMap(_.toLong)
       .toRight(NonEmptyList.one(WrongTypeError(path, classOf[Long], in.getClass, None)))
 
-  override def extractShort[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
-    in: Json,
-    path: Path): Either[NonEmptyList[ExtractionError], Short] =
+  override def extractShort[ALG[_], A](
+    op: ALG[A])(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Short] =
     in.asNumber
       .flatMap(_.toShort)
       .toRight(NonEmptyList.one(WrongTypeError(path, classOf[Short], in.getClass, None)))
 
-  override def extractBool[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
-    in: Json,
-    path: List[String]): Either[NonEmptyList[ExtractionError], Boolean] =
+  override def extractBool[ALG[_], A](
+    op: ALG[A])(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Boolean] =
     in.asBoolean.toRight(determineError(in, op, classOf[Boolean], path))
 
-  override def extractArray[ALG[_], A](op: ListData[ALG, A])(
-    in: Json,
-    path: List[String]): Either[NonEmptyList[ExtractionError], Seq[Json]] =
+  override def extractArray[ALG[_], A](
+    op: ListData[ALG, A])(in: Json, path: Path): Either[NonEmptyList[ExtractionError], Seq[Json]] =
     in.asArray
       .toRight(determineError(in, Left(op), classOf[List[A]], path))
 
-  override def extractBigDecimal[ALG[_], A](op: CoproductDataDefinition[ALG, A])(
-    in: Json,
-    path: List[String]): Either[NonEmptyList[ExtractionError], BigDecimal] =
+  override def extractBigDecimal[ALG[_], A](
+    op: ALG[A])(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], BigDecimal] =
     in.asNumber
       .flatMap(_.toBigDecimal)
       .toRight(determineError(in, op, classOf[BigDecimal], path))

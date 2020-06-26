@@ -12,14 +12,14 @@ class ValidationTest extends AnyFunSuite {
     import com.bones.syntax._
 
     val o1 =
-      ("key1", string) :<:
-        ("key2", string) :<:
+      ("key1", string) ::
+        ("key2", string) ::
         kvpNil
 
 
     val o2 =
-      ("key3", string) :<:
-        ("key4", string) :<:
+      ("key3", string) ::
+        ("key4", string) ::
         kvpNil
 
     //    val o3 = o1 append o2
@@ -54,13 +54,13 @@ class ValidationTest extends AnyFunSuite {
 
 
     val s2 =
-      ("val1", string()) :<:
-        ("val2", string) :<:
+      ("val1", string()) ::
+        ("val2", string) ::
         kvpNil
 
     val i2 =
-      ("int1", long) :<:
-        ("int2", long) :<:
+      ("int1", long) ::
+        ("int2", long) ::
         kvpNil
 
     val merged = s2 ::: i2
@@ -127,7 +127,7 @@ class ValidationTest extends AnyFunSuite {
 
     //createOperation the program that is responsible for converting JSON into a CC.
     //    val jsonToCCProgram = creditCardSchema.lift.foldMap[ValidatedFromJObjectOpt](ValidatedFromJObjectInterpreter())
-    val jsonToCCProgram = IsoCirceEncoderAndValidatorInterpreter.validatorFromSchema(creditCardSchema)
+    val jsonToCCProgram = IsoCirceEncoderAndValidatorInterpreter.validatorFromCustomSchema(creditCardSchema, com.bones.circe.custom.allValidators)
 
     //here, we will test that just the validations step is working
     val btCc = jsonToCCProgram.apply(parsed)

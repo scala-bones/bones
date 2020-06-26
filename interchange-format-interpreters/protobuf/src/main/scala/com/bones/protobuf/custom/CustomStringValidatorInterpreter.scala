@@ -11,7 +11,7 @@ object CustomStringValidatorInterpreter extends CustomValidatorInterpreter[Custo
 
   override def extractFromProto[A](alg: CustomStringValue[A]): ExtractFromProto[A] = {
     stringData[CustomStringValue](
-      Right(alg.asInstanceOf[CustomStringValue[String]]),
+      alg.asInstanceOf[CustomStringValue[String]],
       alg.customValidation :: alg.validations)
       .asInstanceOf[ExtractFromProto[A]]
   }

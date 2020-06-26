@@ -2,16 +2,64 @@ package com.bones.scalacheck.custom
 
 import java.time._
 
+import scala.jdk.CollectionConverters._
 import com.bones.data.custom._
-import com.bones.scalacheck.{GenAlg, Scalacheck}
-import com.bones.validation.ValidationDefinition.{ValidValue, ValidationOp}
+import com.bones.scalacheck.{GenAlg}
+import com.bones.validation.ValidationDefinition.{BaseDateValidation, ValidValue, ValidationOp}
 import com.bones.validation.custom.JavaTimeValidation._
 import org.scalacheck.Gen
 import org.scalacheck.Gen.Choose
 
 import scala.collection.JavaConverters
 
+object ScalacheckJavaTimeInterpreter {
+  def genTime[A](
+                  validations: List[ValidationOp[A]],
+                  validation: BaseDateValidation[A],
+                  globalMin: A,
+                  globalMax: A,
+                  choose: Gen.Choose[A]): Gen[A] = {
+    // Using calendar results in invalid leap years, so we'll use Int instead
+    val min = validations
+      .collectFirst({
+        case validation.MinTime(min, _, _, _) => min
+      })
+      .getOrElse(globalMin)
+    val max = validations
+      .collectFirst({
+        case validation.MaxTime(max, _, _, _) => max
+      })
+      .getOrElse(globalMax)
+    choose.choose(min, max)
+  }
+
+  implicit val chooseLocalDate = new Choose[LocalDate] {
+    override def choose(min: LocalDate, max: LocalDate): Gen[LocalDate] =
+      Gen.choose(min.toEpochDay, max.toEpochDay).map(LocalDate.ofEpochDay)
+  }
+
+  implicit val chooseLocalTime = new Choose[LocalTime] {
+    override def choose(min: LocalTime, max: LocalTime): Gen[LocalTime] =
+      Gen.choose(min.toNanoOfDay, max.toNanoOfDay).map(LocalTime.ofNanoOfDay)
+  }
+
+  implicit val chooseLocalDateTime = new Choose[LocalDateTime] {
+    override def choose(min: LocalDateTime, max: LocalDateTime): Gen[LocalDateTime] =
+      for {
+        localDate <- Gen.choose(min.toLocalDate, max.toLocalDate)
+        localTime <- {
+          // time is "all day" except when date is equal to the extremes.  The we can only
+          // go the min/max of the extremes
+          val minTime = if (localDate == min.toLocalDate) min.toLocalTime else LocalTime.MIN
+          val maxTime = if (localDate == max.toLocalDate) max.toLocalTime else LocalTime.MAX
+          Gen.choose(minTime, maxTime)
+        }
+      } yield (LocalDateTime.of(localDate, localTime))
+  }
+}
 trait ScalacheckJavaTimeInterpreter extends GenAlg[JavaTimeValue] {
+
+  import ScalacheckJavaTimeInterpreter._
 
   implicit val chooseInstant = new Choose[Instant] {
 
@@ -20,7 +68,7 @@ trait ScalacheckJavaTimeInterpreter extends GenAlg[JavaTimeValue] {
         millis <- Gen.choose(min.toEpochMilli, max.toEpochMilli)
         nanos <- {
           val minNano = if (millis == min.toEpochMilli) min.getNano else 0
-          val maxNano = if (millis == max.toEpochMilli) max.getNano else 999999999l
+          val maxNano = if (millis == max.toEpochMilli) max.getNano else 999999999
           Gen.choose(minNano, maxNano)
         }
       } yield Instant.ofEpochSecond(millis, nanos)
@@ -47,7 +95,7 @@ trait ScalacheckJavaTimeInterpreter extends GenAlg[JavaTimeValue] {
   val chooseZonedDateTime = new Choose[ZonedDateTime] {
     override def choose(min: ZonedDateTime, max: ZonedDateTime): Gen[ZonedDateTime] =
       for {
-        localDate <- Scalacheck.chooseLocalDateTime.choose(min.toLocalDateTime, max.toLocalDateTime)
+        localDate <- chooseLocalDateTime.choose(min.toLocalDateTime, max.toLocalDateTime)
         zoneId <- genZoneId(List.empty)
       } yield ZonedDateTime.of(localDate, zoneId)
 
@@ -57,7 +105,7 @@ trait ScalacheckJavaTimeInterpreter extends GenAlg[JavaTimeValue] {
     override def choose(min: OffsetDateTime, max: OffsetDateTime): Gen[OffsetDateTime] =
       (
         for {
-          dateTime <- Scalacheck.chooseLocalDateTime.choose(
+          dateTime <- chooseLocalDateTime.choose(
             min.toLocalDateTime,
             max.toLocalDateTime)
           offset <- chooseZoneOffset.choose(ZoneOffset.MIN, ZoneOffset.MAX)
@@ -69,7 +117,7 @@ trait ScalacheckJavaTimeInterpreter extends GenAlg[JavaTimeValue] {
     override def choose(min: OffsetTime, max: OffsetTime): Gen[OffsetTime] =
       (
         for {
-          time <- Scalacheck.chooseLocalTime.choose(min.toLocalTime, max.toLocalTime)
+          time <- chooseLocalTime.choose(min.toLocalTime, max.toLocalTime)
           offset <- chooseZoneOffset.choose(ZoneOffset.MIN, ZoneOffset.MAX)
         } yield OffsetTime.of(time, offset)
       ).retryUntil(x => (x == min || x.isAfter(min)) && (x == max || x.isBefore(max)))
@@ -110,7 +158,7 @@ trait ScalacheckJavaTimeInterpreter extends GenAlg[JavaTimeValue] {
   }
 
   def genYear(validations: List[ValidationOp[Year]]): Gen[Year] = {
-    Scalacheck.validationConstraints[Year](
+    ScalacheckScalaCoreInterpreter.validationConstraints[Year](
       validations,
       YearValidations,
       _.plusYears(1),
@@ -124,7 +172,7 @@ trait ScalacheckJavaTimeInterpreter extends GenAlg[JavaTimeValue] {
     val values = validations.collectFirst {
       case v: ValidValue[_] => v.validValues.map(_.toString)
     } getOrElse {
-      JavaConverters.collectionAsScalaIterable(ZoneId.getAvailableZoneIds)
+      ZoneId.getAvailableZoneIds.asScala
     }
     Gen.oneOf(values).map(ZoneId.of)
   }
@@ -142,7 +190,7 @@ trait ScalacheckJavaTimeInterpreter extends GenAlg[JavaTimeValue] {
     }
 
     for {
-      localDateTime <- Scalacheck.chooseLocalDateTime.choose(min, max)
+      localDateTime <- chooseLocalDateTime.choose(min, max)
       zoneId <- genZoneId(List.empty)
     } yield {
       ZonedDateTime.of(localDateTime, zoneId)
@@ -171,7 +219,7 @@ trait ScalacheckJavaTimeInterpreter extends GenAlg[JavaTimeValue] {
   override def gen[A](alg: JavaTimeValue[A]): Gen[A] =
     alg match {
       case dte: DateTimeExceptionData =>
-        Scalacheck.wordsGen.map(word => new DateTimeException(word))
+        ScalacheckScalaCoreInterpreter.sentencesGen.map(word => new DateTimeException(word))
       case dow: DayOfWeekData =>
         val values = dow.validations
           .collectFirst[Seq[DayOfWeek]]({
@@ -180,7 +228,7 @@ trait ScalacheckJavaTimeInterpreter extends GenAlg[JavaTimeValue] {
           .getOrElse(DayOfWeek.values.toSeq)
         Gen.oneOf(values)
       case dd: DurationData =>
-        Scalacheck.validationConstraints[Duration](
+        ScalacheckScalaCoreInterpreter.validationConstraints[Duration](
           dd.validations,
           DurationValidation,
           (d: Duration) => d.plusNanos(1),
@@ -190,12 +238,35 @@ trait ScalacheckJavaTimeInterpreter extends GenAlg[JavaTimeValue] {
         )(chooseDuration)
 
       case id: InstantData =>
-        Scalacheck.genTime(
+        genTime(
           id.validations,
           InstantValidation,
           Instant.MIN,
           Instant.MAX,
           chooseInstant)
+      case dd: LocalDateData =>
+        genTime(
+          dd.validations,
+          LocalDateValidation,
+          LocalDate.MIN,
+          LocalDate.MAX,
+          chooseLocalDate)
+      case dd: LocalDateTimeData =>
+        genTime(
+          dd.validations,
+          LocalDateTimeValidation,
+          LocalDateTime
+            .of(LocalDate.ofEpochDay(Int.MinValue), LocalTime.MIN), // toEpochMilli in LocalDateTime doesn't work if the value is outside of the Int range
+          LocalDateTime.of(LocalDate.ofEpochDay(Int.MaxValue), LocalTime.MAX),
+          chooseLocalDateTime
+        )
+      case dt: LocalTimeData =>
+        genTime(
+          dt.validations,
+          LocalTimeValidation,
+          LocalTime.MIN,
+          LocalTime.MAX,
+          chooseLocalTime)
       case md: MonthData =>
         val values = md.validations
           .collectFirst[Seq[Month]] {
@@ -204,21 +275,21 @@ trait ScalacheckJavaTimeInterpreter extends GenAlg[JavaTimeValue] {
           .getOrElse(Month.values.toSeq)
         Gen.oneOf(values)
       case md: MonthDayData =>
-        Scalacheck.genTime(
+        genTime(
           md.validations,
           MonthDayValidations,
           MonthDay.of(1, 1),
           MonthDay.of(12, 31),
           chooseMonthDay)
       case od: OffsetDateTimeData =>
-        Scalacheck.genTime(
+        genTime(
           od.validations,
           OffsetDateTimeValidations,
           OffsetDateTime.MIN,
           OffsetDateTime.MAX,
           chooseOffsetDateTime)
       case ot: OffsetTimeData =>
-        Scalacheck.genTime(
+        genTime(
           ot.validations,
           OffsetTimeValidations,
           OffsetTime.MIN,
@@ -230,7 +301,7 @@ trait ScalacheckJavaTimeInterpreter extends GenAlg[JavaTimeValue] {
             case v: ValidValue[A] => Gen.oneOf(v.validValues)
           }
           .getOrElse {
-            Scalacheck.validationConstraints[Period](
+            ScalacheckScalaCoreInterpreter.validationConstraints[Period](
               pd.validations,
               PeriodValidations,
               _.plusDays(1),
@@ -264,7 +335,7 @@ trait ScalacheckJavaTimeInterpreter extends GenAlg[JavaTimeValue] {
       case z: ZoneIdData =>
         genZoneId(z.validations)
       case z: ZonedDateTimeData =>
-        Scalacheck.genTime(
+        genTime(
           z.validations,
           ZonedDateTimeValidations,
           ZonedDateTime.of(LocalDateTime.MIN, ZoneId.of("+14:00")),
@@ -272,7 +343,7 @@ trait ScalacheckJavaTimeInterpreter extends GenAlg[JavaTimeValue] {
           chooseZonedDateTime
         )
       case z: ZoneOffsetData =>
-        Scalacheck.genTime(
+        genTime(
           z.validations,
           ZoneOffsetValidations,
           ZoneOffset.MIN,

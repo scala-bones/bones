@@ -473,40 +473,5 @@ object ValidationDefinition {
 
   }
 
-  object LocalDateTimeValidationInstances
-      extends BaseDateValidation[LocalDateTime]
-      with Ordering[LocalDateTime] {
-    override def defaultFormatToString(f: LocalDateTime): String =
-      DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(f)
-
-    override val instantDescription: String = "date/time"
-
-    override def compare(x: LocalDateTime, y: LocalDateTime): Int = x.compareTo(y)
-  }
-
-  object LocalTimeValidationInstances
-      extends BaseDateValidation[LocalTime]
-      with Ordering[LocalTime] {
-    override def defaultFormatToString(f: LocalTime): String =
-      DateTimeFormatter.ISO_LOCAL_TIME.format(f)
-
-    /** Used in the error string to describe the type.  For instance: 'date' */
-    override val instantDescription: String = "time"
-
-    override def compare(x: LocalTime, y: LocalTime): Int = x.compareTo(y)
-  }
-
-  object LocalDateValidationInstances
-      extends BaseDateValidation[LocalDate]
-      with Ordering[LocalDate] {
-
-    override def defaultFormatToString(f: LocalDate): String =
-      DateTimeFormatter.ISO_LOCAL_DATE.format(f)
-
-    /** Used in the error string to describe the type.  For instance: 'date' */
-    override val instantDescription: String = "date"
-
-    override def compare(x: LocalDate, y: LocalDate): Int = x.compareTo(y)
-  }
 
 }

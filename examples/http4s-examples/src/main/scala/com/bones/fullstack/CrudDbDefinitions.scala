@@ -2,19 +2,13 @@ package com.bones.fullstack
 
 import cats.data.NonEmptyList
 import cats.effect.IO
-import com.bones.data.Error.{ExtractionError, SystemError}
 import com.bones.data.BonesSchema
-import com.bones.jdbc.JdbcCustomInterpreter
-import com.bones.jdbc.NoAlgebraJdbCustomInterpreter
-import com.bones.jdbc._
-import com.bones.syntax.NoAlgebra
+import com.bones.data.Error.ExtractionError
+import com.bones.jdbc.{JdbcColumnInterpreter, _}
+import com.bones.jdbc.insert.DbInsertValues
+import com.bones.jdbc.update.DbUpdateValues
 import fs2.Stream
 import javax.sql.DataSource
-
-object CrudDbDefinitions {
-  def apply[A](schema: BonesSchema[NoAlgebra, A], ds: DataSource): CrudDbDefinitions[NoAlgebra, A] =
-    CrudDbDefinitions[NoAlgebra, A](schema, NoAlgebraJdbCustomInterpreter, ds)
-}
 
 /**
   * For a given schema, this class provides the basic CRUD operations
@@ -23,17 +17,16 @@ object CrudDbDefinitions {
   * @param ds
   * @tparam A
   */
-case class CrudDbDefinitions[ALG[_], A](
+case class CrudDbDefinitions[ALG[_], A, ID](
   schema: BonesSchema[ALG, A],
-  customInterpreter: JdbcCustomInterpreter[ALG],
+  customInterpreter: JdbcColumnInterpreter[ALG],
+  idDef: IdDefinition[ALG, ID],
   ds: DataSource) {
 
-  import CrudDbDefinitions._
-
   // TODO: deal with error better
-  val searchF: Stream[IO, (Long, A)] =
+  val searchF: Stream[IO, (ID, A)] =
     DbSearch
-      .getEntity(schema, customInterpreter)(ds)
+      .getEntity(schema, customInterpreter.resultSet, idDef)(ds)
       .flatMap({
         case Left(errO) => Stream.empty
         case Right(ro) =>
@@ -42,33 +35,43 @@ case class CrudDbDefinitions[ALG[_], A](
           }
       })
 
-  def createF: A => IO[Either[ExtractionError, (Long, A)]] = {
-    val insertQuery = DbInsertValues.insertQuery(schema, customInterpreter)(ds)
+  def createF: A => IO[Either[NonEmptyList[ExtractionError], (ID, A)]] = {
+    val insertQuery = DbInsertValues.insertQuery(
+      schema,
+      idDef.asSchema,
+      customInterpreter.insert,
+      customInterpreter.resultSet)(ds)
     input: A =>
       IO {
         insertQuery(input)
       }
   }
 
-  val readF: Long => IO[Either[NonEmptyList[ExtractionError], (Long, A)]] = {
-    val readQuery = DbGet.getEntity(schema, customInterpreter)(ds)
-    id: Long =>
+  val readF: ID => IO[Either[NonEmptyList[ExtractionError], (ID, A)]] = {
+    val readQuery =
+      DbGet.getEntity(schema, idDef, customInterpreter.resultSet, customInterpreter.dbUpdate)(ds)
+    id: ID =>
       IO {
         readQuery(id)
       }
   }
 
-  val updateF: (Long, A) => IO[Either[NonEmptyList[ExtractionError], (Long, A)]] = {
-    val updateQuery = DbUpdateValues.updateQueryCustomAlgebra(schema, customInterpreter)(ds)
-    (id: Long, input: A) =>
+  val updateF: (ID, A) => IO[Either[NonEmptyList[ExtractionError], (ID, A)]] = {
+    val updateQuery = DbUpdateValues.updateQueryCustomAlgebra(
+      schema,
+      customInterpreter.dbUpdate,
+      customInterpreter.dbColumn,
+      idDef)(ds)
+    (id: ID, input: A) =>
       IO {
         updateQuery(id, input)
       }
   }
 
-  val deleteF: Long => IO[Either[NonEmptyList[ExtractionError], (Long, A)]] = {
-    val deleteQuery = DbDelete.delete(schema, customInterpreter)(ds)
-    id: Long =>
+  val deleteF: ID => IO[Either[NonEmptyList[ExtractionError], (ID, A)]] = {
+    val deleteQuery =
+      DbDelete.delete(schema, customInterpreter.resultSet, idDef, customInterpreter.dbUpdate)(ds)
+    id: ID =>
       IO {
         deleteQuery(id)
       }
