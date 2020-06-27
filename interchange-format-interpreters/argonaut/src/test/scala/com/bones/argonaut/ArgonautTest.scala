@@ -2,7 +2,7 @@ package com.bones.argonaut
 
 import java.nio.charset.Charset
 
-import com.bones.argonaut.custom._
+import com.bones.argonaut.values._
 import com.bones.scalacheck.Scalacheck
 import com.bones.schemas.Schemas._
 import org.scalacheck.Arbitrary
@@ -17,16 +17,16 @@ class ArgonautTest extends AnyFunSuite with Checkers with Matchers {
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)
 
-  val jsonToCc = IsoArgonautEncoderAndValidatorInterpreter.byteArrayFuncFromCustomSchema(
+  val jsonToCc = IsoArgonautEncoderAndValidatorInterpreter.generateByteArrayValidator(
     allSupportCaseClass,
-    allValidators,
+    defaultValidators,
     Charset.forName("UTF8"))
-  val ccToJson = IsoArgonautEncoderAndValidatorInterpreter.encoderFromCustomSchema(
+  val ccToJson = IsoArgonautEncoderAndValidatorInterpreter.generateEncoder(
     allSupportCaseClass,
-    allEncoders)
+    defaultEncoders)
 
   implicit val arb = Arbitrary(
-    Scalacheck.createCustomGen(allSupportCaseClass, com.bones.scalacheck.custom.allInterpreters))
+    Scalacheck.generateGen(allSupportCaseClass, com.bones.scalacheck.values.allInterpreters))
   val utf8 = Charset.forName("UTF8")
 
   test("scalacheck allSupport types - marshall then marshall") {

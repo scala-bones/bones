@@ -8,7 +8,7 @@ import cats.implicits._
 import com.bones.Util
 import com.bones.data.{KvpCollection, KvpNil, KvpSingleValueHead}
 import com.bones.data.Error.ExtractionError
-import com.bones.data.custom.AllCustomAlgebras
+import com.bones.data.values.DefaultValues
 import com.bones.http4s.BaseCrudInterpreter.StringToIdError
 import com.bones.http4s.ClassicCrudInterpreter
 import com.bones.jdbc.{IdDefinition, JdbcColumnInterpreter}
@@ -27,7 +27,7 @@ object LocalhostAllIOApp {
 
   case class BasicError(message: String)
   private val basicErrorSchema =
-    (("message", com.bones.syntax.string) :: new KvpNil[AllCustomAlgebras]).convert[BasicError]
+    (("message", com.bones.syntax.string) :: new KvpNil[DefaultValues]).convert[BasicError]
 
   def extractionErrorToBasicError(extractionError: ExtractionError): BasicError = {
     BasicError(extractionError.toString)
@@ -48,7 +48,7 @@ object LocalhostAllIOApp {
     new HikariDataSource(config)
   }
 
-  def dbSchemaEndpoint[A](path: String, schema: KvpCollection[AllCustomAlgebras, A]): HttpRoutes[IO] = {
+  def dbSchemaEndpoint[A](path: String, schema: KvpCollection[DefaultValues, A]): HttpRoutes[IO] = {
     val dbSchema = DbColumnInterpreter.tableDefinitionCustomAlgebra(schema, com.bones.jdbc.column.defaultDbColumnInterpreter)
     HttpRoutes.of[IO] {
       case GET -> Root / "dbSchema" / p if p == path => Ok(dbSchema, Header("Content-Type", "text/plain"))
@@ -57,25 +57,25 @@ object LocalhostAllIOApp {
 
   def serviceRoutesWithCrudMiddleware[ALG[_], A, ID:Manifest](
                                                                path: String,
-                                                               schema: KvpCollection[AllCustomAlgebras, A],
-                                                               idDef: IdDefinition[AllCustomAlgebras, ID],
+                                                               schema: KvpCollection[DefaultValues, A],
+                                                               idDef: IdDefinition[DefaultValues, ID],
                                                                parseIdF: String => Either[StringToIdError,ID],
-                                                               jdbcColumnInterpreter: JdbcColumnInterpreter[AllCustomAlgebras],
+                                                               jdbcColumnInterpreter: JdbcColumnInterpreter[DefaultValues],
                                                                ds: DataSource): HttpRoutes[IO] = {
 
-    val middleware = CrudDbDefinitions[AllCustomAlgebras, A, ID](schema, jdbcColumnInterpreter, idDef, ds)
+    val middleware = CrudDbDefinitions[DefaultValues, A, ID](schema, jdbcColumnInterpreter, idDef, ds)
 
     /** Create the REST interpreter with full CRUD capabilities which write data to the database */
-    val interpreter = ClassicCrudInterpreter.allVerbsCustomAlgebra[AllCustomAlgebras, A, BasicError, IO, ID](
+    val interpreter = ClassicCrudInterpreter.allVerbsCustomAlgebra[DefaultValues, A, BasicError, IO, ID](
       path,
-      com.bones.circe.custom.allValidators,
-      com.bones.circe.custom.allEncoders,
-      com.bones.bson.custom.allValidators,
-      com.bones.bson.custom.allEncoders,
-      com.bones.protobuf.custom.allValidators,
-      com.bones.protobuf.custom.allEncoders,
-      com.bones.protobuf.custom.allProtoFiles,
-      com.bones.swagger.custom.allInterpreters,
+      com.bones.circe.values.defaultValidators,
+      com.bones.circe.values.defaultEncoders,
+      com.bones.bson.values.defaultValidators,
+      com.bones.bson.values.defaultEncoders,
+      com.bones.protobuf.values.defaultValidators,
+      com.bones.protobuf.values.defaultEncoders,
+      com.bones.protobuf.values.defaultProtoFileGenerators,
+      com.bones.swagger.values.defaultInterpreters,
       schema,
       idDef.value,
       parseIdF,

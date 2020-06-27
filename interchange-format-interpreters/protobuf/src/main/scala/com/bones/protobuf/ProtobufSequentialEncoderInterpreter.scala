@@ -8,42 +8,12 @@ import cats.Applicative
 import cats.data.NonEmptyList
 import cats.implicits._
 import com.bones.data.KeyValueDefinition.CoproductDataDefinition
-import com.bones.data.custom.CNilF
+import com.bones.data.values.CNilF
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft, _}
 import com.google.protobuf.{CodedOutputStream, Timestamp}
 import shapeless._
 
 object ProtobufSequentialEncoderInterpreter {
-
-  object CustomEncoderInterpreter {
-
-    /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
-      * see https://stackoverflow.com/a/60561575/387094
-      * */
-    def merge[L[_], R[_] <: Coproduct, A](
-      li: CustomEncoderInterpreter[L],
-      ri: CustomEncoderInterpreter[R]): CustomEncoderInterpreter[Lambda[A => L[A] :+: R[A]]] =
-      new CustomEncoderInterpreter[Lambda[A => L[A] :+: R[A]]] {
-        override def encodeToProto[A](lr: L[A] :+: R[A]): EncodeToProto[A] = lr match {
-          case Inl(l) => li.encodeToProto(l)
-          case Inr(r) => ri.encodeToProto(r)
-        }
-      }
-
-    implicit class InterpreterOps[ALG[_]](val base: CustomEncoderInterpreter[ALG]) extends AnyVal {
-      def ++[R[_] <: Coproduct](
-        r: CustomEncoderInterpreter[R]): CustomEncoderInterpreter[Lambda[A => ALG[A] :+: R[A]]] =
-        merge(base, r)
-    }
-
-    object CNilCustomEncoder extends CustomEncoderInterpreter[CNilF] {
-      override def encodeToProto[A](alg: CNilF[A]): EncodeToProto[A] = sys.error("Unreachable code")
-    }
-  }
-
-  trait CustomEncoderInterpreter[ALG[_]] {
-    def encodeToProto[A](alg: ALG[A]): EncodeToProto[A]
-  }
 
   type Path = Vector[String]
   type FieldNumber = Int
@@ -69,9 +39,9 @@ object ProtobufSequentialEncoderInterpreter {
     }
 
   def determineValueDefinition[ALG[_], A](
-                                           kvp: CoproductDataDefinition[ALG, A],
-                                           valueDefinition: (KvpCollection[ALG, A], CustomEncoderInterpreter[ALG]) => EncodeToProto[A],
-                                           customInterpreter: CustomEncoderInterpreter[ALG]
+    kvp: CoproductDataDefinition[ALG, A],
+    valueDefinition: (KvpCollection[ALG, A], ProtobufValueEncoder[ALG]) => EncodeToProto[A],
+    customInterpreter: ProtobufValueEncoder[ALG]
   ): EncodeToProto[A] =
     kvp match {
       case Left(kvp) => valueDefinition(kvp, customInterpreter)
@@ -79,9 +49,9 @@ object ProtobufSequentialEncoderInterpreter {
     }
 
   def optionalKvpValueDefinition[ALG[_], B](
-                                             op: OptionalKvpValueDefinition[ALG, B],
-                                             valueDefinition: (KvpCollection[ALG, B], CustomEncoderInterpreter[ALG]) => EncodeToProto[B],
-                                             customInterpreter: CustomEncoderInterpreter[ALG]
+    op: OptionalKvpValueDefinition[ALG, B],
+    valueDefinition: (KvpCollection[ALG, B], ProtobufValueEncoder[ALG]) => EncodeToProto[B],
+    customInterpreter: ProtobufValueEncoder[ALG]
   ): EncodeToProto[Option[B]] = { (fieldNumber: FieldNumber) =>
     val (lastFieldNumber, fa) =
       determineValueDefinition(op.valueDefinitionOp, valueDefinition, customInterpreter)(
@@ -231,9 +201,9 @@ trait ProtobufSequentialEncoderInterpreter {
 
   import ProtobufSequentialEncoderInterpreter._
 
-  def encodeToBytesCustomAlgebra[ALG[_], A](
-                                             dc: KvpCollection[ALG, A],
-                                             customInterpreter: CustomEncoderInterpreter[ALG]): A => Array[Byte] = dc match {
+  def generateProtobufEncoder[ALG[_], A](
+    dc: KvpCollection[ALG, A],
+    customInterpreter: ProtobufValueEncoder[ALG]): A => Array[Byte] = dc match {
     case x: HListConvert[ALG, _, _, A] @unchecked => {
       val (_, group) = kvpHList(x.from, customInterpreter).apply(1)
       (a: A) =>
@@ -253,7 +223,7 @@ trait ProtobufSequentialEncoderInterpreter {
 
   protected def kvpCoproduct[ALG[_], C <: Coproduct](
     co: KvpCoproduct[ALG, C],
-    customInterpreter: CustomEncoderInterpreter[ALG]
+    customInterpreter: ProtobufValueEncoder[ALG]
   ): EncodeCoproductToProto[C] = {
     co match {
       case nil: KvpCoNil[_] =>
@@ -283,7 +253,7 @@ trait ProtobufSequentialEncoderInterpreter {
 
   protected def kvpHList[ALG[_], H <: HList, HL <: Nat](
     group: KvpHList[ALG, H, HL],
-    customInterpreter: CustomEncoderInterpreter[ALG]): EncodeHListToProto[H] = {
+    customInterpreter: ProtobufValueEncoder[ALG]): EncodeHListToProto[H] = {
     group match {
       case nil: KvpNil[_] =>
         (fieldNumber: FieldNumber) =>
@@ -342,7 +312,7 @@ trait ProtobufSequentialEncoderInterpreter {
       case op: KvpConcreteTypeHead[ALG, a, h, n] =>
         (fieldNumber: FieldNumber) =>
           {
-            val encodeToProto: EncodeToProto[a] = op.bonesSchema match {
+            val encodeToProto: EncodeToProto[a] = op.collection match {
               case hList: HListConvert[ALG, h, n, a] @unchecked => {
                 val result: EncodeHListToProto[h] =
                   kvpHList[ALG, h, n](hList.from, customInterpreter)
@@ -391,8 +361,8 @@ trait ProtobufSequentialEncoderInterpreter {
   }
 
   def valueDefinition[ALG[_], A](
-                                  fgo: KvpCollection[ALG,A],
-                                  customInterpreter: CustomEncoderInterpreter[ALG]): EncodeToProto[A] = {
+    fgo: KvpCollection[ALG, A],
+    customInterpreter: ProtobufValueEncoder[ALG]): EncodeToProto[A] = {
     fgo match {
       case op: OptionalKvpValueDefinition[ALG, a] @unchecked =>
         optionalKvpValueDefinition[ALG, a](op, valueDefinition, customInterpreter)

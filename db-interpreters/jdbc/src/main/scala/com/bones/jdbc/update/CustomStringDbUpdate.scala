@@ -2,7 +2,7 @@ package com.bones.jdbc.update
 
 import java.sql.Types
 
-import com.bones.data.custom.CustomStringValue
+import com.bones.data.values.CustomStringValue
 import com.bones.jdbc.update.DbUpdateValues.{CustomDbUpdateInterpreter, Index, Key, psF}
 
 trait CustomStringDbUpdate extends CustomDbUpdateInterpreter[CustomStringValue] {

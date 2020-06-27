@@ -26,7 +26,7 @@ class ScalacheckExample extends AnyFunSuite with Checkers {
     ).convert[PersonalTraits]
 
   //Use the Scalacheck interpreter to generate an Arbitrary which will produce data within the range of the schema provided above.
-  implicit val arb = Arbitrary(Scalacheck.createCustomGen(personalTraitsSchema, com.bones.scalacheck.custom.allInterpreters))
+  implicit val arb = Arbitrary(Scalacheck.generateGen(personalTraitsSchema, com.bones.scalacheck.values.allInterpreters))
 
 
   //Write your tests

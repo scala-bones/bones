@@ -4,7 +4,7 @@ import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId}
 import java.util.Locale
 
-import com.bones.circe.custom.BaseScalaCoreEncoder
+import com.bones.circe.values.BaseScalaCoreEncoder
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
 import com.bones.schemas.CustomCovSchema._
 import io.circe.Json
@@ -54,7 +54,7 @@ class CovCirceTest extends AnyFunSuite with Checkers with Matchers {
     }
 
     val blogPostToJson = IsoCirceEncoderAndValidatorInterpreter
-      .encoderFromCustomSchema(BlogPost.blogPostSchema, BlogEncoder)
+      .generateEncoder(BlogPost.blogPostSchema, BlogEncoder)
 
     val instant = Instant.parse("2020-12-03T10:15:30.00Z")
 

@@ -11,7 +11,9 @@ import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.Interchang
 import com.bones.protobuf.{
   ProtobufSequentialEncoderInterpreter,
   ProtobufSequentialValidatorInterpreter,
-  ProtobufUtcSequentialEncoderAndValidator
+  ProtobufUtcSequentialEncoderAndValidator,
+  ProtobufValueEncoder,
+  ProtobufValueValidator
 }
 import io.circe.Json
 import org.http4s.HttpRoutes
@@ -24,9 +26,9 @@ class RpcInterpreter[ALG[_], ID: Manifest](
   jsonEncoder: InterchangeFormatEncoder[ALG, Json],
   bsonValidator: InterchangeFormatValidator[ALG, BSONValue],
   bsonEncoder: InterchangeFormatEncoder[ALG, BSONValue],
-  protobufValidator: ProtobufSequentialValidatorInterpreter.CustomValidatorInterpreter[ALG],
-  protobufEncoder: ProtobufSequentialEncoderInterpreter.CustomEncoderInterpreter[ALG],
-//  customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
+  protobufValidator: ProtobufValueValidator[ALG],
+  protobufEncoder: ProtobufValueEncoder[ALG],
+  //  customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
   pathStringToId: String => Either[StringToIdError, ID],
   charset: java.nio.charset.Charset = StandardCharsets.UTF_8
 ) {
@@ -39,10 +41,10 @@ class RpcInterpreter[ALG[_], ID: Manifest](
     ProtobufUtcSequentialEncoderAndValidator
 
   def create[F[_], A, E, B](
-                             createF: A => F[Either[E, B]],
-                             inputSchema: KvpCollection[ALG, A],
-                             errorSchema: KvpCollection[ALG, E],
-                             outputSchema: KvpCollection[ALG, B]
+    createF: A => F[Either[E, B]],
+    inputSchema: KvpCollection[ALG, A],
+    errorSchema: KvpCollection[ALG, E],
+    outputSchema: KvpCollection[ALG, B]
   )(implicit F: Sync[F], H: Http4sDsl[F]): List[HttpRoutes[F]] =
     BaseCrudInterpreter.httpPostRoutes(
       path,

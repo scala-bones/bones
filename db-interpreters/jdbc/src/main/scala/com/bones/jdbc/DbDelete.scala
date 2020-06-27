@@ -6,7 +6,7 @@ import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionError, SystemError}
 import com.bones.data.{KvpCollection, HListConvert}
 import com.bones.jdbc.DbUtil.{camelToSnake, withDataSource, withStatement}
-import com.bones.jdbc.rs.ResultSetValueInterpreter
+import com.bones.jdbc.rs.ResultSetValue
 import com.bones.jdbc.update.DbUpdateValues
 import com.bones.jdbc.update.DbUpdateValues.CustomDbUpdateInterpreter
 import javax.sql.DataSource
@@ -17,7 +17,7 @@ object DbDelete {
 
   def delete[ALG[_], A, ID](
                              schema: KvpCollection[ALG, A],
-                             resultSetCustomInterpreter: ResultSetValueInterpreter[ALG],
+                             resultSetCustomInterpreter: ResultSetValue[ALG],
                              idDef: IdDefinition[ALG, ID],
                              customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG]
   ): DataSource => ID => Either[NonEmptyList[ExtractionError], (ID, A)] = {
@@ -29,7 +29,7 @@ object DbDelete {
 
   def deleteWithConnect[ALG[_], A, ID](
                                         schema: KvpCollection[ALG, A],
-                                        resultSetCustomInterpreter: ResultSetValueInterpreter[ALG],
+                                        resultSetCustomInterpreter: ResultSetValue[ALG],
                                         idDef: IdDefinition[ALG, ID],
                                         customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG]
   ): ID => Connection => Either[NonEmptyList[ExtractionError], (ID, A)] = {

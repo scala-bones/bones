@@ -1,19 +1,19 @@
 package com.bones.scalacheck
 
-import com.bones.data.custom.CNilF
+import com.bones.data.values.CNilF
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft, _}
 import org.scalacheck._
 import shapeless.{:+:, Coproduct, HList, HNil, Inl, Inr, Nat}
 
-object GenAlg {
+object GenValue {
 
   /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
     * see https://stackoverflow.com/a/60561575/387094
     * */
   def merge[L[_], R[_] <: Coproduct, A](
-    li: GenAlg[L],
-    ri: GenAlg[R]): GenAlg[Lambda[A => L[A] :+: R[A]]] =
-    new GenAlg[Lambda[A => L[A] :+: R[A]]] {
+                                         li: GenValue[L],
+                                         ri: GenValue[R]): GenValue[Lambda[A => L[A] :+: R[A]]] =
+    new GenValue[Lambda[A => L[A] :+: R[A]]] {
 
       override def gen[A](lr: L[A] :+: R[A]): Gen[A] = lr match {
         case Inl(l) => li.gen(l)
@@ -21,12 +21,12 @@ object GenAlg {
       }
     }
 
-  implicit class InterpreterOps[ALG[_], OUT](val base: GenAlg[ALG]) extends AnyVal {
-    def ++[R[_] <: Coproduct](r: GenAlg[R]): GenAlg[Lambda[A => ALG[A] :+: R[A]]] =
+  implicit class InterpreterOps[ALG[_], OUT](val base: GenValue[ALG]) extends AnyVal {
+    def ++[R[_] <: Coproduct](r: GenValue[R]): GenValue[Lambda[A => ALG[A] :+: R[A]]] =
       merge(base, r)
   }
 
-  object CNilGenEncoder extends GenAlg[CNilF] {
+  object CNilGenEncoder extends GenValue[CNilF] {
     override def gen[A](ag: CNilF[A]): Gen[A] = sys.error("Unreachable code")
   }
 
@@ -37,7 +37,7 @@ object GenAlg {
   *
   * @tparam ALG
   */
-trait GenAlg[ALG[_]] {
+trait GenValue[ALG[_]] {
   def gen[A](ag: ALG[A]): Gen[A]
 }
 
@@ -45,15 +45,12 @@ object Scalacheck extends ScalacheckBase
 
 trait ScalacheckBase {
 
-  def createCustomGen[ALG[_], A](bonesSchema: KvpCollection[ALG, A], genAlg: GenAlg[ALG]): Gen[A] =
-    bonesSchema match {
-      case co: KvpCoproductConvert[ALG, c, a] => valueDefinition(co, genAlg)
-      case co: HListConvert[ALG, h, n, a]     => valueDefinition(co, genAlg)
-    }
+  def generateGen[ALG[_], A](collection: KvpCollection[ALG, A], genAlg: GenValue[ALG]): Gen[A] =
+    valueDefinition(collection, genAlg)
 
   def kvpCoproduct[ALG[_], C <: Coproduct](
     co: KvpCoproduct[ALG, C],
-    genAlg: GenAlg[ALG]): List[Gen[C]] = {
+    genAlg: GenValue[ALG]): List[Gen[C]] = {
     co match {
       case nil: KvpCoNil[_] => List.empty
       case co: KvpSingleValueLeft[ALG, a, r] @unchecked =>
@@ -65,7 +62,7 @@ trait ScalacheckBase {
 
   def kvpHList[ALG[_], H <: HList, HL <: Nat](
     group: KvpHList[ALG, H, HL],
-    genAlg: GenAlg[ALG]): Gen[H] = {
+    genAlg: GenValue[ALG]): Gen[H] = {
     group match {
       case ni: KvpNil[_] => Gen.const(HNil)
       case op: KvpSingleValueHead[ALG, h, t, tl, a] @unchecked =>
@@ -90,7 +87,7 @@ trait ScalacheckBase {
           head ::: tail
         }
       case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked =>
-        val headGen = fromCustomSchema(op.bonesSchema, genAlg)
+        val headGen = generateGen(op.collection, genAlg)
         val tailGen = kvpHList(op.tail, genAlg)
         for {
           a <- headGen
@@ -101,26 +98,16 @@ trait ScalacheckBase {
     }
   }
 
-  def fromCustomSchema[ALG[_], A](bonesSchema: KvpCollection[ALG, A], genAlg: GenAlg[ALG]): Gen[A] = {
-    bonesSchema match {
-      case hl: HListConvert[ALG, h, n, a] => kvpHList(hl.from, genAlg).map(hl.fHtoA)
-      case co: KvpCoproductConvert[ALG, c, a] => {
-        val gens = kvpCoproduct(co.from, genAlg).map(genList => genList.map(co.cToA)).map((1, _))
-        Gen.frequency(gens: _*)
-      }
-    }
-  }
-
   def determineValueDefinition[ALG[_], A](
                                            value: Either[KvpCollection[ALG, A], ALG[A]],
-                                           genAlg: GenAlg[ALG]): Gen[A] = {
+                                           genAlg: GenValue[ALG]): Gen[A] = {
     value match {
       case Left(kvp)  => valueDefinition(kvp, genAlg)
       case Right(alg) => genAlg.gen(alg)
     }
   }
 
-  def valueDefinition[ALG[_], A](fgo: KvpCollection[ALG, A], genAlg: GenAlg[ALG]): Gen[A] =
+  def valueDefinition[ALG[_], A](fgo: KvpCollection[ALG, A], genAlg: GenValue[ALG]): Gen[A] =
     fgo match {
       case op: OptionalKvpValueDefinition[ALG, a] @unchecked => {
         val optionalGen = determineValueDefinition(op.valueDefinitionOp, genAlg).map(Some(_))

@@ -7,7 +7,7 @@ import com.bones.data.Error.{ExtractionError, SystemError}
 import com.bones.data.KeyValueDefinition.CoproductDataDefinition
 import com.bones.data._
 import com.bones.jdbc.DbUtil._
-import com.bones.jdbc.rs.{ResultSetInterpreter, ResultSetValueInterpreter}
+import com.bones.jdbc.rs.{ResultSetInterpreter, ResultSetValue}
 import javax.sql.DataSource
 import shapeless.{::, HList, Nat}
 
@@ -23,11 +23,16 @@ object DbInsertValues {
   type InsertPair[A] = Key => (Index, A) => (Index, List[(ColumnName, SetValue)])
 
   def insertQuery[ALG[_], A, ID](
-                                  bonesSchema: KvpCollection[ALG, A],
-                                  idSchema: KvpCollection[ALG, ID],
-                                  customInterpreter: CustomInterpreter[ALG],
-                                  resultSetValueInterpreter: ResultSetValueInterpreter[ALG]): DataSource => A => Either[NonEmptyList[ExtractionError], (ID, A)] = {
-    val iq = insertQueryWithConnectionCustomAlgebra(bonesSchema, idSchema, customInterpreter, resultSetValueInterpreter)
+    collection: KvpCollection[ALG, A],
+    idSchema: KvpCollection[ALG, ID],
+    customInterpreter: CustomInterpreter[ALG],
+    resultSetValueInterpreter: ResultSetValue[ALG])
+    : DataSource => A => Either[NonEmptyList[ExtractionError], (ID, A)] = {
+    val iq = insertQueryWithConnectionCustomAlgebra(
+      collection,
+      idSchema,
+      customInterpreter,
+      resultSetValueInterpreter)
     ds =>
       { a =>
         {
@@ -38,51 +43,52 @@ object DbInsertValues {
             result
           } catch {
             case ex: SQLException =>
-              Left(NonEmptyList.one(SystemError(List.empty, ex, Some("Error retrieving connection"))))
+              Left(
+                NonEmptyList.one(SystemError(List.empty, ex, Some("Error retrieving connection"))))
           }
         }
       }
   }
 
   def insertQueryWithConnectionCustomAlgebra[ALG[_], A, ID](
-                                                             bonesSchema: KvpCollection[ALG, A],
-                                                             idSchema: KvpCollection[ALG, ID],
-                                                             customInterpreter: CustomInterpreter[ALG],
-                                                             resultSetInterpreter: ResultSetValueInterpreter[ALG]): A => Connection => Either[NonEmptyList[ExtractionError], (ID, A)] =
-    bonesSchema match {
-      case x: HListConvert[ALG, h, n, b] @unchecked => {
-        val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
-        val updates = kvpHList(x.from, customInterpreter)
-        val rs = ResultSetInterpreter.determineValueDefinition(Left(idSchema), resultSetInterpreter)
-        a: A =>
+    collection: KvpCollection[ALG, A],
+    idSchema: KvpCollection[ALG, ID],
+    customInterpreter: CustomInterpreter[ALG],
+    resultSetInterpreter: ResultSetValue[ALG])
+    : A => Connection => Either[NonEmptyList[ExtractionError], (ID, A)] = {
+    val tableName = camelToSnake(collection.manifestOfA.runtimeClass.getSimpleName)
+    val updates = valueDefinition(collection, customInterpreter)
+    val rs = ResultSetInterpreter.determineValueDefinition(Left(idSchema), resultSetInterpreter)
+    a: A =>
+      {
+        val result = updates("")(1,a)
+        val sql = s"""insert into $tableName ( ${result._2
+          .map(_._1)
+          .mkString(",")} ) values ( ${result._2.map(_ => "?").mkString(",")}  )"""
+        con: Connection =>
           {
-            val result = updates(1, x.fAtoH(a))
-            val sql = s"""insert into $tableName ( ${result._2
-              .map(_._1)
-              .mkString(",")} ) values ( ${result._2.map(_ => "?").mkString(",")}  )"""
-            con: Connection =>
-              {
-                val statement = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
-                try {
-                  result._2.map(_._2).foreach(f => f(statement))
-                  statement.executeUpdate()
-                  val generatedKeys = statement.getGeneratedKeys
+            val statement = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
+            try {
+              result._2.map(_._2).foreach(f => f(statement))
+              statement.executeUpdate()
+              val generatedKeys = statement.getGeneratedKeys
 
-                  try {
-                    if (generatedKeys.next) rs.apply(List.empty, "id").apply(generatedKeys).map((_,a))
-                    else throw new SQLException("Creating user failed, no ID obtained.")
-                  } finally {
-                    generatedKeys.close()
-                  }
-                } catch {
-                  case e: SQLException => Left(NonEmptyList.one(SystemError(e, Some("SQL Statement: " + sql))))
-                } finally {
-                  statement.close()
-                }
+              try {
+                if (generatedKeys.next)
+                  rs.apply(List.empty, "id").apply(generatedKeys).map((_, a))
+                else throw new SQLException("Creating user failed, no ID obtained.")
+              } finally {
+                generatedKeys.close()
               }
+            } catch {
+              case e: SQLException =>
+                Left(NonEmptyList.one(SystemError(e, Some("SQL Statement: " + sql))))
+            } finally {
+              statement.close()
+            }
           }
       }
-    }
+  }
 
   def kvpHList[ALG[_], H <: HList, HL <: Nat](
     group: KvpHList[ALG, H, HL],
@@ -118,7 +124,7 @@ object DbInsertValues {
       }
       case op: KvpConcreteTypeHead[ALG, a, ht, nt] => {
 
-        val headF = fromBonesSchema(op.bonesSchema, customInterpreter)
+        val headF = fromBonesSchema(op.collection, customInterpreter)
         val tailF = kvpHList(op.tail, customInterpreter)
 
         (i: Index, h: a :: ht) =>
@@ -132,8 +138,8 @@ object DbInsertValues {
   }
 
   private def fromBonesSchema[ALG[_], A](
-                                          bonesSchema: KvpCollection[ALG, A],
-                                          customInterpreter: CustomInterpreter[ALG])
+    bonesSchema: KvpCollection[ALG, A],
+    customInterpreter: CustomInterpreter[ALG])
     : (Index, A) => (Index, List[(ColumnName, SetValue)]) = {
     bonesSchema match {
       case co: KvpCoproductConvert[ALG, c, a] => ???
@@ -170,7 +176,7 @@ object DbInsertValues {
   }
 
   def valueDefinition[ALG[_], A](
-    fgo: KvpCollection[ALG,A],
+    fgo: KvpCollection[ALG, A],
     customInterpreter: CustomInterpreter[ALG]): InsertPair[A] =
     fgo match {
       case op: OptionalKvpValueDefinition[ALG, b] @unchecked =>

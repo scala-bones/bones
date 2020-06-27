@@ -2,26 +2,26 @@ package com.bones.circe
 
 import java.nio.charset.{Charset, StandardCharsets}
 
-import com.bones.data.custom.AllCustomAlgebras
+import com.bones.data.values.DefaultValues
 import com.bones.scalacheck.Scalacheck
 import com.bones.schemas.Schemas.{AllSupported, allSupportCaseClass}
 import org.scalacheck.Arbitrary
 import org.scalatestplus.scalacheck.Checkers
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers
-import com.bones.circe.custom._
-import com.bones.scalacheck.custom._
+import com.bones.circe.values._
+import com.bones.scalacheck.values._
 
 class CirceTest extends AnyFunSuite with Checkers with Matchers {
 
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)
 
-  val jsonToCc = IsoCirceEncoderAndValidatorInterpreter.byteArrayFuncFromSchema[AllCustomAlgebras,AllSupported](
+  val jsonToCc = IsoCirceEncoderAndValidatorInterpreter.generateByteArrayValidator[DefaultValues,AllSupported](
     allSupportCaseClass,
     StandardCharsets.UTF_8,
-    allValidators)
-  val ccToJson = IsoCirceEncoderAndValidatorInterpreter.encoderFromCustomSchema(allSupportCaseClass, allEncoders)
+    defaultValidators)
+  val ccToJson = IsoCirceEncoderAndValidatorInterpreter.generateEncoder(allSupportCaseClass, defaultEncoders)
 
   implicit val arb = Arbitrary(Scalacheck.valueDefinition(allSupportCaseClass, allInterpreters))
   val utf8 = Charset.forName("UTF8")

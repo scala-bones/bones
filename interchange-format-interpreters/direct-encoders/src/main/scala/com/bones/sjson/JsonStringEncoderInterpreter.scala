@@ -5,7 +5,7 @@ import java.util.Base64
 
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft}
 import com.bones.data._
-import com.bones.data.custom.CNilF
+import com.bones.data.values.CNilF
 import com.bones.sjson.JsonStringEncoderInterpreter.CustomToJsonStringInterpreter
 import shapeless.{:+:, ::, Coproduct, HList, Inl, Inr, Nat}
 import org.apache.commons.text.StringEscapeUtils.escapeJson
@@ -144,7 +144,7 @@ trait JsonStringEncoderInterpreter {
           }
 
       case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked =>
-        val headF: a => List[String] = fromBonesSchema(op.bonesSchema, customInterpreter)
+        val headF: a => List[String] = fromBonesSchema(op.collection, customInterpreter)
         val tailF = kvpHList(op.tail, customInterpreter)
         implicit val hCons = op.isHCons
         (input: a :: ht) =>

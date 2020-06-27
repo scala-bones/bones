@@ -13,8 +13,8 @@ package object swagger {
   object SwaggerIsoInterpreter extends SwaggerCoreInterpreter
 
   def fromSchemaWithAlg[ALG[_], A](
-                                    gd: KvpCollection[ALG, A],
-                                    customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]): Name => List[(Name, Schema[_])] =
-    SwaggerIsoInterpreter.fromSchemaWithAlg(gd, customAlgebraInterpreter)
+    gd: KvpCollection[ALG, A],
+    customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]): Name => List[(Name, Schema[_])] =
+    SwaggerIsoInterpreter.generateSchemas(gd, customAlgebraInterpreter)
 
 }

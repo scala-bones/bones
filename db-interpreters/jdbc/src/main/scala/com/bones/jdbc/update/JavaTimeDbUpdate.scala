@@ -3,7 +3,7 @@ package com.bones.jdbc.update
 import java.sql.{PreparedStatement, Types}
 import java.time.{LocalDate, LocalDateTime, ZoneOffset}
 
-import com.bones.data.custom.{JavaTimeValue, LocalDateData, LocalDateTimeData}
+import com.bones.data.values.{JavaTimeValue, LocalDateData, LocalDateTimeData}
 import com.bones.jdbc.update.DbUpdateValues.{CustomDbUpdateInterpreter, Index, Key}
 
 trait JavaTimeDbUpdate extends CustomDbUpdateInterpreter[JavaTimeValue] {

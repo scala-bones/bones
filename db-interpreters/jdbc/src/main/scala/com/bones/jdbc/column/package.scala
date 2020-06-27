@@ -1,12 +1,12 @@
 package com.bones.jdbc
 
-import com.bones.data.custom.AllCustomAlgebras
+import com.bones.data.values.DefaultValues
 import com.bones.jdbc.column.DbColumnInterpreter.ColumnInterpreter
 import com.bones.jdbc.column.DbColumnInterpreter.ColumnInterpreter.CNilColumnInterpreter
 
 package object column {
 
-  val defaultDbColumnInterpreter: ColumnInterpreter[AllCustomAlgebras] =
+  val defaultDbColumnInterpreter: ColumnInterpreter[DefaultValues] =
     (DefaultScalaCoreDbColumnInterpreter ++
       (DefaultColumnStringDbInterpreter ++
         (DefaultJavaTimeDbColumnInterpreter ++

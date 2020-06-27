@@ -1,10 +1,10 @@
 package com.bones.schemas
 
-import com.bones.data.custom.{AllCustomAlgebras, ScalaCoreInjectedSugar}
+import com.bones.data.values.{DefaultValues, ScalaCoreInjectedSugar}
 import com.bones.data.{KvpCollection, HListConvert, KeyValueDefinition, KvpCoproductConvert, KvpSingleValueHead, Sugar}
 import com.bones.schemas.Schemas.AllSupported
 
-object WithLongId extends WithId[AllCustomAlgebras] {
+object WithLongId extends WithId[DefaultValues] {
   import com.bones.syntax._
 
   val idDefinition = ("id", long(lv.positive))

@@ -32,7 +32,7 @@ case class KvpCoNil[ALG[_]]() extends KvpCoproduct[ALG, CNil]
   * @param kvpValue The head of the coproduct
   * @param kvpTail The rest of the coproduct
   * @param manifestL The manifest of the Left value, A
-  * @tparam ALG Custom algebra (Or NoAlgebra)
+  * @tparam ALG The GADT context.
   * @tparam A The head (or most left part) of the coproduct (of the values of Coproduct, the one in particular this instance represents)
   * @tparam R The remaining part of the coproduct.  This class
   */
