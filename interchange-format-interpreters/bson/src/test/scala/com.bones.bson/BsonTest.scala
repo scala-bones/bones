@@ -2,10 +2,10 @@ package com.bones.bson
 
 import java.time._
 
-import com.bones.data.custom.{AllCustomAlgebras, JavaTimeValue, LocalDateTimeData}
-import com.bones.scalacheck.GenAlg.CNilGenEncoder
-import com.bones.scalacheck.custom.{DefaultCustomStringValueInterpreter, DefaultScalacheckJavaUtilInterpreter, DefaultScalacheckScalaCoreInterpreter, ScalacheckJavaTimeInterpreter}
-import com.bones.scalacheck.{GenAlg, ScalacheckBase}
+import com.bones.data.values.{DefaultValues, JavaTimeValue, LocalDateTimeData}
+import com.bones.scalacheck.GenValue.CNilGenEncoder
+import com.bones.scalacheck.values.{DefaultCustomStringValueInterpreter, DefaultScalacheckJavaUtilInterpreter, DefaultScalacheckScalaCoreInterpreter, ScalacheckJavaTimeInterpreter}
+import com.bones.scalacheck.{GenValue, ScalacheckBase}
 import com.bones.schemas.Schemas._
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.funsuite.AnyFunSuite
@@ -22,7 +22,7 @@ import scala.util.control.NonFatal
   */
 object BsonScalacheck extends ScalacheckBase {
 
-  val allInterpreters: GenAlg[AllCustomAlgebras] =
+  val allInterpreters: GenValue[DefaultValues] =
     DefaultScalacheckScalaCoreInterpreter ++
       (DefaultCustomStringValueInterpreter ++
         (OverrideJavaTimeInterpreter ++
@@ -49,11 +49,11 @@ class BsonTest extends AnyFunSuite with Checkers with Matchers {
   //  implicit override val generatorDrivenConfig =
   //    PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)
 
-  val bsonToCc = BsonValidatorInterpreter.validatorFromCustomSchema(allSupportCaseClass, com.bones.bson.custom.allValidators)
+  val bsonToCc = BsonValidatorInterpreter.generateValidator(allSupportCaseClass, com.bones.bson.values.defaultValidators)
 
-  val ccToBson = BsonEncoderInterpreter.encoderFromCustomSchema(allSupportCaseClass, com.bones.bson.custom.allEncoders)
+  val ccToBson = BsonEncoderInterpreter.generateEncoder(allSupportCaseClass, com.bones.bson.values.defaultEncoders)
 
-  implicit val arb = Arbitrary(BsonScalacheck.fromCustomSchema(allSupportCaseClass, BsonScalacheck.allInterpreters))
+  implicit val arb = Arbitrary(BsonScalacheck.generateGen(allSupportCaseClass, BsonScalacheck.allInterpreters))
 
   test("scalacheck allSupport types - marshall then marshall") {
     check((cc: AllSupported) => {

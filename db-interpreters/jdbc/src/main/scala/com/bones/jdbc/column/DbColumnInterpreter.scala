@@ -2,7 +2,7 @@ package com.bones.jdbc.column
 
 import com.bones.data.KeyValueDefinition.CoproductDataDefinition
 import com.bones.data._
-import com.bones.data.custom.CNilF
+import com.bones.data.values.CNilF
 import com.bones.jdbc.DbUtil
 import com.bones.jdbc.DbUtil.camelToSnake
 import shapeless.{:+:, Coproduct, HList, Inl, Inr, Nat}
@@ -51,19 +51,16 @@ object DbColumnInterpreter {
   }
 
   def tableDefinitionCustomAlgebra[ALG[_], A](
-                                               bonesSchema: KvpCollection[ALG, A],
-                                               columnInterpreter: ColumnInterpreter[ALG]): String = {
+    collection: KvpCollection[ALG, A],
+    columnInterpreter: ColumnInterpreter[ALG]): String = {
     def nullableString(nullable: Boolean) = if (nullable) "" else " not null"
-    bonesSchema match {
-      case x: HListConvert[ALG, h, n, b] @unchecked =>
-        val result = valueDefinition(x, columnInterpreter)("")
-        val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
-        val columnsWithId = Column("id", "SERIAL", false) :: result
-        val columnString = columnsWithId
-          .map(c => s"${c.name} ${c.columnDefinition}${nullableString(c.nullable)}")
-          .mkString("(", ", ", ")")
-        s"create table $tableName $columnString"
-    }
+    val result = valueDefinition(collection, columnInterpreter)("")
+    val tableName = camelToSnake(collection.manifestOfA.runtimeClass.getSimpleName)
+    val columnsWithId = Column("id", "SERIAL", false) :: result
+    val columnString = columnsWithId
+      .map(c => s"${c.name} ${c.columnDefinition}${nullableString(c.nullable)}")
+      .mkString("(", ", ", ")")
+    s"create table $tableName $columnString"
   }
 
   private def kvpHList[ALG[_], H <: HList, HL <: Nat](
@@ -82,20 +79,16 @@ object DbColumnInterpreter {
         val tailResult = kvpHList(op.tail, customInterpreter)
         headResult ::: tailResult
       case op: KvpConcreteTypeHead[ALG, a, ht, nt] =>
-        val headResult = bonesSchema(op.bonesSchema, customInterpreter)
+        val headResult = generateColumns(op.collection, customInterpreter)
         val tailResult = kvpHList(op.tail, customInterpreter)
         headResult ::: tailResult
     }
   }
 
-  private def bonesSchema[ALG[_], A](
-                                      bonesSchema: KvpCollection[ALG, A],
-                                      customInterpreter: ColumnInterpreter[ALG]): List[Column] =
-    bonesSchema match {
-      case co: KvpCoproductConvert[ALG, c, a] @unchecked =>
-        valueDefinition(co, customInterpreter)("")
-      case co: HListConvert[ALG, h, n, a] @unchecked => valueDefinition(co, customInterpreter)("")
-    }
+  private def generateColumns[ALG[_], A](
+    collection: KvpCollection[ALG, A],
+    customInterpreter: ColumnInterpreter[ALG]): List[Column] =
+    valueDefinition(collection, customInterpreter)("")
 
   def nameToColumn(columnDefinition: String): ToColumns =
     name => List(Column(DbUtil.camelToSnake(name), columnDefinition, false))
@@ -111,7 +104,7 @@ object DbColumnInterpreter {
   }
 
   private def valueDefinition[ALG[_], A](
-    fgo: KvpCollection[ALG,A],
+    fgo: KvpCollection[ALG, A],
     customInterpreter: ColumnInterpreter[ALG]): ToColumns =
     fgo match {
       case op: OptionalKvpValueDefinition[ALG, b] @unchecked =>

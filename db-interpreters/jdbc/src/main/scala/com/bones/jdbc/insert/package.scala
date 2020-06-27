@@ -1,12 +1,12 @@
 package com.bones.jdbc
 
-import com.bones.data.custom.{AllCustomAlgebras, CNilF}
+import com.bones.data.values.{DefaultValues, CNilF}
 import com.bones.jdbc.insert.DbInsertValues.InsertPair
 import shapeless.{:+:, Coproduct, Inl, Inr}
 
 package object insert {
 
-  val defaultDbInsertInterpreter: CustomInterpreter[AllCustomAlgebras] =
+  val defaultDbInsertInterpreter: CustomInterpreter[DefaultValues] =
     DefaultScalaCoreDbInsert ++
       (DefaultCustomStringDbInsert ++
         (DefaultJavaTimeDbInsert ++

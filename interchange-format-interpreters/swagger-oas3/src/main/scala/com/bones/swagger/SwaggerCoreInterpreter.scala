@@ -2,9 +2,16 @@ package com.bones.swagger
 
 import java.util.{Base64, UUID}
 
-import com.bones.data.custom.CNilF
+import com.bones.data.values.CNilF
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft, _}
-import com.bones.validation.ValidationDefinition.{InvalidValue, ValidValue, ValidationOp, BigDecimalValidation => bdv, LongValidation => iv, StringValidation => sv}
+import com.bones.validation.ValidationDefinition.{
+  InvalidValue,
+  ValidValue,
+  ValidationOp,
+  BigDecimalValidation => bdv,
+  LongValidation => iv,
+  StringValidation => sv
+}
 import io.swagger.v3.oas.models.media._
 import shapeless.{:+:, Coproduct, HList, Inl, Inr, Nat}
 
@@ -240,33 +247,33 @@ object SwaggerCoreInterpreter {
   }
 
   /**
-   * Responsible for adding validation specific details to the SwaggerCore files.
-   *
-   * @param op The validation from we will add to the
-   * @tparam A The type which is to be validated.
-   * @return
-   */
+    * Responsible for adding validation specific details to the SwaggerCore files.
+    *
+    * @param op The validation from we will add to the
+    * @tparam A The type which is to be validated.
+    * @return
+    */
   def validation[A](op: ValidationOp[A]): Schema[_] => Schema[_] = {
     op match {
       case ValidValue(values) =>
         schema =>
-        {
-          val typedSchema = schema.asInstanceOf[Schema[A]]
-          values.foreach(typedSchema.addEnumItemObject)
-          typedSchema
-        }
+          {
+            val typedSchema = schema.asInstanceOf[Schema[A]]
+            values.foreach(typedSchema.addEnumItemObject)
+            typedSchema
+          }
       case InvalidValue(values) =>
         val invalidDescription =
           s"These values are not allowed: ${values.mkString("('", ",", "')")}."
         schema =>
-        {
-          val description = schema.getDescription
-          val newDescription =
-            if (description.isEmpty) invalidDescription
-            else description + " " + invalidDescription
-          schema.setDescription(newDescription)
-          schema
-        }
+          {
+            val description = schema.getDescription
+            val newDescription =
+              if (description.isEmpty) invalidDescription
+              else description + " " + invalidDescription
+            schema.setDescription(newDescription)
+            schema
+          }
       case sv.IsAlphanumeric =>
         schema =>
           schema.pattern("^[:alnum:]+$"); schema
@@ -319,7 +326,6 @@ trait SwaggerCoreInterpreter {
 
   import SwaggerCoreInterpreter._
 
-
   private def copySchema(head: Schema[_], tail: ObjectSchema): ObjectSchema = {
     Option(head.getProperties).foreach(_.asScala.toList.foreach(prop =>
       tail.addProperties(prop._1, prop._2)))
@@ -327,16 +333,11 @@ trait SwaggerCoreInterpreter {
     tail
   }
 
-  def fromSchemaWithAlg[ALG[_], A](
-                                    gd: KvpCollection[ALG, A],
-                                    customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]
+  def generateSchemas[ALG[_], A](
+    collection: KvpCollection[ALG, A],
+    customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]
   ): Name => List[(Name, Schema[_])] = name => {
-    val schemas = gd match {
-      case x: HListConvert[ALG, _, _, A] =>
-        valueDefinition(x, customAlgebraInterpreter, None, None)(name)
-      case x: KvpCoproductConvert[ALG, _, A] =>
-        valueDefinition(x, customAlgebraInterpreter, None, None)(name)
-    }
+    val schemas = valueDefinition(collection, customAlgebraInterpreter, None, None)(name)
     (name, schemas.mainSchema) :: schemas.referenceSchemas
   }
 
@@ -386,7 +387,7 @@ trait SwaggerCoreInterpreter {
         val schema = copySchema(headSchemas.mainSchema, tailSchemas.mainSchema)
         SwaggerSchemas(schema, headSchemas.referenceSchemas ::: tailSchemas.referenceSchemas)
       case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked =>
-        val headSchemas = op.bonesSchema match {
+        val headSchemas = op.collection match {
           case op: KvpCoproductConvert[ALG, c, a] =>
             fromKvpCoproduct(op.from, customInterpreter, None)
           case op: HListConvert[ALG, h, n, a] =>
@@ -399,10 +400,10 @@ trait SwaggerCoreInterpreter {
   }
 
   def determineValueDefinition[ALG[_], A](
-                                           value: Either[KvpCollection[ALG, A], ALG[A]],
-                                           customInterpreter: CustomSwaggerInterpreter[ALG],
-                                           description: Option[String],
-                                           example: Option[A]
+    value: Either[KvpCollection[ALG, A], ALG[A]],
+    customInterpreter: CustomSwaggerInterpreter[ALG],
+    description: Option[String],
+    example: Option[A]
   ): Name => SwaggerSchemas[Schema[_]] =
     value match {
       case Left(kvp)  => valueDefinition(kvp, customInterpreter, description, example)
@@ -415,10 +416,10 @@ trait SwaggerCoreInterpreter {
     * @param vd The DataClass definition to convert to a Schema
     **/
   def valueDefinition[ALG[_], A](
-                                  vd: KvpCollection[ALG,A],
-                                  customInterpreter: CustomSwaggerInterpreter[ALG],
-                                  description: Option[String],
-                                  example: Option[A]): Name => SwaggerSchemas[Schema[_]] = {
+    vd: KvpCollection[ALG, A],
+    customInterpreter: CustomSwaggerInterpreter[ALG],
+    description: Option[String],
+    example: Option[A]): Name => SwaggerSchemas[Schema[_]] = {
     vd match {
       case op: OptionalKvpValueDefinition[ALG, b] @unchecked =>
         name =>
@@ -428,7 +429,6 @@ trait SwaggerCoreInterpreter {
             description,
             None)(name)
           oasSchema.copy(mainSchema = oasSchema.mainSchema.nullable(true))
-
 
       case ld: ListData[ALG, t] @unchecked =>
         name =>
@@ -484,10 +484,7 @@ trait SwaggerCoreInterpreter {
           SwaggerSchemas(
             main,
             (name, coproductSchemas.mainSchema) :: coproductSchemas.referenceSchemas)
-
     }
   }
-
-
 
 }

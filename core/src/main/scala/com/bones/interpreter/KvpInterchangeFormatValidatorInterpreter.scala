@@ -3,7 +3,7 @@ package com.bones.interpreter
 import cats.data.NonEmptyList
 import com.bones.data.Error._
 import com.bones.data.KeyValueDefinition.CoproductDataDefinition
-import com.bones.data.custom.CNilF
+import com.bones.data.values.CNilF
 import com.bones.data.{KeyValueDefinition, KvpCoNil, KvpCoproduct, KvpSingleValueLeft, _}
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.{ValidationUtil => vu}
@@ -72,9 +72,9 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
     * @tparam A The final data type returned by the resulting function.
     * @return A function which takes the IN data and returns an Either[ExtractionError,A]
     */
-  def validatorFromCustomSchema[ALG[_], A](
-                                            schema: KvpCollection[ALG, A],
-                                            interchangeFormatValidator: InterchangeFormatValidator[ALG, IN])
+  def generateValidator[ALG[_], A](
+    schema: KvpCollection[ALG, A],
+    interchangeFormatValidator: InterchangeFormatValidator[ALG, IN])
     : IN => Either[NonEmptyList[ExtractionError], A] =
     schema match {
       case x: HListConvert[ALG, _, _, A] =>
@@ -82,9 +82,9 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
           valueDefinition(x, interchangeFormatValidator).apply(Some(in), List.empty)
     }
 
-  def validatorFromSchemaWithPath[ALG[_], A](
-                                              schema: KvpCollection[ALG, A],
-                                              interchangeFormatValidator: InterchangeFormatValidator[ALG, IN])
+  def generateValidatorWithPath[ALG[_], A](
+    schema: KvpCollection[ALG, A],
+    interchangeFormatValidator: InterchangeFormatValidator[ALG, IN])
     : (IN, Path) => Either[NonEmptyList[ExtractionError], A] =
     schema match {
       case x: HListConvert[ALG, _, _, A] =>
@@ -131,29 +131,22 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
   def extractString[ALG[_], A](dataDefinition: ALG[A], clazz: Class[_])(
     in: IN,
     path: Path): Either[NonEmptyList[ExtractionError], String]
-  def extractInt[ALG[_], A](dataDefinition: ALG[A])(
-    in: IN,
-    path: Path): Either[NonEmptyList[ExtractionError], Int]
-  def extractLong[ALG[_], A](dataDefinition: ALG[A])(
-    in: IN,
-    path: Path): Either[NonEmptyList[ExtractionError], Long]
-  def extractBool[ALG[_], A](dataDefinition: ALG[A])(
-    in: IN,
-    path: Path): Either[NonEmptyList[ExtractionError], Boolean]
+  def extractInt[ALG[_], A](
+    dataDefinition: ALG[A])(in: IN, path: Path): Either[NonEmptyList[ExtractionError], Int]
+  def extractLong[ALG[_], A](
+    dataDefinition: ALG[A])(in: IN, path: Path): Either[NonEmptyList[ExtractionError], Long]
+  def extractBool[ALG[_], A](
+    dataDefinition: ALG[A])(in: IN, path: Path): Either[NonEmptyList[ExtractionError], Boolean]
   def extractArray[ALG[_], A](
     op: ListData[ALG, A])(in: IN, path: Path): Either[NonEmptyList[ExtractionError], Seq[IN]]
-  def extractFloat[ALG[_], A](dataDefinition: ALG[A])(
-    in: IN,
-    path: Path): Either[NonEmptyList[ExtractionError], Float]
-  def extractDouble[ALG[_], A](dataDefinition: ALG[A])(
-    in: IN,
-    path: Path): Either[NonEmptyList[ExtractionError], Double]
-  def extractShort[ALG[_], A](dataDefinition: ALG[A])(
-    in: IN,
-    path: Path): Either[NonEmptyList[ExtractionError], Short]
-  def extractBigDecimal[ALG[_], A](dataDefinition: ALG[A])(
-    in: IN,
-    path: Path): Either[NonEmptyList[ExtractionError], BigDecimal]
+  def extractFloat[ALG[_], A](
+    dataDefinition: ALG[A])(in: IN, path: Path): Either[NonEmptyList[ExtractionError], Float]
+  def extractDouble[ALG[_], A](
+    dataDefinition: ALG[A])(in: IN, path: Path): Either[NonEmptyList[ExtractionError], Double]
+  def extractShort[ALG[_], A](
+    dataDefinition: ALG[A])(in: IN, path: Path): Either[NonEmptyList[ExtractionError], Short]
+  def extractBigDecimal[ALG[_], A](
+    dataDefinition: ALG[A])(in: IN, path: Path): Either[NonEmptyList[ExtractionError], BigDecimal]
   def stringValue(in: IN, elementName: String): Option[String]
   def invalidValue[T](
     in: IN,
@@ -222,7 +215,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
 
       case op: KvpConcreteTypeHead[ALG, a, ht, nt] => {
         val headInterpreter: (IN, List[String]) => Either[NonEmptyList[ExtractionError], a] =
-          validatorFromSchemaWithPath(op.bonesSchema, validator)
+          generateValidatorWithPath(op.collection, validator)
         val tailInterpreter = kvpHList(op.tail, validator)
         (in: IN, path: Path) =>
           {
@@ -266,8 +259,8 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
   protected def isEmpty(json: IN): Boolean
 
   protected def determineValueDefinition[ALG[_], A](
-                                                     value: Either[KvpCollection[ALG,A], ALG[A]],
-                                                     extendedValidator: InterchangeFormatValidator[ALG, IN]
+    value: Either[KvpCollection[ALG, A], ALG[A]],
+    extendedValidator: InterchangeFormatValidator[ALG, IN]
   ): (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A] = {
     value match {
       case Left(kvp)  => valueDefinition(kvp, extendedValidator)
@@ -276,8 +269,8 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
   }
 
   protected def valueDefinition[ALG[_], A](
-                                            fgo: KvpCollection[ALG,A],
-                                            extendedValidator: InterchangeFormatValidator[ALG, IN])
+    fgo: KvpCollection[ALG, A],
+    extendedValidator: InterchangeFormatValidator[ALG, IN])
     : (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A] = {
     val result: (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A] =
       fgo match {

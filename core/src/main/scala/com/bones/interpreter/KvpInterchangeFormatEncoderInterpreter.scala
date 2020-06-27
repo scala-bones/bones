@@ -1,6 +1,6 @@
 package com.bones.interpreter
 
-import com.bones.data.custom.CNilF
+import com.bones.data.values.CNilF
 import com.bones.data.{KeyValueDefinition, KvpCoNil, KvpCoproduct, KvpSingleValueLeft, _}
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.CoproductType
 import shapeless.{:+:, Coproduct, HList, Inl, Inr, Nat}
@@ -61,16 +61,14 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
     * This interpreter assumes the data has already been
     * validated and is only responsible for the data conversion.
     *
-    * @param bonesSchema
+    * @param collection
     * @tparam A
     * @return
     */
-  def encoderFromCustomSchema[ALG[_], A](
-                                          bonesSchema: KvpCollection[ALG, A],
-                                          covEncoder: InterchangeFormatEncoder[ALG, OUT]
-  ): A => OUT = bonesSchema match {
-    case x: HListConvert[ALG, _, _, A] => valueDefinition(x, covEncoder)
-  }
+  def generateEncoder[ALG[_], A](
+    collection: KvpCollection[ALG, A],
+    covEncoder: InterchangeFormatEncoder[ALG, OUT]
+  ): A => OUT = valueDefinition(collection, covEncoder)
 
   def none: OUT
 
@@ -131,7 +129,7 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
   }
 
   /** Interpreter for the KvpHList type. */
-  def kvpHList[ALG[_], H <: HList, HL <: Nat](
+  protected def kvpHList[ALG[_], H <: HList, HL <: Nat](
     group: KvpHList[ALG, H, HL],
     encoder: InterchangeFormatEncoder[ALG, OUT]
   ): H => OUT =
@@ -161,7 +159,7 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
             combine(toObj(op.fieldDefinition, val1), tail)
           }
       case op: KvpConcreteTypeHead[ALG, H, ht, nt] @unchecked => {
-        val headF = encoderFromCustomSchema(op.bonesSchema, encoder)
+        val headF = generateEncoder(op.collection, encoder)
         val tailF = kvpHList(op.tail, encoder)
         implicit val hCons = op.isHCons
         (input: H) =>
@@ -174,8 +172,8 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
     }
 
   protected def determineValueDefinition[ALG[_], A](
-                                                     dataDefinition: Either[KvpCollection[ALG,A], ALG[A]],
-                                                     algEncoder: InterchangeFormatEncoder[ALG, OUT]
+    dataDefinition: Either[KvpCollection[ALG, A], ALG[A]],
+    algEncoder: InterchangeFormatEncoder[ALG, OUT]
   ): A => OUT = {
     dataDefinition match {
       case Left(kvp)  => valueDefinition(kvp, algEncoder)
@@ -184,8 +182,8 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
   }
 
   protected def valueDefinition[ALG[_], A](
-                                            fgo: KvpCollection[ALG,A],
-                                            encoder: InterchangeFormatEncoder[ALG, OUT]
+    fgo: KvpCollection[ALG, A],
+    encoder: InterchangeFormatEncoder[ALG, OUT]
   ): A => OUT =
     fgo match {
       case op: OptionalKvpValueDefinition[ALG, b] @unchecked =>

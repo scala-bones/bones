@@ -1,6 +1,6 @@
 package com.bones.jdbc.column
 
-import com.bones.data.custom.{JavaTimeValue, LocalDateData, LocalDateTimeData}
+import com.bones.data.values.{JavaTimeValue, LocalDateData, LocalDateTimeData}
 import com.bones.jdbc.column.DbColumnInterpreter.{ColumnInterpreter, ToColumns, nameToColumn}
 
 trait JavaTimeDbColumnInterpreter extends ColumnInterpreter[JavaTimeValue] {

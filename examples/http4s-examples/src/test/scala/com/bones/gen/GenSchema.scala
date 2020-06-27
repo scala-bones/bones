@@ -1,7 +1,7 @@
 package com.bones.gen
 
 import com.bones.data.KvpHListValue
-import com.bones.data.custom.AllCustomAlgebras
+import com.bones.data.values.DefaultValues
 import org.scalacheck.Gen
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers

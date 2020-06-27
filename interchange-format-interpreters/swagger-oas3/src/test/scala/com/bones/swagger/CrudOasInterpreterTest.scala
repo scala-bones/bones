@@ -25,7 +25,7 @@ class CrudOasInterpreterTest extends AnyFunSuite {
       Schemas.allSupportCaseClass,
       allSupportedWithId,
       error,
-      com.bones.swagger.custom.allInterpreters,
+      com.bones.swagger.values.defaultInterpreters,
       true, true, true, true, true
     )(new OpenAPI())
 

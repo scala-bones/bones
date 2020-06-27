@@ -14,9 +14,9 @@ import org.scalatest.matchers.must.Matchers
 class AllSupportedOuterClassTest extends AnyFunSuite with Matchers {
 
   val encode = ProtobufUtcSequentialEncoderAndValidator
-    .encodeToBytesCustomAlgebra(Schemas.allSupportCaseClass, com.bones.protobuf.custom.allEncoders)
+    .generateProtobufEncoder(Schemas.allSupportCaseClass, com.bones.protobuf.values.defaultEncoders)
   val decode = ProtobufUtcSequentialEncoderAndValidator
-    .fromCustomBytes(Schemas.allSupportCaseClass, com.bones.protobuf.custom.allValidators)
+    .fromCustomBytes(Schemas.allSupportCaseClass, com.bones.protobuf.values.defaultValidators)
 
 
   test("integration test") {

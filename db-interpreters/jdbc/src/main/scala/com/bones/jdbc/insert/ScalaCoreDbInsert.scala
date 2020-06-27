@@ -1,6 +1,6 @@
 package com.bones.jdbc.insert
 
-import com.bones.data.custom._
+import com.bones.data.values._
 import com.bones.jdbc.insert.DbInsertValues.{InsertPair, psF}
 
 trait ScalaCoreDbInsert extends CustomInterpreter[ScalaCoreValue] {

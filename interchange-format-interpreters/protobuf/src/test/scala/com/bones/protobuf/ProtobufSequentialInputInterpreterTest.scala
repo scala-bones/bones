@@ -35,12 +35,12 @@ class ProtobufSequentialInputInterpreterTest extends AnyFunSuite with Checkers w
   ignore("single items") {
 
     val denver = Loc("Denver", "CO")
-    val bytes = ProtobufUtcSequentialEncoderAndValidator.encodeToBytesCustomAlgebra(loc, com.bones.protobuf.custom.allEncoders)(denver)
+    val bytes = ProtobufUtcSequentialEncoderAndValidator.generateProtobufEncoder(loc, com.bones.protobuf.values.defaultEncoders)(denver)
 
     val is = new ByteArrayInputStream(bytes)
     val cin: CodedInputStream = CodedInputStream.newInstance(is)
 
-    val isItDenver = ProtobufUtcSequentialEncoderAndValidator.fromCustomBytes(loc, com.bones.protobuf.custom.allValidators)(bytes)
+    val isItDenver = ProtobufUtcSequentialEncoderAndValidator.fromCustomBytes(loc, com.bones.protobuf.values.defaultValidators)(bytes)
 
     isItDenver match {
       case Right(l) => l mustBe denver
@@ -56,13 +56,13 @@ class ProtobufSequentialInputInterpreterTest extends AnyFunSuite with Checkers w
     val os = new ByteArrayOutputStream()
     val cos: CodedOutputStream = CodedOutputStream.newInstance(os)
 
-    val result = ProtoFileGeneratorInterpreter.fromSchemaCustomAlgebra(person, com.bones.protobuf.custom.allProtoFiles)
+    val result = ProtoFileGeneratorInterpreter.fromSchemaCustomAlgebra(person, com.bones.protobuf.values.defaultProtoFileGenerators)
 
     val str = ProtoFileGeneratorInterpreter.messageToProtoFile(result)
 
-    val bytes = ProtobufUtcSequentialEncoderAndValidator.encodeToBytesCustomAlgebra(person, com.bones.protobuf.custom.allEncoders)(monica)
+    val bytes = ProtobufUtcSequentialEncoderAndValidator.generateProtobufEncoder(person, com.bones.protobuf.values.defaultEncoders)(monica)
 
-    val isItMonica = ProtobufUtcSequentialEncoderAndValidator.fromCustomBytes(person, com.bones.protobuf.custom.allValidators)(bytes)
+    val isItMonica = ProtobufUtcSequentialEncoderAndValidator.fromCustomBytes(person, com.bones.protobuf.values.defaultValidators)(bytes)
 
     isItMonica match {
       case Right(person) => person mustBe monica

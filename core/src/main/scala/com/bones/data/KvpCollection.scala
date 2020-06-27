@@ -1,16 +1,11 @@
 package com.bones.data
 
+import com.bones.KvpValue
 import com.bones.validation.ValidationDefinition.ValidationOp
 import shapeless.ops.hlist.Tupler
 import shapeless.{Coproduct, Generic, HList, Nat}
 
-/** KvpValue is meant to be the 'value' of a key value pair.  These are types
-  * at the end of the tree -- the leaf values per-say.  They should not recursive.
-  * @tparam A The type of the Wrapped Value
-  */
-trait KvpValue[A] {
-  val manifestOfA: Manifest[A]
-}
+
 
 object KvpCollection {
   implicit class ToCollection[ALG[_] <: KvpCollection[ALG, A], A: Manifest](hm: ALG[A]) { self =>
@@ -31,17 +26,6 @@ case class OptionalKvpValueDefinition[ALG[_], B: Manifest](
   valueDefinitionOp: Either[KvpCollection[ALG, B], ALG[B]])
     extends KvpCollection[ALG, Option[B]] {}
 
-
-///** Wraps a KvpValue in to KvpCollection types.
-//  * @tparam ALG This is the base GADT Trait for the Custom Algebra
-//  * @tparam B This is the type being wrapped by SELF
-//  * @tparam SELF The is the concrete data class which extends ALG
-//  */
-//trait AlgToCollectionData[ALG[_], B, SELF <: ALG[B] with KvpValue[B]] { self: SELF =>
-//  private implicit val optManifestOfB: Manifest[B] = self.manifestOfA
-//  def optional[ALG[_]]: OptionalKvpValueDefinition[ALG, B] = OptionalKvpValueDefinition[ALG, B](Right(self))
-//  def list[ALG[_]]: ListData[ALG, B] = ListData[ALG, B](Right(self), List.empty)
-//}
 
 final case class EitherData[ALG[_], A: Manifest, B: Manifest](
   definitionA: Either[KvpCollection[ALG, A], ALG[A]],

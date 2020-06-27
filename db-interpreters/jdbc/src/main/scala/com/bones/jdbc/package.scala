@@ -9,10 +9,10 @@ import shapeless.{HNil, Succ, ::}
 package object jdbc {
 
   case class JdbcColumnInterpreter[ALG[_]](
-    resultSet: rs.ResultSetValueInterpreter[ALG],
-    dbColumn: DbColumnInterpreter.ColumnInterpreter[ALG],
-    insert: com.bones.jdbc.insert.CustomInterpreter[ALG],
-    dbUpdate: CustomDbUpdateInterpreter[ALG])
+                                            resultSet: rs.ResultSetValue[ALG],
+                                            dbColumn: DbColumnInterpreter.ColumnInterpreter[ALG],
+                                            insert: com.bones.jdbc.insert.CustomInterpreter[ALG],
+                                            dbUpdate: CustomDbUpdateInterpreter[ALG])
 
   val defaultJdbcColumnInterpreter =
     JdbcColumnInterpreter(

@@ -3,7 +3,7 @@ package com.bones.jdbc
 import java.util.{Calendar, TimeZone}
 
 import com.bones.data._
-import com.bones.data.custom.AnyAlg
+import com.bones.data.values.AnyAlg
 import com.bones.jdbc.DbUtil.camelToSnake
 import shapeless.{HList, Nat}
 
@@ -47,7 +47,7 @@ object FieldNames {
           op.tail,
           customFieldNamesInterpreter)
       case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked => {
-        val headList = op.bonesSchema match {
+        val headList = op.collection match {
           case hList: HListConvert[ALG, h, n, a] =>
             kvpHList(hList.from, customFieldNamesInterpreter)
           case co: KvpCoproductConvert[ALG, c, a] => ???

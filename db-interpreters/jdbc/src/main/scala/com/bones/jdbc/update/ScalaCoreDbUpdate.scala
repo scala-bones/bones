@@ -2,7 +2,7 @@ package com.bones.jdbc.update
 
 import java.sql.Types
 
-import com.bones.data.custom.{BigDecimalData, BooleanData, ByteArrayData, DoubleData, EnumerationData, FloatData, IntData, LongData, ScalaCoreValue, ShortData, StringData}
+import com.bones.data.values.{BigDecimalData, BooleanData, ByteArrayData, DoubleData, EnumerationData, FloatData, IntData, LongData, ScalaCoreValue, ShortData, StringData}
 import com.bones.jdbc.update.DbUpdateValues.{CustomDbUpdateInterpreter, Index, Key}
 
 trait ScalaCoreDbUpdate extends CustomDbUpdateInterpreter[ScalaCoreValue] {

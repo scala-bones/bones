@@ -2,7 +2,7 @@ package com.bones.jdbc.insert
 
 import java.time.{LocalDate, LocalDateTime, ZoneOffset}
 
-import com.bones.data.custom.{JavaTimeValue, LocalDateData, LocalDateTimeData}
+import com.bones.data.values.{JavaTimeValue, LocalDateData, LocalDateTimeData}
 import com.bones.jdbc.insert.DbInsertValues.{InsertPair, psF}
 
 trait JavaTimeDbInsert extends CustomInterpreter[JavaTimeValue] {
