@@ -5,13 +5,13 @@ import java.time.{Instant, ZoneId}
 import java.util.Locale
 
 import com.bones.circe.values.BaseScalaCoreEncoder
-import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
+import com.bones.interpreter.InterchangeFormatEncoder
 import com.bones.schemas.CustomCovSchema._
 import io.circe.Json
-import org.scalatestplus.scalacheck.Checkers
-import shapeless.{Inl, Inr}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers
+import org.scalatestplus.scalacheck.Checkers
+import shapeless.{Inl, Inr}
 
 class CovCirceTest extends AnyFunSuite with Checkers with Matchers {
 

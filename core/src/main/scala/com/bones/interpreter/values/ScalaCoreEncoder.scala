@@ -1,8 +1,7 @@
 package com.bones.interpreter.values
 
-import com.bones.data.values.{BigDecimalData, BooleanData, ByteArrayData, DoubleData, EnumerationData, FloatData, IntData, LongData, ScalaCoreValue, ShortData, StringData}
-import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
-import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
+import com.bones.data.values._
+import com.bones.interpreter.{InterchangeFormatEncoder, KvpInterchangeFormatEncoderInterpreter}
 
 trait ScalaCoreEncoder[OUT] extends InterchangeFormatEncoder[ScalaCoreValue, OUT] {
   val defaultEncoder: KvpInterchangeFormatEncoderInterpreter[OUT]

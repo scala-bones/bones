@@ -8,8 +8,7 @@ import com.bones.Util.stringToEnumeration
 import com.bones.data.Error
 import com.bones.data.Error.{CanNotConvert, ExtractionError, RequiredValue}
 import com.bones.data.values._
-import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
-import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
+import com.bones.interpreter.{InterchangeFormatValidator, KvpInterchangeFormatValidatorInterpreter}
 
 import scala.util.Try
 

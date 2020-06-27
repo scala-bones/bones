@@ -7,8 +7,7 @@ import cats.data.NonEmptyList
 import com.bones.data.Error
 import com.bones.data.Error.{CanNotConvert, RequiredValue}
 import com.bones.data.values._
-import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
-import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
+import com.bones.interpreter.{InterchangeFormatValidator, KvpInterchangeFormatValidatorInterpreter}
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.ValidationUtil
 
