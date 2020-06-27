@@ -1,6 +1,6 @@
 package com.bones.jdbc.column
 
-import com.bones.data.custom._
+import com.bones.data.values._
 import com.bones.jdbc.column.DbColumnInterpreter.{ColumnInterpreter, ToColumns, nameToColumn}
 
 trait ScalaCoreDbColumnInterpreter extends ColumnInterpreter[ScalaCoreValue] {

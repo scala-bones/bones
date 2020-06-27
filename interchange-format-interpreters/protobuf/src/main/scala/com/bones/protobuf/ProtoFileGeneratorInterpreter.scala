@@ -1,6 +1,6 @@
 package com.bones.protobuf
 
-import com.bones.data.custom.CNilF
+import com.bones.data.values.CNilF
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft, _}
 import shapeless.{:+:, Coproduct, HList, Inl, Inr, Nat}
 
@@ -212,7 +212,7 @@ object ProtoFileGeneratorInterpreter {
         (messageFields :+ r._1, r._2 ++ nestedTypes, lastUsedIndex)
       }
       case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked =>
-        val head = fromBonesSchema(op.bonesSchema, customerInterpreter)(lastIndex)
+        val head = fromBonesSchema(op.collection, customerInterpreter)(lastIndex)
         val tail = kvpHList(op.tail, customerInterpreter)(head._3)
         (head._1 ++ tail._1, head._2 ++ tail._2, tail._3)
       case op: KvpHListHead[ALG, a, al, h, hl, t, tl] @unchecked =>

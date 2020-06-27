@@ -1,18 +1,15 @@
 package com.bones.jdbc.rs
 
 import java.sql.{ResultSet, SQLException}
-import java.time.{LocalDateTime, ZoneId}
-import java.util.Date
 
 import cats.data.NonEmptyList
+import com.bones.KvpValue
 import com.bones.Util
-import com.bones.Util.{stringToEnumeration, stringToUuid}
 import com.bones.data.Error.{ExtractionError, RequiredValue, SystemError}
 import com.bones.data.KeyValueDefinition.CoproductDataDefinition
 import com.bones.data._
 import com.bones.jdbc.DbUtil.camelToSnake
-import com.bones.jdbc.FindInterpreter.{FieldName, Path, utcCalendar}
-import com.bones.jdbc.column.ColumnNameInterpreter.{ColumnName, kvpHList, valueDefinition}
+import com.bones.jdbc.FindInterpreter.{FieldName, Path}
 import shapeless.{HList, HNil, Nat}
 
 /** Responsible for converting a result set into the result type */
@@ -20,7 +17,7 @@ object ResultSetInterpreter {
 
   protected def kvpHList[ALG[_], H <: HList, N <: Nat](
     group: KvpHList[ALG, H, N],
-    customInterpreter: ResultSetValueInterpreter[ALG])
+    customInterpreter: ResultSetValue[ALG])
     : Path => ResultSet => Either[NonEmptyList[ExtractionError], H] =
     group match {
       case nil: KvpNil[_] =>
@@ -54,7 +51,7 @@ object ResultSetInterpreter {
             case co: KvpCoproductConvert[ALG, c, a] => ???
           }
 
-        val headF = fromSchema(op.bonesSchema)
+        val headF = fromSchema(op.collection)
         val tailF = kvpHList(op.tail, customInterpreter)
         path =>
           {
@@ -85,24 +82,19 @@ object ResultSetInterpreter {
 
   def determineValueDefinition[ALG[_], A](
     coproduct: CoproductDataDefinition[ALG, A],
-    customInterpreter: ResultSetValueInterpreter[ALG])
+    customInterpreter: ResultSetValue[ALG])
     : (Path, FieldName) => ResultSet => Either[NonEmptyList[ExtractionError], A] =
     coproduct match {
       case Left(kvp)  => valueDefinition(kvp, customInterpreter)
       case Right(alg) => customInterpreter.resultSet(alg)
     }
 
-  def fromBonesSchema[ALG[_], A](bonesSchema: KvpCollection[ALG, A], customInterpreter: ResultSetValueInterpreter[ALG]): Path => ResultSet => Either[NonEmptyList[ExtractionError], A] =
-    bonesSchema match {
-      case hList: HListConvert[ALG, h, n, a] @unchecked =>
-        { path => valueDefinition(hList, customInterpreter).apply(path, "") }.asInstanceOf[Path => ResultSet => Either[NonEmptyList[ExtractionError], A]]
-      case co: KvpCoproductConvert[ALG, c, a] @unchecked => ???
-//        valueDefinition(co, customInterpreter)("")
-    }
+  def generateResultSet[ALG[_], A](collection: KvpCollection[ALG, A], values: ResultSetValue[ALG]): Path => ResultSet => Either[NonEmptyList[ExtractionError], A] =
+    path => valueDefinition(collection, values)(path, "")
 
   def valueDefinition[ALG[_], A](
     fgo: KvpCollection[ALG,A],
-    customInterpreter: ResultSetValueInterpreter[ALG])
+    customInterpreter: ResultSetValue[ALG])
     : (Path, FieldName) => ResultSet => Either[NonEmptyList[ExtractionError], A] =
     fgo match {
       case op: OptionalKvpValueDefinition[ALG, a] @unchecked =>

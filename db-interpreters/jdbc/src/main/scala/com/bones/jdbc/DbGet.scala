@@ -7,7 +7,7 @@ import com.bones.data.Error.{ExtractionError, NotFound, SystemError}
 import com.bones.data.{KvpCollection, HListConvert, KvpNil}
 import com.bones.jdbc.DbUtil.{camelToSnake, withStatement}
 import com.bones.jdbc.column.ColumnNameInterpreter
-import com.bones.jdbc.rs.{ResultSetInterpreter, ResultSetValueInterpreter => ResultSetCustomInterpreter}
+import com.bones.jdbc.rs.{ResultSetInterpreter, ResultSetValue => ResultSetCustomInterpreter}
 import com.bones.jdbc.update.DbUpdateValues
 import com.bones.jdbc.update.DbUpdateValues.CustomDbUpdateInterpreter
 import javax.sql.DataSource
@@ -40,10 +40,10 @@ object DbGet {
           {
             val tableName = camelToSnake(xMap.manifestOfA.runtimeClass.getSimpleName)
             val resultSetF =
-              ResultSetInterpreter.fromBonesSchema(schema, resultSetCustomInterpreter)
+              ResultSetInterpreter.generateResultSet(schema, resultSetCustomInterpreter)
               .apply(List.empty)
 
-            val fields = ColumnNameInterpreter.fromBonesSchema(schema)
+            val fields = ColumnNameInterpreter.generateColumnNames(schema)
             val idMeta =
               DbUpdateValues.determineValueDefinition(Right(idDefinition.value), customDbUpdateInterpreter)(1,"id")
 

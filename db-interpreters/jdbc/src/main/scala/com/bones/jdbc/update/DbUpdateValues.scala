@@ -5,7 +5,7 @@ import java.sql.{Connection, PreparedStatement, SQLException}
 import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionError, SystemError}
 import com.bones.data._
-import com.bones.data.custom.CNilF
+import com.bones.data.values.CNilF
 import com.bones.jdbc.DbUtil._
 import com.bones.jdbc.IdDefinition
 import com.bones.jdbc.column.DbColumnInterpreter
@@ -166,7 +166,7 @@ object DbUpdateValues {
           }
         }
 
-        val headF = fromBones(op.bonesSchema)
+        val headF = fromBones(op.collection)
         val tailF = kvpHList(op.tail, customDbUpdateInterpreter)
         (i: Index) =>
           {

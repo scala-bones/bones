@@ -31,14 +31,10 @@ sealed abstract class KvpHList[ALG[_], H <: HList, N <: Nat] {
     implicit tupler: Tupler.Aux[H, Tup],
     gen: Generic[Tup]
   ): HListConvert[ALG, H, N, Tup] =
-    HListConvert[ALG, H, N, Tup](
-      this,
-      (h: H) => tupler.apply(h),
-      (t: Tup) => {
-        val out = gen.to(t).asInstanceOf[H]
-        out
-      },
-      tupledValidations.toList)
+    HListConvert[ALG, H, N, Tup](this, (h: H) => tupler.apply(h), (t: Tup) => {
+      val out = gen.to(t).asInstanceOf[H]
+      out
+    }, tupledValidations.toList)
 
   def xmap[A: Manifest](
     f: H => A,
@@ -72,7 +68,7 @@ sealed abstract class KvpHList[ALG[_], H <: HList, N <: Nat] {
     prependSingleValue(v)
 
   /**
-    * Use this operator when you want to prefix a custom algebra.
+    * Use this operator when you want to prefix a Data Type.
     * @param input The Key, Value Pair to Add to the front of the KvpHList
     * @param isHCons The implied ability to cons (and unapply) A to and from H
     * @tparam A The wrapped type
@@ -83,7 +79,7 @@ sealed abstract class KvpHList[ALG[_], H <: HList, N <: Nat] {
     prependSingleValue(KeyValueDefinition(input._1, Right(input._2), None, None))(isHCons)
 
   /**
-    * Use this operator when you want to prefix a custom algebra with a description
+    * Use this operator when you want to prefix a data type with a description
     * @param input The Key, Value Pair and Description, Example to Add to the front of the KvpHList
     * @param isHCons The implied ability to cons (and unapply) A to and from H
     * @tparam A The wrapped type
@@ -147,10 +143,10 @@ case class KvpNil[ALG[_]]() extends KvpHList[ALG, HNil, Nat._0] {
   * @tparam NT Nat length of tail
   */
 final case class KvpConcreteTypeHead[ALG[_], A: Manifest, HT <: HList, NT <: Nat](
-                                                                                   bonesSchema: KvpCollection[ALG, A],
-                                                                                   validations: List[ValidationOp[A :: HT]],
-                                                                                   tail: KvpHList[ALG, HT, NT],
-                                                                                   isHCons: IsHCons.Aux[A :: HT, A, HT])
+  collection: KvpCollection[ALG, A],
+  validations: List[ValidationOp[A :: HT]],
+  tail: KvpHList[ALG, HT, NT],
+  isHCons: IsHCons.Aux[A :: HT, A, HT])
     extends KvpHList[ALG, A :: HT, Succ[NT]] {
 
   val manifestOfA: Manifest[A] = manifest[A]

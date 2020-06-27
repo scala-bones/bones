@@ -24,7 +24,7 @@ object Http4sClient {
   ): Client[IO] => ID => IO[Either[Error[E], O]] = {
 
     val f = IsoCirceEncoderAndValidatorInterpreter
-      .byteArrayFuncFromSchema(outputSchema, Charset.forName("utf-8"), validatorInterpreter)
+      .generateByteArrayValidator(outputSchema, Charset.forName("utf-8"), validatorInterpreter)
 
     httpClient => id =>
       {

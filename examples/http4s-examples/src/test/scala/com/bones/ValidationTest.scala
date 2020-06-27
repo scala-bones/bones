@@ -127,7 +127,7 @@ class ValidationTest extends AnyFunSuite {
 
     //createOperation the program that is responsible for converting JSON into a CC.
     //    val jsonToCCProgram = creditCardSchema.lift.foldMap[ValidatedFromJObjectOpt](ValidatedFromJObjectInterpreter())
-    val jsonToCCProgram = IsoCirceEncoderAndValidatorInterpreter.validatorFromCustomSchema(creditCardSchema, com.bones.circe.custom.allValidators)
+    val jsonToCCProgram = IsoCirceEncoderAndValidatorInterpreter.generateValidator(creditCardSchema, com.bones.circe.values.defaultValidators)
 
     //here, we will test that just the validations step is working
     val btCc = jsonToCCProgram.apply(parsed)

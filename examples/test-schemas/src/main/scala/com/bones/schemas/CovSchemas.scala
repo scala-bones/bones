@@ -3,7 +3,7 @@ package com.bones.schemas
 import java.time.{Instant, LocalDate, LocalDateTime, Month}
 import java.util.UUID
 
-import com.bones.data.custom.{AllCustomAlgebras, ScalaCoreValue}
+import com.bones.data.values.{DefaultValues, ScalaCoreValue}
 import com.bones.schemas.CovSumTypeExample.{Digital, MusicMedium}
 import com.bones.syntax._
 import com.bones.schemas.Schemas.AllSupported

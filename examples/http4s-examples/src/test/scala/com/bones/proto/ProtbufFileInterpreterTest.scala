@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class ProtbufFileInterpreterTest extends AnyFunSuite {
 
-  val result = ProtoFileGeneratorInterpreter.fromSchemaCustomAlgebra(Schemas.creditCardSchema, com.bones.protobuf.custom.allProtoFiles)
+  val result = ProtoFileGeneratorInterpreter.fromSchemaCustomAlgebra(Schemas.creditCardSchema, com.bones.protobuf.values.defaultProtoFileGenerators)
 
   val str = ProtoFileGeneratorInterpreter.messageToProtoFile(result)
 

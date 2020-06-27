@@ -1,6 +1,6 @@
 package com.bones.jdbc.column
 
-import com.bones.data.custom.{JavaUtilValue, UuidData}
+import com.bones.data.values.{JavaUtilValue, UuidData}
 import com.bones.jdbc.column.DbColumnInterpreter.{ColumnInterpreter, ToColumns, nameToColumn}
 
 trait JavaUtilDbColumnInterpreter extends ColumnInterpreter[JavaUtilValue] {

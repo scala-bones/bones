@@ -22,16 +22,12 @@ object ColumnNameInterpreter {
       case op: KvpHListHead[ALG, a, al, h, hl, t, tl] @unchecked =>
         kvpHList(op.head) ::: kvpHList(op.tail)
       case op: KvpConcreteTypeHead[ALG, a, ht, nt] =>
-        fromBonesSchema(op.bonesSchema)
+        generateColumnNames(op.collection)
     }
   }
 
-  def fromBonesSchema[ALG[_], A](bonesSchema: KvpCollection[ALG, A]): List[ColumnName] =
-    bonesSchema match {
-      case hList: HListConvert[ALG, h, n, a] @unchecked => kvpHList(hList.from)
-      case co: KvpCoproductConvert[ALG, c, a] @unchecked =>
-        valueDefinition(co)("")
-    }
+  def generateColumnNames[ALG[_], A](collection: KvpCollection[ALG, A]): List[ColumnName] =
+    valueDefinition(collection)("")
 
   type CoproductName = String
 

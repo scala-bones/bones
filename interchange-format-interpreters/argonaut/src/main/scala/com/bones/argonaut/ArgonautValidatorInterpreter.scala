@@ -22,20 +22,20 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
   override def isEmpty(json: Json): JsonBoolean = json.isNull
 
   /**
-  Creates a function which validates a byte array, convertible to a String with the specified Charset and converts it
-    * the type A as defined by the BonesSchema.  Only data from the core algebra can be used.
-    * To use custom algebra, use [[byteArrayFuncFromCustomSchema()]]
+    *Creates a function which validates a byte array, convertible to a String with the specified Charset and converts it
+    * the type A as defined by the BonesSchema.
+    *
     * @param schema The schema, use to create the validation function.
     * @param charset The charset used to convert the Byte Array to a String
     * @tparam A The resulting type -- the type wrapped by the Bones Schema.
     * @return a function validating a Json Byte Array with the specified data.
     */
-  def byteArrayFuncFromCustomSchema[ALG[_], A](
-                                                schema: KvpCollection[ALG, A],
-                                                customValidator: InterchangeFormatValidator[ALG, Json],
-                                                charset: Charset
+  def generateByteArrayValidator[ALG[_], A](
+    schema: KvpCollection[ALG, A],
+    customValidator: InterchangeFormatValidator[ALG, Json],
+    charset: Charset
   ): Array[Byte] => Either[NonEmptyList[ExtractionError], A] = {
-    val fromSchemaFunction = validatorFromCustomSchema(schema, customValidator)
+    val fromSchemaFunction = generateValidator(schema, customValidator)
     bytes =>
       {
         try {

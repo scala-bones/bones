@@ -1,8 +1,8 @@
 package com.bones.scalacheck
 
-import com.bones.data.custom.{DoubleData, ScalaCoreValue, StringData}
+import com.bones.data.values.{DoubleData, ScalaCoreValue, StringData}
 import com.bones.data.{KeyValueDefinition, _}
-import com.bones.scalacheck.custom.ScalacheckScalaCoreInterpreter
+import com.bones.scalacheck.values.ScalacheckScalaCoreInterpreter
 import com.bones.validation.ValidationDefinition.StringValidation.{MaxLength, Trimmed}
 import com.bones.validation.ValidationDefinition.ValidationOp
 import org.scalacheck.Gen

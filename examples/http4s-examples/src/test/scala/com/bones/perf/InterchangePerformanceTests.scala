@@ -14,23 +14,23 @@ object InterchangePerformanceTests extends App {
 
   val schema = allSupportCaseClass
 
-  val scalaCheckInterpreter = Scalacheck.valueDefinition(schema, com.bones.scalacheck.custom.allInterpreters)
+  val scalaCheckInterpreter = Scalacheck.valueDefinition(schema, com.bones.scalacheck.values.allInterpreters)
 
   val directInterpreter =
-    JsonStringEncoderInterpreter.isoEncoder.fAtoString(schema, com.bones.sjson.algebra.allEncoders)
+    JsonStringEncoderInterpreter.isoEncoder.fAtoString(schema, com.bones.sjson.values.allEncoders)
 
   val circeValidator =
-    IsoCirceEncoderAndValidatorInterpreter.byteArrayFuncFromSchema(schema, Charset.defaultCharset(), com.bones.circe.custom.allValidators)
-  val circeEncoder = IsoCirceEncoderAndValidatorInterpreter.encoderFromCustomSchema(schema, com.bones.circe.custom.allEncoders)
+    IsoCirceEncoderAndValidatorInterpreter.generateByteArrayValidator(schema, Charset.defaultCharset(), com.bones.circe.values.defaultValidators)
+  val circeEncoder = IsoCirceEncoderAndValidatorInterpreter.generateEncoder(schema, com.bones.circe.values.defaultEncoders)
 
-  val argValidator = IsoCirceEncoderAndValidatorInterpreter.byteArrayFuncFromSchema(schema, Charset.defaultCharset(), com.bones.circe.custom.allValidators)
-  val argEncoder = IsoCirceEncoderAndValidatorInterpreter.encoderFromCustomSchema(schema, com.bones.circe.custom.allEncoders)
+  val argValidator = IsoCirceEncoderAndValidatorInterpreter.generateByteArrayValidator(schema, Charset.defaultCharset(), com.bones.circe.values.defaultValidators)
+  val argEncoder = IsoCirceEncoderAndValidatorInterpreter.generateEncoder(schema, com.bones.circe.values.defaultEncoders)
 
-  val bsonValidator = BsonValidatorInterpreter.validatorFromCustomSchema(schema, com.bones.bson.custom.allValidators)
-  val bsonEncoder = BsonEncoderInterpreter.encoderFromCustomSchema(schema, com.bones.bson.custom.allEncoders)
+  val bsonValidator = BsonValidatorInterpreter.generateValidator(schema, com.bones.bson.values.defaultValidators)
+  val bsonEncoder = BsonEncoderInterpreter.generateEncoder(schema, com.bones.bson.values.defaultEncoders)
 
-  val protoValidator = ProtobufUtcSequentialEncoderAndValidator.fromCustomBytes(schema, com.bones.protobuf.custom.allValidators)
-  val protoEncoder = ProtobufUtcSequentialEncoderAndValidator.encodeToBytesCustomAlgebra(schema, com.bones.protobuf.custom.allEncoders)
+  val protoValidator = ProtobufUtcSequentialEncoderAndValidator.fromCustomBytes(schema, com.bones.protobuf.values.defaultValidators)
+  val protoEncoder = ProtobufUtcSequentialEncoderAndValidator.generateProtobufEncoder(schema, com.bones.protobuf.values.defaultEncoders)
 
 
   val objects = Range(0, 5000).toList

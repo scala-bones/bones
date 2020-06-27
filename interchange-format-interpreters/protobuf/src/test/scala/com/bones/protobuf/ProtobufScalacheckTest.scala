@@ -1,5 +1,7 @@
 package com.bones.protobuf
 
+import java.util.Base64
+
 import com.bones.scalacheck.Scalacheck
 import com.bones.schemas.Schemas
 import com.bones.schemas.Schemas.{AllSupported, allSupportCaseClass}
@@ -11,11 +13,11 @@ import org.scalatestplus.scalacheck.Checkers
 class ProtobufScalacheckTest extends AnyFunSuite with Checkers {
 
   val encode = ProtobufUtcSequentialEncoderAndValidator
-    .encodeToBytesCustomAlgebra(Schemas.allSupportCaseClass, com.bones.protobuf.custom.allEncoders)
+    .generateProtobufEncoder(Schemas.allSupportCaseClass, com.bones.protobuf.values.defaultEncoders)
   val decode = ProtobufUtcSequentialEncoderAndValidator
-    .fromCustomBytes(Schemas.allSupportCaseClass, com.bones.protobuf.custom.allValidators)
+    .fromCustomBytes(Schemas.allSupportCaseClass, com.bones.protobuf.values.defaultValidators)
 
-  implicit val arb = Arbitrary(Scalacheck.fromCustomSchema(allSupportCaseClass, com.bones.scalacheck.custom.allInterpreters))
+  implicit val arb = Arbitrary(Scalacheck.generateGen(allSupportCaseClass, com.bones.scalacheck.values.allInterpreters))
 
   test("scalacheck allSupport types - marshall then marshall") {
     check((cc: AllSupported) => {
@@ -53,7 +55,7 @@ class ProtobufScalacheckTest extends AnyFunSuite with Checkers {
   // Print the file, to be used with the protobufIntegrationTest
   ignore("print protofile") {
     val message = ProtoFileGeneratorInterpreter
-      .fromSchemaCustomAlgebra(allSupportCaseClass, com.bones.protobuf.custom.allProtoFiles)
+      .fromSchemaCustomAlgebra(allSupportCaseClass, com.bones.protobuf.values.defaultProtoFileGenerators)
     print(ProtoFileGeneratorInterpreter.messageToProtoFile(message))
   }
 

@@ -6,7 +6,7 @@ import com.bones.syntax._
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
-import com.bones.scalacheck.custom._
+import com.bones.scalacheck.values._
 
 class ScalacheckTest extends AnyFunSuite with Checkers {
 

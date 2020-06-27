@@ -10,7 +10,7 @@ import com.bones.jdbc.DbUtil.camelToSnake
 import com.bones.jdbc.column.ColumnNameInterpreter
 import com.bones.jdbc.rs.{
   ResultSetInterpreter,
-  ResultSetValueInterpreter => ResultSetCustomInterpreter
+  ResultSetValue => ResultSetCustomInterpreter
 }
 import fs2.Stream
 import fs2.Stream.bracket
