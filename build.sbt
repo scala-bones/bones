@@ -76,7 +76,7 @@ lazy val swaggerOas3 = (project in file("interchange-format-interpreters/swagger
     commonSettings,
     name := "Bones DataDefinition to OAS3 Interpreter",
     libraryDependencies ++= Seq(
-      "io.swagger.core.v3" % "swagger-core" % "2.1.2",
+      "io.swagger.core.v3" % "swagger-core" % "2.1.3",
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
       "org.scalatest" %% "scalatest" % "3.2.0" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
