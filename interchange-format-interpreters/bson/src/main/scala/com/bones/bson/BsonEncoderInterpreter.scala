@@ -1,13 +1,11 @@
 package com.bones.bson
 
-import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneOffset}
 import java.util.Base64
 
 import com.bones.data.KeyValueDefinition
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
-import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
 import reactivemongo.bson.buffer.ArrayBSONBuffer
-import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDecimal, BSONDocument, BSONElement, BSONInteger, BSONLong, BSONNull, BSONString, BSONValue}
+import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDecimal, BSONDocument, BSONElement, BSONInteger, BSONLong, BSONNull, BSONString, BSONValue}
 
 /**
   * Responsible for creating functions to encode values to BSON data.
@@ -17,8 +15,6 @@ import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDateTime, BSONDecimal, BS
 object BsonEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[BSONValue] {
 
   override val coproductTypeKey: String = "type"
-
-  trait BsonEncoder[ALG[_]] extends InterchangeFormatEncoder[ALG, BSONValue]
 
   def bsonResultToBytes(bsonValue: BSONValue): Array[Byte] = {
     val buffer = new ArrayBSONBuffer()

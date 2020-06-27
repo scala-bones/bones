@@ -8,13 +8,16 @@ import cats.effect.Sync
 import cats.implicits._
 import com.bones.Util
 import com.bones.bson.{BsonEncoderInterpreter, BsonValidatorInterpreter}
-import com.bones.circe.{CirceEncoderInterpreter, CirceValidatorInterpreter, IsoCirceEncoderAndValidatorInterpreter}
+import com.bones.circe.{
+  CirceEncoderInterpreter,
+  CirceValidatorInterpreter,
+  IsoCirceEncoderAndValidatorInterpreter
+}
 import com.bones.data.Error.ExtractionError
-import com.bones.data.values.ScalaCoreValue
 import com.bones.data._
+import com.bones.data.values.ScalaCoreValue
 import com.bones.http4s.CrudInterpreterDescription._
-import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
-import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
+import com.bones.interpreter.{InterchangeFormatEncoder, InterchangeFormatValidator}
 import com.bones.interpreter.values.ExtractionErrorEncoder
 import com.bones.protobuf._
 import com.bones.syntax._
@@ -243,22 +246,22 @@ object BaseCrudInterpreter {
   }
 
   def httpPostRoutes[F[_], ALG[_], A, E, B, ID](
-                                                 path: String,
-                                                 create: A => F[Either[E, B]],
-                                                 inputSchema: KvpCollection[ALG, A],
-                                                 errorSchema: KvpCollection[ALG, E],
-                                                 outputSchema: KvpCollection[ALG, B],
-                                                 validatedFromCirceInterpreter: CirceValidatorInterpreter,
-                                                 encodeToCirceInterpreter: CirceEncoderInterpreter,
-                                                 protobufSequentialInputInterpreter: ProtobufSequentialValidatorInterpreter,
-                                                 protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter,
-                                                 jsonValidator: InterchangeFormatValidator[ALG, Json],
-                                                 jsonEncoder: InterchangeFormatEncoder[ALG, Json],
-                                                 bsonValidator: InterchangeFormatValidator[ALG, BSONValue],
-                                                 bsonEncoder: InterchangeFormatEncoder[ALG, BSONValue],
-                                                 protobufValidator: ProtobufValueValidator[ALG],
-                                                 protobufEncoder: ProtobufValueEncoder[ALG],
-                                                 charset: Charset
+    path: String,
+    create: A => F[Either[E, B]],
+    inputSchema: KvpCollection[ALG, A],
+    errorSchema: KvpCollection[ALG, E],
+    outputSchema: KvpCollection[ALG, B],
+    validatedFromCirceInterpreter: CirceValidatorInterpreter,
+    encodeToCirceInterpreter: CirceEncoderInterpreter,
+    protobufSequentialInputInterpreter: ProtobufSequentialValidatorInterpreter,
+    protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter,
+    jsonValidator: InterchangeFormatValidator[ALG, Json],
+    jsonEncoder: InterchangeFormatEncoder[ALG, Json],
+    bsonValidator: InterchangeFormatValidator[ALG, BSONValue],
+    bsonEncoder: InterchangeFormatEncoder[ALG, BSONValue],
+    protobufValidator: ProtobufValueValidator[ALG],
+    protobufEncoder: ProtobufValueEncoder[ALG],
+    charset: Charset
   )(implicit F: Sync[F], H: Http4sDsl[F]) = {
     val inputF =
       validatedFromCirceInterpreter
@@ -439,23 +442,23 @@ object BaseCrudInterpreter {
     * Create a PUT endpoint given serialization functors and business logic.
     */
   def updateRoute[F[_], ALG[_], A, E, B, ID](
-                                              path: String,
-                                              pathStringToId: String => Either[StringToIdError, ID],
-                                              updateF: (ID, A) => F[Either[E, B]],
-                                              inputSchema: KvpCollection[ALG, A],
-                                              errorSchema: KvpCollection[ALG, E],
-                                              outputSchema: KvpCollection[ALG, B],
-                                              validatedFromCirceInterpreter: CirceValidatorInterpreter,
-                                              encodeToCirceInterpreter: CirceEncoderInterpreter,
-                                              protobufSequentialInputInterpreter: ProtobufSequentialValidatorInterpreter,
-                                              protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter,
-                                              jsonValidator: InterchangeFormatValidator[ALG, Json],
-                                              jsonEncoder: InterchangeFormatEncoder[ALG, Json],
-                                              bsonValidator: InterchangeFormatValidator[ALG, BSONValue],
-                                              bsonEncoder: InterchangeFormatEncoder[ALG, BSONValue],
-                                              protobufValidator: ProtobufValueValidator[ALG],
-                                              protobufEncoder: ProtobufValueEncoder[ALG],
-                                              charset: Charset
+    path: String,
+    pathStringToId: String => Either[StringToIdError, ID],
+    updateF: (ID, A) => F[Either[E, B]],
+    inputSchema: KvpCollection[ALG, A],
+    errorSchema: KvpCollection[ALG, E],
+    outputSchema: KvpCollection[ALG, B],
+    validatedFromCirceInterpreter: CirceValidatorInterpreter,
+    encodeToCirceInterpreter: CirceEncoderInterpreter,
+    protobufSequentialInputInterpreter: ProtobufSequentialValidatorInterpreter,
+    protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter,
+    jsonValidator: InterchangeFormatValidator[ALG, Json],
+    jsonEncoder: InterchangeFormatEncoder[ALG, Json],
+    bsonValidator: InterchangeFormatValidator[ALG, BSONValue],
+    bsonEncoder: InterchangeFormatEncoder[ALG, BSONValue],
+    protobufValidator: ProtobufValueValidator[ALG],
+    protobufEncoder: ProtobufValueEncoder[ALG],
+    charset: Charset
   )(implicit F: Sync[F], H: Http4sDsl[F]): List[HttpRoutes[F]] = {
     val inputValidation =
       validatedFromCirceInterpreter
@@ -558,19 +561,19 @@ object BaseCrudInterpreter {
   }
 
   def httpSearch[F[_], ALG[_], E, B](
-                                      path: String,
-                                      searchF: () => Stream[F, B],
-                                      encodeToCirceInterpreter: CirceEncoderInterpreter,
-                                      errorSchema: KvpCollection[ALG, E],
-                                      outputSchema: KvpCollection[ALG, B],
-                                      jsonValidator: InterchangeFormatValidator[ALG, Json],
-                                      jsonEncoder: InterchangeFormatEncoder[ALG, Json],
-                                      bsonValidator: InterchangeFormatValidator[ALG, BSONValue],
-                                      bsonEncoder: InterchangeFormatEncoder[ALG, BSONValue],
-                                      protobufValidator: ProtobufValueValidator[ALG],
-                                      protobufEncoder: ProtobufValueEncoder[ALG],
-                                      protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter,
-                                      charset: Charset
+    path: String,
+    searchF: () => Stream[F, B],
+    encodeToCirceInterpreter: CirceEncoderInterpreter,
+    errorSchema: KvpCollection[ALG, E],
+    outputSchema: KvpCollection[ALG, B],
+    jsonValidator: InterchangeFormatValidator[ALG, Json],
+    jsonEncoder: InterchangeFormatEncoder[ALG, Json],
+    bsonValidator: InterchangeFormatValidator[ALG, BSONValue],
+    bsonEncoder: InterchangeFormatEncoder[ALG, BSONValue],
+    protobufValidator: ProtobufValueValidator[ALG],
+    protobufEncoder: ProtobufValueEncoder[ALG],
+    protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter,
+    charset: Charset
   )(implicit F: Sync[F], H: Http4sDsl[F]) = {
     val outputF =
       encodeToCirceInterpreter.generateEncoder(outputSchema, jsonEncoder)

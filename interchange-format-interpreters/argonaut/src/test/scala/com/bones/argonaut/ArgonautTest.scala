@@ -14,8 +14,8 @@ import scala.util.control.NonFatal
 
 class ArgonautTest extends AnyFunSuite with Checkers with Matchers {
 
-  implicit override val generatorDrivenConfig =
-    PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)
+//  implicit override val generatorDrivenConfig =
+//    PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)
 
   val jsonToCc = IsoArgonautEncoderAndValidatorInterpreter.generateByteArrayValidator(
     allSupportCaseClass,

@@ -1,8 +1,7 @@
 package com.bones.interpreter.values
 
 import com.bones.data.values.CustomStringValue
-import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
-import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
+import com.bones.interpreter.{InterchangeFormatEncoder, KvpInterchangeFormatEncoderInterpreter}
 
 trait CustomStringEncoder[OUT] extends InterchangeFormatEncoder[CustomStringValue, OUT] {
 

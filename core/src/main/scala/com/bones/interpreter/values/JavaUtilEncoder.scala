@@ -3,8 +3,7 @@ package com.bones.interpreter.values
 import java.util.UUID
 
 import com.bones.data.values.{JavaUtilValue, UuidData}
-import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
-import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
+import com.bones.interpreter.{InterchangeFormatEncoder, KvpInterchangeFormatEncoderInterpreter}
 
 trait JavaUtilEncoder[OUT] extends InterchangeFormatEncoder[JavaUtilValue, OUT] {
 
