@@ -3,8 +3,7 @@ package com.bones.interpreter.values
 import com.bones.data.Error._
 import com.bones.data.Sugar
 import com.bones.data.values._
-import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
-import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
+import com.bones.interpreter.{InterchangeFormatEncoder, KvpInterchangeFormatEncoderInterpreter}
 import shapeless.syntax.std.tuple._
 import shapeless.{:+:, ::, CNil, Generic, HNil, Inl, Inr}
 

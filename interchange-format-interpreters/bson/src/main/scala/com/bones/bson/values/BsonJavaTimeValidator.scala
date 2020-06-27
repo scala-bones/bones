@@ -7,7 +7,7 @@ import cats.data.NonEmptyList
 import com.bones.bson.BsonValidatorInterpreter
 import com.bones.data.Error
 import com.bones.data.values._
-import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
+import com.bones.interpreter.InterchangeFormatValidator
 import com.bones.interpreter.values.JavaTimeValidator.{parseTime, parseYear}
 import reactivemongo.bson.{BSONDateTime, BSONLong, BSONValue}
 

@@ -6,15 +6,8 @@ import cats.effect.Sync
 import com.bones.circe.IsoCirceEncoderAndValidatorInterpreter
 import com.bones.data.KvpCollection
 import com.bones.http4s.BaseCrudInterpreter.StringToIdError
-import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
-import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
-import com.bones.protobuf.{
-  ProtobufSequentialEncoderInterpreter,
-  ProtobufSequentialValidatorInterpreter,
-  ProtobufUtcSequentialEncoderAndValidator,
-  ProtobufValueEncoder,
-  ProtobufValueValidator
-}
+import com.bones.interpreter.{InterchangeFormatEncoder, InterchangeFormatValidator}
+import com.bones.protobuf._
 import io.circe.Json
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl

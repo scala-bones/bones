@@ -7,8 +7,7 @@ import cats.implicits._
 import com.bones.circe.IsoCirceEncoderAndValidatorInterpreter
 import com.bones.data.{HListConvert, KvpCollection, KvpNil}
 import com.bones.http4s.BaseCrudInterpreter.StringToIdError
-import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
-import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
+import com.bones.interpreter.{InterchangeFormatEncoder, InterchangeFormatValidator}
 import com.bones.protobuf.{ProtobufSequentialEncoderInterpreter, ProtobufSequentialValidatorInterpreter, _}
 import com.bones.swagger.CrudOasInterpreter
 import com.bones.swagger.SwaggerCoreInterpreter.CustomSwaggerInterpreter

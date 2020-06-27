@@ -1,11 +1,11 @@
 package com.bones.bson.values
 
 import java.time.format.DateTimeFormatter
-import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, OffsetDateTime, OffsetTime, ZoneOffset}
+import java.time._
 
 import com.bones.bson.BsonEncoderInterpreter
 import com.bones.data.values._
-import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
+import com.bones.interpreter.InterchangeFormatEncoder
 import reactivemongo.bson.{BSONDateTime, BSONLong, BSONValue}
 
 trait BsonJavaTimeEncoder extends InterchangeFormatEncoder[JavaTimeValue, BSONValue] {

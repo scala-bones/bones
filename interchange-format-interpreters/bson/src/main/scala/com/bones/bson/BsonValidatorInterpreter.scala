@@ -3,10 +3,8 @@ package com.bones.bson
 import cats.data.NonEmptyList
 import cats.implicits._
 import com.bones.data.Error._
-import com.bones.data.KeyValueDefinition.CoproductDataDefinition
 import com.bones.data._
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
-import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
 import reactivemongo.bson.buffer.ArrayReadableBuffer
 import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDecimal, BSONDocument, BSONDouble, BSONInteger, BSONLong, BSONNull, BSONString, BSONValue}
 
@@ -21,8 +19,6 @@ object BsonValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
   /** An additional string in the serialized format which states the coproduct type.
     * TODO:  refactor this interpreter so this property can be overwritten. */
   override val coproductTypeKey: String = "type"
-
-  trait BsonValidator[ALG[_]] extends InterchangeFormatValidator[ALG, BSONValue]
 
   def fromByteArray(arr: Array[Byte]): Either[NonEmptyList[ExtractionError], BSONValue] = {
     val buffer = ArrayReadableBuffer(arr)

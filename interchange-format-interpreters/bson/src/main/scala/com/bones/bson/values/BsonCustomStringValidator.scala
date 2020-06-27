@@ -5,7 +5,7 @@ import com.bones.bson.BsonValidatorInterpreter
 import com.bones.data.Error
 import com.bones.data.Error.RequiredValue
 import com.bones.data.values.CustomStringValue
-import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
+import com.bones.interpreter.InterchangeFormatValidator
 import reactivemongo.bson.BSONValue
 
 trait BsonCustomStringValidator extends InterchangeFormatValidator[CustomStringValue, BSONValue]{

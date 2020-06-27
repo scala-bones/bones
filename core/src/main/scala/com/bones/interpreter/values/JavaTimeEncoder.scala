@@ -3,8 +3,7 @@ package com.bones.interpreter.values
 import java.time.format.DateTimeFormatter
 
 import com.bones.data.values._
-import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
-import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter.InterchangeFormatEncoder
+import com.bones.interpreter.{InterchangeFormatEncoder, KvpInterchangeFormatEncoderInterpreter}
 
 trait JavaTimeEncoder[OUT] extends InterchangeFormatEncoder[JavaTimeValue, OUT] {
 
