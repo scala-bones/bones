@@ -12,8 +12,6 @@ package object bones {
   type Path = List[String]
 
   /** So we can just import com.bones.syntax._ */
-  object syntax extends Sugar[AllCustomAlgebras] with AllCustomSyntax {
-
-  }
+  object syntax extends Sugar[AllCustomAlgebras] with AllCustomSyntax
 
 }

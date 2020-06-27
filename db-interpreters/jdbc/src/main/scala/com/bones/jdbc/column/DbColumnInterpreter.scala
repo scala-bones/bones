@@ -51,8 +51,8 @@ object DbColumnInterpreter {
   }
 
   def tableDefinitionCustomAlgebra[ALG[_], A](
-    bonesSchema: BonesSchema[ALG, A],
-    columnInterpreter: ColumnInterpreter[ALG]): String = {
+                                               bonesSchema: KvpCollection[ALG, A],
+                                               columnInterpreter: ColumnInterpreter[ALG]): String = {
     def nullableString(nullable: Boolean) = if (nullable) "" else " not null"
     bonesSchema match {
       case x: HListConvert[ALG, h, n, b] @unchecked =>
@@ -89,8 +89,8 @@ object DbColumnInterpreter {
   }
 
   private def bonesSchema[ALG[_], A](
-    bonesSchema: BonesSchema[ALG, A],
-    customInterpreter: ColumnInterpreter[ALG]): List[Column] =
+                                      bonesSchema: KvpCollection[ALG, A],
+                                      customInterpreter: ColumnInterpreter[ALG]): List[Column] =
     bonesSchema match {
       case co: KvpCoproductConvert[ALG, c, a] @unchecked =>
         valueDefinition(co, customInterpreter)("")

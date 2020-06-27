@@ -6,7 +6,7 @@ import cats.data.{Kleisli, NonEmptyList}
 import cats.effect._
 import cats.implicits._
 import com.bones.Util
-import com.bones.data.{BonesSchema, KvpNil, KvpSingleValueHead}
+import com.bones.data.{KvpCollection, KvpNil, KvpSingleValueHead}
 import com.bones.data.Error.ExtractionError
 import com.bones.data.custom.AllCustomAlgebras
 import com.bones.http4s.BaseCrudInterpreter.StringToIdError
@@ -48,7 +48,7 @@ object LocalhostAllIOApp {
     new HikariDataSource(config)
   }
 
-  def dbSchemaEndpoint[A](path: String, schema: BonesSchema[AllCustomAlgebras, A]): HttpRoutes[IO] = {
+  def dbSchemaEndpoint[A](path: String, schema: KvpCollection[AllCustomAlgebras, A]): HttpRoutes[IO] = {
     val dbSchema = DbColumnInterpreter.tableDefinitionCustomAlgebra(schema, com.bones.jdbc.column.defaultDbColumnInterpreter)
     HttpRoutes.of[IO] {
       case GET -> Root / "dbSchema" / p if p == path => Ok(dbSchema, Header("Content-Type", "text/plain"))
@@ -56,12 +56,12 @@ object LocalhostAllIOApp {
   }
 
   def serviceRoutesWithCrudMiddleware[ALG[_], A, ID:Manifest](
-    path: String,
-    schema: BonesSchema[AllCustomAlgebras, A],
-    idDef: IdDefinition[AllCustomAlgebras, ID],
-    parseIdF: String => Either[StringToIdError,ID],
-    jdbcColumnInterpreter: JdbcColumnInterpreter[AllCustomAlgebras],
-    ds: DataSource): HttpRoutes[IO] = {
+                                                               path: String,
+                                                               schema: KvpCollection[AllCustomAlgebras, A],
+                                                               idDef: IdDefinition[AllCustomAlgebras, ID],
+                                                               parseIdF: String => Either[StringToIdError,ID],
+                                                               jdbcColumnInterpreter: JdbcColumnInterpreter[AllCustomAlgebras],
+                                                               ds: DataSource): HttpRoutes[IO] = {
 
     val middleware = CrudDbDefinitions[AllCustomAlgebras, A, ID](schema, jdbcColumnInterpreter, idDef, ds)
 

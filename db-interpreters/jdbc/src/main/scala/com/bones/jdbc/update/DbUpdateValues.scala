@@ -70,10 +70,10 @@ object DbUpdateValues {
     predicates: A => List[SetValue])
 
   def updateQueryCustomAlgebra[ALG[_], A, ID](
-    bonesSchema: BonesSchema[ALG, A],
-    customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG],
-    columnInterpreter: ColumnInterpreter[ALG],
-    idDef: IdDefinition[ALG, ID])
+                                               bonesSchema: KvpCollection[ALG, A],
+                                               customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG],
+                                               columnInterpreter: ColumnInterpreter[ALG],
+                                               idDef: IdDefinition[ALG, ID])
     : DataSource => (ID, A) => Either[NonEmptyList[ExtractionError], (ID, A)] = {
     val uq = updateQueryWithConnectionCustomAlgebra(bonesSchema, customDbUpdateInterpreter, columnInterpreter, idDef)
     ds => (id, a) =>
@@ -81,10 +81,10 @@ object DbUpdateValues {
   }
 
   def updateQueryWithConnectionCustomAlgebra[ALG[_], A, ID](
-    bonesSchema: BonesSchema[ALG, A],
-    customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG],
-    columnInterpreter: ColumnInterpreter[ALG],
-    idDef: IdDefinition[ALG, ID]): (ID, A) => Connection => Either[NonEmptyList[SystemError], (ID, A)] =
+                                                             bonesSchema: KvpCollection[ALG, A],
+                                                             customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG],
+                                                             columnInterpreter: ColumnInterpreter[ALG],
+                                                             idDef: IdDefinition[ALG, ID]): (ID, A) => Connection => Either[NonEmptyList[SystemError], (ID, A)] =
     bonesSchema match {
       case x: HListConvert[ALG, h, n, b] @unchecked => {
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
@@ -150,7 +150,7 @@ object DbUpdateValues {
       }
       case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked => {
 
-        def fromBones[A](bonesSchema: BonesSchema[ALG, A]): Index => DefinitionResult[A] = {
+        def fromBones[A](bonesSchema: KvpCollection[ALG, A]): Index => DefinitionResult[A] = {
           bonesSchema match {
             case hList: HListConvert[ALG, h, n, a] =>
               index =>

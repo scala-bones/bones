@@ -19,9 +19,9 @@ trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
   override def isEmpty(json: Json): Boolean = json.isNull
 
   def byteArrayFuncFromSchema[ALG[_], A](
-    schema: BonesSchema[ALG, A],
-    charset: Charset,
-    validatorInterpreter: InterchangeFormatValidator[ALG, Json]
+                                          schema: KvpCollection[ALG, A],
+                                          charset: Charset,
+                                          validatorInterpreter: InterchangeFormatValidator[ALG, Json]
   ): Array[Byte] => Either[NonEmptyList[ExtractionError], A] = {
     val f = validatorFromCustomSchema(schema, validatorInterpreter)
     bytes =>

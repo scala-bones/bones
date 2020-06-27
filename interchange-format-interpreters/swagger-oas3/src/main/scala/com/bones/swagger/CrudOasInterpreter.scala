@@ -1,6 +1,6 @@
 package com.bones.swagger
 
-import com.bones.data.BonesSchema
+import com.bones.data.KvpCollection
 import com.bones.swagger.SwaggerCoreInterpreter.CustomSwaggerInterpreter
 import com.bones.swagger._
 import io.swagger.v3.oas.models._
@@ -18,19 +18,19 @@ import scala.collection.JavaConverters._
 object CrudOasInterpreter {
 
   def jsonApiForService[ALG[_], A, E, ID](
-    path: String,
-    title: String,
-    version: String,
-    contentTypes: List[String],
-    schema: BonesSchema[ALG, A],
-    schemaWithId: BonesSchema[ALG, (ID, A)],
-    errorSchema: BonesSchema[ALG, E],
-    customAlgebraInterpreter: CustomSwaggerInterpreter[ALG],
-    withCreate: Boolean,
-    withRead: Boolean,
-    withUpdate: Boolean,
-    withDelete: Boolean,
-    withSearch: Boolean
+                                           path: String,
+                                           title: String,
+                                           version: String,
+                                           contentTypes: List[String],
+                                           schema: KvpCollection[ALG, A],
+                                           schemaWithId: KvpCollection[ALG, (ID, A)],
+                                           errorSchema: KvpCollection[ALG, E],
+                                           customAlgebraInterpreter: CustomSwaggerInterpreter[ALG],
+                                           withCreate: Boolean,
+                                           withRead: Boolean,
+                                           withUpdate: Boolean,
+                                           withDelete: Boolean,
+                                           withSearch: Boolean
   ): OpenAPI => OpenAPI = { openApi =>
     if (withCreate) {
       CrudOasInterpreter
@@ -108,9 +108,9 @@ object CrudOasInterpreter {
   }
 
   def get[ALG[_], A](
-    outputSchema: (BonesSchema[ALG, A], String),
-    urlPath: String,
-    customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]
+                      outputSchema: (KvpCollection[ALG, A], String),
+                      urlPath: String,
+                      customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]
   ): OpenAPI => OpenAPI = { openAPI =>
     val outputEntityName = outputSchema._2
 
@@ -148,10 +148,10 @@ object CrudOasInterpreter {
   }
 
   def delete[ALG[_], O](
-    outputSchemaWithName: (BonesSchema[ALG, O], String),
-    urlPath: String,
-    contentTypes: List[String],
-    customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]
+                         outputSchemaWithName: (KvpCollection[ALG, O], String),
+                         urlPath: String,
+                         contentTypes: List[String],
+                         customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]
   ): OpenAPI => OpenAPI = { openAPI =>
     val outputEntityName = outputSchemaWithName._2
     val outputComponentSchema =
@@ -187,12 +187,12 @@ object CrudOasInterpreter {
   }
 
   def put[ALG[_], I, O, E](
-    inputSchemaAndName: (BonesSchema[ALG, I], String),
-    outputSchemaAndName: (BonesSchema[ALG, O], String),
-    errorSchemaAndName: (BonesSchema[ALG, E], String),
-    urlPath: String,
-    contentTypes: List[String],
-    customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]
+                            inputSchemaAndName: (KvpCollection[ALG, I], String),
+                            outputSchemaAndName: (KvpCollection[ALG, O], String),
+                            errorSchemaAndName: (KvpCollection[ALG, E], String),
+                            urlPath: String,
+                            contentTypes: List[String],
+                            customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]
   ): OpenAPI => OpenAPI = { openAPI =>
     val inputEntityName = inputSchemaAndName._2
     val outputEntityName = outputSchemaAndName._2
@@ -260,12 +260,12 @@ object CrudOasInterpreter {
   }
 
   def post[ALG[_], I, O, E](
-    inputSchemaAndName: (BonesSchema[ALG, I], String),
-    outputSchemaAndName: (BonesSchema[ALG, O], String),
-    errorSchemaAndName: (BonesSchema[ALG, E], String),
-    urlPath: String,
-    contentTypes: List[String],
-    customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]
+                             inputSchemaAndName: (KvpCollection[ALG, I], String),
+                             outputSchemaAndName: (KvpCollection[ALG, O], String),
+                             errorSchemaAndName: (KvpCollection[ALG, E], String),
+                             urlPath: String,
+                             contentTypes: List[String],
+                             customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]
   ): OpenAPI => OpenAPI = { openAPI =>
     val inputEntityName = inputSchemaAndName._2
     val outputEntityName = outputSchemaAndName._2

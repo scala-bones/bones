@@ -17,7 +17,7 @@ object FindInterpreter {
 
 object TableName {
 
-  def getTableName[ALG[_], B](dc: BonesSchema[ALG, B]): String = dc match {
+  def getTableName[ALG[_], B](dc: KvpCollection[ALG, B]): String = dc match {
     case t: HListConvert[_, a, al, b] @unchecked =>
       camelToSnake(t.manifestOfA.runtimeClass.getSimpleName)
   }
@@ -30,8 +30,8 @@ object FieldNames {
   }
 
   def fromCustomSchema[ALG[_], A](
-    dc: BonesSchema[ALG, A],
-    customFieldNamesInterpreter: CustomFieldNamesInterpreter[ALG]): List[String] =
+                                   dc: KvpCollection[ALG, A],
+                                   customFieldNamesInterpreter: CustomFieldNamesInterpreter[ALG]): List[String] =
     dc match {
       case t: HListConvert[ALG, a, al, b] @unchecked =>
         kvpHList(t.from, customFieldNamesInterpreter)
