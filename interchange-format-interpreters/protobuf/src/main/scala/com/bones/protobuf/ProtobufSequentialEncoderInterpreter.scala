@@ -232,8 +232,8 @@ trait ProtobufSequentialEncoderInterpreter {
   import ProtobufSequentialEncoderInterpreter._
 
   def encodeToBytesCustomAlgebra[ALG[_], A](
-    dc: BonesSchema[ALG, A],
-    customInterpreter: CustomEncoderInterpreter[ALG]): A => Array[Byte] = dc match {
+                                             dc: KvpCollection[ALG, A],
+                                             customInterpreter: CustomEncoderInterpreter[ALG]): A => Array[Byte] = dc match {
     case x: HListConvert[ALG, _, _, A] @unchecked => {
       val (_, group) = kvpHList(x.from, customInterpreter).apply(1)
       (a: A) =>

@@ -2,7 +2,7 @@ package com.bones.data.custom
 
 import java.time._
 
-import com.bones.data.{AlgToCollectionData, KvpValue}
+import com.bones.data.{KvpValue}
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.custom.JavaTimeValidation
 import com.bones.validation.custom.JavaTimeValidation._
@@ -18,71 +18,54 @@ sealed abstract class JavaTimeValue[A: Manifest] extends KvpValue[A] {
   * is mainly here for Serialization. */
 final case class DateTimeExceptionData(validations: List[ValidationOp[DateTimeException]])
     extends JavaTimeValue[DateTimeException]
-    with AlgToCollectionData[JavaTimeValue, DateTimeException, DateTimeExceptionData]
 
 final case class DayOfWeekData(validations: List[ValidationOp[DayOfWeek]])
     extends JavaTimeValue[DayOfWeek]
-    with AlgToCollectionData[JavaTimeValue, DayOfWeek, DayOfWeekData]
 
 final case class DurationData(validations: List[ValidationOp[Duration]])
     extends JavaTimeValue[Duration]
-    with AlgToCollectionData[JavaTimeValue, Duration, DurationData]
 
 final case class InstantData(validations: List[ValidationOp[Instant]])
     extends JavaTimeValue[Instant]
-    with AlgToCollectionData[JavaTimeValue, Instant, InstantData]
 
 final case class LocalDateTimeData(validations: List[ValidationOp[LocalDateTime]])
   extends JavaTimeValue[LocalDateTime]
-    with AlgToCollectionData[JavaTimeValue, LocalDateTime, LocalDateTimeData]
 
 final case class LocalDateData(validations: List[ValidationOp[LocalDate]])
   extends JavaTimeValue[LocalDate]
-    with AlgToCollectionData[JavaTimeValue, LocalDate, LocalDateData]
 
 final case class LocalTimeData(validations: List[ValidationOp[LocalTime]])
   extends JavaTimeValue[LocalTime]
-    with AlgToCollectionData[JavaTimeValue, LocalTime, LocalTimeData]
 
 final case class MonthData(validations: List[ValidationOp[Month]])
     extends JavaTimeValue[Month]
-    with AlgToCollectionData[JavaTimeValue, Month, MonthData]
 
 final case class MonthDayData(validations: List[ValidationOp[MonthDay]])
     extends JavaTimeValue[MonthDay]
-    with AlgToCollectionData[JavaTimeValue, MonthDay, MonthDayData]
 
 final case class OffsetDateTimeData(validations: List[ValidationOp[OffsetDateTime]])
     extends JavaTimeValue[OffsetDateTime]
-    with AlgToCollectionData[JavaTimeValue, OffsetDateTime, OffsetDateTimeData]
 
 final case class OffsetTimeData(validations: List[ValidationOp[OffsetTime]])
     extends JavaTimeValue[OffsetTime]
-    with AlgToCollectionData[JavaTimeValue, OffsetTime, OffsetTimeData]
 
 final case class PeriodData(validations: List[ValidationOp[Period]])
     extends JavaTimeValue[Period]
-    with AlgToCollectionData[JavaTimeValue, Period, PeriodData]
 
 final case class YearData(validations: List[ValidationOp[Year]])
     extends JavaTimeValue[Year]
-    with AlgToCollectionData[JavaTimeValue, Year, YearData]
 
 final case class YearMonthData(validations: List[ValidationOp[YearMonth]])
     extends JavaTimeValue[YearMonth]
-    with AlgToCollectionData[JavaTimeValue, YearMonth, YearMonthData]
 
 final case class ZonedDateTimeData(validations: List[ValidationOp[ZonedDateTime]])
     extends JavaTimeValue[ZonedDateTime]
-    with AlgToCollectionData[JavaTimeValue, ZonedDateTime, ZonedDateTimeData]
 
 final case class ZoneIdData(validations: List[ValidationOp[ZoneId]])
     extends JavaTimeValue[ZoneId]
-    with AlgToCollectionData[JavaTimeValue, ZoneId, ZoneIdData]
 
 final case class ZoneOffsetData(validations: List[ValidationOp[ZoneOffset]])
     extends JavaTimeValue[ZoneOffset]
-    with AlgToCollectionData[JavaTimeValue, ZoneOffset, ZoneOffsetData]
 
 trait JavaTimeValidationSugar {
 

@@ -14,10 +14,10 @@ import shapeless.{Coproduct, HList, Nat}
   *             It can be any [[shapeless.Coproduct]] of Algebras.
   */
 case class KeyValueDefinition[ALG[_], A](
-                                          key: String,
-                                          dataDefinition: Either[KvpCollection[ALG, A], ALG[A]],
-                                          description: Option[String],
-                                          example: Option[A]
+  key: String,
+  dataDefinition: Either[KvpCollection[ALG, A], ALG[A]],
+  description: Option[String],
+  example: Option[A]
 )
 
 object KeyValueDefinition {
@@ -27,7 +27,9 @@ object KeyValueDefinition {
 /** Useful DSL builder */
 trait KeyValueDefinitionSugar {
 
-  def kvp[ALG[_], A](key: String, valueDefinitionOp: KvpCollection[ALG,A]): KeyValueDefinition[ALG, A] =
+  def kvp[ALG[_], A](
+    key: String,
+    valueDefinitionOp: KvpCollection[ALG, A]): KeyValueDefinition[ALG, A] =
     KeyValueDefinition[ALG, A](key, Left(valueDefinitionOp), None, None)
 
   def kvpCov[ALG[_], A](key: String, valueDefinitionOp: ALG[A]): KeyValueDefinition[ALG, A] =
@@ -50,12 +52,20 @@ trait KeyValueDefinitionSugar {
 /** Starting point for obtaining a value definition. */
 trait Sugar[ALG[_]] {
 
-  implicit class ToCollection[A: Manifest](hm: ALG[A]) { self =>
-    def list(validationOps: ValidationOp[List[A]]*) =
+  implicit class WrapKvpValueInCollection[A: Manifest](hm: ALG[A]) { self =>
+    def list(validationOps: ValidationOp[List[A]]*): ListData[ALG, A] =
       ListData[ALG, A](Right(hm), validationOps.toList)
 
-    def optional =
-      OptionalKvpValueDefinition[ALG,A](Right(hm))
+    def optional: OptionalKvpValueDefinition[ALG,A] =
+      OptionalKvpValueDefinition[ALG, A](Right(hm))
+  }
+
+  implicit class WrapKvpCollectionInCollection[A: Manifest](hm: KvpCollection[ALG, A]) { self =>
+    def list(validationOps: ValidationOp[List[A]]*): ListData[ALG, A] =
+      ListData[ALG, A](Left(hm), validationOps.toList)
+
+    def optional: OptionalKvpValueDefinition[ALG, A] =
+      OptionalKvpValueDefinition[ALG, A](Left(hm))
   }
 
   /**
@@ -74,8 +84,8 @@ trait Sugar[ALG[_]] {
     ListData[ALG, T](Right(dataDefinitionOp), v.toList)
 
   def list[T: Manifest](
-                         kvpValue: KvpCollection[ALG, T],
-                         v: ValidationOp[List[T]]*
+    kvpValue: KvpCollection[ALG, T],
+    v: ValidationOp[List[T]]*
   ): ListData[ALG, T] =
     ListData[ALG, T](Left(kvpValue), v.toList)
 
@@ -87,14 +97,14 @@ trait Sugar[ALG[_]] {
 
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
   def either[A: Manifest, B: Manifest](
-                                        definitionA: KvpCollection[ALG,A],
-                                        definitionB: KvpCollection[ALG, B]
+    definitionA: KvpCollection[ALG, A],
+    definitionB: KvpCollection[ALG, B]
   ): EitherData[ALG, A, B] =
     EitherData(Left(definitionA), Left(definitionB))
 
   def either[A: Manifest, B: Manifest](
-                                        definitionA: KvpCollection[ALG,A],
-                                        definitionB: ALG[B]
+    definitionA: KvpCollection[ALG, A],
+    definitionB: ALG[B]
   ): EitherData[ALG, A, B] =
     EitherData(Left(definitionA), Right(definitionB))
 

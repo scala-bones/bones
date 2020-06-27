@@ -66,8 +66,8 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
     * @return
     */
   def encoderFromCustomSchema[ALG[_], A](
-    bonesSchema: BonesSchema[ALG, A],
-    covEncoder: InterchangeFormatEncoder[ALG, OUT]
+                                          bonesSchema: KvpCollection[ALG, A],
+                                          covEncoder: InterchangeFormatEncoder[ALG, OUT]
   ): A => OUT = bonesSchema match {
     case x: HListConvert[ALG, _, _, A] => valueDefinition(x, covEncoder)
   }

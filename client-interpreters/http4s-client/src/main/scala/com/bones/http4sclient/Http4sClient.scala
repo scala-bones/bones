@@ -5,7 +5,7 @@ import java.nio.charset.Charset
 import cats.data.NonEmptyList
 import cats.effect.IO
 import com.bones.circe.IsoCirceEncoderAndValidatorInterpreter
-import com.bones.data.BonesSchema
+import com.bones.data.KvpCollection
 import com.bones.data.Error.ExtractionError
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter.InterchangeFormatValidator
 import io.circe.Json
@@ -18,9 +18,9 @@ object Http4sClient {
   type Error[E] = NonEmptyList[Either[ExtractionError, E]]
 
   def getF[ALG[_], O, E](
-    path: String,
-    outputSchema: BonesSchema[ALG, O],
-    validatorInterpreter: InterchangeFormatValidator[ALG, Json]
+                          path: String,
+                          outputSchema: KvpCollection[ALG, O],
+                          validatorInterpreter: InterchangeFormatValidator[ALG, Json]
   ): Client[IO] => ID => IO[Either[Error[E], O]] = {
 
     val f = IsoCirceEncoderAndValidatorInterpreter

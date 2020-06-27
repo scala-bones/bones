@@ -328,8 +328,8 @@ trait SwaggerCoreInterpreter {
   }
 
   def fromSchemaWithAlg[ALG[_], A](
-    gd: BonesSchema[ALG, A],
-    customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]
+                                    gd: KvpCollection[ALG, A],
+                                    customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]
   ): Name => List[(Name, Schema[_])] = name => {
     val schemas = gd match {
       case x: HListConvert[ALG, _, _, A] =>

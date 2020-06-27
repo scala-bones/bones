@@ -26,7 +26,7 @@ object ColumnNameInterpreter {
     }
   }
 
-  def fromBonesSchema[ALG[_], A](bonesSchema: BonesSchema[ALG, A]): List[ColumnName] =
+  def fromBonesSchema[ALG[_], A](bonesSchema: KvpCollection[ALG, A]): List[ColumnName] =
     bonesSchema match {
       case hList: HListConvert[ALG, h, n, a] @unchecked => kvpHList(hList.from)
       case co: KvpCoproductConvert[ALG, c, a] @unchecked =>

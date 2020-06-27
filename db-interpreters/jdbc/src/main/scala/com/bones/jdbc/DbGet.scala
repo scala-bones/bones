@@ -4,7 +4,7 @@ import java.sql.Connection
 
 import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionError, NotFound, SystemError}
-import com.bones.data.{BonesSchema, HListConvert, KvpNil}
+import com.bones.data.{KvpCollection, HListConvert, KvpNil}
 import com.bones.jdbc.DbUtil.{camelToSnake, withStatement}
 import com.bones.jdbc.column.ColumnNameInterpreter
 import com.bones.jdbc.rs.{ResultSetInterpreter, ResultSetValueInterpreter => ResultSetCustomInterpreter}
@@ -17,10 +17,10 @@ import scala.util.control.NonFatal
 object DbGet {
 
   def getEntity[ALG[_], A, ID](
-    schema: BonesSchema[ALG, A],
-    idDefinition: IdDefinition[ALG,ID],
-    resultSetCustomInterpreter: ResultSetCustomInterpreter[ALG],
-    customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG]
+                                schema: KvpCollection[ALG, A],
+                                idDefinition: IdDefinition[ALG,ID],
+                                resultSetCustomInterpreter: ResultSetCustomInterpreter[ALG],
+                                customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG]
   ): DataSource => ID => Either[NonEmptyList[ExtractionError], (ID, A)] = {
     val withConnection = getEntityWithConnectionCustomAlgebra(schema, idDefinition, resultSetCustomInterpreter, customDbUpdateInterpreter)
     ds =>
@@ -28,10 +28,10 @@ object DbGet {
   }
 
   def getEntityWithConnectionCustomAlgebra[ALG[_], A, ID](
-    schema: BonesSchema[ALG, A],
-    idDefinition: IdDefinition[ALG,ID],
-    resultSetCustomInterpreter: ResultSetCustomInterpreter[ALG],
-    customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG]
+                                                           schema: KvpCollection[ALG, A],
+                                                           idDefinition: IdDefinition[ALG,ID],
+                                                           resultSetCustomInterpreter: ResultSetCustomInterpreter[ALG],
+                                                           customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG]
   ): ID => Connection => Either[NonEmptyList[ExtractionError], (ID, A)] = {
     schema match {
       case xMap: HListConvert[ALG, a, al, b] => {

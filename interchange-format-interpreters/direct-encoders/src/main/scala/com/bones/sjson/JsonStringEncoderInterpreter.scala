@@ -70,8 +70,8 @@ trait JsonStringEncoderInterpreter {
   val localTimeFormatter: DateTimeFormatter
 
   def fAtoString[ALG[_], A](
-    bonesSchema: BonesSchema[ALG, A],
-    customToJsonStringInterpreter: CustomToJsonStringInterpreter[ALG]): A => String =
+                             bonesSchema: KvpCollection[ALG, A],
+                             customToJsonStringInterpreter: CustomToJsonStringInterpreter[ALG]): A => String =
     bonesSchema match {
       case kvp: HListConvert[ALG, h, n, a] @unchecked =>
         valueDefinition(kvp, customToJsonStringInterpreter).andThen(x =>
@@ -157,8 +157,8 @@ trait JsonStringEncoderInterpreter {
   }
 
   def fromBonesSchema[ALG[_], A](
-    bonesSchema: BonesSchema[ALG, A],
-    customToJsonStringInterpreter: CustomToJsonStringInterpreter[ALG]
+                                  bonesSchema: KvpCollection[ALG, A],
+                                  customToJsonStringInterpreter: CustomToJsonStringInterpreter[ALG]
   ): A => List[String] = {
     bonesSchema match {
       case kvp: KvpCoproductConvert[ALG, c, a] =>

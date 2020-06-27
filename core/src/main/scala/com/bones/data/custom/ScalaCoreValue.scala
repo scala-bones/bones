@@ -2,11 +2,11 @@ package com.bones.data.custom
 
 import com.bones.data.KvpValue
 import com.bones.validation.ValidationDefinition
-import com.bones.validation.ValidationDefinition.{BigDecimalValidation, ByteValidation, CharValidation, DoubleValidation, EnumerationValidation, FloatValidation, IntValidation, LongValidation, ShortValidation, StringValidation, ValidationOp}
+import com.bones.validation.ValidationDefinition._
 import shapeless.Coproduct
 import shapeless.ops.coproduct.Inject
 
-abstract class ScalaCoreValue[A: Manifest] extends KvpValue[A] {
+sealed abstract class ScalaCoreValue[A: Manifest] extends KvpValue[A] {
   override val manifestOfA: Manifest[A] = manifest[A]
 }
 
@@ -41,6 +41,7 @@ final case class EnumerationData[E <: Enumeration, V: Manifest](
 ) extends ScalaCoreValue[V]
 
 trait ScalaCoreValidation {
+
   /** sv = String Validation */
   val sv: ValidationDefinition.StringValidation.type = StringValidation
 
@@ -68,12 +69,13 @@ trait ScalaCoreValidation {
   /** dv = double validation */
   val dv: ValidationDefinition.DoubleValidation.type = DoubleValidation
 
-  def ev[E <: Enumeration]: EnumerationValidation[E] = EnumerationValidation[E]
+  def ev[E <: Enumeration]: EnumerationValidation[E] = EnumerationValidation[E]()
 }
 
 object ScalaCoreSugarInstance extends ScalaCoreSugar
 
 trait ScalaCoreSugar extends ScalaCoreValidation {
+
   /** Indicates that the data tied to this key is a String type that must pass the specified validations */
   def string(validationOp: ValidationOp[String]*): StringData =
     StringData(validationOp.toList)
@@ -123,14 +125,14 @@ trait ScalaCoreSugar extends ScalaCoreValidation {
   val bigDecimal: BigDecimalData = bigDecimal()
 
   /** Expecting the type to be a Scala style enumeration
-   *
-   * @param e The base enumeration type.
-   * @tparam E The enumeration
-   */
+    *
+    * @param e The base enumeration type.
+    * @tparam E The enumeration
+    */
   def enumeration[E <: Enumeration, V: Manifest](
-                                                  e: E,
-                                                  validationOp: ValidationOp[V]*
-                                                ): EnumerationData[E, V] =
+    e: E,
+    validationOp: ValidationOp[V]*
+  ): EnumerationData[E, V] =
     EnumerationData[E, V](e, validationOp.toList)
 
   /** Indicates that the data tied to the value is an Array of Bytes */
@@ -138,7 +140,6 @@ trait ScalaCoreSugar extends ScalaCoreValidation {
 
   /** Alias for byte array without validations */
   val byteArray: ByteArrayData = byteArray()
-
 
 }
 
@@ -201,14 +202,14 @@ trait ScalaCoreInjectedSugar[ALG[_] <: Coproduct] extends ScalaCoreValidation {
   val bigDecimal: ALG[BigDecimal] = bigDecimal()
 
   /** Expecting the type to be a Scala style enumeration
-   *
-   * @param e The base enumeration type.
-   * @tparam E The enumeration
-   */
+    *
+    * @param e The base enumeration type.
+    * @tparam E The enumeration
+    */
   def enumeration[E <: Enumeration, V: Manifest](
-                                                  e: E,
-                                                  validationOp: ValidationOp[V]*
-                                                ): ALG[V] =
+    e: E,
+    validationOp: ValidationOp[V]*
+  ): ALG[V] =
     scalaCoreInjected(EnumerationData[E, V](e, validationOp.toList))
 
   /** Indicates that the data tied to the value is an Array of Bytes */
@@ -217,6 +218,5 @@ trait ScalaCoreInjectedSugar[ALG[_] <: Coproduct] extends ScalaCoreValidation {
 
   /** Alias for byte array without validations */
   val byteArray: ALG[Array[Byte]] = byteArray()
-
 
 }

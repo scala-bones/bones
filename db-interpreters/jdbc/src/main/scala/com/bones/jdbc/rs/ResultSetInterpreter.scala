@@ -42,7 +42,7 @@ object ResultSetInterpreter {
               }
           }
       case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked =>
-        def fromSchema[A](bonesSchema: BonesSchema[ALG, A])
+        def fromSchema[A](bonesSchema: KvpCollection[ALG, A])
           : Path => ResultSet => Either[NonEmptyList[ExtractionError], A] =
           bonesSchema match {
             case hList: HListConvert[ALG, hh, nn, A] @unchecked => { path => resultSet =>
@@ -92,7 +92,7 @@ object ResultSetInterpreter {
       case Right(alg) => customInterpreter.resultSet(alg)
     }
 
-  def fromBonesSchema[ALG[_], A](bonesSchema: BonesSchema[ALG, A], customInterpreter: ResultSetValueInterpreter[ALG]): Path => ResultSet => Either[NonEmptyList[ExtractionError], A] =
+  def fromBonesSchema[ALG[_], A](bonesSchema: KvpCollection[ALG, A], customInterpreter: ResultSetValueInterpreter[ALG]): Path => ResultSet => Either[NonEmptyList[ExtractionError], A] =
     bonesSchema match {
       case hList: HListConvert[ALG, h, n, a] @unchecked =>
         { path => valueDefinition(hList, customInterpreter).apply(path, "") }.asInstanceOf[Path => ResultSet => Either[NonEmptyList[ExtractionError], A]]
