@@ -156,8 +156,8 @@ object ProtoFileGeneratorInterpreter {
   }
 
   def fromSchemaToProtoFile[ALG[_], A](
-    dc: BonesSchema[ALG, A],
-    customInterpreter: CustomInterpreter[ALG]): String =
+                                        dc: KvpCollection[ALG, A],
+                                        customInterpreter: CustomInterpreter[ALG]): String =
     messageToProtoFile(fromSchemaCustomAlgebra(dc, customInterpreter))
 
   def messageToProtoFile(message: Message): String = {
@@ -171,8 +171,8 @@ object ProtoFileGeneratorInterpreter {
   }
 
   def fromSchemaCustomAlgebra[ALG[_], A](
-    dc: BonesSchema[ALG, A],
-    customerInterpreter: CustomInterpreter[ALG]): Message = {
+                                          dc: KvpCollection[ALG, A],
+                                          customerInterpreter: CustomInterpreter[ALG]): Message = {
     dc match {
       case t: HListConvert[ALG, a, al, b] =>
         val (messageFields, nestedTypes, lastIndex) = kvpHList(t.from, customerInterpreter)(0)
@@ -223,8 +223,8 @@ object ProtoFileGeneratorInterpreter {
   }
 
   def fromBonesSchema[ALG[_], A](
-    bonesSchema: BonesSchema[ALG, A],
-    customerInterpreter: CustomInterpreter[ALG]
+                                  bonesSchema: KvpCollection[ALG, A],
+                                  customerInterpreter: CustomInterpreter[ALG]
   ): Int => (Vector[MessageField], Vector[NestedType], Int) = {
 
     bonesSchema match {

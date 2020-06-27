@@ -45,7 +45,7 @@ object Scalacheck extends ScalacheckBase
 
 trait ScalacheckBase {
 
-  def createCustomGen[ALG[_], A](bonesSchema: BonesSchema[ALG, A], genAlg: GenAlg[ALG]): Gen[A] =
+  def createCustomGen[ALG[_], A](bonesSchema: KvpCollection[ALG, A], genAlg: GenAlg[ALG]): Gen[A] =
     bonesSchema match {
       case co: KvpCoproductConvert[ALG, c, a] => valueDefinition(co, genAlg)
       case co: HListConvert[ALG, h, n, a]     => valueDefinition(co, genAlg)
@@ -101,7 +101,7 @@ trait ScalacheckBase {
     }
   }
 
-  def fromCustomSchema[ALG[_], A](bonesSchema: BonesSchema[ALG, A], genAlg: GenAlg[ALG]): Gen[A] = {
+  def fromCustomSchema[ALG[_], A](bonesSchema: KvpCollection[ALG, A], genAlg: GenAlg[ALG]): Gen[A] = {
     bonesSchema match {
       case hl: HListConvert[ALG, h, n, a] => kvpHList(hl.from, genAlg).map(hl.fHtoA)
       case co: KvpCoproductConvert[ALG, c, a] => {

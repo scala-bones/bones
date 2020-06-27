@@ -23,10 +23,10 @@ object DbInsertValues {
   type InsertPair[A] = Key => (Index, A) => (Index, List[(ColumnName, SetValue)])
 
   def insertQuery[ALG[_], A, ID](
-    bonesSchema: BonesSchema[ALG, A],
-    idSchema: KvpCollection[ALG, ID],
-    customInterpreter: CustomInterpreter[ALG],
-    resultSetValueInterpreter: ResultSetValueInterpreter[ALG]): DataSource => A => Either[NonEmptyList[ExtractionError], (ID, A)] = {
+                                  bonesSchema: KvpCollection[ALG, A],
+                                  idSchema: KvpCollection[ALG, ID],
+                                  customInterpreter: CustomInterpreter[ALG],
+                                  resultSetValueInterpreter: ResultSetValueInterpreter[ALG]): DataSource => A => Either[NonEmptyList[ExtractionError], (ID, A)] = {
     val iq = insertQueryWithConnectionCustomAlgebra(bonesSchema, idSchema, customInterpreter, resultSetValueInterpreter)
     ds =>
       { a =>
@@ -45,10 +45,10 @@ object DbInsertValues {
   }
 
   def insertQueryWithConnectionCustomAlgebra[ALG[_], A, ID](
-    bonesSchema: BonesSchema[ALG, A],
-    idSchema: KvpCollection[ALG, ID],
-    customInterpreter: CustomInterpreter[ALG],
-    resultSetInterpreter: ResultSetValueInterpreter[ALG]): A => Connection => Either[NonEmptyList[ExtractionError], (ID, A)] =
+                                                             bonesSchema: KvpCollection[ALG, A],
+                                                             idSchema: KvpCollection[ALG, ID],
+                                                             customInterpreter: CustomInterpreter[ALG],
+                                                             resultSetInterpreter: ResultSetValueInterpreter[ALG]): A => Connection => Either[NonEmptyList[ExtractionError], (ID, A)] =
     bonesSchema match {
       case x: HListConvert[ALG, h, n, b] @unchecked => {
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
@@ -132,8 +132,8 @@ object DbInsertValues {
   }
 
   private def fromBonesSchema[ALG[_], A](
-    bonesSchema: BonesSchema[ALG, A],
-    customInterpreter: CustomInterpreter[ALG])
+                                          bonesSchema: KvpCollection[ALG, A],
+                                          customInterpreter: CustomInterpreter[ALG])
     : (Index, A) => (Index, List[(ColumnName, SetValue)]) = {
     bonesSchema match {
       case co: KvpCoproductConvert[ALG, c, a] => ???

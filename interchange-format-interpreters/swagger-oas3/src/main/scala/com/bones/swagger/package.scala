@@ -1,6 +1,6 @@
 package com.bones
 
-import com.bones.data.BonesSchema
+import com.bones.data.KvpCollection
 import com.bones.swagger.SwaggerCoreInterpreter.{CustomSwaggerInterpreter, Name}
 import io.swagger.v3.oas.models.media.Schema
 
@@ -13,8 +13,8 @@ package object swagger {
   object SwaggerIsoInterpreter extends SwaggerCoreInterpreter
 
   def fromSchemaWithAlg[ALG[_], A](
-    gd: BonesSchema[ALG, A],
-    customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]): Name => List[(Name, Schema[_])] =
+                                    gd: KvpCollection[ALG, A],
+                                    customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]): Name => List[(Name, Schema[_])] =
     SwaggerIsoInterpreter.fromSchemaWithAlg(gd, customAlgebraInterpreter)
 
 }

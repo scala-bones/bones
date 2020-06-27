@@ -514,8 +514,8 @@ trait ProtobufSequentialValidatorInterpreter {
   val zoneOffset: ZoneOffset
 
   def fromCustomBytes[ALG[_], A](
-    dc: BonesSchema[ALG, A],
-    customInterpreter: CustomValidatorInterpreter[ALG])
+                                  dc: KvpCollection[ALG, A],
+                                  customInterpreter: CustomValidatorInterpreter[ALG])
     : Array[Byte] => Either[NonEmptyList[ExtractionError], A] = dc match {
     case x: HListConvert[ALG, _, _, A] @unchecked => {
       val (lastFieldNumber, f) =
@@ -600,7 +600,7 @@ trait ProtobufSequentialValidatorInterpreter {
             })
           }
       case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked =>
-        def fromBonesSchema[A](bonesSchema: BonesSchema[ALG, A]): ExtractFromProto[A] = ???
+        def fromBonesSchema[A](bonesSchema: KvpCollection[ALG, A]): ExtractFromProto[A] = ???
 
         val head = fromBonesSchema(op.bonesSchema)
         val tail = kvpHList(op.tail, customInterpreter)

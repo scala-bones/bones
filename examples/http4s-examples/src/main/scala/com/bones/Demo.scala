@@ -1,16 +1,11 @@
 package com.bones
 
 import cats.effect.IO
-import com.bones.data.KvpNil
+import cats.implicits._
 import com.bones.fullstack.LocalhostAllIOApp
 import com.bones.syntax._
-import com.bones.validation.ValidationDefinition.{
-  BigDecimalValidation => dv,
-  StringValidation => sv
-}
+import com.bones.validation.ValidationDefinition.{BigDecimalValidation => dv, StringValidation => sv}
 import org.http4s.HttpRoutes
-import cats.effect._
-import cats.implicits._
 
 object Demo {
 

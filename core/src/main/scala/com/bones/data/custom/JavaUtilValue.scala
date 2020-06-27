@@ -2,7 +2,7 @@ package com.bones.data.custom
 
 import java.util.UUID
 
-import com.bones.data.{AlgToCollectionData, KvpValue}
+import com.bones.data.KvpValue
 import com.bones.validation.ValidationDefinition.ValidationOp
 import shapeless.Coproduct
 import shapeless.ops.coproduct.Inject
@@ -13,7 +13,6 @@ abstract class JavaUtilValue[A:Manifest] extends KvpValue[A] {
 
 final case class UuidData(validations: List[ValidationOp[UUID]])
   extends JavaUtilValue[UUID]
-    with AlgToCollectionData[JavaUtilValue, UUID, UuidData]
 
 
 trait JavaUtilSugar {

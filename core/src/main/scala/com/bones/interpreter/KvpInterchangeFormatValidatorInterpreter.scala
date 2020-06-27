@@ -73,8 +73,8 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
     * @return A function which takes the IN data and returns an Either[ExtractionError,A]
     */
   def validatorFromCustomSchema[ALG[_], A](
-    schema: BonesSchema[ALG, A],
-    interchangeFormatValidator: InterchangeFormatValidator[ALG, IN])
+                                            schema: KvpCollection[ALG, A],
+                                            interchangeFormatValidator: InterchangeFormatValidator[ALG, IN])
     : IN => Either[NonEmptyList[ExtractionError], A] =
     schema match {
       case x: HListConvert[ALG, _, _, A] =>
@@ -83,8 +83,8 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
     }
 
   def validatorFromSchemaWithPath[ALG[_], A](
-    schema: BonesSchema[ALG, A],
-    interchangeFormatValidator: InterchangeFormatValidator[ALG, IN])
+                                              schema: KvpCollection[ALG, A],
+                                              interchangeFormatValidator: InterchangeFormatValidator[ALG, IN])
     : (IN, Path) => Either[NonEmptyList[ExtractionError], A] =
     schema match {
       case x: HListConvert[ALG, _, _, A] =>

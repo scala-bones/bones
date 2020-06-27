@@ -1,6 +1,6 @@
 package com.bones
 
-import com.bones.data.{BonesSchema, HListConvert, KvpNil}
+import com.bones.data.{KvpCollection, HListConvert, KvpNil}
 import com.bones.jdbc.column.DbColumnInterpreter
 import com.bones.jdbc.update.DbUpdateValues.CustomDbUpdateInterpreter
 import shapeless.Nat._0
@@ -26,7 +26,7 @@ package object jdbc {
 
     def asTuple: (String, ALG[ID]) = (key, value)
 
-    def prependSchema[A](schema: BonesSchema[ALG, A]) = {
+    def prependSchema[A](schema: KvpCollection[ALG, A]) = {
       implicit val manifest = schema.manifestOfA
       (asTuple :: schema :><: new KvpNil[ALG]).tupled[(ID, A)]
     }

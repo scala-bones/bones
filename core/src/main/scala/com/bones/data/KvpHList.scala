@@ -53,7 +53,7 @@ sealed abstract class KvpHList[ALG[_], H <: HList, N <: Nat] {
     split: Split.Aux[HO, NP, HP, H]
   ): KvpHList[ALG, HO, NO] = prependHList(kvp)
 
-  def prependSchema[A: Manifest](schema: BonesSchema[ALG, A])(
+  def prependSchema[A: Manifest](schema: KvpCollection[ALG, A])(
     implicit isHCons: IsHCons.Aux[A :: H, A, H]): KvpHList[ALG, A :: H, Succ[N]] =
     KvpConcreteTypeHead[ALG, A, H, N](schema, List.empty, this, isHCons)
 
@@ -111,7 +111,7 @@ sealed abstract class KvpHList[ALG[_], H <: HList, N <: Nat] {
       new KeyValueDefinition(input._1, Left(input._2), Some(input._3), Some(input._4)))(isHCons)
 
   def :><:[OUT2 <: HList, OUT2L <: Nat, A: Manifest, HX <: HList, NX <: Nat](
-    dc: BonesSchema[ALG, A])(
+    dc: KvpCollection[ALG, A])(
     implicit isHCons: IsHCons.Aux[A :: H, A, H]): KvpConcreteTypeHead[ALG, A, H, N] =
     KvpConcreteTypeHead[ALG, A, H, N](dc, List.empty, this, isHCons)
 
@@ -147,10 +147,10 @@ case class KvpNil[ALG[_]]() extends KvpHList[ALG, HNil, Nat._0] {
   * @tparam NT Nat length of tail
   */
 final case class KvpConcreteTypeHead[ALG[_], A: Manifest, HT <: HList, NT <: Nat](
-  bonesSchema: BonesSchema[ALG, A],
-  validations: List[ValidationOp[A :: HT]],
-  tail: KvpHList[ALG, HT, NT],
-  isHCons: IsHCons.Aux[A :: HT, A, HT])
+                                                                                   bonesSchema: KvpCollection[ALG, A],
+                                                                                   validations: List[ValidationOp[A :: HT]],
+                                                                                   tail: KvpHList[ALG, HT, NT],
+                                                                                   isHCons: IsHCons.Aux[A :: HT, A, HT])
     extends KvpHList[ALG, A :: HT, Succ[NT]] {
 
   val manifestOfA: Manifest[A] = manifest[A]
