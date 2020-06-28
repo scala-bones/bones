@@ -5,13 +5,10 @@ import java.sql.{Connection, ResultSet}
 import cats.data.NonEmptyList
 import cats.effect.IO
 import com.bones.data.Error.ExtractionError
-import com.bones.data.{KvpCollection, HListConvert, KvpNil}
+import com.bones.data.{HListConvert, KvpCollection}
 import com.bones.jdbc.DbUtil.camelToSnake
 import com.bones.jdbc.column.ColumnNameInterpreter
-import com.bones.jdbc.rs.{
-  ResultSetInterpreter,
-  ResultSetValue => ResultSetCustomInterpreter
-}
+import com.bones.jdbc.rs.{ResultSetInterpreter, ResultSetValue => ResultSetCustomInterpreter}
 import fs2.Stream
 import fs2.Stream.bracket
 import javax.sql.DataSource
@@ -19,9 +16,9 @@ import javax.sql.DataSource
 object DbSearch {
 
   def getEntity[ALG[_], A, ID](
-                                schema: KvpCollection[ALG, A],
-                                customInterpreter: ResultSetCustomInterpreter[ALG],
-                                idDef: IdDefinition[ALG, ID]
+    schema: KvpCollection[ALG, A],
+    customInterpreter: ResultSetCustomInterpreter[ALG],
+    idDef: IdDefinition[ALG, ID]
   ): DataSource => Stream[IO, Either[NonEmptyList[ExtractionError], (ID, A)]] = {
     val withConnection = searchEntityWithConnection(schema, customInterpreter, idDef)
     ds =>
@@ -44,9 +41,9 @@ object DbSearch {
   }
 
   def searchEntityWithConnection[ALG[_], A, ID](
-                                                 schema: KvpCollection[ALG, A],
-                                                 customInterpreter: ResultSetCustomInterpreter[ALG],
-                                                 idDef: IdDefinition[ALG, ID]
+    schema: KvpCollection[ALG, A],
+    customInterpreter: ResultSetCustomInterpreter[ALG],
+    idDef: IdDefinition[ALG, ID]
   ): Connection => Stream[IO, Either[NonEmptyList[ExtractionError], (ID, A)]] = {
     schema match {
       case x: HListConvert[ALG, h, n, b] @unchecked =>

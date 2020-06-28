@@ -6,7 +6,7 @@ import com.bones.jdbc.column.DbColumnInterpreter.{ToColumns, nameToColumn}
 trait JavaTimeDbColumnValue extends ColumnValue[JavaTimeValue] {
   override def toColumns[A](alg: JavaTimeValue[A]): ToColumns =
     alg match {
-      case dd: LocalDateData     => nameToColumn("date")
-      case dd: LocalDateTimeData => nameToColumn("timestamp")
+      case _: LocalDateData     => nameToColumn("date")
+      case _: LocalDateTimeData => nameToColumn("timestamp")
     }
 }
