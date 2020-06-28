@@ -5,10 +5,10 @@ import com.bones.bson.BsonValidatorInterpreter
 import com.bones.data.Error
 import com.bones.data.Error.RequiredValue
 import com.bones.data.values.CustomStringValue
-import com.bones.interpreter.InterchangeFormatValidator
+import com.bones.interpreter.InterchangeFormatValidatorValue
 import reactivemongo.bson.BSONValue
 
-trait BsonCustomStringValidator extends InterchangeFormatValidator[CustomStringValue, BSONValue]{
+trait BsonCustomStringValidator extends InterchangeFormatValidatorValue[CustomStringValue, BSONValue]{
   override def validate[A](alg: CustomStringValue[A]): (Option[BSONValue], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] =
     (bson, path) =>
       bson match {

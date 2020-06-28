@@ -7,11 +7,11 @@ import cats.data.NonEmptyList
 import com.bones.bson.BsonValidatorInterpreter
 import com.bones.data.Error
 import com.bones.data.values._
-import com.bones.interpreter.InterchangeFormatValidator
+import com.bones.interpreter.InterchangeFormatValidatorValue
 import com.bones.interpreter.values.JavaTimeValidator.{parseTime, parseYear}
 import reactivemongo.bson.{BSONDateTime, BSONLong, BSONValue}
 
-trait BsonJavaTimeValidator extends InterchangeFormatValidator[JavaTimeValue, BSONValue] {
+trait BsonJavaTimeValidator extends InterchangeFormatValidatorValue[JavaTimeValue, BSONValue] {
 
   val baseValidator = BsonValidatorInterpreter
 

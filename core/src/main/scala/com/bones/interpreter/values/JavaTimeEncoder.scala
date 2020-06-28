@@ -3,9 +3,9 @@ package com.bones.interpreter.values
 import java.time.format.DateTimeFormatter
 
 import com.bones.data.values._
-import com.bones.interpreter.{InterchangeFormatEncoder, KvpInterchangeFormatEncoderInterpreter}
+import com.bones.interpreter.{InterchangeFormatEncoderValue, KvpInterchangeFormatEncoderInterpreter}
 
-trait JavaTimeEncoder[OUT] extends InterchangeFormatEncoder[JavaTimeValue, OUT] {
+trait JavaTimeEncoder[OUT] extends InterchangeFormatEncoderValue[JavaTimeValue, OUT] {
 
   val baseEncoder: KvpInterchangeFormatEncoderInterpreter[OUT]
   val instantFormatter: DateTimeFormatter

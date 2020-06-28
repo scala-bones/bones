@@ -8,11 +8,11 @@ import com.bones.Util.stringToEnumeration
 import com.bones.data.Error
 import com.bones.data.Error.{CanNotConvert, ExtractionError, RequiredValue}
 import com.bones.data.values._
-import com.bones.interpreter.{InterchangeFormatValidator, KvpInterchangeFormatValidatorInterpreter}
+import com.bones.interpreter.{InterchangeFormatValidatorValue, KvpInterchangeFormatValidatorInterpreter}
 
 import scala.util.Try
 
-trait ScalaCoreValidator[IN] extends InterchangeFormatValidator[ScalaCoreValue, IN] {
+trait ScalaCoreValidator[IN] extends InterchangeFormatValidatorValue[ScalaCoreValue, IN] {
   
   val baseValidator: KvpInterchangeFormatValidatorInterpreter[IN]
   

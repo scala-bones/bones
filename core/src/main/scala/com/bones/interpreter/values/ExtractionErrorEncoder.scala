@@ -3,7 +3,7 @@ package com.bones.interpreter.values
 import com.bones.data.Error._
 import com.bones.data.Sugar
 import com.bones.data.values._
-import com.bones.interpreter.{InterchangeFormatEncoder, KvpInterchangeFormatEncoderInterpreter}
+import com.bones.interpreter.{InterchangeFormatEncoderValue, KvpInterchangeFormatEncoderInterpreter}
 import shapeless.syntax.std.tuple._
 import shapeless.{:+:, ::, CNil, Generic, HNil, Inl, Inr}
 
@@ -196,7 +196,7 @@ object ExtractionErrorEncoder {
 }
 
 trait ExtractionErrorEncoder[OUT]
-  extends InterchangeFormatEncoder[ExtractionErrorValue, OUT]
+  extends InterchangeFormatEncoderValue[ExtractionErrorValue, OUT]
   with ScalaCoreSugar { self =>
 
   import ExtractionErrorEncoder._

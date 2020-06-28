@@ -6,7 +6,7 @@ import cats.data.NonEmptyList
 import com.bones.Util.{longToLocalDate, longToLocalTime}
 import com.bones.data.Error.{CanNotConvert, ExtractionError}
 import com.bones.data.values._
-import com.bones.protobuf.{ProtobufSequentialValidatorInterpreter, ProtobufValueValidator}
+import com.bones.protobuf.{ProtobufSequentialValidatorInterpreter, ProtobufValidatorValue}
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.ValidationUtil
 
@@ -102,7 +102,7 @@ object JavaTimeValidator {
  *  Because JavaTimeValidator relies
  *
  **/
-trait JavaTimeValidator extends ProtobufValueValidator[JavaTimeValue] {
+trait JavaTimeValidator extends ProtobufValidatorValue[JavaTimeValue] {
 
   import JavaTimeValidator._
 

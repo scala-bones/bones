@@ -8,7 +8,7 @@ import cats.data.NonEmptyList
 import cats.implicits._
 import com.bones.data.Error.{ExtractionError, ParsingError, RequiredValue, WrongTypeError}
 import com.bones.data.{KeyValueDefinition, _}
-import com.bones.interpreter.{InterchangeFormatValidator, KvpInterchangeFormatValidatorInterpreter}
+import com.bones.interpreter.{InterchangeFormatValidatorValue, KvpInterchangeFormatValidatorInterpreter}
 
 import scala.util.control.NonFatal
 
@@ -30,9 +30,9 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
     * @return a function validating a Json Byte Array with the specified data.
     */
   def generateByteArrayValidator[ALG[_], A](
-    schema: KvpCollection[ALG, A],
-    customValidator: InterchangeFormatValidator[ALG, Json],
-    charset: Charset
+                                             schema: KvpCollection[ALG, A],
+                                             customValidator: InterchangeFormatValidatorValue[ALG, Json],
+                                             charset: Charset
   ): Array[Byte] => Either[NonEmptyList[ExtractionError], A] = {
     val fromSchemaFunction = generateValidator(schema, customValidator)
     bytes =>

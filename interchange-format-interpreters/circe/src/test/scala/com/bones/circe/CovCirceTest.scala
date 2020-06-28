@@ -5,7 +5,7 @@ import java.time.{Instant, ZoneId}
 import java.util.Locale
 
 import com.bones.circe.values.BaseScalaCoreEncoder
-import com.bones.interpreter.InterchangeFormatEncoder
+import com.bones.interpreter.InterchangeFormatEncoderValue
 import com.bones.schemas.CustomCovSchema._
 import io.circe.Json
 import org.scalatest.funsuite.AnyFunSuite
@@ -42,7 +42,7 @@ class CovCirceTest extends AnyFunSuite with Checkers with Matchers {
               Json.fromString(dateFormatter.format(i.asInstanceOf[Instant]))
       }
 
-    object BlogEncoder extends InterchangeFormatEncoder[BlogAlgebra, Json] {
+    object BlogEncoder extends InterchangeFormatEncoderValue[BlogAlgebra, Json] {
 
       def encode[A](alg: BlogAlgebra[A]): A => Json =
         alg match {

@@ -3,9 +3,9 @@ package com.bones.protobuf.values
 import java.time._
 
 import com.bones.data.values._
-import com.bones.protobuf.{ProtobufSequentialEncoderInterpreter, ProtobufValueEncoder}
+import com.bones.protobuf.{ProtobufSequentialEncoderInterpreter, ProtobufEncoderValue}
 
-trait JavaTimeEncoder extends ProtobufValueEncoder[JavaTimeValue] {
+trait JavaTimeEncoder extends ProtobufEncoderValue[JavaTimeValue] {
 
   import JavaTimeValidator._
   import ProtobufSequentialEncoderInterpreter._

@@ -4,18 +4,18 @@ import java.time.ZoneOffset
 
 import com.bones.data.values.DefaultValues
 import com.bones.protobuf.ProtoFileGeneratorInterpreter.CustomInterpreter.CNilProtoFileCustomInterpreterEncoder
-import com.bones.protobuf.ProtobufValueEncoder.CNilProtobufValueEncoder
-import com.bones.protobuf.ProtobufValueValidator.CNilProtobufValueValidator
+import com.bones.protobuf.ProtobufEncoderValue.CNilProtobufValueEncoder
+import com.bones.protobuf.ProtobufValidatorValue.CNilProtobufValueValidator
 
 package object values {
 
-  def defaultEncoders[A]: ProtobufValueEncoder[DefaultValues] =
+  def defaultEncoders[A]: ProtobufEncoderValue[DefaultValues] =
     ProtobufScalaCoreEncoder ++
       (ProtobufValueStringEncoder ++
         (ProtobufUtcJavaTimeEncoder ++
           (ProtobufJavaUtilEncoder ++ CNilProtobufValueEncoder)))
 
-  val defaultValidators: ProtobufValueValidator[DefaultValues] =
+  val defaultValidators: ProtobufValidatorValue[DefaultValues] =
     ProtobufScalaCoreValidator ++
       (ProtobufValueStringValidator ++
         (ProtobufUtcJavaTimeValidator ++
