@@ -1,9 +1,9 @@
 package com.bones.jdbc.insert
 
 import com.bones.data.values._
-import com.bones.jdbc.insert.DbInsertValues.{InsertPair, psF}
+import com.bones.jdbc.insert.DbInsert.{InsertPair, psF}
 
-trait ScalaCoreDbInsert extends CustomInterpreter[ScalaCoreValue] {
+trait ScalaCoreDbInsert extends DbInsertValue[ScalaCoreValue] {
   override def insertPair[A](alg: ScalaCoreValue[A]): InsertPair[A] =
     alg match {
       case ob: BooleanData =>

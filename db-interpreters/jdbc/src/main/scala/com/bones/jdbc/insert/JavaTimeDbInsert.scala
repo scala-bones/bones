@@ -3,9 +3,9 @@ package com.bones.jdbc.insert
 import java.time.{LocalDate, LocalDateTime, ZoneOffset}
 
 import com.bones.data.values.{JavaTimeValue, LocalDateData, LocalDateTimeData}
-import com.bones.jdbc.insert.DbInsertValues.{InsertPair, psF}
+import com.bones.jdbc.insert.DbInsert.{InsertPair, psF}
 
-trait JavaTimeDbInsert extends CustomInterpreter[JavaTimeValue] {
+trait JavaTimeDbInsert extends DbInsertValue[JavaTimeValue] {
   override def insertPair[A](alg: JavaTimeValue[A]): InsertPair[A] =
     alg match {
       case dd: LocalDateTimeData =>

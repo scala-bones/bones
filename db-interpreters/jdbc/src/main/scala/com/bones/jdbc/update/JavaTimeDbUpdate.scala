@@ -4,11 +4,10 @@ import java.sql.{PreparedStatement, Types}
 import java.time.{LocalDate, LocalDateTime, ZoneOffset}
 
 import com.bones.data.values.{JavaTimeValue, LocalDateData, LocalDateTimeData}
-import com.bones.jdbc.update.DbUpdateValues.{CustomDbUpdateInterpreter, Index, Key}
 
-trait JavaTimeDbUpdate extends CustomDbUpdateInterpreter[JavaTimeValue] {
-  import DbUpdateValues._
-  override def definitionResult[A](alg: JavaTimeValue[A]): (Index, Key) => DbUpdateValues.DefinitionResult[A] =
+trait JavaTimeDbUpdate extends DbUpdateValue[JavaTimeValue] {
+  import DbUpdate._
+  override def definitionResult[A](alg: JavaTimeValue[A]): (Index, Key) => DbUpdate.DefinitionResult[A] =
     alg match {
       case dd: LocalDateTimeData =>
         psF(

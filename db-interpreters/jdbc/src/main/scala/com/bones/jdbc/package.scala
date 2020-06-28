@@ -2,7 +2,7 @@ package com.bones
 
 import com.bones.data.{HListConvert, KvpCollection, KvpNil}
 import com.bones.jdbc.column.ColumnValue
-import com.bones.jdbc.update.DbUpdateValues.CustomDbUpdateInterpreter
+import com.bones.jdbc.update.DbUpdateValue
 import shapeless.Nat._0
 import shapeless.{::, HNil, Succ}
 
@@ -11,8 +11,8 @@ package object jdbc {
   case class JdbcColumnInterpreter[ALG[_]](
                                             resultSet: rs.ResultSetValue[ALG],
                                             dbColumn: ColumnValue[ALG],
-                                            insert: com.bones.jdbc.insert.CustomInterpreter[ALG],
-                                            dbUpdate: CustomDbUpdateInterpreter[ALG])
+                                            insert: com.bones.jdbc.insert.DbInsertValue[ALG],
+                                            dbUpdate: DbUpdateValue[ALG])
 
   val defaultJdbcColumnInterpreter =
     JdbcColumnInterpreter(

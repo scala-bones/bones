@@ -13,45 +13,7 @@ import javax.sql.DataSource
 import shapeless.{:+:, ::, Coproduct, HList, HNil, Inl, Inr, Nat}
 
 /** insert into table (field1, field2, field3) values (:value1, :value2, :value3) */
-object DbUpdateValues {
-
-  object CustomDbUpdateInterpreter {
-
-    /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
-      * see https://stackoverflow.com/a/60561575/387094
-      * */
-    def merge[L[_], R[_] <: Coproduct, A, OUT](
-      li: CustomDbUpdateInterpreter[L],
-      ri: CustomDbUpdateInterpreter[R]
-    ): CustomDbUpdateInterpreter[Lambda[A => L[A] :+: R[A]]] =
-      new CustomDbUpdateInterpreter[Lambda[A => L[A] :+: R[A]]] {
-
-        override def definitionResult[A](alg: L[A] :+: R[A]): (Index, Key) => DefinitionResult[A] =
-          alg match {
-            case Inl(l) => li.definitionResult(l)
-            case Inr(r) => ri.definitionResult(r)
-          }
-
-      }
-
-    implicit class InterpreterOps[ALG[_], OUT](val base: CustomDbUpdateInterpreter[ALG])
-        extends AnyVal {
-      def ++[R[_] <: Coproduct](
-        r: CustomDbUpdateInterpreter[R]
-      ): CustomDbUpdateInterpreter[Lambda[A => ALG[A] :+: R[A]]] =
-        merge(base, r)
-
-    }
-
-    object CNilUpdateInterpreter extends CustomDbUpdateInterpreter[CNilF] {
-      override def definitionResult[A](alg: CNilF[A]): (Index, Key) => DefinitionResult[A] =
-        sys.error("Unreachable code")
-    }
-  }
-
-  trait CustomDbUpdateInterpreter[ALG[_]] {
-    def definitionResult[A](alg: ALG[A]): (Index, Key) => DefinitionResult[A]
-  }
+object DbUpdate {
 
   type FieldName = String
   type FieldValue = String
@@ -69,7 +31,7 @@ object DbUpdateValues {
 
   def updateQueryCustomAlgebra[ALG[_], A, ID](
                                                bonesSchema: KvpCollection[ALG, A],
-                                               customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG],
+                                               customDbUpdateInterpreter: DbUpdateValue[ALG],
                                                columnInterpreter: ColumnValue[ALG],
                                                idDef: IdDefinition[ALG, ID])
     : DataSource => (ID, A) => Either[NonEmptyList[ExtractionError], (ID, A)] = {
@@ -84,7 +46,7 @@ object DbUpdateValues {
 
   def updateQueryWithConnectionCustomAlgebra[ALG[_], A, ID](
                                                              bonesSchema: KvpCollection[ALG, A],
-                                                             customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG],
+                                                             customDbUpdateInterpreter: DbUpdateValue[ALG],
                                                              columnInterpreter: ColumnValue[ALG],
                                                              idDef: IdDefinition[ALG, ID])
     : (ID, A) => Connection => Either[NonEmptyList[SystemError], (ID, A)] =
@@ -94,9 +56,7 @@ object DbUpdateValues {
         val updates = kvpHList(x.from, customDbUpdateInterpreter)(1)
         val idIndex = updates.lastIndex
         val idUpdateFunction =
-          DbUpdateValues.valueDefinition(idDef.asSchema, customDbUpdateInterpreter)(
-            idIndex,
-            idDef.key)
+          DbUpdate.valueDefinition(idDef.asSchema, customDbUpdateInterpreter)(idIndex, idDef.key)
         // TODO this does not handle null/none case
         val sql =
           s"""update ${tableName} set ${updates.assignmentStatements
@@ -128,7 +88,7 @@ object DbUpdateValues {
 
   def kvpHList[ALG[_], H <: HList, HL <: Nat](
     group: KvpHList[ALG, H, HL],
-    customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG]): Index => DefinitionResult[H] = {
+    customDbUpdateInterpreter: DbUpdateValue[ALG]): Index => DefinitionResult[H] = {
     group match {
       case kvp: KvpNil[_] =>
         i =>
@@ -229,7 +189,7 @@ object DbUpdateValues {
 
   def determineValueDefinition[ALG[_], A](
     valueDef: Either[KvpCollection[ALG, A], ALG[A]],
-    customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG]
+    customDbUpdateInterpreter: DbUpdateValue[ALG]
   ): (Index, Key) => DefinitionResult[A] =
     valueDef match {
       case Left(kvp)  => valueDefinition[ALG, A](kvp, customDbUpdateInterpreter)
@@ -238,7 +198,7 @@ object DbUpdateValues {
 
   def valueDefinition[ALG[_], A](
     fgo: KvpCollection[ALG, A],
-    customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG])
+    customDbUpdateInterpreter: DbUpdateValue[ALG])
     : (Index, Key) => DefinitionResult[A] =
     fgo match {
       case op: OptionalKvpValueDefinition[ALG, b] @unchecked =>
