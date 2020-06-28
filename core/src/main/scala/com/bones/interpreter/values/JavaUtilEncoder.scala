@@ -3,9 +3,9 @@ package com.bones.interpreter.values
 import java.util.UUID
 
 import com.bones.data.values.{JavaUtilValue, UuidData}
-import com.bones.interpreter.{InterchangeFormatEncoder, KvpInterchangeFormatEncoderInterpreter}
+import com.bones.interpreter.{InterchangeFormatEncoderValue, KvpInterchangeFormatEncoderInterpreter}
 
-trait JavaUtilEncoder[OUT] extends InterchangeFormatEncoder[JavaUtilValue, OUT] {
+trait JavaUtilEncoder[OUT] extends InterchangeFormatEncoderValue[JavaUtilValue, OUT] {
 
   val defaultEncoder: KvpInterchangeFormatEncoderInterpreter[OUT]
 

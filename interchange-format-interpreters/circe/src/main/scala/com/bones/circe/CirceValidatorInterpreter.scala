@@ -6,7 +6,7 @@ import cats.data.NonEmptyList
 import com.bones.Path
 import com.bones.data.Error.{ExtractionError, ParsingError, RequiredValue, WrongTypeError}
 import com.bones.data.{KeyValueDefinition, _}
-import com.bones.interpreter.{InterchangeFormatValidator, KvpInterchangeFormatValidatorInterpreter}
+import com.bones.interpreter.{InterchangeFormatValidatorValue, KvpInterchangeFormatValidatorInterpreter}
 import io.circe.Json
 
 /**
@@ -20,7 +20,7 @@ trait CirceValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter
   def generateByteArrayValidator[ALG[_], A](
     schema: KvpCollection[ALG, A],
     charset: Charset,
-    validatorInterpreter: InterchangeFormatValidator[ALG, Json]
+    validatorInterpreter: InterchangeFormatValidatorValue[ALG, Json]
   ): Array[Byte] => Either[NonEmptyList[ExtractionError], A] = {
     val f = generateValidator(schema, validatorInterpreter)
     bytes =>

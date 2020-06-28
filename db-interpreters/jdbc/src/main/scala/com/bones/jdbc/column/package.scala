@@ -1,20 +1,19 @@
 package com.bones.jdbc
 
 import com.bones.data.values.DefaultValues
-import com.bones.jdbc.column.DbColumnInterpreter.ColumnInterpreter
-import com.bones.jdbc.column.DbColumnInterpreter.ColumnInterpreter.CNilColumnInterpreter
+import com.bones.jdbc.column.ColumnValue.CNilColumnValue
 
 package object column {
 
-  val defaultDbColumnInterpreter: ColumnInterpreter[DefaultValues] =
-    (DefaultScalaCoreDbColumnInterpreter ++
-      (DefaultColumnStringDbInterpreter ++
-        (DefaultJavaTimeDbColumnInterpreter ++
-          (DefaultJavaUtilDbColumnInterpreter ++ CNilColumnInterpreter))))
+  val defaultDbColumnInterpreter: ColumnValue[DefaultValues] =
+    (DefaultScalaCoreDbColumnValue ++
+      (DefaultColumnStringDbValue ++
+        (DefaultJavaTimeDbColumnValue ++
+          (DefaultJavaUtilDbColumnValue ++ CNilColumnValue))))
 
-  object DefaultJavaTimeDbColumnInterpreter extends JavaTimeDbColumnInterpreter
-  object DefaultJavaUtilDbColumnInterpreter extends JavaUtilDbColumnInterpreter
-  object DefaultScalaCoreDbColumnInterpreter extends ScalaCoreDbColumnInterpreter
-  object DefaultColumnStringDbInterpreter extends ColumnStringDbColumnInterpreter
+  object DefaultJavaTimeDbColumnValue extends JavaTimeDbColumnValue
+  object DefaultJavaUtilDbColumnValue extends JavaUtilDbColumnValue
+  object DefaultScalaCoreDbColumnValue extends ScalaCoreDbColumnValue
+  object DefaultColumnStringDbValue extends ColumnStringDbColumnValue
 
 }

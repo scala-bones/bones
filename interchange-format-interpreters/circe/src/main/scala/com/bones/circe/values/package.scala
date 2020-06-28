@@ -3,19 +3,19 @@ package com.bones.circe
 import java.time.format.DateTimeFormatter
 
 import com.bones.data.values.DefaultValues
-import com.bones.interpreter.InterchangeFormatEncoder.CNilInterchangeFormatEncoder
-import com.bones.interpreter.InterchangeFormatValidator.CNilInterchangeFormatValidator
+import com.bones.interpreter.InterchangeFormatEncoderValue.CNilInterchangeFormatEncoder
+import com.bones.interpreter.InterchangeFormatValidatorValue.CNilInterchangeFormatValidator
 import com.bones.interpreter.values._
-import com.bones.interpreter.{InterchangeFormatEncoder, InterchangeFormatValidator, KvpInterchangeFormatEncoderInterpreter, KvpInterchangeFormatValidatorInterpreter}
+import com.bones.interpreter.{InterchangeFormatEncoderValue, InterchangeFormatValidatorValue, KvpInterchangeFormatEncoderInterpreter, KvpInterchangeFormatValidatorInterpreter}
 import io.circe.Json
 
 package object values {
 
-  val defaultEncoders: InterchangeFormatEncoder[DefaultValues, Json] =
+  val defaultEncoders: InterchangeFormatEncoderValue[DefaultValues, Json] =
     BaseScalaCoreEncoder ++  (CustomStringEncoder ++ (BaseCirceIsoJavaTimeEncoder ++
       (BaseJavaUtilEncoder ++ CNilInterchangeFormatEncoder[Json]())))
 
-  val defaultValidators: InterchangeFormatValidator[DefaultValues, Json] =
+  val defaultValidators: InterchangeFormatValidatorValue[DefaultValues, Json] =
     BaseScalaCoreValidator ++ (CustomStringValidator ++ (BaseCirceIsoJavaTimeValidator ++
       (BaseJavaUtilValidator ++ CNilInterchangeFormatValidator[Json]())))
 

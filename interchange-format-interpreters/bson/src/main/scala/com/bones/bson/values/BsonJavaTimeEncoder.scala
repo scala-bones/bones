@@ -5,10 +5,10 @@ import java.time._
 
 import com.bones.bson.BsonEncoderInterpreter
 import com.bones.data.values._
-import com.bones.interpreter.InterchangeFormatEncoder
+import com.bones.interpreter.InterchangeFormatEncoderValue
 import reactivemongo.bson.{BSONDateTime, BSONLong, BSONValue}
 
-trait BsonJavaTimeEncoder extends InterchangeFormatEncoder[JavaTimeValue, BSONValue] {
+trait BsonJavaTimeEncoder extends InterchangeFormatEncoderValue[JavaTimeValue, BSONValue] {
 
   val baseEncoder = BsonEncoderInterpreter
   val offsetDateTimeFormatter: DateTimeFormatter

@@ -8,9 +8,7 @@ import com.bones.data._
 import com.bones.data.values.CNilF
 import com.bones.jdbc.DbUtil._
 import com.bones.jdbc.IdDefinition
-import com.bones.jdbc.column.DbColumnInterpreter
-import com.bones.jdbc.column.DbColumnInterpreter.ColumnInterpreter
-import com.bones.jdbc.insert.DbInsertValues
+import com.bones.jdbc.column.ColumnValue
 import javax.sql.DataSource
 import shapeless.{:+:, ::, Coproduct, HList, HNil, Inl, Inr, Nat}
 
@@ -72,10 +70,14 @@ object DbUpdateValues {
   def updateQueryCustomAlgebra[ALG[_], A, ID](
                                                bonesSchema: KvpCollection[ALG, A],
                                                customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG],
-                                               columnInterpreter: ColumnInterpreter[ALG],
+                                               columnInterpreter: ColumnValue[ALG],
                                                idDef: IdDefinition[ALG, ID])
     : DataSource => (ID, A) => Either[NonEmptyList[ExtractionError], (ID, A)] = {
-    val uq = updateQueryWithConnectionCustomAlgebra(bonesSchema, customDbUpdateInterpreter, columnInterpreter, idDef)
+    val uq = updateQueryWithConnectionCustomAlgebra(
+      bonesSchema,
+      customDbUpdateInterpreter,
+      columnInterpreter,
+      idDef)
     ds => (id, a) =>
       withDataSource[(ID, A)](ds)(con => uq(id, a)(con))
   }
@@ -83,39 +85,43 @@ object DbUpdateValues {
   def updateQueryWithConnectionCustomAlgebra[ALG[_], A, ID](
                                                              bonesSchema: KvpCollection[ALG, A],
                                                              customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG],
-                                                             columnInterpreter: ColumnInterpreter[ALG],
-                                                             idDef: IdDefinition[ALG, ID]): (ID, A) => Connection => Either[NonEmptyList[SystemError], (ID, A)] =
+                                                             columnInterpreter: ColumnValue[ALG],
+                                                             idDef: IdDefinition[ALG, ID])
+    : (ID, A) => Connection => Either[NonEmptyList[SystemError], (ID, A)] =
     bonesSchema match {
       case x: HListConvert[ALG, h, n, b] @unchecked => {
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
         val updates = kvpHList(x.from, customDbUpdateInterpreter)(1)
         val idIndex = updates.lastIndex
         val idUpdateFunction =
-          DbUpdateValues.valueDefinition(idDef.asSchema, customDbUpdateInterpreter)(idIndex,idDef.key)
+          DbUpdateValues.valueDefinition(idDef.asSchema, customDbUpdateInterpreter)(
+            idIndex,
+            idDef.key)
         // TODO this does not handle null/none case
         val sql =
           s"""update ${tableName} set ${updates.assignmentStatements
             .map(_._1)
-            .mkString(",")} where ${idUpdateFunction.assignmentStatements.map(_._1).mkString(" and ")}"""
+            .mkString(",")} where ${idUpdateFunction.assignmentStatements
+            .map(_._1)
+            .mkString(" and ")}"""
         (id: ID, a: A) =>
-          {
-            (con: Connection) =>
-              {
-                val statement = con.prepareCall(sql)
-                try {
-                  updates
-                    .predicates(x.fAtoH(a))
-                    .foreach(f => f(statement))
-                  idUpdateFunction.predicates.apply(id).foreach(f => f.apply(statement))
-                  statement.execute()
-                  Right((id, a))
-                } catch {
-                  case e: SQLException =>
-                    Left(NonEmptyList.one(SystemError(e, Some(sql))))
-                } finally {
-                  statement.close()
-                }
+          { (con: Connection) =>
+            {
+              val statement = con.prepareCall(sql)
+              try {
+                updates
+                  .predicates(x.fAtoH(a))
+                  .foreach(f => f(statement))
+                idUpdateFunction.predicates.apply(id).foreach(f => f.apply(statement))
+                statement.execute()
+                Right((id, a))
+              } catch {
+                case e: SQLException =>
+                  Left(NonEmptyList.one(SystemError(e, Some(sql))))
+              } finally {
+                statement.close()
               }
+            }
           }
       }
     }
@@ -222,7 +228,7 @@ object DbUpdateValues {
     }
 
   def determineValueDefinition[ALG[_], A](
-    valueDef: Either[KvpCollection[ALG,A], ALG[A]],
+    valueDef: Either[KvpCollection[ALG, A], ALG[A]],
     customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG]
   ): (Index, Key) => DefinitionResult[A] =
     valueDef match {
@@ -231,7 +237,7 @@ object DbUpdateValues {
     }
 
   def valueDefinition[ALG[_], A](
-    fgo: KvpCollection[ALG,A],
+    fgo: KvpCollection[ALG, A],
     customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG])
     : (Index, Key) => DefinitionResult[A] =
     fgo match {

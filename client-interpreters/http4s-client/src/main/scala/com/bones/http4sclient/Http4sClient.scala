@@ -7,7 +7,7 @@ import cats.effect.IO
 import com.bones.circe.IsoCirceEncoderAndValidatorInterpreter
 import com.bones.data.Error.ExtractionError
 import com.bones.data.KvpCollection
-import com.bones.interpreter.InterchangeFormatValidator
+import com.bones.interpreter.InterchangeFormatValidatorValue
 import io.circe.Json
 import org.http4s.client.Client
 
@@ -20,7 +20,7 @@ object Http4sClient {
   def getF[ALG[_], O, E](
     path: String,
     outputSchema: KvpCollection[ALG, O],
-    validatorInterpreter: InterchangeFormatValidator[ALG, Json]
+    validatorInterpreter: InterchangeFormatValidatorValue[ALG, Json]
   ): Client[IO] => ID => IO[Either[Error[E], O]] = {
 
     val f = IsoCirceEncoderAndValidatorInterpreter

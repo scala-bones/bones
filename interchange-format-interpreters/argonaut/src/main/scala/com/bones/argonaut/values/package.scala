@@ -4,21 +4,21 @@ import java.time.format.DateTimeFormatter
 
 import argonaut.Json
 import com.bones.data.values.DefaultValues
-import com.bones.interpreter.InterchangeFormatEncoder.CNilInterchangeFormatEncoder
-import com.bones.interpreter.InterchangeFormatValidator.CNilInterchangeFormatValidator
+import com.bones.interpreter.InterchangeFormatEncoderValue.CNilInterchangeFormatEncoder
+import com.bones.interpreter.InterchangeFormatValidatorValue.CNilInterchangeFormatValidator
 import com.bones.interpreter.values._
-import com.bones.interpreter.{InterchangeFormatEncoder, InterchangeFormatValidator, KvpInterchangeFormatEncoderInterpreter, KvpInterchangeFormatValidatorInterpreter}
+import com.bones.interpreter.{InterchangeFormatEncoderValue, InterchangeFormatValidatorValue, KvpInterchangeFormatEncoderInterpreter, KvpInterchangeFormatValidatorInterpreter}
 
 package object values {
 
-  val defaultEncoders: InterchangeFormatEncoder[DefaultValues, Json] =
+  val defaultEncoders: InterchangeFormatEncoderValue[DefaultValues, Json] =
     ArgonautScalaCoreEncoder ++
       (CustomStringEncoder ++
         (ArgonautIsoJavaTimeEncoder ++
           (ArgonautJavaUtilEncoder ++ CNilInterchangeFormatEncoder[Json]())))
 
   // Validator for the coproduct of all custom algebras
-  val defaultValidators: InterchangeFormatValidator[DefaultValues, Json] =
+  val defaultValidators: InterchangeFormatValidatorValue[DefaultValues, Json] =
     ArgonautScalaCoreValidator ++
       (CustomStringValidator ++
         (ArgonautIsoJavaTimeValidator ++

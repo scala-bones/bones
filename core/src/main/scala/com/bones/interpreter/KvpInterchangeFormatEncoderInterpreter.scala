@@ -26,7 +26,7 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
     */
   def generateEncoder[ALG[_], A](
     collection: KvpCollection[ALG, A],
-    covEncoder: InterchangeFormatEncoder[ALG, OUT]
+    covEncoder: InterchangeFormatEncoderValue[ALG, OUT]
   ): A => OUT = valueDefinition(collection, covEncoder)
 
   def none: OUT
@@ -70,7 +70,7 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
 
   def kvpCoproduct[ALG[_], C <: Coproduct](
     kvpCo: KvpCoproduct[ALG, C],
-    encoder: InterchangeFormatEncoder[ALG, OUT]
+    encoder: InterchangeFormatEncoderValue[ALG, OUT]
   ): C => (CoproductType, OUT) = {
     kvpCo match {
       case co: KvpCoNil[_] =>
@@ -90,7 +90,7 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
   /** Interpreter for the KvpHList type. */
   protected def kvpHList[ALG[_], H <: HList, HL <: Nat](
     group: KvpHList[ALG, H, HL],
-    encoder: InterchangeFormatEncoder[ALG, OUT]
+    encoder: InterchangeFormatEncoderValue[ALG, OUT]
   ): H => OUT =
     group match {
       case nil: KvpNil[_] =>
@@ -132,7 +132,7 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
 
   protected def determineValueDefinition[ALG[_], A](
     dataDefinition: Either[KvpCollection[ALG, A], ALG[A]],
-    algEncoder: InterchangeFormatEncoder[ALG, OUT]
+    algEncoder: InterchangeFormatEncoderValue[ALG, OUT]
   ): A => OUT = {
     dataDefinition match {
       case Left(kvp)  => valueDefinition(kvp, algEncoder)
@@ -142,7 +142,7 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
 
   protected def valueDefinition[ALG[_], A](
     fgo: KvpCollection[ALG, A],
-    encoder: InterchangeFormatEncoder[ALG, OUT]
+    encoder: InterchangeFormatEncoderValue[ALG, OUT]
   ): A => OUT =
     fgo match {
       case op: OptionalKvpValueDefinition[ALG, b] @unchecked =>

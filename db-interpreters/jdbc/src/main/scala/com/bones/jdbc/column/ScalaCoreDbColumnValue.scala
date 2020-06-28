@@ -1,9 +1,9 @@
 package com.bones.jdbc.column
 
 import com.bones.data.values._
-import com.bones.jdbc.column.DbColumnInterpreter.{ColumnInterpreter, ToColumns, nameToColumn}
+import com.bones.jdbc.column.DbColumnInterpreter.{ToColumns, nameToColumn}
 
-trait ScalaCoreDbColumnInterpreter extends ColumnInterpreter[ScalaCoreValue] {
+trait ScalaCoreDbColumnValue extends ColumnValue[ScalaCoreValue] {
   override def toColumns[A](alg: ScalaCoreValue[A]): ToColumns =
     alg match {
       case ob: BooleanData            => nameToColumn("bool")
