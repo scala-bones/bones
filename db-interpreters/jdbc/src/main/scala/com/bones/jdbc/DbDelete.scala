@@ -4,11 +4,10 @@ import java.sql.Connection
 
 import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionError, SystemError}
-import com.bones.data.{KvpCollection, HListConvert}
+import com.bones.data.{HListConvert, KvpCollection}
 import com.bones.jdbc.DbUtil.{camelToSnake, withDataSource, withStatement}
 import com.bones.jdbc.rs.ResultSetValue
-import com.bones.jdbc.update.DbUpdateValues
-import com.bones.jdbc.update.DbUpdateValues.CustomDbUpdateInterpreter
+import com.bones.jdbc.update.{DbUpdateValue, DbUpdate}
 import javax.sql.DataSource
 
 import scala.util.control.NonFatal
@@ -16,10 +15,10 @@ import scala.util.control.NonFatal
 object DbDelete {
 
   def delete[ALG[_], A, ID](
-                             schema: KvpCollection[ALG, A],
-                             resultSetCustomInterpreter: ResultSetValue[ALG],
-                             idDef: IdDefinition[ALG, ID],
-                             customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG]
+    schema: KvpCollection[ALG, A],
+    resultSetCustomInterpreter: ResultSetValue[ALG],
+    idDef: IdDefinition[ALG, ID],
+    customDbUpdateInterpreter: DbUpdateValue[ALG]
   ): DataSource => ID => Either[NonEmptyList[ExtractionError], (ID, A)] = {
     val withConnection =
       deleteWithConnect(schema, resultSetCustomInterpreter, idDef, customDbUpdateInterpreter)
@@ -28,17 +27,18 @@ object DbDelete {
   }
 
   def deleteWithConnect[ALG[_], A, ID](
-                                        schema: KvpCollection[ALG, A],
-                                        resultSetCustomInterpreter: ResultSetValue[ALG],
-                                        idDef: IdDefinition[ALG, ID],
-                                        customDbUpdateInterpreter: CustomDbUpdateInterpreter[ALG]
+    schema: KvpCollection[ALG, A],
+    resultSetCustomInterpreter: ResultSetValue[ALG],
+    idDef: IdDefinition[ALG, ID],
+    customDbUpdateInterpreter: DbUpdateValue[ALG]
   ): ID => Connection => Either[NonEmptyList[ExtractionError], (ID, A)] = {
     schema match {
       case x: HListConvert[ALG, _, _, _] => {
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
         val updateF =
-          DbUpdateValues.valueDefinition(idDef.asSchema, customDbUpdateInterpreter)(1, idDef.key)
-        val sql = s"delete from ${tableName} where ${updateF.assignmentStatements.map(_._1).mkString(" AND ")}"
+          DbUpdate.valueDefinition(idDef.asSchema, customDbUpdateInterpreter)(1, idDef.key)
+        val sql =
+          s"delete from ${tableName} where ${updateF.assignmentStatements.map(_._1).mkString(" AND ")}"
         val getEntity = DbGet.getEntityWithConnectionCustomAlgebra(
           schema,
           idDef,

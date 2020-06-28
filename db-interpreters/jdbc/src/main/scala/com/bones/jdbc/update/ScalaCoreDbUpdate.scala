@@ -2,14 +2,13 @@ package com.bones.jdbc.update
 
 import java.sql.Types
 
-import com.bones.data.values.{BigDecimalData, BooleanData, ByteArrayData, DoubleData, EnumerationData, FloatData, IntData, LongData, ScalaCoreValue, ShortData, StringData}
-import com.bones.jdbc.update.DbUpdateValues.{CustomDbUpdateInterpreter, Index, Key}
+import com.bones.data.values._
 
-trait ScalaCoreDbUpdate extends CustomDbUpdateInterpreter[ScalaCoreValue] {
+trait ScalaCoreDbUpdate extends DbUpdateValue[ScalaCoreValue] {
 
-  import DbUpdateValues._
+  import DbUpdate._
 
-  override def definitionResult[A](alg: ScalaCoreValue[A]): (Index, Key) => DbUpdateValues.DefinitionResult[A] =
+  override def definitionResult[A](alg: ScalaCoreValue[A]): (Index, Key) => DbUpdate.DefinitionResult[A] =
     alg match {
       case ob: BooleanData =>
         psF(i => (ps, a) => ps.setBoolean(i, a), Types.BOOLEAN)

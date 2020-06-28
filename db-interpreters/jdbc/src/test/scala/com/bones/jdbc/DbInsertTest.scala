@@ -2,14 +2,14 @@ package com.bones.jdbc
 
 import java.util.{Properties, UUID}
 
-import com.bones.jdbc.insert.DbInsertValues
-import com.bones.jdbc.update.DbUpdateValues
+import com.bones.jdbc.insert.DbInsert
+import com.bones.jdbc.update.DbUpdate
 import com.bones.syntax._
 import com.bones.schemas.Schemas
 import com.bones.schemas.Schemas._
 import org.scalatest.funsuite.AnyFunSuite
 
-class DbInsertValuesTest extends AnyFunSuite {
+class DbInsertTest extends AnyFunSuite {
 
   ignore("Insert into db test") {
 
@@ -28,7 +28,7 @@ class DbInsertValuesTest extends AnyFunSuite {
       Some(BillingLocation("US", None))
     )
 
-    val result = DbInsertValues.insertQueryWithConnectionCustomAlgebra(
+    val result = DbInsert.insertQueryWithConnectionCustomAlgebra(
       Schemas.creditCardSchema,
       Schemas.idSchema,
       insert.defaultDbInsertInterpreter,
@@ -44,7 +44,7 @@ class DbInsertValuesTest extends AnyFunSuite {
 
     val newCC = cc.copy(expMonth = 12, expYear = 2012, billingLocation = None)
     val idDef = IdDefinition("id", long(lv.positive))
-    DbUpdateValues.updateQueryWithConnectionCustomAlgebra(
+    DbUpdate.updateQueryWithConnectionCustomAlgebra(
       Schemas.creditCardSchema,
       update.defaultDbUpdateInterpreter,
       column.defaultDbColumnInterpreter,

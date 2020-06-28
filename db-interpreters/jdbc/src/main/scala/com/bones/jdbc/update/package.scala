@@ -1,12 +1,12 @@
 package com.bones.jdbc
 
 import com.bones.data.values.DefaultValues
-import com.bones.jdbc.update.DbUpdateValues.CustomDbUpdateInterpreter
-import com.bones.jdbc.update.DbUpdateValues.CustomDbUpdateInterpreter.CNilUpdateInterpreter
+import com.bones.jdbc.update.DbUpdateValue.CNilUpdateInterpreter
+
 
 package object update {
 
-  val defaultDbUpdateInterpreter: CustomDbUpdateInterpreter[DefaultValues] =
+  val defaultDbUpdateInterpreter: DbUpdateValue[DefaultValues] =
     DefaultScalaCoreDbUpdate ++
       (DefaultCustomStringDbUpdate ++
         (DefaultJavaTimeDbUpdate ++

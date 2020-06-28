@@ -5,8 +5,8 @@ import cats.effect.IO
 import com.bones.data.KvpCollection
 import com.bones.data.Error.ExtractionError
 import com.bones.jdbc.{JdbcColumnInterpreter, _}
-import com.bones.jdbc.insert.DbInsertValues
-import com.bones.jdbc.update.DbUpdateValues
+import com.bones.jdbc.insert.DbInsert
+import com.bones.jdbc.update.DbUpdate
 import fs2.Stream
 import javax.sql.DataSource
 
@@ -36,7 +36,7 @@ case class CrudDbDefinitions[ALG[_], A, ID](
       })
 
   def createF: A => IO[Either[NonEmptyList[ExtractionError], (ID, A)]] = {
-    val insertQuery = DbInsertValues.insertQuery(
+    val insertQuery = DbInsert.insertQuery(
       schema,
       idDef.asSchema,
       customInterpreter.insert,
@@ -57,7 +57,7 @@ case class CrudDbDefinitions[ALG[_], A, ID](
   }
 
   val updateF: (ID, A) => IO[Either[NonEmptyList[ExtractionError], (ID, A)]] = {
-    val updateQuery = DbUpdateValues.updateQueryCustomAlgebra(
+    val updateQuery = DbUpdate.updateQueryCustomAlgebra(
       schema,
       customInterpreter.dbUpdate,
       customInterpreter.dbColumn,
