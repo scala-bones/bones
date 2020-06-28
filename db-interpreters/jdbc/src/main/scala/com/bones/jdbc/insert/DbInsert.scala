@@ -11,7 +11,7 @@ import com.bones.jdbc.rs.{ResultSetInterpreter, ResultSetValue}
 import javax.sql.DataSource
 import shapeless.{::, HList, Nat}
 
-object DbInsertValues {
+object DbInsert {
 
   type FieldName = String
   type FieldValue = String
@@ -23,10 +23,10 @@ object DbInsertValues {
   type InsertPair[A] = Key => (Index, A) => (Index, List[(ColumnName, SetValue)])
 
   def insertQuery[ALG[_], A, ID](
-    collection: KvpCollection[ALG, A],
-    idSchema: KvpCollection[ALG, ID],
-    customInterpreter: CustomInterpreter[ALG],
-    resultSetValueInterpreter: ResultSetValue[ALG])
+                                  collection: KvpCollection[ALG, A],
+                                  idSchema: KvpCollection[ALG, ID],
+                                  customInterpreter: DbInsertValue[ALG],
+                                  resultSetValueInterpreter: ResultSetValue[ALG])
     : DataSource => A => Either[NonEmptyList[ExtractionError], (ID, A)] = {
     val iq = insertQueryWithConnectionCustomAlgebra(
       collection,
@@ -51,10 +51,10 @@ object DbInsertValues {
   }
 
   def insertQueryWithConnectionCustomAlgebra[ALG[_], A, ID](
-    collection: KvpCollection[ALG, A],
-    idSchema: KvpCollection[ALG, ID],
-    customInterpreter: CustomInterpreter[ALG],
-    resultSetInterpreter: ResultSetValue[ALG])
+                                                             collection: KvpCollection[ALG, A],
+                                                             idSchema: KvpCollection[ALG, ID],
+                                                             customInterpreter: DbInsertValue[ALG],
+                                                             resultSetInterpreter: ResultSetValue[ALG])
     : A => Connection => Either[NonEmptyList[ExtractionError], (ID, A)] = {
     val tableName = camelToSnake(collection.manifestOfA.runtimeClass.getSimpleName)
     val updates = valueDefinition(collection, customInterpreter)
@@ -92,7 +92,7 @@ object DbInsertValues {
 
   def kvpHList[ALG[_], H <: HList, HL <: Nat](
     group: KvpHList[ALG, H, HL],
-    customInterpreter: CustomInterpreter[ALG])
+    customInterpreter: DbInsertValue[ALG])
     : (Index, H) => (Index, List[(ColumnName, SetValue)]) = {
     group match {
       case nil: KvpNil[_] =>
@@ -139,7 +139,7 @@ object DbInsertValues {
 
   private def fromBonesSchema[ALG[_], A](
     bonesSchema: KvpCollection[ALG, A],
-    customInterpreter: CustomInterpreter[ALG])
+    customInterpreter: DbInsertValue[ALG])
     : (Index, A) => (Index, List[(ColumnName, SetValue)]) = {
     bonesSchema match {
       case co: KvpCoproductConvert[ALG, c, a] => ???
@@ -168,7 +168,7 @@ object DbInsertValues {
 
   def determineValueDefinition[ALG[_], A](
     coproduct: CoproductDataDefinition[ALG, A],
-    customInterpreter: CustomInterpreter[ALG]): InsertPair[A] = {
+    customInterpreter: DbInsertValue[ALG]): InsertPair[A] = {
     coproduct match {
       case Left(kvp)  => valueDefinition(kvp, customInterpreter)
       case Right(alg) => customInterpreter.insertPair(alg)
@@ -177,7 +177,7 @@ object DbInsertValues {
 
   def valueDefinition[ALG[_], A](
     fgo: KvpCollection[ALG, A],
-    customInterpreter: CustomInterpreter[ALG]): InsertPair[A] =
+    customInterpreter: DbInsertValue[ALG]): InsertPair[A] =
     fgo match {
       case op: OptionalKvpValueDefinition[ALG, b] @unchecked =>
         val valueF = determineValueDefinition(op.valueDefinitionOp, customInterpreter)
