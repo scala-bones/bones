@@ -7,7 +7,7 @@ import cats.data.NonEmptyList
 import com.bones.data.Error
 import com.bones.data.Error.{CanNotConvert, RequiredValue}
 import com.bones.data.values._
-import com.bones.interpreter.{InterchangeFormatValidator, KvpInterchangeFormatValidatorInterpreter}
+import com.bones.interpreter.{InterchangeFormatValidatorValue, KvpInterchangeFormatValidatorInterpreter}
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.ValidationUtil
 
@@ -66,7 +66,7 @@ object JavaTimeValidator {
     }
 }
 
-trait JavaTimeValidator[IN] extends InterchangeFormatValidator[JavaTimeValue, IN] {
+trait JavaTimeValidator[IN] extends InterchangeFormatValidatorValue[JavaTimeValue, IN] {
 
   import JavaTimeValidator._
 

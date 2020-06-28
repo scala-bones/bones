@@ -37,7 +37,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
     */
   def generateValidator[ALG[_], A](
     schema: KvpCollection[ALG, A],
-    interchangeFormatValidator: InterchangeFormatValidator[ALG, IN])
+    interchangeFormatValidator: InterchangeFormatValidatorValue[ALG, IN])
     : IN => Either[NonEmptyList[ExtractionError], A] =
     schema match {
       case x: HListConvert[ALG, _, _, A] =>
@@ -47,7 +47,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
 
   def generateValidatorWithPath[ALG[_], A](
     schema: KvpCollection[ALG, A],
-    interchangeFormatValidator: InterchangeFormatValidator[ALG, IN])
+    interchangeFormatValidator: InterchangeFormatValidatorValue[ALG, IN])
     : (IN, Path) => Either[NonEmptyList[ExtractionError], A] =
     schema match {
       case x: HListConvert[ALG, _, _, A] =>
@@ -131,7 +131,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
 
   protected def kvpCoproduct[ALG[_], C <: Coproduct](
     co: KvpCoproduct[ALG, C],
-    validator: InterchangeFormatValidator[ALG, IN])
+    validator: InterchangeFormatValidatorValue[ALG, IN])
     : (IN, Path, CoproductType) => Either[NonEmptyList[ExtractionError], C] = {
     co match {
       case nil: KvpCoNil[_] =>
@@ -152,7 +152,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
 
   def kvpHList[ALG[_], H <: HList, HL <: Nat](
     group: KvpHList[ALG, H, HL],
-    validator: InterchangeFormatValidator[ALG, IN])
+    validator: InterchangeFormatValidatorValue[ALG, IN])
     : (IN, List[String]) => Either[NonEmptyList[ExtractionError], H] = {
     group match {
       case nil: KvpNil[_] =>
@@ -223,7 +223,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
 
   protected def determineValueDefinition[ALG[_], A](
     value: Either[KvpCollection[ALG, A], ALG[A]],
-    extendedValidator: InterchangeFormatValidator[ALG, IN]
+    extendedValidator: InterchangeFormatValidatorValue[ALG, IN]
   ): (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A] = {
     value match {
       case Left(kvp)  => valueDefinition(kvp, extendedValidator)
@@ -233,7 +233,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
 
   protected def valueDefinition[ALG[_], A](
     fgo: KvpCollection[ALG, A],
-    extendedValidator: InterchangeFormatValidator[ALG, IN])
+    extendedValidator: InterchangeFormatValidatorValue[ALG, IN])
     : (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A] = {
     val result: (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A] =
       fgo match {

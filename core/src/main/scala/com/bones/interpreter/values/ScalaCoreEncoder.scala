@@ -1,9 +1,9 @@
 package com.bones.interpreter.values
 
 import com.bones.data.values._
-import com.bones.interpreter.{InterchangeFormatEncoder, KvpInterchangeFormatEncoderInterpreter}
+import com.bones.interpreter.{InterchangeFormatEncoderValue, KvpInterchangeFormatEncoderInterpreter}
 
-trait ScalaCoreEncoder[OUT] extends InterchangeFormatEncoder[ScalaCoreValue, OUT] {
+trait ScalaCoreEncoder[OUT] extends InterchangeFormatEncoderValue[ScalaCoreValue, OUT] {
   val defaultEncoder: KvpInterchangeFormatEncoderInterpreter[OUT]
 
   override def encode[A](alg: ScalaCoreValue[A]): A => OUT =

@@ -1,16 +1,16 @@
 package com.bones
 
-import com.bones.data.{KvpCollection, HListConvert, KvpNil}
-import com.bones.jdbc.column.DbColumnInterpreter
+import com.bones.data.{HListConvert, KvpCollection, KvpNil}
+import com.bones.jdbc.column.ColumnValue
 import com.bones.jdbc.update.DbUpdateValues.CustomDbUpdateInterpreter
 import shapeless.Nat._0
-import shapeless.{HNil, Succ, ::}
+import shapeless.{::, HNil, Succ}
 
 package object jdbc {
 
   case class JdbcColumnInterpreter[ALG[_]](
                                             resultSet: rs.ResultSetValue[ALG],
-                                            dbColumn: DbColumnInterpreter.ColumnInterpreter[ALG],
+                                            dbColumn: ColumnValue[ALG],
                                             insert: com.bones.jdbc.insert.CustomInterpreter[ALG],
                                             dbUpdate: CustomDbUpdateInterpreter[ALG])
 

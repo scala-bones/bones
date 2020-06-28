@@ -3,21 +3,21 @@ package com.bones.bson
 import java.time.format.DateTimeFormatter
 
 import com.bones.data.values.DefaultValues
-import com.bones.interpreter.InterchangeFormatEncoder.CNilInterchangeFormatEncoder
-import com.bones.interpreter.InterchangeFormatValidator.CNilInterchangeFormatValidator
+import com.bones.interpreter.InterchangeFormatEncoderValue.CNilInterchangeFormatEncoder
+import com.bones.interpreter.InterchangeFormatValidatorValue.CNilInterchangeFormatValidator
 import com.bones.interpreter.values._
-import com.bones.interpreter.{InterchangeFormatEncoder, InterchangeFormatValidator, KvpInterchangeFormatEncoderInterpreter, KvpInterchangeFormatValidatorInterpreter}
+import com.bones.interpreter.{InterchangeFormatEncoderValue, InterchangeFormatValidatorValue, KvpInterchangeFormatEncoderInterpreter, KvpInterchangeFormatValidatorInterpreter}
 import reactivemongo.bson.BSONValue
 
 package object values {
 
-  val defaultEncoders: InterchangeFormatEncoder[DefaultValues, BSONValue] =
+  val defaultEncoders: InterchangeFormatEncoderValue[DefaultValues, BSONValue] =
     BsonScalaCoreEncoder ++
       (DefaultBsonCustomStringEncoder ++
           (IsoBsonJavaTimeEncoder ++
               (BsonJavaUtilEncoder ++ CNilInterchangeFormatEncoder[BSONValue]())))
 
-  val defaultValidators: InterchangeFormatValidator[DefaultValues, BSONValue] =
+  val defaultValidators: InterchangeFormatValidatorValue[DefaultValues, BSONValue] =
     BsonScalaCoreValidator ++
       (DefaultBsonCustomStringValidator ++
         (IsoBsonJavaTimeValidator ++

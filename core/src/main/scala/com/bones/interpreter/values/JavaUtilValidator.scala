@@ -6,9 +6,9 @@ import cats.data.NonEmptyList
 import com.bones.Util.stringToUuid
 import com.bones.data.Error
 import com.bones.data.values.{JavaUtilValue, UuidData}
-import com.bones.interpreter.{InterchangeFormatValidator, KvpInterchangeFormatValidatorInterpreter}
+import com.bones.interpreter.{InterchangeFormatValidatorValue, KvpInterchangeFormatValidatorInterpreter}
 
-trait JavaUtilValidator[IN] extends InterchangeFormatValidator[JavaUtilValue, IN] {
+trait JavaUtilValidator[IN] extends InterchangeFormatValidatorValue[JavaUtilValue, IN] {
 
   val baseValidator: KvpInterchangeFormatValidatorInterpreter[IN]
 

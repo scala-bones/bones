@@ -3,9 +3,9 @@ package com.bones.protobuf.values
 import com.bones.data.values._
 import com.bones.interpreter.values.ExtractionErrorEncoder
 import com.bones.protobuf.ProtobufSequentialEncoderInterpreter.EncodeToProto
-import com.bones.protobuf.{ProtobufUtcSequentialEncoderAndValidator, ProtobufValueEncoder}
+import com.bones.protobuf.{ProtobufUtcSequentialEncoderAndValidator, ProtobufEncoderValue}
 
-object ExtractionErrorProtoEncoder extends ProtobufValueEncoder[ExtractionErrorValue] {
+object ExtractionErrorProtoEncoder extends ProtobufEncoderValue[ExtractionErrorValue] {
   private val encoder = ProtobufUtcSequentialEncoderAndValidator
   val scalaCoreCustomInterpreter = ProtobufScalaCoreEncoder
 

@@ -2,9 +2,9 @@ package com.bones.protobuf.values
 
 import com.bones.data.values._
 import com.bones.protobuf.ProtobufSequentialEncoderInterpreter._
-import com.bones.protobuf.{ProtobufSequentialEncoderInterpreter, ProtobufValueEncoder}
+import com.bones.protobuf.{ProtobufSequentialEncoderInterpreter, ProtobufEncoderValue}
 
-trait ScalaCoreEncoder extends ProtobufValueEncoder[ScalaCoreValue] {
+trait ScalaCoreEncoder extends ProtobufEncoderValue[ScalaCoreValue] {
 
   val defaultEncoder: ProtobufSequentialEncoderInterpreter
 

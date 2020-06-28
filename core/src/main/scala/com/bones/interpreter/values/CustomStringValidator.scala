@@ -4,10 +4,10 @@ import cats.data.NonEmptyList
 import com.bones.data.Error
 import com.bones.data.Error.RequiredValue
 import com.bones.data.values.CustomStringValue
-import com.bones.interpreter.{InterchangeFormatValidator, KvpInterchangeFormatValidatorInterpreter}
+import com.bones.interpreter.{InterchangeFormatValidatorValue, KvpInterchangeFormatValidatorInterpreter}
 import com.bones.validation.ValidationUtil
 
-trait CustomStringValidator[IN] extends InterchangeFormatValidator[CustomStringValue, IN] {
+trait CustomStringValidator[IN] extends InterchangeFormatValidatorValue[CustomStringValue, IN] {
 
   val baseValidator: KvpInterchangeFormatValidatorInterpreter[IN]
 
