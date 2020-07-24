@@ -89,7 +89,7 @@ lazy val directEncoders = (project in file("interchange-format-interpreters/dire
     commonSettings,
     name := "Bones String Json",
     libraryDependencies ++= Seq(
-      "org.apache.commons" % "commons-text" % "1.8",
+      "org.apache.commons" % "commons-text" % "1.9",
       "io.circe" %% "circe-core" % circeVersion % Test,
       "io.circe" %% "circe-parser" % circeVersion % Test,
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
