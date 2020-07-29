@@ -129,8 +129,8 @@ lazy val protobuf = (project in file("interchange-format-interpreters/protobuf")
     commonSettings,
     name := "Bones Protobuf",
     libraryDependencies ++= Seq(
-      "com.google.protobuf" % "protobuf-java" % "3.12.2",
-      "com.google.protobuf" % "protobuf-java-util" % "3.12.2",
+      "com.google.protobuf" % "protobuf-java" % "3.12.4",
+      "com.google.protobuf" % "protobuf-java-util" % "3.12.4",
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
       "org.scalatest" %% "scalatest" % "3.2.0" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
@@ -234,7 +234,7 @@ lazy val protobufIntegrationTest =
       commonSettings,
       name := "Bones JavaPB Integration Test",
       libraryDependencies ++= Seq(
-        "com.google.protobuf" % "protobuf-java" % "3.12.2",
+        "com.google.protobuf" % "protobuf-java" % "3.12.4",
         "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
         "org.scalatest" %% "scalatest" % "3.2.0" % Test,
         "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
