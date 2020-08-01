@@ -103,12 +103,6 @@ trait ScalaCoreValidation {
   def ev[E <: Enumeration]: EnumerationValidation[E] = EnumerationValidation[E]()
 }
 
-trait ScalaCoreValueTemplate[OUT] {
-
-  
-
-}
-
 object ScalaCoreSugarInstance extends ScalaCoreSugar
 
 trait ScalaCoreSugar extends ScalaCoreValidation {

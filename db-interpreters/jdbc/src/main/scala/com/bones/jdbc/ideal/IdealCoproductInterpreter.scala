@@ -33,7 +33,7 @@ trait IdealCoproductInterpreter[ALG[_]]
     TableCollection,
     Option[ColumnName],
     Option[Description]) => Either[InvalidStructureError, TableCollection] = {
-    kvpSingleValueLeft.kvpValue match {
+    val leftF = kvpSingleValueLeft.kvpValue match {
       case Left(kvpCollection: KvpCollection[ALG, A]) =>
         implicit val manifestOfA = kvpCollection.manifestOfA
         fromCollection[A](kvpCollection)
@@ -48,5 +48,18 @@ trait IdealCoproductInterpreter[ALG[_]]
             case None => Left(InvalidStructureError("Expecting a name for this coproduct type"))
           }
     }
+
+    (
+      tableCollection: TableCollection,
+      name: Option[ColumnName],
+      description: Option[Description]) => {
+
+      for {
+        l <- leftF(tableCollection, name, description)
+        t <- fromKvpCoproduct(kvpSingleValueLeft.kvpTail).apply(l, name, description)
+      } yield t
+
+    }
+
   }
 }

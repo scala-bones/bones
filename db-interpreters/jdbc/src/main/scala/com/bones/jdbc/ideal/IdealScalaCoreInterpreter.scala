@@ -3,7 +3,7 @@ package com.bones.jdbc.ideal
 import com.bones.data.values._
 import com.bones.si.ideal._
 
-class IdealScalaCoreInterpreter
+object IdealScalaCoreInterpreter
     extends IdealValue[ScalaCoreValue]
     with BaseScalaCoreInterpreter[IdealDataType] {
 

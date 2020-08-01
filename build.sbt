@@ -174,18 +174,7 @@ lazy val dbJdbc = (project in file("db-interpreters/jdbc"))
     )
   )
   .dependsOn(core, testSchemas % "test->compile")
-lazy val liquidbase = (project in file("db-interpreters/liquibase"))
-  .settings(
-    commonSettings,
-    name := "Bones Liquibase",
-    libraryDependencies ++= Seq(
-      "com.sap.cloud.sdk.frameworks" % "liquibase" % "3.22.0",
-      "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
-      "org.scalatest" %% "scalatest" % "3.2.0" % Test,
-      "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
-    )
-  )
-  .dependsOn(core, dbJdbc, testSchemas % "test->compile")
+
 lazy val http4sVersion = "0.21.6"
 lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
   .settings(

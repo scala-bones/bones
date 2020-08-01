@@ -61,7 +61,7 @@ trait IdealHListInterpreter[ALG[_]]
   override def kvpSingleValueHead[H:Manifest, T <: HList, TL <: Nat, O <: H :: T](
     kvp: KvpSingleValueHead[ALG, H, T, TL, O])
     : TableCollection => Either[InvalidStructureError, TableCollection] = {
-    kvp.fieldDefinition.dataDefinition match {
+    val headF = kvp.fieldDefinition.dataDefinition match {
       case Left(kvpCollection) =>
         (tableCollection: TableCollection) =>
           {
@@ -80,6 +80,12 @@ trait IdealHListInterpreter[ALG[_]]
             Right(newTableCollection)
           }
     }
+
+    (tableCollection: TableCollection) => for {
+      h <- headF(tableCollection)
+      t <- fromKvpHList(kvp.tail).apply(h)
+    } yield t
+
   }
 
 }
