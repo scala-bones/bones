@@ -400,7 +400,7 @@ object ValidationDefinition {
       with Modulo[Long]
       with LongOrdering {
     override val modulo: (Long, Long) => Long = (l1, l2) => l1 % l2
-    val zero = 0l
+    val zero = 0L
   }
 
   object DoubleValidation

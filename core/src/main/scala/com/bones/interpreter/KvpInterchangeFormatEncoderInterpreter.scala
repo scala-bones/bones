@@ -117,7 +117,7 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
             val tail = tailF(tailCons)
             combine(toObj(op.fieldDefinition, val1), tail)
           }
-      case op: KvpConcreteTypeHead[ALG, H, ht, nt] @unchecked => {
+      case op: KvpCollectionHead[ALG, H, ht, nt] @unchecked => {
         val headF = generateEncoder(op.collection, encoder)
         val tailF = kvpHList(op.tail, encoder)
         implicit val hCons = op.isHCons

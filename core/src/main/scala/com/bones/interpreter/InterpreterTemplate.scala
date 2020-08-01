@@ -15,7 +15,7 @@ class InterpreterTemplate {
       case nil: KvpNil[_]                             => ???
       case op: KvpSingleValueHead[alg, h, t, tl, a]   => ???
       case op: KvpHListHead[alg, a, al, h, hl, t, tl] => ???
-      case op: KvpConcreteTypeHead[alg, a, ht, nt]    => ???
+      case op: KvpCollectionHead[alg, a, ht, nt]    => ???
     }
   }
 

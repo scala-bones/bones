@@ -40,4 +40,18 @@ case class KvpSingleValueLeft[ALG[_], A, R <: Coproduct](
   kvpValue: Either[KvpCollection[ALG, A], ALG[A]],
   kvpTail: KvpCoproduct[ALG, R],
   manifestL: Manifest[A]
-) extends KvpCoproduct[ALG, A :+: R] {}
+) extends KvpCoproduct[ALG, A :+: R]
+
+trait KvpCoproductTemplate[ALG[_], OUT] {
+
+  def fromKvpCoproduct[C<:Coproduct](kvpCoproduct: KvpCoproduct[ALG,C]): OUT = {
+    kvpCoproduct match {
+      case kvp: KvpCoNil[ALG] => kvpCoNil(kvp)
+      case kvp: KvpSingleValueLeft[ALG, a, r] => kvpSingleValueLeft(kvp)
+    }
+  }
+
+  def kvpCoNil(kvpCoproduct: KvpCoNil[ALG]): OUT
+  def kvpSingleValueLeft[A,R<:Coproduct](kvpSingleValueLeft: KvpSingleValueLeft[ALG,A,R]): OUT
+
+}

@@ -65,6 +65,7 @@ object DbSearch {
               a
             }
           }
+      case _ => ??? // TODO
     }
   }
 

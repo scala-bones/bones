@@ -10,7 +10,7 @@ package object insert {
     DefaultScalaCoreDbInsert ++
       (DefaultCustomStringDbInsert ++
         (DefaultJavaTimeDbInsert ++
-          (DefaultJavaUtilDbInsert ++ CNilUpdateInterpreter)))
+          (DefaultJavaUtilDbInsert ++ CNilInsertInterpreter)))
 
   object DefaultScalaCoreDbInsert extends ScalaCoreDbInsert
   object DefaultJavaUtilDbInsert extends JavaUtilDbInsert

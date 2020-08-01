@@ -8,6 +8,7 @@ import com.bones.syntax.{long, lv}
 import javax.sql.DataSource
 
 import scala.annotation.tailrec
+import scala.util.Try
 import scala.util.control.NonFatal
 
 object DbUtil {
@@ -33,16 +34,25 @@ object DbUtil {
   }
 
   def withDataSource[A](ds: DataSource)(f: Connection => Either[NonEmptyList[ExtractionError], A])
-    : Either[NonEmptyList[ExtractionError], A] =
+    : Either[NonEmptyList[ExtractionError], A] = {
+
     try {
       val con = ds.getConnection
-      val result = f(con)
-      con.close()
-      result
+      try {
+        val result = f(con)
+        con.close()
+        result
+      } catch {
+        case ex: SQLException =>
+          Left(NonEmptyList.one(SystemError(List.empty, ex, None)))
+      } finally {
+        con.close()
+      }
     } catch {
       case ex: SQLException =>
         Left(NonEmptyList.one(SystemError(List.empty, ex, None)))
     }
+  }
 
   def withStatement[A](con: CallableStatement)(
     f: CallableStatement => Either[NonEmptyList[ExtractionError], A])

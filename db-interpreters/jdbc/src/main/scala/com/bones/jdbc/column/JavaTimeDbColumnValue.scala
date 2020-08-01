@@ -8,5 +8,6 @@ trait JavaTimeDbColumnValue extends ColumnValue[JavaTimeValue] {
     alg match {
       case _: LocalDateData     => nameToColumn("date")
       case _: LocalDateTimeData => nameToColumn("timestamp")
+      case _ => ??? // TODO
     }
 }

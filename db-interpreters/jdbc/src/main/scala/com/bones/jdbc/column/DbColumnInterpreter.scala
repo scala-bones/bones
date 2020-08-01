@@ -44,7 +44,7 @@ object DbColumnInterpreter {
         val headResult = kvpHList(op.head, customInterpreter)
         val tailResult = kvpHList(op.tail, customInterpreter)
         headResult ::: tailResult
-      case op: KvpConcreteTypeHead[ALG, a, ht, nt] =>
+      case op: KvpCollectionHead[ALG, a, ht, nt] =>
         val headResult = generateColumns(op.collection, customInterpreter)
         val tailResult = kvpHList(op.tail, customInterpreter)
         headResult ::: tailResult
@@ -91,5 +91,8 @@ object DbColumnInterpreter {
       case x: HListConvert[ALG, a, al, b] @unchecked =>
         _ =>
           kvpHList(x.from, customInterpreter)
+      case co: KvpCoproductConvert[ALG, c, a] @unchecked => ??? // TODO
+      case co: KvpCoproductValue[ALG,c] @unchecked => ??? // TODO
+
     }
 }

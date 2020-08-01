@@ -233,8 +233,8 @@ trait ScalacheckJavaTimeInterpreter extends GenValue[JavaTimeValue] {
           DurationValidation,
           (d: Duration) => d.plusNanos(1),
           (d: Duration) => d.minusNanos(1),
-          Duration.ofSeconds(Long.MaxValue, 999999999l),
-          Duration.ofSeconds(Long.MinValue, 999999999l)
+          Duration.ofSeconds(Long.MaxValue, 999999999L),
+          Duration.ofSeconds(Long.MinValue, 999999999L)
         )(chooseDuration)
 
       case id: InstantData =>

@@ -9,7 +9,7 @@ import io.swagger.v3.oas.models.media._
 import io.swagger.v3.oas.models.parameters.{Parameter, RequestBody}
 import io.swagger.v3.oas.models.responses.{ApiResponse, ApiResponses}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
   * Responsible for creating a full CRUD Swagger definition including paths and data.

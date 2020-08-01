@@ -161,7 +161,7 @@ object BaseCrudInterpreter {
       case co: KvpCoproductConvert[ALG, _, A] @unchecked =>
         implicit val manifest: Manifest[A] = co.manifestOfA
         (("id", idDefinition) :: co :><: new KvpNil[ALG]).tupled[(ID, A)]
-
+      case _ => ??? // TODO
     }
 
   def httpDeleteRoutes[F[_], ALG[_], A, E, B, ID](

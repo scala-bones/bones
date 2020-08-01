@@ -20,6 +20,7 @@ object TableName {
   def getTableName[ALG[_], B](dc: KvpCollection[ALG, B]): String = dc match {
     case t: HListConvert[_, a, al, b] @unchecked =>
       camelToSnake(t.manifestOfA.runtimeClass.getSimpleName)
+    case _ => ??? // TODO
   }
 }
 
@@ -35,6 +36,7 @@ object FieldNames {
     dc match {
       case t: HListConvert[ALG, a, al, b] @unchecked =>
         kvpHList(t.from, customFieldNamesInterpreter)
+      case _ => ??? // TODO
     }
 
   def kvpHList[ALG[_], H <: HList, HL <: Nat](
@@ -46,11 +48,12 @@ object FieldNames {
         List(camelToSnake(op.fieldDefinition.key)) ::: kvpHList(
           op.tail,
           customFieldNamesInterpreter)
-      case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked => {
+      case op: KvpCollectionHead[ALG, a, ht, nt] @unchecked => {
         val headList = op.collection match {
           case hList: HListConvert[ALG, h, n, a] =>
             kvpHList(hList.from, customFieldNamesInterpreter)
           case co: KvpCoproductConvert[ALG, c, a] => ???
+          case _ => ??? // TODO
         }
         headList ::: kvpHList(op.tail, customFieldNamesInterpreter)
       }
@@ -79,6 +82,8 @@ object FieldNames {
       case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
         kvpHList(kvp.kvpHList, customFieldNamesInterpreter)
       case x: HListConvert[ALG, _, _, _] @unchecked => kvpHList(x.from, customFieldNamesInterpreter)
+      case co: KvpCoproductConvert[ALG, c, a] @unchecked => ??? // TODO
+      case co: KvpCoproductValue[ALG, a] @unchecked => ??? // TODO
     }
 
 }

@@ -29,26 +29,10 @@ object DbUpdate {
     assignmentStatements: List[(AssignmentString, SetNull)],
     predicates: A => List[SetValue])
 
-  def updateQueryCustomAlgebra[ALG[_], A, ID](
-                                               bonesSchema: KvpCollection[ALG, A],
-                                               customDbUpdateInterpreter: DbUpdateValue[ALG],
-                                               columnInterpreter: ColumnValue[ALG],
-                                               idDef: IdDefinition[ALG, ID])
-    : DataSource => (ID, A) => Either[NonEmptyList[ExtractionError], (ID, A)] = {
-    val uq = updateQueryWithConnectionCustomAlgebra(
-      bonesSchema,
-      customDbUpdateInterpreter,
-      columnInterpreter,
-      idDef)
-    ds => (id, a) =>
-      withDataSource[(ID, A)](ds)(con => uq(id, a)(con))
-  }
-
-  def updateQueryWithConnectionCustomAlgebra[ALG[_], A, ID](
-                                                             bonesSchema: KvpCollection[ALG, A],
-                                                             customDbUpdateInterpreter: DbUpdateValue[ALG],
-                                                             columnInterpreter: ColumnValue[ALG],
-                                                             idDef: IdDefinition[ALG, ID])
+  def updateQuery[ALG[_], A, ID](
+    bonesSchema: KvpCollection[ALG, A],
+    customDbUpdateInterpreter: DbUpdateValue[ALG],
+    idDef: IdDefinition[ALG, ID])
     : (ID, A) => Connection => Either[NonEmptyList[SystemError], (ID, A)] =
     bonesSchema match {
       case x: HListConvert[ALG, h, n, b] @unchecked => {
@@ -84,6 +68,7 @@ object DbUpdate {
             }
           }
       }
+      case _ => ??? // TODO
     }
 
   def kvpHList[ALG[_], H <: HList, HL <: Nat](
@@ -114,7 +99,7 @@ object DbUpdate {
               f)
           }
       }
-      case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked => {
+      case op: KvpCollectionHead[ALG, a, ht, nt] @unchecked => {
 
         def fromBones[A](bonesSchema: KvpCollection[ALG, A]): Index => DefinitionResult[A] = {
           bonesSchema match {
@@ -126,9 +111,7 @@ object DbUpdate {
                   val as: A => List[SetValue] = a => dr.predicates(hList.fAtoH(a))
                   DefinitionResult(dr.lastIndex, dr.assignmentStatements, as)
                 }
-            case co: KvpCoproductConvert[ALG, c, a] =>
-              index =>
-                ???
+            case _ => ??? // TODO
           }
         }
 
@@ -198,8 +181,7 @@ object DbUpdate {
 
   def valueDefinition[ALG[_], A](
     fgo: KvpCollection[ALG, A],
-    customDbUpdateInterpreter: DbUpdateValue[ALG])
-    : (Index, Key) => DefinitionResult[A] =
+    customDbUpdateInterpreter: DbUpdateValue[ALG]): (Index, Key) => DefinitionResult[A] =
     fgo match {
       case op: OptionalKvpValueDefinition[ALG, b] @unchecked =>
         val valueF = determineValueDefinition(op.valueDefinitionOp, customDbUpdateInterpreter)
@@ -236,6 +218,8 @@ object DbUpdate {
             val fa = (input: A) => result.predicates(x.fAtoH(input))
             DefinitionResult(result.lastIndex, result.assignmentStatements, fa)
           }
+      case co: KvpCoproductConvert[ALG, c, A] => ??? // TODO
+      case co: KvpCoproductValue[ALG, A] => ??? // TODO
     }
 
 }

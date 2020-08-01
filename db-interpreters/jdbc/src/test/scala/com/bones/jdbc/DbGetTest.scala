@@ -17,7 +17,7 @@ class DbGetTest extends AnyFunSuite {
 
     val idDefinition = IdDefinition("id", long())
 
-    val result = DbGet.getEntityWithConnectionCustomAlgebra(Schemas.creditCardSchema, idDefinition, com.bones.jdbc.rs.defaultResultSetInterpreter, update.defaultDbUpdateInterpreter)(2)(conn)
+    val result = DbGet.getEntity(Schemas.creditCardSchema, idDefinition, com.bones.jdbc.rs.defaultResultSetInterpreter, update.defaultDbUpdateInterpreter)(2)(conn)
 
     //    println(result)
 

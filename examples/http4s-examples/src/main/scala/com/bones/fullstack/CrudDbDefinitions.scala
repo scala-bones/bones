@@ -18,10 +18,10 @@ import javax.sql.DataSource
   * @tparam A
   */
 case class CrudDbDefinitions[ALG[_], A, ID](
-                                             schema: KvpCollection[ALG, A],
-                                             customInterpreter: JdbcColumnInterpreter[ALG],
-                                             idDef: IdDefinition[ALG, ID],
-                                             ds: DataSource) {
+  schema: KvpCollection[ALG, A],
+  customInterpreter: JdbcColumnInterpreter[ALG],
+  idDef: IdDefinition[ALG, ID],
+  ds: DataSource) {
 
   // TODO: deal with error better
   val searchF: Stream[IO, (ID, A)] =
@@ -47,33 +47,37 @@ case class CrudDbDefinitions[ALG[_], A, ID](
       }
   }
 
-  val readF: ID => IO[Either[NonEmptyList[ExtractionError], (ID, A)]] = {
-    val readQuery =
-      DbGet.getEntity(schema, idDef, customInterpreter.resultSet, customInterpreter.dbUpdate)(ds)
-    id: ID =>
-      IO {
-        readQuery(id)
-      }
+  val readF: ID => IO[Either[NonEmptyList[ExtractionError], (ID, A)]] = { id: ID =>
+    val getF = DbGet.getEntity(schema, idDef, customInterpreter.resultSet, customInterpreter.dbUpdate)
+    IO {
+      DbUtil.withDataSource(ds)(con => {
+        getF(id)(con)
+      })
+    }
   }
 
   val updateF: (ID, A) => IO[Either[NonEmptyList[ExtractionError], (ID, A)]] = {
-    val updateQuery = DbUpdate.updateQueryCustomAlgebra(
+    val updateF = DbUpdate.updateQuery(
       schema,
       customInterpreter.dbUpdate,
-      customInterpreter.dbColumn,
-      idDef)(ds)
+      idDef)
+
     (id: ID, input: A) =>
       IO {
-        updateQuery(id, input)
+        DbUtil.withDataSource(ds)(con => {
+          updateF(id, input)(con)
+        })
       }
   }
 
   val deleteF: ID => IO[Either[NonEmptyList[ExtractionError], (ID, A)]] = {
     val deleteQuery =
-      DbDelete.delete(schema, customInterpreter.resultSet, idDef, customInterpreter.dbUpdate)(ds)
+      DbDelete.delete(schema, customInterpreter.resultSet, idDef, customInterpreter.dbUpdate)
     id: ID =>
       IO {
-        deleteQuery(id)
+        DbUtil.withDataSource(ds)(con => {
+          deleteQuery(id)(con)
+        })
       }
   }
 

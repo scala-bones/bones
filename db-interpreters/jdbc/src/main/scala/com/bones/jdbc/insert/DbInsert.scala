@@ -23,10 +23,10 @@ object DbInsert {
   type InsertPair[A] = Key => (Index, A) => (Index, List[(ColumnName, SetValue)])
 
   def insertQuery[ALG[_], A, ID](
-                                  collection: KvpCollection[ALG, A],
-                                  idSchema: KvpCollection[ALG, ID],
-                                  customInterpreter: DbInsertValue[ALG],
-                                  resultSetValueInterpreter: ResultSetValue[ALG])
+    collection: KvpCollection[ALG, A],
+    idSchema: KvpCollection[ALG, ID],
+    customInterpreter: DbInsertValue[ALG],
+    resultSetValueInterpreter: ResultSetValue[ALG])
     : DataSource => A => Either[NonEmptyList[ExtractionError], (ID, A)] = {
     val iq = insertQueryWithConnectionCustomAlgebra(
       collection,
@@ -51,17 +51,17 @@ object DbInsert {
   }
 
   def insertQueryWithConnectionCustomAlgebra[ALG[_], A, ID](
-                                                             collection: KvpCollection[ALG, A],
-                                                             idSchema: KvpCollection[ALG, ID],
-                                                             customInterpreter: DbInsertValue[ALG],
-                                                             resultSetInterpreter: ResultSetValue[ALG])
+    collection: KvpCollection[ALG, A],
+    idSchema: KvpCollection[ALG, ID],
+    customInterpreter: DbInsertValue[ALG],
+    resultSetInterpreter: ResultSetValue[ALG])
     : A => Connection => Either[NonEmptyList[ExtractionError], (ID, A)] = {
     val tableName = camelToSnake(collection.manifestOfA.runtimeClass.getSimpleName)
     val updates = valueDefinition(collection, customInterpreter)
     val rs = ResultSetInterpreter.determineValueDefinition(Left(idSchema), resultSetInterpreter)
     a: A =>
       {
-        val result = updates("")(1,a)
+        val result = updates("")(1, a)
         val sql = s"""insert into $tableName ( ${result._2
           .map(_._1)
           .mkString(",")} ) values ( ${result._2.map(_ => "?").mkString(",")}  )"""
@@ -92,8 +92,7 @@ object DbInsert {
 
   def kvpHList[ALG[_], H <: HList, HL <: Nat](
     group: KvpHList[ALG, H, HL],
-    customInterpreter: DbInsertValue[ALG])
-    : (Index, H) => (Index, List[(ColumnName, SetValue)]) = {
+    customInterpreter: DbInsertValue[ALG]): (Index, H) => (Index, List[(ColumnName, SetValue)]) = {
     group match {
       case nil: KvpNil[_] =>
         (i, h) =>
@@ -122,9 +121,9 @@ object DbInsert {
             (tailList._1, headList._2 ::: tailList._2)
           }
       }
-      case op: KvpConcreteTypeHead[ALG, a, ht, nt] => {
+      case op: KvpCollectionHead[ALG, a, ht, nt] => {
 
-        val headF = fromBonesSchema(op.collection, customInterpreter)
+        val headF = fromCollection(op.collection, customInterpreter)
         val tailF = kvpHList(op.tail, customInterpreter)
 
         (i: Index, h: a :: ht) =>
@@ -137,12 +136,10 @@ object DbInsert {
     }
   }
 
-  private def fromBonesSchema[ALG[_], A](
+  private def fromCollection[ALG[_], A](
     bonesSchema: KvpCollection[ALG, A],
-    customInterpreter: DbInsertValue[ALG])
-    : (Index, A) => (Index, List[(ColumnName, SetValue)]) = {
+    customInterpreter: DbInsertValue[ALG]): (Index, A) => (Index, List[(ColumnName, SetValue)]) = {
     bonesSchema match {
-      case co: KvpCoproductConvert[ALG, c, a] => ???
       case hListConvert: HListConvert[ALG, h, n, a] =>
         val f = kvpHList(hListConvert.from, customInterpreter)
         (index, a) =>
@@ -150,6 +147,7 @@ object DbInsert {
             val h = hListConvert.fAtoH(a)
             f(index, h)
           }
+      case _ => ??? // TODO
     }
   }
 
@@ -208,6 +206,8 @@ object DbInsert {
               groupF(index, x.fAtoH(h))
             }
           }
+      case co: KvpCoproductConvert[ALG, c,a] => ??? // TODO
+      case co: KvpCoproductValue[ALG, c] => ??? // TODO
     }
 
 }
