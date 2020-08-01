@@ -9,8 +9,8 @@ object InterchangeFormatEncoderValue {
     * see https://stackoverflow.com/a/60561575/387094
     * */
   def merge[L[_], R[_] <: Coproduct, A, OUT](
-                                              li: InterchangeFormatEncoderValue[L, OUT],
-                                              ri: InterchangeFormatEncoderValue[R, OUT]
+    li: InterchangeFormatEncoderValue[L, OUT],
+    ri: InterchangeFormatEncoderValue[R, OUT]
   ): InterchangeFormatEncoderValue[Lambda[A => L[A] :+: R[A]], OUT] =
     new InterchangeFormatEncoderValue[Lambda[A => L[A] :+: R[A]], OUT] {
       override def encode[A](lr: L[A] :+: R[A]): A => OUT = lr match {

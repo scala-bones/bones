@@ -43,6 +43,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
       case x: HListConvert[ALG, _, _, A] =>
         (in) =>
           valueDefinition(x, interchangeFormatValidator).apply(Some(in), List.empty)
+      case _ => ??? // TODO
     }
 
   def generateValidatorWithPath[ALG[_], A](
@@ -66,6 +67,8 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
                 Left(NonEmptyList.one(SumTypeError(path, s"Missing parameter ${coproductTypeKey}")))
             }
           }
+      case _ => ??? // TODO
+
     }
 
   /**
@@ -176,7 +179,7 @@ trait KvpInterchangeFormatValidatorInterpreter[IN] {
           }
       }
 
-      case op: KvpConcreteTypeHead[ALG, a, ht, nt] => {
+      case op: KvpCollectionHead[ALG, a, ht, nt] => {
         val headInterpreter: (IN, List[String]) => Either[NonEmptyList[ExtractionError], a] =
           generateValidatorWithPath(op.collection, validator)
         val tailInterpreter = kvpHList(op.tail, validator)

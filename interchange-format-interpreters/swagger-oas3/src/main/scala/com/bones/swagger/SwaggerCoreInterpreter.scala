@@ -386,12 +386,13 @@ trait SwaggerCoreInterpreter {
         tailSchemas.mainSchema.addProperties(op.fieldDefinition.key, headSchemas.mainSchema)
         val schema = copySchema(headSchemas.mainSchema, tailSchemas.mainSchema)
         SwaggerSchemas(schema, headSchemas.referenceSchemas ::: tailSchemas.referenceSchemas)
-      case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked =>
+      case op: KvpCollectionHead[ALG, a, ht, nt] @unchecked =>
         val headSchemas = op.collection match {
           case op: KvpCoproductConvert[ALG, c, a] =>
             fromKvpCoproduct(op.from, customInterpreter, None)
           case op: HListConvert[ALG, h, n, a] =>
             fromKvpHList(op.from, customInterpreter)
+          case _ => ??? // TODO
         }
         val tailSchemas = fromKvpHList(op.tail, customInterpreter)
         val schema = copySchema(headSchemas.mainSchema, tailSchemas.mainSchema)

@@ -23,7 +23,7 @@ class AllSupportedOuterClassTest extends AnyFunSuite with Matchers {
     val build = AllSupportedOuterClass.AllSupported.newBuilder
     build.setBoolean(true)
     build.setInt(3455)
-    build.setLong(8848884l)
+    build.setLong(8848884L)
     build.addListOfInt(5)
     build.addListOfInt(6)
     build.setString("A String")
@@ -80,7 +80,7 @@ class AllSupportedOuterClassTest extends AnyFunSuite with Matchers {
       case Right(all) => {
         all.b mustBe true
         all.i mustBe 3455
-        all.l mustBe 8848884l
+        all.l mustBe 8848884L
         all.ls mustBe List(5,6)
         all.str mustBe "A String"
         all.f mustBe 1.234f

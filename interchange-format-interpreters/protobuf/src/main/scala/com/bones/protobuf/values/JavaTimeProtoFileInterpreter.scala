@@ -24,14 +24,14 @@ object JavaTimeProtoFileInterpreter
         case lt: LocalTimeData     => (name, index) => longMessageField(name, index)
         case md: MonthData             => (name, index) => intMessageField(name, index)
         case md: MonthDayData          => (name, index) => intMessageField(name, index)
-//        case dt: OffsetDateTimeData =>
+        case dt: OffsetDateTimeData => ??? //TODO
 //          ProtoFileGeneratorInterpreter.valueDefinition(offsetDateTimeSchema, this)
-//        case dt: OffsetTimeData =>
+        case dt: OffsetTimeData => ??? //TODO
 //          ProtoFileGeneratorInterpreter.valueDefinition(offsetTimeSchema, this)
         case pd: PeriodData    => (name, index) => stringMessageField(name, index)
         case yd: YearData      => (name, index) => intMessageField(name, index)
         case ym: YearMonthData => (name, index) => longMessageField(name, index)
-//        case zd: ZonedDateTimeData =>
+        case zd: ZonedDateTimeData => ??? //TODO
 //          ProtoFileGeneratorInterpreter.valueDefinition(zonedDateTimeSchema, this)
         case zi: ZoneIdData     => (name, index) => stringMessageField(name, index)
         case zo: ZoneOffsetData => (name, index) => intMessageField(name, index)

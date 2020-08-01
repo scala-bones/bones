@@ -14,19 +14,19 @@ import scala.util.control.NonFatal
 
 object DbDelete {
 
+  /**
+   * Creates a curried function which takes an ID and a connection
+   * and then deletes the entity in the database with the specified id.
+   * @param schema
+   * @param resultSetCustomInterpreter
+   * @param idDef
+   * @param customDbUpdateInterpreter
+   * @tparam ALG
+   * @tparam A
+   * @tparam ID
+   * @return
+   */
   def delete[ALG[_], A, ID](
-    schema: KvpCollection[ALG, A],
-    resultSetCustomInterpreter: ResultSetValue[ALG],
-    idDef: IdDefinition[ALG, ID],
-    customDbUpdateInterpreter: DbUpdateValue[ALG]
-  ): DataSource => ID => Either[NonEmptyList[ExtractionError], (ID, A)] = {
-    val withConnection =
-      deleteWithConnect(schema, resultSetCustomInterpreter, idDef, customDbUpdateInterpreter)
-    ds => id =>
-      withDataSource(ds)(con => withConnection(id)(con))
-  }
-
-  def deleteWithConnect[ALG[_], A, ID](
     schema: KvpCollection[ALG, A],
     resultSetCustomInterpreter: ResultSetValue[ALG],
     idDef: IdDefinition[ALG, ID],
@@ -39,7 +39,7 @@ object DbDelete {
           DbUpdate.valueDefinition(idDef.asSchema, customDbUpdateInterpreter)(1, idDef.key)
         val sql =
           s"delete from ${tableName} where ${updateF.assignmentStatements.map(_._1).mkString(" AND ")}"
-        val getEntity = DbGet.getEntityWithConnectionCustomAlgebra(
+        val getEntity = DbGet.getEntity(
           schema,
           idDef,
           resultSetCustomInterpreter,
@@ -62,6 +62,7 @@ object DbDelete {
             }
           }
       }
+      case _ => ??? // TODO
     }
   }
 

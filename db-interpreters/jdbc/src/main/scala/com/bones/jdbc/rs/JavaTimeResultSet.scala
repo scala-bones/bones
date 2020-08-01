@@ -22,6 +22,7 @@ trait JavaTimeResultSet extends ResultSetValue[JavaTimeValue] {
           catchSql(rs.getDate(fieldName, utcCalendar), path, dd)
             .map(date =>
               LocalDateTime.ofInstant(new Date(date.getTime).toInstant, ZoneId.of("UTC")))
+      case _ => ??? // TODO
 
     }
 }

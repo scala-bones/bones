@@ -44,7 +44,7 @@ trait ScalaCoreInterpreter extends CustomSwaggerInterpreter[ScalaCoreValue]{
           addLongSchema(
             name,
             description.getOrElse("value of type long"),
-            example.asInstanceOf[Option[Long]].getOrElse(123l),
+            example.asInstanceOf[Option[Long]].getOrElse(123L),
             validations(ld.validations)
           )
       case dd: DoubleData =>

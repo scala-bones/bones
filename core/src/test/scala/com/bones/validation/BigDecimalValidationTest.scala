@@ -99,7 +99,7 @@ class BigDecimalValidationTest extends AnyFunSuite with Checkers with Matchers {
   val vv = ValidValue(validValue)
   test("Valid Values") {
     vv.isValid(BigDecimal(0.0)) mustBe true
-    vv.isValid(BigDecimal(1l)) mustBe true
+    vv.isValid(BigDecimal(1L)) mustBe true
     vv.isValid(BigDecimal(100)) mustBe true
   }
 

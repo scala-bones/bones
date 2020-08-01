@@ -21,7 +21,7 @@ object ColumnNameInterpreter {
         headList ::: tailList
       case op: KvpHListHead[ALG, a, al, h, hl, t, tl] @unchecked =>
         kvpHList(op.head) ::: kvpHList(op.tail)
-      case op: KvpConcreteTypeHead[ALG, a, ht, nt] =>
+      case op: KvpCollectionHead[ALG, a, ht, nt] =>
         generateColumnNames(op.collection)
     }
   }
@@ -73,6 +73,11 @@ object ColumnNameInterpreter {
             val columnNames = kvpCoproduct(x.from)
             "dtype" :: columnNames
           }
+      case co: KvpCoproductValue[ALG,c] @unchecked =>
+        _ => {
+          val columnNames = kvpCoproduct(co.kvpCoproduct)
+          "dtype" :: columnNames
+        }
     }
 
 }

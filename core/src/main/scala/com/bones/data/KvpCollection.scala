@@ -21,22 +21,62 @@ sealed abstract class KvpCollection[ALG[_], A: Manifest] extends KvpValue[A] {
   val manifestOfA: Manifest[A] = manifest[A]
 }
 
+trait KvpCollectionTemplate[ALG[_], OUT] {
+  def fromCollection[A:Manifest](kvpCollection: KvpCollection[ALG, A]): OUT = {
+    kvpCollection match {
+      case ov: OptionalKvpValueDefinition[ALG,b] => {
+        implicit val manfifestOfB = ov.manifestOfB
+        optionalToOut(ov)
+      }
+      case ed: EitherData[ALG,a,b] => {
+        implicit val manifestOfA = ed.manifestOfLeft
+        implicit val manifestOfB = ed.manifestOfRight
+        eitherToOut(ed)
+      }
+      case ld: ListData[ALG,t] => {
+        implicit val manifestOfT = ld.manifestOfT
+        listToOut(ld)
+      }
+      case hl: KvpHListValue[ALG, h, hl] => hListToOut(hl)
+      case cv: KvpCoproductValue[ALG, c] => coproductToOut(cv)
+      case hc: HListConvert[ALG, h, n, A] => hListConvertToOut(hc)
+      case cc: KvpCoproductConvert[ALG, c, A] => coproductConvertToOut(cc)
+    }
+  }
+
+  protected def optionalToOut[B:Manifest](opt: OptionalKvpValueDefinition[ALG,B]): OUT
+  protected def eitherToOut[A:Manifest,B:Manifest](either: EitherData[ALG,A,B]): OUT
+  protected def listToOut[A:Manifest](list: ListData[ALG, A]): OUT
+  protected def hListToOut[H<:HList,HL<:Nat](hList: KvpHListValue[ALG, H, HL]): OUT
+  protected def coproductToOut[C<:Coproduct](coproduct: KvpCoproductValue[ALG,C]): OUT
+  protected def hListConvertToOut[A:Manifest, H<:HList,N<:Nat](hList: HListConvert[ALG,H,N,A]): OUT
+  protected def coproductConvertToOut[C<:Coproduct, A:Manifest](cc: KvpCoproductConvert[ALG,C,A]): OUT
+
+}
+
 /** Wraps a data definition to mark the field optional */
 case class OptionalKvpValueDefinition[ALG[_], B: Manifest](
   valueDefinitionOp: Either[KvpCollection[ALG, B], ALG[B]])
-    extends KvpCollection[ALG, Option[B]] {}
+    extends KvpCollection[ALG, Option[B]] {
+  val manifestOfB = manifest[B]
+}
 
 
 final case class EitherData[ALG[_], A: Manifest, B: Manifest](
   definitionA: Either[KvpCollection[ALG, A], ALG[A]],
   definitionB: Either[KvpCollection[ALG, B], ALG[B]])
-    extends KvpCollection[ALG, Either[A, B]]
+    extends KvpCollection[ALG, Either[A, B]] {
+  val manifestOfLeft = manifest[A]
+  val manifestOfRight = manifest[B]
+}
 
 /** Represents a type where the value is a List of T */
 final case class ListData[ALG[_], T: Manifest](
   tDefinition: Either[KvpCollection[ALG, T], ALG[T]],
   validations: List[ValidationOp[List[T]]])
-    extends KvpCollection[ALG, List[T]]
+    extends KvpCollection[ALG, List[T]] {
+  val manifestOfT = manifest[T]
+}
 
 /** Represents a type where the value is an HList */
 final case class KvpHListValue[ALG[_], H <: HList: Manifest, HL <: Nat](

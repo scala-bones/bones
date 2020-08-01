@@ -209,14 +209,14 @@ trait JavaTimeValidator extends ProtobufValidatorValue[JavaTimeValue] {
       case lt: LocalTimeData     => longDataWithFlatMap(lt, longToLocalTime, lt.validations)
       case md: MonthData         => intDataWithFlatMap(md, intToMonth, md.validations)
       case md: MonthDayData      => intDataWithFlatMap(md, intToMonthDay, md.validations)
-//      case dt: OffsetDateTimeData =>
+      case dt: OffsetDateTimeData => ??? // TODO
 //        valueDefThenValidation(offsetDateTimeSchema, dt.validations)
-//      case dt: OffsetTimeData =>
+      case dt: OffsetTimeData => ??? // TODO
 //        valueDefThenValidation(offsetTimeSchema, dt.validations)
       case pd: PeriodData    => stringDataWithFlatMap(pd, stringToPeriod, pd.validations)
       case yd: YearData      => intDataWithFlatMap(yd, intToYear, yd.validations)
       case ym: YearMonthData => longDataWithFlatMap(ym, longToYearMonth, ym.validations)
-//      case zd: ZonedDateTimeData =>
+      case zd: ZonedDateTimeData => ??? // TODO
 //        valueDefThenValidation(zonedDateTimeSchema, zd.validations)
       case zi: ZoneIdData     => stringDataWithFlatMap(zi, stringToZoneId, zi.validations)
       case zo: ZoneOffsetData => intDataWithFlatMap(zo, intToZoneOffset, zo.validations)

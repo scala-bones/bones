@@ -51,7 +51,7 @@ sealed abstract class KvpHList[ALG[_], H <: HList, N <: Nat] {
 
   def prependSchema[A: Manifest](schema: KvpCollection[ALG, A])(
     implicit isHCons: IsHCons.Aux[A :: H, A, H]): KvpHList[ALG, A :: H, Succ[N]] =
-    KvpConcreteTypeHead[ALG, A, H, N](schema, List.empty, this, isHCons)
+    KvpCollectionHead[ALG, A, H, N](schema, List.empty, this, isHCons)
 
   def prependHList[HO <: HList, NO <: Nat, HP <: HList, NP <: Nat](kvp: KvpHList[ALG, HP, NP])(
     implicit prepend: Prepend.Aux[HP, H, HO],
@@ -60,10 +60,10 @@ sealed abstract class KvpHList[ALG[_], H <: HList, N <: Nat] {
     split: Split.Aux[HO, NP, HP, H]
   ): KvpHList[ALG, HO, NO]
 
-  def prependSingleValue[A](v: KeyValueDefinition[ALG, A])(
+  def prependSingleValue[A:Manifest](v: KeyValueDefinition[ALG, A])(
     implicit isHCons: IsHCons.Aux[A :: H, A, H]): KvpSingleValueHead[ALG, A, H, N, A :: H]
 
-  def >>:[A](v: KeyValueDefinition[ALG, A])(
+  def >>:[A:Manifest](v: KeyValueDefinition[ALG, A])(
     implicit isHCons: IsHCons.Aux[A :: H, A, H]): KvpSingleValueHead[ALG, A, H, N, A :: H] =
     prependSingleValue(v)
 
@@ -74,9 +74,9 @@ sealed abstract class KvpHList[ALG[_], H <: HList, N <: Nat] {
     * @tparam A The wrapped type
     * @return KvpSingleValueHead prefixed to this HList
     */
-  def ::[A](input: (String, ALG[A]))(
+  def ::[A:Manifest](input: (String, ALG[A]))(
     implicit isHCons: IsHCons.Aux[A :: H, A, H]): KvpSingleValueHead[ALG, A, H, N, A :: H] =
-    prependSingleValue(KeyValueDefinition(input._1, Right(input._2), None, None))(isHCons)
+    prependSingleValue(KeyValueDefinition(input._1, Right(input._2), None, None))(manifest[A], isHCons)
 
   /**
     * Use this operator when you want to prefix a data type with a description
@@ -85,10 +85,10 @@ sealed abstract class KvpHList[ALG[_], H <: HList, N <: Nat] {
     * @tparam A The wrapped type
     * @return KvpSingleValueHead prefixed to this HList
     */
-  def ::[A](input: (String, ALG[A], String, A))(
+  def ::[A:Manifest](input: (String, ALG[A], String, A))(
     implicit isHCons: IsHCons.Aux[A :: H, A, H]): KvpSingleValueHead[ALG, A, H, N, A :: H] =
     prependSingleValue(
-      KeyValueDefinition(input._1, Right(input._2), Some(input._3), Some(input._4)))(isHCons)
+      KeyValueDefinition(input._1, Right(input._2), Some(input._3), Some(input._4)))(manifest[A], isHCons)
 
   /**
     * Prefixes one of the Algebra types to this HLIst
@@ -97,19 +97,19 @@ sealed abstract class KvpHList[ALG[_], H <: HList, N <: Nat] {
     * @tparam A The wrapped type
     * @return KvpSingleValueHead prefixed to this HList
     */
-  def :<:[A](input: (String, KvpCollection[ALG, A]))(
+  def :<:[A:Manifest](input: (String, KvpCollection[ALG, A]))(
     implicit isHCons: Aux[A :: H, A, H]): KvpSingleValueHead[ALG, A, H, N, A :: H] =
-    prependSingleValue(new KeyValueDefinition(input._1, Left(input._2), None, None))(isHCons)
+    prependSingleValue(new KeyValueDefinition(input._1, Left(input._2), None, None))(manifest[A], isHCons)
 
-  def :<:[A](input: (String, KvpCollection[ALG, A], String, A))(
+  def :<:[A:Manifest](input: (String, KvpCollection[ALG, A], String, A))(
     implicit isHCons: Aux[A :: H, A, H]): KvpSingleValueHead[ALG, A, H, N, A :: H] =
     prependSingleValue(
-      new KeyValueDefinition(input._1, Left(input._2), Some(input._3), Some(input._4)))(isHCons)
+      new KeyValueDefinition(input._1, Left(input._2), Some(input._3), Some(input._4)))(manifest[A], isHCons)
 
   def :><:[OUT2 <: HList, OUT2L <: Nat, A: Manifest, HX <: HList, NX <: Nat](
     dc: KvpCollection[ALG, A])(
-    implicit isHCons: IsHCons.Aux[A :: H, A, H]): KvpConcreteTypeHead[ALG, A, H, N] =
-    KvpConcreteTypeHead[ALG, A, H, N](dc, List.empty, this, isHCons)
+    implicit isHCons: IsHCons.Aux[A :: H, A, H]): KvpCollectionHead[ALG, A, H, N] =
+    KvpCollectionHead[ALG, A, H, N](dc, List.empty, this, isHCons)
 
 }
 
@@ -125,7 +125,7 @@ case class KvpNil[ALG[_]]() extends KvpHList[ALG, HNil, Nat._0] {
     split: Split.Aux[OUT2, PL, P, HNil]): KvpHList[ALG, OUT2, OUT2L] =
     KvpHListHead[ALG, OUT2, OUT2L, P, PL, HNil, Nat._0](kvp, this, prepend, split, List.empty)
 
-  override def prependSingleValue[H](v: KeyValueDefinition[ALG, H])(
+  override def prependSingleValue[H:Manifest](v: KeyValueDefinition[ALG, H])(
     implicit isHCons: IsHCons.Aux[H :: HNil, H, HNil])
     : KvpSingleValueHead[ALG, H, HNil, Nat._0, H :: HNil] =
     KvpSingleValueHead(v, List.empty, this, isHCons)
@@ -142,7 +142,7 @@ case class KvpNil[ALG[_]]() extends KvpHList[ALG, HNil, Nat._0] {
   * @tparam HT HList Tail
   * @tparam NT Nat length of tail
   */
-final case class KvpConcreteTypeHead[ALG[_], A: Manifest, HT <: HList, NT <: Nat](
+final case class KvpCollectionHead[ALG[_], A: Manifest, HT <: HList, NT <: Nat](
   collection: KvpCollection[ALG, A],
   validations: List[ValidationOp[A :: HT]],
   tail: KvpHList[ALG, HT, NT],
@@ -159,7 +159,7 @@ final case class KvpConcreteTypeHead[ALG[_], A: Manifest, HT <: HList, NT <: Nat
     split: Split.Aux[HO2, NP, HP, A :: HT]): KvpHList[ALG, HO2, NO2] =
     KvpHListHead[ALG, HO2, NO2, HP, NP, A :: HT, Succ[NT]](kvp, this, prepend, split, List.empty)
 
-  override def prependSingleValue[B](v: KeyValueDefinition[ALG, B])(
+  override def prependSingleValue[B:Manifest](v: KeyValueDefinition[ALG, B])(
     implicit isHCons: Aux[B :: A :: HT, B, A :: HT])
     : KvpSingleValueHead[ALG, B, A :: HT, Succ[NT], B :: A :: HT] =
     KvpSingleValueHead(v, List.empty, this, isHCons)
@@ -167,12 +167,14 @@ final case class KvpConcreteTypeHead[ALG[_], A: Manifest, HT <: HList, NT <: Nat
 }
 
 /** The head of the HList has a known KeyValueDefinition. */
-final case class KvpSingleValueHead[ALG[_], H, T <: HList, TL <: Nat, OUT <: H :: T](
+final case class KvpSingleValueHead[ALG[_], H:Manifest, T <: HList, TL <: Nat, OUT <: H :: T](
   fieldDefinition: KeyValueDefinition[ALG, H],
   validations: List[ValidationOp[OUT]],
   tail: KvpHList[ALG, T, TL],
   isHCons: IsHCons.Aux[OUT, H, T]
 ) extends KvpHList[ALG, OUT, Succ[TL]] {
+
+  val manifestOfH = manifest[H]
 
   /**
     *
@@ -190,7 +192,7 @@ final case class KvpSingleValueHead[ALG[_], H, T <: HList, TL <: Nat, OUT <: H :
     split: Split.Aux[HO2, PL, P, OUT]): KvpHList[ALG, HO2, NO2] =
     KvpHListHead[ALG, HO2, NO2, P, PL, OUT, Succ[TL]](kvp, this, prepend, split, List.empty)
 
-  override def prependSingleValue[A](v: KeyValueDefinition[ALG, A])(
+  override def prependSingleValue[A:Manifest](v: KeyValueDefinition[ALG, A])(
     implicit isHCons: Aux[A :: OUT, A, OUT]): KvpSingleValueHead[ALG, A, OUT, Succ[TL], A :: OUT] =
     KvpSingleValueHead[ALG, A, OUT, Succ[TL], A :: OUT](v, List.empty, this, isHCons)
 
@@ -231,11 +233,42 @@ final case class KvpHListHead[
   ): KvpHListHead[ALG, HO2, NO2, P, PL, HO, NO] =
     KvpHListHead[ALG, HO2, NO2, P, PL, HO, NO](kvp, this, prepend, split, List.empty)
 
-  override def prependSingleValue[A](kvd: KeyValueDefinition[ALG, A])(
+  override def prependSingleValue[A:Manifest](kvd: KeyValueDefinition[ALG, A])(
     implicit isHCons: Aux[A :: HO, A, HO]): KvpSingleValueHead[ALG, A, HO, NO, A :: HO] =
     KvpSingleValueHead[ALG, A, HO, NO, A :: HO](kvd, List.empty, this, isHCons)
 
   def validate(v: ValidationOp[HO]): KvpHListHead[ALG, HO, NO, H, HL, T, TL] =
     this.copy(validations = v :: validations)
+
+}
+
+/**
+ * Responsible for matching the appropriate KvpHList and delegating to the appropriate overwritten
+ * method.  Though one can certainly just match on the types inline, this approach seems to be a bit cleaner,
+ * albeit with an additional layer of indirection.
+ *
+ * @tparam ALG The Algebra being interpreted.
+ * @tparam OUT The output from interpreting the values.
+ */
+trait KvpHListTemplate[ALG[_], OUT] {
+
+  def fromKvpHList[H<:HList, HL<:Nat](hList: KvpHList[ALG, H, HL]): OUT = {
+    hList match {
+      case kvp: KvpSingleValueHead[ALG, h, t, tl, ht] @unchecked => {
+        implicit val manifestOfH = kvp.manifestOfH
+        kvpSingleValueHead[h, t, tl, ht](kvp)
+      }
+      case kvp: KvpCollectionHead[ALG, H, ht, nt] @unchecked => kvpCollectionHead(kvp)
+      case kvp: KvpHListHead[ALG, ho, no, H, HL, t, tl] @unchecked => kvpHListHead(kvp)
+      case kvp: KvpNil[ALG] => kvpNil(kvp)
+    }
+  }
+
+
+  def kvpCollectionHead[H<:HList, HT<:HList, NT<:Nat](kvp: KvpCollectionHead[ALG, H, HT, NT]): OUT
+  def kvpHListHead[HO<:HList, NO<:Nat, H<:HList, HL<:Nat, T<:HList, TL<:Nat](kvp: KvpHListHead[ALG, HO, NO, H, HL, T, TL]): OUT
+  def kvpNil(kvp: KvpNil[ALG]): OUT
+  def kvpSingleValueHead[H:Manifest, T<:HList, TL<:Nat, O <: H :: T](kvp:KvpSingleValueHead[ALG, H, T, TL, O]): OUT
+
 
 }

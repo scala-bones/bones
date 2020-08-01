@@ -4,7 +4,7 @@ import com.bones.data.values.CNilF
 import com.bones.jdbc.insert.DbInsert.InsertPair
 import shapeless.{:+:, Coproduct, Inl, Inr}
 
-object CNilUpdateInterpreter extends DbInsertValue[CNilF] {
+object CNilInsertInterpreter extends DbInsertValue[CNilF] {
   override def insertPair[A](alg: CNilF[A]): InsertPair[A] =
     sys.error("Unreachable code")
 }

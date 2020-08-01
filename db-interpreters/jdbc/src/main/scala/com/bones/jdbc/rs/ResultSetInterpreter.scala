@@ -38,7 +38,7 @@ object ResultSetInterpreter {
                 })
               }
           }
-      case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked =>
+      case op: KvpCollectionHead[ALG, a, ht, nt] @unchecked =>
         def fromSchema[A](bonesSchema: KvpCollection[ALG, A])
           : Path => ResultSet => Either[NonEmptyList[ExtractionError], A] =
           bonesSchema match {
@@ -48,7 +48,7 @@ object ResultSetInterpreter {
                 resultHH.map(hh => hList.fHtoA(hh))
               }
             }
-            case co: KvpCoproductConvert[ALG, c, a] => ???
+            case _ => ??? // TODO
           }
 
         val headF = fromSchema(op.collection)
@@ -150,6 +150,8 @@ object ResultSetInterpreter {
         val groupF = kvpHList(x.from, customInterpreter)
         (path, _) =>
           groupF(path).andThen(_.map(x.fHtoA))
+      case co: KvpCoproductConvert[ALG, c, a] => ???
+      case co: KvpCoproductValue[ALG, a] => ???
     }
 
   def catchSql[A](f: => A, path: Path, op: KvpValue[_]): Either[NonEmptyList[ExtractionError], A] =
