@@ -88,6 +88,51 @@ trait JavaTimeValidationSugar {
 
 }
 
+trait BaseJavaTimeInterpreter[OUT] {
+  def matchJavaTimeValue[A](alg: JavaTimeValue[A]): OUT = {
+    alg match {
+      case dd: DateTimeExceptionData => dateTimeExceptionData(dd)
+      case dd: DayOfWeekData => dayOfWeekData(dd)
+      case dd: DurationData => durationData(dd)
+      case id: InstantData => instantData(id)
+      case ld: LocalDateTimeData => localDateTimeData(ld)
+      case ld: LocalDateData => localDateData(ld)
+      case lt: LocalTimeData => localTimeData(lt)
+      case md: MonthData => monthData(md)
+      case md: MonthDayData => monthDayData(md)
+      case od: OffsetDateTimeData => offsetDateTimeData(od)
+      case od: OffsetTimeData => offsetTimeData(od)
+      case pd: PeriodData => periodData(pd)
+      case yd: YearData => yearData(yd)
+      case yd: YearMonthData => yearMonthData(yd)
+      case zd: ZonedDateTimeData => zonedDateTimeData(zd)
+      case zd: ZoneIdData => zoneIdData(zd)
+      case zd: ZoneOffsetData => zoneOffsetData(zd)
+    }
+  }
+
+  def dateTimeExceptionData(dateTimeExceptionData: DateTimeExceptionData): OUT
+  def dayOfWeekData(dayOfWeekData: DayOfWeekData): OUT
+  def durationData(durationData: DurationData): OUT
+  def instantData(instantData: InstantData): OUT
+  def localDateTimeData(localDateTimeData: LocalDateTimeData): OUT
+  def localDateData(localDateData: LocalDateData): OUT
+  def localTimeData(localTimeData: LocalTimeData): OUT
+  def monthData(monthData: MonthData): OUT
+  def monthDayData(monthDayData: MonthDayData): OUT
+  def offsetDateTimeData(offsetDateTimeData: OffsetDateTimeData): OUT
+  def offsetTimeData(offsetTimeData: OffsetTimeData): OUT
+  def periodData(periodData: PeriodData): OUT
+  def yearData(yearData: YearData): OUT
+  def yearMonthData(yearMonthData: YearMonthData): OUT
+  def zonedDateTimeData(zonedDateTimeData: ZonedDateTimeData): OUT
+  def zoneIdData(zoneIdData: ZoneIdData): OUT
+  def zoneOffsetData(zoneOffsetData: ZoneOffsetData): OUT
+
+
+
+}
+
 /** Convenient methods for creating GADTs when this is the only data type being used.  If using multiple custom
   * algebras, use [[JavaTimeValueSugarInjected]] to inject into a Coproduct context. */
 trait JavaTimeValueSugar extends JavaTimeValidationSugar {

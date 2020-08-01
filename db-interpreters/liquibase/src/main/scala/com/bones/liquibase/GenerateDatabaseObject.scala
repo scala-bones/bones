@@ -69,6 +69,8 @@ object GenerateDatabaseObject {
         kvpHList(x.from, valueInterpreter)
       case co: KvpCoproductConvert[ALG, c, a] @unchecked =>
         kvpCoproduct(co.from, valueInterpreter)
+      case co: KvpCoproductValue[ALG,c] @unchecked =>
+        kvpCoproduct(co.kvpCoproduct, valueInterpreter)
     }
 
   private def kvpCoproduct[ALG[_], C <: Coproduct](

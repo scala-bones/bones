@@ -14,6 +14,16 @@ abstract class JavaUtilValue[A:Manifest] extends KvpValue[A] {
 final case class UuidData(validations: List[ValidationOp[UUID]])
   extends JavaUtilValue[UUID]
 
+trait BaseJavaUtilInterpreter[OUT] {
+  def matchJavaUtilValue[A](alg: JavaUtilValue[A]): OUT = {
+    alg match {
+      case ud: UuidData => uuidData(ud)
+    }
+  }
+
+  def uuidData(uuidData: UuidData): OUT
+}
+
 
 trait JavaUtilSugar {
   /** Indicates that the data tied to this key is a UUID type that must pass the specified validations. */
