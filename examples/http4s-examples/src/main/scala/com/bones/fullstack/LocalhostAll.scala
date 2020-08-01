@@ -6,7 +6,7 @@ import cats.data.{Kleisli, NonEmptyList}
 import cats.effect._
 import cats.implicits._
 import com.bones.Util
-import com.bones.data.{KvpCollection, KvpNil, KvpSingleValueHead}
+import com.bones.data.{KvpCollection, KvpNil}
 import com.bones.data.Error.ExtractionError
 import com.bones.data.values.DefaultValues
 import com.bones.http4s.BaseCrudInterpreter.StringToIdError
