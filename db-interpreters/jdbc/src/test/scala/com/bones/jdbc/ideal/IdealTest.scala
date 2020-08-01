@@ -9,9 +9,12 @@ class IdealTest extends AnyFunSuite {
 
   test("basic test") {
 
-    val schema = Schemas.allSupportedSchema
+    val schema = Schemas.allSupportCaseClass
 
-    Ideal[DefaultValues].toIdeal(schema)
+    val result = Ideal[DefaultValues](defaultIdealValueInterpreter).toIdeal(schema)
+
+
+    result
 
   }
 

@@ -232,6 +232,36 @@ trait CustomStringAlgebraSugar {
   val cs_ipv6: CustomStringValue.Ipv6ValidationOp.type = Ipv6ValidationOp
 }
 
+trait BaseCustomStringValue[OUT] {
+
+  def matchCustomStringValue[A](alg: CustomStringValue[A]): OUT = {
+    alg match {
+      case ed: EmailData => emailData(ed)
+      case gd: GuidData => guidData(gd)
+      case cd: CreditCardData => creditCardData(cd)
+      case hd: HexStringData => hexStringData(hd)
+      case bd: Base64Data => base64Data(bd)
+      case hd: HostnameData => hostnameData(hd)
+      case ud: UriData => uriData(ud)
+      case ud: UrlData => urlData(ud)
+      case id: IpV4Data => ip4vData(id)
+      case id: IpV6Data => ip46Data(id)
+    }
+  }
+
+  def emailData(emailData: EmailData): OUT
+  def guidData(guidData: GuidData): OUT
+  def creditCardData(creditCardData: CreditCardData): OUT
+  def hexStringData(hexStringData: HexStringData): OUT
+  def base64Data(base64Data: Base64Data): OUT
+  def hostnameData(hostnameData: HostnameData): OUT
+  def uriData(uriData: UriData): OUT
+  def urlData(urlData: UrlData): OUT
+  def ip4vData(ipV4Data: IpV4Data): OUT
+  def ip46Data(ipV6Data: IpV6Data): OUT
+
+}
+
 trait CustomStringValueSugar extends CustomStringAlgebraSugar {
 
   /** String must be a guid */

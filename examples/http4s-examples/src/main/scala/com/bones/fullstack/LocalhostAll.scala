@@ -17,9 +17,13 @@ import com.bones.syntax._
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import javax.sql.DataSource
 import org.http4s.dsl.io._
+import org.http4s.server.Router
 import org.http4s.server.blaze._
 import org.http4s.server.middleware.CORS
-import org.http4s.{Header, HttpRoutes}
+import org.http4s.{Header, HttpApp, HttpRoutes}
+import org.http4s.implicits._
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object LocalhostAllIOApp {
 
@@ -108,9 +112,12 @@ abstract class LocalhostAllIOApp() extends IOApp {
 
     val allServices = services
 
-    BlazeBuilder[IO]
+
+    val router = Router("/"-> CORS(allServices)).orNotFound
+
+    BlazeServerBuilder[IO](global)
       .bindHttp(8080, "localhost")
-      .mountService(CORS(allServices), "/")
+      .withHttpApp(router)
       .serve
       .compile
       .drain
