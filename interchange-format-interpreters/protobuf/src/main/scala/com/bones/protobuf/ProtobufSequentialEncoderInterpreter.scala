@@ -219,6 +219,8 @@ trait ProtobufSequentialEncoderInterpreter {
           os.toByteArray
         }
     }
+    case _ => ??? // TODO
+
   }
 
   protected def kvpCoproduct[ALG[_], C <: Coproduct](
@@ -309,7 +311,7 @@ trait ProtobufSequentialEncoderInterpreter {
             }
           )
 
-      case op: KvpConcreteTypeHead[ALG, a, h, n] =>
+      case op: KvpCollectionHead[ALG, a, h, n] =>
         (fieldNumber: FieldNumber) =>
           {
             val encodeToProto: EncodeToProto[a] = op.collection match {
@@ -335,6 +337,7 @@ trait ProtobufSequentialEncoderInterpreter {
                     (lastField, newComputeEncode)
                   }
               }
+              case _ => ??? // TODO
             }
             val (nextFieldHead, headF) = encodeToProto(fieldNumber)
             val (nextFieldTail, tailF) = kvpHList(op.tail, customInterpreter)(nextFieldHead)

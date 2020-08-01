@@ -44,10 +44,9 @@ class DbInsertTest extends AnyFunSuite {
 
     val newCC = cc.copy(expMonth = 12, expYear = 2012, billingLocation = None)
     val idDef = IdDefinition("id", long(lv.positive))
-    DbUpdate.updateQueryWithConnectionCustomAlgebra(
+    DbUpdate.updateQuery(
       Schemas.creditCardSchema,
       update.defaultDbUpdateInterpreter,
-      column.defaultDbColumnInterpreter,
       idDef)(1, newCC)(conn)
 //    println(executionResult)
   }

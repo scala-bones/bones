@@ -79,6 +79,7 @@ trait JsonStringEncoderInterpreter {
       case kvp: KvpCoproductConvert[ALG, c, a] @unchecked =>
         valueDefinition(kvp, customToJsonStringInterpreter).andThen(x =>
           if (x.isEmpty) "{}" else x.mkString)
+      case _ => ??? // TODO
     }
 
   private def kvpCoproduct[ALG[_], C <: Coproduct](
@@ -143,7 +144,7 @@ trait JsonStringEncoderInterpreter {
               headOut ::: tailOut
           }
 
-      case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked =>
+      case op: KvpCollectionHead[ALG, a, ht, nt] @unchecked =>
         val headF: a => List[String] = fromBonesSchema(op.collection, customInterpreter)
         val tailF = kvpHList(op.tail, customInterpreter)
         implicit val hCons = op.isHCons
@@ -174,6 +175,7 @@ trait JsonStringEncoderInterpreter {
           {
             f(hListConvert.fAtoH(input))
           }
+      case _ => ??? //TODO
     }
   }
 

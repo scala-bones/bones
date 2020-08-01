@@ -279,7 +279,7 @@ object CovSchemas {
   val allSupportedInstance = AllSupported(
     true,
     0,
-    0l,
+    0L,
     List(1),
     "str",
     3.3f,

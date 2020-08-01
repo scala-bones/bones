@@ -177,6 +177,7 @@ object ProtoFileGeneratorInterpreter {
       case t: HListConvert[ALG, a, al, b] =>
         val (messageFields, nestedTypes, lastIndex) = kvpHList(t.from, customerInterpreter)(0)
         Message(t.manifestOfA.runtimeClass.getSimpleName, messageFields, nestedTypes)
+      case _ => ??? // TODO
     }
   }
 
@@ -211,7 +212,7 @@ object ProtoFileGeneratorInterpreter {
           kvpHList(op.tail, customerInterpreter)(r._3)
         (messageFields :+ r._1, r._2 ++ nestedTypes, lastUsedIndex)
       }
-      case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked =>
+      case op: KvpCollectionHead[ALG, a, ht, nt] @unchecked =>
         val head = fromBonesSchema(op.collection, customerInterpreter)(lastIndex)
         val tail = kvpHList(op.tail, customerInterpreter)(head._3)
         (head._1 ++ tail._1, head._2 ++ tail._2, tail._3)
@@ -232,6 +233,7 @@ object ProtoFileGeneratorInterpreter {
         kvpCoproduct(co.from, customerInterpreter)
       case hl: HListConvert[ALG, h, n, a] @unchecked =>
         kvpHList(hl.from, customerInterpreter)
+      case _ => ??? // TODO
     }
 
   }

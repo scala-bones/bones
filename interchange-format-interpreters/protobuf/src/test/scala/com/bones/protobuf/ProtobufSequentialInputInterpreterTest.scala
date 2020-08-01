@@ -14,7 +14,7 @@ class ProtobufSequentialInputInterpreterTest extends AnyFunSuite with Checkers w
   case class Loc(city: String, state: String)
   case class Person(id: UUID, name: String, age: Long, location: Loc, knowsAboutGadt: Boolean, favoriteColor: Option[String])
 
-  val monica = Person(UUID.randomUUID(), "Monica", 44l, Loc("Denver", "CO"), true, Some("black"))
+  val monica = Person(UUID.randomUUID(), "Monica", 44L, Loc("Denver", "CO"), true, Some("black"))
 
   val loc = (
       ("city", string) ::

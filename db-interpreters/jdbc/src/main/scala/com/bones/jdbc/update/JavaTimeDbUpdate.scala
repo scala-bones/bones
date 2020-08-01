@@ -23,5 +23,6 @@ trait JavaTimeDbUpdate extends DbUpdateValue[JavaTimeValue] {
                 i,
                 new java.sql.Date(a.atStartOfDay.toInstant(ZoneOffset.UTC).toEpochMilli)),
           Types.DATE)
+      case _ => ??? // TODO
     }
 }

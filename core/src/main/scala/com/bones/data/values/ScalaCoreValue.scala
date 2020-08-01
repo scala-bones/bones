@@ -40,6 +40,37 @@ final case class EnumerationData[E <: Enumeration, V: Manifest](
   validations: List[ValidationOp[V]]
 ) extends ScalaCoreValue[V]
 
+
+trait BaseScalaCoreInterpreter[OUT] {
+
+  def matchScalaCoreValue[A](alg: ScalaCoreValue[A]): OUT = {
+    alg match {
+      case bd: BooleanData => boolDataToOut(bd)
+      case id: IntData => intDataToOut(id)
+      case ld: LongData => longDataToOut(ld)
+      case sd: ShortData => shortDataToOut(sd)
+      case sd: StringData => stringDataToOut(sd)
+      case fd: FloatData => floatDataToOut(fd)
+      case dd: DoubleData => doubleDataToOut(dd)
+      case bd: BigDecimalData => bigDecimalToOut(bd)
+      case ba: ByteArrayData => byteArrayToOut(ba)
+      case en: EnumerationData[e,v] => enumerationToOut(en)
+    }
+  }
+
+  def boolDataToOut(booleanData: BooleanData): OUT
+  def intDataToOut(intData: IntData): OUT
+  def longDataToOut(longData: LongData): OUT
+  def shortDataToOut(shortData: ShortData): OUT
+  def stringDataToOut(stringData: StringData): OUT
+  def floatDataToOut(floatData: FloatData): OUT
+  def doubleDataToOut(doubleData: DoubleData): OUT
+  def bigDecimalToOut(bigDecimalData: BigDecimalData): OUT
+  def byteArrayToOut(byteArrayData: ByteArrayData): OUT
+  def enumerationToOut[A](enumerationData: EnumerationData[_,A]): OUT
+
+}
+
 trait ScalaCoreValidation {
 
   /** sv = String Validation */
@@ -70,6 +101,12 @@ trait ScalaCoreValidation {
   val dv: ValidationDefinition.DoubleValidation.type = DoubleValidation
 
   def ev[E <: Enumeration]: EnumerationValidation[E] = EnumerationValidation[E]()
+}
+
+trait ScalaCoreValueTemplate[OUT] {
+
+  
+
 }
 
 object ScalaCoreSugarInstance extends ScalaCoreSugar

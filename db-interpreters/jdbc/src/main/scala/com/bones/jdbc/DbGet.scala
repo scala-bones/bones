@@ -8,31 +8,25 @@ import com.bones.data.{HListConvert, KvpCollection}
 import com.bones.jdbc.DbUtil.{camelToSnake, withStatement}
 import com.bones.jdbc.column.ColumnNameInterpreter
 import com.bones.jdbc.rs.{ResultSetInterpreter, ResultSetValue => ResultSetCustomInterpreter}
-import com.bones.jdbc.update.{DbUpdateValue, DbUpdate}
-import javax.sql.DataSource
+import com.bones.jdbc.update.{DbUpdate, DbUpdateValue}
 
 import scala.util.control.NonFatal
 
 object DbGet {
 
+  /**
+   * Creates a function which loads an entity by ID.
+   * This function expects a connection, managed externally.
+   * @param schema The description of the object being loaded.
+   * @param idDefinition The description of the table's primary key column.
+   * @param resultSetCustomInterpreter Used to convert the results set into the resulting type A
+   * @param customDbUpdateInterpreter
+   * @tparam ALG The algebra being used.
+   * @tparam A The resulting type.
+   * @tparam ID The type of the ID (eg, Int, Long, UUID)
+   * @return A Curried Function which when given a Connection and an ID, will fetch the data from the DB.
+   */
   def getEntity[ALG[_], A, ID](
-    schema: KvpCollection[ALG, A],
-    idDefinition: IdDefinition[ALG, ID],
-    resultSetCustomInterpreter: ResultSetCustomInterpreter[ALG],
-    customDbUpdateInterpreter: DbUpdateValue[ALG]
-  ): DataSource => ID => Either[NonEmptyList[ExtractionError], (ID, A)] = {
-    val withConnection = getEntityWithConnectionCustomAlgebra(
-      schema,
-      idDefinition,
-      resultSetCustomInterpreter,
-      customDbUpdateInterpreter)
-    ds =>
-      { id =>
-        DbUtil.withDataSource(ds)(con => withConnection(id)(con))
-      }
-  }
-
-  def getEntityWithConnectionCustomAlgebra[ALG[_], A, ID](
     schema: KvpCollection[ALG, A],
     idDefinition: IdDefinition[ALG, ID],
     resultSetCustomInterpreter: ResultSetCustomInterpreter[ALG],
@@ -40,7 +34,6 @@ object DbGet {
   ): ID => Connection => Either[NonEmptyList[ExtractionError], (ID, A)] = {
     schema match {
       case xMap: HListConvert[ALG, a, al, b] => {
-        val schemaWithId = idDefinition.prependSchema(schema)
         id =>
           {
             val tableName = camelToSnake(xMap.manifestOfA.runtimeClass.getSimpleName)
@@ -79,6 +72,7 @@ object DbGet {
               }
           }
       }
+      case _ => ??? // TODO
     }
   }
 }

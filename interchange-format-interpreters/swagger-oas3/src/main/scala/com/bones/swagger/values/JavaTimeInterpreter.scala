@@ -9,7 +9,7 @@ import com.bones.swagger.SwaggerCoreInterpreter.{CustomSwaggerInterpreter, Name,
 import com.bones.validation.ValidationDefinition.ValidationOp
 import io.swagger.v3.oas.models.media.Schema
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 trait JavaTimeInterpreter extends CustomSwaggerInterpreter[JavaTimeValue] {
 

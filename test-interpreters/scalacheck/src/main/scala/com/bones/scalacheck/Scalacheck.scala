@@ -86,7 +86,7 @@ trait ScalacheckBase {
         } yield {
           head ::: tail
         }
-      case op: KvpConcreteTypeHead[ALG, a, ht, nt] @unchecked =>
+      case op: KvpCollectionHead[ALG, a, ht, nt] @unchecked =>
         val headGen = generateGen(op.collection, genAlg)
         val tailGen = kvpHList(op.tail, genAlg)
         for {

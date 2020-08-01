@@ -214,6 +214,7 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
       case h: HListConvert[ALG, _, _, A] @unchecked =>
         implicit val manifest: Manifest[A] = h.manifestOfA
         (("id", idDefinition) :: h :><: new KvpNil[ALG]).tupled[(ID, A)]
+      case _ => ??? // TODO
     }
 
   val encodeToCirceInterpreter = IsoCirceEncoderAndValidatorInterpreter

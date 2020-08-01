@@ -14,5 +14,6 @@ trait JavaTimeDbInsert extends DbInsertValue[JavaTimeValue] {
       case ld: LocalDateData =>
         psF[LocalDate]((ps, i, a) =>
           ps.setDate(i, new java.sql.Date(a.atStartOfDay().toEpochSecond(ZoneOffset.UTC))))
+      case _ => ??? // TODO
     }
 }
