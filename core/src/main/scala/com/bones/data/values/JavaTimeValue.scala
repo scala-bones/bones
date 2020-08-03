@@ -2,14 +2,14 @@ package com.bones.data.values
 
 import java.time._
 
-import com.bones.KvpValue
+import com.bones.PrimitiveValue
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.values.JavaTimeValidation
 import com.bones.validation.values.JavaTimeValidation._
 import shapeless.Coproduct
 import shapeless.ops.coproduct.Inject
 
-sealed abstract class JavaTimeValue[A: Manifest] extends KvpValue[A] {
+sealed abstract class JavaTimeValue[A: Manifest] extends PrimitiveValue[A] {
   val manifestOfA: Manifest[A] = manifest[A]
 }
 

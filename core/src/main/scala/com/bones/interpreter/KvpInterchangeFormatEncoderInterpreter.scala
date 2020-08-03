@@ -25,7 +25,7 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
     * @return
     */
   def generateEncoder[ALG[_], A](
-    collection: KvpCollection[ALG, A],
+    collection: ConcreteValue[ALG, A],
     covEncoder: InterchangeFormatEncoderValue[ALG, OUT]
   ): A => OUT = valueDefinition(collection, covEncoder)
 
@@ -89,14 +89,14 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
 
   /** Interpreter for the KvpHList type. */
   protected def kvpHList[ALG[_], H <: HList, HL <: Nat](
-    group: KvpHList[ALG, H, HL],
+    group: KvpCollection[ALG, H, HL],
     encoder: InterchangeFormatEncoderValue[ALG, OUT]
   ): H => OUT =
     group match {
       case nil: KvpNil[_] =>
         (input: H) =>
           empty
-      case op: KvpHListHead[ALG, out, l, h, hl, t, tl] =>
+      case op: KvpCollectionHead[ALG, out, l, h, hl, t, tl] =>
         val headF = kvpHList(op.head, encoder)
         val tailF = kvpHList[ALG, t, tl](op.tail, encoder)
         (input: H) =>
@@ -117,7 +117,7 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
             val tail = tailF(tailCons)
             combine(toObj(op.fieldDefinition, val1), tail)
           }
-      case op: KvpCollectionHead[ALG, H, ht, nt] @unchecked => {
+      case op: KvpConcreteValueHead[ALG, H, ht, nt] @unchecked => {
         val headF = generateEncoder(op.collection, encoder)
         val tailF = kvpHList(op.tail, encoder)
         implicit val hCons = op.isHCons
@@ -131,7 +131,7 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
     }
 
   protected def determineValueDefinition[ALG[_], A](
-    dataDefinition: Either[KvpCollection[ALG, A], ALG[A]],
+    dataDefinition: Either[ConcreteValue[ALG, A], ALG[A]],
     algEncoder: InterchangeFormatEncoderValue[ALG, OUT]
   ): A => OUT = {
     dataDefinition match {
@@ -141,11 +141,11 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
   }
 
   protected def valueDefinition[ALG[_], A](
-    fgo: KvpCollection[ALG, A],
+    fgo: ConcreteValue[ALG, A],
     encoder: InterchangeFormatEncoderValue[ALG, OUT]
   ): A => OUT =
     fgo match {
-      case op: OptionalKvpValueDefinition[ALG, b] @unchecked =>
+      case op: OptionalValue[ALG, b] @unchecked =>
         val valueF = determineValueDefinition(op.valueDefinitionOp, encoder)
         (input: A) =>
           {
@@ -176,18 +176,18 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
         val fh = kvpHList(gd.kvpHList, encoder)
         input =>
           fh(input.asInstanceOf[h])
-      case x: HListConvert[ALG, h, hl, A] @unchecked =>
+      case x: Switch[ALG, h, hl, A] @unchecked =>
         val fh = kvpHList(x.from, encoder)
         input: A =>
           {
             fh(x.fAtoH(input))
           }
-      case c: KvpCoproductValue[ALG, c] @unchecked =>
+      case c: CoproductCollection[ALG, c] @unchecked =>
         val fc = kvpCoproduct(c.kvpCoproduct, encoder)
         input =>
           val (name, out) = fc.apply(input.asInstanceOf[c])
           addStringField(out, coproductTypeKey, name)
-      case c: KvpCoproductConvert[ALG, c, a] @unchecked =>
+      case c: CoproductSwitch[ALG, c, a] @unchecked =>
         val fc = kvpCoproduct(c.from, encoder)
         input: A =>
           {

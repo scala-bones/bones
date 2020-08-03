@@ -30,7 +30,7 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
     * @return a function validating a Json Byte Array with the specified data.
     */
   def generateByteArrayValidator[ALG[_], A](
-                                             schema: KvpCollection[ALG, A],
+                                             schema: ConcreteValue[ALG, A],
                                              customValidator: InterchangeFormatValidatorValue[ALG, Json],
                                              charset: Charset
   ): Array[Byte] => Either[NonEmptyList[ExtractionError], A] = {

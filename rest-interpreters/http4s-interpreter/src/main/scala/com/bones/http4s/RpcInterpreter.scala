@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 
 import cats.effect.Sync
 import com.bones.circe.IsoCirceEncoderAndValidatorInterpreter
-import com.bones.data.KvpCollection
+import com.bones.data.ConcreteValue
 import com.bones.http4s.BaseCrudInterpreter.StringToIdError
 import com.bones.interpreter.{InterchangeFormatEncoderValue, InterchangeFormatValidatorValue}
 import com.bones.protobuf._
@@ -34,10 +34,10 @@ class RpcInterpreter[ALG[_], ID: Manifest](
     ProtobufUtcSequentialEncoderAndValidator
 
   def create[F[_], A, E, B](
-    createF: A => F[Either[E, B]],
-    inputSchema: KvpCollection[ALG, A],
-    errorSchema: KvpCollection[ALG, E],
-    outputSchema: KvpCollection[ALG, B]
+                             createF: A => F[Either[E, B]],
+                             inputSchema: ConcreteValue[ALG, A],
+                             errorSchema: ConcreteValue[ALG, E],
+                             outputSchema: ConcreteValue[ALG, B]
   )(implicit F: Sync[F], H: Http4sDsl[F]): List[HttpRoutes[F]] =
     BaseCrudInterpreter.httpPostRoutes(
       path,

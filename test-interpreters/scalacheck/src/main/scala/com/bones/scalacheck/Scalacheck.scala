@@ -45,7 +45,7 @@ object Scalacheck extends ScalacheckBase
 
 trait ScalacheckBase {
 
-  def generateGen[ALG[_], A](collection: KvpCollection[ALG, A], genAlg: GenValue[ALG]): Gen[A] =
+  def generateGen[ALG[_], A](collection: ConcreteValue[ALG, A], genAlg: GenValue[ALG]): Gen[A] =
     valueDefinition(collection, genAlg)
 
   def kvpCoproduct[ALG[_], C <: Coproduct](
@@ -61,8 +61,8 @@ trait ScalacheckBase {
   }
 
   def kvpHList[ALG[_], H <: HList, HL <: Nat](
-    group: KvpHList[ALG, H, HL],
-    genAlg: GenValue[ALG]): Gen[H] = {
+                                               group: KvpCollection[ALG, H, HL],
+                                               genAlg: GenValue[ALG]): Gen[H] = {
     group match {
       case ni: KvpNil[_] => Gen.const(HNil)
       case op: KvpSingleValueHead[ALG, h, t, tl, a] @unchecked =>
@@ -76,7 +76,7 @@ trait ScalacheckBase {
           op.isHCons.cons(head, tail)
         }
         result
-      case op: KvpHListHead[ALG, a, al, h, hl, t, tl] @unchecked =>
+      case op: KvpCollectionHead[ALG, a, al, h, hl, t, tl] @unchecked =>
         implicit val prepend = op.prepend
         val headGen = kvpHList(op.head, genAlg)
         val tailGen = kvpHList(op.tail, genAlg)
@@ -86,7 +86,7 @@ trait ScalacheckBase {
         } yield {
           head ::: tail
         }
-      case op: KvpCollectionHead[ALG, a, ht, nt] @unchecked =>
+      case op: KvpConcreteValueHead[ALG, a, ht, nt] @unchecked =>
         val headGen = generateGen(op.collection, genAlg)
         val tailGen = kvpHList(op.tail, genAlg)
         for {
@@ -99,7 +99,7 @@ trait ScalacheckBase {
   }
 
   def determineValueDefinition[ALG[_], A](
-                                           value: Either[KvpCollection[ALG, A], ALG[A]],
+                                           value: Either[ConcreteValue[ALG, A], ALG[A]],
                                            genAlg: GenValue[ALG]): Gen[A] = {
     value match {
       case Left(kvp)  => valueDefinition(kvp, genAlg)
@@ -107,9 +107,9 @@ trait ScalacheckBase {
     }
   }
 
-  def valueDefinition[ALG[_], A](fgo: KvpCollection[ALG, A], genAlg: GenValue[ALG]): Gen[A] =
+  def valueDefinition[ALG[_], A](fgo: ConcreteValue[ALG, A], genAlg: GenValue[ALG]): Gen[A] =
     fgo match {
-      case op: OptionalKvpValueDefinition[ALG, a] @unchecked => {
+      case op: OptionalValue[ALG, a] @unchecked => {
         val optionalGen = determineValueDefinition(op.valueDefinitionOp, genAlg).map(Some(_))
         Gen.frequency(
           (9, optionalGen),
@@ -129,13 +129,13 @@ trait ScalacheckBase {
       }
       case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
         kvpHList(kvp.kvpHList, genAlg).map(_.asInstanceOf[A])
-      case co: KvpCoproductValue[ALG, c] @unchecked =>
+      case co: CoproductCollection[ALG, c] @unchecked =>
         // Get a list of coproduct and gen them with equal frequency (1)
         val gens = kvpCoproduct(co.kvpCoproduct, genAlg).map(_.map(_.asInstanceOf[A])).map((1, _))
         Gen.frequency(gens: _*)
-      case x: HListConvert[ALG, a, al, b] @unchecked =>
+      case x: Switch[ALG, a, al, b] @unchecked =>
         kvpHList(x.from, genAlg).map(hList => x.fHtoA(hList))
-      case co: KvpCoproductConvert[ALG, c, a] @unchecked =>
+      case co: CoproductSwitch[ALG, c, a] @unchecked =>
         val gens = kvpCoproduct(co.from, genAlg).map((1, _))
         Gen.frequency(gens: _*).map(coproduct => co.cToA(coproduct))
     }

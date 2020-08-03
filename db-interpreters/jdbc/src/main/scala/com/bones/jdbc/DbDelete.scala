@@ -4,7 +4,7 @@ import java.sql.Connection
 
 import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionError, SystemError}
-import com.bones.data.{HListConvert, KvpCollection}
+import com.bones.data.{Switch, ConcreteValue}
 import com.bones.jdbc.DbUtil.{camelToSnake, withDataSource, withStatement}
 import com.bones.jdbc.rs.ResultSetValue
 import com.bones.jdbc.update.{DbUpdateValue, DbUpdate}
@@ -27,13 +27,13 @@ object DbDelete {
    * @return
    */
   def delete[ALG[_], A, ID](
-    schema: KvpCollection[ALG, A],
-    resultSetCustomInterpreter: ResultSetValue[ALG],
-    idDef: IdDefinition[ALG, ID],
-    customDbUpdateInterpreter: DbUpdateValue[ALG]
+                             schema: ConcreteValue[ALG, A],
+                             resultSetCustomInterpreter: ResultSetValue[ALG],
+                             idDef: IdDefinition[ALG, ID],
+                             customDbUpdateInterpreter: DbUpdateValue[ALG]
   ): ID => Connection => Either[NonEmptyList[ExtractionError], (ID, A)] = {
     schema match {
-      case x: HListConvert[ALG, _, _, _] => {
+      case x: Switch[ALG, _, _, _] => {
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
         val updateF =
           DbUpdate.valueDefinition(idDef.asSchema, customDbUpdateInterpreter)(1, idDef.key)

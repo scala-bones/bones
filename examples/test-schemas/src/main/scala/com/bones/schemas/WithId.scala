@@ -1,7 +1,7 @@
 package com.bones.schemas
 
 import com.bones.data.values.{DefaultValues, ScalaCoreInjectedSugar}
-import com.bones.data.{KvpCollection, HListConvert, KeyValueDefinition, KvpCoproductConvert, KvpSingleValueHead, Sugar}
+import com.bones.data.{ConcreteValue, Switch, KeyValueDefinition, CoproductSwitch, KvpSingleValueHead, Sugar}
 import com.bones.schemas.Schemas.AllSupported
 
 object WithLongId extends WithId[DefaultValues] {
@@ -16,7 +16,7 @@ object WithLongId extends WithId[DefaultValues] {
 }
 trait WithId[ALG[_]] extends Sugar[ALG] {
 
-  def schemaWithId[A:Manifest, ID:Manifest](idDefinition: (String, ALG[ID]), schema: KvpCollection[ALG, A]) = {
+  def schemaWithId[A:Manifest, ID:Manifest](idDefinition: (String, ALG[ID]), schema: ConcreteValue[ALG, A]) = {
     (idDefinition :: schema :><: kvpNil).tupled[(ID, A)]
   }
 }

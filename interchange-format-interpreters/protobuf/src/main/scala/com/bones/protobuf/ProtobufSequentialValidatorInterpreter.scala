@@ -50,8 +50,8 @@ object ProtobufSequentialValidatorInterpreter {
 
   /** Determine if we use the core algebra or the custom algebra and then pass control to the appropriate interpreter */
   def determineValueDefinition[ALG[_], A](
-    definition: Either[KvpCollection[ALG, A], ALG[A]],
-    valueDefinition: (KvpCollection[ALG, A], ProtobufValidatorValue[ALG]) => ExtractFromProto[A],
+    definition: Either[ConcreteValue[ALG, A], ALG[A]],
+    valueDefinition: (ConcreteValue[ALG, A], ProtobufValidatorValue[ALG]) => ExtractFromProto[A],
     customInterpreter: ProtobufValidatorValue[ALG]
   ): ExtractFromProto[A] =
     definition match {
@@ -81,8 +81,8 @@ object ProtobufSequentialValidatorInterpreter {
   def identitySuccess[A]: (A, Path) => Either[NonEmptyList[ExtractionError], A] = (a, _) => Right(a)
 
   def optionalKvpValueDefinition[ALG[_], B](
-    op: OptionalKvpValueDefinition[ALG, B],
-    valueDefinition: (KvpCollection[ALG, B], ProtobufValidatorValue[ALG]) => ExtractFromProto[B],
+    op: OptionalValue[ALG, B],
+    valueDefinition: (ConcreteValue[ALG, B], ProtobufValidatorValue[ALG]) => ExtractFromProto[B],
     customInterpreter: ProtobufValidatorValue[ALG]
   ): ExtractFromProto[Option[B]] = {
     val vd = determineValueDefinition(op.valueDefinitionOp, valueDefinition, customInterpreter)
@@ -102,7 +102,7 @@ object ProtobufSequentialValidatorInterpreter {
 
   def listData[ALG[_], B](
     ld: ListData[ALG, B],
-    valueDefinition: (KvpCollection[ALG, B], ProtobufValidatorValue[ALG]) => ExtractFromProto[B],
+    valueDefinition: (ConcreteValue[ALG, B], ProtobufValidatorValue[ALG]) => ExtractFromProto[B],
     customInterpreter: ProtobufValidatorValue[ALG],
     validations: List[ValidationOp[List[B]]]
   ): ExtractFromProto[List[B]] = {
@@ -143,8 +143,8 @@ object ProtobufSequentialValidatorInterpreter {
 
   def eitherData[ALG[_], B, C](
     ed: EitherData[ALG, B, C],
-    valueDefinitionB: (KvpCollection[ALG, B], ProtobufValidatorValue[ALG]) => ExtractFromProto[B],
-    valueDefinitionC: (KvpCollection[ALG, C], ProtobufValidatorValue[ALG]) => ExtractFromProto[C],
+    valueDefinitionB: (ConcreteValue[ALG, B], ProtobufValidatorValue[ALG]) => ExtractFromProto[B],
+    valueDefinitionC: (ConcreteValue[ALG, C], ProtobufValidatorValue[ALG]) => ExtractFromProto[C],
     customInterpreter: ProtobufValidatorValue[ALG],
   ): ExtractFromProto[Either[B, C]] = {
     val extractA: ExtractFromProto[B] =
@@ -171,10 +171,10 @@ object ProtobufSequentialValidatorInterpreter {
   }
 
   def kvpCoproductValueData[ALG[_], A, C <: Coproduct](
-    kvp: KvpCoproductValue[ALG, C],
+    kvp: CoproductCollection[ALG, C],
     kvpCoproduct: (
       KvpCoproduct[ALG, C],
-      KvpCollection[ALG, C],
+      ConcreteValue[ALG, C],
       ProtobufValidatorValue[ALG]) => ExtractProductFromProto[C],
     customInterpreter: ProtobufValidatorValue[ALG]
   ): ExtractFromProto[A] = {
@@ -192,7 +192,7 @@ object ProtobufSequentialValidatorInterpreter {
 
   def kvpHListValue[ALG[_], A, H <: HList, HL <: Nat](
     kvp: KvpHListValue[ALG, H, HL],
-    kvpHList: (KvpHList[ALG, H, HL], ProtobufValidatorValue[ALG]) => ExtractHListFromProto[H],
+    kvpHList: (KvpCollection[ALG, H, HL], ProtobufValidatorValue[ALG]) => ExtractHListFromProto[H],
     customInterpreter: ProtobufValidatorValue[ALG]
   ): ExtractFromProto[A] = {
     val groupExtract = kvpHList(kvp.kvpHList, customInterpreter)
@@ -222,8 +222,8 @@ object ProtobufSequentialValidatorInterpreter {
   }
 
   def hListConvert[ALG[_], A, H <: HList, HL <: Nat](
-    kvp: HListConvert[ALG, H, HL, A],
-    kvpHList: (KvpHList[ALG, H, HL], ProtobufValidatorValue[ALG]) => ExtractHListFromProto[H],
+    kvp: Switch[ALG, H, HL, A],
+    kvpHList: (KvpCollection[ALG, H, HL], ProtobufValidatorValue[ALG]) => ExtractHListFromProto[H],
     customInterpreter: ProtobufValidatorValue[ALG]
   ): ExtractFromProto[A] = {
     val groupExtract = kvpHList(kvp.from, customInterpreter)
@@ -259,10 +259,10 @@ object ProtobufSequentialValidatorInterpreter {
   }
 
   def kvpCoproductConvert[ALG[_], C <: Coproduct, A](
-    co: KvpCoproductConvert[ALG, C, A],
+    co: CoproductSwitch[ALG, C, A],
     kvpCoproduct: (
       KvpCoproduct[ALG, C],
-      KvpCollection[ALG, A],
+      ConcreteValue[ALG, A],
       ProtobufValidatorValue[ALG]) => ExtractProductFromProto[C],
     customInterpreter: ProtobufValidatorValue[ALG]
   ): ExtractFromProto[A] = {
@@ -480,10 +480,10 @@ trait ProtobufSequentialValidatorInterpreter {
   val zoneOffset: ZoneOffset
 
   def fromCustomBytes[ALG[_], A](
-    dc: KvpCollection[ALG, A],
+    dc: ConcreteValue[ALG, A],
     customInterpreter: ProtobufValidatorValue[ALG])
     : Array[Byte] => Either[NonEmptyList[ExtractionError], A] = dc match {
-    case x: HListConvert[ALG, _, _, A] @unchecked => {
+    case x: Switch[ALG, _, _, A] @unchecked => {
       val (lastFieldNumber, f) =
         kvpHList(x.from, customInterpreter)(1, List.empty)
       (bytes: Array[Byte]) =>
@@ -501,7 +501,7 @@ trait ProtobufSequentialValidatorInterpreter {
 
   protected def kvpCoproduct[ALG[_], C <: Coproduct, A](
     kvp: KvpCoproduct[ALG, C],
-    kvpCoproductValue: KvpCollection[ALG, A],
+    kvpCoproductValue: ConcreteValue[ALG, A],
     customInterpreter: ProtobufValidatorValue[ALG]
   ): ExtractProductFromProto[C] = {
 
@@ -534,7 +534,7 @@ trait ProtobufSequentialValidatorInterpreter {
   }
 
   protected def kvpHList[ALG[_], H <: HList, HL <: Nat](
-    group: KvpHList[ALG, H, HL],
+    group: KvpCollection[ALG, H, HL],
     customInterpreter: ProtobufValidatorValue[ALG]): ExtractHListFromProto[H] = {
     group match {
       case nil: KvpNil[_] =>
@@ -566,8 +566,8 @@ trait ProtobufSequentialValidatorInterpreter {
               (canReadTail, result)
             })
           }
-      case op: KvpCollectionHead[ALG, a, ht, nt] @unchecked =>
-        def fromBonesSchema[A](bonesSchema: KvpCollection[ALG, A]): ExtractFromProto[A] = ???
+      case op: KvpConcreteValueHead[ALG, a, ht, nt] @unchecked =>
+        def fromBonesSchema[A](bonesSchema: ConcreteValue[ALG, A]): ExtractFromProto[A] = ???
 
         val head = fromBonesSchema(op.collection)
         val tail = kvpHList(op.tail, customInterpreter)
@@ -591,7 +591,7 @@ trait ProtobufSequentialValidatorInterpreter {
               (canReadTail, totalResult)
             })
           }
-      case op: KvpHListHead[ALG, a, al, h, hl, t, tl] @unchecked =>
+      case op: KvpCollectionHead[ALG, a, al, h, hl, t, tl] @unchecked =>
         val head = kvpHList(op.head, customInterpreter)
         val tail = kvpHList(op.tail, customInterpreter)
         (lastFieldNumber, path) =>
@@ -620,22 +620,22 @@ trait ProtobufSequentialValidatorInterpreter {
   }
 
   def valueDefinition[ALG[_], A]
-    : (KvpCollection[ALG, A], ProtobufValidatorValue[ALG]) => ExtractFromProto[A] =
-    (fgo: KvpCollection[ALG, A], customInterpreter: ProtobufValidatorValue[ALG]) =>
+    : (ConcreteValue[ALG, A], ProtobufValidatorValue[ALG]) => ExtractFromProto[A] =
+    (fgo: ConcreteValue[ALG, A], customInterpreter: ProtobufValidatorValue[ALG]) =>
       fgo match {
-        case op: OptionalKvpValueDefinition[ALG, a] @unchecked =>
+        case op: OptionalValue[ALG, a] @unchecked =>
           optionalKvpValueDefinition[ALG, a](op, valueDefinition, customInterpreter)
         case ld: ListData[ALG, t] @unchecked =>
           listData[ALG, t](ld, valueDefinition, customInterpreter, ld.validations)
         case ed: EitherData[ALG, a, b] @unchecked =>
           eitherData[ALG, a, b](ed, valueDefinition, valueDefinition, customInterpreter)
-        case kvp: KvpCoproductValue[ALG, c] @unchecked =>
+        case kvp: CoproductCollection[ALG, c] @unchecked =>
           kvpCoproductValueData[ALG, A, c](kvp, kvpCoproduct, customInterpreter)
         case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
           kvpHListValue[ALG, A, h, hl](kvp, kvpHList, customInterpreter)
-        case kvp: HListConvert[ALG, h, hl, b] @unchecked =>
+        case kvp: Switch[ALG, h, hl, b] @unchecked =>
           hListConvert[ALG, b, h, hl](kvp, kvpHList, customInterpreter)
-        case co: KvpCoproductConvert[ALG, c, a] @unchecked =>
+        case co: CoproductSwitch[ALG, c, a] @unchecked =>
           kvpCoproductConvert[ALG, c, a](co, kvpCoproduct, customInterpreter)
     }
 }

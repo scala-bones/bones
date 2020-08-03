@@ -6,7 +6,7 @@ import cats.data.{Kleisli, NonEmptyList}
 import cats.effect._
 import cats.implicits._
 import com.bones.Util
-import com.bones.data.{KvpCollection, KvpNil}
+import com.bones.data.{ConcreteValue, KvpNil}
 import com.bones.data.Error.ExtractionError
 import com.bones.data.values.DefaultValues
 import com.bones.http4s.BaseCrudInterpreter.StringToIdError
@@ -52,7 +52,7 @@ object LocalhostAllIOApp {
     new HikariDataSource(config)
   }
 
-  def dbSchemaEndpoint[A](path: String, schema: KvpCollection[DefaultValues, A]): HttpRoutes[IO] = {
+  def dbSchemaEndpoint[A](path: String, schema: ConcreteValue[DefaultValues, A]): HttpRoutes[IO] = {
     val dbSchema = DbColumnInterpreter.tableDefinitionCustomAlgebra(schema, com.bones.jdbc.column.defaultDbColumnInterpreter)
     HttpRoutes.of[IO] {
       case GET -> Root / "dbSchema" / p if p == path => Ok(dbSchema, Header("Content-Type", "text/plain"))
@@ -61,7 +61,7 @@ object LocalhostAllIOApp {
 
   def serviceRoutesWithCrudMiddleware[ALG[_], A, ID:Manifest](
                                                                path: String,
-                                                               schema: KvpCollection[DefaultValues, A],
+                                                               schema: ConcreteValue[DefaultValues, A],
                                                                idDef: IdDefinition[DefaultValues, ID],
                                                                parseIdF: String => Either[StringToIdError,ID],
                                                                jdbcColumnInterpreter: JdbcColumnInterpreter[DefaultValues],

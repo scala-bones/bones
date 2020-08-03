@@ -2,7 +2,7 @@ package com.bones.fullstack
 
 import cats.data.NonEmptyList
 import cats.effect.IO
-import com.bones.data.KvpCollection
+import com.bones.data.ConcreteValue
 import com.bones.data.Error.ExtractionError
 import com.bones.jdbc.{JdbcColumnInterpreter, _}
 import com.bones.jdbc.insert.DbInsert
@@ -18,10 +18,10 @@ import javax.sql.DataSource
   * @tparam A
   */
 case class CrudDbDefinitions[ALG[_], A, ID](
-  schema: KvpCollection[ALG, A],
-  customInterpreter: JdbcColumnInterpreter[ALG],
-  idDef: IdDefinition[ALG, ID],
-  ds: DataSource) {
+                                             schema: ConcreteValue[ALG, A],
+                                             customInterpreter: JdbcColumnInterpreter[ALG],
+                                             idDef: IdDefinition[ALG, ID],
+                                             ds: DataSource) {
 
   // TODO: deal with error better
   val searchF: Stream[IO, (ID, A)] =
