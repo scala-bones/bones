@@ -3,7 +3,7 @@ package com.bones.jdbc.rs
 import java.sql.{ResultSet, SQLException}
 
 import cats.data.NonEmptyList
-import com.bones.KvpValue
+import com.bones.PrimitiveValue
 import com.bones.Util
 import com.bones.data.Error.{ExtractionError, RequiredValue, SystemError}
 import com.bones.data.KeyValueDefinition.CoproductDataDefinition
@@ -16,8 +16,8 @@ import shapeless.{HList, HNil, Nat}
 object ResultSetInterpreter {
 
   protected def kvpHList[ALG[_], H <: HList, N <: Nat](
-    group: KvpHList[ALG, H, N],
-    customInterpreter: ResultSetValue[ALG])
+                                                        group: KvpCollection[ALG, H, N],
+                                                        customInterpreter: ResultSetValue[ALG])
     : Path => ResultSet => Either[NonEmptyList[ExtractionError], H] =
     group match {
       case nil: KvpNil[_] =>
@@ -38,11 +38,11 @@ object ResultSetInterpreter {
                 })
               }
           }
-      case op: KvpCollectionHead[ALG, a, ht, nt] @unchecked =>
-        def fromSchema[A](bonesSchema: KvpCollection[ALG, A])
+      case op: KvpConcreteValueHead[ALG, a, ht, nt] @unchecked =>
+        def fromSchema[A](bonesSchema: ConcreteValue[ALG, A])
           : Path => ResultSet => Either[NonEmptyList[ExtractionError], A] =
           bonesSchema match {
-            case hList: HListConvert[ALG, hh, nn, A] @unchecked => { path => resultSet =>
+            case hList: Switch[ALG, hh, nn, A] @unchecked => { path =>resultSet =>
               {
                 val resultHH = kvpHList(hList.from, customInterpreter)(path)(resultSet)
                 resultHH.map(hh => hList.fHtoA(hh))
@@ -64,7 +64,7 @@ object ResultSetInterpreter {
                 })
               }
           }
-      case op: KvpHListHead[ALG, a, al, h, hl, t, tl] @unchecked =>
+      case op: KvpCollectionHead[ALG, a, al, h, hl, t, tl] @unchecked =>
         val headF = kvpHList(op.head, customInterpreter)
         val tailF = kvpHList(op.tail, customInterpreter)
         path =>
@@ -89,15 +89,15 @@ object ResultSetInterpreter {
       case Right(alg) => customInterpreter.resultSet(alg)
     }
 
-  def generateResultSet[ALG[_], A](collection: KvpCollection[ALG, A], values: ResultSetValue[ALG]): Path => ResultSet => Either[NonEmptyList[ExtractionError], A] =
+  def generateResultSet[ALG[_], A](collection: ConcreteValue[ALG, A], values: ResultSetValue[ALG]): Path => ResultSet => Either[NonEmptyList[ExtractionError], A] =
     path => valueDefinition(collection, values)(path, "")
 
   def valueDefinition[ALG[_], A](
-    fgo: KvpCollection[ALG,A],
-    customInterpreter: ResultSetValue[ALG])
+                                  fgo: ConcreteValue[ALG,A],
+                                  customInterpreter: ResultSetValue[ALG])
     : (Path, FieldName) => ResultSet => Either[NonEmptyList[ExtractionError], A] =
     fgo match {
-      case op: OptionalKvpValueDefinition[ALG, a] @unchecked =>
+      case op: OptionalValue[ALG, a] @unchecked =>
         (path, fieldName) =>
           val child =
             determineValueDefinition(op.valueDefinitionOp, customInterpreter)(path, fieldName)
@@ -146,15 +146,15 @@ object ResultSetInterpreter {
         (path, _) => //Ignore fieldName here
           groupF(path).andThen(_.map(_.asInstanceOf[A]))
 
-      case x: HListConvert[ALG, a, al, b] @unchecked =>
+      case x: Switch[ALG, a, al, b] @unchecked =>
         val groupF = kvpHList(x.from, customInterpreter)
         (path, _) =>
           groupF(path).andThen(_.map(x.fHtoA))
-      case co: KvpCoproductConvert[ALG, c, a] => ???
-      case co: KvpCoproductValue[ALG, a] => ???
+      case co: CoproductSwitch[ALG, c, a] => ???
+      case co: CoproductCollection[ALG, a] => ???
     }
 
-  def catchSql[A](f: => A, path: Path, op: KvpValue[_]): Either[NonEmptyList[ExtractionError], A] =
+  def catchSql[A](f: => A, path: Path, op: PrimitiveValue[_]): Either[NonEmptyList[ExtractionError], A] =
     try {
       val result = f
       if (result == null) {

@@ -6,7 +6,7 @@ import com.bones.jdbc.DbUtil
 import shapeless.{Coproduct, HList, Nat}
 
 case class Ideal[ALG[_]](algInterpreter: IdealValue[ALG])
-    extends KvpCollectionTemplate[
+    extends ConcreteValueTemplate[
       ALG,
       (
         TableCollection,
@@ -15,21 +15,21 @@ case class Ideal[ALG[_]](algInterpreter: IdealValue[ALG])
 
   val coproductInterpreter = new IdealCoproductInterpreter[ALG] {
     override val algInterpreter: IdealValue[ALG] = self.algInterpreter
-    override def fromCollection[A: Manifest](kvpCollection: KvpCollection[ALG, A]):
+    override def fromCollection[A: Manifest](kvpCollection: ConcreteValue[ALG, A]):
       (TableCollection, Option[ColumnName], Option[Description]) => Either[InvalidStructureError, TableCollection] = self.fromCollection(kvpCollection)
   }
   val hListInterpreter = new IdealHListInterpreter[ALG] {
-    override def fromCollection[A: Manifest](kvpCollection: KvpCollection[ALG, A]): (TableCollection, Option[ColumnName], Option[Description]) => Either[InvalidStructureError, TableCollection] = self.fromCollection(kvpCollection)
+    override def fromCollection[A: Manifest](kvpCollection: ConcreteValue[ALG, A]): (TableCollection, Option[ColumnName], Option[Description]) => Either[InvalidStructureError, TableCollection] = self.fromCollection(kvpCollection)
     override val algInterpreter: IdealValue[ALG] = self.algInterpreter
   }
 
-  def toIdeal[A:Manifest](schema: KvpCollection[ALG, A]): Either[InvalidStructureError, TableCollection] = {
+  def toIdeal[A:Manifest](schema: ConcreteValue[ALG, A]): Either[InvalidStructureError, TableCollection] = {
     val name = DbUtil.camelToSnake(schema.manifestOfA.getClass.getSimpleName)
     val tc = TableCollection.init(name, None)
     fromCollection[A](schema).apply(tc, None, None)
   }
 
-  override protected def optionalToOut[B:Manifest](opt: OptionalKvpValueDefinition[ALG, B]): (
+  override protected def optionalToOut[B:Manifest](opt: OptionalValue[ALG, B]): (
     TableCollection,
     Option[ColumnName],
     Option[Description]) => Either[InvalidStructureError, TableCollection] = {
@@ -124,7 +124,7 @@ case class Ideal[ALG[_]](algInterpreter: IdealValue[ALG])
     }
   }
 
-  override protected def coproductToOut[C <: Coproduct](coproduct: KvpCoproductValue[ALG, C]): (
+  override protected def coproductToOut[C <: Coproduct](coproduct: CoproductCollection[ALG, C]): (
     TableCollection,
     Option[ColumnName],
     Option[Description]) => Either[InvalidStructureError, TableCollection] = {
@@ -132,7 +132,7 @@ case class Ideal[ALG[_]](algInterpreter: IdealValue[ALG])
   }
 
   override protected def hListConvertToOut[A: Manifest, H <: HList, N <: Nat](
-    hList: HListConvert[ALG, H, N, A]): (
+    hList: Switch[ALG, H, N, A]): (
     TableCollection,
     Option[ColumnName],
     Option[Description]) => Either[InvalidStructureError, TableCollection] =     (tableCollection: TableCollection, columnName: Option[String], description: Option[String]) => {
@@ -145,7 +145,7 @@ case class Ideal[ALG[_]](algInterpreter: IdealValue[ALG])
 
 
   override protected def coproductConvertToOut[C <: Coproduct, A:Manifest](
-    cc: KvpCoproductConvert[ALG, C, A]): (
+    cc: CoproductSwitch[ALG, C, A]): (
     TableCollection,
     Option[ColumnName],
     Option[Description]) => Either[InvalidStructureError, TableCollection] =

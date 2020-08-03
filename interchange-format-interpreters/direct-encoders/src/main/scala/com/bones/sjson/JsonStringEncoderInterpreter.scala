@@ -70,13 +70,13 @@ trait JsonStringEncoderInterpreter {
   val localTimeFormatter: DateTimeFormatter
 
   def fAtoString[ALG[_], A](
-                             bonesSchema: KvpCollection[ALG, A],
+                             bonesSchema: ConcreteValue[ALG, A],
                              customToJsonStringInterpreter: CustomToJsonStringInterpreter[ALG]): A => String =
     bonesSchema match {
-      case kvp: HListConvert[ALG, h, n, a] @unchecked =>
+      case kvp: Switch[ALG, h, n, a] @unchecked =>
         valueDefinition(kvp, customToJsonStringInterpreter).andThen(x =>
           if (x.isEmpty) "{}" else x.mkString)
-      case kvp: KvpCoproductConvert[ALG, c, a] @unchecked =>
+      case kvp: CoproductSwitch[ALG, c, a] @unchecked =>
         valueDefinition(kvp, customToJsonStringInterpreter).andThen(x =>
           if (x.isEmpty) "{}" else x.mkString)
       case _ => ??? // TODO
@@ -104,8 +104,8 @@ trait JsonStringEncoderInterpreter {
   }
 
   private def kvpHList[ALG[_], H <: HList, HL <: Nat](
-    group: KvpHList[ALG, H, HL],
-    customInterpreter: CustomToJsonStringInterpreter[ALG]
+                                                       group: KvpCollection[ALG, H, HL],
+                                                       customInterpreter: CustomToJsonStringInterpreter[ALG]
   ): H => List[String] = {
 
     group match {
@@ -130,7 +130,7 @@ trait JsonStringEncoderInterpreter {
               valWithKey ::: tail
 
           }
-      case op: KvpHListHead[ALG, a, al, h, hl, t, tl] @unchecked =>
+      case op: KvpCollectionHead[ALG, a, al, h, hl, t, tl] @unchecked =>
         val headF = kvpHList(op.head, customInterpreter)
         val tailF = kvpHList[ALG, t, tl](op.tail, customInterpreter)
         (input: H) =>
@@ -144,7 +144,7 @@ trait JsonStringEncoderInterpreter {
               headOut ::: tailOut
           }
 
-      case op: KvpCollectionHead[ALG, a, ht, nt] @unchecked =>
+      case op: KvpConcreteValueHead[ALG, a, ht, nt] @unchecked =>
         val headF: a => List[String] = fromBonesSchema(op.collection, customInterpreter)
         val tailF = kvpHList(op.tail, customInterpreter)
         implicit val hCons = op.isHCons
@@ -158,18 +158,18 @@ trait JsonStringEncoderInterpreter {
   }
 
   def fromBonesSchema[ALG[_], A](
-                                  bonesSchema: KvpCollection[ALG, A],
+                                  bonesSchema: ConcreteValue[ALG, A],
                                   customToJsonStringInterpreter: CustomToJsonStringInterpreter[ALG]
   ): A => List[String] = {
     bonesSchema match {
-      case kvp: KvpCoproductConvert[ALG, c, a] =>
+      case kvp: CoproductSwitch[ALG, c, a] =>
         val f = kvpCoproduct(kvp.from, customToJsonStringInterpreter)
         (input: A) =>
           {
             val (coproductType, json) = f(kvp.aToC(input))
             List(s""" "type": "${coproductType}", ${json} """)
           }
-      case hListConvert: HListConvert[ALG, h, n, a] =>
+      case hListConvert: Switch[ALG, h, n, a] =>
         val f = kvpHList(hListConvert.from, customToJsonStringInterpreter)
         (input: A) =>
           {
@@ -180,7 +180,7 @@ trait JsonStringEncoderInterpreter {
   }
 
   def determineValueDefinition[ALG[_], A](
-                                           kvpValue: Either[KvpCollection[ALG, A], ALG[A]],
+                                           kvpValue: Either[ConcreteValue[ALG, A], ALG[A]],
                                            customInterpreter: CustomToJsonStringInterpreter[ALG]
   ): A => List[String] = {
     kvpValue match {
@@ -190,10 +190,10 @@ trait JsonStringEncoderInterpreter {
   }
 
   def valueDefinition[ALG[_], A](
-                                  fgo: KvpCollection[ALG, A],
+                                  fgo: ConcreteValue[ALG, A],
                                   customToJsonStringInterpreter: CustomToJsonStringInterpreter[ALG]): A => List[String] =
     fgo match {
-      case op: OptionalKvpValueDefinition[ALG, a] @unchecked =>
+      case op: OptionalValue[ALG, a] @unchecked =>
         val someF = determineValueDefinition(op.valueDefinitionOp, customToJsonStringInterpreter)
         _ match {
           case Some(s) => someF(s)
@@ -216,7 +216,7 @@ trait JsonStringEncoderInterpreter {
         val hListDef = kvpHList(kvp.kvpHList, customToJsonStringInterpreter)
         (input: A) =>
           hListDef(input.asInstanceOf[h]).flatMap(x => List("{", x, "}"))
-      case kvp: KvpCoproductValue[ALG, c] @unchecked =>
+      case kvp: CoproductCollection[ALG, c] @unchecked =>
         val coproductDef = kvpCoproduct(kvp.kvpCoproduct, customToJsonStringInterpreter)
         (input: A) =>
           {
@@ -228,14 +228,14 @@ trait JsonStringEncoderInterpreter {
               List("""{"type":"""", coproductType, """", """) ::: dropOpeningBracket ::: " " :: Nil
             }
           }
-      case x: HListConvert[ALG, a, al, b] @unchecked =>
+      case x: Switch[ALG, a, al, b] @unchecked =>
         val fromDef = kvpHList(x.from, customToJsonStringInterpreter)
         (input: A) =>
           {
             val h = x.fAtoH(input)
             "{" :: fromDef(h) ::: "}" :: Nil
           }
-      case co: KvpCoproductConvert[ALG, c, a] @unchecked =>
+      case co: CoproductSwitch[ALG, c, a] @unchecked =>
         val fromDef = kvpCoproduct(co.from, customToJsonStringInterpreter)
         (input: A) =>
           {

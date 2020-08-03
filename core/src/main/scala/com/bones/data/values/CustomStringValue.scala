@@ -3,7 +3,7 @@ package com.bones.data.values
 import java.net.{URI, URL}
 import java.util.UUID
 
-import com.bones.KvpValue
+import com.bones.PrimitiveValue
 import com.bones.data.values.CustomStringValue._
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.ValidationUtil
@@ -142,7 +142,7 @@ object CustomStringValue {
 
 }
 
-sealed abstract class CustomStringValue[A: Manifest] extends KvpValue[String] {
+sealed abstract class CustomStringValue[A: Manifest] extends PrimitiveValue[String] {
   val manifestOfA: Manifest[String] = manifest[String]
 
   val validations: List[ValidationOp[String]]

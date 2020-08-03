@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets
 import cats.effect._
 import cats.implicits._
 import com.bones.circe.IsoCirceEncoderAndValidatorInterpreter
-import com.bones.data.{HListConvert, KvpCollection, KvpNil}
+import com.bones.data.{Switch, ConcreteValue, KvpNil}
 import com.bones.http4s.BaseCrudInterpreter.StringToIdError
 import com.bones.interpreter.{InterchangeFormatEncoderValue, InterchangeFormatValidatorValue}
 import com.bones.protobuf.{ProtobufSequentialEncoderInterpreter, ProtobufSequentialValidatorInterpreter, _}
@@ -38,10 +38,10 @@ object ClassicCrudInterpreter {
                                                             protobufEncoder: ProtobufEncoderValue[ALG],
                                                             protobufFile: ProtoFileGeneratorInterpreter.CustomInterpreter[ALG],
                                                             customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
-                                                            schema: KvpCollection[ALG, A],
+                                                            schema: ConcreteValue[ALG, A],
                                                             idDefinition: ALG[ID],
                                                             pathStringToId: String => Either[StringToIdError, ID],
-                                                            errorSchema: KvpCollection[ALG, E],
+                                                            errorSchema: ConcreteValue[ALG, E],
                                                             charset: java.nio.charset.Charset = StandardCharsets.UTF_8
   )(
     implicit F: Sync[F],
@@ -84,10 +84,10 @@ object ClassicCrudInterpreter {
                                                                protobufEncoder: ProtobufEncoderValue[ALG],
                                                                protobufFile: ProtoFileGeneratorInterpreter.CustomInterpreter[ALG],
                                                                customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
-                                                               schema: KvpCollection[ALG, A],
+                                                               schema: ConcreteValue[ALG, A],
                                                                idDefinition: ALG[ID],
                                                                pathStringToId: String => Either[StringToIdError, ID],
-                                                               errorSchema: KvpCollection[ALG, E],
+                                                               errorSchema: ConcreteValue[ALG, E],
                                                                createF: A => F[Either[E, (ID, A)]],
                                                                readF: ID => F[Either[E, (ID, A)]],
                                                                updateF: (ID, A) => F[Either[E, (ID, A)]],
@@ -156,11 +156,11 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
                                                                      protobufValidator: ProtobufValidatorValue[ALG],
                                                                      protobufEncoder: ProtobufEncoderValue[ALG],
                                                                      protobufFile: ProtoFileGeneratorInterpreter.CustomInterpreter[ALG],
-                                                                     schema: KvpCollection[ALG, A],
+                                                                     schema: ConcreteValue[ALG, A],
                                                                      customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
                                                                      idDefinition: ALG[ID],
                                                                      pathStringToId: String => Either[StringToIdError, ID],
-                                                                     errorSchema: KvpCollection[ALG, E],
+                                                                     errorSchema: ConcreteValue[ALG, E],
                                                                      createF: Option[A => F[Either[E, (ID, A)]]] = None,
                                                                      readF: Option[ID => F[Either[E, (ID, A)]]] = None,
                                                                      updateF: Option[(ID, A) => F[Either[E, (ID, A)]]] = None,
@@ -209,9 +209,9 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
   def withSearch(search: () => Stream[F, (ID, A)]): ClassicCrudInterpreter[ALG, A, E, F, ID] =
     this.copy(searchF = Some(search))
 
-  val schemaWithId: KvpCollection[ALG, (ID, A)] =
+  val schemaWithId: ConcreteValue[ALG, (ID, A)] =
     schema match {
-      case h: HListConvert[ALG, _, _, A] @unchecked =>
+      case h: Switch[ALG, _, _, A] @unchecked =>
         implicit val manifest: Manifest[A] = h.manifestOfA
         (("id", idDefinition) :: h :><: new KvpNil[ALG]).tupled[(ID, A)]
       case _ => ??? // TODO
@@ -346,12 +346,12 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
 
   /** Create an endpoint to display the swagger doc for classic Crud this type. */
   def swaggerDoc(
-    contentTypes: List[String],
-    customInterpreter: CustomSwaggerInterpreter[ALG],
-    schema: KvpCollection[ALG, A],
-    schemaWithId: KvpCollection[ALG, (ID, A)],
-    errorSchema: KvpCollection[ALG, E],
-    path: String
+                  contentTypes: List[String],
+                  customInterpreter: CustomSwaggerInterpreter[ALG],
+                  schema: ConcreteValue[ALG, A],
+                  schemaWithId: ConcreteValue[ALG, (ID, A)],
+                  errorSchema: ConcreteValue[ALG, E],
+                  path: String
   ): String = {
 
     val openApi =

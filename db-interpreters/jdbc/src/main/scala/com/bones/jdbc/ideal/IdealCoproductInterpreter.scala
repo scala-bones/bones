@@ -2,8 +2,8 @@ package com.bones.jdbc.ideal
 
 import com.bones.data.{
   KvpCoNil,
-  KvpCollection,
-  KvpCollectionTemplate,
+  ConcreteValue,
+  ConcreteValueTemplate,
   KvpCoproductTemplate,
   KvpSingleValueLeft
 }
@@ -19,7 +19,7 @@ trait IdealCoproductInterpreter[ALG[_]]
         Option[Description]) => Either[InvalidStructureError, TableCollection]] {
 
   val algInterpreter: IdealValue[ALG]
-  def fromCollection[A: Manifest](kvpCollection: KvpCollection[ALG, A]):
+  def fromCollection[A: Manifest](kvpCollection: ConcreteValue[ALG, A]):
     (TableCollection, Option[ColumnName], Option[Description]) => Either[InvalidStructureError, TableCollection]
 
   override def kvpCoNil(kvpCoproduct: KvpCoNil[ALG]): (
@@ -34,7 +34,7 @@ trait IdealCoproductInterpreter[ALG[_]]
     Option[ColumnName],
     Option[Description]) => Either[InvalidStructureError, TableCollection] = {
     val leftF = kvpSingleValueLeft.kvpValue match {
-      case Left(kvpCollection: KvpCollection[ALG, A]) =>
+      case Left(kvpCollection: ConcreteValue[ALG, A]) =>
         implicit val manifestOfA = kvpCollection.manifestOfA
         fromCollection[A](kvpCollection)
       case Right(value) =>

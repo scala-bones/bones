@@ -153,12 +153,12 @@ object BaseCrudInterpreter {
     }
   }
 
-  def schemaWithId[ALG[_], A, ID: Manifest](idDefinition: ALG[ID], schema: KvpCollection[ALG, A]) =
+  def schemaWithId[ALG[_], A, ID: Manifest](idDefinition: ALG[ID], schema: ConcreteValue[ALG, A]) =
     schema match {
-      case h: HListConvert[ALG, _, _, A] @unchecked =>
+      case h: Switch[ALG, _, _, A] @unchecked =>
         implicit val manifest: Manifest[A] = h.manifestOfA
         (("id", idDefinition) :: h :><: new KvpNil[ALG]).tupled[(ID, A)]
-      case co: KvpCoproductConvert[ALG, _, A] @unchecked =>
+      case co: CoproductSwitch[ALG, _, A] @unchecked =>
         implicit val manifest: Manifest[A] = co.manifestOfA
         (("id", idDefinition) :: co :><: new KvpNil[ALG]).tupled[(ID, A)]
       case _ => ??? // TODO
@@ -169,8 +169,8 @@ object BaseCrudInterpreter {
                                                    pathStringToId: String => Either[StringToIdError, ID],
                                                    del: ID => F[Either[E, B]],
                                                    encodeToCirceInterpreter: CirceEncoderInterpreter,
-                                                   errorSchema: KvpCollection[ALG, E],
-                                                   outputSchema: KvpCollection[ALG, B],
+                                                   errorSchema: ConcreteValue[ALG, E],
+                                                   outputSchema: ConcreteValue[ALG, B],
                                                    jsonEncoder: InterchangeFormatEncoderValue[ALG, Json],
                                                    bsonEncoder: InterchangeFormatEncoderValue[ALG, BSONValue],
                                                    protobufEncoder: ProtobufEncoderValue[ALG],
@@ -248,9 +248,9 @@ object BaseCrudInterpreter {
   def httpPostRoutes[F[_], ALG[_], A, E, B, ID](
                                                  path: String,
                                                  create: A => F[Either[E, B]],
-                                                 inputSchema: KvpCollection[ALG, A],
-                                                 errorSchema: KvpCollection[ALG, E],
-                                                 outputSchema: KvpCollection[ALG, B],
+                                                 inputSchema: ConcreteValue[ALG, A],
+                                                 errorSchema: ConcreteValue[ALG, E],
+                                                 outputSchema: ConcreteValue[ALG, B],
                                                  validatedFromCirceInterpreter: CirceValidatorInterpreter,
                                                  encodeToCirceInterpreter: CirceEncoderInterpreter,
                                                  protobufSequentialInputInterpreter: ProtobufSequentialValidatorInterpreter,
@@ -357,8 +357,8 @@ object BaseCrudInterpreter {
                                             pathStringToId: String => Either[StringToIdError, ID],
                                             read: ID => F[Either[E, B]],
                                             encodeToCirceInterpreter: CirceEncoderInterpreter,
-                                            errorSchema: KvpCollection[ALG, E],
-                                            outputSchema: KvpCollection[ALG, B],
+                                            errorSchema: ConcreteValue[ALG, E],
+                                            outputSchema: ConcreteValue[ALG, B],
                                             jsonEncoder: InterchangeFormatEncoderValue[ALG, Json],
                                             bsonEncoder: InterchangeFormatEncoderValue[ALG, BSONValue],
                                             protobufEncoder: ProtobufEncoderValue[ALG],
@@ -445,9 +445,9 @@ object BaseCrudInterpreter {
                                               path: String,
                                               pathStringToId: String => Either[StringToIdError, ID],
                                               updateF: (ID, A) => F[Either[E, B]],
-                                              inputSchema: KvpCollection[ALG, A],
-                                              errorSchema: KvpCollection[ALG, E],
-                                              outputSchema: KvpCollection[ALG, B],
+                                              inputSchema: ConcreteValue[ALG, A],
+                                              errorSchema: ConcreteValue[ALG, E],
+                                              outputSchema: ConcreteValue[ALG, B],
                                               validatedFromCirceInterpreter: CirceValidatorInterpreter,
                                               encodeToCirceInterpreter: CirceEncoderInterpreter,
                                               protobufSequentialInputInterpreter: ProtobufSequentialValidatorInterpreter,
@@ -564,8 +564,8 @@ object BaseCrudInterpreter {
                                       path: String,
                                       searchF: () => Stream[F, B],
                                       encodeToCirceInterpreter: CirceEncoderInterpreter,
-                                      errorSchema: KvpCollection[ALG, E],
-                                      outputSchema: KvpCollection[ALG, B],
+                                      errorSchema: ConcreteValue[ALG, E],
+                                      outputSchema: ConcreteValue[ALG, B],
                                       jsonValidator: InterchangeFormatValidatorValue[ALG, Json],
                                       jsonEncoder: InterchangeFormatEncoderValue[ALG, Json],
                                       bsonValidator: InterchangeFormatValidatorValue[ALG, BSONValue],
@@ -624,15 +624,15 @@ trait BaseCrudInterpreter[ALG[_], A, E, B, F[_], ID] extends Http4sDsl[F] {
 
   /** Create an endpoint to display the protobuf schema for each endpoint */
   def protoBuff(
-    path: String,
-    customProtobufInterpreter: ProtoFileGeneratorInterpreter.CustomInterpreter[ALG],
-    schema: KvpCollection[ALG, A],
-    schemaWithId: KvpCollection[ALG, (ID, A)],
-    errorSchema: KvpCollection[ALG, E]
+                 path: String,
+                 customProtobufInterpreter: ProtoFileGeneratorInterpreter.CustomInterpreter[ALG],
+                 schema: ConcreteValue[ALG, A],
+                 schemaWithId: ConcreteValue[ALG, (ID, A)],
+                 errorSchema: ConcreteValue[ALG, E]
   )(implicit F: Sync[F]): HttpRoutes[F] = {
     def toFile[B] =
       ProtoFileGeneratorInterpreter
-        .fromSchemaToProtoFile[ALG, B](_: KvpCollection[ALG, B], customProtobufInterpreter)
+        .fromSchemaToProtoFile[ALG, B](_: ConcreteValue[ALG, B], customProtobufInterpreter)
 
     val text =
       s"""
