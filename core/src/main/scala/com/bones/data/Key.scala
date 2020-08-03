@@ -15,14 +15,15 @@ import shapeless.{Coproduct, HList, Nat}
   */
 case class KeyValueDefinition[ALG[_], A](
   key: String,
-  dataDefinition: Either[KvpCollection[ALG, A], ALG[A]],
+  dataDefinition: Either[ConcreteValue[ALG, A], ALG[A]],
   description: Option[String],
   example: Option[A]
 )
 
 object KeyValueDefinition {
+
   /** In the context of a given ALG, the data definition can be a collection type (left) or a value type (right) */
-  type CoproductDataDefinition[ALG[_], A] = Either[KvpCollection[ALG, A], ALG[A]]
+  type CoproductDataDefinition[ALG[_], A] = Either[ConcreteValue[ALG, A], ALG[A]]
 }
 
 /** Useful DSL builder */
@@ -30,7 +31,7 @@ trait KeyValueDefinitionSugar {
 
   def kvp[ALG[_], A](
     key: String,
-    valueDefinitionOp: KvpCollection[ALG, A]): KeyValueDefinition[ALG, A] =
+    valueDefinitionOp: ConcreteValue[ALG, A]): KeyValueDefinition[ALG, A] =
     KeyValueDefinition[ALG, A](key, Left(valueDefinitionOp), None, None)
 
   def kvpCov[ALG[_], A](key: String, valueDefinitionOp: ALG[A]): KeyValueDefinition[ALG, A] =
@@ -38,7 +39,7 @@ trait KeyValueDefinitionSugar {
 
   def kvpHList[ALG[_], H <: HList: Manifest, HL <: Nat](
     key: String,
-    kvpHList: KvpHList[ALG, H, HL]
+    kvpHList: KvpCollection[ALG, H, HL]
   ): KeyValueDefinition[ALG, H] =
     KeyValueDefinition[ALG, H](key, Left(KvpHListValue(kvpHList, List.empty)), None, None)
 
@@ -46,7 +47,7 @@ trait KeyValueDefinitionSugar {
     key: String,
     kvpCoproduct: KvpCoproduct[ALG, C]
   ): KeyValueDefinition[ALG, C] =
-    KeyValueDefinition[ALG, C](key, Left(KvpCoproductValue(kvpCoproduct)), None, None)
+    KeyValueDefinition[ALG, C](key, Left(CoproductCollection(kvpCoproduct)), None, None)
 
 }
 
@@ -57,16 +58,16 @@ trait Sugar[ALG[_]] {
     def list(validationOps: ValidationOp[List[A]]*): ListData[ALG, A] =
       ListData[ALG, A](Right(hm), validationOps.toList)
 
-    def optional: OptionalKvpValueDefinition[ALG,A] =
-      OptionalKvpValueDefinition[ALG, A](Right(hm))
+    def optional: OptionalValue[ALG, A] =
+      OptionalValue[ALG, A](Right(hm))
   }
 
-  implicit class WrapKvpCollectionInCollection[A: Manifest](hm: KvpCollection[ALG, A]) { self =>
+  implicit class WrapKvpCollectionInCollection[A: Manifest](hm: ConcreteValue[ALG, A]) { self =>
     def list(validationOps: ValidationOp[List[A]]*): ListData[ALG, A] =
       ListData[ALG, A](Left(hm), validationOps.toList)
 
-    def optional: OptionalKvpValueDefinition[ALG, A] =
-      OptionalKvpValueDefinition[ALG, A](Left(hm))
+    def optional: OptionalValue[ALG, A] =
+      OptionalValue[ALG, A](Left(hm))
   }
 
   /**
@@ -85,7 +86,7 @@ trait Sugar[ALG[_]] {
     ListData[ALG, T](Right(dataDefinitionOp), v.toList)
 
   def list[T: Manifest](
-    kvpValue: KvpCollection[ALG, T],
+    kvpValue: ConcreteValue[ALG, T],
     v: ValidationOp[List[T]]*
   ): ListData[ALG, T] =
     ListData[ALG, T](Left(kvpValue), v.toList)
@@ -98,26 +99,26 @@ trait Sugar[ALG[_]] {
 
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
   def either[A: Manifest, B: Manifest](
-    definitionA: KvpCollection[ALG, A],
-    definitionB: KvpCollection[ALG, B]
+    definitionA: ConcreteValue[ALG, A],
+    definitionB: ConcreteValue[ALG, B]
   ): EitherData[ALG, A, B] =
     EitherData(Left(definitionA), Left(definitionB))
 
   def either[A: Manifest, B: Manifest](
-    definitionA: KvpCollection[ALG, A],
+    definitionA: ConcreteValue[ALG, A],
     definitionB: ALG[B]
   ): EitherData[ALG, A, B] =
     EitherData(Left(definitionA), Right(definitionB))
 
   def either[A: Manifest, B: Manifest](
     definitionA: ALG[A],
-    definitionB: KvpCollection[ALG, B]
+    definitionB: ConcreteValue[ALG, B]
   ): EitherData[ALG, A, B] =
     EitherData(Right(definitionA), Left(definitionB))
 
   /** Indicates that the data is a list of Key Value pairs */
   def kvpHList[H <: HList: Manifest, HL <: Nat](
-    kvpHList: KvpHList[ALG, H, HL],
+    kvpHList: KvpCollection[ALG, H, HL],
     v: ValidationOp[H]*
   ): KvpHListValue[ALG, H, HL] =
     KvpHListValue(kvpHList, v.toList)

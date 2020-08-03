@@ -1,12 +1,12 @@
 package com.bones.data.values
 
-import com.bones.KvpValue
+import com.bones.PrimitiveValue
 import com.bones.validation.ValidationDefinition
 import com.bones.validation.ValidationDefinition._
 import shapeless.Coproduct
 import shapeless.ops.coproduct.Inject
 
-sealed abstract class ScalaCoreValue[A: Manifest] extends KvpValue[A] {
+sealed abstract class ScalaCoreValue[A: Manifest] extends PrimitiveValue[A] {
   override val manifestOfA: Manifest[A] = manifest[A]
 }
 

@@ -1,6 +1,6 @@
 package com.bones
 
-import com.bones.data.{HListConvert, KvpCollection, KvpNil}
+import com.bones.data.{Switch, ConcreteValue, KvpNil}
 import com.bones.jdbc.column.ColumnValue
 import com.bones.jdbc.update.DbUpdateValue
 import shapeless.Nat._0
@@ -26,14 +26,14 @@ package object jdbc {
 
     def asTuple: (String, ALG[ID]) = (key, value)
 
-    def prependSchema[A](schema: KvpCollection[ALG, A]) = {
+    def prependSchema[A](schema: ConcreteValue[ALG, A]) = {
       implicit val manifest = schema.manifestOfA
       (asTuple :: schema :><: new KvpNil[ALG]).tupled[(ID, A)]
     }
 
-    def asSchema: HListConvert[ALG, ID :: HNil, Succ[_0], ID] = {
+    def asSchema: Switch[ALG, ID :: HNil, Succ[_0], ID] = {
       val base = asTuple :: new KvpNil[ALG]
-      HListConvert.apply(base, _.head, _ :: HNil, List.empty)
+      Switch.apply(base, _.head, _ :: HNil, List.empty)
     }
 
   }

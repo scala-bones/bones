@@ -8,7 +8,7 @@ import shapeless.{HList, Nat, ::}
 trait IdealHListInterpreter[ALG[_]]
     extends KvpHListTemplate[ALG, TableCollection => Either[InvalidStructureError, TableCollection]] {
 
-  def fromCollection[A: Manifest](kvpCollection: KvpCollection[ALG, A]): (
+  def fromCollection[A: Manifest](kvpCollection: ConcreteValue[ALG, A]): (
     TableCollection,
     Option[ColumnName],
     Option[Description]) => Either[InvalidStructureError, TableCollection]
@@ -17,7 +17,7 @@ trait IdealHListInterpreter[ALG[_]]
 
 
   override def kvpCollectionHead[H <: HList, HT <: HList, NT <: Nat](
-    kvp: KvpCollectionHead[ALG, H, HT, NT])
+    kvp: KvpConcreteValueHead[ALG, H, HT, NT])
     : TableCollection => Either[InvalidStructureError, TableCollection] = {
     implicit val manifestOfH = kvp.manifestOfA
     val head = fromCollection[H](kvp.collection)
@@ -39,7 +39,7 @@ trait IdealHListInterpreter[ALG[_]]
   }
 
   override def kvpHListHead[HO<:HList, NO<:Nat, H<:HList, HL<:Nat, T<:HList, TL<:Nat](
-    kvp: KvpHListHead[ALG, HO, NO, H, HL, T, TL])
+    kvp: KvpCollectionHead[ALG, HO, NO, H, HL, T, TL])
     : TableCollection => Either[InvalidStructureError, TableCollection] = {
     val head = fromKvpHList[H, HL](kvp.head)
     val tail = fromKvpHList[T, TL](kvp.tail)
