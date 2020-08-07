@@ -10,7 +10,7 @@ package object ideal {
     IdealScalaCoreInterpreter ++
       (IdealCustomStringInterpreter ++
         (IdealJavaTimeInterpreter ++
-            (IdealJavaUtilInterpreter ++ CNilIdealInterpreter)))
+          (IdealJavaUtilInterpreter ++ CNilIdealInterpreter)))
 
   object TableCollection {
     def init(name: String, description: Option[String]): TableCollection = {
@@ -62,6 +62,7 @@ package object ideal {
   }
 
   type ColumnName = String
+  type TableName = String
   type Description = String
 
   object IdealValue {

@@ -30,12 +30,12 @@ object DbUpdate {
     predicates: A => List[SetValue])
 
   def updateQuery[ALG[_], A, ID](
-                                  bonesSchema: ConcreteValue[ALG, A],
-                                  customDbUpdateInterpreter: DbUpdateValue[ALG],
-                                  idDef: IdDefinition[ALG, ID])
+    bonesSchema: ConcreteValue[ALG, A],
+    customDbUpdateInterpreter: DbUpdateValue[ALG],
+    idDef: IdDefinition[ALG, ID])
     : (ID, A) => Connection => Either[NonEmptyList[SystemError], (ID, A)] =
     bonesSchema match {
-      case x: Switch[ALG, h, n, b] @unchecked => {
+      case x: SwitchEncoding[ALG, h, n, b] @unchecked => {
         val tableName = camelToSnake(x.manifestOfA.runtimeClass.getSimpleName)
         val updates = kvpHList(x.from, customDbUpdateInterpreter)(1)
         val idIndex = updates.lastIndex
@@ -72,8 +72,8 @@ object DbUpdate {
     }
 
   def kvpHList[ALG[_], H <: HList, HL <: Nat](
-                                               group: KvpCollection[ALG, H, HL],
-                                               customDbUpdateInterpreter: DbUpdateValue[ALG]): Index => DefinitionResult[H] = {
+    group: KvpCollection[ALG, H, HL],
+    customDbUpdateInterpreter: DbUpdateValue[ALG]): Index => DefinitionResult[H] = {
     group match {
       case kvp: KvpNil[_] =>
         i =>
@@ -103,7 +103,7 @@ object DbUpdate {
 
         def fromBones[A](bonesSchema: ConcreteValue[ALG, A]): Index => DefinitionResult[A] = {
           bonesSchema match {
-            case hList: Switch[ALG, h, n, a] =>
+            case hList: SwitchEncoding[ALG, h, n, a] =>
               index =>
                 {
                   val dr: DefinitionResult[h] =
@@ -171,8 +171,8 @@ object DbUpdate {
     }
 
   def determineValueDefinition[ALG[_], A](
-                                           valueDef: Either[ConcreteValue[ALG, A], ALG[A]],
-                                           customDbUpdateInterpreter: DbUpdateValue[ALG]
+    valueDef: Either[ConcreteValue[ALG, A], ALG[A]],
+    customDbUpdateInterpreter: DbUpdateValue[ALG]
   ): (Index, Key) => DefinitionResult[A] =
     valueDef match {
       case Left(kvp)  => valueDefinition[ALG, A](kvp, customDbUpdateInterpreter)
@@ -180,8 +180,8 @@ object DbUpdate {
     }
 
   def valueDefinition[ALG[_], A](
-                                  fgo: ConcreteValue[ALG, A],
-                                  customDbUpdateInterpreter: DbUpdateValue[ALG]): (Index, Key) => DefinitionResult[A] =
+    fgo: ConcreteValue[ALG, A],
+    customDbUpdateInterpreter: DbUpdateValue[ALG]): (Index, Key) => DefinitionResult[A] =
     fgo match {
       case op: OptionalValue[ALG, b] @unchecked =>
         val valueF = determineValueDefinition(op.valueDefinitionOp, customDbUpdateInterpreter)
@@ -210,7 +210,7 @@ object DbUpdate {
             DefinitionResult(result.lastIndex, result.assignmentStatements, fa)
           }
       }
-      case x: Switch[ALG, a, al, b] @unchecked =>
+      case x: SwitchEncoding[ALG, a, al, b] @unchecked =>
         val groupF = kvpHList(x.from, customDbUpdateInterpreter)
         (i, k) =>
           {
@@ -218,7 +218,7 @@ object DbUpdate {
             val fa = (input: A) => result.predicates(x.fAtoH(input))
             DefinitionResult(result.lastIndex, result.assignmentStatements, fa)
           }
-      case co: CoproductSwitch[ALG, c, A] => ??? // TODO
+      case co: CoproductSwitch[ALG, c, A]  => ??? // TODO
       case co: CoproductCollection[ALG, A] => ??? // TODO
     }
 

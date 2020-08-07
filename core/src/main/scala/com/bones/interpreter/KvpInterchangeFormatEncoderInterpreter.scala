@@ -176,7 +176,7 @@ trait KvpInterchangeFormatEncoderInterpreter[OUT] {
         val fh = kvpHList(gd.kvpHList, encoder)
         input =>
           fh(input.asInstanceOf[h])
-      case x: Switch[ALG, h, hl, A] @unchecked =>
+      case x: SwitchEncoding[ALG, h, hl, A] @unchecked =>
         val fh = kvpHList(x.from, encoder)
         input: A =>
           {

@@ -15,28 +15,31 @@ import shapeless.ops.hlist.{IsHCons, Length, Prepend, Split, Tupler}
 sealed abstract class KvpCollection[ALG[_], H <: HList, N <: Nat] {
 
   def convert[A: Manifest](validation: ValidationOp[A]*)(
-    implicit gen: Generic.Aux[A, H]): Switch[ALG, H, N, A] =
-    Switch(this, gen.from, gen.to, validation.toList)
+    implicit gen: Generic.Aux[A, H]): SwitchEncoding[ALG, H, N, A] =
+    SwitchEncoding(this, gen.from, gen.to, validation.toList)
 
-  def convert[A: Manifest](implicit gen: Generic.Aux[A, H]): Switch[ALG, H, N, A] =
+  def convert[A: Manifest](implicit gen: Generic.Aux[A, H]): SwitchEncoding[ALG, H, N, A] =
     convert[A]()
 
   def tupled[Tup <: Product: Manifest](
     implicit tupler: Tupler.Aux[H, Tup],
     gen: Generic[Tup]
-  ): Switch[ALG, H, N, Tup] = tupled[Tup]()
+  ): SwitchEncoding[ALG, H, N, Tup] = tupled[Tup]()
 
   def tupled[Tup <: Product: Manifest](tupledValidations: ValidationOp[Tup]*)(
     implicit tupler: Tupler.Aux[H, Tup],
     gen: Generic[Tup]
-  ): Switch[ALG, H, N, Tup] =
-    Switch[ALG, H, N, Tup](this, (h: H) => tupler.apply(h), (t: Tup) => {
+  ): SwitchEncoding[ALG, H, N, Tup] =
+    SwitchEncoding[ALG, H, N, Tup](this, (h: H) => tupler.apply(h), (t: Tup) => {
       val out = gen.to(t).asInstanceOf[H]
       out
     }, tupledValidations.toList)
 
-  def xmap[A: Manifest](f: H => A, g: A => H, validations: ValidationOp[A]*): Switch[ALG, H, N, A] =
-    Switch(this, f, g, validations.toList)
+  def xmap[A: Manifest](
+    f: H => A,
+    g: A => H,
+    validations: ValidationOp[A]*): SwitchEncoding[ALG, H, N, A] =
+    SwitchEncoding(this, f, g, validations.toList)
 
   def :::[HO <: HList, NO <: Nat, HP <: HList, NP <: Nat](kvp: KvpCollection[ALG, HP, NP])(
     implicit prepend: Prepend.Aux[HP, H, HO],
@@ -259,7 +262,7 @@ final case class KvpCollectionHead[
   * @tparam ALG The Algebra being interpreted.
   * @tparam OUT The output from interpreting the values.
   */
-trait KvpHListTemplate[ALG[_], OUT] {
+trait KvpCollectionTemplate[ALG[_], OUT] {
 
   def fromKvpHList[H <: HList, HL <: Nat](hList: KvpCollection[ALG, H, HL]): OUT = {
     hList match {
@@ -267,15 +270,15 @@ trait KvpHListTemplate[ALG[_], OUT] {
         implicit val manifestOfH = kvp.manifestOfH
         kvpSingleValueHead[h, t, tl, ht](kvp)
       }
-      case kvp: KvpConcreteValueHead[ALG, H, ht, nt] @unchecked            => kvpCollectionHead(kvp)
-      case kvp: KvpCollectionHead[ALG, ho, no, H, HL, t, tl] @unchecked => kvpHListHead(kvp)
+      case kvp: KvpConcreteValueHead[ALG, H, ht, nt] @unchecked         => kvpConcreteValueHead(kvp)
+      case kvp: KvpCollectionHead[ALG, ho, no, H, HL, t, tl] @unchecked => kvpCollectionHead(kvp)
       case kvp: KvpNil[ALG]                                             => kvpNil(kvp)
     }
   }
 
-  def kvpCollectionHead[H <: HList, HT <: HList, NT <: Nat](
+  def kvpConcreteValueHead[H <: HList, HT <: HList, NT <: Nat](
     kvp: KvpConcreteValueHead[ALG, H, HT, NT]): OUT
-  def kvpHListHead[HO <: HList, NO <: Nat, H <: HList, HL <: Nat, T <: HList, TL <: Nat](
+  def kvpCollectionHead[HO <: HList, NO <: Nat, H <: HList, HL <: Nat, T <: HList, TL <: Nat](
     kvp: KvpCollectionHead[ALG, HO, NO, H, HL, T, TL]): OUT
   def kvpNil(kvp: KvpNil[ALG]): OUT
   def kvpSingleValueHead[H: Manifest, T <: HList, TL <: Nat, O <: H :: T](
