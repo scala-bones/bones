@@ -49,9 +49,9 @@ lazy val core = (project in file("core"))
       "org.typelevel" %% "cats-free" % "2.1.1",
       "com.chuusai" %% "shapeless" % "2.3.3",
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
-      "org.scalatest" %% "scalatest" % "3.2.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.1" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test,
-      "org.scalatest" %% "scalatest-mustmatchers" % "3.2.0" % Test
+      "org.scalatest" %% "scalatest-mustmatchers" % "3.2.1" % Test
     ),
     description := "DSL for Data Description using ASTs and interpreters"
   )
@@ -61,7 +61,7 @@ lazy val testSchemas = (project in file("examples/test-schemas"))
     name := "Bones Test Schemas",
     libraryDependencies ++= Seq(
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
-      "org.scalatest" %% "scalatest" % "3.2.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.1" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
   )
@@ -74,7 +74,7 @@ lazy val scalacheck = (project in file("test-interpreters/scalacheck"))
     libraryDependencies ++= Seq(
       "org.scalacheck" %% "scalacheck" % "1.14.3",
       "wolfendale" %% "scalacheck-gen-regexp" % "0.1.2",
-      "org.scalatest" %% "scalatest" % "3.2.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.1" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
       //      "org.easymock" % "easymock" % "3.5.1" % Test
     ),
@@ -88,7 +88,7 @@ lazy val swaggerOas3 = (project in file("interchange-format-interpreters/swagger
     libraryDependencies ++= Seq(
       "io.swagger.core.v3" % "swagger-core" % "2.1.4",
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
-      "org.scalatest" %% "scalatest" % "3.2.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.1" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
   )
@@ -103,7 +103,7 @@ lazy val directEncoders = (project in file("interchange-format-interpreters/dire
       "io.circe" %% "circe-core" % circeVersion % Test,
       "io.circe" %% "circe-parser" % circeVersion % Test,
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
-      "org.scalatest" %% "scalatest" % "3.2.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.1" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
   )
@@ -117,7 +117,7 @@ lazy val jsonCirce = (project in file("interchange-format-interpreters/circe"))
       "io.circe" %% "circe-core" % circeVersion,
       "io.circe" %% "circe-parser" % circeVersion,
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
-      "org.scalatest" %% "scalatest" % "3.2.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.1" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
   )
@@ -129,7 +129,7 @@ lazy val jsonArgonaut = (project in file("interchange-format-interpreters/argona
     libraryDependencies ++= Seq(
       "io.argonaut" %% "argonaut" % "6.3.0",
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
-      "org.scalatest" %% "scalatest" % "3.2.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.1" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
   )
@@ -142,7 +142,7 @@ lazy val protobuf = (project in file("interchange-format-interpreters/protobuf")
       "com.google.protobuf" % "protobuf-java" % "3.12.4",
       "com.google.protobuf" % "protobuf-java-util" % "3.12.4",
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
-      "org.scalatest" %% "scalatest" % "3.2.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.1" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
   )
@@ -155,7 +155,7 @@ lazy val bson = (project in file("interchange-format-interpreters/bson"))
       "org.reactivemongo" %% "reactivemongo-bson" % "0.20.12",
       "org.reactivemongo" %% "reactivemongo" % "0.20.12",
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
-      "org.scalatest" %% "scalatest" % "3.2.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.1" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
   )
@@ -169,7 +169,7 @@ lazy val dbJdbc = (project in file("db-interpreters/jdbc"))
       "co.fs2" %% "fs2-core" % "2.4.2",
       "io.github.scala-bones" %% "scatonic-ideal" % "0.2.0-SNAPSHOT",
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
-      "org.scalatest" %% "scalatest" % "3.2.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.1" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
   )
@@ -185,7 +185,7 @@ lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
       "org.http4s" %% "http4s-blaze-server" % http4sVersion,
       "org.http4s" %% "http4s-circe" % http4sVersion,
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
-      "org.scalatest" %% "scalatest" % "3.2.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.1" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
   )
@@ -196,7 +196,7 @@ lazy val awsLambda = (project in file("rest-interpreters/aws-lambda"))
     name := "Bones AWS Lambda Server",
     libraryDependencies ++= Seq(
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
-      "org.scalatest" %% "scalatest" % "3.2.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.1" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
   )
@@ -208,7 +208,7 @@ lazy val http4sClient = (project in file("client-interpreters/http4s-client"))
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-blaze-client" % http4sVersion,
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
-      "org.scalatest" %% "scalatest" % "3.2.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.1" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
   )
@@ -223,7 +223,7 @@ lazy val examples = (project in file("examples/http4s-examples"))
       "org.slf4j" % "slf4j-simple" % "1.7.30",
       "com.zaxxer" % "HikariCP" % "3.4.5",
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
-      "org.scalatest" %% "scalatest" % "3.2.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.1" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
   )
@@ -248,7 +248,7 @@ lazy val protobufIntegrationTest =
       libraryDependencies ++= Seq(
         "com.google.protobuf" % "protobuf-java" % "3.12.4",
         "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
-        "org.scalatest" %% "scalatest" % "3.2.0" % Test,
+        "org.scalatest" %% "scalatest" % "3.2.1" % Test,
         "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
       )
     )
