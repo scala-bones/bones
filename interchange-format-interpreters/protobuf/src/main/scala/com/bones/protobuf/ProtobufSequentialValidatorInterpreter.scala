@@ -222,7 +222,7 @@ object ProtobufSequentialValidatorInterpreter {
   }
 
   def hListConvert[ALG[_], A, H <: HList, HL <: Nat](
-    kvp: Switch[ALG, H, HL, A],
+    kvp: SwitchEncoding[ALG, H, HL, A],
     kvpHList: (KvpCollection[ALG, H, HL], ProtobufValidatorValue[ALG]) => ExtractHListFromProto[H],
     customInterpreter: ProtobufValidatorValue[ALG]
   ): ExtractFromProto[A] = {
@@ -483,7 +483,7 @@ trait ProtobufSequentialValidatorInterpreter {
     dc: ConcreteValue[ALG, A],
     customInterpreter: ProtobufValidatorValue[ALG])
     : Array[Byte] => Either[NonEmptyList[ExtractionError], A] = dc match {
-    case x: Switch[ALG, _, _, A] @unchecked => {
+    case x: SwitchEncoding[ALG, _, _, A] @unchecked => {
       val (lastFieldNumber, f) =
         kvpHList(x.from, customInterpreter)(1, List.empty)
       (bytes: Array[Byte]) =>
@@ -633,7 +633,7 @@ trait ProtobufSequentialValidatorInterpreter {
           kvpCoproductValueData[ALG, A, c](kvp, kvpCoproduct, customInterpreter)
         case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
           kvpHListValue[ALG, A, h, hl](kvp, kvpHList, customInterpreter)
-        case kvp: Switch[ALG, h, hl, b] @unchecked =>
+        case kvp: SwitchEncoding[ALG, h, hl, b] @unchecked =>
           hListConvert[ALG, b, h, hl](kvp, kvpHList, customInterpreter)
         case co: CoproductSwitch[ALG, c, a] @unchecked =>
           kvpCoproductConvert[ALG, c, a](co, kvpCoproduct, customInterpreter)

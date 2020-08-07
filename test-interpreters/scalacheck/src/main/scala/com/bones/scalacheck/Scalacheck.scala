@@ -11,8 +11,8 @@ object GenValue {
     * see https://stackoverflow.com/a/60561575/387094
     * */
   def merge[L[_], R[_] <: Coproduct, A](
-                                         li: GenValue[L],
-                                         ri: GenValue[R]): GenValue[Lambda[A => L[A] :+: R[A]]] =
+    li: GenValue[L],
+    ri: GenValue[R]): GenValue[Lambda[A => L[A] :+: R[A]]] =
     new GenValue[Lambda[A => L[A] :+: R[A]]] {
 
       override def gen[A](lr: L[A] :+: R[A]): Gen[A] = lr match {
@@ -61,8 +61,8 @@ trait ScalacheckBase {
   }
 
   def kvpHList[ALG[_], H <: HList, HL <: Nat](
-                                               group: KvpCollection[ALG, H, HL],
-                                               genAlg: GenValue[ALG]): Gen[H] = {
+    group: KvpCollection[ALG, H, HL],
+    genAlg: GenValue[ALG]): Gen[H] = {
     group match {
       case ni: KvpNil[_] => Gen.const(HNil)
       case op: KvpSingleValueHead[ALG, h, t, tl, a] @unchecked =>
@@ -99,8 +99,8 @@ trait ScalacheckBase {
   }
 
   def determineValueDefinition[ALG[_], A](
-                                           value: Either[ConcreteValue[ALG, A], ALG[A]],
-                                           genAlg: GenValue[ALG]): Gen[A] = {
+    value: Either[ConcreteValue[ALG, A], ALG[A]],
+    genAlg: GenValue[ALG]): Gen[A] = {
     value match {
       case Left(kvp)  => valueDefinition(kvp, genAlg)
       case Right(alg) => genAlg.gen(alg)
@@ -133,14 +133,11 @@ trait ScalacheckBase {
         // Get a list of coproduct and gen them with equal frequency (1)
         val gens = kvpCoproduct(co.kvpCoproduct, genAlg).map(_.map(_.asInstanceOf[A])).map((1, _))
         Gen.frequency(gens: _*)
-      case x: Switch[ALG, a, al, b] @unchecked =>
+      case x: SwitchEncoding[ALG, a, al, b] @unchecked =>
         kvpHList(x.from, genAlg).map(hList => x.fHtoA(hList))
       case co: CoproductSwitch[ALG, c, a] @unchecked =>
         val gens = kvpCoproduct(co.from, genAlg).map((1, _))
         Gen.frequency(gens: _*).map(coproduct => co.cToA(coproduct))
     }
-
-
-
 
 }

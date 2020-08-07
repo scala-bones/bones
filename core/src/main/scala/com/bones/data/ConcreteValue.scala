@@ -25,7 +25,7 @@ trait Named {
 }
 
 trait ConcreteValueTemplate[ALG[_], OUT] {
-  def fromCollection[A: Manifest](kvpCollection: ConcreteValue[ALG, A]): OUT = {
+  def fromConcreteValue[A: Manifest](kvpCollection: ConcreteValue[ALG, A]): OUT = {
     kvpCollection match {
       case ov: OptionalValue[ALG, b] => {
         implicit val manifestOfB = ov.manifestOfB
@@ -40,10 +40,10 @@ trait ConcreteValueTemplate[ALG[_], OUT] {
         implicit val manifestOfT = ld.manifestOfT
         listToOut(ld)
       }
-      case hl: KvpHListValue[ALG, h, hl]   => hListToOut(hl)
-      case cv: CoproductCollection[ALG, c] => coproductToOut(cv)
-      case hc: Switch[ALG, h, n, A]        => hListConvertToOut(hc)
-      case cc: CoproductSwitch[ALG, c, A]  => coproductConvertToOut(cc)
+      case hl: KvpHListValue[ALG, h, hl]    => hListToOut(hl)
+      case cv: CoproductCollection[ALG, c]  => coproductToOut(cv)
+      case hc: SwitchEncoding[ALG, h, n, A] => switchEncoding(hc)
+      case cc: CoproductSwitch[ALG, c, A]   => coproductConvertToOut(cc)
     }
   }
 
@@ -52,8 +52,8 @@ trait ConcreteValueTemplate[ALG[_], OUT] {
   protected def listToOut[A: Manifest](list: ListData[ALG, A]): OUT
   protected def hListToOut[H <: HList, HL <: Nat](hList: KvpHListValue[ALG, H, HL]): OUT
   protected def coproductToOut[C <: Coproduct](coproduct: CoproductCollection[ALG, C]): OUT
-  protected def hListConvertToOut[A: Manifest, H <: HList, N <: Nat](
-    hList: Switch[ALG, H, N, A]): OUT
+  protected def switchEncoding[A: Manifest, H <: HList, N <: Nat](
+    hList: SwitchEncoding[ALG, H, N, A]): OUT
   protected def coproductConvertToOut[C <: Coproduct, A: Manifest](
     cc: CoproductSwitch[ALG, C, A]): OUT
 
@@ -89,14 +89,14 @@ final case class KvpHListValue[ALG[_], H <: HList: Manifest, HL <: Nat](
     extends ConcreteValue[ALG, H] {
 
   def convert[Z: Manifest](convertValidation: ValidationOp[Z]*)(
-    implicit gen: Generic.Aux[Z, H]): Switch[ALG, H, HL, Z] =
-    Switch(kvpHList, gen.from, gen.to, convertValidation.toList)
+    implicit gen: Generic.Aux[Z, H]): SwitchEncoding[ALG, H, HL, Z] =
+    SwitchEncoding(kvpHList, gen.from, gen.to, convertValidation.toList)
 
   def tupled[Tup <: Product: Manifest](tupleValidations: ValidationOp[Tup]*)(
     implicit tupler: Tupler.Aux[H, Tup],
     gen: Generic[Tup]
-  ): Switch[ALG, H, HL, Tup] =
-    Switch[ALG, H, HL, Tup](
+  ): SwitchEncoding[ALG, H, HL, Tup] =
+    SwitchEncoding[ALG, H, HL, Tup](
       kvpHList,
       (h: H) => tupler.apply(h),
       (t: Tup) => gen.to(t).asInstanceOf[H],
@@ -110,7 +110,7 @@ final case class CoproductCollection[ALG[_], C <: Coproduct: Manifest](
     extends ConcreteValue[ALG, C]
 
 /** Represents a switch in encoding from an HList to a type A. */
-final case class Switch[ALG[_], H <: HList, N <: Nat, A: Manifest](
+final case class SwitchEncoding[ALG[_], H <: HList, N <: Nat, A: Manifest](
   from: KvpCollection[ALG, H, N],
   fHtoA: H => A,
   fAtoH: A => H,

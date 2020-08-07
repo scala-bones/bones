@@ -155,7 +155,7 @@ object BaseCrudInterpreter {
 
   def schemaWithId[ALG[_], A, ID: Manifest](idDefinition: ALG[ID], schema: ConcreteValue[ALG, A]) =
     schema match {
-      case h: Switch[ALG, _, _, A] @unchecked =>
+      case h: SwitchEncoding[ALG, _, _, A] @unchecked =>
         implicit val manifest: Manifest[A] = h.manifestOfA
         (("id", idDefinition) :: h :><: new KvpNil[ALG]).tupled[(ID, A)]
       case co: CoproductSwitch[ALG, _, A] @unchecked =>
@@ -165,17 +165,17 @@ object BaseCrudInterpreter {
     }
 
   def httpDeleteRoutes[F[_], ALG[_], A, E, B, ID](
-                                                   path: String,
-                                                   pathStringToId: String => Either[StringToIdError, ID],
-                                                   del: ID => F[Either[E, B]],
-                                                   encodeToCirceInterpreter: CirceEncoderInterpreter,
-                                                   errorSchema: ConcreteValue[ALG, E],
-                                                   outputSchema: ConcreteValue[ALG, B],
-                                                   jsonEncoder: InterchangeFormatEncoderValue[ALG, Json],
-                                                   bsonEncoder: InterchangeFormatEncoderValue[ALG, BSONValue],
-                                                   protobufEncoder: ProtobufEncoderValue[ALG],
-                                                   protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter,
-                                                   charset: Charset)(implicit F: Sync[F], H: Http4sDsl[F]) = {
+    path: String,
+    pathStringToId: String => Either[StringToIdError, ID],
+    del: ID => F[Either[E, B]],
+    encodeToCirceInterpreter: CirceEncoderInterpreter,
+    errorSchema: ConcreteValue[ALG, E],
+    outputSchema: ConcreteValue[ALG, B],
+    jsonEncoder: InterchangeFormatEncoderValue[ALG, Json],
+    bsonEncoder: InterchangeFormatEncoderValue[ALG, BSONValue],
+    protobufEncoder: ProtobufEncoderValue[ALG],
+    protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter,
+    charset: Charset)(implicit F: Sync[F], H: Http4sDsl[F]) = {
     val outputF =
       encodeToCirceInterpreter.generateEncoder(outputSchema, jsonEncoder)
     val errorF =
@@ -246,22 +246,22 @@ object BaseCrudInterpreter {
   }
 
   def httpPostRoutes[F[_], ALG[_], A, E, B, ID](
-                                                 path: String,
-                                                 create: A => F[Either[E, B]],
-                                                 inputSchema: ConcreteValue[ALG, A],
-                                                 errorSchema: ConcreteValue[ALG, E],
-                                                 outputSchema: ConcreteValue[ALG, B],
-                                                 validatedFromCirceInterpreter: CirceValidatorInterpreter,
-                                                 encodeToCirceInterpreter: CirceEncoderInterpreter,
-                                                 protobufSequentialInputInterpreter: ProtobufSequentialValidatorInterpreter,
-                                                 protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter,
-                                                 jsonValidator: InterchangeFormatValidatorValue[ALG, Json],
-                                                 jsonEncoder: InterchangeFormatEncoderValue[ALG, Json],
-                                                 bsonValidator: InterchangeFormatValidatorValue[ALG, BSONValue],
-                                                 bsonEncoder: InterchangeFormatEncoderValue[ALG, BSONValue],
-                                                 protobufValidator: ProtobufValidatorValue[ALG],
-                                                 protobufEncoder: ProtobufEncoderValue[ALG],
-                                                 charset: Charset
+    path: String,
+    create: A => F[Either[E, B]],
+    inputSchema: ConcreteValue[ALG, A],
+    errorSchema: ConcreteValue[ALG, E],
+    outputSchema: ConcreteValue[ALG, B],
+    validatedFromCirceInterpreter: CirceValidatorInterpreter,
+    encodeToCirceInterpreter: CirceEncoderInterpreter,
+    protobufSequentialInputInterpreter: ProtobufSequentialValidatorInterpreter,
+    protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter,
+    jsonValidator: InterchangeFormatValidatorValue[ALG, Json],
+    jsonEncoder: InterchangeFormatEncoderValue[ALG, Json],
+    bsonValidator: InterchangeFormatValidatorValue[ALG, BSONValue],
+    bsonEncoder: InterchangeFormatEncoderValue[ALG, BSONValue],
+    protobufValidator: ProtobufValidatorValue[ALG],
+    protobufEncoder: ProtobufEncoderValue[ALG],
+    charset: Charset
   )(implicit F: Sync[F], H: Http4sDsl[F]) = {
     val inputF =
       validatedFromCirceInterpreter
@@ -353,17 +353,17 @@ object BaseCrudInterpreter {
   }
 
   def httpGetRoute[F[_], ALG[_], E, B, ID](
-                                            path: String,
-                                            pathStringToId: String => Either[StringToIdError, ID],
-                                            read: ID => F[Either[E, B]],
-                                            encodeToCirceInterpreter: CirceEncoderInterpreter,
-                                            errorSchema: ConcreteValue[ALG, E],
-                                            outputSchema: ConcreteValue[ALG, B],
-                                            jsonEncoder: InterchangeFormatEncoderValue[ALG, Json],
-                                            bsonEncoder: InterchangeFormatEncoderValue[ALG, BSONValue],
-                                            protobufEncoder: ProtobufEncoderValue[ALG],
-                                            protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter,
-                                            charset: Charset)(implicit F: Sync[F], H: Http4sDsl[F]) = {
+    path: String,
+    pathStringToId: String => Either[StringToIdError, ID],
+    read: ID => F[Either[E, B]],
+    encodeToCirceInterpreter: CirceEncoderInterpreter,
+    errorSchema: ConcreteValue[ALG, E],
+    outputSchema: ConcreteValue[ALG, B],
+    jsonEncoder: InterchangeFormatEncoderValue[ALG, Json],
+    bsonEncoder: InterchangeFormatEncoderValue[ALG, BSONValue],
+    protobufEncoder: ProtobufEncoderValue[ALG],
+    protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter,
+    charset: Charset)(implicit F: Sync[F], H: Http4sDsl[F]) = {
     val outputF =
       encodeToCirceInterpreter.generateEncoder(outputSchema, jsonEncoder)
     val errorF =
@@ -442,23 +442,23 @@ object BaseCrudInterpreter {
     * Create a PUT endpoint given serialization functors and business logic.
     */
   def updateRoute[F[_], ALG[_], A, E, B, ID](
-                                              path: String,
-                                              pathStringToId: String => Either[StringToIdError, ID],
-                                              updateF: (ID, A) => F[Either[E, B]],
-                                              inputSchema: ConcreteValue[ALG, A],
-                                              errorSchema: ConcreteValue[ALG, E],
-                                              outputSchema: ConcreteValue[ALG, B],
-                                              validatedFromCirceInterpreter: CirceValidatorInterpreter,
-                                              encodeToCirceInterpreter: CirceEncoderInterpreter,
-                                              protobufSequentialInputInterpreter: ProtobufSequentialValidatorInterpreter,
-                                              protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter,
-                                              jsonValidator: InterchangeFormatValidatorValue[ALG, Json],
-                                              jsonEncoder: InterchangeFormatEncoderValue[ALG, Json],
-                                              bsonValidator: InterchangeFormatValidatorValue[ALG, BSONValue],
-                                              bsonEncoder: InterchangeFormatEncoderValue[ALG, BSONValue],
-                                              protobufValidator: ProtobufValidatorValue[ALG],
-                                              protobufEncoder: ProtobufEncoderValue[ALG],
-                                              charset: Charset
+    path: String,
+    pathStringToId: String => Either[StringToIdError, ID],
+    updateF: (ID, A) => F[Either[E, B]],
+    inputSchema: ConcreteValue[ALG, A],
+    errorSchema: ConcreteValue[ALG, E],
+    outputSchema: ConcreteValue[ALG, B],
+    validatedFromCirceInterpreter: CirceValidatorInterpreter,
+    encodeToCirceInterpreter: CirceEncoderInterpreter,
+    protobufSequentialInputInterpreter: ProtobufSequentialValidatorInterpreter,
+    protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter,
+    jsonValidator: InterchangeFormatValidatorValue[ALG, Json],
+    jsonEncoder: InterchangeFormatEncoderValue[ALG, Json],
+    bsonValidator: InterchangeFormatValidatorValue[ALG, BSONValue],
+    bsonEncoder: InterchangeFormatEncoderValue[ALG, BSONValue],
+    protobufValidator: ProtobufValidatorValue[ALG],
+    protobufEncoder: ProtobufEncoderValue[ALG],
+    charset: Charset
   )(implicit F: Sync[F], H: Http4sDsl[F]): List[HttpRoutes[F]] = {
     val inputValidation =
       validatedFromCirceInterpreter
@@ -561,19 +561,19 @@ object BaseCrudInterpreter {
   }
 
   def httpSearch[F[_], ALG[_], E, B](
-                                      path: String,
-                                      searchF: () => Stream[F, B],
-                                      encodeToCirceInterpreter: CirceEncoderInterpreter,
-                                      errorSchema: ConcreteValue[ALG, E],
-                                      outputSchema: ConcreteValue[ALG, B],
-                                      jsonValidator: InterchangeFormatValidatorValue[ALG, Json],
-                                      jsonEncoder: InterchangeFormatEncoderValue[ALG, Json],
-                                      bsonValidator: InterchangeFormatValidatorValue[ALG, BSONValue],
-                                      bsonEncoder: InterchangeFormatEncoderValue[ALG, BSONValue],
-                                      protobufValidator: ProtobufValidatorValue[ALG],
-                                      protobufEncoder: ProtobufEncoderValue[ALG],
-                                      protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter,
-                                      charset: Charset
+    path: String,
+    searchF: () => Stream[F, B],
+    encodeToCirceInterpreter: CirceEncoderInterpreter,
+    errorSchema: ConcreteValue[ALG, E],
+    outputSchema: ConcreteValue[ALG, B],
+    jsonValidator: InterchangeFormatValidatorValue[ALG, Json],
+    jsonEncoder: InterchangeFormatEncoderValue[ALG, Json],
+    bsonValidator: InterchangeFormatValidatorValue[ALG, BSONValue],
+    bsonEncoder: InterchangeFormatEncoderValue[ALG, BSONValue],
+    protobufValidator: ProtobufValidatorValue[ALG],
+    protobufEncoder: ProtobufEncoderValue[ALG],
+    protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter,
+    charset: Charset
   )(implicit F: Sync[F], H: Http4sDsl[F]) = {
     val outputF =
       encodeToCirceInterpreter.generateEncoder(outputSchema, jsonEncoder)
@@ -624,11 +624,11 @@ trait BaseCrudInterpreter[ALG[_], A, E, B, F[_], ID] extends Http4sDsl[F] {
 
   /** Create an endpoint to display the protobuf schema for each endpoint */
   def protoBuff(
-                 path: String,
-                 customProtobufInterpreter: ProtoFileGeneratorInterpreter.CustomInterpreter[ALG],
-                 schema: ConcreteValue[ALG, A],
-                 schemaWithId: ConcreteValue[ALG, (ID, A)],
-                 errorSchema: ConcreteValue[ALG, E]
+    path: String,
+    customProtobufInterpreter: ProtoFileGeneratorInterpreter.CustomInterpreter[ALG],
+    schema: ConcreteValue[ALG, A],
+    schemaWithId: ConcreteValue[ALG, (ID, A)],
+    errorSchema: ConcreteValue[ALG, E]
   )(implicit F: Sync[F]): HttpRoutes[F] = {
     def toFile[B] =
       ProtoFileGeneratorInterpreter
