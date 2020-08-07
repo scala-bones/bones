@@ -17,8 +17,8 @@ object DbColumnInterpreter {
   type ToColumns = Key => List[Column]
 
   def tableDefinitionCustomAlgebra[ALG[_], A](
-                                               collection: ConcreteValue[ALG, A],
-                                               columnInterpreter: ColumnValue[ALG]): String = {
+    collection: ConcreteValue[ALG, A],
+    columnInterpreter: ColumnValue[ALG]): String = {
     def nullableString(nullable: Boolean) = if (nullable) "" else " not null"
     val result = valueDefinition(collection, columnInterpreter)("")
     val tableName = camelToSnake(collection.manifestOfA.runtimeClass.getSimpleName)
@@ -30,8 +30,8 @@ object DbColumnInterpreter {
   }
 
   private def kvpHList[ALG[_], H <: HList, HL <: Nat](
-                                                       group: KvpCollection[ALG, H, HL],
-                                                       customInterpreter: ColumnValue[ALG]): List[Column] = {
+    group: KvpCollection[ALG, H, HL],
+    customInterpreter: ColumnValue[ALG]): List[Column] = {
     group match {
       case nil: KvpNil[_] => List.empty
       case op: KvpSingleValueHead[ALG, h, t, tl, a] @unchecked =>
@@ -52,8 +52,8 @@ object DbColumnInterpreter {
   }
 
   private def generateColumns[ALG[_], A](
-                                          collection: ConcreteValue[ALG, A],
-                                          customInterpreter: ColumnValue[ALG]): List[Column] =
+    collection: ConcreteValue[ALG, A],
+    customInterpreter: ColumnValue[ALG]): List[Column] =
     valueDefinition(collection, customInterpreter)("")
 
   def nameToColumn(columnDefinition: String): ToColumns =
@@ -70,8 +70,8 @@ object DbColumnInterpreter {
   }
 
   private def valueDefinition[ALG[_], A](
-                                          fgo: ConcreteValue[ALG, A],
-                                          customInterpreter: ColumnValue[ALG]): ToColumns =
+    fgo: ConcreteValue[ALG, A],
+    customInterpreter: ColumnValue[ALG]): ToColumns =
     fgo match {
       case op: OptionalValue[ALG, b] @unchecked =>
         key =>
@@ -88,11 +88,11 @@ object DbColumnInterpreter {
       case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
         _ =>
           kvpHList(kvp.kvpHList, customInterpreter)
-      case x: Switch[ALG, a, al, b] @unchecked =>
+      case x: SwitchEncoding[ALG, a, al, b] @unchecked =>
         _ =>
           kvpHList(x.from, customInterpreter)
-      case co: CoproductSwitch[ALG, c, a] @unchecked => ??? // TODO
-      case co: CoproductCollection[ALG,c] @unchecked => ??? // TODO
+      case co: CoproductSwitch[ALG, c, a] @unchecked  => ??? // TODO
+      case co: CoproductCollection[ALG, c] @unchecked => ??? // TODO
 
     }
 }

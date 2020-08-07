@@ -39,9 +39,9 @@ object ProtobufSequentialEncoderInterpreter {
     }
 
   def determineValueDefinition[ALG[_], A](
-                                           kvp: CoproductDataDefinition[ALG, A],
-                                           valueDefinition: (ConcreteValue[ALG, A], ProtobufEncoderValue[ALG]) => EncodeToProto[A],
-                                           customInterpreter: ProtobufEncoderValue[ALG]
+    kvp: CoproductDataDefinition[ALG, A],
+    valueDefinition: (ConcreteValue[ALG, A], ProtobufEncoderValue[ALG]) => EncodeToProto[A],
+    customInterpreter: ProtobufEncoderValue[ALG]
   ): EncodeToProto[A] =
     kvp match {
       case Left(kvp) => valueDefinition(kvp, customInterpreter)
@@ -49,9 +49,9 @@ object ProtobufSequentialEncoderInterpreter {
     }
 
   def optionalKvpValueDefinition[ALG[_], B](
-                                             op: OptionalValue[ALG, B],
-                                             valueDefinition: (ConcreteValue[ALG, B], ProtobufEncoderValue[ALG]) => EncodeToProto[B],
-                                             customInterpreter: ProtobufEncoderValue[ALG]
+    op: OptionalValue[ALG, B],
+    valueDefinition: (ConcreteValue[ALG, B], ProtobufEncoderValue[ALG]) => EncodeToProto[B],
+    customInterpreter: ProtobufEncoderValue[ALG]
   ): EncodeToProto[Option[B]] = { (fieldNumber: FieldNumber) =>
     val (lastFieldNumber, fa) =
       determineValueDefinition(op.valueDefinitionOp, valueDefinition, customInterpreter)(
@@ -202,9 +202,9 @@ trait ProtobufSequentialEncoderInterpreter {
   import ProtobufSequentialEncoderInterpreter._
 
   def generateProtobufEncoder[ALG[_], A](
-                                          dc: ConcreteValue[ALG, A],
-                                          customInterpreter: ProtobufEncoderValue[ALG]): A => Array[Byte] = dc match {
-    case x: Switch[ALG, _, _, A] @unchecked => {
+    dc: ConcreteValue[ALG, A],
+    customInterpreter: ProtobufEncoderValue[ALG]): A => Array[Byte] = dc match {
+    case x: SwitchEncoding[ALG, _, _, A] @unchecked => {
       val (_, group) = kvpHList(x.from, customInterpreter).apply(1)
       (a: A) =>
         {
@@ -254,8 +254,8 @@ trait ProtobufSequentialEncoderInterpreter {
   }
 
   protected def kvpHList[ALG[_], H <: HList, HL <: Nat](
-                                                         group: KvpCollection[ALG, H, HL],
-                                                         customInterpreter: ProtobufEncoderValue[ALG]): EncodeHListToProto[H] = {
+    group: KvpCollection[ALG, H, HL],
+    customInterpreter: ProtobufEncoderValue[ALG]): EncodeHListToProto[H] = {
     group match {
       case nil: KvpNil[_] =>
         (fieldNumber: FieldNumber) =>
@@ -315,7 +315,7 @@ trait ProtobufSequentialEncoderInterpreter {
         (fieldNumber: FieldNumber) =>
           {
             val encodeToProto: EncodeToProto[a] = op.collection match {
-              case hList: Switch[ALG, h, n, a] @unchecked => {
+              case hList: SwitchEncoding[ALG, h, n, a] @unchecked => {
                 val result: EncodeHListToProto[h] =
                   kvpHList[ALG, h, n](hList.from, customInterpreter)
                 (lastFieldNumber) =>
@@ -364,8 +364,8 @@ trait ProtobufSequentialEncoderInterpreter {
   }
 
   def valueDefinition[ALG[_], A](
-                                  fgo: ConcreteValue[ALG, A],
-                                  customInterpreter: ProtobufEncoderValue[ALG]): EncodeToProto[A] = {
+    fgo: ConcreteValue[ALG, A],
+    customInterpreter: ProtobufEncoderValue[ALG]): EncodeToProto[A] = {
     fgo match {
       case op: OptionalValue[ALG, a] @unchecked =>
         optionalKvpValueDefinition[ALG, a](op, valueDefinition, customInterpreter)
@@ -423,7 +423,7 @@ trait ProtobufSequentialEncoderInterpreter {
             nextFieldNumber,
             (input: A) => enc(input.asInstanceOf[c])
           )
-      case x: Switch[ALG, h, hl, a] @unchecked =>
+      case x: SwitchEncoding[ALG, h, hl, a] @unchecked =>
         (fieldNumber: FieldNumber) =>
           val (_, group) = kvpHList(x.from, customInterpreter)(1)
           (

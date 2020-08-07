@@ -10,12 +10,12 @@ import shapeless.{Coproduct, HList, Nat}
   */
 class InterpreterTemplate {
 
-  def kvpHList[ALG[_], H <: HList, HL <: Nat](group: KvpCollection[ALG, H, HL]): Unit = {
+  def kvpCollection[ALG[_], H <: HList, HL <: Nat](group: KvpCollection[ALG, H, HL]): Unit = {
     group match {
-      case nil: KvpNil[_]                             => ???
-      case op: KvpSingleValueHead[alg, h, t, tl, a]   => ???
+      case nil: KvpNil[_]                                  => ???
+      case op: KvpSingleValueHead[alg, h, t, tl, a]        => ???
       case op: KvpCollectionHead[alg, a, al, h, hl, t, tl] => ???
-      case op: KvpConcreteValueHead[alg, a, ht, nt]    => ???
+      case op: KvpConcreteValueHead[alg, a, ht, nt]        => ???
     }
   }
 
@@ -27,18 +27,18 @@ class InterpreterTemplate {
   }
 
   def determineValueDefinition[ALG[_], A](
-                                           value: Either[ConcreteValue[ALG,A], ALG[A]],
-                                           interpreter: Nothing): Unit = ???
+    value: Either[ConcreteValue[ALG, A], ALG[A]],
+    interpreter: Nothing): Unit = ???
 
-  def valueDefinition[ALG[_], A](fgo: ConcreteValue[ALG,A]): Unit =
+  def valueDefinition[ALG[_], A](fgo: ConcreteValue[ALG, A]): Unit =
     fgo match {
-      case op: OptionalValue[alg, a] => ???
-      case ld: ListData[alg, t]                   => ???
-      case ed: EitherData[alg, a, b]              => ???
-      case kvp: KvpHListValue[alg, h, hl]         => ???
-      case co: CoproductCollection[alg, c]          => ???
-      case x: Switch[alg, a, al, b]         => ???
-      case co: CoproductSwitch[alg, c, a]     => ???
+      case op: OptionalValue[alg, a]        => ???
+      case ld: ListData[alg, t]             => ???
+      case ed: EitherData[alg, a, b]        => ???
+      case kvp: KvpHListValue[alg, h, hl]   => ???
+      case co: CoproductCollection[alg, c]  => ???
+      case x: SwitchEncoding[alg, a, al, b] => ???
+      case co: CoproductSwitch[alg, c, a]   => ???
     }
 
 }

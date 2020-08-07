@@ -156,8 +156,8 @@ object ProtoFileGeneratorInterpreter {
   }
 
   def fromSchemaToProtoFile[ALG[_], A](
-                                        dc: ConcreteValue[ALG, A],
-                                        customInterpreter: CustomInterpreter[ALG]): String =
+    dc: ConcreteValue[ALG, A],
+    customInterpreter: CustomInterpreter[ALG]): String =
     messageToProtoFile(fromSchemaCustomAlgebra(dc, customInterpreter))
 
   def messageToProtoFile(message: Message): String = {
@@ -171,10 +171,10 @@ object ProtoFileGeneratorInterpreter {
   }
 
   def fromSchemaCustomAlgebra[ALG[_], A](
-                                          dc: ConcreteValue[ALG, A],
-                                          customerInterpreter: CustomInterpreter[ALG]): Message = {
+    dc: ConcreteValue[ALG, A],
+    customerInterpreter: CustomInterpreter[ALG]): Message = {
     dc match {
-      case t: Switch[ALG, a, al, b] =>
+      case t: SwitchEncoding[ALG, a, al, b] =>
         val (messageFields, nestedTypes, lastIndex) = kvpHList(t.from, customerInterpreter)(0)
         Message(t.manifestOfA.runtimeClass.getSimpleName, messageFields, nestedTypes)
       case _ => ??? // TODO
@@ -198,8 +198,8 @@ object ProtoFileGeneratorInterpreter {
   }
 
   def kvpHList[ALG[_], H <: HList, HL <: Nat](
-                                               group: KvpCollection[ALG, H, HL],
-                                               customerInterpreter: CustomInterpreter[ALG])
+    group: KvpCollection[ALG, H, HL],
+    customerInterpreter: CustomInterpreter[ALG])
     : Int => (Vector[MessageField], Vector[NestedType], Int) = lastIndex => {
     group match {
       case nil: KvpNil[_] => (Vector.empty, Vector.empty, lastIndex)
@@ -224,14 +224,14 @@ object ProtoFileGeneratorInterpreter {
   }
 
   def fromBonesSchema[ALG[_], A](
-                                  bonesSchema: ConcreteValue[ALG, A],
-                                  customerInterpreter: CustomInterpreter[ALG]
+    bonesSchema: ConcreteValue[ALG, A],
+    customerInterpreter: CustomInterpreter[ALG]
   ): Int => (Vector[MessageField], Vector[NestedType], Int) = {
 
     bonesSchema match {
       case co: CoproductSwitch[ALG, c, a] @unchecked =>
         kvpCoproduct(co.from, customerInterpreter)
-      case hl: Switch[ALG, h, n, a] @unchecked =>
+      case hl: SwitchEncoding[ALG, h, n, a] @unchecked =>
         kvpHList(hl.from, customerInterpreter)
       case _ => ??? // TODO
     }
@@ -239,8 +239,8 @@ object ProtoFileGeneratorInterpreter {
   }
 
   def determineValueDefinition[ALG[_], A](
-                                           value: Either[ConcreteValue[ALG, A], ALG[A]],
-                                           customerInterpreter: CustomInterpreter[ALG]
+    value: Either[ConcreteValue[ALG, A], ALG[A]],
+    customerInterpreter: CustomInterpreter[ALG]
   ): (Name, Int) => (MessageField, Vector[NestedType], Int) =
     value match {
       case Left(kvp)  => valueDefinition(kvp, customerInterpreter)
@@ -282,8 +282,8 @@ object ProtoFileGeneratorInterpreter {
   }
 
   def valueDefinition[ALG[_], A](
-                                  fgo: ConcreteValue[ALG, A],
-                                  customerInterpreter: CustomInterpreter[ALG])
+    fgo: ConcreteValue[ALG, A],
+    customerInterpreter: CustomInterpreter[ALG])
     : (Name, Int) => (MessageField, Vector[NestedType], Int) =
     fgo match {
       case op: OptionalValue[ALG, a] @unchecked =>
@@ -333,7 +333,7 @@ object ProtoFileGeneratorInterpreter {
           val result = kvpHList(kvp.kvpHList, customerInterpreter)(0)
           val nested = NestedMessage(name, result._1)
           (MessageField(NestedDataType(name), true, false, name, index), Vector(nested), index)
-      case t: Switch[ALG, h, hl, a] @unchecked =>
+      case t: SwitchEncoding[ALG, h, hl, a] @unchecked =>
         (name, index) =>
           val (messageFields, _, _) = kvpHList(t.from, customerInterpreter)(0)
           val nested = NestedMessage(name, messageFields)
