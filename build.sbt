@@ -175,7 +175,7 @@ lazy val dbJdbc = (project in file("db-interpreters/jdbc"))
   )
   .dependsOn(core, testSchemas % "test->compile")
 
-lazy val http4sVersion = "0.21.6"
+lazy val http4sVersion = "0.21.7"
 lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
   .settings(
     commonSettings,
