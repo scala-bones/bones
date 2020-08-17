@@ -128,7 +128,7 @@ lazy val jsonArgonaut = (project in file("interchange-format-interpreters/argona
     commonSettings,
     name := "Bones Argonaut",
     libraryDependencies ++= Seq(
-      "io.argonaut" %% "argonaut" % "6.3.0",
+      "io.argonaut" %% "argonaut" % "6.3.1",
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
       "org.scalatest" %% "scalatest" % "3.2.0" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
