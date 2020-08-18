@@ -8,7 +8,7 @@ import shapeless.{:+:, ::, CNil, Coproduct, Generic, HList, HNil, Nat, Succ}
 
 object KvpCollection {
 //  type Empty[_] = Any
-  def headManifest[A](kvpCollection: KvpCollection[Any, _]): Option[Manifest[_]] = {
+  def headManifest[ALG[_], A](kvpCollection: KvpCollection[ALG, A]): Option[Manifest[_]] = {
     kvpCollection match {
       case w: WrappedEncoding[_, _]                  => Some(w.manifestOfA)
       case c: KvpCoproductCollectionHead[_, _, _, _] => Some(c.manifestOfHead)

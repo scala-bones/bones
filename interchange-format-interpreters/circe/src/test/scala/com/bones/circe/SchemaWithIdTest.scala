@@ -17,11 +17,11 @@ class SchemaWithIdTest extends AnyFunSuite with Checkers with Matchers {
     PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)
 
   val jsonToCc =
-    isoCirceEncoderAndValidatorInterpreter.generateByteArrayValidator[(Long, AllSupported)](
+    isoCirceValidatorInterpreter.generateByteArrayValidator[(Long, AllSupported)](
       WithLongId.allSupportedWithId.asValue,
       StandardCharsets.UTF_8)
   val ccToJson =
-    isoCirceEncoderAndValidatorInterpreter.generateEncoder(WithLongId.allSupportedWithId.asValue)
+    isoCirceEncoderInterpreter.generateEncoder(WithLongId.allSupportedWithId.asValue)
 
   implicit val arb = Arbitrary(
     defaultValuesScalacheck
