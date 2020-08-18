@@ -3,7 +3,7 @@ package com.bones.argonaut
 import java.util.Base64
 
 import argonaut._
-import com.bones.data.KeyValueDefinition
+import com.bones.data.KeyDefinition
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
 
 /**
@@ -22,7 +22,7 @@ trait ArgonautEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[
     Json.obj(values1 ::: values2: _*)
   }
 
-  override def toObj[ALG[_], A](kvDef: KeyValueDefinition[ALG, A], value: Json): Json =
+  override def toObj[ALG[_], A](kvDef: KeyDefinition[ALG, A], value: Json): Json =
     Json.obj((kvDef.key, value))
 
   /** Create a function which converts a boolean into the specific OUT type */

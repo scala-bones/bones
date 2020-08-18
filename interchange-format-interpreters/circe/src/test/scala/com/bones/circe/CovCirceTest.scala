@@ -4,8 +4,8 @@ import java.time.format.DateTimeFormatter
 import java.time.{Instant, ZoneId}
 import java.util.Locale
 
-import com.bones.circe.values.BaseScalaCoreEncoder
-import com.bones.interpreter.InterchangeFormatEncoderValue
+import com.bones.circe.values._
+import com.bones.interpreter.{InterchangeFormatEncoderValue, InterchangeFormatPrimitiveEncoder}
 import com.bones.schemas.CustomCovSchema._
 import io.circe.Json
 import org.scalatest.funsuite.AnyFunSuite
@@ -53,8 +53,15 @@ class CovCirceTest extends AnyFunSuite with Checkers with Matchers {
         }
     }
 
-    val blogPostToJson = IsoCirceEncoderAndValidatorInterpreter
-      .generateEncoder(BlogPost.blogPostSchema, BlogEncoder)
+    val encoder = new CirceEncoderInterpreter[BlogAlgebra] {
+      override val coproductTypeKey: String = "type"
+      override val encoder: InterchangeFormatEncoderValue[BlogAlgebra, Json] = BlogEncoder
+      override val interchangeFormatEncoder: InterchangeFormatPrimitiveEncoder[Json] =
+        CircePrimitiveEncoder
+    }
+
+    val blogPostToJson = encoder
+      .generateEncoder(BlogPost.blogPostSchema.asValue)
 
     val instant = Instant.parse("2020-12-03T10:15:30.00Z")
 

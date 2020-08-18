@@ -3,7 +3,11 @@ package com.bones.interpreter.values
 import com.bones.data.Error._
 import com.bones.data.Sugar
 import com.bones.data.values._
-import com.bones.interpreter.{InterchangeFormatEncoderValue, KvpInterchangeFormatEncoderInterpreter}
+import com.bones.interpreter.{
+  InterchangeFormatEncoderValue,
+  InterchangeFormatPrimitiveEncoder,
+  KvpInterchangeFormatEncoderInterpreter
+}
 import shapeless.syntax.std.tuple._
 import shapeless.{:+:, ::, CNil, Generic, HNil, Inl, Inr}
 
@@ -12,7 +16,6 @@ object syntax extends Sugar[ScalaCoreValue] with ScalaCoreSugar
 import com.bones.interpreter.values.syntax._
 
 object ExtractionErrorEncoder {
-
 
   def canNotConvertToHList(
     canNotConvert: CanNotConvert[_, _]): String :: String :: String :: Option[String] :: HNil = {
@@ -30,9 +33,10 @@ object ExtractionErrorEncoder {
         ("expectedType", string) ::
         ("stackTrace", string.optional) :<:
         kvpNil
-    ).xmap[CanNotConvert[_, _]](
-      h => sys.error("Mapping to an ExtractionError is not supported"),
-      canNotConvertToHList(_))
+    ).hListXmap[CanNotConvert[_, _]](
+      _ => sys.error("Mapping to an ExtractionError is not supported"),
+      canNotConvertToHList
+    )
 
   def notFoundToHList(notFoundData: NotFound[_]): String :: String :: String :: HNil = {
     val path = notFoundData.path.mkString(".")
@@ -47,7 +51,7 @@ object ExtractionErrorEncoder {
         ("entityName", string) ::
         ("path", string) ::
         kvpNil
-    ).xmap[NotFound[_]](
+    ).hListXmap[NotFound[_]](
       h => sys.error("Mapping to an ExtractionError is not supported"),
       notFoundToHList)
 
@@ -60,7 +64,7 @@ object ExtractionErrorEncoder {
       ("message", string) ::
         ("stacktrace", string.optional) :<:
         kvpNil
-    ).xmap[ParsingError](
+    ).hListXmap[ParsingError](
       h => sys.error("Mapping to an ParsingError is not supported"),
       parsingErrorToHList)
 
@@ -73,7 +77,7 @@ object ExtractionErrorEncoder {
       ("path", string) ::
         ("problem", string) ::
         kvpNil
-    ).xmap[SumTypeError](
+    ).hListXmap[SumTypeError](
       _ => sys.error("Mapping to a SumTypeError is not supported"),
       sumTypeErrorToHList)
 
@@ -90,7 +94,7 @@ object ExtractionErrorEncoder {
         ("stackTrace", string) ::
         ("message", string.optional) :<:
         kvpNil
-    ).xmap[SystemError](
+    ).hListXmap[SystemError](
       _ => sys.error("Mapping to a SystemError is not supported"),
       systemErrorToHList(_))
 
@@ -105,7 +109,7 @@ object ExtractionErrorEncoder {
       ("path", string) ::
         ("validationDescription", string) ::
         kvpNil
-    ).xmap[ValidationError[_]](
+    ).hListXmap[ValidationError[_]](
       _ => sys.error("Mapping to a ValidationError is not supported"),
       validationErrorToHList)
 
@@ -131,7 +135,7 @@ object ExtractionErrorEncoder {
         ("errorMessage", string.optional) :<:
         ("errorStackTrace", string.optional) :<:
         kvpNil
-    ).xmap[WrongTypeError[_]](
+    ).hListXmap[WrongTypeError[_]](
       _ => sys.error("Mapping to a WrongTypeError is not supported"),
       wrongTypeToHList(_))
 
@@ -140,7 +144,7 @@ object ExtractionErrorEncoder {
       ("path", string(sv.words)) ::
         ("description", string) ::
         kvpNil
-    ).xmap[RequiredValue[_]](
+    ).hListXmap[RequiredValue[_]](
       _ => sys.error("Mapping to a Required Value is not supported"),
       requiredValueHList)
 
@@ -183,26 +187,25 @@ object ExtractionErrorEncoder {
   }
 
   val extractionErrorSchema =
-    validationErrorSchema :<+:
-      wrongTypeErrorSchema :<+:
-      canNotConvertSchema :<+:
-      requiredValueSchema :<+:
-      sumTypeErrorSchema :<+:
-      parsingErrorSchema :<+:
-      systemErrorSchema :<+:
-      notFoundDataSchema :<+:
+    validationErrorSchema :+:
+      wrongTypeErrorSchema :+:
+      canNotConvertSchema :+:
+      requiredValueSchema :+:
+      sumTypeErrorSchema :+:
+      parsingErrorSchema :+:
+      systemErrorSchema :+:
+      notFoundDataSchema :+:
       kvpCoNil
 
 }
 
 trait ExtractionErrorEncoder[OUT]
-  extends InterchangeFormatEncoderValue[ExtractionErrorValue, OUT]
-  with ScalaCoreSugar { self =>
+    extends InterchangeFormatEncoderValue[ExtractionErrorValue, OUT]
+    with ScalaCoreSugar { self =>
 
   import ExtractionErrorEncoder._
 
-
-  def defaultEncoder: KvpInterchangeFormatEncoderInterpreter[OUT]
+  def defaultEncoder: KvpInterchangeFormatEncoderInterpreter[ScalaCoreValue, OUT]
   val scalaCoreInterpreter: ScalaCoreEncoder[OUT]
 
   def requiredValueToHList(requiredValue: RequiredValue[_]): String :: String :: HNil = {
@@ -214,35 +217,35 @@ trait ExtractionErrorEncoder[OUT]
       ("path", string) ::
         ("valueDescription", string) ::
         kvpNil
-    ).xmap[RequiredValue[_]](
+    ).hListXmap[RequiredValue[_]](
       h => sys.error("Mapping to an RequiredValue is not supported"),
       requiredValueToHList)
 
-  object ScalaCoreEncoder extends ScalaCoreEncoder[OUT] {
-    override val defaultEncoder: KvpInterchangeFormatEncoderInterpreter[OUT] = self.defaultEncoder
-  }
-
   def canNotConvertEncoder =
-      defaultEncoder
-        .generateEncoder[ScalaCoreValue, CanNotConvert[_, _]](
-          canNotConvertSchema,
-          ScalaCoreEncoder)
+    defaultEncoder
+      .generateEncoder[CanNotConvert[_, _]](canNotConvertSchema.asValue)
 
-  def notFoundEncoder = defaultEncoder
-    .generateEncoder[ScalaCoreValue, NotFound[_]](notFoundDataSchema, ScalaCoreEncoder)
-  def parsingErrorEncoder = defaultEncoder
-    .generateEncoder[ScalaCoreValue, ParsingError](parsingErrorSchema, ScalaCoreEncoder)
+  def notFoundEncoder =
+    defaultEncoder
+      .generateEncoder[NotFound[_]](notFoundDataSchema.asValue)
+  def parsingErrorEncoder =
+    defaultEncoder
+      .generateEncoder[ParsingError](parsingErrorSchema.asValue)
   def requiredValueEncoder =
     defaultEncoder
-      .generateEncoder[ScalaCoreValue, RequiredValue[_]](requiredValueSchema, ScalaCoreEncoder)
-  def sumTypeErrorEncoder = defaultEncoder
-    .generateEncoder[ScalaCoreValue, SumTypeError](sumTypeErrorSchema, ScalaCoreEncoder)
-  def systemErrorEncoder = defaultEncoder
-    .generateEncoder[ScalaCoreValue, SystemError](systemErrorSchema, ScalaCoreEncoder)
-  def validationErrorEncoder = defaultEncoder
-    .generateEncoder[ScalaCoreValue, ValidationError[_]](validationErrorSchema, ScalaCoreEncoder)
-  def wrongTypeErrorEncoder = defaultEncoder
-    .generateEncoder[ScalaCoreValue, WrongTypeError[_]](wrongTypeErrorSchema, ScalaCoreEncoder)
+      .generateEncoder[RequiredValue[_]](requiredValueSchema.asValue)
+  def sumTypeErrorEncoder =
+    defaultEncoder
+      .generateEncoder[SumTypeError](sumTypeErrorSchema.asValue)
+  def systemErrorEncoder =
+    defaultEncoder
+      .generateEncoder[SystemError](systemErrorSchema.asValue)
+  def validationErrorEncoder =
+    defaultEncoder
+      .generateEncoder[ValidationError[_]](validationErrorSchema.asValue)
+  def wrongTypeErrorEncoder =
+    defaultEncoder
+      .generateEncoder[WrongTypeError[_]](wrongTypeErrorSchema.asValue)
 
   override def encode[A](alg: ExtractionErrorValue[A]): A => OUT =
     alg match {

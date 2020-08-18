@@ -19,8 +19,8 @@ object SumTypeExample {
 
     // Note the order needs to be the order in which they are defined below
     val bonesSchema =
-      (Album.bonesSchema :<+: CompactDisc.bonesSchema :<+: Digital.bonesSchema :<+: kvpCoNil)
-        .convert[MusicMedium]
+      (Album.bonesSchema :+: CompactDisc.bonesSchema :+: Digital.bonesSchema :+: kvpCoNil)
+        .toSuperclassOf[MusicMedium]
 //    type MusicMedium = Digital :+: CompactDisc :+: Album :+: CNil
   }
   sealed trait MusicMedium {

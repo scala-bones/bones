@@ -2,28 +2,26 @@ package com.bones.circe
 
 import java.nio.charset.{Charset, StandardCharsets}
 
-import com.bones.data.values.DefaultValues
-import com.bones.scalacheck.Scalacheck
+import com.bones.circe.values.isoCirceEncoderAndValidatorInterpreter
 import com.bones.schemas.Schemas.{AllSupported, allSupportCaseClass}
 import org.scalacheck.Arbitrary
 import org.scalatestplus.scalacheck.Checkers
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers
 import com.bones.circe.values._
-import com.bones.scalacheck.values._
+import com.bones.scalacheck.values.defaultValuesScalacheck
 
 class CirceTest extends AnyFunSuite with Checkers with Matchers {
 
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)
 
-  val jsonToCc = IsoCirceEncoderAndValidatorInterpreter.generateByteArrayValidator[DefaultValues,AllSupported](
-    allSupportCaseClass,
-    StandardCharsets.UTF_8,
-    defaultValidators)
-  val ccToJson = IsoCirceEncoderAndValidatorInterpreter.generateEncoder(allSupportCaseClass, defaultEncoders)
+  val jsonToCc = isoCirceEncoderAndValidatorInterpreter
+    .generateByteArrayValidator[AllSupported](allSupportCaseClass.asValue, StandardCharsets.UTF_8)
+  val ccToJson =
+    isoCirceEncoderAndValidatorInterpreter.generateEncoder(allSupportCaseClass.asValue)
 
-  implicit val arb = Arbitrary(Scalacheck.valueDefinition(allSupportCaseClass, allInterpreters))
+  implicit val arb = Arbitrary(defaultValuesScalacheck.valueDefinition(allSupportCaseClass.asValue))
   val utf8 = Charset.forName("UTF8")
 
   test("scalacheck allSupport types - marshall then unmarshall") {

@@ -1,9 +1,11 @@
 package com.bones.scalacheck
 
+import cats.Applicative
+import com.bones.data.template.{KvpCollectionEncoder, KvpCollectionTransformation}
 import com.bones.data.values.CNilF
-import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft, _}
+import com.bones.data.{KvpCoNil, KvpCoproduct, KvpCoproductCollectionHead, _}
 import org.scalacheck._
-import shapeless.{:+:, Coproduct, HList, HNil, Inl, Inr, Nat}
+import shapeless.{:+:, CNil, Coproduct, HList, HNil, Inl, Inr, Nat}
 
 object GenValue {
 
@@ -41,103 +43,77 @@ trait GenValue[ALG[_]] {
   def gen[A](ag: ALG[A]): Gen[A]
 }
 
-object Scalacheck extends ScalacheckBase
+trait ScalacheckBase[ALG[_]] extends KvpCollectionTransformation[ALG, Gen] {
 
-trait ScalacheckBase {
+  val genValue: GenValue[ALG]
 
-  def generateGen[ALG[_], A](collection: ConcreteValue[ALG, A], genAlg: GenValue[ALG]): Gen[A] =
-    valueDefinition(collection, genAlg)
+  def generateGen[A](collection: PrimitiveWrapperValue[ALG, A]): Gen[A] =
+    valueDefinition(collection)
 
-  def kvpCoproduct[ALG[_], C <: Coproduct](
-    co: KvpCoproduct[ALG, C],
-    genAlg: GenValue[ALG]): List[Gen[C]] = {
-    co match {
-      case nil: KvpCoNil[_] => List.empty
-      case co: KvpSingleValueLeft[ALG, a, r] @unchecked =>
-        val head = determineValueDefinition[ALG, a](co.kvpValue, genAlg).map(Inl(_))
-        val tail = kvpCoproduct(co.kvpTail, genAlg).map(gen => gen.map(Inr(_)))
-        head :: tail
+  override implicit def applicativeOfOut: Applicative[Gen] = new Applicative[Gen] {
+    override def pure[A](x: A): Gen[A] = Gen.const(x)
+
+    override def ap[A, B](ff: Gen[A => B])(fa: Gen[A]): Gen[B] = {
+      fa.flatMap(a => {
+        ff.map(f => f(a))
+      })
     }
   }
 
-  def kvpHList[ALG[_], H <: HList, HL <: Nat](
-    group: KvpCollection[ALG, H, HL],
-    genAlg: GenValue[ALG]): Gen[H] = {
-    group match {
-      case ni: KvpNil[_] => Gen.const(HNil)
-      case op: KvpSingleValueHead[ALG, h, t, tl, a] @unchecked =>
-        implicit val isHCons = op.isHCons
-        val headGen = determineValueDefinition(op.fieldDefinition.dataDefinition, genAlg)
-        val tailGen = kvpHList(op.tail, genAlg)
-        val result: Gen[H] = for {
-          head <- headGen
-          tail <- tailGen
-        } yield {
-          op.isHCons.cons(head, tail)
-        }
-        result
-      case op: KvpCollectionHead[ALG, a, al, h, hl, t, tl] @unchecked =>
-        implicit val prepend = op.prepend
-        val headGen = kvpHList(op.head, genAlg)
-        val tailGen = kvpHList(op.tail, genAlg)
-        for {
-          head <- headGen
-          tail <- tailGen
-        } yield {
-          head ::: tail
-        }
-      case op: KvpConcreteValueHead[ALG, a, ht, nt] @unchecked =>
-        val headGen = generateGen(op.collection, genAlg)
-        val tailGen = kvpHList(op.tail, genAlg)
-        for {
-          a <- headGen
-          tail <- tailGen
-        } yield {
-          op.isHCons.cons(a, tail)
-        }
+  override def primitiveEncoder[A](keyDefinition: KeyDefinition[ALG, A]): Gen[A] =
+    determineValueDefinition(keyDefinition.dataDefinition)
+
+  private def coproductFrequencies[O <: Coproduct](
+    kvpCoproduct: KvpCoproduct[ALG, O]): List[(Int, Gen[O])] = {
+    kvpCoproduct match {
+      case kvpCoproductCollectionHead: KvpCoproductCollectionHead[ALG, h, c, O] => {
+        val tailFrequencies =
+          coproductFrequencies[c](kvpCoproductCollectionHead.kvpTail)
+            .map(freq => (freq._1, freq._2.map(o => Inr(o).asInstanceOf[O])))
+        val headGen = fromKvpCollection(kvpCoproductCollectionHead.kvpCollection)
+          .map(h => Inl(h).asInstanceOf[O])
+        (1, headGen) :: tailFrequencies
+      }
+      case _: KvpCoNil[ALG] => List.empty[(Int, Gen[O])]
     }
   }
+  override def kvpCoproductCollectionHead[A, C <: Coproduct, O <: A :+: C](
+    kvpCoproductCollectionHead: KvpCoproductCollectionHead[ALG, A, C, O]): Gen[O] = {
 
-  def determineValueDefinition[ALG[_], A](
-    value: Either[ConcreteValue[ALG, A], ALG[A]],
-    genAlg: GenValue[ALG]): Gen[A] = {
+    val frequencies = coproductFrequencies(kvpCoproductCollectionHead)
+    Gen.frequency(frequencies: _*)
+
+  }
+
+  def determineValueDefinition[A](value: Either[PrimitiveWrapperValue[ALG, A], ALG[A]]): Gen[A] = {
     value match {
-      case Left(kvp)  => valueDefinition(kvp, genAlg)
-      case Right(alg) => genAlg.gen(alg)
+      case Left(kvp)  => valueDefinition(kvp)
+      case Right(alg) => genValue.gen(alg)
     }
   }
 
-  def valueDefinition[ALG[_], A](fgo: ConcreteValue[ALG, A], genAlg: GenValue[ALG]): Gen[A] =
+  def valueDefinition[A](fgo: PrimitiveWrapperValue[ALG, A]): Gen[A] =
     fgo match {
       case op: OptionalValue[ALG, a] @unchecked => {
-        val optionalGen = determineValueDefinition(op.valueDefinitionOp, genAlg).map(Some(_))
+        val optionalGen = determineValueDefinition(op.valueDefinitionOp).map(Some(_))
         Gen.frequency(
           (9, optionalGen),
           (1, None)
         )
       }
       case ld: ListData[ALG, t] @unchecked =>
-        implicit val elemGenerator = determineValueDefinition(ld.tDefinition, genAlg)
+        implicit val elemGenerator = determineValueDefinition(ld.tDefinition)
         for {
           numElems <- Gen.choose(1, 500)
           elem <- Gen.listOfN(numElems, elemGenerator)
         } yield elem
       case ed: EitherData[ALG, a, b] @unchecked => {
-        val left = determineValueDefinition(ed.definitionA, genAlg).map(Left(_))
-        val right = determineValueDefinition(ed.definitionB, genAlg).map(Right(_))
+        val left = determineValueDefinition(ed.definitionA).map(Left(_))
+        val right = determineValueDefinition(ed.definitionB).map(Right(_))
         Gen.frequency((1, left), (1, right))
       }
-      case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
-        kvpHList(kvp.kvpHList, genAlg).map(_.asInstanceOf[A])
-      case co: CoproductCollection[ALG, c] @unchecked =>
-        // Get a list of coproduct and gen them with equal frequency (1)
-        val gens = kvpCoproduct(co.kvpCoproduct, genAlg).map(_.map(_.asInstanceOf[A])).map((1, _))
-        Gen.frequency(gens: _*)
-      case x: SwitchEncoding[ALG, a, al, b] @unchecked =>
-        kvpHList(x.from, genAlg).map(hList => x.fHtoA(hList))
-      case co: CoproductSwitch[ALG, c, a] @unchecked =>
-        val gens = kvpCoproduct(co.from, genAlg).map((1, _))
-        Gen.frequency(gens: _*).map(coproduct => co.cToA(coproduct))
+      case kvp: KvpCollectionValue[ALG, A] @unchecked =>
+        fromKvpCollection(kvp.kvpCollection)
     }
 
 }

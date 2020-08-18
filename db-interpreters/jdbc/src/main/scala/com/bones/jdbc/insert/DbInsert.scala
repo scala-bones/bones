@@ -4,7 +4,7 @@ import java.sql._
 
 import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionError, SystemError}
-import com.bones.data.KeyValueDefinition.CoproductDataDefinition
+import com.bones.data.KeyDefinition.CoproductDataDefinition
 import com.bones.data._
 import com.bones.jdbc.DbUtil._
 import com.bones.jdbc.rs.{ResultSetInterpreter, ResultSetValue}
@@ -23,8 +23,8 @@ object DbInsert {
   type InsertPair[A] = Key => (Index, A) => (Index, List[(ColumnName, SetValue)])
 
   def insertQuery[ALG[_], A, ID](
-    collection: ConcreteValue[ALG, A],
-    idSchema: ConcreteValue[ALG, ID],
+    collection: PrimitiveWrapperValue[ALG, A],
+    idSchema: PrimitiveWrapperValue[ALG, ID],
     customInterpreter: DbInsertValue[ALG],
     resultSetValueInterpreter: ResultSetValue[ALG])
     : DataSource => A => Either[NonEmptyList[ExtractionError], (ID, A)] = {
@@ -51,8 +51,8 @@ object DbInsert {
   }
 
   def insertQueryWithConnectionCustomAlgebra[ALG[_], A, ID](
-    collection: ConcreteValue[ALG, A],
-    idSchema: ConcreteValue[ALG, ID],
+    collection: PrimitiveWrapperValue[ALG, A],
+    idSchema: PrimitiveWrapperValue[ALG, ID],
     customInterpreter: DbInsertValue[ALG],
     resultSetInterpreter: ResultSetValue[ALG])
     : A => Connection => Either[NonEmptyList[ExtractionError], (ID, A)] = {
@@ -91,7 +91,7 @@ object DbInsert {
   }
 
   def kvpHList[ALG[_], H <: HList, HL <: Nat](
-    group: KvpCollection[ALG, H, HL],
+    group: KvpHListCollection[ALG, H, HL],
     customInterpreter: DbInsertValue[ALG]): (Index, H) => (Index, List[(ColumnName, SetValue)]) = {
     group match {
       case nil: KvpNil[_] =>
@@ -110,7 +110,7 @@ object DbInsert {
             (tailResult._1, headResult._2 ::: tailResult._2)
           }
       }
-      case op: KvpCollectionHead[ALG, a, al, h, hl, t, tl] @unchecked => {
+      case op: KvpHListCollectionHead[ALG, a, al, h, hl, t, tl] @unchecked => {
         val headF = kvpHList(op.head, customInterpreter)
         val tailF = kvpHList(op.tail, customInterpreter)
         (i: Index, h: H) =>
@@ -124,7 +124,7 @@ object DbInsert {
       case op: KvpConcreteValueHead[ALG, a, ht, nt] => {
 
         val headF = fromCollection(op.collection, customInterpreter)
-        val tailF = kvpHList(op.tail, customInterpreter)
+        val tailF = kvpHList(op.wrappedEncoding, customInterpreter)
 
         (i: Index, h: a :: ht) =>
           {
@@ -137,7 +137,7 @@ object DbInsert {
   }
 
   private def fromCollection[ALG[_], A](
-    bonesSchema: ConcreteValue[ALG, A],
+    bonesSchema: PrimitiveWrapperValue[ALG, A],
     customInterpreter: DbInsertValue[ALG]): (Index, A) => (Index, List[(ColumnName, SetValue)]) = {
     bonesSchema match {
       case hListConvert: SwitchEncoding[ALG, h, n, a] =>
@@ -174,7 +174,7 @@ object DbInsert {
   }
 
   def valueDefinition[ALG[_], A](
-    fgo: ConcreteValue[ALG, A],
+    fgo: PrimitiveWrapperValue[ALG, A],
     customInterpreter: DbInsertValue[ALG]): InsertPair[A] =
     fgo match {
       case op: OptionalValue[ALG, b] @unchecked =>
@@ -190,8 +190,8 @@ object DbInsert {
           }
       case ld: ListData[ALG, t] @unchecked      => ???
       case ed: EitherData[ALG, a, b] @unchecked => ???
-      case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
-        val groupF = kvpHList(kvp.kvpHList, customInterpreter)
+      case kvp: KvpCollectionValue[ALG, h, hl] @unchecked =>
+        val groupF = kvpHList(kvp.kvpCollection, customInterpreter)
         k =>
           { (index, a) =>
             {

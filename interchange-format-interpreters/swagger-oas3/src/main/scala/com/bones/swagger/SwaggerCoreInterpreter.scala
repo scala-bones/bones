@@ -3,7 +3,7 @@ package com.bones.swagger
 import java.util.{Base64, UUID}
 
 import com.bones.data.values.CNilF
-import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft, _}
+import com.bones.data.{KvpCoNil, KvpCoproduct, KvpCoproductCollectionHead, _}
 import com.bones.validation.ValidationDefinition.{
   InvalidValue,
   ValidValue,
@@ -334,7 +334,7 @@ trait SwaggerCoreInterpreter {
   }
 
   def generateSchemas[ALG[_], A](
-    collection: ConcreteValue[ALG, A],
+    collection: PrimitiveWrapperValue[ALG, A],
     customAlgebraInterpreter: CustomSwaggerInterpreter[ALG]
   ): Name => List[(Name, Schema[_])] = name => {
     val schemas = valueDefinition(collection, customAlgebraInterpreter, None, None)(name)
@@ -348,7 +348,7 @@ trait SwaggerCoreInterpreter {
   ): SwaggerSchemas[ComposedSchema] =
     co match {
       case nil: KvpCoNil[_] => SwaggerSchemas(new ComposedSchema())
-      case co: KvpSingleValueLeft[ALG, l, r] @unchecked => {
+      case co: KvpCoproductCollectionHead[ALG, l, r] @unchecked => {
         val name = co.manifestL.runtimeClass.getSimpleName
         val lSchema =
           determineValueDefinition(co.kvpValue, customInterpreter, description, None)(name)
@@ -362,14 +362,14 @@ trait SwaggerCoreInterpreter {
     }
 
   protected def fromKvpHList[ALG[_], H <: HList, HL <: Nat](
-    group: KvpCollection[ALG, H, HL],
+    group: KvpHListCollection[ALG, H, HL],
     customInterpreter: CustomSwaggerInterpreter[ALG]): SwaggerSchemas[ObjectSchema] = {
     group match {
       case nil: KvpNil[_] =>
         val schema = new ObjectSchema()
         schema.nullable(false)
         SwaggerSchemas(schema)
-      case op: KvpCollectionHead[ALG, H, al, h, hl, t, tl] @unchecked =>
+      case op: KvpHListCollectionHead[ALG, H, al, h, hl, t, tl] @unchecked =>
         val headSchemas = fromKvpHList(op.head, customInterpreter)
         val tailSchemas = fromKvpHList(op.tail, customInterpreter)
         val schema = copySchema(headSchemas.mainSchema, tailSchemas.mainSchema)
@@ -394,14 +394,14 @@ trait SwaggerCoreInterpreter {
             fromKvpHList(op.from, customInterpreter)
           case _ => ??? // TODO
         }
-        val tailSchemas = fromKvpHList(op.tail, customInterpreter)
+        val tailSchemas = fromKvpHList(op.wrappedEncoding, customInterpreter)
         val schema = copySchema(headSchemas.mainSchema, tailSchemas.mainSchema)
         SwaggerSchemas(schema, headSchemas.referenceSchemas ::: tailSchemas.referenceSchemas)
     }
   }
 
   def determineValueDefinition[ALG[_], A](
-    value: Either[ConcreteValue[ALG, A], ALG[A]],
+    value: Either[PrimitiveWrapperValue[ALG, A], ALG[A]],
     customInterpreter: CustomSwaggerInterpreter[ALG],
     description: Option[String],
     example: Option[A]
@@ -417,7 +417,7 @@ trait SwaggerCoreInterpreter {
     * @param vd The DataClass definition to convert to a Schema
     **/
   def valueDefinition[ALG[_], A](
-    vd: ConcreteValue[ALG, A],
+    vd: PrimitiveWrapperValue[ALG, A],
     customInterpreter: CustomSwaggerInterpreter[ALG],
     description: Option[String],
     example: Option[A]): Name => SwaggerSchemas[Schema[_]] = {
@@ -456,9 +456,9 @@ trait SwaggerCoreInterpreter {
             .description(description.getOrElse("value of type either"))
             .name(name)
           SwaggerSchemas(composedSchema, a.referenceSchemas ::: b.referenceSchemas)
-      case gd: KvpHListValue[ALG, h, hl] @unchecked =>
+      case gd: KvpCollectionValue[ALG, h, hl] @unchecked =>
         name =>
-          val schemas = fromKvpHList(gd.kvpHList, customInterpreter)
+          val schemas = fromKvpHList(gd.kvpCollection, customInterpreter)
           schemas.mainSchema.name(name).description(description.getOrElse("value of type list"))
           validations(gd.validations)(schemas.mainSchema)
           schemas

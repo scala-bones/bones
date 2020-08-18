@@ -2,10 +2,21 @@ package com.bones.bson
 
 import java.util.Base64
 
-import com.bones.data.KeyValueDefinition
+import com.bones.data.KeyDefinition
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
 import reactivemongo.bson.buffer.ArrayBSONBuffer
-import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDecimal, BSONDocument, BSONElement, BSONInteger, BSONLong, BSONNull, BSONString, BSONValue}
+import reactivemongo.bson.{
+  BSONArray,
+  BSONBoolean,
+  BSONDecimal,
+  BSONDocument,
+  BSONElement,
+  BSONInteger,
+  BSONLong,
+  BSONNull,
+  BSONString,
+  BSONValue
+}
 
 /**
   * Responsible for creating functions to encode values to BSON data.
@@ -64,7 +75,7 @@ object BsonEncoderInterpreter extends KvpInterchangeFormatEncoderInterpreter[BSO
   override def byteArrayToOut: Array[Byte] => BSONValue =
     input => BSONString(Base64.getEncoder.encodeToString(input))
 
-  def toObj[ALG[_], A](kvDef: KeyValueDefinition[ALG, A], value: BSONValue): BSONValue =
+  def toObj[ALG[_], A](kvDef: KeyDefinition[ALG, A], value: BSONValue): BSONValue =
     BSONDocument(BSONElement(kvDef.key, value))
 
   override def addStringField(element: BSONValue, name: String, value: String): BSONValue =

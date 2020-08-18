@@ -6,20 +6,25 @@ import cats.data.NonEmptyList
 import com.bones.Util.stringToUuid
 import com.bones.data.Error
 import com.bones.data.values.{JavaUtilValue, UuidData}
-import com.bones.interpreter.{InterchangeFormatValidatorValue, KvpInterchangeFormatValidatorInterpreter}
+import com.bones.interpreter.{
+  InterchangeFormatPrimitiveValidator,
+  InterchangeFormatValidatorValue,
+  KvpInterchangeFormatValidatorInterpreter
+}
 
 trait JavaUtilValidator[IN] extends InterchangeFormatValidatorValue[JavaUtilValue, IN] {
 
-  val baseValidator: KvpInterchangeFormatValidatorInterpreter[IN]
+  val baseValidator: InterchangeFormatPrimitiveValidator[IN]
 
-  override def validate[A](alg: JavaUtilValue[A]):
-    (Option[IN], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] = {
+  override def validate[A](alg: JavaUtilValue[A])
+    : (Option[IN], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] = {
     alg match {
       case UuidData(validations) => {
         baseValidator.required(
           Right(alg),
           validations,
-          (in, path) => baseValidator.extractString(alg, classOf[UUID])(in, path).flatMap(stringToUuid(_, path))
+          (in, path) =>
+            baseValidator.extractString(alg, classOf[UUID])(in, path).flatMap(stringToUuid(_, path))
         )
       }
     }

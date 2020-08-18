@@ -1,7 +1,7 @@
 package com.bones.data
 
 import com.bones.validation.ValidationDefinition.ValidationOp
-import shapeless.{Coproduct, HList, Nat}
+import shapeless.{HList, Nat}
 
 /** A String key and it's value description where A is the type the value.
   *
@@ -13,41 +13,37 @@ import shapeless.{Coproduct, HList, Nat}
   *             It can be a single data type such as [[com.bones.data.values.JavaTimeValue]]
   *             It can be any [[shapeless.Coproduct]] of Algebras.
   */
-case class KeyValueDefinition[ALG[_], A](
+case class KeyDefinition[ALG[_], A: Manifest](
   key: String,
-  dataDefinition: Either[ConcreteValue[ALG, A], ALG[A]],
+  dataDefinition: Either[PrimitiveWrapperValue[ALG, A], ALG[A]],
   description: Option[String],
   example: Option[A]
-)
+) {
+  val manifestOfA: Manifest[A] = manifest[A]
+}
 
-object KeyValueDefinition {
+object KeyDefinition {
 
   /** In the context of a given ALG, the data definition can be a collection type (left) or a value type (right) */
-  type CoproductDataDefinition[ALG[_], A] = Either[ConcreteValue[ALG, A], ALG[A]]
+  type CoproductDataDefinition[ALG[_], A] = Either[PrimitiveWrapperValue[ALG, A], ALG[A]]
 }
 
 /** Useful DSL builder */
 trait KeyValueDefinitionSugar {
 
-  def kvp[ALG[_], A](
+  def kvp[ALG[_], A: Manifest](
     key: String,
-    valueDefinitionOp: ConcreteValue[ALG, A]): KeyValueDefinition[ALG, A] =
-    KeyValueDefinition[ALG, A](key, Left(valueDefinitionOp), None, None)
+    valueDefinitionOp: PrimitiveWrapperValue[ALG, A]): KeyDefinition[ALG, A] =
+    KeyDefinition[ALG, A](key, Left(valueDefinitionOp), None, None)
 
-  def kvpCov[ALG[_], A](key: String, valueDefinitionOp: ALG[A]): KeyValueDefinition[ALG, A] =
-    KeyValueDefinition[ALG, A](key, Right(valueDefinitionOp), None, None)
+  def kvpCov[ALG[_], A: Manifest](key: String, valueDefinitionOp: ALG[A]): KeyDefinition[ALG, A] =
+    KeyDefinition[ALG, A](key, Right(valueDefinitionOp), None, None)
 
-  def kvpHList[ALG[_], H <: HList: Manifest, HL <: Nat](
-    key: String,
-    kvpHList: KvpCollection[ALG, H, HL]
-  ): KeyValueDefinition[ALG, H] =
-    KeyValueDefinition[ALG, H](key, Left(KvpHListValue(kvpHList, List.empty)), None, None)
-
-  def kvpCoproduct[ALG[_], C <: Coproduct: Manifest](
-    key: String,
-    kvpCoproduct: KvpCoproduct[ALG, C]
-  ): KeyValueDefinition[ALG, C] =
-    KeyValueDefinition[ALG, C](key, Left(CoproductCollection(kvpCoproduct)), None, None)
+//  def kvpHList[ALG[_], H <: HList: Manifest, HL <: Nat](
+//    key: String,
+//    kvpHList: KvpHListCollection[ALG, H, HL]
+//  ): KeyDefinition[ALG, H] =
+//    KeyDefinition[ALG, H](key, Left(KvpCollectionValue(kvpHList, List.empty)), None, None)
 
 }
 
@@ -62,7 +58,8 @@ trait Sugar[ALG[_]] {
       OptionalValue[ALG, A](Right(hm))
   }
 
-  implicit class WrapKvpCollectionInCollection[A: Manifest](hm: ConcreteValue[ALG, A]) { self =>
+  implicit class WrapKvpCollectionInCollection[A: Manifest](hm: PrimitiveWrapperValue[ALG, A]) {
+    self =>
     def list(validationOps: ValidationOp[List[A]]*): ListData[ALG, A] =
       ListData[ALG, A](Left(hm), validationOps.toList)
 
@@ -86,7 +83,7 @@ trait Sugar[ALG[_]] {
     ListData[ALG, T](Right(dataDefinitionOp), v.toList)
 
   def list[T: Manifest](
-    kvpValue: ConcreteValue[ALG, T],
+    kvpValue: PrimitiveWrapperValue[ALG, T],
     v: ValidationOp[List[T]]*
   ): ListData[ALG, T] =
     ListData[ALG, T](Left(kvpValue), v.toList)
@@ -99,29 +96,22 @@ trait Sugar[ALG[_]] {
 
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
   def either[A: Manifest, B: Manifest](
-    definitionA: ConcreteValue[ALG, A],
-    definitionB: ConcreteValue[ALG, B]
+    definitionA: PrimitiveWrapperValue[ALG, A],
+    definitionB: PrimitiveWrapperValue[ALG, B]
   ): EitherData[ALG, A, B] =
     EitherData(Left(definitionA), Left(definitionB))
 
   def either[A: Manifest, B: Manifest](
-    definitionA: ConcreteValue[ALG, A],
+    definitionA: PrimitiveWrapperValue[ALG, A],
     definitionB: ALG[B]
   ): EitherData[ALG, A, B] =
     EitherData(Left(definitionA), Right(definitionB))
 
   def either[A: Manifest, B: Manifest](
     definitionA: ALG[A],
-    definitionB: ConcreteValue[ALG, B]
+    definitionB: PrimitiveWrapperValue[ALG, B]
   ): EitherData[ALG, A, B] =
     EitherData(Right(definitionA), Left(definitionB))
-
-  /** Indicates that the data is a list of Key Value pairs */
-  def kvpHList[H <: HList: Manifest, HL <: Nat](
-    kvpHList: KvpCollection[ALG, H, HL],
-    v: ValidationOp[H]*
-  ): KvpHListValue[ALG, H, HL] =
-    KvpHListValue(kvpHList, v.toList)
 
   def kvpNil = new KvpNil[ALG]()
 
