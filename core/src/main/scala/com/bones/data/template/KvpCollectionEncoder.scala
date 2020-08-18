@@ -18,6 +18,8 @@ trait KvpCollectionEncoder[ALG[_], OUT] {
   def primitiveEncoder[A](keyDefinition: KeyDefinition[ALG, A]): A => OUT
   def combine(a: OUT, b: OUT): OUT
   def empty: OUT
+  def coproductTypeKey: String
+  def addStringField(element: OUT, name: String, value: String): OUT
 
   def fromKvpCollection[A](kvpCollection: KvpCollection[ALG, A]): A => OUT = {
     kvpCollection match {
@@ -97,7 +99,12 @@ trait KvpCollectionEncoder[ALG[_], OUT] {
     (o: A :+: C) =>
       {
         o match {
-          case Inl(a)    => headF(a)
+          case Inl(a) => {
+            val out = headF(a)
+            val manifest = KvpCollection.headManifest(kvpCoproductCollectionHead.kvpCollection)
+            val typeName = manifest.map(_.runtimeClass.getSimpleName).getOrElse("unknown")
+            addStringField(out, coproductTypeKey, typeName)
+          }
           case Inr(tail) => tailF(tail)
         }
       }

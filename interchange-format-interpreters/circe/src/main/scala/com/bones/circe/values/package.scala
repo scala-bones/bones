@@ -86,22 +86,22 @@ package object values {
 
   object BaseExtractionErrorEncoder extends ExtractionErrorEncoder[Json] {
 
-//    override def defaultEncoder: KvpI[Json] =
-//      CircePrimitiveEncoder
-
     override def defaultEncoder: KvpInterchangeFormatEncoderInterpreter[ScalaCoreValue, Json] =
-      IsoCirceEncoderAndValidatorInterpreter[ScalaCoreValue](
-        BaseScalaCoreValidator,
+      IsoCirceEncoderInterpreter[ScalaCoreValue](
         BaseScalaCoreEncoder
       )
 
     override val scalaCoreInterpreter: ScalaCoreEncoder[Json] = BaseScalaCoreEncoder
   }
 
-  val isoCirceEncoderAndValidatorInterpreter =
-    new IsoCirceEncoderAndValidatorInterpreter[DefaultValues](
-      values.defaultValidators,
+  val isoCirceEncoderInterpreter =
+    new IsoCirceEncoderInterpreter[DefaultValues](
       values.defaultEncoders
+    )
+
+  val isoCirceValidatorInterpreter =
+    new IsoCirceValidatorInterpreter[DefaultValues](
+      values.defaultValidators
     )
 
 }
