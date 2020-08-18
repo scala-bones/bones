@@ -10,6 +10,11 @@ import io.circe._
   */
 trait CirceEncoderInterpreter[ALG[_]] extends KvpInterchangeFormatEncoderInterpreter[ALG, Json] {
 
+  override def addStringField(element: Json, name: String, value: String): Json = {
+    val fields = (name, Json.fromString(value)) :: element.asObject.toList.flatMap(_.toList)
+    Json.obj(fields: _*)
+  }
+
   override def empty: Json = Json.obj()
 
   override def combine(a: Json, b: Json): Json = {

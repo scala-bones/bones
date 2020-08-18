@@ -70,16 +70,17 @@ class CovCirceTest extends AnyFunSuite with Checkers with Matchers {
     val json = blogPostToJson.apply(blogPost)
     val jsonString = json.spaces2
 
-    val expectedResult = """{
-                           |  "id" : 1,
-                           |  "title" : "title",
-                           |  "tags" : [
-                           |    "tag1",
-                           |    "tag2"
-                           |  ],
-                           |  "publishDate" : "20201203101530.0Z",
-                           |  "content" : "Here is some content"
-                           |}""".stripMargin
+    val expectedResult =
+      """{
+          |  "id" : 1,
+          |  "title" : "title",
+          |  "tags" : [
+          |    "tag1",
+          |    "tag2"
+          |  ],
+          |  "publishDate" : "20201203101530.0Z",
+          |  "content" : "Here is some content"
+          |}""".stripMargin
 
     jsonString mustEqual expectedResult
 
