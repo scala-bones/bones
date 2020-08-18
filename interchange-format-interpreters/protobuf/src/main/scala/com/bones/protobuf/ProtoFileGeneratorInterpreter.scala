@@ -1,7 +1,7 @@
 package com.bones.protobuf
 
 import com.bones.data.values.CNilF
-import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft, _}
+import com.bones.data.{KvpCoNil, KvpCoproduct, KvpCoproductCollectionHead, _}
 import shapeless.{:+:, Coproduct, HList, Inl, Inr, Nat}
 
 /**
@@ -156,7 +156,7 @@ object ProtoFileGeneratorInterpreter {
   }
 
   def fromSchemaToProtoFile[ALG[_], A](
-    dc: ConcreteValue[ALG, A],
+    dc: PrimitiveWrapperValue[ALG, A],
     customInterpreter: CustomInterpreter[ALG]): String =
     messageToProtoFile(fromSchemaCustomAlgebra(dc, customInterpreter))
 
@@ -171,7 +171,7 @@ object ProtoFileGeneratorInterpreter {
   }
 
   def fromSchemaCustomAlgebra[ALG[_], A](
-    dc: ConcreteValue[ALG, A],
+    dc: PrimitiveWrapperValue[ALG, A],
     customerInterpreter: CustomInterpreter[ALG]): Message = {
     dc match {
       case t: SwitchEncoding[ALG, a, al, b] =>
@@ -187,7 +187,7 @@ object ProtoFileGeneratorInterpreter {
     : Int => (Vector[MessageField], Vector[NestedType], Int) = lastIndex => {
     co match {
       case nil: KvpCoNil[_] => (Vector.empty, Vector.empty, lastIndex)
-      case op: KvpSingleValueLeft[ALG, l, r] @unchecked => {
+      case op: KvpCoproductCollectionHead[ALG, l, r] @unchecked => {
         val left = determineValueDefinition(op.kvpValue, customerInterpreter)(
           op.manifestL.runtimeClass.getSimpleName,
           lastIndex)
@@ -198,7 +198,7 @@ object ProtoFileGeneratorInterpreter {
   }
 
   def kvpHList[ALG[_], H <: HList, HL <: Nat](
-    group: KvpCollection[ALG, H, HL],
+    group: KvpHListCollection[ALG, H, HL],
     customerInterpreter: CustomInterpreter[ALG])
     : Int => (Vector[MessageField], Vector[NestedType], Int) = lastIndex => {
     group match {
@@ -214,9 +214,9 @@ object ProtoFileGeneratorInterpreter {
       }
       case op: KvpConcreteValueHead[ALG, a, ht, nt] @unchecked =>
         val head = fromBonesSchema(op.collection, customerInterpreter)(lastIndex)
-        val tail = kvpHList(op.tail, customerInterpreter)(head._3)
+        val tail = kvpHList(op.wrappedEncoding, customerInterpreter)(head._3)
         (head._1 ++ tail._1, head._2 ++ tail._2, tail._3)
-      case op: KvpCollectionHead[ALG, a, al, h, hl, t, tl] @unchecked =>
+      case op: KvpHListCollectionHead[ALG, a, al, h, hl, t, tl] @unchecked =>
         val head = kvpHList(op.head, customerInterpreter)(lastIndex)
         val tail = kvpHList(op.tail, customerInterpreter)(head._3)
         (head._1 ++ tail._1, head._2 ++ tail._2, tail._3)
@@ -224,7 +224,7 @@ object ProtoFileGeneratorInterpreter {
   }
 
   def fromBonesSchema[ALG[_], A](
-    bonesSchema: ConcreteValue[ALG, A],
+    bonesSchema: PrimitiveWrapperValue[ALG, A],
     customerInterpreter: CustomInterpreter[ALG]
   ): Int => (Vector[MessageField], Vector[NestedType], Int) = {
 
@@ -239,7 +239,7 @@ object ProtoFileGeneratorInterpreter {
   }
 
   def determineValueDefinition[ALG[_], A](
-    value: Either[ConcreteValue[ALG, A], ALG[A]],
+    value: Either[PrimitiveWrapperValue[ALG, A], ALG[A]],
     customerInterpreter: CustomInterpreter[ALG]
   ): (Name, Int) => (MessageField, Vector[NestedType], Int) =
     value match {
@@ -282,7 +282,7 @@ object ProtoFileGeneratorInterpreter {
   }
 
   def valueDefinition[ALG[_], A](
-    fgo: ConcreteValue[ALG, A],
+    fgo: PrimitiveWrapperValue[ALG, A],
     customerInterpreter: CustomInterpreter[ALG])
     : (Name, Int) => (MessageField, Vector[NestedType], Int) =
     fgo match {
@@ -328,9 +328,9 @@ object ProtoFileGeneratorInterpreter {
               nextIndex),
             nestedTypes,
             index + nestedMessageFields.length - 1)
-      case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
+      case kvp: KvpCollectionValue[ALG, h, hl] @unchecked =>
         (name, index) =>
-          val result = kvpHList(kvp.kvpHList, customerInterpreter)(0)
+          val result = kvpHList(kvp.kvpCollection, customerInterpreter)(0)
           val nested = NestedMessage(name, result._1)
           (MessageField(NestedDataType(name), true, false, name, index), Vector(nested), index)
       case t: SwitchEncoding[ALG, h, hl, a] @unchecked =>

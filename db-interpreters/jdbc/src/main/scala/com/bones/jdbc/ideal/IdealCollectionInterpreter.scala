@@ -15,7 +15,7 @@ trait IdealCollectionInterpreter[ALG[_]]
     * @return
     */
   def fromConcreteValue[A: Manifest](
-    concreteValue: ConcreteValue[ALG, A]): TableCollection => TableCollection
+    concreteValue: PrimitiveWrapperValue[ALG, A]): TableCollection => TableCollection
 
   /**
     * This is used when we have found a concrete value at the head of the HList.
@@ -24,7 +24,7 @@ trait IdealCollectionInterpreter[ALG[_]]
     * @tparam A
     * @return
     */
-  def fromNestedConcreteValue[A](cv: ConcreteValue[ALG, A])
+  def fromNestedConcreteValue[A](cv: PrimitiveWrapperValue[ALG, A])
     : (TableCollection, ColumnName, Option[Description]) => TableCollection
 
   val algInterpreter: IdealValue[ALG]
@@ -33,7 +33,7 @@ trait IdealCollectionInterpreter[ALG[_]]
     kvp: KvpConcreteValueHead[ALG, H, HT, NT]): TableCollection => TableCollection = {
     implicit val manifestOfH = kvp.manifestOfA
     val head = fromConcreteValue[H](kvp.collection)
-    val tail = this.fromKvpHList(kvp.tail)
+    val tail = this.fromKvpCollection(kvp.wrappedEncoding)
 
     (tableCollection: TableCollection) =>
       {
@@ -43,16 +43,16 @@ trait IdealCollectionInterpreter[ALG[_]]
 
   }
 
-  override def kvpCollectionHead[
+  override def kvpHListCollectionHead[
     HO <: HList,
     NO <: Nat,
     H <: HList,
     HL <: Nat,
     T <: HList,
     TL <: Nat](
-    kvp: KvpCollectionHead[ALG, HO, NO, H, HL, T, TL]): TableCollection => TableCollection = {
-    val head = fromKvpHList[H, HL](kvp.head)
-    val tail = fromKvpHList[T, TL](kvp.tail)
+    kvp: KvpHListCollectionHead[ALG, HO, NO, H, HL, T, TL]): TableCollection => TableCollection = {
+    val head = fromKvpCollection[H, HL](kvp.head)
+    val tail = fromKvpCollection[T, TL](kvp.tail)
     (tableCollection: TableCollection) =>
       {
         val headTableCollection = head(tableCollection)
@@ -85,7 +85,7 @@ trait IdealCollectionInterpreter[ALG[_]]
     (tableCollection: TableCollection) =>
       {
         val h = headF(tableCollection)
-        fromKvpHList(kvp.tail).apply(h)
+        fromKvpCollection(kvp.tail).apply(h)
       }
 
   }

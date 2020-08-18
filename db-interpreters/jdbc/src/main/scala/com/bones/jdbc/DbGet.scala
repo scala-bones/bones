@@ -4,7 +4,7 @@ import java.sql.Connection
 
 import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionError, NotFound, SystemError}
-import com.bones.data.{SwitchEncoding, ConcreteValue}
+import com.bones.data.{SwitchEncoding, PrimitiveWrapperValue}
 import com.bones.jdbc.DbUtil.{camelToSnake, withStatement}
 import com.bones.jdbc.column.ColumnNameInterpreter
 import com.bones.jdbc.rs.{ResultSetInterpreter, ResultSetValue => ResultSetCustomInterpreter}
@@ -27,7 +27,7 @@ object DbGet {
     * @return A Curried Function which when given a Connection and an ID, will fetch the data from the DB.
     */
   def getEntity[ALG[_], A, ID](
-    schema: ConcreteValue[ALG, A],
+    schema: PrimitiveWrapperValue[ALG, A],
     idDefinition: IdDefinition[ALG, ID],
     resultSetCustomInterpreter: ResultSetCustomInterpreter[ALG],
     customDbUpdateInterpreter: DbUpdateValue[ALG]

@@ -8,18 +8,26 @@ import com.bones.Util.stringToEnumeration
 import com.bones.data.Error
 import com.bones.data.Error.{CanNotConvert, ExtractionError, RequiredValue}
 import com.bones.data.values._
-import com.bones.interpreter.{InterchangeFormatValidatorValue, KvpInterchangeFormatValidatorInterpreter}
+import com.bones.interpreter.{
+  InterchangeFormatPrimitiveValidator,
+  InterchangeFormatValidatorValue,
+  KvpInterchangeFormatValidatorInterpreter
+}
 
 import scala.util.Try
 
 trait ScalaCoreValidator[IN] extends InterchangeFormatValidatorValue[ScalaCoreValue, IN] {
-  
-  val baseValidator: KvpInterchangeFormatValidatorInterpreter[IN]
-  
-  override def validate[A](alg: ScalaCoreValue[A]): (Option[IN], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] = {
+
+  val baseValidator: InterchangeFormatPrimitiveValidator[IN]
+
+  override def validate[A](alg: ScalaCoreValue[A])
+    : (Option[IN], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] = {
     alg match {
       case op: StringData =>
-        baseValidator.required(Right(op), op.validations, baseValidator.extractString(Right(op), classOf[String]))
+        baseValidator.required(
+          Right(op),
+          op.validations,
+          baseValidator.extractString(Right(op), classOf[String]))
       case id: IntData =>
         baseValidator.required(Right(id), id.validations, baseValidator.extractInt(Right(id)))
       case op: LongData =>
@@ -31,7 +39,7 @@ trait ScalaCoreValidator[IN] extends InterchangeFormatValidatorValue[ScalaCoreVa
         (inOpt: Option[IN], path: Path) =>
           for {
             in <- inOpt.toRight[NonEmptyList[ExtractionError]](
-              NonEmptyList.one(RequiredValue(path, Right(op))))
+              NonEmptyList.one(RequiredValue.fromDef(path, Right(op))))
             str <- baseValidator.extractString(Right(op), classOf[Array[Byte]])(in, path)
             arr <- Try {
               decoder.decode(str)
@@ -41,22 +49,20 @@ trait ScalaCoreValidator[IN] extends InterchangeFormatValidatorValue[ScalaCoreVa
       case fd: FloatData =>
         baseValidator.required(Right(fd), fd.validations, baseValidator.extractFloat(Left(alg)))
       case dd: DoubleData =>
-        baseValidator.required(Right(dd), dd.validations, baseValidator.extractDouble(Left(alg)))
+        baseValidator.required(Right(dd), dd.validations, baseValidator.extractDouble(alg))
       case sd: ShortData =>
-        baseValidator.required(Right(sd), sd.validations, baseValidator.extractShort(Left(alg)))
+        baseValidator.required(Right(sd), sd.validations, baseValidator.extractShort(alg))
       case op: BigDecimalData =>
-        baseValidator.required(Right(op), op.validations, baseValidator.extractBigDecimal(Left(alg)))
+        baseValidator.required(Right(op), op.validations, baseValidator.extractBigDecimal(alg))
       case op: EnumerationData[e, A] =>
         (inOpt: Option[IN], path: Path) =>
           for {
             in <- inOpt.toRight[NonEmptyList[ExtractionError]](
-              NonEmptyList.one(RequiredValue(path, Right(op))))
+              NonEmptyList.one(RequiredValue.fromDef(path, Right(op))))
             str <- baseValidator.extractString(Right(alg), op.manifestOfA.runtimeClass)(in, path)
             enum <- stringToEnumeration[e, A](str, path, op.enumeration.asInstanceOf[e])(
               op.manifestOfA)
           } yield enum.asInstanceOf[A]
-
-
 
     }
   }

@@ -64,9 +64,9 @@ object Error {
   final case class RequiredValue[A](path: List[String], description: String) extends ExtractionError
 
   object RequiredValue {
-    def apply[ALG[_], A](
+    def fromDef[ALG[_], A](
       path: List[String],
-      dataDefinition: Either[ConcreteValue[ALG,A], ALG[A]]): RequiredValue[A] = {
+      dataDefinition: Either[PrimitiveWrapperValue[ALG, A], ALG[A]]): RequiredValue[A] = {
       val description: String = dataDefinition match {
         case Left(x)  => x.manifestOfA.runtimeClass.getSimpleName
         case Right(x) => x.getClass.getSimpleName

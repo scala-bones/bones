@@ -5,7 +5,7 @@ import java.sql.{Connection, ResultSet}
 import cats.data.NonEmptyList
 import cats.effect.IO
 import com.bones.data.Error.ExtractionError
-import com.bones.data.{SwitchEncoding, ConcreteValue}
+import com.bones.data.{SwitchEncoding, PrimitiveWrapperValue}
 import com.bones.jdbc.DbUtil.camelToSnake
 import com.bones.jdbc.column.ColumnNameInterpreter
 import com.bones.jdbc.rs.{ResultSetInterpreter, ResultSetValue => ResultSetCustomInterpreter}
@@ -16,7 +16,7 @@ import javax.sql.DataSource
 object DbSearch {
 
   def getEntity[ALG[_], A, ID](
-    schema: ConcreteValue[ALG, A],
+    schema: PrimitiveWrapperValue[ALG, A],
     customInterpreter: ResultSetCustomInterpreter[ALG],
     idDef: IdDefinition[ALG, ID]
   ): DataSource => Stream[IO, Either[NonEmptyList[ExtractionError], (ID, A)]] = {
@@ -41,7 +41,7 @@ object DbSearch {
   }
 
   def searchEntityWithConnection[ALG[_], A, ID](
-    schema: ConcreteValue[ALG, A],
+    schema: PrimitiveWrapperValue[ALG, A],
     customInterpreter: ResultSetCustomInterpreter[ALG],
     idDef: IdDefinition[ALG, ID]
   ): Connection => Stream[IO, Either[NonEmptyList[ExtractionError], (ID, A)]] = {

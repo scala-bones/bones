@@ -1,6 +1,6 @@
 package com.bones
 
-import com.bones.data.{SwitchEncoding, ConcreteValue, KvpNil}
+import com.bones.data.{SwitchEncoding, PrimitiveWrapperValue, KvpNil}
 import com.bones.jdbc.column.ColumnValue
 import com.bones.jdbc.update.DbUpdateValue
 import shapeless.Nat._0
@@ -26,7 +26,7 @@ package object jdbc {
 
     def asTuple: (String, ALG[ID]) = (key, value)
 
-    def prependSchema[A](schema: ConcreteValue[ALG, A]) = {
+    def prependSchema[A](schema: PrimitiveWrapperValue[ALG, A]) = {
       implicit val manifest = schema.manifestOfA
       (asTuple :: schema :><: new KvpNil[ALG]).tupled[(ID, A)]
     }

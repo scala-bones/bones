@@ -134,7 +134,31 @@ as a schema.
 
 ```
 
-
+# Next Attempt
 Optional should only hold ConcreteType data structures.
 Add a new ConcrteType data strucutre (maybe identity)
-which represents a PrimitiveValue
+which represents a PrimitiveValue.  The identity should
+be responsible for it's own key.
+
+What about either.  Should we allow the following definition of key
+to work for  ```scala Either[Int,String]```
+
+```json
+{
+ "val1": {
+    "key" : 1
+}
+
+ "val2": {
+    "key": "two"
+  }
+}
+```
+
+
+
+
+```
+
+
+

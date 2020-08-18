@@ -30,7 +30,7 @@ object DbUpdate {
     predicates: A => List[SetValue])
 
   def updateQuery[ALG[_], A, ID](
-    bonesSchema: ConcreteValue[ALG, A],
+    bonesSchema: PrimitiveWrapperValue[ALG, A],
     customDbUpdateInterpreter: DbUpdateValue[ALG],
     idDef: IdDefinition[ALG, ID])
     : (ID, A) => Connection => Either[NonEmptyList[SystemError], (ID, A)] =
@@ -72,7 +72,7 @@ object DbUpdate {
     }
 
   def kvpHList[ALG[_], H <: HList, HL <: Nat](
-    group: KvpCollection[ALG, H, HL],
+    group: KvpHListCollection[ALG, H, HL],
     customDbUpdateInterpreter: DbUpdateValue[ALG]): Index => DefinitionResult[H] = {
     group match {
       case kvp: KvpNil[_] =>
@@ -101,7 +101,8 @@ object DbUpdate {
       }
       case op: KvpConcreteValueHead[ALG, a, ht, nt] @unchecked => {
 
-        def fromBones[A](bonesSchema: ConcreteValue[ALG, A]): Index => DefinitionResult[A] = {
+        def fromBones[A](
+          bonesSchema: PrimitiveWrapperValue[ALG, A]): Index => DefinitionResult[A] = {
           bonesSchema match {
             case hList: SwitchEncoding[ALG, h, n, a] =>
               index =>
@@ -116,7 +117,7 @@ object DbUpdate {
         }
 
         val headF = fromBones(op.collection)
-        val tailF = kvpHList(op.tail, customDbUpdateInterpreter)
+        val tailF = kvpHList(op.wrappedEncoding, customDbUpdateInterpreter)
         (i: Index) =>
           {
             val headResult = headF(i)
@@ -133,7 +134,7 @@ object DbUpdate {
               f)
           }
       }
-      case op: KvpCollectionHead[ALG, a, al, h, hl, t, tl] @unchecked => {
+      case op: KvpHListCollectionHead[ALG, a, al, h, hl, t, tl] @unchecked => {
         val headF = kvpHList(op.head, customDbUpdateInterpreter)
         val tailF = kvpHList(op.tail, customDbUpdateInterpreter)
         (i: Index) =>
@@ -171,7 +172,7 @@ object DbUpdate {
     }
 
   def determineValueDefinition[ALG[_], A](
-    valueDef: Either[ConcreteValue[ALG, A], ALG[A]],
+    valueDef: Either[PrimitiveWrapperValue[ALG, A], ALG[A]],
     customDbUpdateInterpreter: DbUpdateValue[ALG]
   ): (Index, Key) => DefinitionResult[A] =
     valueDef match {
@@ -180,7 +181,7 @@ object DbUpdate {
     }
 
   def valueDefinition[ALG[_], A](
-    fgo: ConcreteValue[ALG, A],
+    fgo: PrimitiveWrapperValue[ALG, A],
     customDbUpdateInterpreter: DbUpdateValue[ALG]): (Index, Key) => DefinitionResult[A] =
     fgo match {
       case op: OptionalValue[ALG, b] @unchecked =>
@@ -201,8 +202,8 @@ object DbUpdate {
           ops.copy(predicates = f)
       case ld: ListData[ALG, t] @unchecked      => ???
       case ed: EitherData[ALG, a, b] @unchecked => ???
-      case kvp: KvpHListValue[ALG, h, hl] @unchecked => {
-        val groupF = kvpHList(kvp.kvpHList, customDbUpdateInterpreter)
+      case kvp: KvpCollectionValue[ALG, h, hl] @unchecked => {
+        val groupF = kvpHList(kvp.kvpCollection, customDbUpdateInterpreter)
         (i, k) =>
           {
             val result = groupF(i)

@@ -2,7 +2,7 @@ package com.bones.fullstack
 
 import cats.data.NonEmptyList
 import cats.effect.IO
-import com.bones.data.ConcreteValue
+import com.bones.data.PrimitiveWrapperValue
 import com.bones.data.Error.ExtractionError
 import com.bones.jdbc.{JdbcColumnInterpreter, _}
 import com.bones.jdbc.insert.DbInsert
@@ -18,10 +18,10 @@ import javax.sql.DataSource
   * @tparam A
   */
 case class CrudDbDefinitions[ALG[_], A, ID](
-                                             schema: ConcreteValue[ALG, A],
-                                             customInterpreter: JdbcColumnInterpreter[ALG],
-                                             idDef: IdDefinition[ALG, ID],
-                                             ds: DataSource) {
+  schema: PrimitiveWrapperValue[ALG, A],
+  customInterpreter: JdbcColumnInterpreter[ALG],
+  idDef: IdDefinition[ALG, ID],
+  ds: DataSource) {
 
   // TODO: deal with error better
   val searchF: Stream[IO, (ID, A)] =
@@ -48,7 +48,8 @@ case class CrudDbDefinitions[ALG[_], A, ID](
   }
 
   val readF: ID => IO[Either[NonEmptyList[ExtractionError], (ID, A)]] = { id: ID =>
-    val getF = DbGet.getEntity(schema, idDef, customInterpreter.resultSet, customInterpreter.dbUpdate)
+    val getF =
+      DbGet.getEntity(schema, idDef, customInterpreter.resultSet, customInterpreter.dbUpdate)
     IO {
       DbUtil.withDataSource(ds)(con => {
         getF(id)(con)
@@ -57,10 +58,7 @@ case class CrudDbDefinitions[ALG[_], A, ID](
   }
 
   val updateF: (ID, A) => IO[Either[NonEmptyList[ExtractionError], (ID, A)]] = {
-    val updateF = DbUpdate.updateQuery(
-      schema,
-      customInterpreter.dbUpdate,
-      idDef)
+    val updateF = DbUpdate.updateQuery(schema, customInterpreter.dbUpdate, idDef)
 
     (id: ID, input: A) =>
       IO {

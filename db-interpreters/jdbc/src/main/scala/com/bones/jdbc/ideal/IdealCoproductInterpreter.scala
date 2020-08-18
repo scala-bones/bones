@@ -1,6 +1,11 @@
 package com.bones.jdbc.ideal
 
-import com.bones.data.{ConcreteValue, KvpCoNil, KvpCoproductTemplate, KvpSingleValueLeft}
+import com.bones.data.{
+  PrimitiveWrapperValue,
+  KvpCoNil,
+  KvpCoproductTemplate,
+  KvpCoproductCollectionHead
+}
 import com.bones.jdbc.DbUtil
 import shapeless.Coproduct
 
@@ -10,7 +15,7 @@ trait IdealCoproductInterpreter[ALG[_]]
       (TableCollection, ColumnName, Option[Description]) => TableCollection] {
 
   val algInterpreter: IdealValue[ALG]
-  def fromCollection[A: Manifest](kvpCollection: ConcreteValue[ALG, A])
+  def fromCollection[A: Manifest](kvpCollection: PrimitiveWrapperValue[ALG, A])
     : (TableCollection, ColumnName, Option[Description]) => TableCollection
 
   override def kvpCoNil(kvpCoproduct: KvpCoNil[ALG])
@@ -18,10 +23,10 @@ trait IdealCoproductInterpreter[ALG[_]]
     (tc, _, _) => tc
 
   override def kvpSingleValueLeft[A, R <: Coproduct](
-    kvpSingleValueLeft: KvpSingleValueLeft[ALG, A, R])
+    kvpSingleValueLeft: KvpCoproductCollectionHead[ALG, A, R])
     : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
     val leftF = kvpSingleValueLeft.kvpValue match {
-      case Left(kvpCollection: ConcreteValue[ALG, A]) =>
+      case Left(kvpCollection: PrimitiveWrapperValue[ALG, A]) =>
         implicit val manifestOfA = kvpCollection.manifestOfA
         fromCollection[A](kvpCollection)
       case Right(value) =>

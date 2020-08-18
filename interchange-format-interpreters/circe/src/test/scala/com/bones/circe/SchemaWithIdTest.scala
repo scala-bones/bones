@@ -2,33 +2,34 @@ package com.bones.circe
 
 import java.nio.charset.{Charset, StandardCharsets}
 
-import com.bones.scalacheck.Scalacheck
+import com.bones.circe.values._
+import com.bones.scalacheck.values.defaultValuesScalacheck
 import com.bones.schemas.Schemas.AllSupported
-import com.bones.schemas.{WithId, WithLongId}
+import com.bones.schemas.WithLongId
 import org.scalacheck.Arbitrary
-import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.scalacheck.Checkers
-import com.bones.circe.values._
-import com.bones.data.values.DefaultValues
 
 class SchemaWithIdTest extends AnyFunSuite with Checkers with Matchers {
 
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)
 
-  val jsonToCc = IsoCirceEncoderAndValidatorInterpreter.generateByteArrayValidator[DefaultValues,(Long,AllSupported)](
-    WithLongId.allSupportedWithId,
-    StandardCharsets.UTF_8,
-    defaultValidators)
-  val ccToJson = IsoCirceEncoderAndValidatorInterpreter.generateEncoder(WithLongId.allSupportedWithId, defaultEncoders)
+  val jsonToCc =
+    isoCirceEncoderAndValidatorInterpreter.generateByteArrayValidator[(Long, AllSupported)](
+      WithLongId.allSupportedWithId.asValue,
+      StandardCharsets.UTF_8)
+  val ccToJson =
+    isoCirceEncoderAndValidatorInterpreter.generateEncoder(WithLongId.allSupportedWithId.asValue)
 
-  implicit val arb = Arbitrary(Scalacheck.valueDefinition(WithLongId.allSupportedWithId, com.bones.scalacheck.values.allInterpreters))
+  implicit val arb = Arbitrary(
+    defaultValuesScalacheck
+      .valueDefinition(WithLongId.allSupportedWithId.asValue))
   val utf8 = Charset.forName("UTF8")
 
   test("scalacheck allSupport types - marshall then unmarshall") {
-    check((cc: (Long,AllSupported)) => {
+    check((cc: (Long, AllSupported)) => {
       val json = ccToJson.apply(cc)
       val jsonString = json.spaces2.getBytes(utf8)
       val newCc = jsonToCc(jsonString)
