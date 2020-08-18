@@ -1,6 +1,6 @@
 package com.bones.jdbc.column
 
-import com.bones.data.KeyValueDefinition.CoproductDataDefinition
+import com.bones.data.KeyDefinition.CoproductDataDefinition
 import com.bones.data._
 import com.bones.data.values.CNilF
 import com.bones.jdbc.DbUtil
@@ -17,7 +17,7 @@ object DbColumnInterpreter {
   type ToColumns = Key => List[Column]
 
   def tableDefinitionCustomAlgebra[ALG[_], A](
-    collection: ConcreteValue[ALG, A],
+    collection: PrimitiveWrapperValue[ALG, A],
     columnInterpreter: ColumnValue[ALG]): String = {
     def nullableString(nullable: Boolean) = if (nullable) "" else " not null"
     val result = valueDefinition(collection, columnInterpreter)("")
@@ -30,7 +30,7 @@ object DbColumnInterpreter {
   }
 
   private def kvpHList[ALG[_], H <: HList, HL <: Nat](
-    group: KvpCollection[ALG, H, HL],
+    group: KvpHListCollection[ALG, H, HL],
     customInterpreter: ColumnValue[ALG]): List[Column] = {
     group match {
       case nil: KvpNil[_] => List.empty
@@ -40,19 +40,19 @@ object DbColumnInterpreter {
             op.fieldDefinition.key)
         val tailResult = kvpHList(op.tail, customInterpreter)
         headResult ::: tailResult
-      case op: KvpCollectionHead[ALG, a, al, h, hl, t, tl] @unchecked =>
+      case op: KvpHListCollectionHead[ALG, a, al, h, hl, t, tl] @unchecked =>
         val headResult = kvpHList(op.head, customInterpreter)
         val tailResult = kvpHList(op.tail, customInterpreter)
         headResult ::: tailResult
       case op: KvpConcreteValueHead[ALG, a, ht, nt] =>
         val headResult = generateColumns(op.collection, customInterpreter)
-        val tailResult = kvpHList(op.tail, customInterpreter)
+        val tailResult = kvpHList(op.wrappedEncoding, customInterpreter)
         headResult ::: tailResult
     }
   }
 
   private def generateColumns[ALG[_], A](
-    collection: ConcreteValue[ALG, A],
+    collection: PrimitiveWrapperValue[ALG, A],
     customInterpreter: ColumnValue[ALG]): List[Column] =
     valueDefinition(collection, customInterpreter)("")
 
@@ -70,7 +70,7 @@ object DbColumnInterpreter {
   }
 
   private def valueDefinition[ALG[_], A](
-    fgo: ConcreteValue[ALG, A],
+    fgo: PrimitiveWrapperValue[ALG, A],
     customInterpreter: ColumnValue[ALG]): ToColumns =
     fgo match {
       case op: OptionalValue[ALG, b] @unchecked =>
@@ -85,9 +85,9 @@ object DbColumnInterpreter {
               ed.definitionB,
               customInterpreter)(name)
           }
-      case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
+      case kvp: KvpCollectionValue[ALG, h, hl] @unchecked =>
         _ =>
-          kvpHList(kvp.kvpHList, customInterpreter)
+          kvpHList(kvp.kvpCollection, customInterpreter)
       case x: SwitchEncoding[ALG, a, al, b] @unchecked =>
         _ =>
           kvpHList(x.from, customInterpreter)

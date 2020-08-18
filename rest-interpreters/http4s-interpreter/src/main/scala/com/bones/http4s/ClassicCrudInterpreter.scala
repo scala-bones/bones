@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets
 import cats.effect._
 import cats.implicits._
 import com.bones.circe.IsoCirceEncoderAndValidatorInterpreter
-import com.bones.data.{SwitchEncoding, ConcreteValue, KvpNil}
+import com.bones.data.{SwitchEncoding, PrimitiveWrapperValue, KvpNil}
 import com.bones.http4s.BaseCrudInterpreter.StringToIdError
 import com.bones.interpreter.{InterchangeFormatEncoderValue, InterchangeFormatValidatorValue}
 import com.bones.protobuf.{
@@ -42,10 +42,10 @@ object ClassicCrudInterpreter {
     protobufEncoder: ProtobufEncoderValue[ALG],
     protobufFile: ProtoFileGeneratorInterpreter.CustomInterpreter[ALG],
     customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
-    schema: ConcreteValue[ALG, A],
+    schema: PrimitiveWrapperValue[ALG, A],
     idDefinition: ALG[ID],
     pathStringToId: String => Either[StringToIdError, ID],
-    errorSchema: ConcreteValue[ALG, E],
+    errorSchema: PrimitiveWrapperValue[ALG, E],
     charset: java.nio.charset.Charset = StandardCharsets.UTF_8
   )(
     implicit F: Sync[F],
@@ -88,10 +88,10 @@ object ClassicCrudInterpreter {
     protobufEncoder: ProtobufEncoderValue[ALG],
     protobufFile: ProtoFileGeneratorInterpreter.CustomInterpreter[ALG],
     customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
-    schema: ConcreteValue[ALG, A],
+    schema: PrimitiveWrapperValue[ALG, A],
     idDefinition: ALG[ID],
     pathStringToId: String => Either[StringToIdError, ID],
-    errorSchema: ConcreteValue[ALG, E],
+    errorSchema: PrimitiveWrapperValue[ALG, E],
     createF: A => F[Either[E, (ID, A)]],
     readF: ID => F[Either[E, (ID, A)]],
     updateF: (ID, A) => F[Either[E, (ID, A)]],
@@ -160,11 +160,11 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
   protobufValidator: ProtobufValidatorValue[ALG],
   protobufEncoder: ProtobufEncoderValue[ALG],
   protobufFile: ProtoFileGeneratorInterpreter.CustomInterpreter[ALG],
-  schema: ConcreteValue[ALG, A],
+  schema: PrimitiveWrapperValue[ALG, A],
   customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
   idDefinition: ALG[ID],
   pathStringToId: String => Either[StringToIdError, ID],
-  errorSchema: ConcreteValue[ALG, E],
+  errorSchema: PrimitiveWrapperValue[ALG, E],
   createF: Option[A => F[Either[E, (ID, A)]]] = None,
   readF: Option[ID => F[Either[E, (ID, A)]]] = None,
   updateF: Option[(ID, A) => F[Either[E, (ID, A)]]] = None,
@@ -213,7 +213,7 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
   def withSearch(search: () => Stream[F, (ID, A)]): ClassicCrudInterpreter[ALG, A, E, F, ID] =
     this.copy(searchF = Some(search))
 
-  val schemaWithId: ConcreteValue[ALG, (ID, A)] =
+  val schemaWithId: PrimitiveWrapperValue[ALG, (ID, A)] =
     schema match {
       case h: SwitchEncoding[ALG, _, _, A] @unchecked =>
         implicit val manifest: Manifest[A] = h.manifestOfA
@@ -352,9 +352,9 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
   def swaggerDoc(
     contentTypes: List[String],
     customInterpreter: CustomSwaggerInterpreter[ALG],
-    schema: ConcreteValue[ALG, A],
-    schemaWithId: ConcreteValue[ALG, (ID, A)],
-    errorSchema: ConcreteValue[ALG, E],
+    schema: PrimitiveWrapperValue[ALG, A],
+    schemaWithId: PrimitiveWrapperValue[ALG, (ID, A)],
+    errorSchema: PrimitiveWrapperValue[ALG, E],
     path: String
   ): String = {
 

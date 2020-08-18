@@ -4,7 +4,7 @@ import java.sql.Connection
 
 import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionError, SystemError}
-import com.bones.data.{SwitchEncoding, ConcreteValue}
+import com.bones.data.{SwitchEncoding, PrimitiveWrapperValue}
 import com.bones.jdbc.DbUtil.{camelToSnake, withDataSource, withStatement}
 import com.bones.jdbc.rs.ResultSetValue
 import com.bones.jdbc.update.{DbUpdateValue, DbUpdate}
@@ -27,7 +27,7 @@ object DbDelete {
     * @return
     */
   def delete[ALG[_], A, ID](
-    schema: ConcreteValue[ALG, A],
+    schema: PrimitiveWrapperValue[ALG, A],
     resultSetCustomInterpreter: ResultSetValue[ALG],
     idDef: IdDefinition[ALG, ID],
     customDbUpdateInterpreter: DbUpdateValue[ALG]

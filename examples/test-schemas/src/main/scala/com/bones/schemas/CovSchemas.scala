@@ -70,6 +70,14 @@ object CovSchemas {
 
   val ccTypeValue = enumeration[CreditCardType.type, CreditCardType.Value](CreditCardType)
 
+  val prefix = ("firstSix", string(sv.length(6), sv.matchesRegex("[0-9]{6}".r))) ::
+    ("lastFour", string(sv.length(4), sv.matchesRegex("[0-9]{4}".r))) ::
+    ("uuid", uuid) ::
+    ("token", uuid) ::
+    ("ccType", ccTypeValue) :: kvpNil
+
+  val x = prefix ::: ccExp
+
   // Here we are defining our expected input data.  This definition will drive the interpreters.
   val ccObj = (
     ("firstSix", string(sv.length(6), sv.matchesRegex("[0-9]{6}".r))) ::
@@ -78,19 +86,21 @@ object CovSchemas {
       ("token", uuid) ::
       ("ccType", ccTypeValue) ::
       kvpNil
-  ) ::: ccExp ::: (
-    ("cardHolder", string(sv.words)) ::
-      ("currencyIso", enumeration[Currency.type, Currency.Value](Currency)) ::
-      ("deletedAt", localDateTime.optional) :<:
-      ("lastModifiedRequest", uuid) ::
-      (
-      "billingLocation",
-      (
-        ("countryIso", string(sv.validVector(isoList))) ::
-          ("zipCode", string(sv.max(10)).optional) :<:
-          kvpNil
-      ).convert[BillingLocation].optional) :<:
-      kvpNil
+  ) ::: /* ccExp ::: */ (
+    (
+      ("cardHolder", string(sv.words)) ::
+        ("currencyIso", enumeration[Currency.type, Currency.Value](Currency)) ::
+        ("deletedAt", localDateTime.optional) :<:
+        ("lastModifiedRequest", uuid) ::
+        (
+        "billingLocation",
+        (
+          ("countryIso", string(sv.validVector(isoList))) ::
+            ("zipCode", string(sv.max(10)).optional) :<:
+            kvpNil
+        ).convert[BillingLocation].asValue.optional) :<:
+        kvpNil
+    ).prependHList(ccExp)
   )
 
   case class OasMetadata(example: Option[String], description: Option[String])
@@ -167,7 +177,8 @@ object CovSchemas {
     ("double", double(dv.min(0)).optional) :<:
     ("byteArray", byteArray.optional) :<:
     ("localDate", localDate(jt_ld.min(LocalDate.of(1800, 1, 1))).optional) :<:
-    ("localDateTime",
+    (
+    "localDateTime",
     localDateTime(jt_ldt.min(LocalDateTime.of(1800, Month.JANUARY, 1, 0, 0))).optional) :<:
     ("uuid", uuid.optional) :<:
     ("enumeration", enumeration[Currency.type, Currency.Value](Currency).optional) :<:
@@ -209,8 +220,8 @@ object CovSchemas {
       ("enumeration", enumeration[Currency.type, Currency.Value](Currency)) ::
       ("bigDecimal", bigDecimal(bdv.max(BigDecimal(100)))) ::
       ("eitherField", either(string(sv.words), int)) :<:
-      ("child", allSupportedOptionalSchema.convert[AllSupportedOptional]) :<:
-      ("media", MusicMedium.bonesSchema) :<:
+      ("child", allSupportedOptionalSchema.convert[AllSupportedOptional].asValue) :<:
+      ("media", MusicMedium.bonesSchema.asValue) :<:
       ("int2", int(iv.between(Int.MinValue, Int.MinValue))) ::
       kvpNil
 
@@ -296,6 +307,5 @@ object CovSchemas {
     Digital("em pee three", "mp3"),
     7
   )
-
 
 }

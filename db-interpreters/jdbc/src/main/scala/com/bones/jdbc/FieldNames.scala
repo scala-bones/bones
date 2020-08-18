@@ -17,7 +17,7 @@ object FindInterpreter {
 
 object TableName {
 
-  def getTableName[ALG[_], B](dc: ConcreteValue[ALG, B]): String = dc match {
+  def getTableName[ALG[_], B](dc: PrimitiveWrapperValue[ALG, B]): String = dc match {
     case t: SwitchEncoding[_, a, al, b] @unchecked =>
       camelToSnake(t.manifestOfA.runtimeClass.getSimpleName)
     case _ => ??? // TODO
@@ -31,7 +31,7 @@ object FieldNames {
   }
 
   def fromCustomSchema[ALG[_], A](
-    dc: ConcreteValue[ALG, A],
+    dc: PrimitiveWrapperValue[ALG, A],
     customFieldNamesInterpreter: CustomFieldNamesInterpreter[ALG]): List[String] =
     dc match {
       case t: SwitchEncoding[ALG, a, al, b] @unchecked =>
@@ -40,7 +40,7 @@ object FieldNames {
     }
 
   def kvpHList[ALG[_], H <: HList, HL <: Nat](
-    group: KvpCollection[ALG, H, HL],
+    group: KvpHListCollection[ALG, H, HL],
     customFieldNamesInterpreter: CustomFieldNamesInterpreter[ALG]): List[String] =
     group match {
       case nil: KvpNil[_] => List.empty
@@ -55,16 +55,16 @@ object FieldNames {
           case co: CoproductSwitch[ALG, c, a] => ???
           case _                              => ??? // TODO
         }
-        headList ::: kvpHList(op.tail, customFieldNamesInterpreter)
+        headList ::: kvpHList(op.wrappedEncoding, customFieldNamesInterpreter)
       }
-      case op: KvpCollectionHead[ALG, a, al, h, hl, t, tl] @unchecked =>
+      case op: KvpHListCollectionHead[ALG, a, al, h, hl, t, tl] @unchecked =>
         kvpHList(op.head, customFieldNamesInterpreter) ::: kvpHList(
           op.tail,
           customFieldNamesInterpreter)
     }
 
   def determineValueDefinition[ALG[_], A](
-    valueDefinitionOp: Either[ConcreteValue[ALG, A], AnyAlg[A]],
+    valueDefinitionOp: Either[PrimitiveWrapperValue[ALG, A], AnyAlg[A]],
     customFieldNamesInterpreter: CustomFieldNamesInterpreter[ALG]): List[String] =
     valueDefinitionOp match {
       case Left(kvp) => valueDefinition(kvp, customFieldNamesInterpreter)
@@ -72,15 +72,15 @@ object FieldNames {
     }
 
   def valueDefinition[ALG[_], A](
-    fgo: ConcreteValue[ALG, A],
+    fgo: PrimitiveWrapperValue[ALG, A],
     customFieldNamesInterpreter: CustomFieldNamesInterpreter[ALG]): List[String] =
     fgo match {
       case op: OptionalValue[ALG, a] @unchecked =>
         determineValueDefinition(op.valueDefinitionOp, customFieldNamesInterpreter)
       case ld: ListData[ALG, t] @unchecked      => List.empty
       case ed: EitherData[ALG, a, b] @unchecked => List.empty
-      case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
-        kvpHList(kvp.kvpHList, customFieldNamesInterpreter)
+      case kvp: KvpCollectionValue[ALG, h, hl] @unchecked =>
+        kvpHList(kvp.kvpCollection, customFieldNamesInterpreter)
       case x: SwitchEncoding[ALG, _, _, _] @unchecked =>
         kvpHList(x.from, customFieldNamesInterpreter)
       case co: CoproductSwitch[ALG, c, a] @unchecked  => ??? // TODO

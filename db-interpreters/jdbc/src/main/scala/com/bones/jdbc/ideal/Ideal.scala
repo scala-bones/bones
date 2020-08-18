@@ -10,8 +10,8 @@ case class Ideal[ALG[_]](algInterpreter: IdealValue[ALG]) { self =>
   val tableFromConcreteValue = new ConcreteValueTemplate[
     ALG,
     TableCollection => Either[InvalidStructureError, TableCollection]] {
-    override protected def optionalToOut[B: Manifest](
-      opt: OptionalValue[ALG, B]): TableCollection => TableCollection =
+    override protected def optionalToOut[B: Manifest](opt: OptionalValue[ALG, B])
+      : TableCollection => Either[InvalidStructureError, TableCollection] =
       opt.valueDefinitionOp match {
         case Left(cv) => fromConcreteValue(cv)
         case Right(alg) =>
@@ -32,11 +32,12 @@ case class Ideal[ALG[_]](algInterpreter: IdealValue[ALG]) { self =>
             Left(InvalidStructureError(s"unexpected algebra in list : ${alg}"))
       }
 
-    override protected def hListToOut[H <: HList, HL <: Nat](hList: KvpHListValue[ALG, H, HL])
+    override protected def kvpCollectionToOut[H <: HList, HL <: Nat](
+      hList: KvpCollectionValue[ALG, H, HL])
       : TableCollection => Either[InvalidStructureError, TableCollection] =
       tableCollection => {
         val collectionWithColumns =
-          columnCollectionInterpreter.fromKvpHList(hList.kvpHList)(tableCollection)
+          columnCollectionInterpreter.fromKvpCollection(hList.kvpCollection)(tableCollection)
         Right(collectionWithColumns)
       }
 
@@ -49,7 +50,7 @@ case class Ideal[ALG[_]](algInterpreter: IdealValue[ALG]) { self =>
       : TableCollection => Either[InvalidStructureError, TableCollection] =
       tableCollection => {
         val collectionWithColumns =
-          columnCollectionInterpreter.fromKvpHList(hList.from).apply(tableCollection)
+          columnCollectionInterpreter.fromKvpCollection(hList.from).apply(tableCollection)
         Right(collectionWithColumns)
       }
 
@@ -122,13 +123,14 @@ case class Ideal[ALG[_]](algInterpreter: IdealValue[ALG]) { self =>
       * @tparam HL
       * @return
       */
-    override protected def hListToOut[H <: HList, HL <: Nat](hList: KvpHListValue[ALG, H, HL])
+    override protected def kvpCollectionToOut[H <: HList, HL <: Nat](
+      hList: KvpCollectionValue[ALG, H, HL])
       : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
 
       (tableCollection: TableCollection, columnName: String, description: Option[String]) =>
         {
           val tc = tableCollection.startNewTable(columnName, description)
-          columnCollectionInterpreter.fromKvpHList(hList.kvpHList)(tc)
+          columnCollectionInterpreter.fromKvpCollection(hList.kvpCollection)(tc)
         }
     }
 
@@ -142,7 +144,7 @@ case class Ideal[ALG[_]](algInterpreter: IdealValue[ALG]) { self =>
       : (TableCollection, ColumnName, Option[Description]) => TableCollection =
       (tableCollection: TableCollection, columnName: String, description: Option[String]) => {
         val tc = tableCollection.startNewTable(columnName, description)
-        columnCollectionInterpreter.fromKvpHList(hList.from)(tc)
+        columnCollectionInterpreter.fromKvpCollection(hList.from)(tc)
       }
 
     override protected def coproductConvertToOut[C <: Coproduct, A: Manifest](
@@ -153,21 +155,19 @@ case class Ideal[ALG[_]](algInterpreter: IdealValue[ALG]) { self =>
 
   val coproductInterpreter = new IdealCoproductInterpreter[ALG] {
     override val algInterpreter: IdealValue[ALG] = self.algInterpreter
-    override def fromCollection[A: Manifest](kvpCollection: ConcreteValue[ALG, A])
+    override def fromCollection[A: Manifest](kvpCollection: PrimitiveWrapperValue[ALG, A])
       : (TableCollection, ColumnName, Option[Description]) => TableCollection =
       addColumnToWorkingTable.fromConcreteValue(kvpCollection)
   }
   val columnCollectionInterpreter = new IdealCollectionInterpreter[ALG] {
     override def fromConcreteValue[A: Manifest](
-      concreteValue: ConcreteValue[ALG, A]): TableCollection => TableCollection =
+      concreteValue: PrimitiveWrapperValue[ALG, A]): TableCollection => TableCollection =
       tableFromConcreteValue.fromConcreteValue(concreteValue)
-
     override val algInterpreter: IdealValue[ALG] = self.algInterpreter
-
   }
 
   def toIdeal[A: Manifest](
-    schema: ConcreteValue[ALG, A],
+    schema: PrimitiveWrapperValue[ALG, A],
     name: Option[String] = None,
     description: Option[String] = None): Either[InvalidStructureError, TableCollection] = {
     val tableName = name.getOrElse(DbUtil.camelToSnake(schema.manifestOfA.getClass.getSimpleName))

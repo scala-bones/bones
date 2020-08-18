@@ -10,11 +10,11 @@ class CrudOasInterpreterTest extends AnyFunSuite {
 
   val idDefinition = ("id", int)
 
-  val allSupportedWithId = (idDefinition :: Schemas.allSupportCaseClass :><: kvpNil).tupled[(Int, AllSupported)]
+  val allSupportedWithId =
+    (idDefinition :: Schemas.allSupportCaseClass).tupled[(Int, AllSupported)]
 
   case class Error(message: String)
   val error = (("message", string) :: kvpNil).convert[Error]
-
 
   test("all supported") {
     val openApi = CrudOasInterpreter.jsonApiForService(
@@ -26,7 +26,11 @@ class CrudOasInterpreterTest extends AnyFunSuite {
       allSupportedWithId,
       error,
       com.bones.swagger.values.defaultInterpreters,
-      true, true, true, true, true
+      true,
+      true,
+      true,
+      true,
+      true
     )(new OpenAPI())
 
     val string = io.swagger.v3.core.util.Json.mapper().writeValueAsString(openApi)

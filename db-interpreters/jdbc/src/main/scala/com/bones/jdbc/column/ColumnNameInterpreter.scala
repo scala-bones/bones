@@ -1,6 +1,6 @@
 package com.bones.jdbc.column
 
-import com.bones.data.KeyValueDefinition.CoproductDataDefinition
+import com.bones.data.KeyDefinition.CoproductDataDefinition
 import com.bones.data._
 import com.bones.jdbc.DbUtil._
 import shapeless.{Coproduct, HList, Nat}
@@ -12,7 +12,7 @@ object ColumnNameInterpreter {
   type Key = String
 
   def kvpHList[ALG[_], H <: HList, HL <: Nat](
-    group: KvpCollection[ALG, H, HL]): List[ColumnName] = {
+    group: KvpHListCollection[ALG, H, HL]): List[ColumnName] = {
     group match {
       case nil: KvpNil[_] => List.empty
       case op: KvpSingleValueHead[ALG, h, t, tl, a] @unchecked =>
@@ -20,14 +20,14 @@ object ColumnNameInterpreter {
           determineValueDefinition(op.fieldDefinition.dataDefinition)(op.fieldDefinition.key)
         val tailList = kvpHList(op.tail)
         headList ::: tailList
-      case op: KvpCollectionHead[ALG, a, al, h, hl, t, tl] @unchecked =>
+      case op: KvpHListCollectionHead[ALG, a, al, h, hl, t, tl] @unchecked =>
         kvpHList(op.head) ::: kvpHList(op.tail)
       case op: KvpConcreteValueHead[ALG, a, ht, nt] =>
         generateColumnNames(op.collection)
     }
   }
 
-  def generateColumnNames[ALG[_], A](collection: ConcreteValue[ALG, A]): List[ColumnName] =
+  def generateColumnNames[ALG[_], A](collection: PrimitiveWrapperValue[ALG, A]): List[ColumnName] =
     valueDefinition(collection)("")
 
   type CoproductName = String
@@ -36,7 +36,7 @@ object ColumnNameInterpreter {
     kvpCo: KvpCoproduct[ALG, C]): List[ColumnName] =
     kvpCo match {
       case co: KvpCoNil[_] => List.empty
-      case co: KvpSingleValueLeft[ALG, l, r] =>
+      case co: KvpCoproductCollectionHead[ALG, l, r] =>
         val head = determineValueDefinition(co.kvpValue)("")
         val tail = kvpCoproduct(co.kvpTail)
         head ::: tail
@@ -51,7 +51,7 @@ object ColumnNameInterpreter {
       case Right(_)  => keyToColumnNames
     }
 
-  def valueDefinition[ALG[_], A](fgo: ConcreteValue[ALG, A]): Key => List[ColumnName] =
+  def valueDefinition[ALG[_], A](fgo: PrimitiveWrapperValue[ALG, A]): Key => List[ColumnName] =
     fgo match {
       case op: OptionalValue[ALG, a] @unchecked =>
         determineValueDefinition(op.valueDefinitionOp)
@@ -62,9 +62,9 @@ object ColumnNameInterpreter {
             val baseName = camelToSnake(key)
             List("left_" + baseName, "right_" + baseName)
           }
-      case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
+      case kvp: KvpCollectionValue[ALG, h, hl] @unchecked =>
         _ =>
-          kvpHList(kvp.kvpHList)
+          kvpHList(kvp.kvpCollection)
       case x: SwitchEncoding[ALG, a, al, b] @unchecked =>
         _ =>
           kvpHList(x.from)
