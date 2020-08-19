@@ -9,6 +9,7 @@ import cats.implicits._
 import com.bones.data.Error.{ExtractionError, ParsingError, RequiredValue, WrongTypeError}
 import com.bones.data.{KeyDefinition, _}
 import com.bones.interpreter.{
+  InterchangeFormatPrimitiveValidator,
   InterchangeFormatValidatorValue,
   KvpInterchangeFormatValidatorInterpreter
 }
@@ -19,7 +20,10 @@ import scala.util.control.NonFatal
   * Module responsible for converting argonaut JSON input into values with validation checks.
   * See [KvpInterchangeFormatValidatorInterpreter.validatorFromSchema] for the entry point.
   */
-trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpreter[Json] {
+trait ArgonautValidatorInterpreter[ALG[_]]
+    extends KvpInterchangeFormatValidatorInterpreter[ALG, Json] {
+
+  val coproductTypeKey: String
 
   override def isEmpty(json: Json): JsonBoolean = json.isNull
 
@@ -32,12 +36,11 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
     * @tparam A The resulting type -- the type wrapped by the Bones Schema.
     * @return a function validating a Json Byte Array with the specified data.
     */
-  def generateByteArrayValidator[ALG[_], A](
-    schema: PrimitiveWrapperValue[ALG, A],
-    customValidator: InterchangeFormatValidatorValue[ALG, Json],
+  def generateByteArrayValidator[A](
+    schema: KvpCollectionValue[ALG, A],
     charset: Charset
   ): Array[Byte] => Either[NonEmptyList[ExtractionError], A] = {
-    val fromSchemaFunction = generateValidator(schema, customValidator)
+    val fromSchemaFunction = fromKvpCollection(schema.kvpCollection)
     bytes =>
       {
         try {
@@ -46,7 +49,7 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
             .parse(str)
             .left
             .map(str => NonEmptyList.one(ParsingError(str)))
-            .flatMap(fromSchemaFunction(_))
+            .flatMap(fromSchemaFunction(_, List.empty))
         } catch {
           case NonFatal(ex) =>
             Left(NonEmptyList.one(ParsingError(ex.getMessage, Some(ex))))
@@ -54,7 +57,7 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
       }
   }
 
-  override def headValue[ALG[_], A](
+  override def headValue[A](
     in: Json,
     kv: KeyDefinition[ALG, A],
     headInterpreter: (Option[Json], List[String]) => Either[NonEmptyList[ExtractionError], A],
@@ -69,69 +72,11 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
         _.toList
           .find(f => f._1 === kv.key)
           .toRight[NonEmptyList[ExtractionError]](
-            NonEmptyList.one(RequiredValue(path, kv.dataDefinition))
+            NonEmptyList.one(RequiredValue.fromDef(path, kv.dataDefinition))
           )
       )
       .flatMap(j => headInterpreter.apply(Some(j._2), path))
   }
-
-  override def extractString[ALG[_], A](
-    dataDefinition: ALG[A],
-    clazz: Class[_]
-  )(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], String] =
-    in.string.toRight(NonEmptyList.one(WrongTypeError(path, clazz, in.getClass, None)))
-
-  override def extractShort[ALG[_], A](
-    dataDefinition: ALG[A]
-  )(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Short] =
-    in.number
-      .flatMap(n => n.toShort)
-      .toRight(NonEmptyList.one(WrongTypeError(path, classOf[Short], in.getClass, None)))
-
-  override def extractInt[ALG[_], A](
-    dataDefinition: ALG[A]
-  )(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Int] =
-    in.number
-      .flatMap(n => n.toInt)
-      .toRight(NonEmptyList.one(WrongTypeError(path, classOf[Int], in.getClass, None)))
-
-  override def extractLong[ALG[_], A](
-    dataDefinition: ALG[A]
-  )(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Long] =
-    in.number
-      .flatMap(_.toLong)
-      .toRight(NonEmptyList.one(WrongTypeError(path, classOf[Long], in.getClass, None)))
-
-  override def extractBool[ALG[_], A](
-    dataDefinition: ALG[A]
-  )(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], JsonBoolean] =
-    in.bool.toRight(NonEmptyList.one(WrongTypeError(path, classOf[Boolean], in.getClass, None)))
-
-  override def extractArray[ALG[_], A](
-    op: ListData[ALG, A]
-  )(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Seq[Json]] =
-    in.array.toRight(NonEmptyList.one(WrongTypeError(path, classOf[Array[_]], in.getClass, None)))
-
-  override def extractFloat[ALG[_], A](
-    dataDefinition: ALG[A]
-  )(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Float] =
-    in.number
-      .flatMap(n => n.toFloat)
-      .toRight(NonEmptyList.one(WrongTypeError(path, classOf[Byte], in.getClass, None)))
-
-  override def extractDouble[ALG[_], A](
-    dataDefinition: ALG[A]
-  )(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Double] =
-    in.number
-      .flatMap(n => n.toDouble)
-      .toRight(NonEmptyList.one(WrongTypeError(path, classOf[Byte], in.getClass, None)))
-
-  override def extractBigDecimal[ALG[_], A](
-    dataDefinition: ALG[A]
-  )(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], BigDecimal] =
-    in.number
-      .map(_.toBigDecimal)
-      .toRight(NonEmptyList.one(WrongTypeError(path, classOf[BigDecimal], in.getClass, None)))
 
   override def invalidValue[T](
     in: Json,
@@ -148,12 +93,5 @@ trait ArgonautValidatorInterpreter extends KvpInterchangeFormatValidatorInterpre
     )
     Left(NonEmptyList.one(WrongTypeError(path, expected, invalid, None)))
   }
-
-  override def stringValue(in: Json, elementName: String): Option[String] =
-    for {
-      obj <- in.obj
-      element <- obj.toList.find(_._1 == elementName)
-      value <- element._2.string
-    } yield value
 
 }
