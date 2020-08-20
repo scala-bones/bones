@@ -5,7 +5,14 @@ import com.bones.data.Error._
 import com.bones.data.KeyDefinition.CoproductDataDefinition
 import com.bones.data.template.KvpCollectionValidateAndDecode
 import com.bones.data.values.CNilF
-import com.bones.data.{KeyDefinition, KvpCoNil, KvpCoproduct, KvpCoproductCollectionHead, _}
+import com.bones.data.{
+  KeyDefinition,
+  KvpCoNil,
+  KvpCollectionValue,
+  KvpCoproduct,
+  KvpCoproductCollectionHead,
+  _
+}
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.{ValidationUtil => vu}
 import com.bones.{Path, Util}
@@ -25,6 +32,12 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
   val interchangeFormatValidator: InterchangeFormatValidatorValue[ALG, IN]
 
   val interchangeFormatPrimitiveValidator: InterchangeFormatPrimitiveValidator[IN]
+
+  def generateValidator[A](
+    kvpCollection: KvpCollectionValue[ALG, A]): IN => Either[NonEmptyList[ExtractionError], A] = {
+    fromKvpCollection(kvpCollection.kvpCollection)(_, List.empty)
+
+  }
 
   /**
     * Extend this to extract the value of type A from the input type IN
