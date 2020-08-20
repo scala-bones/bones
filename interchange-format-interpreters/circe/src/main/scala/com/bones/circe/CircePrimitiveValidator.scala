@@ -76,4 +76,5 @@ object CircePrimitiveValidator extends InterchangeFormatPrimitiveValidator[Json]
       else WrongTypeError(path, expectedType, in.getClass, None)
     NonEmptyList.one(error)
   }
+
 }
