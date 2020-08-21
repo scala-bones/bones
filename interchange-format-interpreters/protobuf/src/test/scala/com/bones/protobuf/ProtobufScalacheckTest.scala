@@ -2,22 +2,25 @@ package com.bones.protobuf
 
 import java.util.Base64
 
-import com.bones.scalacheck.Scalacheck
+import com.bones.protobuf.messageType.{ProtoFileGeneratorInterpreter, defaultProtoFile}
+import com.bones.protobuf.values.{defaultEncoder, defaultUtcValidator}
 import com.bones.schemas.Schemas
 import com.bones.schemas.Schemas.{AllSupported, allSupportCaseClass}
+import com.bones.scalacheck.values._
 import org.scalacheck.Arbitrary
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 
-
 class ProtobufScalacheckTest extends AnyFunSuite with Checkers {
 
-  val encode = ProtobufUtcSequentialEncoderAndValidator
-    .generateProtobufEncoder(Schemas.allSupportCaseClass, com.bones.protobuf.values.defaultEncoders)
-  val decode = ProtobufUtcSequentialEncoderAndValidator
-    .fromCustomBytes(Schemas.allSupportCaseClass, com.bones.protobuf.values.defaultValidators)
+  val encode = defaultEncoder
+    .generateProtobufEncoder(Schemas.allSupportCaseClass.asValue)
+  val decode = defaultUtcValidator
+    .fromCustomBytes(Schemas.allSupportCaseClass.asValue)
 
-  implicit val arb = Arbitrary(Scalacheck.generateGen(allSupportCaseClass, com.bones.scalacheck.values.allInterpreters))
+  implicit val arb = Arbitrary(
+    defaultValuesScalacheck.generateGen(allSupportCaseClass.asValue)
+  )
 
   test("scalacheck allSupport types - marshall then marshall") {
     check((cc: AllSupported) => {
@@ -27,8 +30,9 @@ class ProtobufScalacheckTest extends AnyFunSuite with Checkers {
       val newCc = try {
         decode(bytes)
       } catch {
-        case ex: Exception => ex.printStackTrace()
-        throw ex
+        case ex: Exception =>
+          ex.printStackTrace()
+          throw ex
       }
 
       newCc match {
@@ -41,7 +45,7 @@ class ProtobufScalacheckTest extends AnyFunSuite with Checkers {
           val newCc2NoBa = newCc2.copy(ba = nullBa).copy(child = newCc2.child.copy(ba = None))
           val ccNoBA = cc.copy(ba = nullBa).copy(child = cc.child.copy(ba = None))
 
-          if (! (newCc2NoBa == ccNoBA && java.util.Arrays.equals(newCc2.ba, cc.ba))) {
+          if (!(newCc2NoBa == ccNoBA && java.util.Arrays.equals(newCc2.ba, cc.ba))) {
             println(cc)
             println(newCc2)
           }
@@ -54,11 +58,9 @@ class ProtobufScalacheckTest extends AnyFunSuite with Checkers {
 
   // Print the file, to be used with the protobufIntegrationTest
   ignore("print protofile") {
-    val message = ProtoFileGeneratorInterpreter
-      .fromSchemaCustomAlgebra(allSupportCaseClass, com.bones.protobuf.values.defaultProtoFileGenerators)
-    print(ProtoFileGeneratorInterpreter.messageToProtoFile(message))
+    val message = defaultProtoFile
+      .fromSchemaCustomAlgebra(allSupportCaseClass.asValue)
+    print(defaultProtoFile.messageToProtoFile(message))
   }
-
-
 
 }
