@@ -1,8 +1,8 @@
 package com.bones.protobuf.values
 
 import com.bones.data.values.{JavaUtilValue, UuidData}
-import com.bones.protobuf.ProtobufSequentialEncoderInterpreter.{EncodeToProto, stringDataFromMap}
-import com.bones.protobuf.ProtobufEncoderValue
+import com.bones.protobuf.ProtobufSequentialEncoderInterpreter.stringDataFromMap
+import com.bones.protobuf.{EncodeToProto, ProtobufEncoderValue}
 
 trait JavaUtilEncoder extends ProtobufEncoderValue[JavaUtilValue] {
 
