@@ -20,6 +20,12 @@ package object protobuf {
   type ComputeEncode[A] = A => (ComputeSize, Encode)
   type EncodeToProto[A] = FieldNumber => (LastFieldNumber, ComputeEncode[A])
 
+  def mapEncodeToProto[A, B](f: B => A, encodeToProto: EncodeToProto[A]): EncodeToProto[B] = {
+    fieldNumber =>
+      val (lastFieldNumber, computeEncode) = encodeToProto(fieldNumber)
+      (lastFieldNumber, b => computeEncode(f(b)))
+  }
+
   /******* Validator Types ******/
   /** Path to the value -- list of keys */
   type Tag = Int

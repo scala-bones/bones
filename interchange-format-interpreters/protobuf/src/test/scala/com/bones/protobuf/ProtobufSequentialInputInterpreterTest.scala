@@ -1,12 +1,12 @@
 package com.bones.protobuf
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.io.ByteArrayInputStream
 import java.util.UUID
 
-import com.bones.protobuf.messageType.{ProtoFileGeneratorInterpreter, defaultProtoFile}
+import com.bones.protobuf.messageType.defaultProtoFile
 import com.bones.protobuf.values.{defaultEncoder, defaultUtcValidator}
 import com.bones.syntax._
-import com.google.protobuf.{CodedInputStream, CodedOutputStream}
+import com.google.protobuf.CodedInputStream
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.scalacheck.Checkers
@@ -59,14 +59,9 @@ class ProtobufSequentialInputInterpreterTest extends AnyFunSuite with Checkers w
 
   }
 
-  ignore("Person") {
-
-    val os = new ByteArrayOutputStream()
-    val cos: CodedOutputStream = CodedOutputStream.newInstance(os)
+  test("Person") {
 
     val result = defaultProtoFile.fromSchemaCustomAlgebra(person.asValue)
-
-    val str = defaultProtoFile.messageToProtoFile(result)
 
     val bytes = defaultEncoder.generateProtobufEncoder(person.asValue)(monica)
 
@@ -76,6 +71,31 @@ class ProtobufSequentialInputInterpreterTest extends AnyFunSuite with Checkers w
       case Right(person) => person mustBe monica
       case Left(err)     => fail(s"Expected monica, received: ${err}")
     }
+
+    val message = defaultProtoFile.messageToProtoFile(result)
+
+    // NOTE! : There are 4 spaces after message Location {}
+    val expectedMessage =
+      """
+        |message Person {
+        |  required string id = 1;
+        |  required string name = 2;
+        |  required int64 age = 3;
+        |  required Location location = 4;
+        |  required bool knowsAboutGadt = 5;
+        |  optional string favoriteColor = 6;
+        |
+        |
+        |  message Location {
+        |    required string city = 1;
+        |    required string state = 2;
+        |  }
+        |
+        |}
+        |     """.stripMargin
+
+    expectedMessage mustEqual message
+
   }
 
   def convertBytesToHex(bytes: Seq[Byte]): String = {

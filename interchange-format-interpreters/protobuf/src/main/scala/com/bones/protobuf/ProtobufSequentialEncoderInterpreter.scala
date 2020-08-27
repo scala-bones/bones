@@ -284,9 +284,9 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
             }
           )
       case op: KvpWrappedCoproduct[ALG, A, c] =>
-        wrappedChild(op.fAtoC, op.wrappedEncoding)
+        mapEncodeToProto(op.fAtoC, fromKvpCollection(op.wrappedEncoding))
       case op: KvpWrappedHList[ALG, A, xs, xsl] =>
-        wrappedChild(op.fAtoH, op.wrappedEncoding)
+        mapEncodeToProto(op.fAtoH, fromKvpCollection(op.wrappedEncoding))
       case co: KvpCoproduct[ALG, c] => kvpCoproduct[c](co).asInstanceOf[EncodeToProto[A]]
     }
   }
@@ -297,6 +297,24 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
         val b = f(a)
         val (_, computeEncode) = fromKvpCollection(child).apply(1)
         val (fSize, fEncode) = computeEncode.apply(b)
+        val groupSize = fSize()
+        val encodeF: Encode = (outputStream: CodedOutputStream) => {
+          outputStream.writeTag(fieldNumber, 2)
+          outputStream.writeUInt32NoTag(groupSize)
+          fEncode(outputStream)
+        }
+        val allSize = () => {
+          groupSize + 1 + CodedOutputStream.computeUInt32SizeNoTag(groupSize)
+        }
+        (allSize, encodeF)
+      })
+    }
+
+  private def subObject[A](child: KvpCollectionValue[ALG, A]): EncodeToProto[A] =
+    fieldNumber => {
+      (fieldNumber + 1, (a: A) => {
+        val (_, computeEncode) = fromKvpCollection(child.kvpCollection).apply(1)
+        val (fSize, fEncode) = computeEncode.apply(a)
         val groupSize = fSize()
         val encodeF: Encode = (outputStream: CodedOutputStream) => {
           outputStream.writeTag(fieldNumber, 2)

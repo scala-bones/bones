@@ -243,11 +243,14 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
 
   /** Determine if we use the core algebra or the custom algebra and then pass control to the appropriate interpreter */
   def determineValueDefinition[A](
+    key: String,
     definition: Either[PrimitiveWrapperValue[ALG, A], ALG[A]]
   ): ExtractFromProto[A] =
     definition match {
-      case Left(kvp)  => valueDefinition(kvp)
-      case Right(alg) => customInterpreter.extractFromProto(alg)
+      case Left(kvp) => valueDefinition(key, kvp)
+      case Right(alg) =>
+        (lastItem, path) =>
+          customInterpreter.extractFromProto(alg).apply(lastItem, key :: path)
     }
 
   val zoneOffset: ZoneOffset
@@ -304,7 +307,8 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
 
       case op: KvpSingleValueHead[ALG, h, t, tl, a] @unchecked =>
         val headF = op.head match {
-          case Left(keyValueDef)    => determineValueDefinition(keyValueDef.dataDefinition)
+          case Left(keyValueDef) =>
+            determineValueDefinition(keyValueDef.key, keyValueDef.dataDefinition)
           case Right(kvpCollection) => fromKvpCollection(kvpCollection)
         }
         (lastFieldNumber, path) =>
@@ -313,7 +317,7 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
               headF(lastFieldNumber, path)
             val (tailTags, tailFieldNumber, fTail) =
               fromKvpCollection(op.tail)(headFieldNumber, path)
-            (tailTags, tailFieldNumber, (canReadTag, in) => {
+            (tag ::: tailTags, tailFieldNumber, (canReadTag, in) => {
               if (canReadTag) in.readTag
 
               val (canReadHead, headResult) = fHead(false, in)
@@ -364,32 +368,38 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
   private def unwrap[A, B](extractF: ExtractFromProto[A], fAtoB: A => B): ExtractFromProto[B] = {
     (last: LastFieldNumber, path: Path) =>
       {
-        val (tags, lastFieldNumber, coproductF) = extractF(last, path)
+        val (tags, lastFieldNumber, childF) = extractF(last, path)
         val f = (canReadInput: CanReadTag, in: CodedInputStream) => {
-          val (canRead, result) = coproductF(canReadInput, in)
+          val (canRead, result) = childF(canReadInput, in)
           (canRead, result.map(cResult => fAtoB(cResult)))
         }
         (tags, lastFieldNumber, f)
       }
   }
 
-  def valueDefinition[A](fgo: PrimitiveWrapperValue[ALG, A]): ExtractFromProto[A] =
+  def valueDefinition[A](key: String, fgo: PrimitiveWrapperValue[ALG, A]): ExtractFromProto[A] =
     fgo match {
       case op: OptionalValue[ALG, a] @unchecked =>
-        optionalKvpValueDefinition[a](op)
+        optionalKvpValueDefinition[a](key, op)
       case ld: ListData[ALG, t] @unchecked =>
-        listData[t](ld)
+        listData[t](key, ld)
       case ed: EitherData[ALG, a, b] @unchecked =>
-        eitherData[a, b](ed)
-      case kvp: KvpCollectionValue[ALG, A] @unchecked =>
-        fromKvpCollection[A](kvp.kvpCollection)
+        eitherData[a, b](key, ed)
+      case kvp: KvpCollectionValue[ALG, A] @unchecked => {
+        val f = fromKvpCollection[A](kvp.kvpCollection)
+        (lastFieldNumber, path) =>
+          f(lastFieldNumber, key :: path)
+      }
     }
 
-  def optionalKvpValueDefinition[B](op: OptionalValue[ALG, B]): ExtractFromProto[Option[B]] = {
-    val vd = determineValueDefinition(op.valueDefinitionOp)
+  def optionalKvpValueDefinition[B](
+    key: String,
+    op: OptionalValue[ALG, B]): ExtractFromProto[Option[B]] = {
+    val vd = determineValueDefinition(key, op.valueDefinitionOp)
     (fieldNumber: LastFieldNumber, path: Path) =>
       {
         val (tags, childFieldNumber, fa) = vd(fieldNumber, path)
+
         (tags, childFieldNumber, (canReadInput, in) => {
           if (tags.contains(in.getLastTag)) {
             val (canRead, result) = fa(canReadInput, in)
@@ -401,8 +411,8 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
       }
   }
 
-  def listData[B](ld: ListData[ALG, B]): ExtractFromProto[List[B]] = {
-    val child = determineValueDefinition[B](ld.tDefinition)
+  def listData[B](key: String, ld: ListData[ALG, B]): ExtractFromProto[List[B]] = {
+    val child = determineValueDefinition[B](key, ld.tDefinition)
 
     @tailrec
     def loop[C](
@@ -438,12 +448,13 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
   }
 
   def eitherData[B, C](
+    key: String,
     ed: EitherData[ALG, B, C]
   ): ExtractFromProto[Either[B, C]] = {
     val extractA: ExtractFromProto[B] =
-      determineValueDefinition[B](ed.definitionA)
+      determineValueDefinition[B](key, ed.definitionA)
     val extractB: ExtractFromProto[C] =
-      determineValueDefinition[C](ed.definitionB)
+      determineValueDefinition[C](key, ed.definitionB)
     (lastFieldNumber, path) =>
       {
         val (tagsA, fieldNumberA, cisFA) = extractA(lastFieldNumber, path)
