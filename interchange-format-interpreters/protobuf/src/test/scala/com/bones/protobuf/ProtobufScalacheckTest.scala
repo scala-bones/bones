@@ -1,12 +1,11 @@
 package com.bones.protobuf
 
-import java.util.Base64
-
-import com.bones.protobuf.messageType.{ProtoFileGeneratorInterpreter, defaultProtoFile}
+import com.bones.protobuf.messageType.defaultProtoFile
 import com.bones.protobuf.values.{defaultEncoder, defaultUtcValidator}
+import com.bones.scalacheck.values._
 import com.bones.schemas.Schemas
 import com.bones.schemas.Schemas.{AllSupported, allSupportCaseClass}
-import com.bones.scalacheck.values._
+import javax.xml.bind.DatatypeConverter
 import org.scalacheck.Arbitrary
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
@@ -26,6 +25,8 @@ class ProtobufScalacheckTest extends AnyFunSuite with Checkers {
     check((cc: AllSupported) => {
 
       val bytes = encode(cc)
+
+      println(DatatypeConverter.printHexBinary(bytes))
 
       val newCc = try {
         decode(bytes)
@@ -57,7 +58,7 @@ class ProtobufScalacheckTest extends AnyFunSuite with Checkers {
   }
 
   // Print the file, to be used with the protobufIntegrationTest
-  ignore("print protofile") {
+  test("print protofile") {
     val message = defaultProtoFile
       .fromSchemaCustomAlgebra(allSupportCaseClass.asValue)
     print(defaultProtoFile.messageToProtoFile(message))
