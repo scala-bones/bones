@@ -3,7 +3,7 @@ package com.bones.http4s
 import java.nio.charset.StandardCharsets
 
 import cats.effect._
-import cats.implicits._
+import cats.syntax.all._
 import com.bones.circe.IsoCirceEncoderAndValidatorInterpreter
 import com.bones.data.{SwitchEncoding, ConcreteValue, KvpNil}
 import com.bones.http4s.BaseCrudInterpreter.StringToIdError

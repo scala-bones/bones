@@ -3,7 +3,7 @@ package com.bones.validation
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 
-import cats.implicits._
+import cats.syntax.all._
 
 import scala.math.Ordering.{
   BigDecimalOrdering,

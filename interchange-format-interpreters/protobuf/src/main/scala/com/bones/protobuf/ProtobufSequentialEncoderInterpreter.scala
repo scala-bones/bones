@@ -6,7 +6,6 @@ import java.util.UUID
 
 import cats.Applicative
 import cats.data.NonEmptyList
-import cats.implicits._
 import com.bones.data.KeyValueDefinition.CoproductDataDefinition
 import com.bones.data.values.CNilF
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpSingleValueLeft, _}
