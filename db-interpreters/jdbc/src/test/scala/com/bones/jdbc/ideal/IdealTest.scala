@@ -6,13 +6,11 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class IdealTest extends AnyFunSuite {
 
-
   test("basic test") {
 
     val schema = Schemas.allSupportCaseClass
 
-    val result = Ideal[DefaultValues](defaultIdealValueInterpreter).toIdeal(schema)
-
+    val result = defaultIdealInterpreter.toIdeal(schema)
 
     result
 

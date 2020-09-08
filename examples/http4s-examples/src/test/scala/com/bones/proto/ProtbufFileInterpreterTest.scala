@@ -1,16 +1,14 @@
 package com.bones.proto
 
-import com.bones.protobuf.messageType.ProtoFileGeneratorInterpreter
 import com.bones.schemas.Schemas
 import org.scalatest.funsuite.AnyFunSuite
 
 class ProtbufFileInterpreterTest extends AnyFunSuite {
 
-  val result = ProtoFileGeneratorInterpreter.fromSchemaCustomAlgebra(
-    Schemas.creditCardSchema,
-    com.bones.protobuf.values.defaultProtoFileGenerators)
+  val result = com.bones.protobuf.messageType.defaultProtoFile
+    .fromSchemaCustomAlgebra(Schemas.creditCardSchema)
 
-  val str = ProtoFileGeneratorInterpreter.messageToProtoFile(result)
+  val str = com.bones.protobuf.messageType.defaultProtoFile.messageToProtoFile(result)
 
 //  println(str)
 

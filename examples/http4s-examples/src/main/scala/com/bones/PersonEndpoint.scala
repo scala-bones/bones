@@ -30,5 +30,16 @@ object PersonEndpoint extends LocalhostAllIOApp {
   ).convert[Person]
 
   override def services: HttpRoutes[IO] =
-    serviceRoutesWithCrudMiddleware("person", personSchema, idDef, parseIdF, com.bones.jdbc.defaultJdbcColumnInterpreter, ds)
+    serviceRoutesWithCrudMiddleware(
+      "person",
+      personSchema,
+      idDef,
+      parseIdF,
+      com.bones.jdbc.dbGetDefaultInterpreter,
+      com.bones.jdbc.dbSearchInterpreter,
+      com.bones.jdbc.insert.defaultDbInsertInterpreter,
+      com.bones.jdbc.update.defaultDbUpdate,
+      com.bones.jdbc.dbDeleteInterpreter,
+      ds
+    )
 }

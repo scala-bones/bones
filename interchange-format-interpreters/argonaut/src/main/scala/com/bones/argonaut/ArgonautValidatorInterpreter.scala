@@ -37,10 +37,10 @@ trait ArgonautValidatorInterpreter[ALG[_]]
     * @return a function validating a Json Byte Array with the specified data.
     */
   def generateByteArrayValidator[A](
-    schema: KvpCollectionValue[ALG, A],
+    schema: KvpCollection[ALG, A],
     charset: Charset
   ): Array[Byte] => Either[NonEmptyList[ExtractionError], A] = {
-    val fromSchemaFunction = fromKvpCollection(schema.kvpCollection)
+    val fromSchemaFunction = fromKvpCollection(schema)
     bytes =>
       {
         try {

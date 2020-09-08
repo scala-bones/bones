@@ -27,8 +27,8 @@ trait KvpInterchangeFormatEncoderInterpreter[ALG[_], OUT] extends KvpCollectionE
     * @return
     */
   def generateEncoder[A](
-    collection: PrimitiveWrapperValue[ALG, A]
-  ): A => OUT = primitiveWrapperDefinition(collection)
+    collection: KvpCollection[ALG, A]
+  ): A => OUT = fromKvpCollection(collection)
 
   /** Takes a value definition and the actual value and create
     * a key value pair wrapped in the OUT type.  Analogous to
@@ -67,14 +67,13 @@ trait KvpInterchangeFormatEncoderInterpreter[ALG[_], OUT] extends KvpCollectionE
               case None    => interchangeFormatEncoder.none
             }
           }
-      case ld: ListData[ALG, t] @unchecked => {
+      case ld: ListData[ALG, t] @unchecked =>
         val itemToOut = determineValueDefinition(ld.tDefinition)
         (input: A) =>
           {
             val listOfJson = input.asInstanceOf[List[t]].map(itemToOut)
             interchangeFormatEncoder.toOutList(listOfJson)
           }
-      }
       case either: EitherData[ALG, a, b] @unchecked =>
         val aF = determineValueDefinition(either.definitionA)
         val bF = determineValueDefinition(either.definitionB)
