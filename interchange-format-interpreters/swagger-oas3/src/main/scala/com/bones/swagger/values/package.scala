@@ -27,4 +27,8 @@ package object values {
     override val localTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_TIME
   }
 
+  val defaultSwaggerInterpreter = new SwaggerCoreInterpreter[DefaultValues] {
+    override def customInterpreter: CustomSwaggerInterpreter[DefaultValues] = defaultInterpreters
+  }
+
 }

@@ -61,7 +61,7 @@ class CovCirceTest extends AnyFunSuite with Checkers with Matchers {
     }
 
     val blogPostToJson = encoder
-      .generateEncoder(BlogPost.blogPostSchema.asValue)
+      .generateEncoder(BlogPost.blogPostSchema)
 
     val instant = Instant.parse("2020-12-03T10:15:30.00Z")
 

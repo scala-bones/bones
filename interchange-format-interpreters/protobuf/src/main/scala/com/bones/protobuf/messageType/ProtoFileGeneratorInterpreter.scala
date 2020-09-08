@@ -1,10 +1,9 @@
 package com.bones.protobuf.messageType
 
-import com.bones.data.template.KvpCollectionMatch
-import com.bones.data.values.CNilF
+import com.bones.data.KvpCollection.headManifest
 import com.bones.data._
-import com.bones.protobuf.messageType
-import shapeless.{:+:, ::, Coproduct, HList, Inl, Inr, Nat}
+import com.bones.data.template.KvpCollectionMatch
+import shapeless.{::, Coproduct, HList, Nat}
 
 object ProtoFileGeneratorInterpreter {
 
@@ -108,7 +107,7 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
   }
 
   def fromSchemaToProtoFile[A](
-    dc: KvpCollectionValue[ALG, A]
+    dc: KvpCollection[ALG, A]
   ): String =
     messageToProtoFile(fromSchemaCustomAlgebra(dc))
 
@@ -123,10 +122,13 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
   }
 
   def fromSchemaCustomAlgebra[A](
-    dc: KvpCollectionValue[ALG, A]
+    dc: KvpCollection[ALG, A]
   ): Message = {
-    val (messageFields, nestedTypes, _) = fromKvpCollection(dc.kvpCollection).apply(0)
-    Message(dc.manifestOfA.runtimeClass.getSimpleName, messageFields, nestedTypes)
+    val (messageFields, nestedTypes, _) = fromKvpCollection(dc).apply(0)
+    Message(
+      headManifest(dc).map(_.runtimeClass.getSimpleName).getOrElse("unknown"),
+      messageFields,
+      nestedTypes)
   }
 
   override def kvpCoproduct[C <: Coproduct](

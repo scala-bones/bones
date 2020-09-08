@@ -256,9 +256,9 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
   val zoneOffset: ZoneOffset
 
   def fromCustomBytes[A](
-    dc: KvpCollectionValue[ALG, A]): Array[Byte] => Either[NonEmptyList[ExtractionError], A] = {
+    dc: KvpCollection[ALG, A]): Array[Byte] => Either[NonEmptyList[ExtractionError], A] = {
     val (_, _, f) =
-      fromKvpCollection(dc.kvpCollection)(1, List.empty)
+      fromKvpCollection(dc)(1, List.empty)
     (bytes: Array[Byte]) =>
       {
         val is = new ByteArrayInputStream(bytes)

@@ -1,7 +1,6 @@
 package com.bones.jdbc.insert
 
 import com.bones.data.values.CNilF
-import com.bones.jdbc.insert.DbInsert.InsertPair
 import shapeless.{:+:, Coproduct, Inl, Inr}
 
 object CNilInsertInterpreter extends DbInsertValue[CNilF] {
@@ -15,8 +14,8 @@ object DbInsertValue {
     * see https://stackoverflow.com/a/60561575/387094
     * */
   def merge[L[_], R[_] <: Coproduct, A, OUT](
-                                              li: DbInsertValue[L],
-                                              ri: DbInsertValue[R]
+    li: DbInsertValue[L],
+    ri: DbInsertValue[R]
   ): DbInsertValue[Lambda[A => L[A] :+: R[A]]] =
     new DbInsertValue[Lambda[A => L[A] :+: R[A]]] {
 

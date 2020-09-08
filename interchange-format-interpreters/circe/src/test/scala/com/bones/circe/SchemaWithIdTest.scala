@@ -18,10 +18,10 @@ class SchemaWithIdTest extends AnyFunSuite with Checkers with Matchers {
 
   val jsonToCc =
     isoCirceValidatorInterpreter.generateByteArrayValidator[(Long, AllSupported)](
-      WithLongId.allSupportedWithId.asValue,
+      WithLongId.allSupportedWithId,
       StandardCharsets.UTF_8)
   val ccToJson =
-    isoCirceEncoderInterpreter.generateEncoder(WithLongId.allSupportedWithId.asValue)
+    isoCirceEncoderInterpreter.generateEncoder(WithLongId.allSupportedWithId)
 
   implicit val arb = Arbitrary(
     defaultValuesScalacheck

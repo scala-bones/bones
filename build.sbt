@@ -1,7 +1,7 @@
 lazy val commonSettings = Seq(
   organization := "com.github.oletraveler",
   scalaVersion := "2.13.2",
-  version := "0.6.0",
+  version := "0.7.0-SNAPSHOT",
   homepage := Some(url("https://github.com/oletraveler/bones")),
   startYear := Some(2018),
   licenses := Seq("MIT" -> url("http://opensource.org/licenses/MIT")),
@@ -94,20 +94,20 @@ lazy val swaggerOas3 = (project in file("interchange-format-interpreters/swagger
   )
   .dependsOn(core, testSchemas % "test")
 lazy val doobieVersion = "0.6.0"
-lazy val directEncoders = (project in file("interchange-format-interpreters/direct-encoders"))
-  .settings(
-    commonSettings,
-    name := "Bones String Json",
-    libraryDependencies ++= Seq(
-      "org.apache.commons" % "commons-text" % "1.9",
-      "io.circe" %% "circe-core" % circeVersion % Test,
-      "io.circe" %% "circe-parser" % circeVersion % Test,
-      "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
-      "org.scalatest" %% "scalatest" % "3.2.0" % Test,
-      "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
-    )
-  )
-  .dependsOn(core, testSchemas % "test", scalacheck % "test")
+// lazy val directEncoders = (project in file("interchange-format-interpreters/direct-encoders"))
+//  .settings(
+//    commonSettings,
+//    name := "Bones String Json",
+//    libraryDependencies ++= Seq(
+//      "org.apache.commons" % "commons-text" % "1.9",
+//      "io.circe" %% "circe-core" % circeVersion % Test,
+//      "io.circe" %% "circe-parser" % circeVersion % Test,
+//      "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
+//      "org.scalatest" %% "scalatest" % "3.2.0" % Test,
+//      "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
+//    )
+//  )
+//  .dependsOn(core, testSchemas % "test", scalacheck % "test")
 lazy val circeVersion = "0.13.0"
 lazy val jsonCirce = (project in file("interchange-format-interpreters/circe"))
   .settings(
@@ -236,7 +236,7 @@ lazy val examples = (project in file("examples/http4s-examples"))
     protobuf,
     jsonArgonaut % "test",
     bson % "test",
-    directEncoders % "test",
+//    directEncoders % "test",
     testSchemas % "test",
     scalacheck % "test"
   )

@@ -19,20 +19,20 @@ object ExtractionErrorProtoEncoder extends ProtobufEncoderValue[ExtractionErrorV
   override def encodeToProto[A](alg: ExtractionErrorValue[A]): EncodeToProto[A] =
     alg match {
       case CanNotConvertData =>
-        encoder.valueDefinition(ExtractionErrorEncoder.canNotConvertSchema.asValue)
+        encoder.fromKvpCollection(ExtractionErrorEncoder.canNotConvertSchema)
       case NotFoundData =>
-        encoder.valueDefinition(ExtractionErrorEncoder.notFoundDataSchema.asValue)
+        encoder.fromKvpCollection(ExtractionErrorEncoder.notFoundDataSchema)
       case ParsingErrorData =>
-        encoder.valueDefinition(ExtractionErrorEncoder.parsingErrorSchema.asValue)
+        encoder.fromKvpCollection(ExtractionErrorEncoder.parsingErrorSchema)
       case RequiredValueData =>
-        encoder.valueDefinition(ExtractionErrorEncoder.requiredValueSchema.asValue)
+        encoder.fromKvpCollection(ExtractionErrorEncoder.requiredValueSchema)
       case SumTypeErrorData =>
-        encoder.valueDefinition(ExtractionErrorEncoder.sumTypeErrorSchema.asValue)
+        encoder.fromKvpCollection(ExtractionErrorEncoder.sumTypeErrorSchema)
       case SystemErrorData =>
-        encoder.valueDefinition(ExtractionErrorEncoder.systemErrorSchema.asValue)
+        encoder.fromKvpCollection(ExtractionErrorEncoder.systemErrorSchema)
       case ValidationErrorData =>
-        encoder.valueDefinition(ExtractionErrorEncoder.validationErrorSchema.asValue)
+        encoder.fromKvpCollection(ExtractionErrorEncoder.validationErrorSchema)
       case WrongTypeErrorData =>
-        encoder.valueDefinition(ExtractionErrorEncoder.wrongTypeErrorSchema.asValue)
+        encoder.fromKvpCollection(ExtractionErrorEncoder.wrongTypeErrorSchema)
     }
 }

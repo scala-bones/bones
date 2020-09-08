@@ -47,8 +47,8 @@ trait ScalacheckBase[ALG[_]] extends KvpCollectionTransformation[ALG, Gen] {
 
   val genValue: GenValue[ALG]
 
-  def generateGen[A](collection: PrimitiveWrapperValue[ALG, A]): Gen[A] =
-    valueDefinition(collection)
+  def generateGen[A](collection: KvpCollection[ALG, A]): Gen[A] =
+    fromKvpCollection(collection)
 
   override implicit def applicativeOfOut: Applicative[Gen] = new Applicative[Gen] {
     override def pure[A](x: A): Gen[A] = Gen.const(x)

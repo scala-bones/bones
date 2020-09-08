@@ -11,7 +11,7 @@ class CrudOasInterpreterTest extends AnyFunSuite {
   val idDefinition = ("id", int)
 
   val allSupportedWithId =
-    (idDefinition :: Schemas.allSupportCaseClass).tupled[(Int, AllSupported)]
+    (idDefinition :: Schemas.allSupportCaseClass :: kvpNil).tupled[(Int, AllSupported)]
 
   case class Error(message: String)
   val error = (("message", string) :: kvpNil).convert[Error]
@@ -25,7 +25,7 @@ class CrudOasInterpreterTest extends AnyFunSuite {
       Schemas.allSupportCaseClass,
       allSupportedWithId,
       error,
-      com.bones.swagger.values.defaultInterpreters,
+      com.bones.swagger.values.defaultSwaggerInterpreter,
       true,
       true,
       true,

@@ -185,8 +185,8 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
       })
   }
 
-  def generateProtobufEncoder[A](dc: KvpCollectionValue[ALG, A]): A => Array[Byte] = {
-    val (_, group) = fromKvpCollection(dc.kvpCollection).apply(1)
+  def generateProtobufEncoder[A](dc: KvpCollection[ALG, A]): A => Array[Byte] = {
+    val (_, group) = fromKvpCollection(dc).apply(1)
     (a: A) =>
       {
         val (_, fEncode) = group(a)
@@ -228,7 +228,7 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
     }
   }
 
-  protected def fromKvpCollection[A](group: KvpCollection[ALG, A]): EncodeToProto[A] = {
+  def fromKvpCollection[A](group: KvpCollection[ALG, A]): EncodeToProto[A] = {
     group match {
       case nil: KvpNil[_] =>
         (fieldNumber: FieldNumber) =>
