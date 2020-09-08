@@ -6,11 +6,15 @@ import shapeless.{:+:, Coproduct, Inl, Inr}
 
 package object ideal {
 
-  val defaultIdealValueInterpreter: IdealValue[DefaultValues] =
+  val defaultIdealValue: IdealValue[DefaultValues] =
     IdealScalaCoreInterpreter ++
       (IdealCustomStringInterpreter ++
         (IdealJavaTimeInterpreter ++
           (IdealJavaUtilInterpreter ++ CNilIdealInterpreter)))
+
+  val defaultIdealInterpreter = new Ideal[DefaultValues] {
+    override def algInterpreter: IdealValue[DefaultValues] = defaultIdealValue
+  }
 
   object TableCollection {
     def init(name: String, description: Option[String]): TableCollection = {

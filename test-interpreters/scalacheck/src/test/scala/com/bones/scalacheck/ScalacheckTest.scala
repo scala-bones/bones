@@ -19,7 +19,7 @@ class ScalacheckTest extends AnyFunSuite with Checkers {
 
   test("check scalacheck") {
     implicit val gen: Gen[CC] =
-      defaultValuesScalacheck.valueDefinition(Schemas.creditCardSchema.asValue)
+      defaultValuesScalacheck.generateGen(Schemas.creditCardSchema)
     implicit val arb = Arbitrary(gen)
     check((cc: CC) => { true })
   }
@@ -27,7 +27,7 @@ class ScalacheckTest extends AnyFunSuite with Checkers {
   /** Check we gen all supported types */
   test("all supported") {
     implicit val allSupportedGen =
-      defaultValuesScalacheck.valueDefinition(Schemas.allSupportCaseClass.asValue)
+      defaultValuesScalacheck.generateGen(Schemas.allSupportCaseClass)
     implicit val arb = Arbitrary(allSupportedGen)
 
     check((a: AllSupported) => { true })

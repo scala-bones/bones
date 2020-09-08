@@ -53,10 +53,10 @@ trait CirceValidatorInterpreter[ALG[_]]
     }
 
   def generateByteArrayValidator[A](
-    schema: KvpCollectionValue[ALG, A],
+    schema: KvpCollection[ALG, A],
     charset: Charset
   ): Array[Byte] => Either[NonEmptyList[ExtractionError], A] = {
-    val f = fromKvpCollection(schema.kvpCollection)
+    val f = fromKvpCollection(schema)
     bytes =>
       fromByteArray(bytes, charset).flatMap(f(_, List.empty))
   }

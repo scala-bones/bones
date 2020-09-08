@@ -34,8 +34,8 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
   val interchangeFormatPrimitiveValidator: InterchangeFormatPrimitiveValidator[IN]
 
   def generateValidator[A](
-    kvpCollection: KvpCollectionValue[ALG, A]): IN => Either[NonEmptyList[ExtractionError], A] = {
-    fromKvpCollection(kvpCollection.kvpCollection)(_, List.empty)
+    kvpCollection: KvpCollection[ALG, A]): IN => Either[NonEmptyList[ExtractionError], A] = {
+    fromKvpCollection(kvpCollection)(_, List.empty)
 
   }
 

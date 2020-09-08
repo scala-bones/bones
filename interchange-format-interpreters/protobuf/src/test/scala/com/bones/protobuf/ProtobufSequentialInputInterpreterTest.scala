@@ -40,17 +40,17 @@ class ProtobufSequentialInputInterpreterTest extends AnyFunSuite with Checkers w
       kvpNil
   ).convert[Person]
 
-  ignore("single items") {
+  test("single items") {
 
     val denver = Loc("Denver", "CO")
     val bytes =
-      defaultEncoder.generateProtobufEncoder(loc.asValue)(denver)
+      defaultEncoder.generateProtobufEncoder(loc)(denver)
 
     val is = new ByteArrayInputStream(bytes)
     val cin: CodedInputStream = CodedInputStream.newInstance(is)
 
     val isItDenver =
-      defaultUtcValidator.fromCustomBytes(loc.asValue)(bytes)
+      defaultUtcValidator.fromCustomBytes(loc)(bytes)
 
     isItDenver match {
       case Right(l)  => l mustBe denver
@@ -59,13 +59,13 @@ class ProtobufSequentialInputInterpreterTest extends AnyFunSuite with Checkers w
 
   }
 
-  test("Person") {
+  ignore("Person") {
 
-    val result = defaultProtoFile.fromSchemaCustomAlgebra(person.asValue)
+    val result = defaultProtoFile.fromSchemaCustomAlgebra(person)
 
-    val bytes = defaultEncoder.generateProtobufEncoder(person.asValue)(monica)
+    val bytes = defaultEncoder.generateProtobufEncoder(person)(monica)
 
-    val isItMonica = defaultUtcValidator.fromCustomBytes(person.asValue)(bytes)
+    val isItMonica = defaultUtcValidator.fromCustomBytes(person)(bytes)
 
     isItMonica match {
       case Right(person) => person mustBe monica

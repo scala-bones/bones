@@ -31,13 +31,6 @@ trait BsonValidatorInterpreter[ALG[_]]
     * TODO:  refactor this interpreter so this property can be overwritten. */
   override val coproductTypeKey: String = "type"
 
-  def fromByteArray(arr: Array[Byte]): Either[NonEmptyList[ExtractionError], BSONValue] = {
-    val buffer = ArrayReadableBuffer(arr)
-    Try {
-      BSONDocument.read(buffer)
-    }.toEither.left.map(err => NonEmptyList.one(ParsingError(err.getMessage)))
-  }
-
   override def isEmpty(json: BSONValue): Boolean = json match {
     case BSONNull => true
     case _        => false

@@ -6,7 +6,7 @@ import com.bones.schemas.Schemas
 import com.bones.syntax._
 import org.scalatest.funsuite.AnyFunSuite
 
-class DbGetTest extends AnyFunSuite {
+class DbGetInterpreterTest extends AnyFunSuite {
 
   import java.sql.{Connection, DriverManager}
 
@@ -17,7 +17,8 @@ class DbGetTest extends AnyFunSuite {
 
     val idDefinition = IdDefinition("id", long())
 
-    val result = DbGet.getEntity(Schemas.creditCardSchema, idDefinition, com.bones.jdbc.rs.defaultResultSetInterpreter, update.defaultDbUpdateInterpreter)(2)(conn)
+    val result = com.bones.jdbc.dbGetDefaultInterpreter
+      .getEntity(Schemas.creditCardSchema, idDefinition)(2)(conn)
 
     //    println(result)
 

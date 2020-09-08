@@ -3,7 +3,7 @@ package com.bones.jdbc
 import java.util.{Properties, UUID}
 
 import com.bones.jdbc.insert.DbInsert
-import com.bones.jdbc.update.DbUpdate
+import com.bones.jdbc.update.{DbUpdate, defaultDbUpdate}
 import com.bones.syntax._
 import com.bones.schemas.Schemas
 import com.bones.schemas.Schemas._
@@ -28,11 +28,9 @@ class DbInsertTest extends AnyFunSuite {
       Some(BillingLocation("US", None))
     )
 
-    val result = DbInsert.insertQueryWithConnectionCustomAlgebra(
-      Schemas.creditCardSchema,
-      Schemas.idSchema,
-      insert.defaultDbInsertInterpreter,
-      rs.defaultResultSetInterpreter)(cc)
+    val result =
+      com.bones.jdbc.insert.defaultDbInsertInterpreter
+        .insertQueryWithConnectionCustomAlgebra(Schemas.creditCardSchema, Schemas.idSchema)(cc)
 
     import java.sql.{Connection, DriverManager}
 
@@ -44,10 +42,7 @@ class DbInsertTest extends AnyFunSuite {
 
     val newCC = cc.copy(expMonth = 12, expYear = 2012, billingLocation = None)
     val idDef = IdDefinition("id", long(lv.positive))
-    DbUpdate.updateQuery(
-      Schemas.creditCardSchema,
-      update.defaultDbUpdateInterpreter,
-      idDef)(1, newCC)(conn)
+    defaultDbUpdate.updateQuery(Schemas.creditCardSchema, idDef)(1, newCC)(conn)
 //    println(executionResult)
   }
 

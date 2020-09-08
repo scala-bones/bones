@@ -18,14 +18,14 @@ class ArgonautTest extends AnyFunSuite with Checkers with Matchers {
 //    PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)
 
   val jsonToCc = defaultIsoArgonautValidatorInterpreter.generateByteArrayValidator(
-    allSupportCaseClass.asValue,
+    allSupportCaseClass,
     Charset.forName("UTF8"))
   val ccToJson =
-    defaultIsoArgonautEncoderInterpreter.generateEncoder(allSupportCaseClass.asValue)
+    defaultIsoArgonautEncoderInterpreter.generateEncoder(allSupportCaseClass)
 
   implicit val arb = Arbitrary(
     defaultValuesScalacheck
-      .generateGen(allSupportCaseClass.asValue))
+      .generateGen(allSupportCaseClass))
   val utf8 = Charset.forName("UTF8")
 
   test("scalacheck allSupport types - marshall then marshall") {

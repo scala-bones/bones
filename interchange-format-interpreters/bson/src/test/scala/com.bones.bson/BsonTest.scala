@@ -60,11 +60,11 @@ class BsonTest extends AnyFunSuite with Checkers with Matchers {
   //    PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)
 
   val bsonToCc = defaultBsonValidatorInterpreter
-    .generateValidator(allSupportCaseClass.asValue)
+    .generateValidator(allSupportCaseClass)
 
-  val ccToBson = defaultBsonEncoderInterpreter.generateEncoder(allSupportCaseClass.asValue)
+  val ccToBson = defaultBsonEncoderInterpreter.generateEncoder(allSupportCaseClass)
 
-  implicit val arb = Arbitrary(BsonScalacheck.generateGen(allSupportCaseClass.asValue))
+  implicit val arb = Arbitrary(BsonScalacheck.generateGen(allSupportCaseClass))
 
   test("scalacheck allSupport types - marshall then marshall") {
     check((cc: AllSupported) => {

@@ -45,12 +45,6 @@ trait BsonEncoderInterpreter[ALG[_]]
     }
   override val coproductTypeKey: String = "type"
 
-  def bsonResultToBytes(bsonValue: BSONValue): Array[Byte] = {
-    val buffer = new ArrayBSONBuffer()
-    BSONDocument.write(bsonValue.asInstanceOf[BSONDocument], buffer)
-    buffer.array
-  }
-
   override def toObj[A](kvDef: KeyDefinition[ALG, A], value: BSONValue): BSONValue =
     BSONDocument(BSONElement(kvDef.key, value))
 

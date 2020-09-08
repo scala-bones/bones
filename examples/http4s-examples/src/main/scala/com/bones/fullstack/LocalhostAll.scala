@@ -6,13 +6,15 @@ import cats.data.{Kleisli, NonEmptyList}
 import cats.effect._
 import cats.implicits._
 import com.bones.Util
-import com.bones.data.{PrimitiveWrapperValue, KvpNil}
+import com.bones.data.{KvpCollection, KvpNil, PrimitiveWrapperValue}
 import com.bones.data.Error.ExtractionError
 import com.bones.data.values.DefaultValues
 import com.bones.http4s.BaseCrudInterpreter.StringToIdError
 import com.bones.http4s.ClassicCrudInterpreter
-import com.bones.jdbc.{IdDefinition, JdbcColumnInterpreter}
+import com.bones.jdbc.{DbDelete, DbGetInterpreter, DbSearch, IdDefinition, JdbcColumnInterpreter}
 import com.bones.jdbc.column.DbColumnInterpreter
+import com.bones.jdbc.insert.DbInsert
+import com.bones.jdbc.update.DbUpdate
 import com.bones.syntax._
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import javax.sql.DataSource
@@ -52,12 +54,9 @@ object LocalhostAllIOApp {
     new HikariDataSource(config)
   }
 
-  def dbSchemaEndpoint[A](
-    path: String,
-    schema: PrimitiveWrapperValue[DefaultValues, A]): HttpRoutes[IO] = {
-    val dbSchema = DbColumnInterpreter.tableDefinitionCustomAlgebra(
-      schema,
-      com.bones.jdbc.column.defaultDbColumnInterpreter)
+  def dbSchemaEndpoint[A](path: String, schema: KvpCollection[DefaultValues, A]): HttpRoutes[IO] = {
+    val dbSchema =
+      com.bones.jdbc.column.defaultDbColumnInterpreter.tableDefinitionCustomAlgebra(schema)
     HttpRoutes.of[IO] {
       case GET -> Root / "dbSchema" / p if p == path =>
         Ok(dbSchema, Header("Content-Type", "text/plain"))
@@ -66,27 +65,39 @@ object LocalhostAllIOApp {
 
   def serviceRoutesWithCrudMiddleware[ALG[_], A, ID: Manifest](
     path: String,
-    schema: PrimitiveWrapperValue[DefaultValues, A],
+    schema: KvpCollection[DefaultValues, A],
     idDef: IdDefinition[DefaultValues, ID],
     parseIdF: String => Either[StringToIdError, ID],
-    jdbcColumnInterpreter: JdbcColumnInterpreter[DefaultValues],
+    dbGet: DbGetInterpreter[DefaultValues],
+    dbSearch: DbSearch[DefaultValues],
+    dbInsert: DbInsert[DefaultValues],
+    dbUpdate: DbUpdate[DefaultValues],
+    dbDelete: DbDelete[DefaultValues],
     ds: DataSource): HttpRoutes[IO] = {
 
     val middleware =
-      CrudDbDefinitions[DefaultValues, A, ID](schema, jdbcColumnInterpreter, idDef, ds)
+      CrudDbDefinitions[DefaultValues, A, ID](
+        schema,
+        idDef,
+        dbGet,
+        dbSearch,
+        dbInsert,
+        dbUpdate,
+        dbDelete,
+        ds)
 
     /** Create the REST interpreter with full CRUD capabilities which write data to the database */
     val interpreter =
       ClassicCrudInterpreter.allVerbsCustomAlgebra[DefaultValues, A, BasicError, IO, ID](
         path,
-        com.bones.circe.values.defaultValidators,
-        com.bones.circe.values.defaultEncoders,
-        com.bones.bson.values.defaultValidators,
-        com.bones.bson.values.defaultEncoders,
-        com.bones.protobuf.values.defaultValidators,
-        com.bones.protobuf.values.defaultEncoders,
-        com.bones.protobuf.values.defaultProtoFileGenerators,
-        com.bones.swagger.values.defaultInterpreters,
+        com.bones.circe.values.isoCirceValidatorInterpreter,
+        com.bones.circe.values.isoCirceEncoderInterpreter,
+        com.bones.bson.values.defaultBsonValidatorInterpreter,
+        com.bones.bson.values.defaultBsonEncoderInterpreter,
+        com.bones.protobuf.values.defaultUtcValidator,
+        com.bones.protobuf.values.defaultEncoder,
+        com.bones.protobuf.messageType.defaultProtoFile,
+        com.bones.swagger.values.defaultSwaggerInterpreter,
         schema,
         idDef.value,
         parseIdF,

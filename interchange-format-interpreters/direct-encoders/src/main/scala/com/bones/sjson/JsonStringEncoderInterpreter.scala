@@ -69,18 +69,11 @@ trait JsonStringEncoderInterpreter {
   val localDateFormatter: DateTimeFormatter
   val localTimeFormatter: DateTimeFormatter
 
-  def fAtoString[ALG[_], A](
-    bonesSchema: PrimitiveWrapperValue[ALG, A],
-    customToJsonStringInterpreter: CustomToJsonStringInterpreter[ALG]): A => String =
-    bonesSchema match {
-      case kvp: SwitchEncoding[ALG, h, n, a] @unchecked =>
-        valueDefinition(kvp, customToJsonStringInterpreter).andThen(x =>
-          if (x.isEmpty) "{}" else x.mkString)
-      case kvp: CoproductSwitch[ALG, c, a] @unchecked =>
-        valueDefinition(kvp, customToJsonStringInterpreter).andThen(x =>
-          if (x.isEmpty) "{}" else x.mkString)
-      case _ => ??? // TODO
-    }
+  def fAtoString[ALG[_], A](bonesSchema: KvpCollection[ALG, A]): A => String = {
+
+    fromBonesSchema(bonesSchema)
+
+  }
 
   private def kvpCoproduct[ALG[_], C <: Coproduct](
     kvp: KvpCoproduct[ALG, C],
@@ -158,7 +151,7 @@ trait JsonStringEncoderInterpreter {
   }
 
   def fromBonesSchema[ALG[_], A](
-    bonesSchema: PrimitiveWrapperValue[ALG, A],
+    bonesSchema: KvpCollection[ALG, A],
     customToJsonStringInterpreter: CustomToJsonStringInterpreter[ALG]
   ): A => List[String] = {
     bonesSchema match {

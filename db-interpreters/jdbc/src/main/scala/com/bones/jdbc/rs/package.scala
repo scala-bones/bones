@@ -1,16 +1,16 @@
 package com.bones.jdbc
 
-import java.sql.ResultSet
+import java.sql.SQLException
 
 import cats.data.NonEmptyList
-import com.bones.data.Error.ExtractionError
-import com.bones.data.values.{DefaultValues, CNilF}
-import com.bones.jdbc.FindInterpreter.{FieldName, Path}
-import shapeless.{:+:, Coproduct, Inl, Inr}
+import com.bones.PrimitiveValue
+import com.bones.data.Error.{ExtractionError, RequiredValue, SystemError}
+import com.bones.data.values.DefaultValues
+import com.bones.jdbc.FindInterpreter.Path
 
 package object rs {
 
-  val defaultResultSetInterpreter: ResultSetValue[DefaultValues] =
+  val defaultResultSetValues: ResultSetValue[DefaultValues] =
     (DefaultScalaCoreResultSet ++
       (DefaultCustomStringResultSet ++
         (DefaultJavaTimeResultSet ++
@@ -21,6 +21,25 @@ package object rs {
   object DefaultCustomStringResultSet extends CustomStringResultSetValue
   object DefaultScalaCoreResultSet extends ScalaCoreResultSet
 
+  val defaultResultSetInterpreter = new ResultSetInterpreter[DefaultValues] {
+    override val customInterpreter: ResultSetValue[DefaultValues] =
+      defaultResultSetValues
+  }
 
+  def catchSql[A](
+    f: => A,
+    path: Path,
+    op: PrimitiveValue[_]): Either[NonEmptyList[ExtractionError], A] =
+    try {
+      val result = f
+      if (result == null) {
+        Left(NonEmptyList.one(RequiredValue.fromDef(path, Right(op))))
+      } else {
+        Right(result)
+      }
+    } catch {
+      case ex: SQLException =>
+        Left(NonEmptyList.one(SystemError(path, ex, None)))
+    }
 
 }

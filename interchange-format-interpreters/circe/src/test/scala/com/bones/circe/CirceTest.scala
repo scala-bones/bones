@@ -16,11 +16,11 @@ class CirceTest extends AnyFunSuite with Checkers with Matchers {
     PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)
 
   val jsonToCc = isoCirceValidatorInterpreter
-    .generateByteArrayValidator[AllSupported](allSupportCaseClass.asValue, StandardCharsets.UTF_8)
+    .generateByteArrayValidator[AllSupported](allSupportCaseClass, StandardCharsets.UTF_8)
   val ccToJson =
-    isoCirceEncoderInterpreter.generateEncoder(allSupportCaseClass.asValue)
+    isoCirceEncoderInterpreter.generateEncoder(allSupportCaseClass)
 
-  implicit val arb = Arbitrary(defaultValuesScalacheck.valueDefinition(allSupportCaseClass.asValue))
+  implicit val arb = Arbitrary(defaultValuesScalacheck.fromKvpCollection(allSupportCaseClass))
   val utf8 = Charset.forName("UTF8")
 
   test("scalacheck allSupport types - marshall then unmarshall") {

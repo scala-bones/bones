@@ -223,29 +223,29 @@ trait ExtractionErrorEncoder[OUT]
 
   def canNotConvertEncoder =
     defaultEncoder
-      .generateEncoder[CanNotConvert[_, _]](canNotConvertSchema.asValue)
+      .generateEncoder[CanNotConvert[_, _]](canNotConvertSchema)
 
   def notFoundEncoder =
     defaultEncoder
-      .generateEncoder[NotFound[_]](notFoundDataSchema.asValue)
+      .generateEncoder[NotFound[_]](notFoundDataSchema)
   def parsingErrorEncoder =
     defaultEncoder
-      .generateEncoder[ParsingError](parsingErrorSchema.asValue)
+      .generateEncoder[ParsingError](parsingErrorSchema)
   def requiredValueEncoder =
     defaultEncoder
-      .generateEncoder[RequiredValue[_]](requiredValueSchema.asValue)
+      .generateEncoder[RequiredValue[_]](requiredValueSchema)
   def sumTypeErrorEncoder =
     defaultEncoder
-      .generateEncoder[SumTypeError](sumTypeErrorSchema.asValue)
+      .generateEncoder[SumTypeError](sumTypeErrorSchema)
   def systemErrorEncoder =
     defaultEncoder
-      .generateEncoder[SystemError](systemErrorSchema.asValue)
+      .generateEncoder[SystemError](systemErrorSchema)
   def validationErrorEncoder =
     defaultEncoder
-      .generateEncoder[ValidationError[_]](validationErrorSchema.asValue)
+      .generateEncoder[ValidationError[_]](validationErrorSchema)
   def wrongTypeErrorEncoder =
     defaultEncoder
-      .generateEncoder[WrongTypeError[_]](wrongTypeErrorSchema.asValue)
+      .generateEncoder[WrongTypeError[_]](wrongTypeErrorSchema)
 
   override def encode[A](alg: ExtractionErrorValue[A]): A => OUT =
     alg match {

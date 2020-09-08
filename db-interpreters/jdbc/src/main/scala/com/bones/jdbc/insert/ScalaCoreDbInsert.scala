@@ -1,7 +1,6 @@
 package com.bones.jdbc.insert
 
 import com.bones.data.values._
-import com.bones.jdbc.insert.DbInsert.{InsertPair, psF}
 
 trait ScalaCoreDbInsert extends DbInsertValue[ScalaCoreValue] {
   override def insertPair[A](alg: ScalaCoreValue[A]): InsertPair[A] =

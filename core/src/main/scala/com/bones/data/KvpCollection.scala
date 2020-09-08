@@ -8,11 +8,11 @@ import shapeless.{:+:, ::, CNil, Coproduct, Generic, HList, HNil, Nat, Succ}
 
 object KvpCollection {
 //  type Empty[_] = Any
-  def headManifest[ALG[_], A](kvpCollection: KvpCollection[ALG, A]): Option[Manifest[_]] = {
+  def headManifest[ALG[_], A](kvpCollection: KvpCollection[ALG, A]): Option[Manifest[A]] = {
     kvpCollection match {
-      case w: WrappedEncoding[_, _]                  => Some(w.manifestOfA)
-      case c: KvpCoproductCollectionHead[_, _, _, _] => Some(c.manifestOfHead)
-      case s: KvpSingleValueHead[_, _, _, _, _] => {
+      case w: WrappedEncoding[ALG, A] @unchecked                  => Some(w.manifestOfA)
+      case c: KvpCoproductCollectionHead[ALG, A, _, _] @unchecked => Some(c.manifestOfHead)
+      case s: KvpSingleValueHead[ALG, A, _, _, _] @unchecked => {
         s.head match {
           case Left(keyDef) => Some(keyDef.manifestOfA)
           case Right(coll)  => headManifest(coll)
@@ -273,42 +273,5 @@ final case class KvpHListCollectionHead[
 
   def validate(v: ValidationOp[HO]): KvpHListCollectionHead[ALG, HO, NO, H, HL, T, TL] =
     this.copy(validations = v :: validations)
-
-}
-
-/**
-  * Responsible for matching the appropriate KvpCollection and delegating to the appropriate overwritten
-  * method.  Though one can certainly just match on the types inline, this approach seems to be a bit cleaner,
-  * albeit with an additional layer of indirection.
-  *
-  * @tparam ALG The Algebra being interpreted.
-  * @tparam OUT The output from interpreting the values.
-  */
-trait KvpCollectionTemplate[ALG[_], OUT] {
-
-  def fromKvpCollection[A](kvpCollection: KvpCollection[ALG, A]): OUT = {
-    kvpCollection match {
-      case kvp: KvpWrappedHList[ALG, a, h, n] @unchecked  => kvpWrappedHList(kvp)
-      case kvp: KvpWrappedCoproduct[ALG, a, c] @unchecked => kvpWrappedCoproduct(kvp)
-      case kvp: KvpCoNil[ALG]                             => kvpCoNil(kvp)
-      case kvp: KvpCoproductCollectionHead[ALG, a, c, o]  => kvpCoproductCollectionHead(kvp)
-      case kvp: KvpSingleValueHead[ALG, h, t, tl, ht] @unchecked =>
-        kvpSingleValueHead[h, t, tl, ht](kvp)
-      case kvp: KvpHListCollectionHead[ALG, ho, no, h, hl, t, tl] @unchecked =>
-        kvpHListCollectionHead(kvp)
-      case kvp: KvpNil[ALG] => kvpNil(kvp)
-    }
-  }
-
-  def kvpWrappedHList[A, H <: HList, HL <: Nat](wrappedHList: KvpWrappedHList[ALG, A, H, HL]): OUT
-  def kvpWrappedCoproduct[A, C <: Coproduct](wrappedCoproduct: KvpWrappedCoproduct[ALG, A, C]): OUT
-  def kvpHListCollectionHead[HO <: HList, NO <: Nat, H <: HList, HL <: Nat, T <: HList, TL <: Nat](
-    kvp: KvpHListCollectionHead[ALG, HO, NO, H, HL, T, TL]): OUT
-  def kvpNil(kvp: KvpNil[ALG]): OUT
-  def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
-    kvp: KvpSingleValueHead[ALG, H, T, TL, O]): OUT
-  def kvpCoNil(kvpCoNil: KvpCoNil[ALG]): OUT
-  def kvpCoproductCollectionHead[A, C <: Coproduct, O <: A :+: C](
-    kvpCoproductCollectionHead: KvpCoproductCollectionHead[ALG, A, C, O]): OUT
 
 }
