@@ -1,13 +1,11 @@
 package com.bones.protobuf
 
 import java.io.{ByteArrayOutputStream, IOException}
-import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneOffset}
-import java.util.UUID
+import java.time.{LocalDateTime, ZoneOffset}
 
 import cats.Applicative
 import cats.data.NonEmptyList
-import com.bones.data.KeyValueDefinition.CoproductDataDefinition
-import com.bones.data.values.CNilF
+import com.bones.data.KeyDefinition.CoproductDataDefinition
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpCoproductCollectionHead, _}
 import com.google.protobuf.{CodedOutputStream, Timestamp}
 import shapeless._
