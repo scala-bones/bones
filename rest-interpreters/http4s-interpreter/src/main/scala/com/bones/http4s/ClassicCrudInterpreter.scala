@@ -4,25 +4,22 @@ import java.nio.charset.StandardCharsets
 
 import cats.effect._
 import cats.syntax.all._
-import com.bones.circe.IsoCirceEncoderAndValidatorInterpreter
-import com.bones.data.{SwitchEncoding, ConcreteValue, KvpNil}
+import com.bones.bson.{BsonEncoderInterpreter, BsonValidatorInterpreter}
+import com.bones.circe.{CirceEncoderInterpreter, CirceValidatorInterpreter}
+import com.bones.data.KvpCollection.headManifest
+import com.bones.data.{KvpCollection, KvpNil}
 import com.bones.http4s.BaseCrudInterpreter.StringToIdError
-import com.bones.interpreter.{InterchangeFormatEncoderValue, InterchangeFormatValidatorValue}
 import com.bones.protobuf.messageType.ProtoFileGeneratorInterpreter
 import com.bones.protobuf.{
   ProtobufSequentialEncoderInterpreter,
-  ProtobufSequentialValidatorInterpreter,
-  _
+  ProtobufSequentialValidatorInterpreter
 }
 import com.bones.swagger.{CrudOasInterpreter, SwaggerCoreInterpreter}
-import com.bones.swagger.SwaggerCoreInterpreter.CustomSwaggerInterpreter
 import fs2.Stream
-import io.circe.Json
 import io.swagger.v3.oas.models.OpenAPI
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.dsl.impl.Path
-import reactivemongo.bson.BSONValue
 
 object ClassicCrudInterpreter {
 
