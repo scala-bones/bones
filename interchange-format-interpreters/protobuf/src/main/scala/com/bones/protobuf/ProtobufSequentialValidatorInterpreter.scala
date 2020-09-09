@@ -4,7 +4,7 @@ import java.io.{ByteArrayInputStream, IOException}
 import java.time.{LocalDateTime, ZoneOffset}
 
 import cats.data.NonEmptyList
-import cats.implicits._
+import cats.syntax.all._
 import com.bones.Util
 import com.bones.data.Error._
 import com.bones.data.values.CNilF

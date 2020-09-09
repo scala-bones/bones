@@ -46,8 +46,8 @@ lazy val core = (project in file("core"))
     commonSettings,
     name := "Bones",
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % "2.1.1",
-      "org.typelevel" %% "cats-free" % "2.1.1",
+      "org.typelevel" %% "cats-core" % "2.2.0",
+      "org.typelevel" %% "cats-free" % "2.2.0",
       "com.chuusai" %% "shapeless" % "2.3.3",
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
       "org.scalatest" %% "scalatest" % "3.2.2" % Test,

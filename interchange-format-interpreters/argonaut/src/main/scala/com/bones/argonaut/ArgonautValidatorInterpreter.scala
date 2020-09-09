@@ -5,7 +5,7 @@ import java.nio.charset.Charset
 import argonaut.Argonaut._
 import argonaut._
 import cats.data.NonEmptyList
-import cats.implicits._
+import cats.syntax.all._
 import com.bones.data.Error.{ExtractionError, ParsingError, RequiredValue, WrongTypeError}
 import com.bones.data.{KeyDefinition, _}
 import com.bones.interpreter.{
