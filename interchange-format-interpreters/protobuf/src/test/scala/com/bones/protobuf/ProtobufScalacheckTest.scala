@@ -5,7 +5,6 @@ import com.bones.protobuf.values.{defaultEncoder, defaultUtcValidator}
 import com.bones.scalacheck.values._
 import com.bones.schemas.Schemas
 import com.bones.schemas.Schemas.{AllSupported, allSupportCaseClass}
-import javax.xml.bind.DatatypeConverter
 import org.scalacheck.Arbitrary
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
@@ -26,7 +25,7 @@ class ProtobufScalacheckTest extends AnyFunSuite with Checkers {
 
       val bytes = encode(cc)
 
-      println(DatatypeConverter.printHexBinary(bytes))
+//      println(javax.xml.bind.DatatypeConverter.DatatypeConverter.printHexBinary(bytes))
 
       val newCc = try {
         decode(bytes)
