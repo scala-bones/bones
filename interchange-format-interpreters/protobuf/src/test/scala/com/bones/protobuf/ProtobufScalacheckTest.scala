@@ -25,7 +25,7 @@ class ProtobufScalacheckTest extends AnyFunSuite with Checkers {
 
       val bytes = encode(cc)
 
-//      println(javax.xml.bind.DatatypeConverter.DatatypeConverter.printHexBinary(bytes))
+//      println(javax.xml.bind.DatatypeConverter.printHexBinary(bytes))
 
       val newCc = try {
         decode(bytes)
