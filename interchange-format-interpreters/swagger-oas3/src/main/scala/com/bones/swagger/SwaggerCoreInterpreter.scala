@@ -84,7 +84,7 @@ object SwaggerCoreInterpreter {
     example: Option[Boolean],
     applyValidationDescription: Schema[_] => Schema[_]) = {
     val main = new BooleanSchema()
-      .example(example.getOrElse(new java.lang.Boolean(true)))
+      .example(example.getOrElse(java.lang.Boolean.TRUE))
       .description(description.getOrElse("value of type boolean"))
       .nullable(false)
       .name(name)
