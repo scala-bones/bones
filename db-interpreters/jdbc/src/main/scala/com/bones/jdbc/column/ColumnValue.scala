@@ -1,7 +1,6 @@
 package com.bones.jdbc.column
 
 import com.bones.data.values.CNilF
-import com.bones.jdbc.column.DbColumnInterpreter.ToColumns
 import shapeless.{:+:, Coproduct, Inl, Inr}
 
 object ColumnValue {
@@ -10,8 +9,8 @@ object ColumnValue {
     * see https://stackoverflow.com/a/60561575/387094
     * */
   def merge[L[_], R[_] <: Coproduct, A, OUT](
-                                              li: ColumnValue[L],
-                                              ri: ColumnValue[R]
+    li: ColumnValue[L],
+    ri: ColumnValue[R]
   ): ColumnValue[Lambda[A => L[A] :+: R[A]]] =
     new ColumnValue[Lambda[A => L[A] :+: R[A]]] {
 

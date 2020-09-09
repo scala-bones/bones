@@ -3,7 +3,7 @@ package com.bones.protobuf.values
 import com.bones.Util.{stringToBigDecimal, stringToEnumeration}
 import com.bones.data.values._
 import com.bones.protobuf.ProtobufSequentialValidatorInterpreter._
-import com.bones.protobuf.ProtobufValidatorValue
+import com.bones.protobuf.{ExtractFromProto, ProtobufValidatorValue}
 
 trait ScalaCoreValidator extends ProtobufValidatorValue[ScalaCoreValue] {
   override def extractFromProto[A](alg: ScalaCoreValue[A]): ExtractFromProto[A] =

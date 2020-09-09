@@ -8,12 +8,13 @@ import com.bones.circe.IsoCirceEncoderAndValidatorInterpreter
 import com.bones.data.{SwitchEncoding, ConcreteValue, KvpNil}
 import com.bones.http4s.BaseCrudInterpreter.StringToIdError
 import com.bones.interpreter.{InterchangeFormatEncoderValue, InterchangeFormatValidatorValue}
+import com.bones.protobuf.messageType.ProtoFileGeneratorInterpreter
 import com.bones.protobuf.{
   ProtobufSequentialEncoderInterpreter,
   ProtobufSequentialValidatorInterpreter,
   _
 }
-import com.bones.swagger.CrudOasInterpreter
+import com.bones.swagger.{CrudOasInterpreter, SwaggerCoreInterpreter}
 import com.bones.swagger.SwaggerCoreInterpreter.CustomSwaggerInterpreter
 import fs2.Stream
 import io.circe.Json
@@ -34,18 +35,18 @@ object ClassicCrudInterpreter {
     */
   def emptyCustomAlgebra[ALG[_], A, E, F[_], ID: Manifest](
     path: String,
-    jsonValidator: InterchangeFormatValidatorValue[ALG, Json],
-    jsonEncoder: InterchangeFormatEncoderValue[ALG, Json],
-    bsonValidator: InterchangeFormatValidatorValue[ALG, BSONValue],
-    bsonEncoder: InterchangeFormatEncoderValue[ALG, BSONValue],
-    protobufValidator: ProtobufValidatorValue[ALG],
-    protobufEncoder: ProtobufEncoderValue[ALG],
-    protobufFile: ProtoFileGeneratorInterpreter.CustomInterpreter[ALG],
-    customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
-    schema: ConcreteValue[ALG, A],
+    jsonValidator: CirceValidatorInterpreter[ALG],
+    jsonEncoder: CirceEncoderInterpreter[ALG],
+    bsonValidator: BsonValidatorInterpreter[ALG],
+    bsonEncoder: BsonEncoderInterpreter[ALG],
+    protobufValidator: ProtobufSequentialValidatorInterpreter[ALG],
+    protobufEncoder: ProtobufSequentialEncoderInterpreter[ALG],
+    protobufFile: ProtoFileGeneratorInterpreter[ALG],
+    customSwaggerInterpreter: SwaggerCoreInterpreter[ALG],
+    schema: KvpCollection[ALG, A],
     idDefinition: ALG[ID],
     pathStringToId: String => Either[StringToIdError, ID],
-    errorSchema: ConcreteValue[ALG, E],
+    errorSchema: KvpCollection[ALG, E],
     charset: java.nio.charset.Charset = StandardCharsets.UTF_8
   )(
     implicit F: Sync[F],
@@ -80,18 +81,18 @@ object ClassicCrudInterpreter {
     */
   def allVerbsCustomAlgebra[ALG[_], A, E, F[_], ID: Manifest](
     path: String,
-    jsonValidator: InterchangeFormatValidatorValue[ALG, Json],
-    jsonEncoder: InterchangeFormatEncoderValue[ALG, Json],
-    bsonValidator: InterchangeFormatValidatorValue[ALG, BSONValue],
-    bsonEncoder: InterchangeFormatEncoderValue[ALG, BSONValue],
-    protobufValidator: ProtobufValidatorValue[ALG],
-    protobufEncoder: ProtobufEncoderValue[ALG],
-    protobufFile: ProtoFileGeneratorInterpreter.CustomInterpreter[ALG],
-    customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
-    schema: ConcreteValue[ALG, A],
+    jsonValidator: CirceValidatorInterpreter[ALG],
+    jsonEncoder: CirceEncoderInterpreter[ALG],
+    bsonValidator: BsonValidatorInterpreter[ALG],
+    bsonEncoder: BsonEncoderInterpreter[ALG],
+    protobufValidator: ProtobufSequentialValidatorInterpreter[ALG],
+    protobufEncoder: ProtobufSequentialEncoderInterpreter[ALG],
+    protobufFile: ProtoFileGeneratorInterpreter[ALG],
+    customSwaggerInterpreter: SwaggerCoreInterpreter[ALG],
+    schema: KvpCollection[ALG, A],
     idDefinition: ALG[ID],
     pathStringToId: String => Either[StringToIdError, ID],
-    errorSchema: ConcreteValue[ALG, E],
+    errorSchema: KvpCollection[ALG, E],
     createF: A => F[Either[E, (ID, A)]],
     readF: ID => F[Either[E, (ID, A)]],
     updateF: (ID, A) => F[Either[E, (ID, A)]],
@@ -153,18 +154,18 @@ object ClassicCrudInterpreter {
   */
 case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
   path: String,
-  jsonValidator: InterchangeFormatValidatorValue[ALG, Json],
-  jsonEncoder: InterchangeFormatEncoderValue[ALG, Json],
-  bsonValidator: InterchangeFormatValidatorValue[ALG, BSONValue],
-  bsonEncoder: InterchangeFormatEncoderValue[ALG, BSONValue],
-  protobufValidator: ProtobufValidatorValue[ALG],
-  protobufEncoder: ProtobufEncoderValue[ALG],
-  protobufFile: ProtoFileGeneratorInterpreter.CustomInterpreter[ALG],
-  schema: ConcreteValue[ALG, A],
-  customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
+  jsonValidator: CirceValidatorInterpreter[ALG],
+  jsonEncoder: CirceEncoderInterpreter[ALG],
+  bsonValidator: BsonValidatorInterpreter[ALG],
+  bsonEncoder: BsonEncoderInterpreter[ALG],
+  protobufValidator: ProtobufSequentialValidatorInterpreter[ALG],
+  protobufEncoder: ProtobufSequentialEncoderInterpreter[ALG],
+  protobufFile: ProtoFileGeneratorInterpreter[ALG],
+  schema: KvpCollection[ALG, A],
+  customSwaggerInterpreter: SwaggerCoreInterpreter[ALG],
   idDefinition: ALG[ID],
   pathStringToId: String => Either[StringToIdError, ID],
-  errorSchema: ConcreteValue[ALG, E],
+  errorSchema: KvpCollection[ALG, E],
   createF: Option[A => F[Either[E, (ID, A)]]] = None,
   readF: Option[ID => F[Either[E, (ID, A)]]] = None,
   updateF: Option[(ID, A) => F[Either[E, (ID, A)]]] = None,
@@ -213,21 +214,12 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
   def withSearch(search: () => Stream[F, (ID, A)]): ClassicCrudInterpreter[ALG, A, E, F, ID] =
     this.copy(searchF = Some(search))
 
-  val schemaWithId: ConcreteValue[ALG, (ID, A)] =
-    schema match {
-      case h: SwitchEncoding[ALG, _, _, A] @unchecked =>
-        implicit val manifest: Manifest[A] = h.manifestOfA
-        (("id", idDefinition) :: h :><: new KvpNil[ALG]).tupled[(ID, A)]
-      case _ => ??? // TODO
-    }
-
-  val encodeToCirceInterpreter = IsoCirceEncoderAndValidatorInterpreter
-  val validatedFromCirceInterpreter = IsoCirceEncoderAndValidatorInterpreter
-
-  val protobufSequentialInputInterpreter: ProtobufSequentialValidatorInterpreter =
-    ProtobufUtcSequentialEncoderAndValidator
-  val protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter =
-    ProtobufUtcSequentialEncoderAndValidator
+  val schemaWithId: KvpCollection[ALG, (ID, A)] = {
+    implicit def manifestA =
+      headManifest(schema).getOrElse(
+        throw new UnsupportedOperationException("No manifest for A available"))
+    (("id", idDefinition) :: schema :: new KvpNil[ALG]).tupled[(ID, A)]
+  }
 
   def createRoutes: HttpRoutes[F] = {
 
@@ -242,10 +234,6 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
           schema,
           errorSchema,
           schemaWithId,
-          validatedFromCirceInterpreter,
-          encodeToCirceInterpreter,
-          protobufSequentialInputInterpreter,
-          protobufSequentialOutputInterpreter,
           jsonValidator,
           jsonEncoder,
           bsonValidator,
@@ -261,13 +249,11 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
         path,
         pathStringToId,
         read,
-        encodeToCirceInterpreter,
         errorSchema,
         schemaWithId,
         jsonEncoder,
         bsonEncoder,
         protobufEncoder,
-        protobufSequentialOutputInterpreter,
         charset
       )
     })
@@ -276,16 +262,8 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
       BaseCrudInterpreter.httpSearch(
         path,
         search,
-        encodeToCirceInterpreter,
-        errorSchema,
         schemaWithId,
-        jsonValidator,
         jsonEncoder,
-        bsonValidator,
-        bsonEncoder,
-        protobufValidator,
-        protobufEncoder,
-        protobufSequentialOutputInterpreter,
         charset
       )
     })
@@ -297,10 +275,6 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
         schema,
         errorSchema,
         schemaWithId,
-        validatedFromCirceInterpreter,
-        encodeToCirceInterpreter,
-        protobufSequentialInputInterpreter,
-        protobufSequentialOutputInterpreter,
         jsonValidator,
         jsonEncoder,
         bsonValidator,
@@ -316,14 +290,12 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
         path,
         pathStringToId,
         del,
-        encodeToCirceInterpreter,
         errorSchema,
         schemaWithId,
         jsonEncoder,
         bsonEncoder,
         protobufEncoder,
-        protobufSequentialOutputInterpreter,
-        charset,
+        charset
       )
     })
 
@@ -351,10 +323,10 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
   /** Create an endpoint to display the swagger doc for classic Crud this type. */
   def swaggerDoc(
     contentTypes: List[String],
-    customInterpreter: CustomSwaggerInterpreter[ALG],
-    schema: ConcreteValue[ALG, A],
-    schemaWithId: ConcreteValue[ALG, (ID, A)],
-    errorSchema: ConcreteValue[ALG, E],
+    customInterpreter: SwaggerCoreInterpreter[ALG],
+    schema: KvpCollection[ALG, A],
+    schemaWithId: KvpCollection[ALG, (ID, A)],
+    errorSchema: KvpCollection[ALG, E],
     path: String
   ): String = {
 

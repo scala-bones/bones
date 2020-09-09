@@ -2,10 +2,14 @@ package com.bones.protobuf
 
 import java.time.ZoneOffset
 
-import com.bones.data.values.DefaultValues
-import com.bones.protobuf.ProtoFileGeneratorInterpreter.CustomInterpreter.CNilProtoFileCustomInterpreterEncoder
+import com.bones.data.values.{DefaultValues, JavaTimeValue}
 import com.bones.protobuf.ProtobufEncoderValue.CNilProtobufValueEncoder
 import com.bones.protobuf.ProtobufValidatorValue.CNilProtobufValueValidator
+import com.bones.protobuf.messageType.{
+  CNilProtoFileCustomInterpreterEncoder,
+  CustomInterpreter,
+  JavaUtilProtoFileInterpreter
+}
 
 package object values {
 
@@ -21,20 +25,9 @@ package object values {
         (ProtobufUtcJavaTimeValidator ++
           (ProtobufJavaUtilValidator ++ CNilProtobufValueValidator)))
 
-  val defaultProtoFileGenerators: ProtoFileGeneratorInterpreter.CustomInterpreter[DefaultValues] =
-    ScalaCoreProtoFile ++
-      (CustomStringProtoFileInterpreter ++
-        (JavaTimeProtoFileInterpreter ++
-          (JavaUtilProtoFile ++ CNilProtoFileCustomInterpreterEncoder)))
-
-  object ProtobufScalaCoreEncoder extends ScalaCoreEncoder {
-    override val defaultEncoder: ProtobufSequentialEncoderInterpreter =
-      ProtobufUtcSequentialEncoderAndValidator
-  }
+  object ProtobufScalaCoreEncoder extends ScalaCoreEncoder
 
   object ProtobufScalaCoreValidator extends ScalaCoreValidator
-
-  object ScalaCoreProtoFile extends ScalaCoreFileInterpreter
 
   object ProtobufJavaUtilEncoder extends JavaUtilEncoder
 
@@ -43,15 +36,21 @@ package object values {
   object JavaUtilProtoFile extends JavaUtilProtoFileInterpreter
 
   object ProtobufUtcJavaTimeEncoder extends JavaTimeEncoder {
-    override val coreProtobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter =
-      ProtobufUtcSequentialEncoderAndValidator
     override val zoneOffset: ZoneOffset = ZoneOffset.UTC
   }
 
   object ProtobufUtcJavaTimeValidator extends JavaTimeValidator {
-    override val coreProtobufSequentialInputInterpreter: ProtobufSequentialValidatorInterpreter =
-      ProtobufUtcSequentialEncoderAndValidator
     override val defaultZoneOffset: ZoneOffset = ZoneOffset.UTC
+  }
+
+  val defaultUtcValidator = new ProtobufSequentialValidatorInterpreter[DefaultValues] {
+    override val customInterpreter: ProtobufValidatorValue[DefaultValues] =
+      defaultValidators
+    override val zoneOffset: ZoneOffset = ZoneOffset.UTC
+  }
+
+  val defaultEncoder = new ProtobufSequentialEncoderInterpreter[DefaultValues] {
+    override def customInterpreter: ProtobufEncoderValue[DefaultValues] = defaultEncoders
   }
 
 }

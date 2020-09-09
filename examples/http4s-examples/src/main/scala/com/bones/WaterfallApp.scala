@@ -4,7 +4,11 @@ import cats.effect.IO
 import cats.implicits._
 import com.bones.fullstack.LocalhostAllIOApp
 import com.bones.syntax._
-import com.bones.validation.ValidationDefinition.{BigDecimalValidation => dv, LongValidation => lv, StringValidation => sv}
+import com.bones.validation.ValidationDefinition.{
+  BigDecimalValidation => dv,
+  LongValidation => lv,
+  StringValidation => sv
+}
 import org.http4s.HttpRoutes
 
 object WaterfallDefinitions {
@@ -38,7 +42,7 @@ object WaterfallDefinitions {
       ("latitude", bigDecimal(dv.min(-180), dv.max(180))) ::
       ("longitude", bigDecimal(dv.min(-180), dv.max(180))) ::
       ("cubicFeetPerMinute", bigDecimal(dv.positive).optional) :<:
-      ("height", imperialMeasurement.optional) :<:
+      ("height", imperialMeasurement.asValue.optional) :<:
       ("waterVolume", enumeration[WaterVolume.type, WaterVolume.Value](WaterVolume)) ::
       //      kvp("discoveryDate", isoDateTime()) ::
 //      kvp("wantToVisit", boolean) ::
@@ -59,7 +63,6 @@ object WaterfallDefinitions {
       kvpNil
   ).convert[WaterfallVisit]
 
-
 }
 
 object WaterfallApp extends LocalhostAllIOApp() {
@@ -70,7 +73,18 @@ object WaterfallApp extends LocalhostAllIOApp() {
   val ds = localhostDataSource
 
   override def services: HttpRoutes[IO] = {
-    serviceRoutesWithCrudMiddleware("waterfall", waterfallSchema, idDef, parseIdF, com.bones.jdbc.defaultJdbcColumnInterpreter, ds) <+>
+    serviceRoutesWithCrudMiddleware(
+      "waterfall",
+      waterfallSchema,
+      idDef,
+      parseIdF,
+      com.bones.jdbc.dbGetDefaultInterpreter,
+      com.bones.jdbc.dbSearchInterpreter,
+      com.bones.jdbc.insert.defaultDbInsertInterpreter,
+      com.bones.jdbc.update.defaultDbUpdate,
+      com.bones.jdbc.dbDeleteInterpreter,
+      ds
+    ) <+>
       //    serviceRoutesWithCrudMiddleware(waterfallVisitService, ds) <+>
       dbSchemaEndpoint("waterfall", waterfallSchema) <+>
       dbSchemaEndpoint("waterfallVisit", waterfallVisitSchema)

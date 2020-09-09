@@ -1,8 +1,11 @@
 package com.bones.protobuf.values
 
 import com.bones.data.values.CustomStringValue
-import com.bones.protobuf.{ProtobufSequentialEncoderInterpreter, ProtobufEncoderValue}
-import com.bones.protobuf.ProtobufSequentialEncoderInterpreter.EncodeToProto
+import com.bones.protobuf.{
+  EncodeToProto,
+  ProtobufEncoderValue,
+  ProtobufSequentialEncoderInterpreter
+}
 
 object ProtobufValueStringEncoder extends ProtobufEncoderValue[CustomStringValue] {
 

@@ -3,11 +3,11 @@ package com.bones.argonaut
 import java.time.format.DateTimeFormatter
 
 import argonaut.Json
-import com.bones.data.values.DefaultValues
+import com.bones.data.values.{DefaultValues, ScalaCoreValue}
 import com.bones.interpreter.InterchangeFormatEncoderValue.CNilInterchangeFormatEncoder
 import com.bones.interpreter.InterchangeFormatValidatorValue.CNilInterchangeFormatValidator
 import com.bones.interpreter.values._
-import com.bones.interpreter.{InterchangeFormatEncoderValue, InterchangeFormatValidatorValue, KvpInterchangeFormatEncoderInterpreter, KvpInterchangeFormatValidatorInterpreter}
+import com.bones.interpreter._
 
 package object values {
 
@@ -25,33 +25,33 @@ package object values {
           (ArgonautJavaUtilValidator ++ CNilInterchangeFormatValidator[Json]())))
 
   object ArgonautScalaCoreValidator extends ScalaCoreValidator[Json] {
-    override val baseValidator: KvpInterchangeFormatValidatorInterpreter[Json] =
-      IsoArgonautEncoderAndValidatorInterpreter
+    override val baseValidator: InterchangeFormatPrimitiveValidator[Json] =
+      ArgonautPrimitiveValidator
   }
 
   object ArgonautScalaCoreEncoder extends ScalaCoreEncoder[Json] {
-    override val defaultEncoder: KvpInterchangeFormatEncoderInterpreter[Json] =
-      IsoArgonautEncoderAndValidatorInterpreter
+    override val defaultEncoder: InterchangeFormatPrimitiveEncoder[Json] =
+      ArgonautPrimitiveEncoder
   }
 
   object ArgonautIsoJavaTimeValidator extends BaseArgonautIsoJavaTimeValidator {
-    override val baseValidator: KvpInterchangeFormatValidatorInterpreter[Json] =
-      IsoArgonautEncoderAndValidatorInterpreter
+    override val baseValidator: InterchangeFormatPrimitiveValidator[Json] =
+      ArgonautPrimitiveValidator
   }
 
   object ArgonautIsoJavaTimeEncoder extends BaseArgonautIsoJavaTimeEncoder {
-    override val baseEncoder: KvpInterchangeFormatEncoderInterpreter[Json] =
-      IsoArgonautEncoderAndValidatorInterpreter
+    override val baseEncoder: InterchangeFormatPrimitiveEncoder[Json] =
+      ArgonautPrimitiveEncoder
   }
 
   object ArgonautJavaUtilEncoder extends JavaUtilEncoder[Json] {
-    override val defaultEncoder: KvpInterchangeFormatEncoderInterpreter[Json] =
-      IsoArgonautEncoderAndValidatorInterpreter
+    override val defaultEncoder: InterchangeFormatPrimitiveEncoder[Json] =
+      ArgonautPrimitiveEncoder
   }
 
   object ArgonautJavaUtilValidator extends JavaUtilValidator[Json] {
-    override val baseValidator: KvpInterchangeFormatValidatorInterpreter[Json] =
-      IsoArgonautEncoderAndValidatorInterpreter
+    override val baseValidator: InterchangeFormatPrimitiveValidator[Json] =
+      ArgonautPrimitiveValidator
   }
 
   trait BaseArgonautIsoJavaTimeValidator extends JavaTimeValidator[Json] {
@@ -78,20 +78,33 @@ package object values {
   }
 
   object CustomStringValidator extends CustomStringValidator[Json] {
-    override val baseValidator: KvpInterchangeFormatValidatorInterpreter[Json] =
-      IsoArgonautEncoderAndValidatorInterpreter
+    override val baseValidator: InterchangeFormatPrimitiveValidator[Json] =
+      ArgonautPrimitiveValidator
   }
 
   object CustomStringEncoder extends CustomStringEncoder[Json] {
-    override val baseEncoder: KvpInterchangeFormatEncoderInterpreter[Json] =
-      IsoArgonautEncoderAndValidatorInterpreter
+    override val baseEncoder: InterchangeFormatPrimitiveEncoder[Json] =
+      ArgonautPrimitiveEncoder
+  }
+
+  object IsoArgonautScalaCoreEncoder extends ArgonautEncoderInterpreter[ScalaCoreValue] {
+    override def coproductTypeKey: String = "type"
+
+    override def encoder: InterchangeFormatEncoderValue[ScalaCoreValue, Json] =
+      ArgonautScalaCoreEncoder
+
+    override def interchangeFormatEncoder: InterchangeFormatPrimitiveEncoder[Json] =
+      ArgonautPrimitiveEncoder
   }
 
   object BaseExtractionErrorEncoder extends ExtractionErrorEncoder[Json] {
-    override def defaultEncoder: KvpInterchangeFormatEncoderInterpreter[Json] =
-      IsoArgonautEncoderAndValidatorInterpreter
 
-    override val scalaCoreInterpreter: ScalaCoreEncoder[Json] = ArgonautScalaCoreEncoder
+    override val scalaCoreInterpreter: ScalaCoreEncoder[Json] =
+      ArgonautScalaCoreEncoder
+
+    override def defaultEncoder: KvpInterchangeFormatEncoderInterpreter[ScalaCoreValue, Json] =
+      IsoArgonautScalaCoreEncoder
+
   }
 
 }
