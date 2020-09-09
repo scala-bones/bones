@@ -19,6 +19,7 @@ lazy val commonSettings = Seq(
     </developers>
   },
   resolvers += Resolver.sonatypeRepo("releases"),
+  resolvers += Resolver.sonatypeRepo("snapshots"),
   credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
   publishTo := {
     val nexus = "https://oss.sonatype.org/"

@@ -156,12 +156,16 @@ Version 0.6.0 includes validation, CRUD and the http4s REST Interpreter.
 #### Getting Started with Http4s Circe Interpreter
 Basic CRUD capabilities implemented with http4s, circe and JDBC.
 
-```libraryDependencies += "com.github.oletraveler" %% "examples" % "0.6.0-SNAPSHOT"```
+```libraryDependencies += "com.github.oletraveler" %% "examples" % "0.7.0-SNAPSHOT"```
 
 Then check out the [LocalhostAll Example](examples/http4s-examples/src/main/scala/com/bones/fullstack/LocalhostAll.scala)
 
 ### CI
 [![Build Status](https://travis-ci.org/scala-bones/bones.svg?branch=master)](https://travis-ci.org/scala-bones/bones)
+
+## External Doc
+
+* Travis Stevens' talk on [GADTs in Scala](https://www.youtube.com/watch?v=WSGMVMTUZRM) were he descrbies the fundamental ideas of this library.
 
 
 
