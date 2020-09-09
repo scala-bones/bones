@@ -5,7 +5,7 @@ import java.util.UUID
 
 import cats.data.{EitherT, NonEmptyList}
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import com.bones.Util
 import com.bones.bson.values.BsonScalaCoreValueEncoderInterpreter
 import com.bones.bson.{BsonEncoderInterpreter, BsonValidatorInterpreter}

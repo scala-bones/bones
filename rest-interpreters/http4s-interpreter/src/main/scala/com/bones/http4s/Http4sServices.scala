@@ -1,7 +1,6 @@
 package com.bones.http4s
 
 import cats.effect.{ExitCode, IO}
-import cats.implicits._
 import org.http4s.HttpRoutes
 import org.http4s.implicits._
 import org.http4s.server.Router

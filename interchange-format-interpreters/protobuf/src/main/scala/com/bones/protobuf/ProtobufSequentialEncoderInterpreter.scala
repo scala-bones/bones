@@ -6,9 +6,7 @@ import java.util.UUID
 
 import cats.Applicative
 import cats.data.NonEmptyList
-import cats.implicits._
-import com.bones.data.KeyDefinition.CoproductDataDefinition
-import com.bones.data.template.KvpCollectionMatch
+import com.bones.data.KeyValueDefinition.CoproductDataDefinition
 import com.bones.data.values.CNilF
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpCoproductCollectionHead, _}
 import com.google.protobuf.{CodedOutputStream, Timestamp}

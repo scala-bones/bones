@@ -1,7 +1,7 @@
 package com.bones.validation
 
 import cats.data.NonEmptyList
-import cats.implicits._
+import cats.syntax.all._
 import com.bones.data.Error.ValidationError
 import com.bones.validation.ValidationDefinition.ValidationOp
 
