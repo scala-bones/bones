@@ -2,11 +2,13 @@ package com.bones.protobuf.values
 
 import com.bones.data.values._
 import com.bones.protobuf.ProtobufSequentialEncoderInterpreter._
-import com.bones.protobuf.{ProtobufSequentialEncoderInterpreter, ProtobufEncoderValue}
+import com.bones.protobuf.{
+  EncodeToProto,
+  ProtobufEncoderValue,
+  ProtobufSequentialEncoderInterpreter
+}
 
 trait ScalaCoreEncoder extends ProtobufEncoderValue[ScalaCoreValue] {
-
-  val defaultEncoder: ProtobufSequentialEncoderInterpreter
 
   override def encodeToProto[A](alg: ScalaCoreValue[A]): EncodeToProto[A] =
     alg match {

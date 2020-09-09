@@ -3,70 +3,73 @@ package com.bones.perf
 import java.nio.charset.Charset
 
 import cats.implicits._
-import com.bones.bson.{BsonEncoderInterpreter, BsonValidatorInterpreter}
-import com.bones.circe.IsoCirceEncoderAndValidatorInterpreter
-import com.bones.protobuf.ProtobufUtcSequentialEncoderAndValidator
-import com.bones.scalacheck.Scalacheck
 import com.bones.schemas.Schemas.allSupportCaseClass
-import com.bones.sjson.JsonStringEncoderInterpreter
 
 object InterchangePerformanceTests extends App {
 
   val schema = allSupportCaseClass
 
-  val scalaCheckInterpreter = Scalacheck.valueDefinition(schema, com.bones.scalacheck.values.allInterpreters)
+  val scalaCheckInterpreter =
+    com.bones.scalacheck.values.defaultValuesScalacheck.generateGen(schema)
 
-  val directInterpreter =
-    JsonStringEncoderInterpreter.isoEncoder.fAtoString(schema, com.bones.sjson.values.allEncoders)
+//  val directInterpreter =
+//    JsonStringEncoderInterpreter.isoEncoder.fAtoString(schema, com.bones.sjson.values.allEncoders)
 
   val circeValidator =
-    IsoCirceEncoderAndValidatorInterpreter.generateByteArrayValidator(schema, Charset.defaultCharset(), com.bones.circe.values.defaultValidators)
-  val circeEncoder = IsoCirceEncoderAndValidatorInterpreter.generateEncoder(schema, com.bones.circe.values.defaultEncoders)
+    com.bones.circe.values.isoCirceValidatorInterpreter
+      .generateByteArrayValidator(schema, Charset.defaultCharset())
 
-  val argValidator = IsoCirceEncoderAndValidatorInterpreter.generateByteArrayValidator(schema, Charset.defaultCharset(), com.bones.circe.values.defaultValidators)
-  val argEncoder = IsoCirceEncoderAndValidatorInterpreter.generateEncoder(schema, com.bones.circe.values.defaultEncoders)
+  val circeEncoder = com.bones.circe.values.isoCirceEncoderInterpreter.generateEncoder(schema)
 
-  val bsonValidator = BsonValidatorInterpreter.generateValidator(schema, com.bones.bson.values.defaultValidators)
-  val bsonEncoder = BsonEncoderInterpreter.generateEncoder(schema, com.bones.bson.values.defaultEncoders)
+  val argValidator = com.bones.circe.values.isoCirceValidatorInterpreter
+    .generateByteArrayValidator(schema, Charset.defaultCharset())
 
-  val protoValidator = ProtobufUtcSequentialEncoderAndValidator.fromCustomBytes(schema, com.bones.protobuf.values.defaultValidators)
-  val protoEncoder = ProtobufUtcSequentialEncoderAndValidator.generateProtobufEncoder(schema, com.bones.protobuf.values.defaultEncoders)
+  val argEncoder = com.bones.circe.values.isoCirceEncoderInterpreter.generateEncoder(schema)
 
+  val bsonValidator =
+    com.bones.bson.values.defaultBsonValidatorInterpreter
+      .generateValidator(schema)
+  val bsonEncoder =
+    com.bones.bson.values.defaultBsonEncoderInterpreter.generateEncoder(schema)
+
+  val protoValidator = com.bones.protobuf.values.defaultUtcValidator.fromCustomBytes(schema)
+  val protoEncoder = com.bones.protobuf.values.defaultEncoder.generateProtobufEncoder(schema)
 
   val objects = Range(0, 5000).toList
     .flatMap(_ => scalaCheckInterpreter.sample)
 
   System.gc()
-  val directEncoderStart = System.currentTimeMillis()
-  val jsonObjects = objects.map(i => directInterpreter(i))
-  val directEncoderEnd = System.currentTimeMillis()
-  val success = jsonObjects.traverse(io.circe.parser.parse).isRight
-  val jsonSize = jsonObjects.map(_.getBytes.length).sum
-  println(s"direct encoder size: ${jsonSize} success: ${success} time: ${directEncoderEnd - directEncoderStart}")
-  System.gc()
+//  val directEncoderStart = System.currentTimeMillis()
+//  val jsonObjects = objects.map(i => directInterpreter(i))
+//  val directEncoderEnd = System.currentTimeMillis()
+//  val success = jsonObjects.traverse(io.circe.parser.parse).isRight
+//  val jsonSize = jsonObjects.map(_.getBytes.length).sum
+//  println(
+//    s"direct encoder size: ${jsonSize} success: ${success} time: ${directEncoderEnd - directEncoderStart}")
+//  System.gc()
 
   //bson
   val bsonEncoderStart = System.currentTimeMillis()
-  val bsonObjects = objects.map(o => BsonEncoderInterpreter.bsonResultToBytes(bsonEncoder(o)))
+  val bsonObjects = objects.map(o => com.bones.bson.bsonResultToBytes(bsonEncoder(o)))
   val bsonEncoderEnd = System.currentTimeMillis()
   val bsonSize = bsonObjects.map(_.length).sum
   println(s"bson encoder size: ${bsonSize} time: ${bsonEncoderEnd - bsonEncoderStart}")
   System.gc()
 
   val bsonStart = System.currentTimeMillis()
-  val bsonResult = bsonObjects.map(b => bsonValidator(BsonValidatorInterpreter.fromByteArray(b).toOption.get))
+  val bsonResult =
+    bsonObjects.map(b => bsonValidator(com.bones.bson.fromByteArray(b).toOption.get))
   val bsonEnd = System.currentTimeMillis()
   val badBsonResults = bsonResult.indices.filterNot(i => {
     (bsonResult.get(i).flatMap(_.toOption), objects.get(i)) match {
       case (Some(o1), Some(o2)) => o1.fancyEquals(o2)
-      case (None, None) => true
-      case _ => false
+      case (None, None)         => true
+      case _                    => false
     }
   })
   val bsonSuccess = badBsonResults.isEmpty
   println(s"bson validator success: ${bsonSuccess} time: ${bsonEnd - bsonStart}")
   System.gc()
-
 
   val circeEncoderStart = System.currentTimeMillis()
   objects.map(o => circeEncoder.apply(o).noSpaces)
@@ -74,54 +77,52 @@ object InterchangePerformanceTests extends App {
   println(s"circe encoder time: ${circeEncoderEnd - circeEncoderStart}")
   System.gc()
 
-  val circeStart = System.currentTimeMillis()
-  val result = jsonObjects.map(j => circeValidator.apply(j.getBytes))
-  val circeStop = System.currentTimeMillis()
-  val badCirceResults = result.indices.filterNot(i => {
-    (result.get(i).flatMap(_.toOption), objects.get(i)) match {
-      case (Some(o1), Some(o2)) => o1.fancyEquals(o2)
-      case (None, None) => true
-      case _ => false
-    }
-  })
-  val circeSuccess = badCirceResults.isEmpty
+//  val circeStart = System.currentTimeMillis()
+//  val result = jsonObjects.map(j => circeValidator.apply(j.getBytes))
+//  val circeStop = System.currentTimeMillis()
+//  val badCirceResults = result.indices.filterNot(i => {
+//    (result.get(i).flatMap(_.toOption), objects.get(i)) match {
+//      case (Some(o1), Some(o2)) => o1.fancyEquals(o2)
+//      case (None, None)         => true
+//      case _                    => false
+//    }
+//  })
+//  val circeSuccess = badCirceResults.isEmpty
 
+//  println(s"Circe Validator Success: ${circeSuccess} Time: ${circeStop - circeStart}")
+//  System.gc()
 
-  println(s"Circe Validator Success: ${circeSuccess} Time: ${circeStop - circeStart}")
-  System.gc()
-
-  val argoEncoderStart = System.currentTimeMillis()
-  objects.map(o => argEncoder.apply(o).noSpaces)
-  val argEncoderEnd = System.currentTimeMillis()
-  println(s"argo encoder time: ${argEncoderEnd - argoEncoderStart}")
-  System.gc()
-
-  val argoStart = System.currentTimeMillis()
-  val argResult = jsonObjects.map(j => argValidator.apply(j.getBytes))
-  val argoStop = System.currentTimeMillis()
-  val badArgoResults = argResult.indices.filterNot(i => {
-    (argResult.get(i).flatMap(_.toOption), objects.get(i)) match {
-      case (Some(o1), Some(o2)) => o1.fancyEquals(o2)
-      case (None, None) => true
-      case _ => false
-    }
-  })
-  val argoSuccess = badCirceResults.isEmpty
-  println(s"Argo Validator Success: ${argoSuccess} Time: ${argoStop - argoStart}")
-  System.gc()
-
-  val protoEncodeStart = System.currentTimeMillis()
-  val peResult = objects.map(protoEncoder.apply(_))
-  val protoEncodeEnd = System.currentTimeMillis()
-  val protoSize = peResult.map(_.length).sum
-  println(s"Proto Encode Size: ${protoSize} time: ${protoEncodeEnd - protoEncodeStart}")
-  System.gc()
-
-  val protoValidateStart = System.currentTimeMillis()
-  val pe = peResult.map(pe => protoValidator.apply(pe))
-  val protoValidateEnd = System.currentTimeMillis()
-  println(s"Proto Validate time: ${protoValidateEnd - protoValidateStart}")
-  System.gc()
-
+//  val argoEncoderStart = System.currentTimeMillis()
+//  objects.map(o => argEncoder.apply(o).noSpaces)
+//  val argEncoderEnd = System.currentTimeMillis()
+//  println(s"argo encoder time: ${argEncoderEnd - argoEncoderStart}")
+//  System.gc()
+//
+//  val argoStart = System.currentTimeMillis()
+//  val argResult = jsonObjects.map(j => argValidator.apply(j.getBytes))
+//  val argoStop = System.currentTimeMillis()
+//  val badArgoResults = argResult.indices.filterNot(i => {
+//    (argResult.get(i).flatMap(_.toOption), objects.get(i)) match {
+//      case (Some(o1), Some(o2)) => o1.fancyEquals(o2)
+//      case (None, None)         => true
+//      case _                    => false
+//    }
+//  })
+//  val argoSuccess = badCirceResults.isEmpty
+//  println(s"Argo Validator Success: ${argoSuccess} Time: ${argoStop - argoStart}")
+//  System.gc()
+//
+//  val protoEncodeStart = System.currentTimeMillis()
+//  val peResult = objects.map(protoEncoder.apply(_))
+//  val protoEncodeEnd = System.currentTimeMillis()
+//  val protoSize = peResult.map(_.length).sum
+//  println(s"Proto Encode Size: ${protoSize} time: ${protoEncodeEnd - protoEncodeStart}")
+//  System.gc()
+//
+//  val protoValidateStart = System.currentTimeMillis()
+//  val pe = peResult.map(pe => protoValidator.apply(pe))
+//  val protoValidateEnd = System.currentTimeMillis()
+//  println(s"Proto Validate time: ${protoValidateEnd - protoValidateStart}")
+//  System.gc()
 
 }

@@ -7,7 +7,11 @@ import cats.data.NonEmptyList
 import com.bones.data.Error
 import com.bones.data.Error.{CanNotConvert, RequiredValue}
 import com.bones.data.values._
-import com.bones.interpreter.{InterchangeFormatValidatorValue, KvpInterchangeFormatValidatorInterpreter}
+import com.bones.interpreter.{
+  InterchangeFormatPrimitiveValidator,
+  InterchangeFormatValidatorValue,
+  KvpInterchangeFormatValidatorInterpreter
+}
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.ValidationUtil
 
@@ -26,10 +30,9 @@ object JavaTimeValidator {
         Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDateTime], Some(ex))))
     }
 
-
-  def parseTime[A, OUT](
-    baseValidator: KvpInterchangeFormatValidatorInterpreter[OUT],
-    alg: JavaTimeValue[A],
+  def parseTime[ALG[_], A, OUT](
+    baseValidator: InterchangeFormatPrimitiveValidator[OUT],
+    javaTimeAlgebra: JavaTimeValue[A],
     clazz: Class[A],
     f: String => A,
     validations: List[ValidationOp[A]]
@@ -39,29 +42,29 @@ object JavaTimeValidator {
         jsonOpt match {
           case Some(json) =>
             baseValidator
-              .extractString(Right(alg), clazz)(json, path)
+              .extractString(javaTimeAlgebra, clazz)(json, path)
               .flatMap(result => errorHandleTimeParsing(path, f, result))
               .flatMap(result => ValidationUtil.validate(validations)(result, path))
           case None =>
-            Left(NonEmptyList.one(RequiredValue(path, Right(alg))))
+            Left(NonEmptyList.one(RequiredValue.fromDef(path, Right(javaTimeAlgebra))))
         }
       }
   }
 
-  def parseYear[A, OUT](
-    baseValidator: KvpInterchangeFormatValidatorInterpreter[OUT],
-    alg: JavaTimeValue[A],
+  def parseYear[ALG[_], A, OUT](
+    baseValidator: InterchangeFormatPrimitiveValidator[OUT],
+    javaTimeValue: JavaTimeValue[A],
     validations: List[ValidationOp[Year]])
     : (Option[OUT], List[String]) => Either[NonEmptyList[Error.ExtractionError], Year] =
     (jsonOpt: Option[OUT], path: List[String]) => {
       jsonOpt match {
         case Some(json) =>
           baseValidator
-            .extractInt(Right(alg))(json, path)
+            .extractInt(javaTimeValue)(json, path)
             .map(result => Year.of(result))
             .flatMap(result => ValidationUtil.validate(validations)(result, path))
         case None =>
-          Left(NonEmptyList.one(RequiredValue(path, Right(alg))))
+          Left(NonEmptyList.one(RequiredValue.fromDef(path, Right(javaTimeValue))))
       }
     }
 }
@@ -77,7 +80,7 @@ trait JavaTimeValidator[IN] extends InterchangeFormatValidatorValue[JavaTimeValu
   val offsetDateTimeFormatter: DateTimeFormatter
   val offsetTimeFormatter: DateTimeFormatter
   val zonedDateTimeFormatter: DateTimeFormatter
-  val baseValidator: KvpInterchangeFormatValidatorInterpreter[IN]
+  val baseValidator: InterchangeFormatPrimitiveValidator[IN]
 
   override def validate[A](alg: JavaTimeValue[A])
     : (Option[IN], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] = {

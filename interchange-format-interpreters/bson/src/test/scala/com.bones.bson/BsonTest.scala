@@ -4,9 +4,16 @@ import java.time._
 
 import com.bones.data.values.{DefaultValues, JavaTimeValue, LocalDateTimeData}
 import com.bones.scalacheck.GenValue.CNilGenEncoder
-import com.bones.scalacheck.values.{DefaultCustomStringValueInterpreter, DefaultScalacheckJavaUtilInterpreter, DefaultScalacheckScalaCoreInterpreter, ScalacheckJavaTimeInterpreter}
+import com.bones.scalacheck.values.{
+  DefaultCustomStringValueInterpreter,
+  DefaultScalacheckJavaUtilInterpreter,
+  DefaultScalacheckScalaCoreInterpreter,
+  ScalacheckJavaTimeInterpreter,
+  allInterpreters
+}
 import com.bones.scalacheck.{GenValue, ScalacheckBase}
 import com.bones.schemas.Schemas._
+import com.bones.bson.values._
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers
@@ -16,11 +23,10 @@ import reactivemongo.bson.buffer.{ArrayBSONBuffer, ArrayReadableBuffer}
 
 import scala.util.control.NonFatal
 
-
 /** Bson dates do not support nano seconds.  need to override LocalDateTime generation in Bson
   * so that it only generates seconds
   */
-object BsonScalacheck extends ScalacheckBase {
+object BsonScalacheck extends ScalacheckBase[DefaultValues] {
 
   val allInterpreters: GenValue[DefaultValues] =
     DefaultScalacheckScalaCoreInterpreter ++
@@ -29,14 +35,18 @@ object BsonScalacheck extends ScalacheckBase {
           (DefaultScalacheckJavaUtilInterpreter ++
             CNilGenEncoder)))
 
+  override val genValue: GenValue[DefaultValues] = allInterpreters
+
   object OverrideJavaTimeInterpreter extends ScalacheckJavaTimeInterpreter {
     override def gen[A](alg: JavaTimeValue[A]): Gen[A] = {
       alg match {
         case LocalDateTimeData(_) => {
-          super.gen(alg).map((localDate: LocalDateTime) => {
-            val millis = localDate.toInstant(ZoneOffset.UTC).toEpochMilli
-            LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
-          })
+          super
+            .gen(alg)
+            .map((localDate: LocalDateTime) => {
+              val millis = localDate.toInstant(ZoneOffset.UTC).toEpochMilli
+              LocalDateTime.ofInstant(Instant.ofEpochMilli(millis), ZoneOffset.UTC)
+            })
         }
         case _ => super.gen(alg)
       }
@@ -49,11 +59,12 @@ class BsonTest extends AnyFunSuite with Checkers with Matchers {
   //  implicit override val generatorDrivenConfig =
   //    PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)
 
-  val bsonToCc = BsonValidatorInterpreter.generateValidator(allSupportCaseClass, com.bones.bson.values.defaultValidators)
+  val bsonToCc = defaultBsonValidatorInterpreter
+    .generateValidator(allSupportCaseClass)
 
-  val ccToBson = BsonEncoderInterpreter.generateEncoder(allSupportCaseClass, com.bones.bson.values.defaultEncoders)
+  val ccToBson = defaultBsonEncoderInterpreter.generateEncoder(allSupportCaseClass)
 
-  implicit val arb = Arbitrary(BsonScalacheck.generateGen(allSupportCaseClass, BsonScalacheck.allInterpreters))
+  implicit val arb = Arbitrary(BsonScalacheck.generateGen(allSupportCaseClass))
 
   test("scalacheck allSupport types - marshall then marshall") {
     check((cc: AllSupported) => {
@@ -61,13 +72,12 @@ class BsonTest extends AnyFunSuite with Checkers with Matchers {
         val buffer = new ArrayBSONBuffer()
         ccToBson(cc) match {
           case doc: BSONDocument => BSONDocument.write(doc, buffer)
-          case x => fail(s"expected BSONDocument, received $x")
+          case x                 => fail(s"expected BSONDocument, received $x")
         }
         val bytes = buffer.array
 
         val readBuffer = ArrayReadableBuffer.apply(bytes)
         val doc = BSONDocument.read(readBuffer)
-
 
         val newCc = bsonToCc.apply(doc)
 
@@ -84,7 +94,7 @@ class BsonTest extends AnyFunSuite with Checkers with Matchers {
             newCc2NoBa == ccNoBA // && java.util.Arrays.equals(newCc2.ba, cc.ba)
         }
       } catch {
-        case NonFatal(e) => { e.printStackTrace() ; false }
+        case NonFatal(e) => { e.printStackTrace(); false }
 
       }
     })

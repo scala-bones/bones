@@ -4,35 +4,26 @@ import java.sql._
 
 import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionError, SystemError}
-import com.bones.data.KeyValueDefinition.CoproductDataDefinition
+import com.bones.data.KeyDefinition.CoproductDataDefinition
+import com.bones.data.KvpCollection.headManifest
 import com.bones.data._
+import com.bones.data.template.KvpCollectionFunctor
 import com.bones.jdbc.DbUtil._
-import com.bones.jdbc.rs.{ResultSetInterpreter, ResultSetValue}
+import com.bones.jdbc.rs.ResultSetInterpreter
 import javax.sql.DataSource
-import shapeless.{::, HList, Nat}
+import shapeless.{::, Coproduct, HList, HNil, Nat}
 
-object DbInsert {
+trait DbInsert[ALG[_]]
+    extends KvpCollectionFunctor[
+      ALG,
+      Lambda[A => (Index, A) => (Index, List[(ColumnName, SetValue)])]] {
 
-  type FieldName = String
-  type FieldValue = String
-  type Key = String
-  type ColumnName = String
-  type SetValue = PreparedStatement => Unit
-  type SetNull = PreparedStatement => Unit
-  type Index = Int
-  type InsertPair[A] = Key => (Index, A) => (Index, List[(ColumnName, SetValue)])
+  def resultSetInterpreter: ResultSetInterpreter[ALG]
+  def customInterpreter: DbInsertValue[ALG]
 
-  def insertQuery[ALG[_], A, ID](
-    collection: ConcreteValue[ALG, A],
-    idSchema: ConcreteValue[ALG, ID],
-    customInterpreter: DbInsertValue[ALG],
-    resultSetValueInterpreter: ResultSetValue[ALG])
+  def insertQuery[A, ID](collection: KvpCollection[ALG, A], idSchema: KvpCollection[ALG, ID])
     : DataSource => A => Either[NonEmptyList[ExtractionError], (ID, A)] = {
-    val iq = insertQueryWithConnectionCustomAlgebra(
-      collection,
-      idSchema,
-      customInterpreter,
-      resultSetValueInterpreter)
+    val iq = insertQueryWithConnectionCustomAlgebra(collection, idSchema)
     ds =>
       { a =>
         {
@@ -50,18 +41,17 @@ object DbInsert {
       }
   }
 
-  def insertQueryWithConnectionCustomAlgebra[ALG[_], A, ID](
-    collection: ConcreteValue[ALG, A],
-    idSchema: ConcreteValue[ALG, ID],
-    customInterpreter: DbInsertValue[ALG],
-    resultSetInterpreter: ResultSetValue[ALG])
+  def insertQueryWithConnectionCustomAlgebra[A, ID](
+    collection: KvpCollection[ALG, A],
+    idSchema: KvpCollection[ALG, ID])
     : A => Connection => Either[NonEmptyList[ExtractionError], (ID, A)] = {
-    val tableName = camelToSnake(collection.manifestOfA.runtimeClass.getSimpleName)
-    val updates = valueDefinition(collection, customInterpreter)
-    val rs = ResultSetInterpreter.determineValueDefinition(Left(idSchema), resultSetInterpreter)
+    val tableName = camelToSnake(
+      headManifest(collection).map(_.runtimeClass.getSimpleName).getOrElse("unknown"))
+    val updates = fromKvpCollection(collection)
+    val rs = resultSetInterpreter.fromKvpCollection(idSchema)
     a: A =>
       {
-        val result = updates("")(1, a)
+        val result = updates(1, a)
         val sql = s"""insert into $tableName ( ${result._2
           .map(_._1)
           .mkString(",")} ) values ( ${result._2.map(_ => "?").mkString(",")}  )"""
@@ -75,7 +65,7 @@ object DbInsert {
 
               try {
                 if (generatedKeys.next)
-                  rs.apply(List.empty, "id").apply(generatedKeys).map((_, a))
+                  rs.apply(List.empty).apply(generatedKeys).map((_, a))
                 else throw new SQLException("Creating user failed, no ID obtained.")
               } finally {
                 generatedKeys.close()
@@ -90,95 +80,80 @@ object DbInsert {
       }
   }
 
-  def kvpHList[ALG[_], H <: HList, HL <: Nat](
-    group: KvpCollection[ALG, H, HL],
-    customInterpreter: DbInsertValue[ALG]): (Index, H) => (Index, List[(ColumnName, SetValue)]) = {
-    group match {
-      case nil: KvpNil[_] =>
-        (i, h) =>
-          (i, List.empty)
-      case op: KvpSingleValueHead[ALG, h, t, tl, H] @unchecked => {
-        val headF =
-          determineValueDefinition(op.fieldDefinition.dataDefinition, customInterpreter)(
-            op.fieldDefinition.key)
-        val tailF = kvpHList(op.tail, customInterpreter)
-        implicit val hCons = op.isHCons
-        (i: Index, h: H) =>
-          {
-            val headResult = headF(i, h.head)
-            val tailResult = tailF(headResult._1, h.tail)
-            (tailResult._1, headResult._2 ::: tailResult._2)
-          }
-      }
-      case op: KvpCollectionHead[ALG, a, al, h, hl, t, tl] @unchecked => {
-        val headF = kvpHList(op.head, customInterpreter)
-        val tailF = kvpHList(op.tail, customInterpreter)
-        (i: Index, h: H) =>
-          {
-            val hSplit = op.split(h)
-            val headList = headF(i, hSplit._1)
-            val tailList = tailF(headList._1, hSplit._2)
-            (tailList._1, headList._2 ::: tailList._2)
-          }
-      }
-      case op: KvpConcreteValueHead[ALG, a, ht, nt] => {
+  override def kvpNil(kvp: KvpNil[ALG]): (Index, HNil) => (Index, List[(ColumnName, SetValue)]) =
+    (i, h) => (i, List.empty)
 
-        val headF = fromCollection(op.collection, customInterpreter)
-        val tailF = kvpHList(op.tail, customInterpreter)
-
-        (i: Index, h: a :: ht) =>
-          {
-            val headList = headF(i, h.head)
-            val tailList = tailF(headList._1, h.tail)
-            (tailList._1, headList._2 ::: tailList._2)
-          }
-      }
-    }
+  override def kvpWrappedHList[A, H <: HList, HL <: Nat](
+    wrappedHList: KvpWrappedHList[ALG, A, H, HL])
+    : (Index, A) => (Index, List[(ColumnName, SetValue)]) = {
+    val wrappedF = fromKvpCollection(wrappedHList.wrappedEncoding)
+    (i, a) =>
+      wrappedF(i, wrappedHList.fAtoH(a))
   }
 
-  private def fromCollection[ALG[_], A](
-    bonesSchema: ConcreteValue[ALG, A],
-    customInterpreter: DbInsertValue[ALG]): (Index, A) => (Index, List[(ColumnName, SetValue)]) = {
-    bonesSchema match {
-      case hListConvert: SwitchEncoding[ALG, h, n, a] =>
-        val f = kvpHList(hListConvert.from, customInterpreter)
-        (index, a) =>
-          {
-            val h = hListConvert.fAtoH(a)
-            f(index, h)
-          }
-      case _ => ??? // TODO
-    }
+  override def kvpWrappedCoproduct[A, C <: Coproduct](
+    wrappedCoproduct: KvpWrappedCoproduct[ALG, A, C])
+    : (Index, A) => (Index, List[(ColumnName, SetValue)]) = {
+    val wrappedF = fromKvpCollection(wrappedCoproduct.wrappedEncoding)
+    (i, a) =>
+      wrappedF(i, wrappedCoproduct.fAtoC(a))
   }
 
-  /** Create the return type for valueDefinition given the arguments */
-  def psF[A](f: (PreparedStatement, Index, A) => Unit): InsertPair[A] =
-    key => {
-      val columnName = camelToSnake(key)
-      (index: Index, a: A) =>
-        {
-          val setValue: SetValue = ps => {
-            f(ps, index, a)
-          }
-          (index + 1, List((columnName, setValue)))
-        }
+  override def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
+    kvp: KvpSingleValueHead[ALG, H, T, TL, O])
+    : (Index, O) => (Index, List[(ColumnName, SetValue)]) = {
+    val headF = kvp.head match {
+      case Left(keyDef)         => determineValueDefinition(keyDef.dataDefinition)(keyDef.key)
+      case Right(kvpCollection) => fromKvpCollection(kvpCollection)
     }
+    val tailF = fromKvpCollection(kvp.tail)
 
-  def determineValueDefinition[ALG[_], A](
-    coproduct: CoproductDataDefinition[ALG, A],
-    customInterpreter: DbInsertValue[ALG]): InsertPair[A] = {
+    (i: Index, o: O) =>
+      {
+        val h = kvp.isHCons.head(o)
+        val t = kvp.isHCons.tail(o)
+        val headResult = headF(i, h)
+        val tailResult = tailF(headResult._1, t)
+        val nameValues = headResult._2 ::: tailResult._2
+        (tailResult._1, nameValues)
+      }
+  }
+
+  override def kvpHListCollectionHead[
+    HO <: HList,
+    NO <: Nat,
+    H <: HList,
+    HL <: Nat,
+    T <: HList,
+    TL <: Nat](kvp: KvpHListCollectionHead[ALG, HO, NO, H, HL, T, TL])
+    : (Index, HO) => (Index, List[(ColumnName, SetValue)]) = {
+    val headF = fromKvpCollection(kvp.head)
+    val tailF = fromKvpCollection(kvp.tail)
+    (i: Index, ho: HO) =>
+      {
+        val (h, t) = kvp.split(ho)
+        val headResult = headF(i, h)
+        val tailResult = tailF(headResult._1, t)
+        val nameValues = headResult._2 ::: tailResult._2
+        (tailResult._1, nameValues)
+      }
+  }
+
+  override def kvpCoproduct[C <: Coproduct](
+    value: KvpCoproduct[ALG, C]): (Index, C) => (Index, List[(ColumnName, SetValue)]) =
+    throw new UnsupportedOperationException("coproduct currently not supported for DbInsert") // TODO: implement this
+
+  def determineValueDefinition[A](coproduct: CoproductDataDefinition[ALG, A]): InsertPair[A] = {
     coproduct match {
-      case Left(kvp)  => valueDefinition(kvp, customInterpreter)
+      case Left(kvp)  => valueDefinition(kvp)
       case Right(alg) => customInterpreter.insertPair(alg)
     }
   }
 
-  def valueDefinition[ALG[_], A](
-    fgo: ConcreteValue[ALG, A],
-    customInterpreter: DbInsertValue[ALG]): InsertPair[A] =
+  def valueDefinition[A](fgo: PrimitiveWrapperValue[ALG, A]): InsertPair[A] =
     fgo match {
       case op: OptionalValue[ALG, b] @unchecked =>
-        val valueF = determineValueDefinition(op.valueDefinitionOp, customInterpreter)
+        val valueF = determineValueDefinition(op.valueDefinitionOp)
         key =>
           { (index: Index, a: A) =>
             {
@@ -190,24 +165,12 @@ object DbInsert {
           }
       case ld: ListData[ALG, t] @unchecked      => ???
       case ed: EitherData[ALG, a, b] @unchecked => ???
-      case kvp: KvpHListValue[ALG, h, hl] @unchecked =>
-        val groupF = kvpHList(kvp.kvpHList, customInterpreter)
+      case kvp: KvpCollectionValue[ALG, a] @unchecked =>
+        val groupF = fromKvpCollection(kvp.kvpCollection)
         k =>
           { (index, a) =>
-            {
-              groupF(index, a.asInstanceOf[h])
-            }
+            groupF(index, a)
           }
-      case x: SwitchEncoding[ALG, a, al, b] @unchecked =>
-        val groupF = kvpHList(x.from, customInterpreter)
-        k =>
-          { (index, h) =>
-            {
-              groupF(index, x.fAtoH(h))
-            }
-          }
-      case co: CoproductSwitch[ALG, c, a]  => ??? // TODO
-      case co: CoproductCollection[ALG, c] => ??? // TODO
     }
 
 }

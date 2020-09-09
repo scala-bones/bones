@@ -1,8 +1,8 @@
 package com.bones.protobuf.values
 
 import com.bones.data.values.CustomStringValue
-import com.bones.protobuf.ProtobufSequentialValidatorInterpreter.{ExtractFromProto, stringData}
-import com.bones.protobuf.ProtobufValidatorValue
+import com.bones.protobuf.ProtobufSequentialValidatorInterpreter.stringData
+import com.bones.protobuf.{ExtractFromProto, ProtobufValidatorValue}
 
 object ProtobufValueStringValidator extends ProtobufValidatorValue[CustomStringValue] {
 
