@@ -3,11 +3,9 @@ package com.bones.http4s
 import java.nio.charset.StandardCharsets
 
 import cats.effect._
-import cats.implicits._
-import com.bones.bson.{BsonEncoderInterpreter, BsonValidatorInterpreter}
-import com.bones.circe.{CirceEncoderInterpreter, CirceValidatorInterpreter}
-import com.bones.data.KvpCollection.headManifest
-import com.bones.data.{KvpCollection, KvpNil, PrimitiveWrapperValue}
+import cats.syntax.all._
+import com.bones.circe.IsoCirceEncoderAndValidatorInterpreter
+import com.bones.data.{SwitchEncoding, ConcreteValue, KvpNil}
 import com.bones.http4s.BaseCrudInterpreter.StringToIdError
 import com.bones.interpreter.{InterchangeFormatEncoderValue, InterchangeFormatValidatorValue}
 import com.bones.protobuf.messageType.ProtoFileGeneratorInterpreter
