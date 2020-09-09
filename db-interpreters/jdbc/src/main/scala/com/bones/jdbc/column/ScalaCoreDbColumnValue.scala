@@ -1,7 +1,6 @@
 package com.bones.jdbc.column
 
 import com.bones.data.values._
-import com.bones.jdbc.column.DbColumnInterpreter.{ToColumns, nameToColumn}
 
 trait ScalaCoreDbColumnValue extends ColumnValue[ScalaCoreValue] {
   override def toColumns[A](alg: ScalaCoreValue[A]): ToColumns =

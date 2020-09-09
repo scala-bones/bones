@@ -1,6 +1,6 @@
 package com.bones.gen
 
-import com.bones.data.KvpHListValue
+import com.bones.data.KvpCollectionValue
 import com.bones.data.values.DefaultValues
 import org.scalacheck.Gen
 import org.scalatest.funsuite.AnyFunSuite

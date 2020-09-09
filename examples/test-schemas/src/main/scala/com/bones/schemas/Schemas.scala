@@ -10,7 +10,7 @@ import shapeless.HNil
 
 object Schemas {
 
-  val idSchema = ( ("id", long(lv.positive)) :: kvpNil ).convert[Tuple1[Long]]
+  val idSchema = (("id", long(lv.positive)) :: kvpNil).convert[Tuple1[Long]]
 
   object CreditCardType extends Enumeration {
     type CreditCardTypes = Value
@@ -104,7 +104,7 @@ object Schemas {
         ("countryIso", string(sv.validVector(isoList))) ::
           ("zipCode", string(sv.max(10)).optional) :<:
           kvpNil
-      ).convert[BillingLocation].optional) :<:
+      ).convert[BillingLocation].asValue.optional) :<:
       kvpNil
   )
 
@@ -225,8 +225,8 @@ object Schemas {
       ("enumeration", enumeration[Currency.type, Currency.Value](Currency)) ::
       ("bigDecimal", bigDecimal(bdv.max(BigDecimal(100)))) ::
       ("eitherField", either(string(sv.words), int)) :<:
-      ("child", allSupportedOptionalSchema.convert[AllSupportedOptional]) :<:
-      ("media", MusicMedium.bonesSchema) :<:
+      ("child", allSupportedOptionalSchema.convert[AllSupportedOptional].asValue) :<:
+      ("media", MusicMedium.bonesSchema.asValue) :<:
       ("int2", int(iv.between(Int.MinValue, Int.MaxValue))) ::
       kvpNil
 

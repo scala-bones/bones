@@ -8,10 +8,10 @@ import cats.data.NonEmptyList
 import com.bones.data.Error
 import com.bones.data.values.{JavaTimeValue, LocalDateData, LocalDateTimeData}
 import com.bones.jdbc.FindInterpreter.{FieldName, Path, utcCalendar}
-import com.bones.jdbc.rs.ResultSetInterpreter.catchSql
 
 trait JavaTimeResultSet extends ResultSetValue[JavaTimeValue] {
-  override def resultSet[A](alg: JavaTimeValue[A]): (Path, FieldName) => ResultSet => Either[NonEmptyList[Error.ExtractionError], A] =
+  override def resultSet[A](alg: JavaTimeValue[A])
+    : (Path, FieldName) => ResultSet => Either[NonEmptyList[Error.ExtractionError], A] =
     alg match {
       case ld: LocalDateData =>
         (path, fieldName) => rs =>

@@ -5,9 +5,9 @@ import java.time.{LocalDate, LocalDateTime, ZoneOffset}
 
 import com.bones.data.values.{JavaTimeValue, LocalDateData, LocalDateTimeData}
 
-trait JavaTimeDbUpdate extends DbUpdateValue[JavaTimeValue] {
-  import DbUpdate._
-  override def definitionResult[A](alg: JavaTimeValue[A]): (Index, Key) => DbUpdate.DefinitionResult[A] =
+trait JavaTimeUpdateStatement extends UpdateStatementValue[JavaTimeValue] {
+
+  override def definitionResult[A](alg: JavaTimeValue[A]): (Index, Key) => JdbcColumnStatement[A] =
     alg match {
       case dd: LocalDateTimeData =>
         psF(

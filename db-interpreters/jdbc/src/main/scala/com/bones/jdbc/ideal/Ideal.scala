@@ -1,62 +1,44 @@
 package com.bones.jdbc.ideal
 
-import com.bones.data.values.InvalidStructureError
+import com.bones.data.KvpCollection.headManifest
+import com.bones.data.template.KvpCollectionMatch
 import com.bones.data.{ConcreteValueTemplate, _}
 import com.bones.jdbc.DbUtil
-import shapeless.{Coproduct, HList, Nat}
+import com.bones.jdbc.DbUtil.camelToSnake
+import shapeless.{::, Coproduct, HList, Nat}
 
-case class Ideal[ALG[_]](algInterpreter: IdealValue[ALG]) { self =>
+trait Ideal[ALG[_]] extends KvpCollectionMatch[ALG, TableCollection => TableCollection] { self =>
+
+  def algInterpreter: IdealValue[ALG]
 
   val tableFromConcreteValue = new ConcreteValueTemplate[
     ALG,
-    TableCollection => Either[InvalidStructureError, TableCollection]] {
-    override protected def optionalToOut[B: Manifest](
-      opt: OptionalValue[ALG, B]): TableCollection => TableCollection =
-      opt.valueDefinitionOp match {
-        case Left(cv) => fromConcreteValue(cv)
-        case Right(alg) =>
-          _ =>
-            Left(InvalidStructureError(s"unexpected algebra in optional: ${alg}"))
-      }
+    (TableCollection, ColumnName, Option[Description]) => TableCollection] {
+    override protected def optionalToOut[B: Manifest](opt: OptionalValue[ALG, B])
+      : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
+      determineValueDefinition(opt.valueDefinitionOp)
+    }
 
     override protected def eitherToOut[A: Manifest, B: Manifest](either: EitherData[ALG, A, B])
-      : TableCollection => Either[InvalidStructureError, TableCollection] =
-      _ => Left(InvalidStructureError("either data currently not supported"))
+      : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
+      val leftF = determineValueDefinition(either.definitionA)
+      val leftName = camelToSnake(either.manifestOfLeft.runtimeClass.getSimpleName)
+      val rightF = determineValueDefinition(either.definitionB)
+      val rightName = camelToSnake(either.manifestOfRight.runtimeClass.getSimpleName)
+      (tc, name, description) =>
+        {
+          val leftResult = leftF(tc, leftName, description)
+          rightF(leftResult, rightName, description)
+        }
+    }
 
-    override protected def listToOut[A: Manifest](
-      list: ListData[ALG, A]): TableCollection => Either[InvalidStructureError, TableCollection] =
-      list.tDefinition match {
-        case Left(cv) => fromConcreteValue(cv)
-        case Right(alg) =>
-          _ =>
-            Left(InvalidStructureError(s"unexpected algebra in list : ${alg}"))
-      }
+    override protected def listToOut[A: Manifest](list: ListData[ALG, A])
+      : (TableCollection, ColumnName, Option[Description]) => TableCollection =
+      determineValueDefinition(list.tDefinition)
 
-    override protected def hListToOut[H <: HList, HL <: Nat](hList: KvpHListValue[ALG, H, HL])
-      : TableCollection => Either[InvalidStructureError, TableCollection] =
-      tableCollection => {
-        val collectionWithColumns =
-          columnCollectionInterpreter.fromKvpHList(hList.kvpHList)(tableCollection)
-        Right(collectionWithColumns)
-      }
-
-    override protected def coproductToOut[C <: Coproduct](coproduct: CoproductCollection[ALG, C])
-      : TableCollection => Either[InvalidStructureError, TableCollection] =
-      _ => Left(InvalidStructureError("Coproduct not supported at the table level."))
-
-    override protected def switchEncoding[A: Manifest, H <: HList, N <: Nat](
-      hList: SwitchEncoding[ALG, H, N, A])
-      : TableCollection => Either[InvalidStructureError, TableCollection] =
-      tableCollection => {
-        val collectionWithColumns =
-          columnCollectionInterpreter.fromKvpHList(hList.from).apply(tableCollection)
-        Right(collectionWithColumns)
-      }
-
-    override protected def coproductConvertToOut[C <: Coproduct, A: Manifest](
-      cc: CoproductSwitch[ALG, C, A])
-      : TableCollection => Either[InvalidStructureError, TableCollection] =
-      _ => Left(InvalidStructureError("Coproduct not supported at the table level."))
+    override protected def kvpCollectionToOut[A](hList: KvpCollectionValue[ALG, A])
+      : (TableCollection, ColumnName, Option[Description]) => TableCollection =
+      (tc, _, _) => fromKvpCollection(hList.kvpCollection)(tc)
   }
 
   val addColumnToWorkingTable = new ConcreteValueTemplate[
@@ -118,61 +100,109 @@ case class Ideal[ALG[_]](algInterpreter: IdealValue[ALG]) { self =>
     /**
       * Create a function, where it he column name is provided, we will create a new table collection.
       * @param hList
-      * @tparam H
-      * @tparam HL
       * @return
       */
-    override protected def hListToOut[H <: HList, HL <: Nat](hList: KvpHListValue[ALG, H, HL])
+    override protected def kvpCollectionToOut[A](hList: KvpCollectionValue[ALG, A])
       : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
 
       (tableCollection: TableCollection, columnName: String, description: Option[String]) =>
         {
           val tc = tableCollection.startNewTable(columnName, description)
-          columnCollectionInterpreter.fromKvpHList(hList.kvpHList)(tc)
+          fromKvpCollection(hList.kvpCollection)(tc)
         }
     }
+  }
 
-    override protected def coproductToOut[C <: Coproduct](coproduct: CoproductCollection[ALG, C])
-      : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
-      coproductInterpreter.fromKvpCoproduct(coproduct.kvpCoproduct)
-    }
+//  val columnCollectionInterpreter = new IdealCollectionInterpreter[ALG] {
+//    override def fromConcreteValue[A: Manifest](
+//      concreteValue: PrimitiveWrapperValue[ALG, A]): TableCollection => TableCollection =
+//      tableFromConcreteValue.fromConcreteValue(concreteValue)
+//    override val algInterpreter: IdealValue[ALG] = self.algInterpreter
+//  }
 
-    override protected def switchEncoding[A: Manifest, H <: HList, N <: Nat](
-      hList: SwitchEncoding[ALG, H, N, A])
-      : (TableCollection, ColumnName, Option[Description]) => TableCollection =
-      (tableCollection: TableCollection, columnName: String, description: Option[String]) => {
-        val tc = tableCollection.startNewTable(columnName, description)
-        columnCollectionInterpreter.fromKvpHList(hList.from)(tc)
+  override def kvpNil(kvp: KvpNil[ALG]): TableCollection => TableCollection =
+    identity
+
+  override def kvpHListCollectionHead[
+    HO <: HList,
+    NO <: Nat,
+    H <: HList,
+    HL <: Nat,
+    T <: HList,
+    TL <: Nat](
+    kvp: KvpHListCollectionHead[ALG, HO, NO, H, HL, T, TL]): TableCollection => TableCollection = {
+    val head = fromKvpCollection(kvp.head)
+    val tail = fromKvpCollection(kvp.tail)
+    (tableCollection: TableCollection) =>
+      {
+        val headTableCollection = head(tableCollection)
+        tail(headTableCollection)
       }
-
-    override protected def coproductConvertToOut[C <: Coproduct, A: Manifest](
-      cc: CoproductSwitch[ALG, C, A])
-      : (TableCollection, ColumnName, Option[Description]) => TableCollection =
-      coproductInterpreter.fromKvpCoproduct(cc.from)
   }
 
-  val coproductInterpreter = new IdealCoproductInterpreter[ALG] {
-    override val algInterpreter: IdealValue[ALG] = self.algInterpreter
-    override def fromCollection[A: Manifest](kvpCollection: ConcreteValue[ALG, A])
-      : (TableCollection, ColumnName, Option[Description]) => TableCollection =
-      addColumnToWorkingTable.fromConcreteValue(kvpCollection)
-  }
-  val columnCollectionInterpreter = new IdealCollectionInterpreter[ALG] {
-    override def fromConcreteValue[A: Manifest](
-      concreteValue: ConcreteValue[ALG, A]): TableCollection => TableCollection =
-      tableFromConcreteValue.fromConcreteValue(concreteValue)
+  override def kvpWrappedHList[A, H <: HList, HL <: Nat](
+    wrappedHList: KvpWrappedHList[ALG, A, H, HL]): TableCollection => TableCollection =
+    fromKvpCollection(wrappedHList.wrappedEncoding)
 
-    override val algInterpreter: IdealValue[ALG] = self.algInterpreter
+  override def kvpWrappedCoproduct[A, C <: Coproduct](
+    wrappedCoproduct: KvpWrappedCoproduct[ALG, A, C]): TableCollection => TableCollection =
+    fromKvpCollection(wrappedCoproduct.wrappedEncoding)
+
+  override def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
+    kvp: KvpSingleValueHead[ALG, H, T, TL, O]): TableCollection => TableCollection = {
+    val headResult = kvp.head match {
+      case Left(keyDef) => { (tc: TableCollection) =>
+        determineValueDefinition(keyDef.dataDefinition)(tc, keyDef.key, keyDef.description)
+      }
+      case Right(kvpColl) => fromKvpCollection(kvpColl)
+    }
+    val tailResult = fromKvpCollection(kvp.tail)
+    tc =>
+      {
+        val headTc = headResult(tc)
+        tailResult(headTc)
+      }
+  }
+
+  def determineValueDefinition[A](dataDefinition: Either[PrimitiveWrapperValue[ALG, A], ALG[A]])
+    : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
+    dataDefinition match {
+      case Left(primitiveWrapper) =>
+        (tc, name, desc) =>
+          tableFromConcreteValue.fromConcreteValue(primitiveWrapper)(primitiveWrapper.manifestOfA)(
+            tc,
+            name,
+            desc)
+      case Right(alg) => algInterpreter.columns(alg)
+    }
+  }
+
+  override def kvpCoproduct[C <: Coproduct](
+    value: KvpCoproduct[ALG, C]): TableCollection => TableCollection = {
+
+    value match {
+      case _: KvpCoNil[ALG] => identity
+      case kvp: KvpCoproductCollectionHead[ALG, a, C, o] @unchecked => {
+        val head = fromKvpCollection(kvp.kvpCollection)
+        val tail = kvpCoproduct(kvp.kvpTail)
+        tc =>
+          {
+            val headTc = head(tc)
+            tail(headTc)
+          }
+      }
+    }
 
   }
 
   def toIdeal[A: Manifest](
-    schema: ConcreteValue[ALG, A],
+    schema: KvpCollection[ALG, A],
     name: Option[String] = None,
-    description: Option[String] = None): Either[InvalidStructureError, TableCollection] = {
-    val tableName = name.getOrElse(DbUtil.camelToSnake(schema.manifestOfA.getClass.getSimpleName))
+    description: Option[String] = None): TableCollection = {
+    val tableName =
+      DbUtil.camelToSnake(headManifest(schema).map(_.getClass.getSimpleName).getOrElse("unknown"))
     val tableCol = TableCollection.init(tableName, description)
-    tableFromConcreteValue.fromConcreteValue(schema).apply(tableCol)
+    fromKvpCollection(schema).apply(tableCol)
   }
 
 }
