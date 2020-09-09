@@ -3,14 +3,14 @@ package com.bones.bson.values
 import java.time.format.DateTimeFormatter
 import java.time._
 
-import com.bones.bson.BsonEncoderInterpreter
+import com.bones.bson.{BsonEncoderInterpreter, BsonPrimitiveEncoder}
 import com.bones.data.values._
 import com.bones.interpreter.InterchangeFormatEncoderValue
 import reactivemongo.bson.{BSONDateTime, BSONLong, BSONValue}
 
 trait BsonJavaTimeEncoder extends InterchangeFormatEncoderValue[JavaTimeValue, BSONValue] {
 
-  val baseEncoder = BsonEncoderInterpreter
+  val baseEncoder = BsonPrimitiveEncoder
   val offsetDateTimeFormatter: DateTimeFormatter
   val offsetTimeFormatter: DateTimeFormatter
   val zonedDateTimeFormatter: DateTimeFormatter
@@ -30,15 +30,18 @@ trait BsonJavaTimeEncoder extends InterchangeFormatEncoderValue[JavaTimeValue, B
         duration =>
           f(duration.toString)
       case InstantData(_) =>
-        (input: Instant) => BSONDateTime(input.toEpochMilli)
+        (input: Instant) =>
+          BSONDateTime(input.toEpochMilli)
       case LocalDateTimeData(_) =>
         (input: LocalDateTime) =>
           val date = input.toInstant(ZoneOffset.UTC).toEpochMilli
           BSONDateTime(date)
       case LocalTimeData(_) =>
-        (input: LocalTime) => BSONLong(input.toNanoOfDay)
+        (input: LocalTime) =>
+          BSONLong(input.toNanoOfDay)
       case LocalDateData(_) =>
-        (input: LocalDate) => BSONDateTime(input.toEpochDay)
+        (input: LocalDate) =>
+          BSONDateTime(input.toEpochDay)
       case MonthData(_) =>
         val f = baseEncoder.stringToOut
         month =>

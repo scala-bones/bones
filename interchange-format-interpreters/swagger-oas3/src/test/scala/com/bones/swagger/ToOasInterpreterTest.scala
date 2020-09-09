@@ -6,9 +6,8 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class ToOasInterpreterTest extends AnyFunSuite {
 
-  val swaggerSchema = SwaggerIsoInterpreter.generateSchemas(
-    allSupportCaseClass,
-    com.bones.swagger.values.defaultInterpreters)("root")
+  val swaggerSchema = com.bones.swagger.values.defaultSwaggerInterpreter
+    .generateSchemas(allSupportCaseClass)("root")
   val str = swaggerSchema
     .map(schemas => io.swagger.v3.core.util.Yaml.mapper().writeValueAsString(schemas._2))
     .mkString("\n")
@@ -16,9 +15,8 @@ class ToOasInterpreterTest extends AnyFunSuite {
   test("simpleTypeWorks") {
     case class Simple(id: Int, name: String)
     val simpleBone = (("id", int) :: ("name", string) :: kvpNil).convert[Simple]
-    val simpleSwagger = SwaggerIsoInterpreter.generateSchemas(
-      simpleBone,
-      com.bones.swagger.values.defaultInterpreters)("root")
+    val simpleSwagger = com.bones.swagger.values.defaultSwaggerInterpreter
+      .generateSchemas(simpleBone)("root")
     val simpleStr = io.swagger.v3.core.util.Yaml.mapper().writeValueAsString(simpleSwagger.head._2)
     //    println(simpleStr)
   }

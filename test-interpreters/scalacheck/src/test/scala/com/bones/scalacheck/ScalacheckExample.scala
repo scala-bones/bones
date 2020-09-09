@@ -1,5 +1,6 @@
 package com.bones.scalacheck
 
+import com.bones.scalacheck.values.defaultValuesScalacheck
 import org.scalacheck.Arbitrary
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
@@ -7,14 +8,17 @@ import com.bones.syntax._
 
 class ScalacheckExample extends AnyFunSuite with Checkers {
 
-
   // Define a case class.  This is probably already be defined in your application.
   object EyeColor extends Enumeration {
     type EyeColor = Value
     val Amber, Blue, Brown, Grey, Green, Hazel, Red = Value
   }
 
-  case class PersonalTraits(height: Int, weight: Double, eyeColor: EyeColor.EyeColor, correctiveVision: Boolean)
+  case class PersonalTraits(
+    height: Int,
+    weight: Double,
+    eyeColor: EyeColor.EyeColor,
+    correctiveVision: Boolean)
 
   // Define our "Bones Schema" with data constraints
   val personalTraitsSchema = (
@@ -23,30 +27,23 @@ class ScalacheckExample extends AnyFunSuite with Checkers {
       ("eyeColor", enumeration[EyeColor.type, EyeColor.EyeColor](EyeColor)) ::
       ("correctiveVision", boolean) ::
       kvpNil
-    ).convert[PersonalTraits]
+  ).convert[PersonalTraits]
 
   //Use the Scalacheck interpreter to generate an Arbitrary which will produce data within the range of the schema provided above.
-  implicit val arb = Arbitrary(Scalacheck.generateGen(personalTraitsSchema, com.bones.scalacheck.values.allInterpreters))
-
+  implicit val arb = Arbitrary(defaultValuesScalacheck.generateGen(personalTraitsSchema))
 
   //Write your tests
   test("user generator") {
-    check( (personalTraits: PersonalTraits) => {
+    check((personalTraits: PersonalTraits) => {
 
       personalTraits.height >= 12 &&
-        personalTraits.height <=240 &&
-        personalTraits.weight >= 4 &&
-        personalTraits.weight <= 9999 &&
-        EyeColor.values.contains(personalTraits.eyeColor) &&
-        List(true, false).contains(personalTraits.correctiveVision)
+      personalTraits.height <= 240 &&
+      personalTraits.weight >= 4 &&
+      personalTraits.weight <= 9999 &&
+      EyeColor.values.contains(personalTraits.eyeColor) &&
+      List(true, false).contains(personalTraits.correctiveVision)
 
     })
   }
-
-
-
-
-
-
 
 }

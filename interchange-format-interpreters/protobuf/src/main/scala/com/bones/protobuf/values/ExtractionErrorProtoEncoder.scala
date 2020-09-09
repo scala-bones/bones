@@ -2,45 +2,37 @@ package com.bones.protobuf.values
 
 import com.bones.data.values._
 import com.bones.interpreter.values.ExtractionErrorEncoder
-import com.bones.protobuf.ProtobufSequentialEncoderInterpreter.EncodeToProto
-import com.bones.protobuf.{ProtobufUtcSequentialEncoderAndValidator, ProtobufEncoderValue}
+import com.bones.protobuf.{
+  EncodeToProto,
+  ProtobufEncoderValue,
+  ProtobufSequentialEncoderInterpreter
+}
 
 object ExtractionErrorProtoEncoder extends ProtobufEncoderValue[ExtractionErrorValue] {
-  private val encoder = ProtobufUtcSequentialEncoderAndValidator
+  val encoder: ProtobufSequentialEncoderInterpreter[ScalaCoreValue] =
+    new ProtobufSequentialEncoderInterpreter[ScalaCoreValue] {
+      override def customInterpreter: ProtobufEncoderValue[ScalaCoreValue] =
+        ProtobufScalaCoreEncoder
+    }
   val scalaCoreCustomInterpreter = ProtobufScalaCoreEncoder
 
   override def encodeToProto[A](alg: ExtractionErrorValue[A]): EncodeToProto[A] =
     alg match {
       case CanNotConvertData =>
-        encoder.valueDefinition(
-          ExtractionErrorEncoder.canNotConvertSchema, scalaCoreCustomInterpreter)
+        encoder.fromKvpCollection(ExtractionErrorEncoder.canNotConvertSchema)
       case NotFoundData =>
-        encoder.valueDefinition(
-          ExtractionErrorEncoder.notFoundDataSchema,
-          scalaCoreCustomInterpreter)
+        encoder.fromKvpCollection(ExtractionErrorEncoder.notFoundDataSchema)
       case ParsingErrorData =>
-        encoder.valueDefinition(
-          ExtractionErrorEncoder.parsingErrorSchema,
-          scalaCoreCustomInterpreter)
+        encoder.fromKvpCollection(ExtractionErrorEncoder.parsingErrorSchema)
       case RequiredValueData =>
-        encoder.valueDefinition(
-          ExtractionErrorEncoder.requiredValueSchema,
-          scalaCoreCustomInterpreter)
+        encoder.fromKvpCollection(ExtractionErrorEncoder.requiredValueSchema)
       case SumTypeErrorData =>
-        encoder.valueDefinition(
-          ExtractionErrorEncoder.sumTypeErrorSchema,
-          scalaCoreCustomInterpreter)
+        encoder.fromKvpCollection(ExtractionErrorEncoder.sumTypeErrorSchema)
       case SystemErrorData =>
-        encoder.valueDefinition(
-          ExtractionErrorEncoder.systemErrorSchema,
-          scalaCoreCustomInterpreter)
+        encoder.fromKvpCollection(ExtractionErrorEncoder.systemErrorSchema)
       case ValidationErrorData =>
-        encoder.valueDefinition(
-          ExtractionErrorEncoder.validationErrorSchema,
-          scalaCoreCustomInterpreter)
+        encoder.fromKvpCollection(ExtractionErrorEncoder.validationErrorSchema)
       case WrongTypeErrorData =>
-        encoder.valueDefinition(
-          ExtractionErrorEncoder.wrongTypeErrorSchema,
-          scalaCoreCustomInterpreter)
+        encoder.fromKvpCollection(ExtractionErrorEncoder.wrongTypeErrorSchema)
     }
 }
