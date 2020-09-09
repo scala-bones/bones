@@ -1,9 +1,7 @@
 package com.bones
 
 import cats.data.NonEmptyList
-import com.bones.circe.IsoCirceEncoderAndValidatorInterpreter
 import org.scalatest.funsuite.AnyFunSuite
-
 
 class ValidationTest extends AnyFunSuite {
 
@@ -15,7 +13,6 @@ class ValidationTest extends AnyFunSuite {
       ("key1", string) ::
         ("key2", string) ::
         kvpNil
-
 
     val o2 =
       ("key3", string) ::
@@ -45,13 +42,11 @@ class ValidationTest extends AnyFunSuite {
     //
     //    split.apply(merged)
 
-
   }
 
   test("append generalization") {
 
     import com.bones.syntax._
-
 
     val s2 =
       ("val1", string()) ::
@@ -84,7 +79,6 @@ class ValidationTest extends AnyFunSuite {
     //    val extResult = merged.apply(jsonProducer)
     //
     //    assert(extResult.toOption.get === Out("one", "two", 1, 2))
-
 
   }
 
@@ -127,7 +121,8 @@ class ValidationTest extends AnyFunSuite {
 
     //createOperation the program that is responsible for converting JSON into a CC.
     //    val jsonToCCProgram = creditCardSchema.lift.foldMap[ValidatedFromJObjectOpt](ValidatedFromJObjectInterpreter())
-    val jsonToCCProgram = IsoCirceEncoderAndValidatorInterpreter.generateValidator(creditCardSchema, com.bones.circe.values.defaultValidators)
+    val jsonToCCProgram =
+      com.bones.circe.values.isoCirceValidatorInterpreter.generateValidator(creditCardSchema)
 
     //here, we will test that just the validations step is working
     val btCc = jsonToCCProgram.apply(parsed)
@@ -177,14 +172,11 @@ class ValidationTest extends AnyFunSuite {
     //    openApi.components(components)
 
     //    println(io.swagger.v3.core.util.Json.mapper().writeValueAsString(openApi))
-
-
     //    {
     //      "statusCode": 400,
     //      "error": "Bad Request",
     //      "message": "invalid query"
     //    }
-
 
   }
 

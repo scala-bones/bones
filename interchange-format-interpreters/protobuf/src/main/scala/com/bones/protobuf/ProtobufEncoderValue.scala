@@ -1,7 +1,6 @@
 package com.bones.protobuf
 
 import com.bones.data.values.CNilF
-import com.bones.protobuf.ProtobufSequentialEncoderInterpreter.EncodeToProto
 import shapeless.{:+:, Coproduct, Inl, Inr}
 
 object ProtobufEncoderValue {
@@ -10,8 +9,8 @@ object ProtobufEncoderValue {
     * see https://stackoverflow.com/a/60561575/387094
     * */
   def merge[L[_], R[_] <: Coproduct, A](
-                                         li: ProtobufEncoderValue[L],
-                                         ri: ProtobufEncoderValue[R]): ProtobufEncoderValue[Lambda[A => L[A] :+: R[A]]] =
+    li: ProtobufEncoderValue[L],
+    ri: ProtobufEncoderValue[R]): ProtobufEncoderValue[Lambda[A => L[A] :+: R[A]]] =
     new ProtobufEncoderValue[Lambda[A => L[A] :+: R[A]]] {
       override def encodeToProto[A](lr: L[A] :+: R[A]): EncodeToProto[A] = lr match {
         case Inl(l) => li.encodeToProto(l)

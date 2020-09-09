@@ -6,7 +6,11 @@ import cats.data.NonEmptyList
 import com.bones.Util.{longToLocalDate, longToLocalTime}
 import com.bones.data.Error.{CanNotConvert, ExtractionError}
 import com.bones.data.values._
-import com.bones.protobuf.{ProtobufSequentialValidatorInterpreter, ProtobufValidatorValue}
+import com.bones.protobuf.{
+  ExtractFromProto,
+  ProtobufSequentialValidatorInterpreter,
+  ProtobufValidatorValue
+}
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.ValidationUtil
 
@@ -14,7 +18,7 @@ import scala.util.Try
 
 object JavaTimeValidator {
   val stringToDateTimeException
-  : (String, List[String]) => Either[NonEmptyList[ExtractionError], DateTimeException] =
+    : (String, List[String]) => Either[NonEmptyList[ExtractionError], DateTimeException] =
     (str, _) => Right(new DateTimeException(str))
 
   val intToDayOfWeek: (Int, List[String]) => Either[NonEmptyList[ExtractionError], DayOfWeek] =
@@ -26,7 +30,7 @@ object JavaTimeValidator {
         .map(th => NonEmptyList.one(CanNotConvert(path, str, classOf[Duration], Some(th))))
 
   val timestampToInstant
-  : (Long, Int, List[String]) => Either[NonEmptyList[ExtractionError], Instant] =
+    : (Long, Int, List[String]) => Either[NonEmptyList[ExtractionError], Instant] =
     (seconds, nanos, path) =>
       Try { Instant.ofEpochSecond(seconds, nanos) }.toEither.left
         .map(th =>
@@ -99,15 +103,13 @@ object JavaTimeValidator {
 }
 
 /** Custom interpreter for JavaTimeData.
- *  Because JavaTimeValidator relies
- *
+  *  Because JavaTimeValidator relies
+  *
  **/
 trait JavaTimeValidator extends ProtobufValidatorValue[JavaTimeValue] {
 
   import JavaTimeValidator._
-
-
-
+  import ProtobufSequentialValidatorInterpreter._
 
 //  def offsetDateTime(lt: OffsetDateTimeData): ExtractFromProto[OffsetDateTime] = {
 //
@@ -160,8 +162,6 @@ trait JavaTimeValidator extends ProtobufValidatorValue[JavaTimeValue] {
 
   val defaultZoneOffset: ZoneOffset
 
-  val coreProtobufSequentialInputInterpreter: ProtobufSequentialValidatorInterpreter
-
 //  def valueDefThenValidation[ALG[_], A](
 //                                 kvpValue: KvpCollection[ALG,A],
 //                                 validations: List[ValidationOp[A]]): ExtractFromProto[A] = {
@@ -185,7 +185,7 @@ trait JavaTimeValidator extends ProtobufValidatorValue[JavaTimeValue] {
     def f(
       seconds: Long,
       nanos: Int,
-      path: Path): Either[NonEmptyList[ExtractionError], LocalDateTime] =
+      path: List[String]): Either[NonEmptyList[ExtractionError], LocalDateTime] =
       Try {
         LocalDateTime.ofEpochSecond(seconds, nanos, zoneOffset)
       }.toEither.left
@@ -201,21 +201,21 @@ trait JavaTimeValidator extends ProtobufValidatorValue[JavaTimeValue] {
     alg match {
       case dt: DateTimeExceptionData =>
         stringDataWithFlatMap(dt, stringToDateTimeException, dt.validations)
-      case dt: DayOfWeekData     => intDataWithFlatMap(dt, intToDayOfWeek, dt.validations)
-      case dd: DurationData      => stringDataWithFlatMap(dd, stringToDuration, dd.validations)
-      case id: InstantData       => timestampWithMap(timestampToInstant, id.validations)
-      case dd: LocalDateTimeData => localDateTimeData(dd, defaultZoneOffset, dd.validations)
-      case dt: LocalDateData     => longDataWithFlatMap(dt, longToLocalDate, dt.validations)
-      case lt: LocalTimeData     => longDataWithFlatMap(lt, longToLocalTime, lt.validations)
-      case md: MonthData         => intDataWithFlatMap(md, intToMonth, md.validations)
-      case md: MonthDayData      => intDataWithFlatMap(md, intToMonthDay, md.validations)
+      case dt: DayOfWeekData      => intDataWithFlatMap(dt, intToDayOfWeek, dt.validations)
+      case dd: DurationData       => stringDataWithFlatMap(dd, stringToDuration, dd.validations)
+      case id: InstantData        => timestampWithMap(timestampToInstant, id.validations)
+      case dd: LocalDateTimeData  => localDateTimeData(dd, defaultZoneOffset, dd.validations)
+      case dt: LocalDateData      => longDataWithFlatMap(dt, longToLocalDate, dt.validations)
+      case lt: LocalTimeData      => longDataWithFlatMap(lt, longToLocalTime, lt.validations)
+      case md: MonthData          => intDataWithFlatMap(md, intToMonth, md.validations)
+      case md: MonthDayData       => intDataWithFlatMap(md, intToMonthDay, md.validations)
       case dt: OffsetDateTimeData => ??? // TODO
 //        valueDefThenValidation(offsetDateTimeSchema, dt.validations)
       case dt: OffsetTimeData => ??? // TODO
 //        valueDefThenValidation(offsetTimeSchema, dt.validations)
-      case pd: PeriodData    => stringDataWithFlatMap(pd, stringToPeriod, pd.validations)
-      case yd: YearData      => intDataWithFlatMap(yd, intToYear, yd.validations)
-      case ym: YearMonthData => longDataWithFlatMap(ym, longToYearMonth, ym.validations)
+      case pd: PeriodData        => stringDataWithFlatMap(pd, stringToPeriod, pd.validations)
+      case yd: YearData          => intDataWithFlatMap(yd, intToYear, yd.validations)
+      case ym: YearMonthData     => longDataWithFlatMap(ym, longToYearMonth, ym.validations)
       case zd: ZonedDateTimeData => ??? // TODO
 //        valueDefThenValidation(zonedDateTimeSchema, zd.validations)
       case zi: ZoneIdData     => stringDataWithFlatMap(zi, stringToZoneId, zi.validations)
