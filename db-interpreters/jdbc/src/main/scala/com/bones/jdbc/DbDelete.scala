@@ -5,7 +5,7 @@ import java.sql.Connection
 import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionError, SystemError}
 import com.bones.data.KvpCollection.headManifest
-import com.bones.data.{KvpCollection, KvpCollectionValue, PrimitiveWrapperValue}
+import com.bones.data.{KvpCollection, KvpCollectionValue, HigherOrderValue}
 import com.bones.jdbc.DbUtil.{camelToSnake, withStatement}
 import com.bones.jdbc.rs.{ResultSetInterpreter, ResultSetValue}
 import com.bones.jdbc.update.{DbUpdate, JdbcStatementInterpreter, UpdateStatementValue}

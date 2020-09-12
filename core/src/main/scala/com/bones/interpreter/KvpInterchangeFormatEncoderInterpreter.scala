@@ -46,7 +46,7 @@ trait KvpInterchangeFormatEncoderInterpreter[ALG[_], OUT] extends KvpCollectionE
   }
 
   protected def determineValueDefinition[A](
-    dataDefinition: Either[PrimitiveWrapperValue[ALG, A], ALG[A]]
+    dataDefinition: Either[HigherOrderValue[ALG, A], ALG[A]]
   ): A => OUT = {
     dataDefinition match {
       case Left(kvp)  => primitiveWrapperDefinition(kvp)
@@ -55,7 +55,7 @@ trait KvpInterchangeFormatEncoderInterpreter[ALG[_], OUT] extends KvpCollectionE
   }
 
   protected def primitiveWrapperDefinition[A](
-    fgo: PrimitiveWrapperValue[ALG, A]
+    fgo: HigherOrderValue[ALG, A]
   ): A => OUT =
     fgo match {
       case op: OptionalValue[ALG, b] @unchecked =>

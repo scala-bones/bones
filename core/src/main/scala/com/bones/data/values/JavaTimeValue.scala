@@ -29,16 +29,15 @@ final case class InstantData(validations: List[ValidationOp[Instant]])
     extends JavaTimeValue[Instant]
 
 final case class LocalDateTimeData(validations: List[ValidationOp[LocalDateTime]])
-  extends JavaTimeValue[LocalDateTime]
+    extends JavaTimeValue[LocalDateTime]
 
 final case class LocalDateData(validations: List[ValidationOp[LocalDate]])
-  extends JavaTimeValue[LocalDate]
+    extends JavaTimeValue[LocalDate]
 
 final case class LocalTimeData(validations: List[ValidationOp[LocalTime]])
-  extends JavaTimeValue[LocalTime]
+    extends JavaTimeValue[LocalTime]
 
-final case class MonthData(validations: List[ValidationOp[Month]])
-    extends JavaTimeValue[Month]
+final case class MonthData(validations: List[ValidationOp[Month]]) extends JavaTimeValue[Month]
 
 final case class MonthDayData(validations: List[ValidationOp[MonthDay]])
     extends JavaTimeValue[MonthDay]
@@ -49,11 +48,9 @@ final case class OffsetDateTimeData(validations: List[ValidationOp[OffsetDateTim
 final case class OffsetTimeData(validations: List[ValidationOp[OffsetTime]])
     extends JavaTimeValue[OffsetTime]
 
-final case class PeriodData(validations: List[ValidationOp[Period]])
-    extends JavaTimeValue[Period]
+final case class PeriodData(validations: List[ValidationOp[Period]]) extends JavaTimeValue[Period]
 
-final case class YearData(validations: List[ValidationOp[Year]])
-    extends JavaTimeValue[Year]
+final case class YearData(validations: List[ValidationOp[Year]]) extends JavaTimeValue[Year]
 
 final case class YearMonthData(validations: List[ValidationOp[YearMonth]])
     extends JavaTimeValue[YearMonth]
@@ -61,8 +58,7 @@ final case class YearMonthData(validations: List[ValidationOp[YearMonth]])
 final case class ZonedDateTimeData(validations: List[ValidationOp[ZonedDateTime]])
     extends JavaTimeValue[ZonedDateTime]
 
-final case class ZoneIdData(validations: List[ValidationOp[ZoneId]])
-    extends JavaTimeValue[ZoneId]
+final case class ZoneIdData(validations: List[ValidationOp[ZoneId]]) extends JavaTimeValue[ZoneId]
 
 final case class ZoneOffsetData(validations: List[ValidationOp[ZoneOffset]])
     extends JavaTimeValue[ZoneOffset]
@@ -92,22 +88,22 @@ trait BaseJavaTimeInterpreter[OUT] {
   def matchJavaTimeValue[A](alg: JavaTimeValue[A]): OUT = {
     alg match {
       case dd: DateTimeExceptionData => dateTimeExceptionData(dd)
-      case dd: DayOfWeekData => dayOfWeekData(dd)
-      case dd: DurationData => durationData(dd)
-      case id: InstantData => instantData(id)
-      case ld: LocalDateTimeData => localDateTimeData(ld)
-      case ld: LocalDateData => localDateData(ld)
-      case lt: LocalTimeData => localTimeData(lt)
-      case md: MonthData => monthData(md)
-      case md: MonthDayData => monthDayData(md)
-      case od: OffsetDateTimeData => offsetDateTimeData(od)
-      case od: OffsetTimeData => offsetTimeData(od)
-      case pd: PeriodData => periodData(pd)
-      case yd: YearData => yearData(yd)
-      case yd: YearMonthData => yearMonthData(yd)
-      case zd: ZonedDateTimeData => zonedDateTimeData(zd)
-      case zd: ZoneIdData => zoneIdData(zd)
-      case zd: ZoneOffsetData => zoneOffsetData(zd)
+      case dd: DayOfWeekData         => dayOfWeekData(dd)
+      case dd: DurationData          => durationData(dd)
+      case id: InstantData           => instantData(id)
+      case ld: LocalDateTimeData     => localDateTimeData(ld)
+      case ld: LocalDateData         => localDateData(ld)
+      case lt: LocalTimeData         => localTimeData(lt)
+      case md: MonthData             => monthData(md)
+      case md: MonthDayData          => monthDayData(md)
+      case od: OffsetDateTimeData    => offsetDateTimeData(od)
+      case od: OffsetTimeData        => offsetTimeData(od)
+      case pd: PeriodData            => periodData(pd)
+      case yd: YearData              => yearData(yd)
+      case yd: YearMonthData         => yearMonthData(yd)
+      case zd: ZonedDateTimeData     => zonedDateTimeData(zd)
+      case zd: ZoneIdData            => zoneIdData(zd)
+      case zd: ZoneOffsetData        => zoneOffsetData(zd)
     }
   }
 
@@ -129,8 +125,6 @@ trait BaseJavaTimeInterpreter[OUT] {
   def zoneIdData(zoneIdData: ZoneIdData): OUT
   def zoneOffsetData(zoneOffsetData: ZoneOffsetData): OUT
 
-
-
 }
 
 /** Convenient methods for creating GADTs when this is the only data type being used.  If using multiple custom
@@ -139,68 +133,68 @@ trait JavaTimeValueSugar extends JavaTimeValidationSugar {
   def dateTimeException(validations: ValidationOp[DateTimeException]*): DateTimeExceptionData =
     DateTimeExceptionData(validations.toList)
 
-  val dateTimeException: DateTimeExceptionData = dateTimeException()
+  def dateTimeException: DateTimeExceptionData = dateTimeException()
 
   def dayOfWeek(validations: ValidationOp[DayOfWeek]*): DayOfWeekData =
     DayOfWeekData(validations.toList)
-  val dayOfWeek: DayOfWeekData = dayOfWeek()
+  def dayOfWeek: DayOfWeekData = dayOfWeek()
 
   def duration(validations: ValidationOp[Duration]*): DurationData =
     DurationData(validations.toList)
   val duration: DurationData = duration()
 
   def instant(validations: ValidationOp[Instant]*): InstantData = InstantData(validations.toList)
-  val instant: InstantData = instant()
+  def instant: InstantData = instant()
 
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
   def localDateTime(v: ValidationOp[LocalDateTime]*): LocalDateTimeData =
     LocalDateTimeData(v.toList)
 
-  val localDateTime: LocalDateTimeData = LocalDateTimeData(List.empty)
+  def localDateTime: LocalDateTimeData = LocalDateTimeData(List.empty)
 
   def localDate(v: ValidationOp[LocalDate]*): LocalDateData = LocalDateData(v.toList)
 
-  val localDate: LocalDateData = LocalDateData(List.empty)
+  def localDate: LocalDateData = LocalDateData(List.empty)
 
   def localTime(v: ValidationOp[LocalTime]*): LocalTimeData = LocalTimeData(v.toList)
 
-  val localTime: LocalTimeData = localTime()
+  def localTime: LocalTimeData = localTime()
 
   def month(validations: ValidationOp[Month]*): MonthData = MonthData(validations.toList)
-  val month: MonthData = month()
+  def month: MonthData = month()
 
   def monthDay(validations: ValidationOp[MonthDay]*): MonthDayData =
     MonthDayData(validations.toList)
-  val monthDay: MonthDayData = monthDay()
+  def monthDay: MonthDayData = monthDay()
 
   def offsetDateTime(validations: ValidationOp[OffsetDateTime]*): OffsetDateTimeData =
     OffsetDateTimeData(validations.toList)
-  val offsetDateTime: OffsetDateTimeData = offsetDateTime()
+  def offsetDateTime: OffsetDateTimeData = offsetDateTime()
 
   def offsetTime(validations: ValidationOp[OffsetTime]*): OffsetTimeData =
     OffsetTimeData(validations.toList)
-  val offsetTime: OffsetTimeData = offsetTime()
+  def offsetTime: OffsetTimeData = offsetTime()
 
   def period(validations: ValidationOp[Period]*): PeriodData = PeriodData(validations.toList)
-  val period: PeriodData = period()
+  def period: PeriodData = period()
 
   def year(validations: ValidationOp[Year]*): YearData = YearData(validations.toList)
-  val year: YearData = year()
+  def year: YearData = year()
 
   def yearMonth(validations: ValidationOp[YearMonth]*): YearMonthData =
     YearMonthData(validations.toList)
-  val yearMonth: YearMonthData = yearMonth()
+  def yearMonth: YearMonthData = yearMonth()
 
   def zonedDateTime(validations: ValidationOp[ZonedDateTime]*): ZonedDateTimeData =
     ZonedDateTimeData(validations.toList)
-  val zonedDateTime: ZonedDateTimeData = zonedDateTime()
+  def zonedDateTime: ZonedDateTimeData = zonedDateTime()
 
   def zoneId(validations: ValidationOp[ZoneId]*): ZoneIdData = ZoneIdData(validations.toList)
-  val zoneId: ZoneIdData = zoneId()
+  def zoneId: ZoneIdData = zoneId()
 
   def zoneOffset(validations: ValidationOp[ZoneOffset]*): ZoneOffsetData =
     ZoneOffsetData(validations.toList)
-  val zoneOffset: ZoneOffsetData = zoneOffset()
+  def zoneOffset: ZoneOffsetData = zoneOffset()
 }
 
 /** Adds smart constructors to lift our GADT into a multi-algebra coproduct */
@@ -211,75 +205,75 @@ trait JavaTimeValueSugarInjected[ALG[_] <: Coproduct] extends JavaTimeValidation
   def dateTimeException(validations: ValidationOp[DateTimeException]*): ALG[DateTimeException] =
     javaTimeInject(DateTimeExceptionData(validations.toList))
 
-  val dateTimeException: ALG[DateTimeException] = dateTimeException()
+  def dateTimeException: ALG[DateTimeException] = dateTimeException()
 
   def dayOfWeek(validations: ValidationOp[DayOfWeek]*): ALG[DayOfWeek] =
     javaTimeInject[DayOfWeek].apply(DayOfWeekData(validations.toList))
 
-  val dayOfWeek: ALG[DayOfWeek] = dayOfWeek()
+  def dayOfWeek: ALG[DayOfWeek] = dayOfWeek()
 
   def duration(validations: ValidationOp[Duration]*): ALG[Duration] =
     javaTimeInject(DurationData(validations.toList))
-  val duration: ALG[Duration] = duration()
+  def duration: ALG[Duration] = duration()
 
   def instant(validations: ValidationOp[Instant]*): ALG[Instant] =
     javaTimeInject(InstantData(validations.toList))
-  val instant: ALG[Instant] = instant()
+  def instant: ALG[Instant] = instant()
 
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
   def localDateTime(v: ValidationOp[LocalDateTime]*): ALG[LocalDateTime] =
     javaTimeInject(LocalDateTimeData(v.toList))
 
-  val localDateTime: ALG[LocalDateTime] = localDateTime()
+  def localDateTime: ALG[LocalDateTime] = localDateTime()
 
   def localDate(v: ValidationOp[LocalDate]*): ALG[LocalDate] =
     javaTimeInject(LocalDateData(v.toList))
 
-  val localDate: ALG[LocalDate] = localDate()
+  def localDate: ALG[LocalDate] = localDate()
 
   def localTime(v: ValidationOp[LocalTime]*): ALG[LocalTime] =
     javaTimeInject(LocalTimeData(v.toList))
 
-  val localTime: ALG[LocalTime] = localTime()
+  def localTime: ALG[LocalTime] = localTime()
 
   def month(validations: ValidationOp[Month]*): ALG[Month] =
     javaTimeInject(MonthData(validations.toList))
-  val month: ALG[Month] = month()
+  def month: ALG[Month] = month()
 
   def monthDay(validations: ValidationOp[MonthDay]*): ALG[MonthDay] =
     javaTimeInject(MonthDayData(validations.toList))
-  val monthDay: ALG[MonthDay] = monthDay()
+  def monthDay: ALG[MonthDay] = monthDay()
 
   def offsetDateTime(validations: ValidationOp[OffsetDateTime]*): ALG[OffsetDateTime] =
     javaTimeInject(OffsetDateTimeData(validations.toList))
-  val offsetDateTime: ALG[OffsetDateTime] = offsetDateTime()
+  def offsetDateTime: ALG[OffsetDateTime] = offsetDateTime()
 
   def offsetTime(validations: ValidationOp[OffsetTime]*): ALG[OffsetTime] =
     javaTimeInject(OffsetTimeData(validations.toList))
-  val offsetTime: ALG[OffsetTime] = offsetTime()
+  def offsetTime: ALG[OffsetTime] = offsetTime()
 
   def period(validations: ValidationOp[Period]*): ALG[Period] =
     javaTimeInject(PeriodData(validations.toList))
-  val period: ALG[Period] = period()
+  def period: ALG[Period] = period()
 
   def year(validations: ValidationOp[Year]*): ALG[Year] =
     javaTimeInject(YearData(validations.toList))
-  val year: ALG[Year] = year()
+  def year: ALG[Year] = year()
 
   def yearMonth(validations: ValidationOp[YearMonth]*): ALG[YearMonth] =
     javaTimeInject(YearMonthData(validations.toList))
-  val yearMonth: ALG[YearMonth] = yearMonth()
+  def yearMonth: ALG[YearMonth] = yearMonth()
 
   def zonedDateTime(validations: ValidationOp[ZonedDateTime]*): ALG[ZonedDateTime] =
     javaTimeInject(ZonedDateTimeData(validations.toList))
-  val zonedDateTime: ALG[ZonedDateTime] = zonedDateTime()
+  def zonedDateTime: ALG[ZonedDateTime] = zonedDateTime()
 
   def zoneId(validations: ValidationOp[ZoneId]*): ALG[ZoneId] =
     javaTimeInject(ZoneIdData(validations.toList))
-  val zoneId: ALG[ZoneId] = zoneId()
+  def zoneId: ALG[ZoneId] = zoneId()
 
   def zoneOffset(validations: ValidationOp[ZoneOffset]*): ALG[ZoneOffset] =
     javaTimeInject(ZoneOffsetData(validations.toList))
 
-  val zoneOffset: ALG[ZoneOffset] = zoneOffset()
+  def zoneOffset: ALG[ZoneOffset] = zoneOffset()
 }

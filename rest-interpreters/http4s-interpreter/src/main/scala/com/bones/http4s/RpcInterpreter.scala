@@ -3,25 +3,16 @@ package com.bones.http4s
 import java.nio.charset.StandardCharsets
 
 import cats.effect.Sync
-import com.bones.bson.{BsonEncoderInterpreter, BsonValidatorInterpreter}
-import com.bones.circe.{CirceEncoderInterpreter, CirceValidatorInterpreter}
 import com.bones.data.KvpCollection
 import com.bones.http4s.BaseCrudInterpreter.StringToIdError
-import com.bones.protobuf._
+import com.bones.http4s.config.InterpreterConfig
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 
 class RpcInterpreter[ALG[_], ID: Manifest](
+  interpreters: InterpreterConfig[ALG, ID],
   path: String,
-  jsonValidator: CirceValidatorInterpreter[ALG],
-  jsonEncoder: CirceEncoderInterpreter[ALG],
-  bsonValidator: BsonValidatorInterpreter[ALG],
-  bsonEncoder: BsonEncoderInterpreter[ALG],
-  protobufValidator: ProtobufSequentialValidatorInterpreter[ALG],
-  protobufEncoder: ProtobufSequentialEncoderInterpreter[ALG],
-  //  customSwaggerInterpreter: CustomSwaggerInterpreter[ALG],
-  pathStringToId: String => Either[StringToIdError, ID],
-  charset: java.nio.charset.Charset = StandardCharsets.UTF_8
+  pathStringToId: String => Either[StringToIdError, ID]
 ) {
 
   def create[F[_], A, E, B](
@@ -36,13 +27,13 @@ class RpcInterpreter[ALG[_], ID: Manifest](
       inputSchema,
       errorSchema,
       outputSchema,
-      jsonValidator,
-      jsonEncoder,
-      bsonValidator,
-      bsonEncoder,
-      protobufValidator,
-      protobufEncoder,
-      charset
+      interpreters.jsonValidator,
+      interpreters.jsonEncoder,
+      interpreters.bsonValidator,
+      interpreters.bsonEncoder,
+      interpreters.protobufValidator,
+      interpreters.protobufEncoder,
+      interpreters.charset
     )
 
 }

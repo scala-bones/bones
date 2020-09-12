@@ -229,7 +229,7 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
   }
 
   def determineValueDefinition[A](
-    value: Either[PrimitiveWrapperValue[ALG, A], ALG[A]]
+    value: Either[HigherOrderValue[ALG, A], ALG[A]]
   ): (Name, Int) => (MessageField, Vector[NestedType], Int) =
     value match {
       case Left(kvp)  => valueDefinition(kvp)
@@ -237,7 +237,7 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
     }
 
   def valueDefinition[A](
-    fgo: PrimitiveWrapperValue[ALG, A]): (Name, Int) => (MessageField, Vector[NestedType], Int) =
+    fgo: HigherOrderValue[ALG, A]): (Name, Int) => (MessageField, Vector[NestedType], Int) =
     fgo match {
       case op: OptionalValue[ALG, a] @unchecked =>
         (name, index) =>

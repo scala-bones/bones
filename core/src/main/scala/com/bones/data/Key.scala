@@ -11,11 +11,11 @@ import shapeless.{HList, Nat}
   * @tparam ALG Defines what gadt(s) we can use in a context.
   *             It can be [[com.bones.data.values.DefaultValuesSyntax]]  (aka everything supported in Bones).
   *             It can be a single data type such as [[com.bones.data.values.JavaTimeValue]]
-  *             It can be any [[shapeless.Coproduct]] of Algebras.
+  *             It can be any shapeless.Coproduct of Algebras.
   */
 case class KeyDefinition[ALG[_], A: Manifest](
   key: String,
-  dataDefinition: Either[PrimitiveWrapperValue[ALG, A], ALG[A]],
+  dataDefinition: Either[HigherOrderValue[ALG, A], ALG[A]],
   description: Option[String],
   example: Option[A]
 ) {
@@ -25,7 +25,7 @@ case class KeyDefinition[ALG[_], A: Manifest](
 object KeyDefinition {
 
   /** In the context of a given ALG, the data definition can be a collection type (left) or a value type (right) */
-  type CoproductDataDefinition[ALG[_], A] = Either[PrimitiveWrapperValue[ALG, A], ALG[A]]
+  type CoproductDataDefinition[ALG[_], A] = Either[HigherOrderValue[ALG, A], ALG[A]]
 }
 
 /** Useful DSL builder */
@@ -33,7 +33,7 @@ trait KeyValueDefinitionSugar {
 
   def kvp[ALG[_], A: Manifest](
     key: String,
-    valueDefinitionOp: PrimitiveWrapperValue[ALG, A]): KeyDefinition[ALG, A] =
+    valueDefinitionOp: HigherOrderValue[ALG, A]): KeyDefinition[ALG, A] =
     KeyDefinition[ALG, A](key, Left(valueDefinitionOp), None, None)
 
   def kvpCov[ALG[_], A: Manifest](key: String, valueDefinitionOp: ALG[A]): KeyDefinition[ALG, A] =
@@ -58,7 +58,7 @@ trait Sugar[ALG[_]] {
       OptionalValue[ALG, A](Right(hm))
   }
 
-  implicit class WrapKvpCollectionInCollection[A: Manifest](hm: PrimitiveWrapperValue[ALG, A]) {
+  implicit class WrapKvpCollectionInCollection[A: Manifest](hm: HigherOrderValue[ALG, A]) {
     self =>
     def list(validationOps: ValidationOp[List[A]]*): ListData[ALG, A] =
       ListData[ALG, A](Left(hm), validationOps.toList)
@@ -83,7 +83,7 @@ trait Sugar[ALG[_]] {
     ListData[ALG, T](Right(dataDefinitionOp), v.toList)
 
   def list[T: Manifest](
-    kvpValue: PrimitiveWrapperValue[ALG, T],
+    kvpValue: HigherOrderValue[ALG, T],
     v: ValidationOp[List[T]]*
   ): ListData[ALG, T] =
     ListData[ALG, T](Left(kvpValue), v.toList)
@@ -96,20 +96,20 @@ trait Sugar[ALG[_]] {
 
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
   def either[A: Manifest, B: Manifest](
-    definitionA: PrimitiveWrapperValue[ALG, A],
-    definitionB: PrimitiveWrapperValue[ALG, B]
+    definitionA: HigherOrderValue[ALG, A],
+    definitionB: HigherOrderValue[ALG, B]
   ): EitherData[ALG, A, B] =
     EitherData(Left(definitionA), Left(definitionB))
 
   def either[A: Manifest, B: Manifest](
-    definitionA: PrimitiveWrapperValue[ALG, A],
+    definitionA: HigherOrderValue[ALG, A],
     definitionB: ALG[B]
   ): EitherData[ALG, A, B] =
     EitherData(Left(definitionA), Right(definitionB))
 
   def either[A: Manifest, B: Manifest](
     definitionA: ALG[A],
-    definitionB: PrimitiveWrapperValue[ALG, B]
+    definitionB: HigherOrderValue[ALG, B]
   ): EitherData[ALG, A, B] =
     EitherData(Right(definitionA), Left(definitionB))
 

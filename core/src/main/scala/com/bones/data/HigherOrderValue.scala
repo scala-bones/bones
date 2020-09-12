@@ -3,8 +3,8 @@ package com.bones.data
 import com.bones.PrimitiveValue
 import com.bones.validation.ValidationDefinition.ValidationOp
 
-object PrimitiveWrapperValue {
-  implicit class ToCollection[ALG[_] <: PrimitiveWrapperValue[ALG, A], A: Manifest](hm: ALG[A]) {
+object HigherOrderValue {
+  implicit class ToCollection[ALG[_] <: HigherOrderValue[ALG, A], A: Manifest](hm: ALG[A]) {
     self =>
     def list(validationOps: ValidationOp[List[A]]*): ListData[ALG, A] =
       ListData[ALG, A](Right(hm), validationOps.toList)
@@ -14,7 +14,7 @@ object PrimitiveWrapperValue {
   }
 }
 
-sealed abstract class PrimitiveWrapperValue[ALG[_], A: Manifest] extends PrimitiveValue[A] {
+sealed abstract class HigherOrderValue[ALG[_], A: Manifest] extends PrimitiveValue[A] {
   val manifestOfA: Manifest[A] = manifest[A]
 }
 
@@ -23,7 +23,7 @@ trait Named {
 }
 
 trait ConcreteValueTemplate[ALG[_], OUT] {
-  def fromConcreteValue[A: Manifest](kvpCollection: PrimitiveWrapperValue[ALG, A]): OUT = {
+  def fromConcreteValue[A: Manifest](kvpCollection: HigherOrderValue[ALG, A]): OUT = {
     kvpCollection match {
       case ov: OptionalValue[ALG, b] =>
         implicit val manifestOfB: Manifest[b] = ov.manifestOfB
@@ -48,24 +48,24 @@ trait ConcreteValueTemplate[ALG[_], OUT] {
 
 /** Wraps a data definition to mark the field optional */
 case class OptionalValue[ALG[_], B: Manifest](
-  valueDefinitionOp: Either[PrimitiveWrapperValue[ALG, B], ALG[B]])
-    extends PrimitiveWrapperValue[ALG, Option[B]] {
+  valueDefinitionOp: Either[HigherOrderValue[ALG, B], ALG[B]])
+    extends HigherOrderValue[ALG, Option[B]] {
   val manifestOfB: Manifest[B] = manifest[B]
 }
 
 final case class EitherData[ALG[_], A: Manifest, B: Manifest](
-  definitionA: Either[PrimitiveWrapperValue[ALG, A], ALG[A]],
-  definitionB: Either[PrimitiveWrapperValue[ALG, B], ALG[B]])
-    extends PrimitiveWrapperValue[ALG, Either[A, B]] {
+  definitionA: Either[HigherOrderValue[ALG, A], ALG[A]],
+  definitionB: Either[HigherOrderValue[ALG, B], ALG[B]])
+    extends HigherOrderValue[ALG, Either[A, B]] {
   val manifestOfLeft: Manifest[A] = manifest[A]
   val manifestOfRight: Manifest[B] = manifest[B]
 }
 
 /** Represents a type where the value is a List of T */
 final case class ListData[ALG[_], T: Manifest](
-  tDefinition: Either[PrimitiveWrapperValue[ALG, T], ALG[T]],
+  tDefinition: Either[HigherOrderValue[ALG, T], ALG[T]],
   validations: List[ValidationOp[List[T]]])
-    extends PrimitiveWrapperValue[ALG, List[T]] {
+    extends HigherOrderValue[ALG, List[T]] {
   val manifestOfT: Manifest[T] = manifest[T]
 }
 
@@ -73,4 +73,4 @@ final case class ListData[ALG[_], T: Manifest](
 final case class KvpCollectionValue[ALG[_], A: Manifest](
   kvpCollection: KvpCollection[ALG, A],
   validations: List[ValidationOp[A]])
-    extends PrimitiveWrapperValue[ALG, A] {}
+    extends HigherOrderValue[ALG, A] {}

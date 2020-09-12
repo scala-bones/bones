@@ -148,6 +148,11 @@ sealed abstract class KvpHListCollection[ALG[_], L <: HList, LL <: Nat]
     hListXmap[A](f2, g2, validation.toList: _*)
   }
 
+  def encodedHead[B: Manifest](validation: ValidationOp[B]*)(
+    implicit isEqual: (B :: HNil) =:= L
+  ) =
+    xmap[B, B](identity, identity)
+
   def xmapTup[A: Manifest, Tup <: Product](f: Tup => A, g: A => Tup, validations: ValidationOp[A]*)(
     implicit tupler: Tupler.Aux[L, Tup],
     gen: Generic[Tup]
@@ -227,11 +232,11 @@ sealed abstract class KvpHListCollection[ALG[_], L <: HList, LL <: Nat]
     * @tparam A The wrapped type
     * @return KvpSingleValueHead prefixed to this HList
     */
-  def :<:[A: Manifest](input: (String, PrimitiveWrapperValue[ALG, A]))(
+  def :<:[A: Manifest](input: (String, HigherOrderValue[ALG, A]))(
     implicit isHCons: Aux[A :: L, A, L]): KvpSingleValueHead[ALG, A, L, LL, A :: L] =
     consKeyDefinition(KeyDefinition(input._1, Left(input._2), None, None))(manifest[A], isHCons)
 
-  def :<:[A: Manifest](input: (String, PrimitiveWrapperValue[ALG, A], String, A))(
+  def :<:[A: Manifest](input: (String, HigherOrderValue[ALG, A], String, A))(
     implicit isHCons: Aux[A :: L, A, L]): KvpSingleValueHead[ALG, A, L, LL, A :: L] =
     consKeyDefinition(new KeyDefinition(input._1, Left(input._2), Some(input._3), Some(input._4)))(
       manifest[A],

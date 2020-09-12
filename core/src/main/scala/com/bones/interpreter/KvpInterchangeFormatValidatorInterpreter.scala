@@ -74,7 +74,7 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
   }
 
   protected def determineValidator[A](
-    value: Either[PrimitiveWrapperValue[ALG, A], ALG[A]]
+    value: Either[HigherOrderValue[ALG, A], ALG[A]]
   ): (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A] = {
     value match {
       case Left(kvp)  => valueDefinition(kvp)
@@ -82,7 +82,7 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
     }
   }
 
-  protected def valueDefinition[A](fgo: PrimitiveWrapperValue[ALG, A])
+  protected def valueDefinition[A](fgo: HigherOrderValue[ALG, A])
     : (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A] = {
     val result: (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A] =
       fgo match {

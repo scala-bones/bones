@@ -156,7 +156,7 @@ Version 0.6.0 includes validation, CRUD and the http4s REST Interpreter.
 #### Getting Started with Http4s Circe Interpreter
 Basic CRUD capabilities implemented with http4s, circe and JDBC.
 
-```libraryDependencies += "com.github.oletraveler" %% "examples" % "0.7.0-SNAPSHOT"```
+```libraryDependencies += "io.github.scala-bones" %% "bones-http4s-server" % "0.7.0-SNAPSHOT"```
 
 Then check out the [LocalhostAll Example](examples/http4s-examples/src/main/scala/com/bones/fullstack/LocalhostAll.scala)
 
