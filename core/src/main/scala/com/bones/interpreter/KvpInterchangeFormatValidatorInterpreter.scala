@@ -101,22 +101,13 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
           (in: Option[IN], path: Path) =>
             {
               optionalA(in, path) match {
-                case Left(err) =>
-                  val nonWrongTypeError = err.toList.filter {
-                    case WrongTypeError(_, _, _, _) => false
-                    case RequiredValue(_, _)        => false
-                    case CanNotConvert(_, _, _, _)  => false
-                    case _                          => true
-                  }
-                  if (nonWrongTypeError.isEmpty) {
-                    optionalB(in, path) match {
-                      case Right(b) => Right(Right(b))
-                      case Left(err) => {
-                        Left(NonEmptyList.one(RequiredValue.fromDef(path, Left(ed))))
-                      }
+                case Left(err1) =>
+                  optionalB(in, path) match {
+                    case Right(b) => Right(Right(b))
+                    case Left(err2) => {
+                      val errors = RequiredValue.fromDef(path, Left(ed)) :: err2 ::: err1
+                      Left(errors)
                     }
-                  } else {
-                    Left(err)
                   }
                 case Right(a) => Right(Left(a))
               }
