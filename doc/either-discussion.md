@@ -43,9 +43,11 @@ Right Value
 ```
 
 In order to parse this data, Either Data first passes priority to the Left value.  If the parser
-returns a CanNotConvert error, then priority passes to the Right value parser.  If the
+returns any error, then priority passes to the Right value parser.  If the
 right parser successfully parses the data, then the CanNotConvert error, returned from the right parser,
 is discarded.
+
+
 
 ### Protobuf
 The Protobuf representation will be 2 different field numbers using a 'oneof' keyword.
@@ -53,8 +55,8 @@ The Protobuf representation will be 2 different field numbers using a 'oneof' ke
 ```proto
 message SampleMessage {
   oneof key_oneof {
-    int32 age_int = 1;
-    string age_string = 2;
+    int32 age1 = 1;
+    string age2 = 2;
   }
 }
 
