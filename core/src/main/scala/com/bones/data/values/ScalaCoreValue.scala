@@ -40,21 +40,20 @@ final case class EnumerationData[E <: Enumeration, V: Manifest](
   validations: List[ValidationOp[V]]
 ) extends ScalaCoreValue[V]
 
-
 trait BaseScalaCoreInterpreter[OUT] {
 
   def matchScalaCoreValue[A](alg: ScalaCoreValue[A]): OUT = {
     alg match {
-      case bd: BooleanData => boolDataToOut(bd)
-      case id: IntData => intDataToOut(id)
-      case ld: LongData => longDataToOut(ld)
-      case sd: ShortData => shortDataToOut(sd)
-      case sd: StringData => stringDataToOut(sd)
-      case fd: FloatData => floatDataToOut(fd)
-      case dd: DoubleData => doubleDataToOut(dd)
-      case bd: BigDecimalData => bigDecimalToOut(bd)
-      case ba: ByteArrayData => byteArrayToOut(ba)
-      case en: EnumerationData[e,v] => enumerationToOut(en)
+      case bd: BooleanData           => boolDataToOut(bd)
+      case id: IntData               => intDataToOut(id)
+      case ld: LongData              => longDataToOut(ld)
+      case sd: ShortData             => shortDataToOut(sd)
+      case sd: StringData            => stringDataToOut(sd)
+      case fd: FloatData             => floatDataToOut(fd)
+      case dd: DoubleData            => doubleDataToOut(dd)
+      case bd: BigDecimalData        => bigDecimalToOut(bd)
+      case ba: ByteArrayData         => byteArrayToOut(ba)
+      case en: EnumerationData[e, v] => enumerationToOut(en)
     }
   }
 
@@ -67,7 +66,7 @@ trait BaseScalaCoreInterpreter[OUT] {
   def doubleDataToOut(doubleData: DoubleData): OUT
   def bigDecimalToOut(bigDecimalData: BigDecimalData): OUT
   def byteArrayToOut(byteArrayData: ByteArrayData): OUT
-  def enumerationToOut[A](enumerationData: EnumerationData[_,A]): OUT
+  def enumerationToOut[A](enumerationData: EnumerationData[_, A]): OUT
 
 }
 
@@ -182,55 +181,55 @@ trait ScalaCoreInjectedSugar[ALG[_] <: Coproduct] extends ScalaCoreValidation {
     scalaCoreInjected(StringData(validationOp.toList))
 
   /** Alias for string without validations. */
-  val string: ALG[String] = string()
+  def string: ALG[String] = string()
 
   /* Indicates that the data tied to this value is a Float */
   def float(f: ValidationOp[Float]*): ALG[Float] =
     scalaCoreInjected(FloatData(f.toList))
 
   /** Alias for float without validations. */
-  val float: ALG[Float] = float()
+  def float: ALG[Float] = float()
 
   /** Indicates that the data tied to this value is a short */
   def short(f: ValidationOp[Short]*): ALG[Short] =
     scalaCoreInjected(ShortData(f.toList))
 
   /** Alias for short without validations */
-  val short: ALG[Short] = short()
+  def short: ALG[Short] = short()
 
   /** Indicates that the data tied to this value is a double */
   def double(f: ValidationOp[Double]*): ALG[Double] =
     scalaCoreInjected(DoubleData(f.toList))
 
   /** Alias for double without validations */
-  val double: ALG[Double] = double()
+  def double: ALG[Double] = double()
 
   /** Indicates the data tied to this Value is an Int */
   def int(f: ValidationOp[Int]*): ALG[Int] =
     scalaCoreInjected(IntData(f.toList))
 
   /** Alias for int without any validations */
-  val int: ALG[Int] = int()
+  def int: ALG[Int] = int()
 
   /** Indicates that the data tied to this key is an Int type that must pass the specified validations */
   def long(f: ValidationOp[Long]*): ALG[Long] =
     scalaCoreInjected(LongData(f.toList))
 
   /** Alias for long without validations. */
-  val long: ALG[Long] = long()
+  def long: ALG[Long] = long()
 
   /** Indicates that the data tied to this key is an boolean type that must pass the specified validations. */
   def boolean(f: ValidationOp[Boolean]*): ALG[Boolean] =
     scalaCoreInjected(BooleanData(f.toList))
 
-  val boolean: ALG[Boolean] = boolean()
+  def boolean: ALG[Boolean] = boolean()
 
   /** Indicates that the data tied to this key is a BigDecimal that must pass the specified validations. */
   def bigDecimal(v: ValidationOp[BigDecimal]*): ALG[BigDecimal] =
     scalaCoreInjected(BigDecimalData(v.toList))
 
   /** Alias for bigDecimal without validations */
-  val bigDecimal: ALG[BigDecimal] = bigDecimal()
+  def bigDecimal: ALG[BigDecimal] = bigDecimal()
 
   /** Expecting the type to be a Scala style enumeration
     *
@@ -248,6 +247,6 @@ trait ScalaCoreInjectedSugar[ALG[_] <: Coproduct] extends ScalaCoreValidation {
     scalaCoreInjected(ByteArrayData(v.toList))
 
   /** Alias for byte array without validations */
-  val byteArray: ALG[Array[Byte]] = byteArray()
+  def byteArray: ALG[Array[Byte]] = byteArray()
 
 }

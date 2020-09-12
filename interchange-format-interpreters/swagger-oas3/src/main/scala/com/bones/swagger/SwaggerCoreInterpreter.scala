@@ -429,7 +429,7 @@ trait SwaggerCoreInterpreter[ALG[_]] extends KvpCollectionMatch[ALG, SwaggerSche
   }
 
   def determineValueDefinition[A](
-    value: Either[PrimitiveWrapperValue[ALG, A], ALG[A]],
+    value: Either[HigherOrderValue[ALG, A], ALG[A]],
     description: Option[String],
     example: Option[A]
   ): Name => SwaggerSchemas[Schema[_]] =
@@ -444,7 +444,7 @@ trait SwaggerCoreInterpreter[ALG[_]] extends KvpCollectionMatch[ALG, SwaggerSche
     * @param vd The DataClass definition to convert to a Schema
     **/
   def valueDefinition[A](
-    vd: PrimitiveWrapperValue[ALG, A],
+    vd: HigherOrderValue[ALG, A],
     description: Option[String],
     example: Option[A]): Name => SwaggerSchemas[Schema[_]] = {
     vd match {

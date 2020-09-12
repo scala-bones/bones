@@ -244,7 +244,7 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
   /** Determine if we use the core algebra or the custom algebra and then pass control to the appropriate interpreter */
   def determineValueDefinition[A](
     key: String,
-    definition: Either[PrimitiveWrapperValue[ALG, A], ALG[A]]
+    definition: Either[HigherOrderValue[ALG, A], ALG[A]]
   ): ExtractFromProto[A] =
     definition match {
       case Left(kvp) => valueDefinition(key, kvp)
@@ -377,7 +377,7 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
       }
   }
 
-  def valueDefinition[A](key: String, fgo: PrimitiveWrapperValue[ALG, A]): ExtractFromProto[A] =
+  def valueDefinition[A](key: String, fgo: HigherOrderValue[ALG, A]): ExtractFromProto[A] =
     fgo match {
       case op: OptionalValue[ALG, a] @unchecked =>
         optionalKvpValueDefinition[a](key, op)

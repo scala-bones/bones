@@ -236,16 +236,16 @@ trait BaseCustomStringValue[OUT] {
 
   def matchCustomStringValue[A](alg: CustomStringValue[A]): OUT = {
     alg match {
-      case ed: EmailData => emailData(ed)
-      case gd: GuidData => guidData(gd)
+      case ed: EmailData      => emailData(ed)
+      case gd: GuidData       => guidData(gd)
       case cd: CreditCardData => creditCardData(cd)
-      case hd: HexStringData => hexStringData(hd)
-      case bd: Base64Data => base64Data(bd)
-      case hd: HostnameData => hostnameData(hd)
-      case ud: UriData => uriData(ud)
-      case ud: UrlData => urlData(ud)
-      case id: IpV4Data => ip4vData(id)
-      case id: IpV6Data => ip46Data(id)
+      case hd: HexStringData  => hexStringData(hd)
+      case bd: Base64Data     => base64Data(bd)
+      case hd: HostnameData   => hostnameData(hd)
+      case ud: UriData        => uriData(ud)
+      case ud: UrlData        => urlData(ud)
+      case id: IpV4Data       => ip4vData(id)
+      case id: IpV6Data       => ip46Data(id)
     }
   }
 
@@ -267,48 +267,48 @@ trait CustomStringValueSugar extends CustomStringAlgebraSugar {
   /** String must be a guid */
   def guid(validationOp: ValidationOp[String]*): GuidData = GuidData(validationOp.toList)
 
-  val guid: GuidData = guid()
+  def guid: GuidData = guid()
 
   /** String must be a valid email format */
   def email(validationOp: ValidationOp[String]*): EmailData = EmailData(validationOp.toList)
 
-  val email: EmailData = email()
+  def email: EmailData = email()
 
   /** String must be a valid hexadecimal String */
   def hex(validationOp: ValidationOp[String]*): HexStringData = HexStringData(validationOp.toList)
 
-  val hex: HexStringData = hex()
+  def hex: HexStringData = hex()
 
   /** String must be in base64 */
   def base64(validationOp: ValidationOp[String]*): Base64Data = Base64Data(validationOp.toList)
 
-  val base64: Base64Data = base64()
+  def base64: Base64Data = base64()
 
   /** String must be a hostname */
   def hostname(validationOp: ValidationOp[String]*): HostnameData =
     HostnameData(validationOp.toList)
 
-  val hostname: HostnameData = hostname()
+  def hostname: HostnameData = hostname()
 
   /** String must be an IPv4 */
   def iPv4(validationOp: ValidationOp[String]*): IpV4Data = IpV4Data(validationOp.toList)
 
-  val iPv4: IpV4Data = iPv4()
+  def iPv4: IpV4Data = iPv4()
 
   /** String must be a Uri */
   def uri(validationOp: ValidationOp[String]*): UriData = UriData(validationOp.toList)
 
-  val uri: UriData = uri()
+  def uri: UriData = uri()
 
   def url(validationOp: ValidationOp[String]*): UrlData = UrlData(validationOp.toList)
 
-  val url: UrlData = url()
+  def url: UrlData = url()
 
   /** String must be a valid credit card number */
   def creditCard(validationOp: ValidationOp[String]*): CreditCardData =
     CreditCardData(validationOp.toList)
 
-  val creditCard: CreditCardData = creditCard()
+  def creditCard: CreditCardData = creditCard()
 }
 
 /** Adds smart constructors to lift our GADT into a multi-algebra system */
@@ -320,52 +320,52 @@ trait CustomStringValueSugarInjected[ALG[_] <: Coproduct] extends CustomStringAl
   def guid(validationOp: ValidationOp[String]*): ALG[String] =
     stringValueInject(GuidData(validationOp.toList))
 
-  val guid: ALG[String] = guid()
+  def guid: ALG[String] = guid()
 
   /** String must be a valid email format */
   def email(validationOp: ValidationOp[String]*): ALG[String] =
     stringValueInject(EmailData(validationOp.toList))
 
-  val email: ALG[String] = email()
+  def email: ALG[String] = email()
 
   /** String must be a valid hexadecimal String */
   def hex(validationOp: ValidationOp[String]*): ALG[String] =
     stringValueInject(HexStringData(validationOp.toList))
 
-  val hex: ALG[String] = hex()
+  def hex: ALG[String] = hex()
 
   /** String must be in base64 */
   def base64(validationOp: ValidationOp[String]*): ALG[String] =
     stringValueInject(Base64Data(validationOp.toList))
 
-  val base64: ALG[String] = base64()
+  def base64: ALG[String] = base64()
 
   /** String must be a hostname */
   def hostname(validationOp: ValidationOp[String]*): ALG[String] =
     stringValueInject(HostnameData(validationOp.toList))
 
-  val hostname: ALG[String] = hostname()
+  def hostname: ALG[String] = hostname()
 
   /** String must be an IPv4 */
   def iPv4(validationOp: ValidationOp[String]*): ALG[String] =
     stringValueInject(IpV4Data(validationOp.toList))
 
-  val iPv4: ALG[String] = iPv4()
+  def iPv4: ALG[String] = iPv4()
 
   /** String must be a Uri */
   def uri(validationOp: ValidationOp[String]*): ALG[String] =
     stringValueInject(UriData(validationOp.toList))
 
-  val uri: ALG[String] = uri()
+  def uri: ALG[String] = uri()
 
   def url(validationOp: ValidationOp[String]*): ALG[String] =
     stringValueInject(UrlData(validationOp.toList))
 
-  val url: ALG[String] = url()
+  def url: ALG[String] = url()
 
   /** String must be a valid credit card number */
   def creditCard(validationOp: ValidationOp[String]*): ALG[String] =
     stringValueInject(CreditCardData(validationOp.toList))
 
-  val creditCard: ALG[String] = creditCard()
+  def creditCard: ALG[String] = creditCard()
 }

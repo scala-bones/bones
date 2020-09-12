@@ -150,7 +150,7 @@ trait DbInsert[ALG[_]]
     }
   }
 
-  def valueDefinition[A](fgo: PrimitiveWrapperValue[ALG, A]): InsertPair[A] =
+  def valueDefinition[A](fgo: HigherOrderValue[ALG, A]): InsertPair[A] =
     fgo match {
       case op: OptionalValue[ALG, b] @unchecked =>
         val valueF = determineValueDefinition(op.valueDefinitionOp)

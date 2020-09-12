@@ -6,24 +6,24 @@ import cats.data.{Kleisli, NonEmptyList}
 import cats.effect._
 import cats.implicits._
 import com.bones.Util
-import com.bones.data.{KvpCollection, KvpNil, PrimitiveWrapperValue}
 import com.bones.data.Error.ExtractionError
 import com.bones.data.values.DefaultValues
+import com.bones.data.{KvpCollection, KvpNil}
 import com.bones.http4s.BaseCrudInterpreter.StringToIdError
 import com.bones.http4s.ClassicCrudInterpreter
-import com.bones.jdbc.{DbDelete, DbGetInterpreter, DbSearch, IdDefinition, JdbcColumnInterpreter}
-import com.bones.jdbc.column.DbColumnInterpreter
+import com.bones.http4s.config.InterpreterConfig
 import com.bones.jdbc.insert.DbInsert
 import com.bones.jdbc.update.DbUpdate
+import com.bones.jdbc.{DbDelete, DbGetInterpreter, DbSearch, IdDefinition}
 import com.bones.syntax._
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import javax.sql.DataSource
 import org.http4s.dsl.io._
+import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.blaze._
 import org.http4s.server.middleware.CORS
-import org.http4s.{Header, HttpApp, HttpRoutes}
-import org.http4s.implicits._
+import org.http4s.{Header, HttpRoutes}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -63,10 +63,10 @@ object LocalhostAllIOApp {
     }
   }
 
-  def serviceRoutesWithCrudMiddleware[ALG[_], A, ID: Manifest](
+  def serviceRoutesWithCrudMiddleware[A, ID: Manifest](
+    interpreters: InterpreterConfig[DefaultValues, ID],
     path: String,
     schema: KvpCollection[DefaultValues, A],
-    idDef: IdDefinition[DefaultValues, ID],
     parseIdF: String => Either[StringToIdError, ID],
     dbGet: DbGetInterpreter[DefaultValues],
     dbSearch: DbSearch[DefaultValues],
@@ -74,6 +74,8 @@ object LocalhostAllIOApp {
     dbUpdate: DbUpdate[DefaultValues],
     dbDelete: DbDelete[DefaultValues],
     ds: DataSource): HttpRoutes[IO] = {
+
+    val idDef = IdDefinition("id", interpreters.idDefinition)
 
     val middleware =
       CrudDbDefinitions[DefaultValues, A, ID](
@@ -88,18 +90,10 @@ object LocalhostAllIOApp {
 
     /** Create the REST interpreter with full CRUD capabilities which write data to the database */
     val interpreter =
-      ClassicCrudInterpreter.allVerbsCustomAlgebra[DefaultValues, A, BasicError, IO, ID](
+      ClassicCrudInterpreter.allVerbs[DefaultValues, A, BasicError, IO, ID](
+        interpreters,
         path,
-        com.bones.circe.values.isoCirceValidatorInterpreter,
-        com.bones.circe.values.isoCirceEncoderInterpreter,
-        com.bones.bson.values.defaultBsonValidatorInterpreter,
-        com.bones.bson.values.defaultBsonEncoderInterpreter,
-        com.bones.protobuf.values.defaultUtcValidator,
-        com.bones.protobuf.values.defaultEncoder,
-        com.bones.protobuf.messageType.defaultProtoFile,
-        com.bones.swagger.values.defaultSwaggerInterpreter,
         schema,
-        idDef.value,
         parseIdF,
         basicErrorSchema,
         Kleisli(middleware.createF).map(_.left.map(e => extractionErrorsToBasicError(e))).run,
@@ -109,8 +103,7 @@ object LocalhostAllIOApp {
             .map(_.left.map(e => extractionErrorsToBasicError(e)))
             .run),
         Kleisli(middleware.deleteF).map(_.left.map(e => extractionErrorsToBasicError(e))).run,
-        () => middleware.searchF,
-        StandardCharsets.UTF_8
+        () => middleware.searchF
       )
     val dbRoutes = dbSchemaEndpoint(path, schema)
     interpreter.createRoutes <+> dbRoutes

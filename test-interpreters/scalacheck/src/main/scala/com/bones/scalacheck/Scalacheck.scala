@@ -85,14 +85,14 @@ trait ScalacheckBase[ALG[_]] extends KvpCollectionTransformation[ALG, Gen] {
 
   }
 
-  def determineValueDefinition[A](value: Either[PrimitiveWrapperValue[ALG, A], ALG[A]]): Gen[A] = {
+  def determineValueDefinition[A](value: Either[HigherOrderValue[ALG, A], ALG[A]]): Gen[A] = {
     value match {
       case Left(kvp)  => valueDefinition(kvp)
       case Right(alg) => genValue.gen(alg)
     }
   }
 
-  def valueDefinition[A](fgo: PrimitiveWrapperValue[ALG, A]): Gen[A] =
+  def valueDefinition[A](fgo: HigherOrderValue[ALG, A]): Gen[A] =
     fgo match {
       case op: OptionalValue[ALG, a] @unchecked => {
         val optionalGen = determineValueDefinition(op.valueDefinitionOp).map(Some(_))

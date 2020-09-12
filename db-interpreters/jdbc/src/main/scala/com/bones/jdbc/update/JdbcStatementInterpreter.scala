@@ -13,7 +13,7 @@ import com.bones.data.{
   KvpWrappedHList,
   ListData,
   OptionalValue,
-  PrimitiveWrapperValue
+  HigherOrderValue
 }
 import com.bones.data.template.KvpCollectionFunctor
 import shapeless.{::, CNil, Coproduct, HList, HNil, Inl, Inr, Nat}
@@ -110,15 +110,14 @@ trait JdbcStatementInterpreter[ALG[_]]
   }
 
   def determineValueDefinition[A](
-    valueDef: Either[PrimitiveWrapperValue[ALG, A], ALG[A]]
+    valueDef: Either[HigherOrderValue[ALG, A], ALG[A]]
   ): (Index, Key) => JdbcColumnStatement[A] =
     valueDef match {
       case Left(kvp)  => valueDefinition[A](kvp)
       case Right(alg) => customDbUpdateInterpreter.definitionResult(alg)
     }
 
-  def valueDefinition[A](
-    fgo: PrimitiveWrapperValue[ALG, A]): (Index, Key) => JdbcColumnStatement[A] =
+  def valueDefinition[A](fgo: HigherOrderValue[ALG, A]): (Index, Key) => JdbcColumnStatement[A] =
     fgo match {
       case op: OptionalValue[ALG, b] @unchecked =>
         val valueF = determineValueDefinition(op.valueDefinitionOp)

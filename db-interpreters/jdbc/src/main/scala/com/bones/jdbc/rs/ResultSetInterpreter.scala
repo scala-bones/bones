@@ -98,7 +98,7 @@ trait ResultSetInterpreter[ALG[_]]
     : Path => ResultSet => Either[NonEmptyList[ExtractionError], A] =
     path => fromKvpCollection(collection)(path)
 
-  def valueDefinition[A](fgo: PrimitiveWrapperValue[ALG, A])
+  def valueDefinition[A](fgo: HigherOrderValue[ALG, A])
     : (Path, FieldName) => ResultSet => Either[NonEmptyList[ExtractionError], A] =
     fgo match {
       case op: OptionalValue[ALG, a] @unchecked =>

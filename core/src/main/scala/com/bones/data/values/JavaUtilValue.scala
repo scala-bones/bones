@@ -7,12 +7,11 @@ import com.bones.validation.ValidationDefinition.ValidationOp
 import shapeless.Coproduct
 import shapeless.ops.coproduct.Inject
 
-abstract class JavaUtilValue[A:Manifest] extends PrimitiveValue[A] {
+abstract class JavaUtilValue[A: Manifest] extends PrimitiveValue[A] {
   override val manifestOfA: Manifest[A] = manifest[A]
 }
 
-final case class UuidData(validations: List[ValidationOp[UUID]])
-  extends JavaUtilValue[UUID]
+final case class UuidData(validations: List[ValidationOp[UUID]]) extends JavaUtilValue[UUID]
 
 trait BaseJavaUtilInterpreter[OUT] {
   def matchJavaUtilValue[A](alg: JavaUtilValue[A]): OUT = {
@@ -24,13 +23,13 @@ trait BaseJavaUtilInterpreter[OUT] {
   def uuidData(uuidData: UuidData): OUT
 }
 
-
 trait JavaUtilSugar {
+
   /** Indicates that the data tied to this key is a UUID type that must pass the specified validations. */
   def uuid(v: ValidationOp[UUID]*): UuidData = UuidData(v.toList)
 
   /** Alias for UUID without validations */
-  val uuid: UuidData = UuidData(List.empty)
+  def uuid: UuidData = UuidData(List.empty)
 
 }
 
@@ -42,5 +41,5 @@ trait JavaUtilInjectedSugar[ALG[_] <: Coproduct] {
     javaUtilInjected(UuidData(v.toList))
 
   /** Alias for UUID without validations */
-  val uuid: ALG[UUID] = uuid()
+  def uuid: ALG[UUID] = uuid()
 }

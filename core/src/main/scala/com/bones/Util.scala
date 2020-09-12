@@ -6,6 +6,7 @@ import java.util.UUID
 
 import cats.data.NonEmptyList
 import com.bones.data.Error.{CanNotConvert, ExtractionError}
+import com.bones.data.HigherOrderValue
 
 import scala.util.Try
 
@@ -86,8 +87,6 @@ object Util {
         Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDate], Some(e))))
     }
 
-
-
   /**
     * Convert the String to a BigDecimal returning Either[NonEmptyList[ExtractionError],BigDecimal]
     */
@@ -101,7 +100,7 @@ object Util {
         Left(NonEmptyList.one(CanNotConvert(path, input, classOf[BigDecimal], Some(e))))
     }
 
-  /** Convert the String to an Enumeration using [[Enumeration.withName]] returning Left[NonEmptyList[ExtractionError],Object]
+  /** Convert the String to an Enumeration using scala.Enumeration.withName returning Left[NonEmptyList[ExtractionError],Object]
     * if there is an parse error.
     */
   def stringToEnumeration[E <: Enumeration, V](str: String, path: List[String], enumeration: E)(
@@ -117,7 +116,7 @@ object Util {
             CanNotConvert(path, str, manifest.runtimeClass.asInstanceOf[Class[V]], Some(e))))
     }
 
-  /** Convert the string to an Enum using [[Enumeration.withName]] returning Either[NonEmptyList[ExtractionError],A]
+  /** Convert the string to an Enum using scala.Enumeration.withName returning Either[NonEmptyList[ExtractionError],A]
     * if there is an parse error.
     */
   def stringToEnum[A <: Enum[A]: Manifest](
@@ -146,6 +145,19 @@ object Util {
     e1: Either[NonEmptyList[ExtractionError], A],
     e2: Either[NonEmptyList[ExtractionError], B])(
     f: (A, B) => Z): Either[NonEmptyList[ExtractionError], Z] = {
+    (e1, e2) match {
+      case (Left(err1), Left(err2)) => Left(err1 concatNel err2)
+      case (Left(err1), _)          => Left(err1)
+      case (_, Left(err2))          => Left(err2)
+      case (Right(a), Right(b))     => Right(f(a, b))
+    }
+  }
+
+  def eitherMap2HigherOrder[ALG[_], A, B, Z](
+    e1: Either[NonEmptyList[(Either[HigherOrderValue[ALG, A], ALG[A]], ExtractionError)], A],
+    e2: Either[NonEmptyList[(Either[HigherOrderValue[ALG, A], ALG[A]], ExtractionError)], B])(
+    f: (A, B) => Z)
+    : Either[NonEmptyList[(Either[HigherOrderValue[ALG, A], ALG[A]], ExtractionError)], Z] = {
     (e1, e2) match {
       case (Left(err1), Left(err2)) => Left(err1 concatNel err2)
       case (Left(err1), _)          => Left(err1)

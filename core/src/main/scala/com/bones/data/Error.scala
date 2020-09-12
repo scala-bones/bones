@@ -66,7 +66,7 @@ object Error {
   object RequiredValue {
     def fromDef[ALG[_], A](
       path: List[String],
-      dataDefinition: Either[PrimitiveWrapperValue[ALG, A], ALG[A]]): RequiredValue[A] = {
+      dataDefinition: Either[HigherOrderValue[ALG, A], ALG[A]]): RequiredValue[A] = {
       val description: String = dataDefinition match {
         case Left(x)  => x.manifestOfA.runtimeClass.getSimpleName
         case Right(x) => x.getClass.getSimpleName
