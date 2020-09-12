@@ -470,7 +470,6 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
             (canReadTag, Left(NonEmptyList.one(RequiredValue.fromDef(path, Left(ed)))))
           }
         }: (CanReadTag, Either[NonEmptyList[ExtractionError], Either[B, C]]))
-
       }
   }
 

@@ -134,10 +134,11 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
   override def kvpCoproduct[C <: Coproduct](
     kvp: KvpCoproduct[ALG, C]
   ): Int => (Vector[MessageField], Vector[NestedType], Int) = index => {
+    val thisIndex = index + 1
     val (nestedTypes, nextIndex) =
-      eachKvpCoproduct(kvp)(index)
+      eachKvpCoproduct(kvp)(thisIndex)
     val nestedMessageFields: Vector[MessageField] = nestedTypes.zipWithIndex.map(nt =>
-      MessageField(NestedDataType(nt._1.name), false, false, nt._1.name, index + nt._2))
+      MessageField(NestedDataType(nt._1.name), false, false, nt._1.name, thisIndex + nt._2))
     val name = nestedTypes.headOption.map(_.name).getOrElse("unknown")
     (
       Vector(
@@ -158,7 +159,7 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
         lastIndex =>
           (Vector.empty, lastIndex)
       case op: KvpCoproductCollectionHead[ALG, a, c, o] @unchecked => {
-        val leftF = fromKvpCollection(op.kvpCollection)
+        val left = fromKvpCollection(op.kvpCollection)(0)
         val name = KvpCollection
           .headManifest(op.kvpCollection)
           .map(_.runtimeClass.getSimpleName)
@@ -166,7 +167,7 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
         val tailF = eachKvpCoproduct(op.kvpTail)
         lastIndex =>
           {
-            val left = leftF(lastIndex)
+//            val left = leftF(lastIndex)
             val right = tailF(left._3)
             val allNested = NestedMessage(name, left._1) +: left._2.appendedAll(right._1)
             (allNested, right._2)
@@ -251,14 +252,20 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
       case ed: EitherData[ALG, a, b] @unchecked =>
         (name, index) =>
           val (messageFieldA, nestedTypesA, nextIndex) =
-            determineValueDefinition(ed.definitionA)(s"${name}Left", index)
+            determineValueDefinition(ed.definitionA)(name, index)
           val (messageFieldB, nestedTypesB, lastIndex) = determineValueDefinition(
             ed.definitionB
-          )(s"${name}Right", nextIndex + 1)
+          )(name, nextIndex + 1)
+
+          //Append the type to the name so that the name is unique.
+          val messageFieldFinalA =
+            messageFieldA.copy(name = name + messageFieldA.dataType.name.capitalize)
+          val messageFieldFinalB =
+            messageFieldB.copy(name = name + messageFieldB.dataType.name.capitalize)
           val oneOfName = toSnake(name.capitalize)
           (
             MessageField(
-              EitherDataType(oneOfName, messageFieldA, messageFieldB),
+              EitherDataType(oneOfName, messageFieldFinalA, messageFieldFinalB),
               false,
               false,
               name,
