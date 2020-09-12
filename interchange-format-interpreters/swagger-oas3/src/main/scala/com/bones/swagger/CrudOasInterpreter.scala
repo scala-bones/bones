@@ -1,6 +1,6 @@
 package com.bones.swagger
 
-import com.bones.data.{KvpCollection, PrimitiveWrapperValue}
+import com.bones.data.{KvpCollection, HigherOrderValue}
 import com.bones.swagger.SwaggerCoreInterpreter.CustomSwaggerInterpreter
 import com.bones.swagger._
 import io.swagger.v3.oas.models._

@@ -152,7 +152,10 @@ trait Ideal[ALG[_]] extends KvpCollectionMatch[ALG, TableCollection => TableColl
     kvp: KvpSingleValueHead[ALG, H, T, TL, O]): TableCollection => TableCollection = {
     val headResult = kvp.head match {
       case Left(keyDef) => { (tc: TableCollection) =>
-        determineValueDefinition(keyDef.dataDefinition)(tc, keyDef.key, keyDef.description)
+        determineValueDefinition(keyDef.dataDefinition)(
+          tc,
+          camelToSnake(keyDef.key),
+          keyDef.description)
       }
       case Right(kvpColl) => fromKvpCollection(kvpColl)
     }
@@ -164,7 +167,7 @@ trait Ideal[ALG[_]] extends KvpCollectionMatch[ALG, TableCollection => TableColl
       }
   }
 
-  def determineValueDefinition[A](dataDefinition: Either[PrimitiveWrapperValue[ALG, A], ALG[A]])
+  def determineValueDefinition[A](dataDefinition: Either[HigherOrderValue[ALG, A], ALG[A]])
     : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
     dataDefinition match {
       case Left(primitiveWrapper) =>
@@ -200,7 +203,8 @@ trait Ideal[ALG[_]] extends KvpCollectionMatch[ALG, TableCollection => TableColl
     name: Option[String] = None,
     description: Option[String] = None): TableCollection = {
     val tableName =
-      DbUtil.camelToSnake(headManifest(schema).map(_.getClass.getSimpleName).getOrElse("unknown"))
+      DbUtil.camelToSnake(
+        headManifest(schema).map(_.runtimeClass.getSimpleName).getOrElse("unknown"))
     val tableCol = TableCollection.init(tableName, description)
     fromKvpCollection(schema).apply(tableCol)
   }

@@ -6,7 +6,7 @@ import cats.data.NonEmptyList
 import cats.effect.IO
 import com.bones.data.Error.ExtractionError
 import com.bones.data.KvpCollection.headManifest
-import com.bones.data.{KvpCollection, KvpCollectionValue, KvpWrappedHList, PrimitiveWrapperValue}
+import com.bones.data.{KvpCollection, KvpCollectionValue, KvpWrappedHList, HigherOrderValue}
 import com.bones.jdbc.DbUtil.camelToSnake
 import com.bones.jdbc.column.ColumnNameInterpreter
 import com.bones.jdbc.rs.{ResultSetInterpreter, ResultSetValue => ResultSetCustomInterpreter}

@@ -324,7 +324,7 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
       })
     }
 
-  def valueDefinition[A](fgo: PrimitiveWrapperValue[ALG, A]): EncodeToProto[A] = {
+  def valueDefinition[A](fgo: HigherOrderValue[ALG, A]): EncodeToProto[A] = {
     fgo match {
       case op: OptionalValue[ALG, a] @unchecked =>
         optionalKvpValueDefinition[a](op).asInstanceOf[EncodeToProto[A]]

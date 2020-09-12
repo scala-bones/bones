@@ -64,7 +64,7 @@ trait DbColumnInterpreter[ALG[_]] extends KvpCollectionMatch[ALG, List[Column]] 
     }
   }
 
-  private def valueDefinition[A](fgo: PrimitiveWrapperValue[ALG, A]): ToColumns =
+  private def valueDefinition[A](fgo: HigherOrderValue[ALG, A]): ToColumns =
     fgo match {
       case op: OptionalValue[ALG, b] @unchecked =>
         key =>

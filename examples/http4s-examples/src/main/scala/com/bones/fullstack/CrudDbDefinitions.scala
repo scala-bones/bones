@@ -2,9 +2,9 @@ package com.bones.fullstack
 
 import cats.data.NonEmptyList
 import cats.effect.IO
-import com.bones.data.{KvpCollection, PrimitiveWrapperValue}
 import com.bones.data.Error.ExtractionError
-import com.bones.jdbc.{JdbcColumnInterpreter, _}
+import com.bones.data.KvpCollection
+import com.bones.jdbc._
 import com.bones.jdbc.insert.DbInsert
 import com.bones.jdbc.update.DbUpdate
 import fs2.Stream

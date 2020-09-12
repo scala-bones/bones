@@ -72,14 +72,14 @@ trait FieldNames[ALG[_]] extends KvpCollectionMatch[ALG, List[String]] {
     "dtype" :: fromKvpCollection(wrappedCoproduct.wrappedEncoding)
 
   def determineValueDefinition[A](
-    valueDefinitionOp: Either[PrimitiveWrapperValue[ALG, A], AnyAlg[A]]): List[String] =
+    valueDefinitionOp: Either[HigherOrderValue[ALG, A], AnyAlg[A]]): List[String] =
     valueDefinitionOp match {
       case Left(kvp) => valueDefinition(kvp)
       case Right(_)  => List.empty
     }
 
   def valueDefinition[A](
-    fgo: PrimitiveWrapperValue[ALG, A]
+    fgo: HigherOrderValue[ALG, A]
   ): List[String] =
     fgo match {
       case op: OptionalValue[ALG, a] @unchecked =>
