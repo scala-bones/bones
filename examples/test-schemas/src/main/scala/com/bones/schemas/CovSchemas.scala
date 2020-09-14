@@ -270,7 +270,7 @@ object CovSchemas {
 
   val allSupportCaseClass = allSupportedSchema.convert[AllSupported]
 
-  val allSupporedOptionalInstance = AllSupportedOptional(
+  val allSupportedOptionalInstance = AllSupportedOptional(
     None,
     None,
     None,
@@ -303,7 +303,7 @@ object CovSchemas {
     Currency.CAD,
     BigDecimal("5.0"),
     Left("Hello"),
-    allSupporedOptionalInstance,
+    allSupportedOptionalInstance,
     Digital("em pee three", "mp3"),
     7
   )
