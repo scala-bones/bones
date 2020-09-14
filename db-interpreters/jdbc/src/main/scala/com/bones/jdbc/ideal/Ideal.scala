@@ -11,36 +11,6 @@ trait Ideal[ALG[_]] extends KvpCollectionMatch[ALG, TableCollection => TableColl
 
   def algInterpreter: IdealValue[ALG]
 
-  val tableFromConcreteValue = new ConcreteValueTemplate[
-    ALG,
-    (TableCollection, ColumnName, Option[Description]) => TableCollection] {
-    override protected def optionalToOut[B: Manifest](opt: OptionalValue[ALG, B])
-      : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
-      determineValueDefinition(opt.valueDefinitionOp)
-    }
-
-    override protected def eitherToOut[A: Manifest, B: Manifest](either: EitherData[ALG, A, B])
-      : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
-      val leftF = determineValueDefinition(either.definitionA)
-      val leftName = camelToSnake(either.manifestOfLeft.runtimeClass.getSimpleName)
-      val rightF = determineValueDefinition(either.definitionB)
-      val rightName = camelToSnake(either.manifestOfRight.runtimeClass.getSimpleName)
-      (tc, name, description) =>
-        {
-          val leftResult = leftF(tc, leftName, description)
-          rightF(leftResult, rightName, description)
-        }
-    }
-
-    override protected def listToOut[A: Manifest](list: ListData[ALG, A])
-      : (TableCollection, ColumnName, Option[Description]) => TableCollection =
-      determineValueDefinition(list.tDefinition)
-
-    override protected def kvpCollectionToOut[A](hList: KvpCollectionValue[ALG, A])
-      : (TableCollection, ColumnName, Option[Description]) => TableCollection =
-      (tc, _, _) => fromKvpCollection(hList.kvpCollection)(tc)
-  }
-
   val addColumnToWorkingTable = new ConcreteValueTemplate[
     ALG,
     (TableCollection, ColumnName, Option[Description]) => TableCollection] {
@@ -63,25 +33,21 @@ trait Ideal[ALG[_]] extends KvpCollectionMatch[ALG, TableCollection => TableColl
       * @return A function to create the tables.
       */
     override protected def eitherToOut[A: Manifest, B: Manifest](either: EitherData[ALG, A, B])
-      : (TableCollection, ColumnName, Option[Description]) => TableCollection =
-      (tableCollection, columnName, description) => {
-        either.definitionA match {
-          case Left(subCollection) =>
-            fromConcreteValue(subCollection)
-              .apply(
-                tableCollection,
-                DbUtil.camelToSnake(either.manifestOfLeft.getClass.getSimpleName),
-                description)
-          case Right(value) => {
-            algInterpreter
-              .columns(value)
-              .apply(
-                tableCollection,
-                DbUtil.camelToSnake(either.manifestOfRight.getClass.getSimpleName),
-                description)
-          }
+      : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
+      val fa = determineValueDefinition(either.definitionA)
+      val fb = determineValueDefinition(either.definitionB)
+
+      (tc, columnName, desc) =>
+        {
+          val fullNameOfA = columnName + "_" + DbUtil.camelToSnake(
+            either.manifestOfRight.runtimeClass.getSimpleName)
+          val fullNameOfB = columnName + "_" + DbUtil.camelToSnake(
+            either.manifestOfLeft.runtimeClass.getSimpleName)
+          val a = fa.apply(tc, fullNameOfA, desc)
+          fb.apply(a, fullNameOfB, desc)
         }
-      }
+
+    }
 
     override protected def listToOut[A: Manifest](list: ListData[ALG, A])
       : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
@@ -172,7 +138,7 @@ trait Ideal[ALG[_]] extends KvpCollectionMatch[ALG, TableCollection => TableColl
     dataDefinition match {
       case Left(primitiveWrapper) =>
         (tc, name, desc) =>
-          tableFromConcreteValue.fromConcreteValue(primitiveWrapper)(primitiveWrapper.manifestOfA)(
+          addColumnToWorkingTable.fromConcreteValue(primitiveWrapper)(primitiveWrapper.manifestOfA)(
             tc,
             name,
             desc)

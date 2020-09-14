@@ -5,7 +5,7 @@ import java.time.{LocalDateTime, ZoneOffset}
 
 import cats.data.NonEmptyList
 import cats.syntax.all._
-import com.bones.Util
+import com.bones.{Util, data}
 import com.bones.data.Error._
 import com.bones.data.values.CNilF
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpCoproductCollectionHead, _}
@@ -385,10 +385,42 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
         listData[t](key, ld)
       case ed: EitherData[ALG, a, b] @unchecked =>
         eitherData[a, b](key, ed)
+//      case kvp: KvpCollectionValue[ALG, A] @unchecked => {
+//        val f = fromKvpCollection[A](kvp.kvpCollection)
+//        (lastFieldNumber, path) =>
+//          f(lastFieldNumber, key :: path)
+//      }
       case kvp: KvpCollectionValue[ALG, A] @unchecked => {
-        val f = fromKvpCollection[A](kvp.kvpCollection)
-        (lastFieldNumber, path) =>
-          f(lastFieldNumber, key :: path)
+        val groupExtract = fromKvpCollection[A](kvp.kvpCollection)
+        (last: LastFieldNumber, path: Path) =>
+          {
+            val thisTag = last << 3 | LENGTH_DELIMITED
+            val (tags, lastFieldNumber, fIn) = groupExtract(1, path)
+            (List(thisTag), last + 1, (canReadTag: CanReadTag, in: CodedInputStream) => {
+              val length = in.readRawVarint32()
+              val oldLimit = in.pushLimit(length)
+              val (_, result) = fIn(true, in)
+              try {
+                in.readTag() //should be 0
+                in.checkLastTagWas(0)
+                in.popLimit(oldLimit)
+                (
+                  true,
+                  result
+                    .asInstanceOf[Either[NonEmptyList[ExtractionError], A]]
+                    .flatMap(i => vu.validate(kvp.validations)(i, path)))
+              } catch {
+                case ex: InvalidProtocolBufferException => {
+                  in.getLastTag
+                  (
+                    canReadTag,
+                    Left(
+                      NonEmptyList.one(
+                        WrongTypeError(path, classOf[HList], classOf[Any], Some(ex)))))
+                }
+              }
+            })
+          }
       }
     }
 

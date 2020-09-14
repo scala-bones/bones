@@ -18,109 +18,134 @@ public final class AllSupportedOuterClass {
 
     /**
      * <code>required bool boolean = 1;</code>
+     * @return Whether the boolean field is set.
      */
     boolean hasBoolean();
     /**
      * <code>required bool boolean = 1;</code>
+     * @return The boolean.
      */
     boolean getBoolean();
 
     /**
      * <code>required int32 int = 2;</code>
+     * @return Whether the int field is set.
      */
     boolean hasInt();
     /**
      * <code>required int32 int = 2;</code>
+     * @return The int.
      */
     int getInt();
 
     /**
      * <code>required int64 long = 3;</code>
+     * @return Whether the long field is set.
      */
     boolean hasLong();
     /**
      * <code>required int64 long = 3;</code>
+     * @return The long.
      */
     long getLong();
 
     /**
      * <code>repeated int32 listOfInt = 4;</code>
+     * @return A list containing the listOfInt.
      */
     java.util.List<java.lang.Integer> getListOfIntList();
     /**
      * <code>repeated int32 listOfInt = 4;</code>
+     * @return The count of listOfInt.
      */
     int getListOfIntCount();
     /**
      * <code>repeated int32 listOfInt = 4;</code>
+     * @param index The index of the element to return.
+     * @return The listOfInt at the given index.
      */
     int getListOfInt(int index);
 
     /**
      * <code>required string string = 5;</code>
+     * @return Whether the string field is set.
      */
     boolean hasString();
     /**
      * <code>required string string = 5;</code>
+     * @return The string.
      */
     java.lang.String getString();
     /**
      * <code>required string string = 5;</code>
+     * @return The bytes for string.
      */
     com.google.protobuf.ByteString
         getStringBytes();
 
     /**
      * <code>required float float = 6;</code>
+     * @return Whether the float field is set.
      */
     boolean hasFloat();
     /**
      * <code>required float float = 6;</code>
+     * @return The float.
      */
     float getFloat();
 
     /**
      * <code>required int32 short = 7;</code>
+     * @return Whether the short field is set.
      */
     boolean hasShort();
     /**
      * <code>required int32 short = 7;</code>
+     * @return The short.
      */
     int getShort();
 
     /**
      * <code>required double double = 8;</code>
+     * @return Whether the double field is set.
      */
     boolean hasDouble();
     /**
      * <code>required double double = 8;</code>
+     * @return The double.
      */
     double getDouble();
 
     /**
      * <code>required bytes byteArray = 9;</code>
+     * @return Whether the byteArray field is set.
      */
     boolean hasByteArray();
     /**
      * <code>required bytes byteArray = 9;</code>
+     * @return The byteArray.
      */
     com.google.protobuf.ByteString getByteArray();
 
     /**
      * <code>required int64 localDate = 10;</code>
+     * @return Whether the localDate field is set.
      */
     boolean hasLocalDate();
     /**
      * <code>required int64 localDate = 10;</code>
+     * @return The localDate.
      */
     long getLocalDate();
 
     /**
      * <code>required .AllSupported.Timestamp localDateTime = 11;</code>
+     * @return Whether the localDateTime field is set.
      */
     boolean hasLocalDateTime();
     /**
      * <code>required .AllSupported.Timestamp localDateTime = 11;</code>
+     * @return The localDateTime.
      */
     AllSupportedOuterClass.AllSupported.Timestamp getLocalDateTime();
     /**
@@ -130,75 +155,91 @@ public final class AllSupportedOuterClass {
 
     /**
      * <code>required string uuid = 12;</code>
+     * @return Whether the uuid field is set.
      */
     boolean hasUuid();
     /**
      * <code>required string uuid = 12;</code>
+     * @return The uuid.
      */
     java.lang.String getUuid();
     /**
      * <code>required string uuid = 12;</code>
+     * @return The bytes for uuid.
      */
     com.google.protobuf.ByteString
         getUuidBytes();
 
     /**
      * <code>required string enumeration = 13;</code>
+     * @return Whether the enumeration field is set.
      */
     boolean hasEnumeration();
     /**
      * <code>required string enumeration = 13;</code>
+     * @return The enumeration.
      */
     java.lang.String getEnumeration();
     /**
      * <code>required string enumeration = 13;</code>
+     * @return The bytes for enumeration.
      */
     com.google.protobuf.ByteString
         getEnumerationBytes();
 
     /**
      * <code>required string bigDecimal = 14;</code>
+     * @return Whether the bigDecimal field is set.
      */
     boolean hasBigDecimal();
     /**
      * <code>required string bigDecimal = 14;</code>
+     * @return The bigDecimal.
      */
     java.lang.String getBigDecimal();
     /**
      * <code>required string bigDecimal = 14;</code>
+     * @return The bytes for bigDecimal.
      */
     com.google.protobuf.ByteString
         getBigDecimalBytes();
 
     /**
-     * <code>optional string eitherFieldLeft = 15;</code>
+     * <code>string eitherFieldLeft = 15;</code>
+     * @return Whether the eitherFieldLeft field is set.
      */
     boolean hasEitherFieldLeft();
     /**
-     * <code>optional string eitherFieldLeft = 15;</code>
+     * <code>string eitherFieldLeft = 15;</code>
+     * @return The eitherFieldLeft.
      */
     java.lang.String getEitherFieldLeft();
     /**
-     * <code>optional string eitherFieldLeft = 15;</code>
+     * <code>string eitherFieldLeft = 15;</code>
+     * @return The bytes for eitherFieldLeft.
      */
     com.google.protobuf.ByteString
         getEitherFieldLeftBytes();
 
     /**
-     * <code>optional int32 eitherFieldRight = 16;</code>
+     * <code>int32 eitherFieldRight = 16;</code>
+     * @return Whether the eitherFieldRight field is set.
      */
     boolean hasEitherFieldRight();
     /**
-     * <code>optional int32 eitherFieldRight = 16;</code>
+     * <code>int32 eitherFieldRight = 16;</code>
+     * @return The eitherFieldRight.
      */
     int getEitherFieldRight();
 
     /**
      * <code>required .AllSupported.Child child = 17;</code>
+     * @return Whether the child field is set.
      */
     boolean hasChild();
     /**
      * <code>required .AllSupported.Child child = 17;</code>
+     * @return The child.
      */
     AllSupportedOuterClass.AllSupported.Child getChild();
     /**
@@ -207,50 +248,58 @@ public final class AllSupportedOuterClass {
     AllSupportedOuterClass.AllSupported.ChildOrBuilder getChildOrBuilder();
 
     /**
-     * <code>optional .AllSupported.Digital digital = 18;</code>
+     * <code>.AllSupported.Digital digital = 18;</code>
+     * @return Whether the digital field is set.
      */
     boolean hasDigital();
     /**
-     * <code>optional .AllSupported.Digital digital = 18;</code>
+     * <code>.AllSupported.Digital digital = 18;</code>
+     * @return The digital.
      */
     AllSupportedOuterClass.AllSupported.Digital getDigital();
     /**
-     * <code>optional .AllSupported.Digital digital = 18;</code>
+     * <code>.AllSupported.Digital digital = 18;</code>
      */
     AllSupportedOuterClass.AllSupported.DigitalOrBuilder getDigitalOrBuilder();
 
     /**
-     * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+     * <code>.AllSupported.CompactDisc compact_disc = 19;</code>
+     * @return Whether the compactDisc field is set.
      */
     boolean hasCompactDisc();
     /**
-     * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+     * <code>.AllSupported.CompactDisc compact_disc = 19;</code>
+     * @return The compactDisc.
      */
     AllSupportedOuterClass.AllSupported.CompactDisc getCompactDisc();
     /**
-     * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+     * <code>.AllSupported.CompactDisc compact_disc = 19;</code>
      */
     AllSupportedOuterClass.AllSupported.CompactDiscOrBuilder getCompactDiscOrBuilder();
 
     /**
-     * <code>optional .AllSupported.Album album = 20;</code>
+     * <code>.AllSupported.Album album = 20;</code>
+     * @return Whether the album field is set.
      */
     boolean hasAlbum();
     /**
-     * <code>optional .AllSupported.Album album = 20;</code>
+     * <code>.AllSupported.Album album = 20;</code>
+     * @return The album.
      */
     AllSupportedOuterClass.AllSupported.Album getAlbum();
     /**
-     * <code>optional .AllSupported.Album album = 20;</code>
+     * <code>.AllSupported.Album album = 20;</code>
      */
     AllSupportedOuterClass.AllSupported.AlbumOrBuilder getAlbumOrBuilder();
 
     /**
      * <code>required int32 int2 = 21;</code>
+     * @return Whether the int2 field is set.
      */
     boolean hasInt2();
     /**
      * <code>required int32 int2 = 21;</code>
+     * @return The int2.
      */
     int getInt2();
 
@@ -261,7 +310,7 @@ public final class AllSupportedOuterClass {
   /**
    * Protobuf type {@code AllSupported}
    */
-  public  static final class AllSupported extends
+  public static final class AllSupported extends
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:AllSupported)
       AllSupportedOrBuilder {
@@ -271,20 +320,19 @@ public final class AllSupportedOuterClass {
       super(builder);
     }
     private AllSupported() {
-      boolean_ = false;
-      int_ = 0;
-      long_ = 0L;
-      listOfInt_ = java.util.Collections.emptyList();
+      listOfInt_ = emptyIntList();
       string_ = "";
-      float_ = 0F;
-      short_ = 0;
-      double_ = 0D;
       byteArray_ = com.google.protobuf.ByteString.EMPTY;
-      localDate_ = 0L;
       uuid_ = "";
       enumeration_ = "";
       bigDecimal_ = "";
-      int2_ = 0;
+    }
+
+    @java.lang.Override
+    @SuppressWarnings({"unused"})
+    protected java.lang.Object newInstance(
+        UnusedPrivateParameter unused) {
+      return new AllSupported();
     }
 
     @java.lang.Override
@@ -327,22 +375,22 @@ public final class AllSupportedOuterClass {
               break;
             }
             case 32: {
-              if (!((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
-                listOfInt_ = new java.util.ArrayList<java.lang.Integer>();
+              if (!((mutable_bitField0_ & 0x00000008) != 0)) {
+                listOfInt_ = newIntList();
                 mutable_bitField0_ |= 0x00000008;
               }
-              listOfInt_.add(input.readInt32());
+              listOfInt_.addInt(input.readInt32());
               break;
             }
             case 34: {
               int length = input.readRawVarint32();
               int limit = input.pushLimit(length);
-              if (!((mutable_bitField0_ & 0x00000008) == 0x00000008) && input.getBytesUntilLimit() > 0) {
-                listOfInt_ = new java.util.ArrayList<java.lang.Integer>();
+              if (!((mutable_bitField0_ & 0x00000008) != 0) && input.getBytesUntilLimit() > 0) {
+                listOfInt_ = newIntList();
                 mutable_bitField0_ |= 0x00000008;
               }
               while (input.getBytesUntilLimit() > 0) {
-                listOfInt_.add(input.readInt32());
+                listOfInt_.addInt(input.readInt32());
               }
               input.popLimit(limit);
               break;
@@ -380,7 +428,7 @@ public final class AllSupportedOuterClass {
             }
             case 90: {
               AllSupportedOuterClass.AllSupported.Timestamp.Builder subBuilder = null;
-              if (((bitField0_ & 0x00000200) == 0x00000200)) {
+              if (((bitField0_ & 0x00000200) != 0)) {
                 subBuilder = localDateTime_.toBuilder();
               }
               localDateTime_ = input.readMessage(AllSupportedOuterClass.AllSupported.Timestamp.PARSER, extensionRegistry);
@@ -422,7 +470,7 @@ public final class AllSupportedOuterClass {
             }
             case 138: {
               AllSupportedOuterClass.AllSupported.Child.Builder subBuilder = null;
-              if (((bitField0_ & 0x00008000) == 0x00008000)) {
+              if (((bitField0_ & 0x00008000) != 0)) {
                 subBuilder = child_.toBuilder();
               }
               child_ = input.readMessage(AllSupportedOuterClass.AllSupported.Child.PARSER, extensionRegistry);
@@ -495,8 +543,8 @@ public final class AllSupportedOuterClass {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
-        if (((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
-          listOfInt_ = java.util.Collections.unmodifiableList(listOfInt_);
+        if (((mutable_bitField0_ & 0x00000008) != 0)) {
+          listOfInt_.makeImmutable(); // C
         }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -521,26 +569,30 @@ public final class AllSupportedOuterClass {
 
       /**
        * <code>required int64 seconds = 1;</code>
+       * @return Whether the seconds field is set.
        */
       boolean hasSeconds();
       /**
        * <code>required int64 seconds = 1;</code>
+       * @return The seconds.
        */
       long getSeconds();
 
       /**
        * <code>required int64 nanos = 2;</code>
+       * @return Whether the nanos field is set.
        */
       boolean hasNanos();
       /**
        * <code>required int64 nanos = 2;</code>
+       * @return The nanos.
        */
       long getNanos();
     }
     /**
      * Protobuf type {@code AllSupported.Timestamp}
      */
-    public  static final class Timestamp extends
+    public static final class Timestamp extends
         com.google.protobuf.GeneratedMessageV3 implements
         // @@protoc_insertion_point(message_implements:AllSupported.Timestamp)
         TimestampOrBuilder {
@@ -550,8 +602,13 @@ public final class AllSupportedOuterClass {
         super(builder);
       }
       private Timestamp() {
-        seconds_ = 0L;
-        nanos_ = 0L;
+      }
+
+      @java.lang.Override
+      @SuppressWarnings({"unused"})
+      protected java.lang.Object newInstance(
+          UnusedPrivateParameter unused) {
+        return new Timestamp();
       }
 
       @java.lang.Override
@@ -625,13 +682,17 @@ public final class AllSupportedOuterClass {
       private long seconds_;
       /**
        * <code>required int64 seconds = 1;</code>
+       * @return Whether the seconds field is set.
        */
+      @java.lang.Override
       public boolean hasSeconds() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
+        return ((bitField0_ & 0x00000001) != 0);
       }
       /**
        * <code>required int64 seconds = 1;</code>
+       * @return The seconds.
        */
+      @java.lang.Override
       public long getSeconds() {
         return seconds_;
       }
@@ -640,13 +701,17 @@ public final class AllSupportedOuterClass {
       private long nanos_;
       /**
        * <code>required int64 nanos = 2;</code>
+       * @return Whether the nanos field is set.
        */
+      @java.lang.Override
       public boolean hasNanos() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
+        return ((bitField0_ & 0x00000002) != 0);
       }
       /**
        * <code>required int64 nanos = 2;</code>
+       * @return The nanos.
        */
+      @java.lang.Override
       public long getNanos() {
         return nanos_;
       }
@@ -673,10 +738,10 @@ public final class AllSupportedOuterClass {
       @java.lang.Override
       public void writeTo(com.google.protobuf.CodedOutputStream output)
                           throws java.io.IOException {
-        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        if (((bitField0_ & 0x00000001) != 0)) {
           output.writeInt64(1, seconds_);
         }
-        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        if (((bitField0_ & 0x00000002) != 0)) {
           output.writeInt64(2, nanos_);
         }
         unknownFields.writeTo(output);
@@ -688,11 +753,11 @@ public final class AllSupportedOuterClass {
         if (size != -1) return size;
 
         size = 0;
-        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        if (((bitField0_ & 0x00000001) != 0)) {
           size += com.google.protobuf.CodedOutputStream
             .computeInt64Size(1, seconds_);
         }
-        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        if (((bitField0_ & 0x00000002) != 0)) {
           size += com.google.protobuf.CodedOutputStream
             .computeInt64Size(2, nanos_);
         }
@@ -711,19 +776,18 @@ public final class AllSupportedOuterClass {
         }
         AllSupportedOuterClass.AllSupported.Timestamp other = (AllSupportedOuterClass.AllSupported.Timestamp) obj;
 
-        boolean result = true;
-        result = result && (hasSeconds() == other.hasSeconds());
+        if (hasSeconds() != other.hasSeconds()) return false;
         if (hasSeconds()) {
-          result = result && (getSeconds()
-              == other.getSeconds());
+          if (getSeconds()
+              != other.getSeconds()) return false;
         }
-        result = result && (hasNanos() == other.hasNanos());
+        if (hasNanos() != other.hasNanos()) return false;
         if (hasNanos()) {
-          result = result && (getNanos()
-              == other.getNanos());
+          if (getNanos()
+              != other.getNanos()) return false;
         }
-        result = result && unknownFields.equals(other.unknownFields);
-        return result;
+        if (!unknownFields.equals(other.unknownFields)) return false;
+        return true;
       }
 
       @java.lang.Override
@@ -908,14 +972,14 @@ public final class AllSupportedOuterClass {
           AllSupportedOuterClass.AllSupported.Timestamp result = new AllSupportedOuterClass.AllSupported.Timestamp(this);
           int from_bitField0_ = bitField0_;
           int to_bitField0_ = 0;
-          if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          if (((from_bitField0_ & 0x00000001) != 0)) {
+            result.seconds_ = seconds_;
             to_bitField0_ |= 0x00000001;
           }
-          result.seconds_ = seconds_;
-          if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          if (((from_bitField0_ & 0x00000002) != 0)) {
+            result.nanos_ = nanos_;
             to_bitField0_ |= 0x00000002;
           }
-          result.nanos_ = nanos_;
           result.bitField0_ = to_bitField0_;
           onBuilt();
           return result;
@@ -923,35 +987,35 @@ public final class AllSupportedOuterClass {
 
         @java.lang.Override
         public Builder clone() {
-          return (Builder) super.clone();
+          return super.clone();
         }
         @java.lang.Override
         public Builder setField(
             com.google.protobuf.Descriptors.FieldDescriptor field,
             java.lang.Object value) {
-          return (Builder) super.setField(field, value);
+          return super.setField(field, value);
         }
         @java.lang.Override
         public Builder clearField(
             com.google.protobuf.Descriptors.FieldDescriptor field) {
-          return (Builder) super.clearField(field);
+          return super.clearField(field);
         }
         @java.lang.Override
         public Builder clearOneof(
             com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-          return (Builder) super.clearOneof(oneof);
+          return super.clearOneof(oneof);
         }
         @java.lang.Override
         public Builder setRepeatedField(
             com.google.protobuf.Descriptors.FieldDescriptor field,
             int index, java.lang.Object value) {
-          return (Builder) super.setRepeatedField(field, index, value);
+          return super.setRepeatedField(field, index, value);
         }
         @java.lang.Override
         public Builder addRepeatedField(
             com.google.protobuf.Descriptors.FieldDescriptor field,
             java.lang.Object value) {
-          return (Builder) super.addRepeatedField(field, value);
+          return super.addRepeatedField(field, value);
         }
         @java.lang.Override
         public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -1010,18 +1074,24 @@ public final class AllSupportedOuterClass {
         private long seconds_ ;
         /**
          * <code>required int64 seconds = 1;</code>
+         * @return Whether the seconds field is set.
          */
+        @java.lang.Override
         public boolean hasSeconds() {
-          return ((bitField0_ & 0x00000001) == 0x00000001);
+          return ((bitField0_ & 0x00000001) != 0);
         }
         /**
          * <code>required int64 seconds = 1;</code>
+         * @return The seconds.
          */
+        @java.lang.Override
         public long getSeconds() {
           return seconds_;
         }
         /**
          * <code>required int64 seconds = 1;</code>
+         * @param value The seconds to set.
+         * @return This builder for chaining.
          */
         public Builder setSeconds(long value) {
           bitField0_ |= 0x00000001;
@@ -1031,6 +1101,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required int64 seconds = 1;</code>
+         * @return This builder for chaining.
          */
         public Builder clearSeconds() {
           bitField0_ = (bitField0_ & ~0x00000001);
@@ -1042,18 +1113,24 @@ public final class AllSupportedOuterClass {
         private long nanos_ ;
         /**
          * <code>required int64 nanos = 2;</code>
+         * @return Whether the nanos field is set.
          */
+        @java.lang.Override
         public boolean hasNanos() {
-          return ((bitField0_ & 0x00000002) == 0x00000002);
+          return ((bitField0_ & 0x00000002) != 0);
         }
         /**
          * <code>required int64 nanos = 2;</code>
+         * @return The nanos.
          */
+        @java.lang.Override
         public long getNanos() {
           return nanos_;
         }
         /**
          * <code>required int64 nanos = 2;</code>
+         * @param value The nanos to set.
+         * @return This builder for chaining.
          */
         public Builder setNanos(long value) {
           bitField0_ |= 0x00000002;
@@ -1063,6 +1140,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required int64 nanos = 2;</code>
+         * @return This builder for chaining.
          */
         public Builder clearNanos() {
           bitField0_ = (bitField0_ & ~0x00000002);
@@ -1129,109 +1207,134 @@ public final class AllSupportedOuterClass {
 
       /**
        * <code>optional bool boolean = 1;</code>
+       * @return Whether the boolean field is set.
        */
       boolean hasBoolean();
       /**
        * <code>optional bool boolean = 1;</code>
+       * @return The boolean.
        */
       boolean getBoolean();
 
       /**
        * <code>optional int32 int = 2;</code>
+       * @return Whether the int field is set.
        */
       boolean hasInt();
       /**
        * <code>optional int32 int = 2;</code>
+       * @return The int.
        */
       int getInt();
 
       /**
        * <code>optional int64 long = 3;</code>
+       * @return Whether the long field is set.
        */
       boolean hasLong();
       /**
        * <code>optional int64 long = 3;</code>
+       * @return The long.
        */
       long getLong();
 
       /**
        * <code>repeated int32 listOfInt = 4;</code>
+       * @return A list containing the listOfInt.
        */
       java.util.List<java.lang.Integer> getListOfIntList();
       /**
        * <code>repeated int32 listOfInt = 4;</code>
+       * @return The count of listOfInt.
        */
       int getListOfIntCount();
       /**
        * <code>repeated int32 listOfInt = 4;</code>
+       * @param index The index of the element to return.
+       * @return The listOfInt at the given index.
        */
       int getListOfInt(int index);
 
       /**
        * <code>optional string string = 5;</code>
+       * @return Whether the string field is set.
        */
       boolean hasString();
       /**
        * <code>optional string string = 5;</code>
+       * @return The string.
        */
       java.lang.String getString();
       /**
        * <code>optional string string = 5;</code>
+       * @return The bytes for string.
        */
       com.google.protobuf.ByteString
           getStringBytes();
 
       /**
        * <code>optional float float = 6;</code>
+       * @return Whether the float field is set.
        */
       boolean hasFloat();
       /**
        * <code>optional float float = 6;</code>
+       * @return The float.
        */
       float getFloat();
 
       /**
        * <code>optional int32 short = 7;</code>
+       * @return Whether the short field is set.
        */
       boolean hasShort();
       /**
        * <code>optional int32 short = 7;</code>
+       * @return The short.
        */
       int getShort();
 
       /**
        * <code>optional double double = 8;</code>
+       * @return Whether the double field is set.
        */
       boolean hasDouble();
       /**
        * <code>optional double double = 8;</code>
+       * @return The double.
        */
       double getDouble();
 
       /**
        * <code>optional bytes byteArray = 9;</code>
+       * @return Whether the byteArray field is set.
        */
       boolean hasByteArray();
       /**
        * <code>optional bytes byteArray = 9;</code>
+       * @return The byteArray.
        */
       com.google.protobuf.ByteString getByteArray();
 
       /**
        * <code>optional int64 localDate = 10;</code>
+       * @return Whether the localDate field is set.
        */
       boolean hasLocalDate();
       /**
        * <code>optional int64 localDate = 10;</code>
+       * @return The localDate.
        */
       long getLocalDate();
 
       /**
        * <code>optional .AllSupported.Timestamp localDateTime = 11;</code>
+       * @return Whether the localDateTime field is set.
        */
       boolean hasLocalDateTime();
       /**
        * <code>optional .AllSupported.Timestamp localDateTime = 11;</code>
+       * @return The localDateTime.
        */
       AllSupportedOuterClass.AllSupported.Timestamp getLocalDateTime();
       /**
@@ -1241,66 +1344,80 @@ public final class AllSupportedOuterClass {
 
       /**
        * <code>optional string uuid = 12;</code>
+       * @return Whether the uuid field is set.
        */
       boolean hasUuid();
       /**
        * <code>optional string uuid = 12;</code>
+       * @return The uuid.
        */
       java.lang.String getUuid();
       /**
        * <code>optional string uuid = 12;</code>
+       * @return The bytes for uuid.
        */
       com.google.protobuf.ByteString
           getUuidBytes();
 
       /**
        * <code>optional string enumeration = 13;</code>
+       * @return Whether the enumeration field is set.
        */
       boolean hasEnumeration();
       /**
        * <code>optional string enumeration = 13;</code>
+       * @return The enumeration.
        */
       java.lang.String getEnumeration();
       /**
        * <code>optional string enumeration = 13;</code>
+       * @return The bytes for enumeration.
        */
       com.google.protobuf.ByteString
           getEnumerationBytes();
 
       /**
        * <code>optional string bigDecimal = 14;</code>
+       * @return Whether the bigDecimal field is set.
        */
       boolean hasBigDecimal();
       /**
        * <code>optional string bigDecimal = 14;</code>
+       * @return The bigDecimal.
        */
       java.lang.String getBigDecimal();
       /**
        * <code>optional string bigDecimal = 14;</code>
+       * @return The bytes for bigDecimal.
        */
       com.google.protobuf.ByteString
           getBigDecimalBytes();
 
       /**
-       * <code>optional string eitherLeft = 15;</code>
+       * <code>string eitherLeft = 15;</code>
+       * @return Whether the eitherLeft field is set.
        */
       boolean hasEitherLeft();
       /**
-       * <code>optional string eitherLeft = 15;</code>
+       * <code>string eitherLeft = 15;</code>
+       * @return The eitherLeft.
        */
       java.lang.String getEitherLeft();
       /**
-       * <code>optional string eitherLeft = 15;</code>
+       * <code>string eitherLeft = 15;</code>
+       * @return The bytes for eitherLeft.
        */
       com.google.protobuf.ByteString
           getEitherLeftBytes();
 
       /**
-       * <code>optional int32 eitherRight = 16;</code>
+       * <code>int32 eitherRight = 16;</code>
+       * @return Whether the eitherRight field is set.
        */
       boolean hasEitherRight();
       /**
-       * <code>optional int32 eitherRight = 16;</code>
+       * <code>int32 eitherRight = 16;</code>
+       * @return The eitherRight.
        */
       int getEitherRight();
 
@@ -1309,7 +1426,7 @@ public final class AllSupportedOuterClass {
     /**
      * Protobuf type {@code AllSupported.Child}
      */
-    public  static final class Child extends
+    public static final class Child extends
         com.google.protobuf.GeneratedMessageV3 implements
         // @@protoc_insertion_point(message_implements:AllSupported.Child)
         ChildOrBuilder {
@@ -1319,19 +1436,19 @@ public final class AllSupportedOuterClass {
         super(builder);
       }
       private Child() {
-        boolean_ = false;
-        int_ = 0;
-        long_ = 0L;
-        listOfInt_ = java.util.Collections.emptyList();
+        listOfInt_ = emptyIntList();
         string_ = "";
-        float_ = 0F;
-        short_ = 0;
-        double_ = 0D;
         byteArray_ = com.google.protobuf.ByteString.EMPTY;
-        localDate_ = 0L;
         uuid_ = "";
         enumeration_ = "";
         bigDecimal_ = "";
+      }
+
+      @java.lang.Override
+      @SuppressWarnings({"unused"})
+      protected java.lang.Object newInstance(
+          UnusedPrivateParameter unused) {
+        return new Child();
       }
 
       @java.lang.Override
@@ -1374,22 +1491,22 @@ public final class AllSupportedOuterClass {
                 break;
               }
               case 32: {
-                if (!((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
-                  listOfInt_ = new java.util.ArrayList<java.lang.Integer>();
+                if (!((mutable_bitField0_ & 0x00000008) != 0)) {
+                  listOfInt_ = newIntList();
                   mutable_bitField0_ |= 0x00000008;
                 }
-                listOfInt_.add(input.readInt32());
+                listOfInt_.addInt(input.readInt32());
                 break;
               }
               case 34: {
                 int length = input.readRawVarint32();
                 int limit = input.pushLimit(length);
-                if (!((mutable_bitField0_ & 0x00000008) == 0x00000008) && input.getBytesUntilLimit() > 0) {
-                  listOfInt_ = new java.util.ArrayList<java.lang.Integer>();
+                if (!((mutable_bitField0_ & 0x00000008) != 0) && input.getBytesUntilLimit() > 0) {
+                  listOfInt_ = newIntList();
                   mutable_bitField0_ |= 0x00000008;
                 }
                 while (input.getBytesUntilLimit() > 0) {
-                  listOfInt_.add(input.readInt32());
+                  listOfInt_.addInt(input.readInt32());
                 }
                 input.popLimit(limit);
                 break;
@@ -1427,7 +1544,7 @@ public final class AllSupportedOuterClass {
               }
               case 90: {
                 AllSupportedOuterClass.AllSupported.Timestamp.Builder subBuilder = null;
-                if (((bitField0_ & 0x00000200) == 0x00000200)) {
+                if (((bitField0_ & 0x00000200) != 0)) {
                   subBuilder = localDateTime_.toBuilder();
                 }
                 localDateTime_ = input.readMessage(AllSupportedOuterClass.AllSupported.Timestamp.PARSER, extensionRegistry);
@@ -1482,8 +1599,8 @@ public final class AllSupportedOuterClass {
           throw new com.google.protobuf.InvalidProtocolBufferException(
               e).setUnfinishedMessage(this);
         } finally {
-          if (((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
-            listOfInt_ = java.util.Collections.unmodifiableList(listOfInt_);
+          if (((mutable_bitField0_ & 0x00000008) != 0)) {
+            listOfInt_.makeImmutable(); // C
           }
           this.unknownFields = unknownFields.build();
           makeExtensionsImmutable();
@@ -1506,7 +1623,8 @@ public final class AllSupportedOuterClass {
       private int eitherCase_ = 0;
       private java.lang.Object either_;
       public enum EitherCase
-          implements com.google.protobuf.Internal.EnumLite {
+          implements com.google.protobuf.Internal.EnumLite,
+              com.google.protobuf.AbstractMessage.InternalOneOfEnum {
         EITHERLEFT(15),
         EITHERRIGHT(16),
         EITHER_NOT_SET(0);
@@ -1515,6 +1633,8 @@ public final class AllSupportedOuterClass {
           this.value = value;
         }
         /**
+         * @param value The number of the enum to look for.
+         * @return The enum associated with the given number.
          * @deprecated Use {@link #forNumber(int)} instead.
          */
         @java.lang.Deprecated
@@ -1545,13 +1665,17 @@ public final class AllSupportedOuterClass {
       private boolean boolean_;
       /**
        * <code>optional bool boolean = 1;</code>
+       * @return Whether the boolean field is set.
        */
+      @java.lang.Override
       public boolean hasBoolean() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
+        return ((bitField0_ & 0x00000001) != 0);
       }
       /**
        * <code>optional bool boolean = 1;</code>
+       * @return The boolean.
        */
+      @java.lang.Override
       public boolean getBoolean() {
         return boolean_;
       }
@@ -1560,13 +1684,17 @@ public final class AllSupportedOuterClass {
       private int int_;
       /**
        * <code>optional int32 int = 2;</code>
+       * @return Whether the int field is set.
        */
+      @java.lang.Override
       public boolean hasInt() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
+        return ((bitField0_ & 0x00000002) != 0);
       }
       /**
        * <code>optional int32 int = 2;</code>
+       * @return The int.
        */
+      @java.lang.Override
       public int getInt() {
         return int_;
       }
@@ -1575,50 +1703,63 @@ public final class AllSupportedOuterClass {
       private long long_;
       /**
        * <code>optional int64 long = 3;</code>
+       * @return Whether the long field is set.
        */
+      @java.lang.Override
       public boolean hasLong() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
+        return ((bitField0_ & 0x00000004) != 0);
       }
       /**
        * <code>optional int64 long = 3;</code>
+       * @return The long.
        */
+      @java.lang.Override
       public long getLong() {
         return long_;
       }
 
       public static final int LISTOFINT_FIELD_NUMBER = 4;
-      private java.util.List<java.lang.Integer> listOfInt_;
+      private com.google.protobuf.Internal.IntList listOfInt_;
       /**
        * <code>repeated int32 listOfInt = 4;</code>
+       * @return A list containing the listOfInt.
        */
+      @java.lang.Override
       public java.util.List<java.lang.Integer>
           getListOfIntList() {
         return listOfInt_;
       }
       /**
        * <code>repeated int32 listOfInt = 4;</code>
+       * @return The count of listOfInt.
        */
       public int getListOfIntCount() {
         return listOfInt_.size();
       }
       /**
        * <code>repeated int32 listOfInt = 4;</code>
+       * @param index The index of the element to return.
+       * @return The listOfInt at the given index.
        */
       public int getListOfInt(int index) {
-        return listOfInt_.get(index);
+        return listOfInt_.getInt(index);
       }
 
       public static final int STRING_FIELD_NUMBER = 5;
       private volatile java.lang.Object string_;
       /**
        * <code>optional string string = 5;</code>
+       * @return Whether the string field is set.
        */
+      @java.lang.Override
       public boolean hasString() {
-        return ((bitField0_ & 0x00000008) == 0x00000008);
+        return ((bitField0_ & 0x00000008) != 0);
       }
       /**
        * <code>optional string string = 5;</code>
+       * @return The string.
        */
+      @java.lang.Override
       public java.lang.String getString() {
         java.lang.Object ref = string_;
         if (ref instanceof java.lang.String) {
@@ -1635,7 +1776,9 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>optional string string = 5;</code>
+       * @return The bytes for string.
        */
+      @java.lang.Override
       public com.google.protobuf.ByteString
           getStringBytes() {
         java.lang.Object ref = string_;
@@ -1654,13 +1797,17 @@ public final class AllSupportedOuterClass {
       private float float_;
       /**
        * <code>optional float float = 6;</code>
+       * @return Whether the float field is set.
        */
+      @java.lang.Override
       public boolean hasFloat() {
-        return ((bitField0_ & 0x00000010) == 0x00000010);
+        return ((bitField0_ & 0x00000010) != 0);
       }
       /**
        * <code>optional float float = 6;</code>
+       * @return The float.
        */
+      @java.lang.Override
       public float getFloat() {
         return float_;
       }
@@ -1669,13 +1816,17 @@ public final class AllSupportedOuterClass {
       private int short_;
       /**
        * <code>optional int32 short = 7;</code>
+       * @return Whether the short field is set.
        */
+      @java.lang.Override
       public boolean hasShort() {
-        return ((bitField0_ & 0x00000020) == 0x00000020);
+        return ((bitField0_ & 0x00000020) != 0);
       }
       /**
        * <code>optional int32 short = 7;</code>
+       * @return The short.
        */
+      @java.lang.Override
       public int getShort() {
         return short_;
       }
@@ -1684,13 +1835,17 @@ public final class AllSupportedOuterClass {
       private double double_;
       /**
        * <code>optional double double = 8;</code>
+       * @return Whether the double field is set.
        */
+      @java.lang.Override
       public boolean hasDouble() {
-        return ((bitField0_ & 0x00000040) == 0x00000040);
+        return ((bitField0_ & 0x00000040) != 0);
       }
       /**
        * <code>optional double double = 8;</code>
+       * @return The double.
        */
+      @java.lang.Override
       public double getDouble() {
         return double_;
       }
@@ -1699,13 +1854,17 @@ public final class AllSupportedOuterClass {
       private com.google.protobuf.ByteString byteArray_;
       /**
        * <code>optional bytes byteArray = 9;</code>
+       * @return Whether the byteArray field is set.
        */
+      @java.lang.Override
       public boolean hasByteArray() {
-        return ((bitField0_ & 0x00000080) == 0x00000080);
+        return ((bitField0_ & 0x00000080) != 0);
       }
       /**
        * <code>optional bytes byteArray = 9;</code>
+       * @return The byteArray.
        */
+      @java.lang.Override
       public com.google.protobuf.ByteString getByteArray() {
         return byteArray_;
       }
@@ -1714,13 +1873,17 @@ public final class AllSupportedOuterClass {
       private long localDate_;
       /**
        * <code>optional int64 localDate = 10;</code>
+       * @return Whether the localDate field is set.
        */
+      @java.lang.Override
       public boolean hasLocalDate() {
-        return ((bitField0_ & 0x00000100) == 0x00000100);
+        return ((bitField0_ & 0x00000100) != 0);
       }
       /**
        * <code>optional int64 localDate = 10;</code>
+       * @return The localDate.
        */
+      @java.lang.Override
       public long getLocalDate() {
         return localDate_;
       }
@@ -1729,19 +1892,24 @@ public final class AllSupportedOuterClass {
       private AllSupportedOuterClass.AllSupported.Timestamp localDateTime_;
       /**
        * <code>optional .AllSupported.Timestamp localDateTime = 11;</code>
+       * @return Whether the localDateTime field is set.
        */
+      @java.lang.Override
       public boolean hasLocalDateTime() {
-        return ((bitField0_ & 0x00000200) == 0x00000200);
+        return ((bitField0_ & 0x00000200) != 0);
       }
       /**
        * <code>optional .AllSupported.Timestamp localDateTime = 11;</code>
+       * @return The localDateTime.
        */
+      @java.lang.Override
       public AllSupportedOuterClass.AllSupported.Timestamp getLocalDateTime() {
         return localDateTime_ == null ? AllSupportedOuterClass.AllSupported.Timestamp.getDefaultInstance() : localDateTime_;
       }
       /**
        * <code>optional .AllSupported.Timestamp localDateTime = 11;</code>
        */
+      @java.lang.Override
       public AllSupportedOuterClass.AllSupported.TimestampOrBuilder getLocalDateTimeOrBuilder() {
         return localDateTime_ == null ? AllSupportedOuterClass.AllSupported.Timestamp.getDefaultInstance() : localDateTime_;
       }
@@ -1750,13 +1918,17 @@ public final class AllSupportedOuterClass {
       private volatile java.lang.Object uuid_;
       /**
        * <code>optional string uuid = 12;</code>
+       * @return Whether the uuid field is set.
        */
+      @java.lang.Override
       public boolean hasUuid() {
-        return ((bitField0_ & 0x00000400) == 0x00000400);
+        return ((bitField0_ & 0x00000400) != 0);
       }
       /**
        * <code>optional string uuid = 12;</code>
+       * @return The uuid.
        */
+      @java.lang.Override
       public java.lang.String getUuid() {
         java.lang.Object ref = uuid_;
         if (ref instanceof java.lang.String) {
@@ -1773,7 +1945,9 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>optional string uuid = 12;</code>
+       * @return The bytes for uuid.
        */
+      @java.lang.Override
       public com.google.protobuf.ByteString
           getUuidBytes() {
         java.lang.Object ref = uuid_;
@@ -1792,13 +1966,17 @@ public final class AllSupportedOuterClass {
       private volatile java.lang.Object enumeration_;
       /**
        * <code>optional string enumeration = 13;</code>
+       * @return Whether the enumeration field is set.
        */
+      @java.lang.Override
       public boolean hasEnumeration() {
-        return ((bitField0_ & 0x00000800) == 0x00000800);
+        return ((bitField0_ & 0x00000800) != 0);
       }
       /**
        * <code>optional string enumeration = 13;</code>
+       * @return The enumeration.
        */
+      @java.lang.Override
       public java.lang.String getEnumeration() {
         java.lang.Object ref = enumeration_;
         if (ref instanceof java.lang.String) {
@@ -1815,7 +1993,9 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>optional string enumeration = 13;</code>
+       * @return The bytes for enumeration.
        */
+      @java.lang.Override
       public com.google.protobuf.ByteString
           getEnumerationBytes() {
         java.lang.Object ref = enumeration_;
@@ -1834,13 +2014,17 @@ public final class AllSupportedOuterClass {
       private volatile java.lang.Object bigDecimal_;
       /**
        * <code>optional string bigDecimal = 14;</code>
+       * @return Whether the bigDecimal field is set.
        */
+      @java.lang.Override
       public boolean hasBigDecimal() {
-        return ((bitField0_ & 0x00001000) == 0x00001000);
+        return ((bitField0_ & 0x00001000) != 0);
       }
       /**
        * <code>optional string bigDecimal = 14;</code>
+       * @return The bigDecimal.
        */
+      @java.lang.Override
       public java.lang.String getBigDecimal() {
         java.lang.Object ref = bigDecimal_;
         if (ref instanceof java.lang.String) {
@@ -1857,7 +2041,9 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>optional string bigDecimal = 14;</code>
+       * @return The bytes for bigDecimal.
        */
+      @java.lang.Override
       public com.google.protobuf.ByteString
           getBigDecimalBytes() {
         java.lang.Object ref = bigDecimal_;
@@ -1874,13 +2060,15 @@ public final class AllSupportedOuterClass {
 
       public static final int EITHERLEFT_FIELD_NUMBER = 15;
       /**
-       * <code>optional string eitherLeft = 15;</code>
+       * <code>string eitherLeft = 15;</code>
+       * @return Whether the eitherLeft field is set.
        */
       public boolean hasEitherLeft() {
         return eitherCase_ == 15;
       }
       /**
-       * <code>optional string eitherLeft = 15;</code>
+       * <code>string eitherLeft = 15;</code>
+       * @return The eitherLeft.
        */
       public java.lang.String getEitherLeft() {
         java.lang.Object ref = "";
@@ -1900,7 +2088,8 @@ public final class AllSupportedOuterClass {
         }
       }
       /**
-       * <code>optional string eitherLeft = 15;</code>
+       * <code>string eitherLeft = 15;</code>
+       * @return The bytes for eitherLeft.
        */
       public com.google.protobuf.ByteString
           getEitherLeftBytes() {
@@ -1923,14 +2112,18 @@ public final class AllSupportedOuterClass {
 
       public static final int EITHERRIGHT_FIELD_NUMBER = 16;
       /**
-       * <code>optional int32 eitherRight = 16;</code>
+       * <code>int32 eitherRight = 16;</code>
+       * @return Whether the eitherRight field is set.
        */
+      @java.lang.Override
       public boolean hasEitherRight() {
         return eitherCase_ == 16;
       }
       /**
-       * <code>optional int32 eitherRight = 16;</code>
+       * <code>int32 eitherRight = 16;</code>
+       * @return The eitherRight.
        */
+      @java.lang.Override
       public int getEitherRight() {
         if (eitherCase_ == 16) {
           return (java.lang.Integer) either_;
@@ -1958,46 +2151,46 @@ public final class AllSupportedOuterClass {
       @java.lang.Override
       public void writeTo(com.google.protobuf.CodedOutputStream output)
                           throws java.io.IOException {
-        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        if (((bitField0_ & 0x00000001) != 0)) {
           output.writeBool(1, boolean_);
         }
-        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        if (((bitField0_ & 0x00000002) != 0)) {
           output.writeInt32(2, int_);
         }
-        if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        if (((bitField0_ & 0x00000004) != 0)) {
           output.writeInt64(3, long_);
         }
         for (int i = 0; i < listOfInt_.size(); i++) {
-          output.writeInt32(4, listOfInt_.get(i));
+          output.writeInt32(4, listOfInt_.getInt(i));
         }
-        if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        if (((bitField0_ & 0x00000008) != 0)) {
           com.google.protobuf.GeneratedMessageV3.writeString(output, 5, string_);
         }
-        if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        if (((bitField0_ & 0x00000010) != 0)) {
           output.writeFloat(6, float_);
         }
-        if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        if (((bitField0_ & 0x00000020) != 0)) {
           output.writeInt32(7, short_);
         }
-        if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        if (((bitField0_ & 0x00000040) != 0)) {
           output.writeDouble(8, double_);
         }
-        if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        if (((bitField0_ & 0x00000080) != 0)) {
           output.writeBytes(9, byteArray_);
         }
-        if (((bitField0_ & 0x00000100) == 0x00000100)) {
+        if (((bitField0_ & 0x00000100) != 0)) {
           output.writeInt64(10, localDate_);
         }
-        if (((bitField0_ & 0x00000200) == 0x00000200)) {
+        if (((bitField0_ & 0x00000200) != 0)) {
           output.writeMessage(11, getLocalDateTime());
         }
-        if (((bitField0_ & 0x00000400) == 0x00000400)) {
+        if (((bitField0_ & 0x00000400) != 0)) {
           com.google.protobuf.GeneratedMessageV3.writeString(output, 12, uuid_);
         }
-        if (((bitField0_ & 0x00000800) == 0x00000800)) {
+        if (((bitField0_ & 0x00000800) != 0)) {
           com.google.protobuf.GeneratedMessageV3.writeString(output, 13, enumeration_);
         }
-        if (((bitField0_ & 0x00001000) == 0x00001000)) {
+        if (((bitField0_ & 0x00001000) != 0)) {
           com.google.protobuf.GeneratedMessageV3.writeString(output, 14, bigDecimal_);
         }
         if (eitherCase_ == 15) {
@@ -2016,15 +2209,15 @@ public final class AllSupportedOuterClass {
         if (size != -1) return size;
 
         size = 0;
-        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        if (((bitField0_ & 0x00000001) != 0)) {
           size += com.google.protobuf.CodedOutputStream
             .computeBoolSize(1, boolean_);
         }
-        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        if (((bitField0_ & 0x00000002) != 0)) {
           size += com.google.protobuf.CodedOutputStream
             .computeInt32Size(2, int_);
         }
-        if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        if (((bitField0_ & 0x00000004) != 0)) {
           size += com.google.protobuf.CodedOutputStream
             .computeInt64Size(3, long_);
         }
@@ -2032,45 +2225,45 @@ public final class AllSupportedOuterClass {
           int dataSize = 0;
           for (int i = 0; i < listOfInt_.size(); i++) {
             dataSize += com.google.protobuf.CodedOutputStream
-              .computeInt32SizeNoTag(listOfInt_.get(i));
+              .computeInt32SizeNoTag(listOfInt_.getInt(i));
           }
           size += dataSize;
           size += 1 * getListOfIntList().size();
         }
-        if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        if (((bitField0_ & 0x00000008) != 0)) {
           size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, string_);
         }
-        if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        if (((bitField0_ & 0x00000010) != 0)) {
           size += com.google.protobuf.CodedOutputStream
             .computeFloatSize(6, float_);
         }
-        if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        if (((bitField0_ & 0x00000020) != 0)) {
           size += com.google.protobuf.CodedOutputStream
             .computeInt32Size(7, short_);
         }
-        if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        if (((bitField0_ & 0x00000040) != 0)) {
           size += com.google.protobuf.CodedOutputStream
             .computeDoubleSize(8, double_);
         }
-        if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        if (((bitField0_ & 0x00000080) != 0)) {
           size += com.google.protobuf.CodedOutputStream
             .computeBytesSize(9, byteArray_);
         }
-        if (((bitField0_ & 0x00000100) == 0x00000100)) {
+        if (((bitField0_ & 0x00000100) != 0)) {
           size += com.google.protobuf.CodedOutputStream
             .computeInt64Size(10, localDate_);
         }
-        if (((bitField0_ & 0x00000200) == 0x00000200)) {
+        if (((bitField0_ & 0x00000200) != 0)) {
           size += com.google.protobuf.CodedOutputStream
             .computeMessageSize(11, getLocalDateTime());
         }
-        if (((bitField0_ & 0x00000400) == 0x00000400)) {
+        if (((bitField0_ & 0x00000400) != 0)) {
           size += com.google.protobuf.GeneratedMessageV3.computeStringSize(12, uuid_);
         }
-        if (((bitField0_ & 0x00000800) == 0x00000800)) {
+        if (((bitField0_ & 0x00000800) != 0)) {
           size += com.google.protobuf.GeneratedMessageV3.computeStringSize(13, enumeration_);
         }
-        if (((bitField0_ & 0x00001000) == 0x00001000)) {
+        if (((bitField0_ & 0x00001000) != 0)) {
           size += com.google.protobuf.GeneratedMessageV3.computeStringSize(14, bigDecimal_);
         }
         if (eitherCase_ == 15) {
@@ -2096,95 +2289,90 @@ public final class AllSupportedOuterClass {
         }
         AllSupportedOuterClass.AllSupported.Child other = (AllSupportedOuterClass.AllSupported.Child) obj;
 
-        boolean result = true;
-        result = result && (hasBoolean() == other.hasBoolean());
+        if (hasBoolean() != other.hasBoolean()) return false;
         if (hasBoolean()) {
-          result = result && (getBoolean()
-              == other.getBoolean());
+          if (getBoolean()
+              != other.getBoolean()) return false;
         }
-        result = result && (hasInt() == other.hasInt());
+        if (hasInt() != other.hasInt()) return false;
         if (hasInt()) {
-          result = result && (getInt()
-              == other.getInt());
+          if (getInt()
+              != other.getInt()) return false;
         }
-        result = result && (hasLong() == other.hasLong());
+        if (hasLong() != other.hasLong()) return false;
         if (hasLong()) {
-          result = result && (getLong()
-              == other.getLong());
+          if (getLong()
+              != other.getLong()) return false;
         }
-        result = result && getListOfIntList()
-            .equals(other.getListOfIntList());
-        result = result && (hasString() == other.hasString());
+        if (!getListOfIntList()
+            .equals(other.getListOfIntList())) return false;
+        if (hasString() != other.hasString()) return false;
         if (hasString()) {
-          result = result && getString()
-              .equals(other.getString());
+          if (!getString()
+              .equals(other.getString())) return false;
         }
-        result = result && (hasFloat() == other.hasFloat());
+        if (hasFloat() != other.hasFloat()) return false;
         if (hasFloat()) {
-          result = result && (
-              java.lang.Float.floatToIntBits(getFloat())
-              == java.lang.Float.floatToIntBits(
-                  other.getFloat()));
+          if (java.lang.Float.floatToIntBits(getFloat())
+              != java.lang.Float.floatToIntBits(
+                  other.getFloat())) return false;
         }
-        result = result && (hasShort() == other.hasShort());
+        if (hasShort() != other.hasShort()) return false;
         if (hasShort()) {
-          result = result && (getShort()
-              == other.getShort());
+          if (getShort()
+              != other.getShort()) return false;
         }
-        result = result && (hasDouble() == other.hasDouble());
+        if (hasDouble() != other.hasDouble()) return false;
         if (hasDouble()) {
-          result = result && (
-              java.lang.Double.doubleToLongBits(getDouble())
-              == java.lang.Double.doubleToLongBits(
-                  other.getDouble()));
+          if (java.lang.Double.doubleToLongBits(getDouble())
+              != java.lang.Double.doubleToLongBits(
+                  other.getDouble())) return false;
         }
-        result = result && (hasByteArray() == other.hasByteArray());
+        if (hasByteArray() != other.hasByteArray()) return false;
         if (hasByteArray()) {
-          result = result && getByteArray()
-              .equals(other.getByteArray());
+          if (!getByteArray()
+              .equals(other.getByteArray())) return false;
         }
-        result = result && (hasLocalDate() == other.hasLocalDate());
+        if (hasLocalDate() != other.hasLocalDate()) return false;
         if (hasLocalDate()) {
-          result = result && (getLocalDate()
-              == other.getLocalDate());
+          if (getLocalDate()
+              != other.getLocalDate()) return false;
         }
-        result = result && (hasLocalDateTime() == other.hasLocalDateTime());
+        if (hasLocalDateTime() != other.hasLocalDateTime()) return false;
         if (hasLocalDateTime()) {
-          result = result && getLocalDateTime()
-              .equals(other.getLocalDateTime());
+          if (!getLocalDateTime()
+              .equals(other.getLocalDateTime())) return false;
         }
-        result = result && (hasUuid() == other.hasUuid());
+        if (hasUuid() != other.hasUuid()) return false;
         if (hasUuid()) {
-          result = result && getUuid()
-              .equals(other.getUuid());
+          if (!getUuid()
+              .equals(other.getUuid())) return false;
         }
-        result = result && (hasEnumeration() == other.hasEnumeration());
+        if (hasEnumeration() != other.hasEnumeration()) return false;
         if (hasEnumeration()) {
-          result = result && getEnumeration()
-              .equals(other.getEnumeration());
+          if (!getEnumeration()
+              .equals(other.getEnumeration())) return false;
         }
-        result = result && (hasBigDecimal() == other.hasBigDecimal());
+        if (hasBigDecimal() != other.hasBigDecimal()) return false;
         if (hasBigDecimal()) {
-          result = result && getBigDecimal()
-              .equals(other.getBigDecimal());
+          if (!getBigDecimal()
+              .equals(other.getBigDecimal())) return false;
         }
-        result = result && getEitherCase().equals(
-            other.getEitherCase());
-        if (!result) return false;
+        if (!getEitherCase().equals(other.getEitherCase())) return false;
         switch (eitherCase_) {
           case 15:
-            result = result && getEitherLeft()
-                .equals(other.getEitherLeft());
+            if (!getEitherLeft()
+                .equals(other.getEitherLeft())) return false;
             break;
           case 16:
-            result = result && (getEitherRight()
-                == other.getEitherRight());
+            if (getEitherRight()
+                != other.getEitherRight()) return false;
             break;
           case 0:
           default:
         }
-        result = result && unknownFields.equals(other.unknownFields);
-        return result;
+        if (!unknownFields.equals(other.unknownFields)) return false;
+        return true;
       }
 
       @java.lang.Override
@@ -2407,7 +2595,7 @@ public final class AllSupportedOuterClass {
           bitField0_ = (bitField0_ & ~0x00000002);
           long_ = 0L;
           bitField0_ = (bitField0_ & ~0x00000004);
-          listOfInt_ = java.util.Collections.emptyList();
+          listOfInt_ = emptyIntList();
           bitField0_ = (bitField0_ & ~0x00000008);
           string_ = "";
           bitField0_ = (bitField0_ & ~0x00000010);
@@ -2463,64 +2651,64 @@ public final class AllSupportedOuterClass {
           AllSupportedOuterClass.AllSupported.Child result = new AllSupportedOuterClass.AllSupported.Child(this);
           int from_bitField0_ = bitField0_;
           int to_bitField0_ = 0;
-          if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          if (((from_bitField0_ & 0x00000001) != 0)) {
+            result.boolean_ = boolean_;
             to_bitField0_ |= 0x00000001;
           }
-          result.boolean_ = boolean_;
-          if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          if (((from_bitField0_ & 0x00000002) != 0)) {
+            result.int_ = int_;
             to_bitField0_ |= 0x00000002;
           }
-          result.int_ = int_;
-          if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          if (((from_bitField0_ & 0x00000004) != 0)) {
+            result.long_ = long_;
             to_bitField0_ |= 0x00000004;
           }
-          result.long_ = long_;
-          if (((bitField0_ & 0x00000008) == 0x00000008)) {
-            listOfInt_ = java.util.Collections.unmodifiableList(listOfInt_);
+          if (((bitField0_ & 0x00000008) != 0)) {
+            listOfInt_.makeImmutable();
             bitField0_ = (bitField0_ & ~0x00000008);
           }
           result.listOfInt_ = listOfInt_;
-          if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          if (((from_bitField0_ & 0x00000010) != 0)) {
             to_bitField0_ |= 0x00000008;
           }
           result.string_ = string_;
-          if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          if (((from_bitField0_ & 0x00000020) != 0)) {
+            result.float_ = float_;
             to_bitField0_ |= 0x00000010;
           }
-          result.float_ = float_;
-          if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+          if (((from_bitField0_ & 0x00000040) != 0)) {
+            result.short_ = short_;
             to_bitField0_ |= 0x00000020;
           }
-          result.short_ = short_;
-          if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
+          if (((from_bitField0_ & 0x00000080) != 0)) {
+            result.double_ = double_;
             to_bitField0_ |= 0x00000040;
           }
-          result.double_ = double_;
-          if (((from_bitField0_ & 0x00000100) == 0x00000100)) {
+          if (((from_bitField0_ & 0x00000100) != 0)) {
             to_bitField0_ |= 0x00000080;
           }
           result.byteArray_ = byteArray_;
-          if (((from_bitField0_ & 0x00000200) == 0x00000200)) {
+          if (((from_bitField0_ & 0x00000200) != 0)) {
+            result.localDate_ = localDate_;
             to_bitField0_ |= 0x00000100;
           }
-          result.localDate_ = localDate_;
-          if (((from_bitField0_ & 0x00000400) == 0x00000400)) {
+          if (((from_bitField0_ & 0x00000400) != 0)) {
+            if (localDateTimeBuilder_ == null) {
+              result.localDateTime_ = localDateTime_;
+            } else {
+              result.localDateTime_ = localDateTimeBuilder_.build();
+            }
             to_bitField0_ |= 0x00000200;
           }
-          if (localDateTimeBuilder_ == null) {
-            result.localDateTime_ = localDateTime_;
-          } else {
-            result.localDateTime_ = localDateTimeBuilder_.build();
-          }
-          if (((from_bitField0_ & 0x00000800) == 0x00000800)) {
+          if (((from_bitField0_ & 0x00000800) != 0)) {
             to_bitField0_ |= 0x00000400;
           }
           result.uuid_ = uuid_;
-          if (((from_bitField0_ & 0x00001000) == 0x00001000)) {
+          if (((from_bitField0_ & 0x00001000) != 0)) {
             to_bitField0_ |= 0x00000800;
           }
           result.enumeration_ = enumeration_;
-          if (((from_bitField0_ & 0x00002000) == 0x00002000)) {
+          if (((from_bitField0_ & 0x00002000) != 0)) {
             to_bitField0_ |= 0x00001000;
           }
           result.bigDecimal_ = bigDecimal_;
@@ -2538,35 +2726,35 @@ public final class AllSupportedOuterClass {
 
         @java.lang.Override
         public Builder clone() {
-          return (Builder) super.clone();
+          return super.clone();
         }
         @java.lang.Override
         public Builder setField(
             com.google.protobuf.Descriptors.FieldDescriptor field,
             java.lang.Object value) {
-          return (Builder) super.setField(field, value);
+          return super.setField(field, value);
         }
         @java.lang.Override
         public Builder clearField(
             com.google.protobuf.Descriptors.FieldDescriptor field) {
-          return (Builder) super.clearField(field);
+          return super.clearField(field);
         }
         @java.lang.Override
         public Builder clearOneof(
             com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-          return (Builder) super.clearOneof(oneof);
+          return super.clearOneof(oneof);
         }
         @java.lang.Override
         public Builder setRepeatedField(
             com.google.protobuf.Descriptors.FieldDescriptor field,
             int index, java.lang.Object value) {
-          return (Builder) super.setRepeatedField(field, index, value);
+          return super.setRepeatedField(field, index, value);
         }
         @java.lang.Override
         public Builder addRepeatedField(
             com.google.protobuf.Descriptors.FieldDescriptor field,
             java.lang.Object value) {
-          return (Builder) super.addRepeatedField(field, value);
+          return super.addRepeatedField(field, value);
         }
         @java.lang.Override
         public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -2705,18 +2893,24 @@ public final class AllSupportedOuterClass {
         private boolean boolean_ ;
         /**
          * <code>optional bool boolean = 1;</code>
+         * @return Whether the boolean field is set.
          */
+        @java.lang.Override
         public boolean hasBoolean() {
-          return ((bitField0_ & 0x00000001) == 0x00000001);
+          return ((bitField0_ & 0x00000001) != 0);
         }
         /**
          * <code>optional bool boolean = 1;</code>
+         * @return The boolean.
          */
+        @java.lang.Override
         public boolean getBoolean() {
           return boolean_;
         }
         /**
          * <code>optional bool boolean = 1;</code>
+         * @param value The boolean to set.
+         * @return This builder for chaining.
          */
         public Builder setBoolean(boolean value) {
           bitField0_ |= 0x00000001;
@@ -2726,6 +2920,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional bool boolean = 1;</code>
+         * @return This builder for chaining.
          */
         public Builder clearBoolean() {
           bitField0_ = (bitField0_ & ~0x00000001);
@@ -2737,18 +2932,24 @@ public final class AllSupportedOuterClass {
         private int int_ ;
         /**
          * <code>optional int32 int = 2;</code>
+         * @return Whether the int field is set.
          */
+        @java.lang.Override
         public boolean hasInt() {
-          return ((bitField0_ & 0x00000002) == 0x00000002);
+          return ((bitField0_ & 0x00000002) != 0);
         }
         /**
          * <code>optional int32 int = 2;</code>
+         * @return The int.
          */
+        @java.lang.Override
         public int getInt() {
           return int_;
         }
         /**
          * <code>optional int32 int = 2;</code>
+         * @param value The int to set.
+         * @return This builder for chaining.
          */
         public Builder setInt(int value) {
           bitField0_ |= 0x00000002;
@@ -2758,6 +2959,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional int32 int = 2;</code>
+         * @return This builder for chaining.
          */
         public Builder clearInt() {
           bitField0_ = (bitField0_ & ~0x00000002);
@@ -2769,18 +2971,24 @@ public final class AllSupportedOuterClass {
         private long long_ ;
         /**
          * <code>optional int64 long = 3;</code>
+         * @return Whether the long field is set.
          */
+        @java.lang.Override
         public boolean hasLong() {
-          return ((bitField0_ & 0x00000004) == 0x00000004);
+          return ((bitField0_ & 0x00000004) != 0);
         }
         /**
          * <code>optional int64 long = 3;</code>
+         * @return The long.
          */
+        @java.lang.Override
         public long getLong() {
           return long_;
         }
         /**
          * <code>optional int64 long = 3;</code>
+         * @param value The long to set.
+         * @return This builder for chaining.
          */
         public Builder setLong(long value) {
           bitField0_ |= 0x00000004;
@@ -2790,6 +2998,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional int64 long = 3;</code>
+         * @return This builder for chaining.
          */
         public Builder clearLong() {
           bitField0_ = (bitField0_ & ~0x00000004);
@@ -2798,53 +3007,65 @@ public final class AllSupportedOuterClass {
           return this;
         }
 
-        private java.util.List<java.lang.Integer> listOfInt_ = java.util.Collections.emptyList();
+        private com.google.protobuf.Internal.IntList listOfInt_ = emptyIntList();
         private void ensureListOfIntIsMutable() {
-          if (!((bitField0_ & 0x00000008) == 0x00000008)) {
-            listOfInt_ = new java.util.ArrayList<java.lang.Integer>(listOfInt_);
+          if (!((bitField0_ & 0x00000008) != 0)) {
+            listOfInt_ = mutableCopy(listOfInt_);
             bitField0_ |= 0x00000008;
            }
         }
         /**
          * <code>repeated int32 listOfInt = 4;</code>
+         * @return A list containing the listOfInt.
          */
         public java.util.List<java.lang.Integer>
             getListOfIntList() {
-          return java.util.Collections.unmodifiableList(listOfInt_);
+          return ((bitField0_ & 0x00000008) != 0) ?
+                   java.util.Collections.unmodifiableList(listOfInt_) : listOfInt_;
         }
         /**
          * <code>repeated int32 listOfInt = 4;</code>
+         * @return The count of listOfInt.
          */
         public int getListOfIntCount() {
           return listOfInt_.size();
         }
         /**
          * <code>repeated int32 listOfInt = 4;</code>
+         * @param index The index of the element to return.
+         * @return The listOfInt at the given index.
          */
         public int getListOfInt(int index) {
-          return listOfInt_.get(index);
+          return listOfInt_.getInt(index);
         }
         /**
          * <code>repeated int32 listOfInt = 4;</code>
+         * @param index The index to set the value at.
+         * @param value The listOfInt to set.
+         * @return This builder for chaining.
          */
         public Builder setListOfInt(
             int index, int value) {
           ensureListOfIntIsMutable();
-          listOfInt_.set(index, value);
+          listOfInt_.setInt(index, value);
           onChanged();
           return this;
         }
         /**
          * <code>repeated int32 listOfInt = 4;</code>
+         * @param value The listOfInt to add.
+         * @return This builder for chaining.
          */
         public Builder addListOfInt(int value) {
           ensureListOfIntIsMutable();
-          listOfInt_.add(value);
+          listOfInt_.addInt(value);
           onChanged();
           return this;
         }
         /**
          * <code>repeated int32 listOfInt = 4;</code>
+         * @param values The listOfInt to add.
+         * @return This builder for chaining.
          */
         public Builder addAllListOfInt(
             java.lang.Iterable<? extends java.lang.Integer> values) {
@@ -2856,9 +3077,10 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>repeated int32 listOfInt = 4;</code>
+         * @return This builder for chaining.
          */
         public Builder clearListOfInt() {
-          listOfInt_ = java.util.Collections.emptyList();
+          listOfInt_ = emptyIntList();
           bitField0_ = (bitField0_ & ~0x00000008);
           onChanged();
           return this;
@@ -2867,12 +3089,14 @@ public final class AllSupportedOuterClass {
         private java.lang.Object string_ = "";
         /**
          * <code>optional string string = 5;</code>
+         * @return Whether the string field is set.
          */
         public boolean hasString() {
-          return ((bitField0_ & 0x00000010) == 0x00000010);
+          return ((bitField0_ & 0x00000010) != 0);
         }
         /**
          * <code>optional string string = 5;</code>
+         * @return The string.
          */
         public java.lang.String getString() {
           java.lang.Object ref = string_;
@@ -2890,6 +3114,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional string string = 5;</code>
+         * @return The bytes for string.
          */
         public com.google.protobuf.ByteString
             getStringBytes() {
@@ -2906,6 +3131,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional string string = 5;</code>
+         * @param value The string to set.
+         * @return This builder for chaining.
          */
         public Builder setString(
             java.lang.String value) {
@@ -2919,6 +3146,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional string string = 5;</code>
+         * @return This builder for chaining.
          */
         public Builder clearString() {
           bitField0_ = (bitField0_ & ~0x00000010);
@@ -2928,6 +3156,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional string string = 5;</code>
+         * @param value The bytes for string to set.
+         * @return This builder for chaining.
          */
         public Builder setStringBytes(
             com.google.protobuf.ByteString value) {
@@ -2943,18 +3173,24 @@ public final class AllSupportedOuterClass {
         private float float_ ;
         /**
          * <code>optional float float = 6;</code>
+         * @return Whether the float field is set.
          */
+        @java.lang.Override
         public boolean hasFloat() {
-          return ((bitField0_ & 0x00000020) == 0x00000020);
+          return ((bitField0_ & 0x00000020) != 0);
         }
         /**
          * <code>optional float float = 6;</code>
+         * @return The float.
          */
+        @java.lang.Override
         public float getFloat() {
           return float_;
         }
         /**
          * <code>optional float float = 6;</code>
+         * @param value The float to set.
+         * @return This builder for chaining.
          */
         public Builder setFloat(float value) {
           bitField0_ |= 0x00000020;
@@ -2964,6 +3200,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional float float = 6;</code>
+         * @return This builder for chaining.
          */
         public Builder clearFloat() {
           bitField0_ = (bitField0_ & ~0x00000020);
@@ -2975,18 +3212,24 @@ public final class AllSupportedOuterClass {
         private int short_ ;
         /**
          * <code>optional int32 short = 7;</code>
+         * @return Whether the short field is set.
          */
+        @java.lang.Override
         public boolean hasShort() {
-          return ((bitField0_ & 0x00000040) == 0x00000040);
+          return ((bitField0_ & 0x00000040) != 0);
         }
         /**
          * <code>optional int32 short = 7;</code>
+         * @return The short.
          */
+        @java.lang.Override
         public int getShort() {
           return short_;
         }
         /**
          * <code>optional int32 short = 7;</code>
+         * @param value The short to set.
+         * @return This builder for chaining.
          */
         public Builder setShort(int value) {
           bitField0_ |= 0x00000040;
@@ -2996,6 +3239,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional int32 short = 7;</code>
+         * @return This builder for chaining.
          */
         public Builder clearShort() {
           bitField0_ = (bitField0_ & ~0x00000040);
@@ -3007,18 +3251,24 @@ public final class AllSupportedOuterClass {
         private double double_ ;
         /**
          * <code>optional double double = 8;</code>
+         * @return Whether the double field is set.
          */
+        @java.lang.Override
         public boolean hasDouble() {
-          return ((bitField0_ & 0x00000080) == 0x00000080);
+          return ((bitField0_ & 0x00000080) != 0);
         }
         /**
          * <code>optional double double = 8;</code>
+         * @return The double.
          */
+        @java.lang.Override
         public double getDouble() {
           return double_;
         }
         /**
          * <code>optional double double = 8;</code>
+         * @param value The double to set.
+         * @return This builder for chaining.
          */
         public Builder setDouble(double value) {
           bitField0_ |= 0x00000080;
@@ -3028,6 +3278,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional double double = 8;</code>
+         * @return This builder for chaining.
          */
         public Builder clearDouble() {
           bitField0_ = (bitField0_ & ~0x00000080);
@@ -3039,18 +3290,24 @@ public final class AllSupportedOuterClass {
         private com.google.protobuf.ByteString byteArray_ = com.google.protobuf.ByteString.EMPTY;
         /**
          * <code>optional bytes byteArray = 9;</code>
+         * @return Whether the byteArray field is set.
          */
+        @java.lang.Override
         public boolean hasByteArray() {
-          return ((bitField0_ & 0x00000100) == 0x00000100);
+          return ((bitField0_ & 0x00000100) != 0);
         }
         /**
          * <code>optional bytes byteArray = 9;</code>
+         * @return The byteArray.
          */
+        @java.lang.Override
         public com.google.protobuf.ByteString getByteArray() {
           return byteArray_;
         }
         /**
          * <code>optional bytes byteArray = 9;</code>
+         * @param value The byteArray to set.
+         * @return This builder for chaining.
          */
         public Builder setByteArray(com.google.protobuf.ByteString value) {
           if (value == null) {
@@ -3063,6 +3320,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional bytes byteArray = 9;</code>
+         * @return This builder for chaining.
          */
         public Builder clearByteArray() {
           bitField0_ = (bitField0_ & ~0x00000100);
@@ -3074,18 +3332,24 @@ public final class AllSupportedOuterClass {
         private long localDate_ ;
         /**
          * <code>optional int64 localDate = 10;</code>
+         * @return Whether the localDate field is set.
          */
+        @java.lang.Override
         public boolean hasLocalDate() {
-          return ((bitField0_ & 0x00000200) == 0x00000200);
+          return ((bitField0_ & 0x00000200) != 0);
         }
         /**
          * <code>optional int64 localDate = 10;</code>
+         * @return The localDate.
          */
+        @java.lang.Override
         public long getLocalDate() {
           return localDate_;
         }
         /**
          * <code>optional int64 localDate = 10;</code>
+         * @param value The localDate to set.
+         * @return This builder for chaining.
          */
         public Builder setLocalDate(long value) {
           bitField0_ |= 0x00000200;
@@ -3095,6 +3359,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional int64 localDate = 10;</code>
+         * @return This builder for chaining.
          */
         public Builder clearLocalDate() {
           bitField0_ = (bitField0_ & ~0x00000200);
@@ -3103,17 +3368,19 @@ public final class AllSupportedOuterClass {
           return this;
         }
 
-        private AllSupportedOuterClass.AllSupported.Timestamp localDateTime_ = null;
+        private AllSupportedOuterClass.AllSupported.Timestamp localDateTime_;
         private com.google.protobuf.SingleFieldBuilderV3<
             AllSupportedOuterClass.AllSupported.Timestamp, AllSupportedOuterClass.AllSupported.Timestamp.Builder, AllSupportedOuterClass.AllSupported.TimestampOrBuilder> localDateTimeBuilder_;
         /**
          * <code>optional .AllSupported.Timestamp localDateTime = 11;</code>
+         * @return Whether the localDateTime field is set.
          */
         public boolean hasLocalDateTime() {
-          return ((bitField0_ & 0x00000400) == 0x00000400);
+          return ((bitField0_ & 0x00000400) != 0);
         }
         /**
          * <code>optional .AllSupported.Timestamp localDateTime = 11;</code>
+         * @return The localDateTime.
          */
         public AllSupportedOuterClass.AllSupported.Timestamp getLocalDateTime() {
           if (localDateTimeBuilder_ == null) {
@@ -3157,7 +3424,7 @@ public final class AllSupportedOuterClass {
          */
         public Builder mergeLocalDateTime(AllSupportedOuterClass.AllSupported.Timestamp value) {
           if (localDateTimeBuilder_ == null) {
-            if (((bitField0_ & 0x00000400) == 0x00000400) &&
+            if (((bitField0_ & 0x00000400) != 0) &&
                 localDateTime_ != null &&
                 localDateTime_ != AllSupportedOuterClass.AllSupported.Timestamp.getDefaultInstance()) {
               localDateTime_ =
@@ -3224,12 +3491,14 @@ public final class AllSupportedOuterClass {
         private java.lang.Object uuid_ = "";
         /**
          * <code>optional string uuid = 12;</code>
+         * @return Whether the uuid field is set.
          */
         public boolean hasUuid() {
-          return ((bitField0_ & 0x00000800) == 0x00000800);
+          return ((bitField0_ & 0x00000800) != 0);
         }
         /**
          * <code>optional string uuid = 12;</code>
+         * @return The uuid.
          */
         public java.lang.String getUuid() {
           java.lang.Object ref = uuid_;
@@ -3247,6 +3516,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional string uuid = 12;</code>
+         * @return The bytes for uuid.
          */
         public com.google.protobuf.ByteString
             getUuidBytes() {
@@ -3263,6 +3533,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional string uuid = 12;</code>
+         * @param value The uuid to set.
+         * @return This builder for chaining.
          */
         public Builder setUuid(
             java.lang.String value) {
@@ -3276,6 +3548,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional string uuid = 12;</code>
+         * @return This builder for chaining.
          */
         public Builder clearUuid() {
           bitField0_ = (bitField0_ & ~0x00000800);
@@ -3285,6 +3558,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional string uuid = 12;</code>
+         * @param value The bytes for uuid to set.
+         * @return This builder for chaining.
          */
         public Builder setUuidBytes(
             com.google.protobuf.ByteString value) {
@@ -3300,12 +3575,14 @@ public final class AllSupportedOuterClass {
         private java.lang.Object enumeration_ = "";
         /**
          * <code>optional string enumeration = 13;</code>
+         * @return Whether the enumeration field is set.
          */
         public boolean hasEnumeration() {
-          return ((bitField0_ & 0x00001000) == 0x00001000);
+          return ((bitField0_ & 0x00001000) != 0);
         }
         /**
          * <code>optional string enumeration = 13;</code>
+         * @return The enumeration.
          */
         public java.lang.String getEnumeration() {
           java.lang.Object ref = enumeration_;
@@ -3323,6 +3600,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional string enumeration = 13;</code>
+         * @return The bytes for enumeration.
          */
         public com.google.protobuf.ByteString
             getEnumerationBytes() {
@@ -3339,6 +3617,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional string enumeration = 13;</code>
+         * @param value The enumeration to set.
+         * @return This builder for chaining.
          */
         public Builder setEnumeration(
             java.lang.String value) {
@@ -3352,6 +3632,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional string enumeration = 13;</code>
+         * @return This builder for chaining.
          */
         public Builder clearEnumeration() {
           bitField0_ = (bitField0_ & ~0x00001000);
@@ -3361,6 +3642,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional string enumeration = 13;</code>
+         * @param value The bytes for enumeration to set.
+         * @return This builder for chaining.
          */
         public Builder setEnumerationBytes(
             com.google.protobuf.ByteString value) {
@@ -3376,12 +3659,14 @@ public final class AllSupportedOuterClass {
         private java.lang.Object bigDecimal_ = "";
         /**
          * <code>optional string bigDecimal = 14;</code>
+         * @return Whether the bigDecimal field is set.
          */
         public boolean hasBigDecimal() {
-          return ((bitField0_ & 0x00002000) == 0x00002000);
+          return ((bitField0_ & 0x00002000) != 0);
         }
         /**
          * <code>optional string bigDecimal = 14;</code>
+         * @return The bigDecimal.
          */
         public java.lang.String getBigDecimal() {
           java.lang.Object ref = bigDecimal_;
@@ -3399,6 +3684,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional string bigDecimal = 14;</code>
+         * @return The bytes for bigDecimal.
          */
         public com.google.protobuf.ByteString
             getBigDecimalBytes() {
@@ -3415,6 +3701,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional string bigDecimal = 14;</code>
+         * @param value The bigDecimal to set.
+         * @return This builder for chaining.
          */
         public Builder setBigDecimal(
             java.lang.String value) {
@@ -3428,6 +3716,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional string bigDecimal = 14;</code>
+         * @return This builder for chaining.
          */
         public Builder clearBigDecimal() {
           bitField0_ = (bitField0_ & ~0x00002000);
@@ -3437,6 +3726,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>optional string bigDecimal = 14;</code>
+         * @param value The bytes for bigDecimal to set.
+         * @return This builder for chaining.
          */
         public Builder setBigDecimalBytes(
             com.google.protobuf.ByteString value) {
@@ -3450,14 +3741,18 @@ public final class AllSupportedOuterClass {
         }
 
         /**
-         * <code>optional string eitherLeft = 15;</code>
+         * <code>string eitherLeft = 15;</code>
+         * @return Whether the eitherLeft field is set.
          */
+        @java.lang.Override
         public boolean hasEitherLeft() {
           return eitherCase_ == 15;
         }
         /**
-         * <code>optional string eitherLeft = 15;</code>
+         * <code>string eitherLeft = 15;</code>
+         * @return The eitherLeft.
          */
+        @java.lang.Override
         public java.lang.String getEitherLeft() {
           java.lang.Object ref = "";
           if (eitherCase_ == 15) {
@@ -3478,8 +3773,10 @@ public final class AllSupportedOuterClass {
           }
         }
         /**
-         * <code>optional string eitherLeft = 15;</code>
+         * <code>string eitherLeft = 15;</code>
+         * @return The bytes for eitherLeft.
          */
+        @java.lang.Override
         public com.google.protobuf.ByteString
             getEitherLeftBytes() {
           java.lang.Object ref = "";
@@ -3499,7 +3796,9 @@ public final class AllSupportedOuterClass {
           }
         }
         /**
-         * <code>optional string eitherLeft = 15;</code>
+         * <code>string eitherLeft = 15;</code>
+         * @param value The eitherLeft to set.
+         * @return This builder for chaining.
          */
         public Builder setEitherLeft(
             java.lang.String value) {
@@ -3512,7 +3811,8 @@ public final class AllSupportedOuterClass {
           return this;
         }
         /**
-         * <code>optional string eitherLeft = 15;</code>
+         * <code>string eitherLeft = 15;</code>
+         * @return This builder for chaining.
          */
         public Builder clearEitherLeft() {
           if (eitherCase_ == 15) {
@@ -3523,7 +3823,9 @@ public final class AllSupportedOuterClass {
           return this;
         }
         /**
-         * <code>optional string eitherLeft = 15;</code>
+         * <code>string eitherLeft = 15;</code>
+         * @param value The bytes for eitherLeft to set.
+         * @return This builder for chaining.
          */
         public Builder setEitherLeftBytes(
             com.google.protobuf.ByteString value) {
@@ -3537,13 +3839,15 @@ public final class AllSupportedOuterClass {
         }
 
         /**
-         * <code>optional int32 eitherRight = 16;</code>
+         * <code>int32 eitherRight = 16;</code>
+         * @return Whether the eitherRight field is set.
          */
         public boolean hasEitherRight() {
           return eitherCase_ == 16;
         }
         /**
-         * <code>optional int32 eitherRight = 16;</code>
+         * <code>int32 eitherRight = 16;</code>
+         * @return The eitherRight.
          */
         public int getEitherRight() {
           if (eitherCase_ == 16) {
@@ -3552,7 +3856,9 @@ public final class AllSupportedOuterClass {
           return 0;
         }
         /**
-         * <code>optional int32 eitherRight = 16;</code>
+         * <code>int32 eitherRight = 16;</code>
+         * @param value The eitherRight to set.
+         * @return This builder for chaining.
          */
         public Builder setEitherRight(int value) {
           eitherCase_ = 16;
@@ -3561,7 +3867,8 @@ public final class AllSupportedOuterClass {
           return this;
         }
         /**
-         * <code>optional int32 eitherRight = 16;</code>
+         * <code>int32 eitherRight = 16;</code>
+         * @return This builder for chaining.
          */
         public Builder clearEitherRight() {
           if (eitherCase_ == 16) {
@@ -3630,28 +3937,34 @@ public final class AllSupportedOuterClass {
 
       /**
        * <code>required string name = 1;</code>
+       * @return Whether the name field is set.
        */
       boolean hasName();
       /**
        * <code>required string name = 1;</code>
+       * @return The name.
        */
       java.lang.String getName();
       /**
        * <code>required string name = 1;</code>
+       * @return The bytes for name.
        */
       com.google.protobuf.ByteString
           getNameBytes();
 
       /**
        * <code>required string format = 2;</code>
+       * @return Whether the format field is set.
        */
       boolean hasFormat();
       /**
        * <code>required string format = 2;</code>
+       * @return The format.
        */
       java.lang.String getFormat();
       /**
        * <code>required string format = 2;</code>
+       * @return The bytes for format.
        */
       com.google.protobuf.ByteString
           getFormatBytes();
@@ -3659,7 +3972,7 @@ public final class AllSupportedOuterClass {
     /**
      * Protobuf type {@code AllSupported.Digital}
      */
-    public  static final class Digital extends
+    public static final class Digital extends
         com.google.protobuf.GeneratedMessageV3 implements
         // @@protoc_insertion_point(message_implements:AllSupported.Digital)
         DigitalOrBuilder {
@@ -3671,6 +3984,13 @@ public final class AllSupportedOuterClass {
       private Digital() {
         name_ = "";
         format_ = "";
+      }
+
+      @java.lang.Override
+      @SuppressWarnings({"unused"})
+      protected java.lang.Object newInstance(
+          UnusedPrivateParameter unused) {
+        return new Digital();
       }
 
       @java.lang.Override
@@ -3746,13 +4066,17 @@ public final class AllSupportedOuterClass {
       private volatile java.lang.Object name_;
       /**
        * <code>required string name = 1;</code>
+       * @return Whether the name field is set.
        */
+      @java.lang.Override
       public boolean hasName() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
+        return ((bitField0_ & 0x00000001) != 0);
       }
       /**
        * <code>required string name = 1;</code>
+       * @return The name.
        */
+      @java.lang.Override
       public java.lang.String getName() {
         java.lang.Object ref = name_;
         if (ref instanceof java.lang.String) {
@@ -3769,7 +4093,9 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string name = 1;</code>
+       * @return The bytes for name.
        */
+      @java.lang.Override
       public com.google.protobuf.ByteString
           getNameBytes() {
         java.lang.Object ref = name_;
@@ -3788,13 +4114,17 @@ public final class AllSupportedOuterClass {
       private volatile java.lang.Object format_;
       /**
        * <code>required string format = 2;</code>
+       * @return Whether the format field is set.
        */
+      @java.lang.Override
       public boolean hasFormat() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
+        return ((bitField0_ & 0x00000002) != 0);
       }
       /**
        * <code>required string format = 2;</code>
+       * @return The format.
        */
+      @java.lang.Override
       public java.lang.String getFormat() {
         java.lang.Object ref = format_;
         if (ref instanceof java.lang.String) {
@@ -3811,7 +4141,9 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string format = 2;</code>
+       * @return The bytes for format.
        */
+      @java.lang.Override
       public com.google.protobuf.ByteString
           getFormatBytes() {
         java.lang.Object ref = format_;
@@ -3848,10 +4180,10 @@ public final class AllSupportedOuterClass {
       @java.lang.Override
       public void writeTo(com.google.protobuf.CodedOutputStream output)
                           throws java.io.IOException {
-        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        if (((bitField0_ & 0x00000001) != 0)) {
           com.google.protobuf.GeneratedMessageV3.writeString(output, 1, name_);
         }
-        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        if (((bitField0_ & 0x00000002) != 0)) {
           com.google.protobuf.GeneratedMessageV3.writeString(output, 2, format_);
         }
         unknownFields.writeTo(output);
@@ -3863,10 +4195,10 @@ public final class AllSupportedOuterClass {
         if (size != -1) return size;
 
         size = 0;
-        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        if (((bitField0_ & 0x00000001) != 0)) {
           size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, name_);
         }
-        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        if (((bitField0_ & 0x00000002) != 0)) {
           size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, format_);
         }
         size += unknownFields.getSerializedSize();
@@ -3884,19 +4216,18 @@ public final class AllSupportedOuterClass {
         }
         AllSupportedOuterClass.AllSupported.Digital other = (AllSupportedOuterClass.AllSupported.Digital) obj;
 
-        boolean result = true;
-        result = result && (hasName() == other.hasName());
+        if (hasName() != other.hasName()) return false;
         if (hasName()) {
-          result = result && getName()
-              .equals(other.getName());
+          if (!getName()
+              .equals(other.getName())) return false;
         }
-        result = result && (hasFormat() == other.hasFormat());
+        if (hasFormat() != other.hasFormat()) return false;
         if (hasFormat()) {
-          result = result && getFormat()
-              .equals(other.getFormat());
+          if (!getFormat()
+              .equals(other.getFormat())) return false;
         }
-        result = result && unknownFields.equals(other.unknownFields);
-        return result;
+        if (!unknownFields.equals(other.unknownFields)) return false;
+        return true;
       }
 
       @java.lang.Override
@@ -4079,11 +4410,11 @@ public final class AllSupportedOuterClass {
           AllSupportedOuterClass.AllSupported.Digital result = new AllSupportedOuterClass.AllSupported.Digital(this);
           int from_bitField0_ = bitField0_;
           int to_bitField0_ = 0;
-          if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          if (((from_bitField0_ & 0x00000001) != 0)) {
             to_bitField0_ |= 0x00000001;
           }
           result.name_ = name_;
-          if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          if (((from_bitField0_ & 0x00000002) != 0)) {
             to_bitField0_ |= 0x00000002;
           }
           result.format_ = format_;
@@ -4094,35 +4425,35 @@ public final class AllSupportedOuterClass {
 
         @java.lang.Override
         public Builder clone() {
-          return (Builder) super.clone();
+          return super.clone();
         }
         @java.lang.Override
         public Builder setField(
             com.google.protobuf.Descriptors.FieldDescriptor field,
             java.lang.Object value) {
-          return (Builder) super.setField(field, value);
+          return super.setField(field, value);
         }
         @java.lang.Override
         public Builder clearField(
             com.google.protobuf.Descriptors.FieldDescriptor field) {
-          return (Builder) super.clearField(field);
+          return super.clearField(field);
         }
         @java.lang.Override
         public Builder clearOneof(
             com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-          return (Builder) super.clearOneof(oneof);
+          return super.clearOneof(oneof);
         }
         @java.lang.Override
         public Builder setRepeatedField(
             com.google.protobuf.Descriptors.FieldDescriptor field,
             int index, java.lang.Object value) {
-          return (Builder) super.setRepeatedField(field, index, value);
+          return super.setRepeatedField(field, index, value);
         }
         @java.lang.Override
         public Builder addRepeatedField(
             com.google.protobuf.Descriptors.FieldDescriptor field,
             java.lang.Object value) {
-          return (Builder) super.addRepeatedField(field, value);
+          return super.addRepeatedField(field, value);
         }
         @java.lang.Override
         public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -4185,12 +4516,14 @@ public final class AllSupportedOuterClass {
         private java.lang.Object name_ = "";
         /**
          * <code>required string name = 1;</code>
+         * @return Whether the name field is set.
          */
         public boolean hasName() {
-          return ((bitField0_ & 0x00000001) == 0x00000001);
+          return ((bitField0_ & 0x00000001) != 0);
         }
         /**
          * <code>required string name = 1;</code>
+         * @return The name.
          */
         public java.lang.String getName() {
           java.lang.Object ref = name_;
@@ -4208,6 +4541,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string name = 1;</code>
+         * @return The bytes for name.
          */
         public com.google.protobuf.ByteString
             getNameBytes() {
@@ -4224,6 +4558,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string name = 1;</code>
+         * @param value The name to set.
+         * @return This builder for chaining.
          */
         public Builder setName(
             java.lang.String value) {
@@ -4237,6 +4573,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string name = 1;</code>
+         * @return This builder for chaining.
          */
         public Builder clearName() {
           bitField0_ = (bitField0_ & ~0x00000001);
@@ -4246,6 +4583,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string name = 1;</code>
+         * @param value The bytes for name to set.
+         * @return This builder for chaining.
          */
         public Builder setNameBytes(
             com.google.protobuf.ByteString value) {
@@ -4261,12 +4600,14 @@ public final class AllSupportedOuterClass {
         private java.lang.Object format_ = "";
         /**
          * <code>required string format = 2;</code>
+         * @return Whether the format field is set.
          */
         public boolean hasFormat() {
-          return ((bitField0_ & 0x00000002) == 0x00000002);
+          return ((bitField0_ & 0x00000002) != 0);
         }
         /**
          * <code>required string format = 2;</code>
+         * @return The format.
          */
         public java.lang.String getFormat() {
           java.lang.Object ref = format_;
@@ -4284,6 +4625,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string format = 2;</code>
+         * @return The bytes for format.
          */
         public com.google.protobuf.ByteString
             getFormatBytes() {
@@ -4300,6 +4642,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string format = 2;</code>
+         * @param value The format to set.
+         * @return This builder for chaining.
          */
         public Builder setFormat(
             java.lang.String value) {
@@ -4313,6 +4657,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string format = 2;</code>
+         * @return This builder for chaining.
          */
         public Builder clearFormat() {
           bitField0_ = (bitField0_ & ~0x00000002);
@@ -4322,6 +4667,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string format = 2;</code>
+         * @param value The bytes for format to set.
+         * @return This builder for chaining.
          */
         public Builder setFormatBytes(
             com.google.protobuf.ByteString value) {
@@ -4392,42 +4739,51 @@ public final class AllSupportedOuterClass {
 
       /**
        * <code>required string name = 1;</code>
+       * @return Whether the name field is set.
        */
       boolean hasName();
       /**
        * <code>required string name = 1;</code>
+       * @return The name.
        */
       java.lang.String getName();
       /**
        * <code>required string name = 1;</code>
+       * @return The bytes for name.
        */
       com.google.protobuf.ByteString
           getNameBytes();
 
       /**
        * <code>required string cdQuality = 2;</code>
+       * @return Whether the cdQuality field is set.
        */
       boolean hasCdQuality();
       /**
        * <code>required string cdQuality = 2;</code>
+       * @return The cdQuality.
        */
       java.lang.String getCdQuality();
       /**
        * <code>required string cdQuality = 2;</code>
+       * @return The bytes for cdQuality.
        */
       com.google.protobuf.ByteString
           getCdQualityBytes();
 
       /**
        * <code>required string caseQuality = 3;</code>
+       * @return Whether the caseQuality field is set.
        */
       boolean hasCaseQuality();
       /**
        * <code>required string caseQuality = 3;</code>
+       * @return The caseQuality.
        */
       java.lang.String getCaseQuality();
       /**
        * <code>required string caseQuality = 3;</code>
+       * @return The bytes for caseQuality.
        */
       com.google.protobuf.ByteString
           getCaseQualityBytes();
@@ -4435,7 +4791,7 @@ public final class AllSupportedOuterClass {
     /**
      * Protobuf type {@code AllSupported.CompactDisc}
      */
-    public  static final class CompactDisc extends
+    public static final class CompactDisc extends
         com.google.protobuf.GeneratedMessageV3 implements
         // @@protoc_insertion_point(message_implements:AllSupported.CompactDisc)
         CompactDiscOrBuilder {
@@ -4448,6 +4804,13 @@ public final class AllSupportedOuterClass {
         name_ = "";
         cdQuality_ = "";
         caseQuality_ = "";
+      }
+
+      @java.lang.Override
+      @SuppressWarnings({"unused"})
+      protected java.lang.Object newInstance(
+          UnusedPrivateParameter unused) {
+        return new CompactDisc();
       }
 
       @java.lang.Override
@@ -4529,13 +4892,17 @@ public final class AllSupportedOuterClass {
       private volatile java.lang.Object name_;
       /**
        * <code>required string name = 1;</code>
+       * @return Whether the name field is set.
        */
+      @java.lang.Override
       public boolean hasName() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
+        return ((bitField0_ & 0x00000001) != 0);
       }
       /**
        * <code>required string name = 1;</code>
+       * @return The name.
        */
+      @java.lang.Override
       public java.lang.String getName() {
         java.lang.Object ref = name_;
         if (ref instanceof java.lang.String) {
@@ -4552,7 +4919,9 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string name = 1;</code>
+       * @return The bytes for name.
        */
+      @java.lang.Override
       public com.google.protobuf.ByteString
           getNameBytes() {
         java.lang.Object ref = name_;
@@ -4571,13 +4940,17 @@ public final class AllSupportedOuterClass {
       private volatile java.lang.Object cdQuality_;
       /**
        * <code>required string cdQuality = 2;</code>
+       * @return Whether the cdQuality field is set.
        */
+      @java.lang.Override
       public boolean hasCdQuality() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
+        return ((bitField0_ & 0x00000002) != 0);
       }
       /**
        * <code>required string cdQuality = 2;</code>
+       * @return The cdQuality.
        */
+      @java.lang.Override
       public java.lang.String getCdQuality() {
         java.lang.Object ref = cdQuality_;
         if (ref instanceof java.lang.String) {
@@ -4594,7 +4967,9 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string cdQuality = 2;</code>
+       * @return The bytes for cdQuality.
        */
+      @java.lang.Override
       public com.google.protobuf.ByteString
           getCdQualityBytes() {
         java.lang.Object ref = cdQuality_;
@@ -4613,13 +4988,17 @@ public final class AllSupportedOuterClass {
       private volatile java.lang.Object caseQuality_;
       /**
        * <code>required string caseQuality = 3;</code>
+       * @return Whether the caseQuality field is set.
        */
+      @java.lang.Override
       public boolean hasCaseQuality() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
+        return ((bitField0_ & 0x00000004) != 0);
       }
       /**
        * <code>required string caseQuality = 3;</code>
+       * @return The caseQuality.
        */
+      @java.lang.Override
       public java.lang.String getCaseQuality() {
         java.lang.Object ref = caseQuality_;
         if (ref instanceof java.lang.String) {
@@ -4636,7 +5015,9 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string caseQuality = 3;</code>
+       * @return The bytes for caseQuality.
        */
+      @java.lang.Override
       public com.google.protobuf.ByteString
           getCaseQualityBytes() {
         java.lang.Object ref = caseQuality_;
@@ -4677,13 +5058,13 @@ public final class AllSupportedOuterClass {
       @java.lang.Override
       public void writeTo(com.google.protobuf.CodedOutputStream output)
                           throws java.io.IOException {
-        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        if (((bitField0_ & 0x00000001) != 0)) {
           com.google.protobuf.GeneratedMessageV3.writeString(output, 1, name_);
         }
-        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        if (((bitField0_ & 0x00000002) != 0)) {
           com.google.protobuf.GeneratedMessageV3.writeString(output, 2, cdQuality_);
         }
-        if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        if (((bitField0_ & 0x00000004) != 0)) {
           com.google.protobuf.GeneratedMessageV3.writeString(output, 3, caseQuality_);
         }
         unknownFields.writeTo(output);
@@ -4695,13 +5076,13 @@ public final class AllSupportedOuterClass {
         if (size != -1) return size;
 
         size = 0;
-        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        if (((bitField0_ & 0x00000001) != 0)) {
           size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, name_);
         }
-        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        if (((bitField0_ & 0x00000002) != 0)) {
           size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, cdQuality_);
         }
-        if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        if (((bitField0_ & 0x00000004) != 0)) {
           size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, caseQuality_);
         }
         size += unknownFields.getSerializedSize();
@@ -4719,24 +5100,23 @@ public final class AllSupportedOuterClass {
         }
         AllSupportedOuterClass.AllSupported.CompactDisc other = (AllSupportedOuterClass.AllSupported.CompactDisc) obj;
 
-        boolean result = true;
-        result = result && (hasName() == other.hasName());
+        if (hasName() != other.hasName()) return false;
         if (hasName()) {
-          result = result && getName()
-              .equals(other.getName());
+          if (!getName()
+              .equals(other.getName())) return false;
         }
-        result = result && (hasCdQuality() == other.hasCdQuality());
+        if (hasCdQuality() != other.hasCdQuality()) return false;
         if (hasCdQuality()) {
-          result = result && getCdQuality()
-              .equals(other.getCdQuality());
+          if (!getCdQuality()
+              .equals(other.getCdQuality())) return false;
         }
-        result = result && (hasCaseQuality() == other.hasCaseQuality());
+        if (hasCaseQuality() != other.hasCaseQuality()) return false;
         if (hasCaseQuality()) {
-          result = result && getCaseQuality()
-              .equals(other.getCaseQuality());
+          if (!getCaseQuality()
+              .equals(other.getCaseQuality())) return false;
         }
-        result = result && unknownFields.equals(other.unknownFields);
-        return result;
+        if (!unknownFields.equals(other.unknownFields)) return false;
+        return true;
       }
 
       @java.lang.Override
@@ -4925,15 +5305,15 @@ public final class AllSupportedOuterClass {
           AllSupportedOuterClass.AllSupported.CompactDisc result = new AllSupportedOuterClass.AllSupported.CompactDisc(this);
           int from_bitField0_ = bitField0_;
           int to_bitField0_ = 0;
-          if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          if (((from_bitField0_ & 0x00000001) != 0)) {
             to_bitField0_ |= 0x00000001;
           }
           result.name_ = name_;
-          if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          if (((from_bitField0_ & 0x00000002) != 0)) {
             to_bitField0_ |= 0x00000002;
           }
           result.cdQuality_ = cdQuality_;
-          if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          if (((from_bitField0_ & 0x00000004) != 0)) {
             to_bitField0_ |= 0x00000004;
           }
           result.caseQuality_ = caseQuality_;
@@ -4944,35 +5324,35 @@ public final class AllSupportedOuterClass {
 
         @java.lang.Override
         public Builder clone() {
-          return (Builder) super.clone();
+          return super.clone();
         }
         @java.lang.Override
         public Builder setField(
             com.google.protobuf.Descriptors.FieldDescriptor field,
             java.lang.Object value) {
-          return (Builder) super.setField(field, value);
+          return super.setField(field, value);
         }
         @java.lang.Override
         public Builder clearField(
             com.google.protobuf.Descriptors.FieldDescriptor field) {
-          return (Builder) super.clearField(field);
+          return super.clearField(field);
         }
         @java.lang.Override
         public Builder clearOneof(
             com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-          return (Builder) super.clearOneof(oneof);
+          return super.clearOneof(oneof);
         }
         @java.lang.Override
         public Builder setRepeatedField(
             com.google.protobuf.Descriptors.FieldDescriptor field,
             int index, java.lang.Object value) {
-          return (Builder) super.setRepeatedField(field, index, value);
+          return super.setRepeatedField(field, index, value);
         }
         @java.lang.Override
         public Builder addRepeatedField(
             com.google.protobuf.Descriptors.FieldDescriptor field,
             java.lang.Object value) {
-          return (Builder) super.addRepeatedField(field, value);
+          return super.addRepeatedField(field, value);
         }
         @java.lang.Override
         public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -5043,12 +5423,14 @@ public final class AllSupportedOuterClass {
         private java.lang.Object name_ = "";
         /**
          * <code>required string name = 1;</code>
+         * @return Whether the name field is set.
          */
         public boolean hasName() {
-          return ((bitField0_ & 0x00000001) == 0x00000001);
+          return ((bitField0_ & 0x00000001) != 0);
         }
         /**
          * <code>required string name = 1;</code>
+         * @return The name.
          */
         public java.lang.String getName() {
           java.lang.Object ref = name_;
@@ -5066,6 +5448,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string name = 1;</code>
+         * @return The bytes for name.
          */
         public com.google.protobuf.ByteString
             getNameBytes() {
@@ -5082,6 +5465,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string name = 1;</code>
+         * @param value The name to set.
+         * @return This builder for chaining.
          */
         public Builder setName(
             java.lang.String value) {
@@ -5095,6 +5480,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string name = 1;</code>
+         * @return This builder for chaining.
          */
         public Builder clearName() {
           bitField0_ = (bitField0_ & ~0x00000001);
@@ -5104,6 +5490,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string name = 1;</code>
+         * @param value The bytes for name to set.
+         * @return This builder for chaining.
          */
         public Builder setNameBytes(
             com.google.protobuf.ByteString value) {
@@ -5119,12 +5507,14 @@ public final class AllSupportedOuterClass {
         private java.lang.Object cdQuality_ = "";
         /**
          * <code>required string cdQuality = 2;</code>
+         * @return Whether the cdQuality field is set.
          */
         public boolean hasCdQuality() {
-          return ((bitField0_ & 0x00000002) == 0x00000002);
+          return ((bitField0_ & 0x00000002) != 0);
         }
         /**
          * <code>required string cdQuality = 2;</code>
+         * @return The cdQuality.
          */
         public java.lang.String getCdQuality() {
           java.lang.Object ref = cdQuality_;
@@ -5142,6 +5532,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string cdQuality = 2;</code>
+         * @return The bytes for cdQuality.
          */
         public com.google.protobuf.ByteString
             getCdQualityBytes() {
@@ -5158,6 +5549,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string cdQuality = 2;</code>
+         * @param value The cdQuality to set.
+         * @return This builder for chaining.
          */
         public Builder setCdQuality(
             java.lang.String value) {
@@ -5171,6 +5564,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string cdQuality = 2;</code>
+         * @return This builder for chaining.
          */
         public Builder clearCdQuality() {
           bitField0_ = (bitField0_ & ~0x00000002);
@@ -5180,6 +5574,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string cdQuality = 2;</code>
+         * @param value The bytes for cdQuality to set.
+         * @return This builder for chaining.
          */
         public Builder setCdQualityBytes(
             com.google.protobuf.ByteString value) {
@@ -5195,12 +5591,14 @@ public final class AllSupportedOuterClass {
         private java.lang.Object caseQuality_ = "";
         /**
          * <code>required string caseQuality = 3;</code>
+         * @return Whether the caseQuality field is set.
          */
         public boolean hasCaseQuality() {
-          return ((bitField0_ & 0x00000004) == 0x00000004);
+          return ((bitField0_ & 0x00000004) != 0);
         }
         /**
          * <code>required string caseQuality = 3;</code>
+         * @return The caseQuality.
          */
         public java.lang.String getCaseQuality() {
           java.lang.Object ref = caseQuality_;
@@ -5218,6 +5616,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string caseQuality = 3;</code>
+         * @return The bytes for caseQuality.
          */
         public com.google.protobuf.ByteString
             getCaseQualityBytes() {
@@ -5234,6 +5633,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string caseQuality = 3;</code>
+         * @param value The caseQuality to set.
+         * @return This builder for chaining.
          */
         public Builder setCaseQuality(
             java.lang.String value) {
@@ -5247,6 +5648,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string caseQuality = 3;</code>
+         * @return This builder for chaining.
          */
         public Builder clearCaseQuality() {
           bitField0_ = (bitField0_ & ~0x00000004);
@@ -5256,6 +5658,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string caseQuality = 3;</code>
+         * @param value The bytes for caseQuality to set.
+         * @return This builder for chaining.
          */
         public Builder setCaseQualityBytes(
             com.google.protobuf.ByteString value) {
@@ -5326,42 +5730,51 @@ public final class AllSupportedOuterClass {
 
       /**
        * <code>required string name = 1;</code>
+       * @return Whether the name field is set.
        */
       boolean hasName();
       /**
        * <code>required string name = 1;</code>
+       * @return The name.
        */
       java.lang.String getName();
       /**
        * <code>required string name = 1;</code>
+       * @return The bytes for name.
        */
       com.google.protobuf.ByteString
           getNameBytes();
 
       /**
        * <code>required string albumQuality = 2;</code>
+       * @return Whether the albumQuality field is set.
        */
       boolean hasAlbumQuality();
       /**
        * <code>required string albumQuality = 2;</code>
+       * @return The albumQuality.
        */
       java.lang.String getAlbumQuality();
       /**
        * <code>required string albumQuality = 2;</code>
+       * @return The bytes for albumQuality.
        */
       com.google.protobuf.ByteString
           getAlbumQualityBytes();
 
       /**
        * <code>required string coverQuality = 3;</code>
+       * @return Whether the coverQuality field is set.
        */
       boolean hasCoverQuality();
       /**
        * <code>required string coverQuality = 3;</code>
+       * @return The coverQuality.
        */
       java.lang.String getCoverQuality();
       /**
        * <code>required string coverQuality = 3;</code>
+       * @return The bytes for coverQuality.
        */
       com.google.protobuf.ByteString
           getCoverQualityBytes();
@@ -5369,7 +5782,7 @@ public final class AllSupportedOuterClass {
     /**
      * Protobuf type {@code AllSupported.Album}
      */
-    public  static final class Album extends
+    public static final class Album extends
         com.google.protobuf.GeneratedMessageV3 implements
         // @@protoc_insertion_point(message_implements:AllSupported.Album)
         AlbumOrBuilder {
@@ -5382,6 +5795,13 @@ public final class AllSupportedOuterClass {
         name_ = "";
         albumQuality_ = "";
         coverQuality_ = "";
+      }
+
+      @java.lang.Override
+      @SuppressWarnings({"unused"})
+      protected java.lang.Object newInstance(
+          UnusedPrivateParameter unused) {
+        return new Album();
       }
 
       @java.lang.Override
@@ -5463,13 +5883,17 @@ public final class AllSupportedOuterClass {
       private volatile java.lang.Object name_;
       /**
        * <code>required string name = 1;</code>
+       * @return Whether the name field is set.
        */
+      @java.lang.Override
       public boolean hasName() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
+        return ((bitField0_ & 0x00000001) != 0);
       }
       /**
        * <code>required string name = 1;</code>
+       * @return The name.
        */
+      @java.lang.Override
       public java.lang.String getName() {
         java.lang.Object ref = name_;
         if (ref instanceof java.lang.String) {
@@ -5486,7 +5910,9 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string name = 1;</code>
+       * @return The bytes for name.
        */
+      @java.lang.Override
       public com.google.protobuf.ByteString
           getNameBytes() {
         java.lang.Object ref = name_;
@@ -5505,13 +5931,17 @@ public final class AllSupportedOuterClass {
       private volatile java.lang.Object albumQuality_;
       /**
        * <code>required string albumQuality = 2;</code>
+       * @return Whether the albumQuality field is set.
        */
+      @java.lang.Override
       public boolean hasAlbumQuality() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
+        return ((bitField0_ & 0x00000002) != 0);
       }
       /**
        * <code>required string albumQuality = 2;</code>
+       * @return The albumQuality.
        */
+      @java.lang.Override
       public java.lang.String getAlbumQuality() {
         java.lang.Object ref = albumQuality_;
         if (ref instanceof java.lang.String) {
@@ -5528,7 +5958,9 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string albumQuality = 2;</code>
+       * @return The bytes for albumQuality.
        */
+      @java.lang.Override
       public com.google.protobuf.ByteString
           getAlbumQualityBytes() {
         java.lang.Object ref = albumQuality_;
@@ -5547,13 +5979,17 @@ public final class AllSupportedOuterClass {
       private volatile java.lang.Object coverQuality_;
       /**
        * <code>required string coverQuality = 3;</code>
+       * @return Whether the coverQuality field is set.
        */
+      @java.lang.Override
       public boolean hasCoverQuality() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
+        return ((bitField0_ & 0x00000004) != 0);
       }
       /**
        * <code>required string coverQuality = 3;</code>
+       * @return The coverQuality.
        */
+      @java.lang.Override
       public java.lang.String getCoverQuality() {
         java.lang.Object ref = coverQuality_;
         if (ref instanceof java.lang.String) {
@@ -5570,7 +6006,9 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string coverQuality = 3;</code>
+       * @return The bytes for coverQuality.
        */
+      @java.lang.Override
       public com.google.protobuf.ByteString
           getCoverQualityBytes() {
         java.lang.Object ref = coverQuality_;
@@ -5611,13 +6049,13 @@ public final class AllSupportedOuterClass {
       @java.lang.Override
       public void writeTo(com.google.protobuf.CodedOutputStream output)
                           throws java.io.IOException {
-        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        if (((bitField0_ & 0x00000001) != 0)) {
           com.google.protobuf.GeneratedMessageV3.writeString(output, 1, name_);
         }
-        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        if (((bitField0_ & 0x00000002) != 0)) {
           com.google.protobuf.GeneratedMessageV3.writeString(output, 2, albumQuality_);
         }
-        if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        if (((bitField0_ & 0x00000004) != 0)) {
           com.google.protobuf.GeneratedMessageV3.writeString(output, 3, coverQuality_);
         }
         unknownFields.writeTo(output);
@@ -5629,13 +6067,13 @@ public final class AllSupportedOuterClass {
         if (size != -1) return size;
 
         size = 0;
-        if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        if (((bitField0_ & 0x00000001) != 0)) {
           size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, name_);
         }
-        if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        if (((bitField0_ & 0x00000002) != 0)) {
           size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, albumQuality_);
         }
-        if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        if (((bitField0_ & 0x00000004) != 0)) {
           size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, coverQuality_);
         }
         size += unknownFields.getSerializedSize();
@@ -5653,24 +6091,23 @@ public final class AllSupportedOuterClass {
         }
         AllSupportedOuterClass.AllSupported.Album other = (AllSupportedOuterClass.AllSupported.Album) obj;
 
-        boolean result = true;
-        result = result && (hasName() == other.hasName());
+        if (hasName() != other.hasName()) return false;
         if (hasName()) {
-          result = result && getName()
-              .equals(other.getName());
+          if (!getName()
+              .equals(other.getName())) return false;
         }
-        result = result && (hasAlbumQuality() == other.hasAlbumQuality());
+        if (hasAlbumQuality() != other.hasAlbumQuality()) return false;
         if (hasAlbumQuality()) {
-          result = result && getAlbumQuality()
-              .equals(other.getAlbumQuality());
+          if (!getAlbumQuality()
+              .equals(other.getAlbumQuality())) return false;
         }
-        result = result && (hasCoverQuality() == other.hasCoverQuality());
+        if (hasCoverQuality() != other.hasCoverQuality()) return false;
         if (hasCoverQuality()) {
-          result = result && getCoverQuality()
-              .equals(other.getCoverQuality());
+          if (!getCoverQuality()
+              .equals(other.getCoverQuality())) return false;
         }
-        result = result && unknownFields.equals(other.unknownFields);
-        return result;
+        if (!unknownFields.equals(other.unknownFields)) return false;
+        return true;
       }
 
       @java.lang.Override
@@ -5859,15 +6296,15 @@ public final class AllSupportedOuterClass {
           AllSupportedOuterClass.AllSupported.Album result = new AllSupportedOuterClass.AllSupported.Album(this);
           int from_bitField0_ = bitField0_;
           int to_bitField0_ = 0;
-          if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          if (((from_bitField0_ & 0x00000001) != 0)) {
             to_bitField0_ |= 0x00000001;
           }
           result.name_ = name_;
-          if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          if (((from_bitField0_ & 0x00000002) != 0)) {
             to_bitField0_ |= 0x00000002;
           }
           result.albumQuality_ = albumQuality_;
-          if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          if (((from_bitField0_ & 0x00000004) != 0)) {
             to_bitField0_ |= 0x00000004;
           }
           result.coverQuality_ = coverQuality_;
@@ -5878,35 +6315,35 @@ public final class AllSupportedOuterClass {
 
         @java.lang.Override
         public Builder clone() {
-          return (Builder) super.clone();
+          return super.clone();
         }
         @java.lang.Override
         public Builder setField(
             com.google.protobuf.Descriptors.FieldDescriptor field,
             java.lang.Object value) {
-          return (Builder) super.setField(field, value);
+          return super.setField(field, value);
         }
         @java.lang.Override
         public Builder clearField(
             com.google.protobuf.Descriptors.FieldDescriptor field) {
-          return (Builder) super.clearField(field);
+          return super.clearField(field);
         }
         @java.lang.Override
         public Builder clearOneof(
             com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-          return (Builder) super.clearOneof(oneof);
+          return super.clearOneof(oneof);
         }
         @java.lang.Override
         public Builder setRepeatedField(
             com.google.protobuf.Descriptors.FieldDescriptor field,
             int index, java.lang.Object value) {
-          return (Builder) super.setRepeatedField(field, index, value);
+          return super.setRepeatedField(field, index, value);
         }
         @java.lang.Override
         public Builder addRepeatedField(
             com.google.protobuf.Descriptors.FieldDescriptor field,
             java.lang.Object value) {
-          return (Builder) super.addRepeatedField(field, value);
+          return super.addRepeatedField(field, value);
         }
         @java.lang.Override
         public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -5977,12 +6414,14 @@ public final class AllSupportedOuterClass {
         private java.lang.Object name_ = "";
         /**
          * <code>required string name = 1;</code>
+         * @return Whether the name field is set.
          */
         public boolean hasName() {
-          return ((bitField0_ & 0x00000001) == 0x00000001);
+          return ((bitField0_ & 0x00000001) != 0);
         }
         /**
          * <code>required string name = 1;</code>
+         * @return The name.
          */
         public java.lang.String getName() {
           java.lang.Object ref = name_;
@@ -6000,6 +6439,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string name = 1;</code>
+         * @return The bytes for name.
          */
         public com.google.protobuf.ByteString
             getNameBytes() {
@@ -6016,6 +6456,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string name = 1;</code>
+         * @param value The name to set.
+         * @return This builder for chaining.
          */
         public Builder setName(
             java.lang.String value) {
@@ -6029,6 +6471,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string name = 1;</code>
+         * @return This builder for chaining.
          */
         public Builder clearName() {
           bitField0_ = (bitField0_ & ~0x00000001);
@@ -6038,6 +6481,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string name = 1;</code>
+         * @param value The bytes for name to set.
+         * @return This builder for chaining.
          */
         public Builder setNameBytes(
             com.google.protobuf.ByteString value) {
@@ -6053,12 +6498,14 @@ public final class AllSupportedOuterClass {
         private java.lang.Object albumQuality_ = "";
         /**
          * <code>required string albumQuality = 2;</code>
+         * @return Whether the albumQuality field is set.
          */
         public boolean hasAlbumQuality() {
-          return ((bitField0_ & 0x00000002) == 0x00000002);
+          return ((bitField0_ & 0x00000002) != 0);
         }
         /**
          * <code>required string albumQuality = 2;</code>
+         * @return The albumQuality.
          */
         public java.lang.String getAlbumQuality() {
           java.lang.Object ref = albumQuality_;
@@ -6076,6 +6523,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string albumQuality = 2;</code>
+         * @return The bytes for albumQuality.
          */
         public com.google.protobuf.ByteString
             getAlbumQualityBytes() {
@@ -6092,6 +6540,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string albumQuality = 2;</code>
+         * @param value The albumQuality to set.
+         * @return This builder for chaining.
          */
         public Builder setAlbumQuality(
             java.lang.String value) {
@@ -6105,6 +6555,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string albumQuality = 2;</code>
+         * @return This builder for chaining.
          */
         public Builder clearAlbumQuality() {
           bitField0_ = (bitField0_ & ~0x00000002);
@@ -6114,6 +6565,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string albumQuality = 2;</code>
+         * @param value The bytes for albumQuality to set.
+         * @return This builder for chaining.
          */
         public Builder setAlbumQualityBytes(
             com.google.protobuf.ByteString value) {
@@ -6129,12 +6582,14 @@ public final class AllSupportedOuterClass {
         private java.lang.Object coverQuality_ = "";
         /**
          * <code>required string coverQuality = 3;</code>
+         * @return Whether the coverQuality field is set.
          */
         public boolean hasCoverQuality() {
-          return ((bitField0_ & 0x00000004) == 0x00000004);
+          return ((bitField0_ & 0x00000004) != 0);
         }
         /**
          * <code>required string coverQuality = 3;</code>
+         * @return The coverQuality.
          */
         public java.lang.String getCoverQuality() {
           java.lang.Object ref = coverQuality_;
@@ -6152,6 +6607,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string coverQuality = 3;</code>
+         * @return The bytes for coverQuality.
          */
         public com.google.protobuf.ByteString
             getCoverQualityBytes() {
@@ -6168,6 +6624,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string coverQuality = 3;</code>
+         * @param value The coverQuality to set.
+         * @return This builder for chaining.
          */
         public Builder setCoverQuality(
             java.lang.String value) {
@@ -6181,6 +6639,7 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string coverQuality = 3;</code>
+         * @return This builder for chaining.
          */
         public Builder clearCoverQuality() {
           bitField0_ = (bitField0_ & ~0x00000004);
@@ -6190,6 +6649,8 @@ public final class AllSupportedOuterClass {
         }
         /**
          * <code>required string coverQuality = 3;</code>
+         * @param value The bytes for coverQuality to set.
+         * @return This builder for chaining.
          */
         public Builder setCoverQualityBytes(
             com.google.protobuf.ByteString value) {
@@ -6258,7 +6719,8 @@ public final class AllSupportedOuterClass {
     private int eitherFieldCase_ = 0;
     private java.lang.Object eitherField_;
     public enum EitherFieldCase
-        implements com.google.protobuf.Internal.EnumLite {
+        implements com.google.protobuf.Internal.EnumLite,
+            com.google.protobuf.AbstractMessage.InternalOneOfEnum {
       EITHERFIELDLEFT(15),
       EITHERFIELDRIGHT(16),
       EITHERFIELD_NOT_SET(0);
@@ -6267,6 +6729,8 @@ public final class AllSupportedOuterClass {
         this.value = value;
       }
       /**
+       * @param value The number of the enum to look for.
+       * @return The enum associated with the given number.
        * @deprecated Use {@link #forNumber(int)} instead.
        */
       @java.lang.Deprecated
@@ -6296,7 +6760,8 @@ public final class AllSupportedOuterClass {
     private int digitalOneofCase_ = 0;
     private java.lang.Object digitalOneof_;
     public enum DigitalOneofCase
-        implements com.google.protobuf.Internal.EnumLite {
+        implements com.google.protobuf.Internal.EnumLite,
+            com.google.protobuf.AbstractMessage.InternalOneOfEnum {
       DIGITAL(18),
       COMPACT_DISC(19),
       ALBUM(20),
@@ -6306,6 +6771,8 @@ public final class AllSupportedOuterClass {
         this.value = value;
       }
       /**
+       * @param value The number of the enum to look for.
+       * @return The enum associated with the given number.
        * @deprecated Use {@link #forNumber(int)} instead.
        */
       @java.lang.Deprecated
@@ -6337,13 +6804,17 @@ public final class AllSupportedOuterClass {
     private boolean boolean_;
     /**
      * <code>required bool boolean = 1;</code>
+     * @return Whether the boolean field is set.
      */
+    @java.lang.Override
     public boolean hasBoolean() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
+      return ((bitField0_ & 0x00000001) != 0);
     }
     /**
      * <code>required bool boolean = 1;</code>
+     * @return The boolean.
      */
+    @java.lang.Override
     public boolean getBoolean() {
       return boolean_;
     }
@@ -6352,13 +6823,17 @@ public final class AllSupportedOuterClass {
     private int int_;
     /**
      * <code>required int32 int = 2;</code>
+     * @return Whether the int field is set.
      */
+    @java.lang.Override
     public boolean hasInt() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
+      return ((bitField0_ & 0x00000002) != 0);
     }
     /**
      * <code>required int32 int = 2;</code>
+     * @return The int.
      */
+    @java.lang.Override
     public int getInt() {
       return int_;
     }
@@ -6367,50 +6842,63 @@ public final class AllSupportedOuterClass {
     private long long_;
     /**
      * <code>required int64 long = 3;</code>
+     * @return Whether the long field is set.
      */
+    @java.lang.Override
     public boolean hasLong() {
-      return ((bitField0_ & 0x00000004) == 0x00000004);
+      return ((bitField0_ & 0x00000004) != 0);
     }
     /**
      * <code>required int64 long = 3;</code>
+     * @return The long.
      */
+    @java.lang.Override
     public long getLong() {
       return long_;
     }
 
     public static final int LISTOFINT_FIELD_NUMBER = 4;
-    private java.util.List<java.lang.Integer> listOfInt_;
+    private com.google.protobuf.Internal.IntList listOfInt_;
     /**
      * <code>repeated int32 listOfInt = 4;</code>
+     * @return A list containing the listOfInt.
      */
+    @java.lang.Override
     public java.util.List<java.lang.Integer>
         getListOfIntList() {
       return listOfInt_;
     }
     /**
      * <code>repeated int32 listOfInt = 4;</code>
+     * @return The count of listOfInt.
      */
     public int getListOfIntCount() {
       return listOfInt_.size();
     }
     /**
      * <code>repeated int32 listOfInt = 4;</code>
+     * @param index The index of the element to return.
+     * @return The listOfInt at the given index.
      */
     public int getListOfInt(int index) {
-      return listOfInt_.get(index);
+      return listOfInt_.getInt(index);
     }
 
     public static final int STRING_FIELD_NUMBER = 5;
     private volatile java.lang.Object string_;
     /**
      * <code>required string string = 5;</code>
+     * @return Whether the string field is set.
      */
+    @java.lang.Override
     public boolean hasString() {
-      return ((bitField0_ & 0x00000008) == 0x00000008);
+      return ((bitField0_ & 0x00000008) != 0);
     }
     /**
      * <code>required string string = 5;</code>
+     * @return The string.
      */
+    @java.lang.Override
     public java.lang.String getString() {
       java.lang.Object ref = string_;
       if (ref instanceof java.lang.String) {
@@ -6427,7 +6915,9 @@ public final class AllSupportedOuterClass {
     }
     /**
      * <code>required string string = 5;</code>
+     * @return The bytes for string.
      */
+    @java.lang.Override
     public com.google.protobuf.ByteString
         getStringBytes() {
       java.lang.Object ref = string_;
@@ -6446,13 +6936,17 @@ public final class AllSupportedOuterClass {
     private float float_;
     /**
      * <code>required float float = 6;</code>
+     * @return Whether the float field is set.
      */
+    @java.lang.Override
     public boolean hasFloat() {
-      return ((bitField0_ & 0x00000010) == 0x00000010);
+      return ((bitField0_ & 0x00000010) != 0);
     }
     /**
      * <code>required float float = 6;</code>
+     * @return The float.
      */
+    @java.lang.Override
     public float getFloat() {
       return float_;
     }
@@ -6461,13 +6955,17 @@ public final class AllSupportedOuterClass {
     private int short_;
     /**
      * <code>required int32 short = 7;</code>
+     * @return Whether the short field is set.
      */
+    @java.lang.Override
     public boolean hasShort() {
-      return ((bitField0_ & 0x00000020) == 0x00000020);
+      return ((bitField0_ & 0x00000020) != 0);
     }
     /**
      * <code>required int32 short = 7;</code>
+     * @return The short.
      */
+    @java.lang.Override
     public int getShort() {
       return short_;
     }
@@ -6476,13 +6974,17 @@ public final class AllSupportedOuterClass {
     private double double_;
     /**
      * <code>required double double = 8;</code>
+     * @return Whether the double field is set.
      */
+    @java.lang.Override
     public boolean hasDouble() {
-      return ((bitField0_ & 0x00000040) == 0x00000040);
+      return ((bitField0_ & 0x00000040) != 0);
     }
     /**
      * <code>required double double = 8;</code>
+     * @return The double.
      */
+    @java.lang.Override
     public double getDouble() {
       return double_;
     }
@@ -6491,13 +6993,17 @@ public final class AllSupportedOuterClass {
     private com.google.protobuf.ByteString byteArray_;
     /**
      * <code>required bytes byteArray = 9;</code>
+     * @return Whether the byteArray field is set.
      */
+    @java.lang.Override
     public boolean hasByteArray() {
-      return ((bitField0_ & 0x00000080) == 0x00000080);
+      return ((bitField0_ & 0x00000080) != 0);
     }
     /**
      * <code>required bytes byteArray = 9;</code>
+     * @return The byteArray.
      */
+    @java.lang.Override
     public com.google.protobuf.ByteString getByteArray() {
       return byteArray_;
     }
@@ -6506,13 +7012,17 @@ public final class AllSupportedOuterClass {
     private long localDate_;
     /**
      * <code>required int64 localDate = 10;</code>
+     * @return Whether the localDate field is set.
      */
+    @java.lang.Override
     public boolean hasLocalDate() {
-      return ((bitField0_ & 0x00000100) == 0x00000100);
+      return ((bitField0_ & 0x00000100) != 0);
     }
     /**
      * <code>required int64 localDate = 10;</code>
+     * @return The localDate.
      */
+    @java.lang.Override
     public long getLocalDate() {
       return localDate_;
     }
@@ -6521,19 +7031,24 @@ public final class AllSupportedOuterClass {
     private AllSupportedOuterClass.AllSupported.Timestamp localDateTime_;
     /**
      * <code>required .AllSupported.Timestamp localDateTime = 11;</code>
+     * @return Whether the localDateTime field is set.
      */
+    @java.lang.Override
     public boolean hasLocalDateTime() {
-      return ((bitField0_ & 0x00000200) == 0x00000200);
+      return ((bitField0_ & 0x00000200) != 0);
     }
     /**
      * <code>required .AllSupported.Timestamp localDateTime = 11;</code>
+     * @return The localDateTime.
      */
+    @java.lang.Override
     public AllSupportedOuterClass.AllSupported.Timestamp getLocalDateTime() {
       return localDateTime_ == null ? AllSupportedOuterClass.AllSupported.Timestamp.getDefaultInstance() : localDateTime_;
     }
     /**
      * <code>required .AllSupported.Timestamp localDateTime = 11;</code>
      */
+    @java.lang.Override
     public AllSupportedOuterClass.AllSupported.TimestampOrBuilder getLocalDateTimeOrBuilder() {
       return localDateTime_ == null ? AllSupportedOuterClass.AllSupported.Timestamp.getDefaultInstance() : localDateTime_;
     }
@@ -6542,13 +7057,17 @@ public final class AllSupportedOuterClass {
     private volatile java.lang.Object uuid_;
     /**
      * <code>required string uuid = 12;</code>
+     * @return Whether the uuid field is set.
      */
+    @java.lang.Override
     public boolean hasUuid() {
-      return ((bitField0_ & 0x00000400) == 0x00000400);
+      return ((bitField0_ & 0x00000400) != 0);
     }
     /**
      * <code>required string uuid = 12;</code>
+     * @return The uuid.
      */
+    @java.lang.Override
     public java.lang.String getUuid() {
       java.lang.Object ref = uuid_;
       if (ref instanceof java.lang.String) {
@@ -6565,7 +7084,9 @@ public final class AllSupportedOuterClass {
     }
     /**
      * <code>required string uuid = 12;</code>
+     * @return The bytes for uuid.
      */
+    @java.lang.Override
     public com.google.protobuf.ByteString
         getUuidBytes() {
       java.lang.Object ref = uuid_;
@@ -6584,13 +7105,17 @@ public final class AllSupportedOuterClass {
     private volatile java.lang.Object enumeration_;
     /**
      * <code>required string enumeration = 13;</code>
+     * @return Whether the enumeration field is set.
      */
+    @java.lang.Override
     public boolean hasEnumeration() {
-      return ((bitField0_ & 0x00000800) == 0x00000800);
+      return ((bitField0_ & 0x00000800) != 0);
     }
     /**
      * <code>required string enumeration = 13;</code>
+     * @return The enumeration.
      */
+    @java.lang.Override
     public java.lang.String getEnumeration() {
       java.lang.Object ref = enumeration_;
       if (ref instanceof java.lang.String) {
@@ -6607,7 +7132,9 @@ public final class AllSupportedOuterClass {
     }
     /**
      * <code>required string enumeration = 13;</code>
+     * @return The bytes for enumeration.
      */
+    @java.lang.Override
     public com.google.protobuf.ByteString
         getEnumerationBytes() {
       java.lang.Object ref = enumeration_;
@@ -6626,13 +7153,17 @@ public final class AllSupportedOuterClass {
     private volatile java.lang.Object bigDecimal_;
     /**
      * <code>required string bigDecimal = 14;</code>
+     * @return Whether the bigDecimal field is set.
      */
+    @java.lang.Override
     public boolean hasBigDecimal() {
-      return ((bitField0_ & 0x00001000) == 0x00001000);
+      return ((bitField0_ & 0x00001000) != 0);
     }
     /**
      * <code>required string bigDecimal = 14;</code>
+     * @return The bigDecimal.
      */
+    @java.lang.Override
     public java.lang.String getBigDecimal() {
       java.lang.Object ref = bigDecimal_;
       if (ref instanceof java.lang.String) {
@@ -6649,7 +7180,9 @@ public final class AllSupportedOuterClass {
     }
     /**
      * <code>required string bigDecimal = 14;</code>
+     * @return The bytes for bigDecimal.
      */
+    @java.lang.Override
     public com.google.protobuf.ByteString
         getBigDecimalBytes() {
       java.lang.Object ref = bigDecimal_;
@@ -6666,13 +7199,15 @@ public final class AllSupportedOuterClass {
 
     public static final int EITHERFIELDLEFT_FIELD_NUMBER = 15;
     /**
-     * <code>optional string eitherFieldLeft = 15;</code>
+     * <code>string eitherFieldLeft = 15;</code>
+     * @return Whether the eitherFieldLeft field is set.
      */
     public boolean hasEitherFieldLeft() {
       return eitherFieldCase_ == 15;
     }
     /**
-     * <code>optional string eitherFieldLeft = 15;</code>
+     * <code>string eitherFieldLeft = 15;</code>
+     * @return The eitherFieldLeft.
      */
     public java.lang.String getEitherFieldLeft() {
       java.lang.Object ref = "";
@@ -6692,7 +7227,8 @@ public final class AllSupportedOuterClass {
       }
     }
     /**
-     * <code>optional string eitherFieldLeft = 15;</code>
+     * <code>string eitherFieldLeft = 15;</code>
+     * @return The bytes for eitherFieldLeft.
      */
     public com.google.protobuf.ByteString
         getEitherFieldLeftBytes() {
@@ -6715,14 +7251,18 @@ public final class AllSupportedOuterClass {
 
     public static final int EITHERFIELDRIGHT_FIELD_NUMBER = 16;
     /**
-     * <code>optional int32 eitherFieldRight = 16;</code>
+     * <code>int32 eitherFieldRight = 16;</code>
+     * @return Whether the eitherFieldRight field is set.
      */
+    @java.lang.Override
     public boolean hasEitherFieldRight() {
       return eitherFieldCase_ == 16;
     }
     /**
-     * <code>optional int32 eitherFieldRight = 16;</code>
+     * <code>int32 eitherFieldRight = 16;</code>
+     * @return The eitherFieldRight.
      */
+    @java.lang.Override
     public int getEitherFieldRight() {
       if (eitherFieldCase_ == 16) {
         return (java.lang.Integer) eitherField_;
@@ -6734,33 +7274,42 @@ public final class AllSupportedOuterClass {
     private AllSupportedOuterClass.AllSupported.Child child_;
     /**
      * <code>required .AllSupported.Child child = 17;</code>
+     * @return Whether the child field is set.
      */
+    @java.lang.Override
     public boolean hasChild() {
-      return ((bitField0_ & 0x00008000) == 0x00008000);
+      return ((bitField0_ & 0x00008000) != 0);
     }
     /**
      * <code>required .AllSupported.Child child = 17;</code>
+     * @return The child.
      */
+    @java.lang.Override
     public AllSupportedOuterClass.AllSupported.Child getChild() {
       return child_ == null ? AllSupportedOuterClass.AllSupported.Child.getDefaultInstance() : child_;
     }
     /**
      * <code>required .AllSupported.Child child = 17;</code>
      */
+    @java.lang.Override
     public AllSupportedOuterClass.AllSupported.ChildOrBuilder getChildOrBuilder() {
       return child_ == null ? AllSupportedOuterClass.AllSupported.Child.getDefaultInstance() : child_;
     }
 
     public static final int DIGITAL_FIELD_NUMBER = 18;
     /**
-     * <code>optional .AllSupported.Digital digital = 18;</code>
+     * <code>.AllSupported.Digital digital = 18;</code>
+     * @return Whether the digital field is set.
      */
+    @java.lang.Override
     public boolean hasDigital() {
       return digitalOneofCase_ == 18;
     }
     /**
-     * <code>optional .AllSupported.Digital digital = 18;</code>
+     * <code>.AllSupported.Digital digital = 18;</code>
+     * @return The digital.
      */
+    @java.lang.Override
     public AllSupportedOuterClass.AllSupported.Digital getDigital() {
       if (digitalOneofCase_ == 18) {
          return (AllSupportedOuterClass.AllSupported.Digital) digitalOneof_;
@@ -6768,8 +7317,9 @@ public final class AllSupportedOuterClass {
       return AllSupportedOuterClass.AllSupported.Digital.getDefaultInstance();
     }
     /**
-     * <code>optional .AllSupported.Digital digital = 18;</code>
+     * <code>.AllSupported.Digital digital = 18;</code>
      */
+    @java.lang.Override
     public AllSupportedOuterClass.AllSupported.DigitalOrBuilder getDigitalOrBuilder() {
       if (digitalOneofCase_ == 18) {
          return (AllSupportedOuterClass.AllSupported.Digital) digitalOneof_;
@@ -6779,14 +7329,18 @@ public final class AllSupportedOuterClass {
 
     public static final int COMPACT_DISC_FIELD_NUMBER = 19;
     /**
-     * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+     * <code>.AllSupported.CompactDisc compact_disc = 19;</code>
+     * @return Whether the compactDisc field is set.
      */
+    @java.lang.Override
     public boolean hasCompactDisc() {
       return digitalOneofCase_ == 19;
     }
     /**
-     * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+     * <code>.AllSupported.CompactDisc compact_disc = 19;</code>
+     * @return The compactDisc.
      */
+    @java.lang.Override
     public AllSupportedOuterClass.AllSupported.CompactDisc getCompactDisc() {
       if (digitalOneofCase_ == 19) {
          return (AllSupportedOuterClass.AllSupported.CompactDisc) digitalOneof_;
@@ -6794,8 +7348,9 @@ public final class AllSupportedOuterClass {
       return AllSupportedOuterClass.AllSupported.CompactDisc.getDefaultInstance();
     }
     /**
-     * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+     * <code>.AllSupported.CompactDisc compact_disc = 19;</code>
      */
+    @java.lang.Override
     public AllSupportedOuterClass.AllSupported.CompactDiscOrBuilder getCompactDiscOrBuilder() {
       if (digitalOneofCase_ == 19) {
          return (AllSupportedOuterClass.AllSupported.CompactDisc) digitalOneof_;
@@ -6805,14 +7360,18 @@ public final class AllSupportedOuterClass {
 
     public static final int ALBUM_FIELD_NUMBER = 20;
     /**
-     * <code>optional .AllSupported.Album album = 20;</code>
+     * <code>.AllSupported.Album album = 20;</code>
+     * @return Whether the album field is set.
      */
+    @java.lang.Override
     public boolean hasAlbum() {
       return digitalOneofCase_ == 20;
     }
     /**
-     * <code>optional .AllSupported.Album album = 20;</code>
+     * <code>.AllSupported.Album album = 20;</code>
+     * @return The album.
      */
+    @java.lang.Override
     public AllSupportedOuterClass.AllSupported.Album getAlbum() {
       if (digitalOneofCase_ == 20) {
          return (AllSupportedOuterClass.AllSupported.Album) digitalOneof_;
@@ -6820,8 +7379,9 @@ public final class AllSupportedOuterClass {
       return AllSupportedOuterClass.AllSupported.Album.getDefaultInstance();
     }
     /**
-     * <code>optional .AllSupported.Album album = 20;</code>
+     * <code>.AllSupported.Album album = 20;</code>
      */
+    @java.lang.Override
     public AllSupportedOuterClass.AllSupported.AlbumOrBuilder getAlbumOrBuilder() {
       if (digitalOneofCase_ == 20) {
          return (AllSupportedOuterClass.AllSupported.Album) digitalOneof_;
@@ -6833,13 +7393,17 @@ public final class AllSupportedOuterClass {
     private int int2_;
     /**
      * <code>required int32 int2 = 21;</code>
+     * @return Whether the int2 field is set.
      */
+    @java.lang.Override
     public boolean hasInt2() {
-      return ((bitField0_ & 0x00080000) == 0x00080000);
+      return ((bitField0_ & 0x00080000) != 0);
     }
     /**
      * <code>required int32 int2 = 21;</code>
+     * @return The int2.
      */
+    @java.lang.Override
     public int getInt2() {
       return int2_;
     }
@@ -6944,46 +7508,46 @@ public final class AllSupportedOuterClass {
     @java.lang.Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+      if (((bitField0_ & 0x00000001) != 0)) {
         output.writeBool(1, boolean_);
       }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+      if (((bitField0_ & 0x00000002) != 0)) {
         output.writeInt32(2, int_);
       }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+      if (((bitField0_ & 0x00000004) != 0)) {
         output.writeInt64(3, long_);
       }
       for (int i = 0; i < listOfInt_.size(); i++) {
-        output.writeInt32(4, listOfInt_.get(i));
+        output.writeInt32(4, listOfInt_.getInt(i));
       }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+      if (((bitField0_ & 0x00000008) != 0)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 5, string_);
       }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+      if (((bitField0_ & 0x00000010) != 0)) {
         output.writeFloat(6, float_);
       }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+      if (((bitField0_ & 0x00000020) != 0)) {
         output.writeInt32(7, short_);
       }
-      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+      if (((bitField0_ & 0x00000040) != 0)) {
         output.writeDouble(8, double_);
       }
-      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+      if (((bitField0_ & 0x00000080) != 0)) {
         output.writeBytes(9, byteArray_);
       }
-      if (((bitField0_ & 0x00000100) == 0x00000100)) {
+      if (((bitField0_ & 0x00000100) != 0)) {
         output.writeInt64(10, localDate_);
       }
-      if (((bitField0_ & 0x00000200) == 0x00000200)) {
+      if (((bitField0_ & 0x00000200) != 0)) {
         output.writeMessage(11, getLocalDateTime());
       }
-      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+      if (((bitField0_ & 0x00000400) != 0)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 12, uuid_);
       }
-      if (((bitField0_ & 0x00000800) == 0x00000800)) {
+      if (((bitField0_ & 0x00000800) != 0)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 13, enumeration_);
       }
-      if (((bitField0_ & 0x00001000) == 0x00001000)) {
+      if (((bitField0_ & 0x00001000) != 0)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 14, bigDecimal_);
       }
       if (eitherFieldCase_ == 15) {
@@ -6993,7 +7557,7 @@ public final class AllSupportedOuterClass {
         output.writeInt32(
             16, (int)((java.lang.Integer) eitherField_));
       }
-      if (((bitField0_ & 0x00008000) == 0x00008000)) {
+      if (((bitField0_ & 0x00008000) != 0)) {
         output.writeMessage(17, getChild());
       }
       if (digitalOneofCase_ == 18) {
@@ -7005,7 +7569,7 @@ public final class AllSupportedOuterClass {
       if (digitalOneofCase_ == 20) {
         output.writeMessage(20, (AllSupportedOuterClass.AllSupported.Album) digitalOneof_);
       }
-      if (((bitField0_ & 0x00080000) == 0x00080000)) {
+      if (((bitField0_ & 0x00080000) != 0)) {
         output.writeInt32(21, int2_);
       }
       unknownFields.writeTo(output);
@@ -7017,15 +7581,15 @@ public final class AllSupportedOuterClass {
       if (size != -1) return size;
 
       size = 0;
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+      if (((bitField0_ & 0x00000001) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBoolSize(1, boolean_);
       }
-      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+      if (((bitField0_ & 0x00000002) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(2, int_);
       }
-      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+      if (((bitField0_ & 0x00000004) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt64Size(3, long_);
       }
@@ -7033,45 +7597,45 @@ public final class AllSupportedOuterClass {
         int dataSize = 0;
         for (int i = 0; i < listOfInt_.size(); i++) {
           dataSize += com.google.protobuf.CodedOutputStream
-            .computeInt32SizeNoTag(listOfInt_.get(i));
+            .computeInt32SizeNoTag(listOfInt_.getInt(i));
         }
         size += dataSize;
         size += 1 * getListOfIntList().size();
       }
-      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+      if (((bitField0_ & 0x00000008) != 0)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, string_);
       }
-      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+      if (((bitField0_ & 0x00000010) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeFloatSize(6, float_);
       }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+      if (((bitField0_ & 0x00000020) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(7, short_);
       }
-      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+      if (((bitField0_ & 0x00000040) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeDoubleSize(8, double_);
       }
-      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+      if (((bitField0_ & 0x00000080) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(9, byteArray_);
       }
-      if (((bitField0_ & 0x00000100) == 0x00000100)) {
+      if (((bitField0_ & 0x00000100) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt64Size(10, localDate_);
       }
-      if (((bitField0_ & 0x00000200) == 0x00000200)) {
+      if (((bitField0_ & 0x00000200) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(11, getLocalDateTime());
       }
-      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+      if (((bitField0_ & 0x00000400) != 0)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(12, uuid_);
       }
-      if (((bitField0_ & 0x00000800) == 0x00000800)) {
+      if (((bitField0_ & 0x00000800) != 0)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(13, enumeration_);
       }
-      if (((bitField0_ & 0x00001000) == 0x00001000)) {
+      if (((bitField0_ & 0x00001000) != 0)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(14, bigDecimal_);
       }
       if (eitherFieldCase_ == 15) {
@@ -7082,7 +7646,7 @@ public final class AllSupportedOuterClass {
           .computeInt32Size(
               16, (int)((java.lang.Integer) eitherField_));
       }
-      if (((bitField0_ & 0x00008000) == 0x00008000)) {
+      if (((bitField0_ & 0x00008000) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(17, getChild());
       }
@@ -7098,7 +7662,7 @@ public final class AllSupportedOuterClass {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(20, (AllSupportedOuterClass.AllSupported.Album) digitalOneof_);
       }
-      if (((bitField0_ & 0x00080000) == 0x00080000)) {
+      if (((bitField0_ & 0x00080000) != 0)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(21, int2_);
       }
@@ -7117,124 +7681,117 @@ public final class AllSupportedOuterClass {
       }
       AllSupportedOuterClass.AllSupported other = (AllSupportedOuterClass.AllSupported) obj;
 
-      boolean result = true;
-      result = result && (hasBoolean() == other.hasBoolean());
+      if (hasBoolean() != other.hasBoolean()) return false;
       if (hasBoolean()) {
-        result = result && (getBoolean()
-            == other.getBoolean());
+        if (getBoolean()
+            != other.getBoolean()) return false;
       }
-      result = result && (hasInt() == other.hasInt());
+      if (hasInt() != other.hasInt()) return false;
       if (hasInt()) {
-        result = result && (getInt()
-            == other.getInt());
+        if (getInt()
+            != other.getInt()) return false;
       }
-      result = result && (hasLong() == other.hasLong());
+      if (hasLong() != other.hasLong()) return false;
       if (hasLong()) {
-        result = result && (getLong()
-            == other.getLong());
+        if (getLong()
+            != other.getLong()) return false;
       }
-      result = result && getListOfIntList()
-          .equals(other.getListOfIntList());
-      result = result && (hasString() == other.hasString());
+      if (!getListOfIntList()
+          .equals(other.getListOfIntList())) return false;
+      if (hasString() != other.hasString()) return false;
       if (hasString()) {
-        result = result && getString()
-            .equals(other.getString());
+        if (!getString()
+            .equals(other.getString())) return false;
       }
-      result = result && (hasFloat() == other.hasFloat());
+      if (hasFloat() != other.hasFloat()) return false;
       if (hasFloat()) {
-        result = result && (
-            java.lang.Float.floatToIntBits(getFloat())
-            == java.lang.Float.floatToIntBits(
-                other.getFloat()));
+        if (java.lang.Float.floatToIntBits(getFloat())
+            != java.lang.Float.floatToIntBits(
+                other.getFloat())) return false;
       }
-      result = result && (hasShort() == other.hasShort());
+      if (hasShort() != other.hasShort()) return false;
       if (hasShort()) {
-        result = result && (getShort()
-            == other.getShort());
+        if (getShort()
+            != other.getShort()) return false;
       }
-      result = result && (hasDouble() == other.hasDouble());
+      if (hasDouble() != other.hasDouble()) return false;
       if (hasDouble()) {
-        result = result && (
-            java.lang.Double.doubleToLongBits(getDouble())
-            == java.lang.Double.doubleToLongBits(
-                other.getDouble()));
+        if (java.lang.Double.doubleToLongBits(getDouble())
+            != java.lang.Double.doubleToLongBits(
+                other.getDouble())) return false;
       }
-      result = result && (hasByteArray() == other.hasByteArray());
+      if (hasByteArray() != other.hasByteArray()) return false;
       if (hasByteArray()) {
-        result = result && getByteArray()
-            .equals(other.getByteArray());
+        if (!getByteArray()
+            .equals(other.getByteArray())) return false;
       }
-      result = result && (hasLocalDate() == other.hasLocalDate());
+      if (hasLocalDate() != other.hasLocalDate()) return false;
       if (hasLocalDate()) {
-        result = result && (getLocalDate()
-            == other.getLocalDate());
+        if (getLocalDate()
+            != other.getLocalDate()) return false;
       }
-      result = result && (hasLocalDateTime() == other.hasLocalDateTime());
+      if (hasLocalDateTime() != other.hasLocalDateTime()) return false;
       if (hasLocalDateTime()) {
-        result = result && getLocalDateTime()
-            .equals(other.getLocalDateTime());
+        if (!getLocalDateTime()
+            .equals(other.getLocalDateTime())) return false;
       }
-      result = result && (hasUuid() == other.hasUuid());
+      if (hasUuid() != other.hasUuid()) return false;
       if (hasUuid()) {
-        result = result && getUuid()
-            .equals(other.getUuid());
+        if (!getUuid()
+            .equals(other.getUuid())) return false;
       }
-      result = result && (hasEnumeration() == other.hasEnumeration());
+      if (hasEnumeration() != other.hasEnumeration()) return false;
       if (hasEnumeration()) {
-        result = result && getEnumeration()
-            .equals(other.getEnumeration());
+        if (!getEnumeration()
+            .equals(other.getEnumeration())) return false;
       }
-      result = result && (hasBigDecimal() == other.hasBigDecimal());
+      if (hasBigDecimal() != other.hasBigDecimal()) return false;
       if (hasBigDecimal()) {
-        result = result && getBigDecimal()
-            .equals(other.getBigDecimal());
+        if (!getBigDecimal()
+            .equals(other.getBigDecimal())) return false;
       }
-      result = result && (hasChild() == other.hasChild());
+      if (hasChild() != other.hasChild()) return false;
       if (hasChild()) {
-        result = result && getChild()
-            .equals(other.getChild());
+        if (!getChild()
+            .equals(other.getChild())) return false;
       }
-      result = result && (hasInt2() == other.hasInt2());
+      if (hasInt2() != other.hasInt2()) return false;
       if (hasInt2()) {
-        result = result && (getInt2()
-            == other.getInt2());
+        if (getInt2()
+            != other.getInt2()) return false;
       }
-      result = result && getEitherFieldCase().equals(
-          other.getEitherFieldCase());
-      if (!result) return false;
+      if (!getEitherFieldCase().equals(other.getEitherFieldCase())) return false;
       switch (eitherFieldCase_) {
         case 15:
-          result = result && getEitherFieldLeft()
-              .equals(other.getEitherFieldLeft());
+          if (!getEitherFieldLeft()
+              .equals(other.getEitherFieldLeft())) return false;
           break;
         case 16:
-          result = result && (getEitherFieldRight()
-              == other.getEitherFieldRight());
+          if (getEitherFieldRight()
+              != other.getEitherFieldRight()) return false;
           break;
         case 0:
         default:
       }
-      result = result && getDigitalOneofCase().equals(
-          other.getDigitalOneofCase());
-      if (!result) return false;
+      if (!getDigitalOneofCase().equals(other.getDigitalOneofCase())) return false;
       switch (digitalOneofCase_) {
         case 18:
-          result = result && getDigital()
-              .equals(other.getDigital());
+          if (!getDigital()
+              .equals(other.getDigital())) return false;
           break;
         case 19:
-          result = result && getCompactDisc()
-              .equals(other.getCompactDisc());
+          if (!getCompactDisc()
+              .equals(other.getCompactDisc())) return false;
           break;
         case 20:
-          result = result && getAlbum()
-              .equals(other.getAlbum());
+          if (!getAlbum()
+              .equals(other.getAlbum())) return false;
           break;
         case 0:
         default:
       }
-      result = result && unknownFields.equals(other.unknownFields);
-      return result;
+      if (!unknownFields.equals(other.unknownFields)) return false;
+      return true;
     }
 
     @java.lang.Override
@@ -7482,7 +8039,7 @@ public final class AllSupportedOuterClass {
         bitField0_ = (bitField0_ & ~0x00000002);
         long_ = 0L;
         bitField0_ = (bitField0_ & ~0x00000004);
-        listOfInt_ = java.util.Collections.emptyList();
+        listOfInt_ = emptyIntList();
         bitField0_ = (bitField0_ & ~0x00000008);
         string_ = "";
         bitField0_ = (bitField0_ & ~0x00000010);
@@ -7548,64 +8105,64 @@ public final class AllSupportedOuterClass {
         AllSupportedOuterClass.AllSupported result = new AllSupportedOuterClass.AllSupported(this);
         int from_bitField0_ = bitField0_;
         int to_bitField0_ = 0;
-        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.boolean_ = boolean_;
           to_bitField0_ |= 0x00000001;
         }
-        result.boolean_ = boolean_;
-        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+        if (((from_bitField0_ & 0x00000002) != 0)) {
+          result.int_ = int_;
           to_bitField0_ |= 0x00000002;
         }
-        result.int_ = int_;
-        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+        if (((from_bitField0_ & 0x00000004) != 0)) {
+          result.long_ = long_;
           to_bitField0_ |= 0x00000004;
         }
-        result.long_ = long_;
-        if (((bitField0_ & 0x00000008) == 0x00000008)) {
-          listOfInt_ = java.util.Collections.unmodifiableList(listOfInt_);
+        if (((bitField0_ & 0x00000008) != 0)) {
+          listOfInt_.makeImmutable();
           bitField0_ = (bitField0_ & ~0x00000008);
         }
         result.listOfInt_ = listOfInt_;
-        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+        if (((from_bitField0_ & 0x00000010) != 0)) {
           to_bitField0_ |= 0x00000008;
         }
         result.string_ = string_;
-        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+        if (((from_bitField0_ & 0x00000020) != 0)) {
+          result.float_ = float_;
           to_bitField0_ |= 0x00000010;
         }
-        result.float_ = float_;
-        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+        if (((from_bitField0_ & 0x00000040) != 0)) {
+          result.short_ = short_;
           to_bitField0_ |= 0x00000020;
         }
-        result.short_ = short_;
-        if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
+        if (((from_bitField0_ & 0x00000080) != 0)) {
+          result.double_ = double_;
           to_bitField0_ |= 0x00000040;
         }
-        result.double_ = double_;
-        if (((from_bitField0_ & 0x00000100) == 0x00000100)) {
+        if (((from_bitField0_ & 0x00000100) != 0)) {
           to_bitField0_ |= 0x00000080;
         }
         result.byteArray_ = byteArray_;
-        if (((from_bitField0_ & 0x00000200) == 0x00000200)) {
+        if (((from_bitField0_ & 0x00000200) != 0)) {
+          result.localDate_ = localDate_;
           to_bitField0_ |= 0x00000100;
         }
-        result.localDate_ = localDate_;
-        if (((from_bitField0_ & 0x00000400) == 0x00000400)) {
+        if (((from_bitField0_ & 0x00000400) != 0)) {
+          if (localDateTimeBuilder_ == null) {
+            result.localDateTime_ = localDateTime_;
+          } else {
+            result.localDateTime_ = localDateTimeBuilder_.build();
+          }
           to_bitField0_ |= 0x00000200;
         }
-        if (localDateTimeBuilder_ == null) {
-          result.localDateTime_ = localDateTime_;
-        } else {
-          result.localDateTime_ = localDateTimeBuilder_.build();
-        }
-        if (((from_bitField0_ & 0x00000800) == 0x00000800)) {
+        if (((from_bitField0_ & 0x00000800) != 0)) {
           to_bitField0_ |= 0x00000400;
         }
         result.uuid_ = uuid_;
-        if (((from_bitField0_ & 0x00001000) == 0x00001000)) {
+        if (((from_bitField0_ & 0x00001000) != 0)) {
           to_bitField0_ |= 0x00000800;
         }
         result.enumeration_ = enumeration_;
-        if (((from_bitField0_ & 0x00002000) == 0x00002000)) {
+        if (((from_bitField0_ & 0x00002000) != 0)) {
           to_bitField0_ |= 0x00001000;
         }
         result.bigDecimal_ = bigDecimal_;
@@ -7615,13 +8172,13 @@ public final class AllSupportedOuterClass {
         if (eitherFieldCase_ == 16) {
           result.eitherField_ = eitherField_;
         }
-        if (((from_bitField0_ & 0x00010000) == 0x00010000)) {
+        if (((from_bitField0_ & 0x00010000) != 0)) {
+          if (childBuilder_ == null) {
+            result.child_ = child_;
+          } else {
+            result.child_ = childBuilder_.build();
+          }
           to_bitField0_ |= 0x00008000;
-        }
-        if (childBuilder_ == null) {
-          result.child_ = child_;
-        } else {
-          result.child_ = childBuilder_.build();
         }
         if (digitalOneofCase_ == 18) {
           if (digitalBuilder_ == null) {
@@ -7644,10 +8201,10 @@ public final class AllSupportedOuterClass {
             result.digitalOneof_ = albumBuilder_.build();
           }
         }
-        if (((from_bitField0_ & 0x00100000) == 0x00100000)) {
+        if (((from_bitField0_ & 0x00100000) != 0)) {
+          result.int2_ = int2_;
           to_bitField0_ |= 0x00080000;
         }
-        result.int2_ = int2_;
         result.bitField0_ = to_bitField0_;
         result.eitherFieldCase_ = eitherFieldCase_;
         result.digitalOneofCase_ = digitalOneofCase_;
@@ -7657,35 +8214,35 @@ public final class AllSupportedOuterClass {
 
       @java.lang.Override
       public Builder clone() {
-        return (Builder) super.clone();
+        return super.clone();
       }
       @java.lang.Override
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           java.lang.Object value) {
-        return (Builder) super.setField(field, value);
+        return super.setField(field, value);
       }
       @java.lang.Override
       public Builder clearField(
           com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return (Builder) super.clearField(field);
+        return super.clearField(field);
       }
       @java.lang.Override
       public Builder clearOneof(
           com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return (Builder) super.clearOneof(oneof);
+        return super.clearOneof(oneof);
       }
       @java.lang.Override
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           int index, java.lang.Object value) {
-        return (Builder) super.setRepeatedField(field, index, value);
+        return super.setRepeatedField(field, index, value);
       }
       @java.lang.Override
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
           java.lang.Object value) {
-        return (Builder) super.addRepeatedField(field, value);
+        return super.addRepeatedField(field, value);
       }
       @java.lang.Override
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -7923,18 +8480,24 @@ public final class AllSupportedOuterClass {
       private boolean boolean_ ;
       /**
        * <code>required bool boolean = 1;</code>
+       * @return Whether the boolean field is set.
        */
+      @java.lang.Override
       public boolean hasBoolean() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
+        return ((bitField0_ & 0x00000001) != 0);
       }
       /**
        * <code>required bool boolean = 1;</code>
+       * @return The boolean.
        */
+      @java.lang.Override
       public boolean getBoolean() {
         return boolean_;
       }
       /**
        * <code>required bool boolean = 1;</code>
+       * @param value The boolean to set.
+       * @return This builder for chaining.
        */
       public Builder setBoolean(boolean value) {
         bitField0_ |= 0x00000001;
@@ -7944,6 +8507,7 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required bool boolean = 1;</code>
+       * @return This builder for chaining.
        */
       public Builder clearBoolean() {
         bitField0_ = (bitField0_ & ~0x00000001);
@@ -7955,18 +8519,24 @@ public final class AllSupportedOuterClass {
       private int int_ ;
       /**
        * <code>required int32 int = 2;</code>
+       * @return Whether the int field is set.
        */
+      @java.lang.Override
       public boolean hasInt() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
+        return ((bitField0_ & 0x00000002) != 0);
       }
       /**
        * <code>required int32 int = 2;</code>
+       * @return The int.
        */
+      @java.lang.Override
       public int getInt() {
         return int_;
       }
       /**
        * <code>required int32 int = 2;</code>
+       * @param value The int to set.
+       * @return This builder for chaining.
        */
       public Builder setInt(int value) {
         bitField0_ |= 0x00000002;
@@ -7976,6 +8546,7 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required int32 int = 2;</code>
+       * @return This builder for chaining.
        */
       public Builder clearInt() {
         bitField0_ = (bitField0_ & ~0x00000002);
@@ -7987,18 +8558,24 @@ public final class AllSupportedOuterClass {
       private long long_ ;
       /**
        * <code>required int64 long = 3;</code>
+       * @return Whether the long field is set.
        */
+      @java.lang.Override
       public boolean hasLong() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
+        return ((bitField0_ & 0x00000004) != 0);
       }
       /**
        * <code>required int64 long = 3;</code>
+       * @return The long.
        */
+      @java.lang.Override
       public long getLong() {
         return long_;
       }
       /**
        * <code>required int64 long = 3;</code>
+       * @param value The long to set.
+       * @return This builder for chaining.
        */
       public Builder setLong(long value) {
         bitField0_ |= 0x00000004;
@@ -8008,6 +8585,7 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required int64 long = 3;</code>
+       * @return This builder for chaining.
        */
       public Builder clearLong() {
         bitField0_ = (bitField0_ & ~0x00000004);
@@ -8016,53 +8594,65 @@ public final class AllSupportedOuterClass {
         return this;
       }
 
-      private java.util.List<java.lang.Integer> listOfInt_ = java.util.Collections.emptyList();
+      private com.google.protobuf.Internal.IntList listOfInt_ = emptyIntList();
       private void ensureListOfIntIsMutable() {
-        if (!((bitField0_ & 0x00000008) == 0x00000008)) {
-          listOfInt_ = new java.util.ArrayList<java.lang.Integer>(listOfInt_);
+        if (!((bitField0_ & 0x00000008) != 0)) {
+          listOfInt_ = mutableCopy(listOfInt_);
           bitField0_ |= 0x00000008;
          }
       }
       /**
        * <code>repeated int32 listOfInt = 4;</code>
+       * @return A list containing the listOfInt.
        */
       public java.util.List<java.lang.Integer>
           getListOfIntList() {
-        return java.util.Collections.unmodifiableList(listOfInt_);
+        return ((bitField0_ & 0x00000008) != 0) ?
+                 java.util.Collections.unmodifiableList(listOfInt_) : listOfInt_;
       }
       /**
        * <code>repeated int32 listOfInt = 4;</code>
+       * @return The count of listOfInt.
        */
       public int getListOfIntCount() {
         return listOfInt_.size();
       }
       /**
        * <code>repeated int32 listOfInt = 4;</code>
+       * @param index The index of the element to return.
+       * @return The listOfInt at the given index.
        */
       public int getListOfInt(int index) {
-        return listOfInt_.get(index);
+        return listOfInt_.getInt(index);
       }
       /**
        * <code>repeated int32 listOfInt = 4;</code>
+       * @param index The index to set the value at.
+       * @param value The listOfInt to set.
+       * @return This builder for chaining.
        */
       public Builder setListOfInt(
           int index, int value) {
         ensureListOfIntIsMutable();
-        listOfInt_.set(index, value);
+        listOfInt_.setInt(index, value);
         onChanged();
         return this;
       }
       /**
        * <code>repeated int32 listOfInt = 4;</code>
+       * @param value The listOfInt to add.
+       * @return This builder for chaining.
        */
       public Builder addListOfInt(int value) {
         ensureListOfIntIsMutable();
-        listOfInt_.add(value);
+        listOfInt_.addInt(value);
         onChanged();
         return this;
       }
       /**
        * <code>repeated int32 listOfInt = 4;</code>
+       * @param values The listOfInt to add.
+       * @return This builder for chaining.
        */
       public Builder addAllListOfInt(
           java.lang.Iterable<? extends java.lang.Integer> values) {
@@ -8074,9 +8664,10 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>repeated int32 listOfInt = 4;</code>
+       * @return This builder for chaining.
        */
       public Builder clearListOfInt() {
-        listOfInt_ = java.util.Collections.emptyList();
+        listOfInt_ = emptyIntList();
         bitField0_ = (bitField0_ & ~0x00000008);
         onChanged();
         return this;
@@ -8085,12 +8676,14 @@ public final class AllSupportedOuterClass {
       private java.lang.Object string_ = "";
       /**
        * <code>required string string = 5;</code>
+       * @return Whether the string field is set.
        */
       public boolean hasString() {
-        return ((bitField0_ & 0x00000010) == 0x00000010);
+        return ((bitField0_ & 0x00000010) != 0);
       }
       /**
        * <code>required string string = 5;</code>
+       * @return The string.
        */
       public java.lang.String getString() {
         java.lang.Object ref = string_;
@@ -8108,6 +8701,7 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string string = 5;</code>
+       * @return The bytes for string.
        */
       public com.google.protobuf.ByteString
           getStringBytes() {
@@ -8124,6 +8718,8 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string string = 5;</code>
+       * @param value The string to set.
+       * @return This builder for chaining.
        */
       public Builder setString(
           java.lang.String value) {
@@ -8137,6 +8733,7 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string string = 5;</code>
+       * @return This builder for chaining.
        */
       public Builder clearString() {
         bitField0_ = (bitField0_ & ~0x00000010);
@@ -8146,6 +8743,8 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string string = 5;</code>
+       * @param value The bytes for string to set.
+       * @return This builder for chaining.
        */
       public Builder setStringBytes(
           com.google.protobuf.ByteString value) {
@@ -8161,18 +8760,24 @@ public final class AllSupportedOuterClass {
       private float float_ ;
       /**
        * <code>required float float = 6;</code>
+       * @return Whether the float field is set.
        */
+      @java.lang.Override
       public boolean hasFloat() {
-        return ((bitField0_ & 0x00000020) == 0x00000020);
+        return ((bitField0_ & 0x00000020) != 0);
       }
       /**
        * <code>required float float = 6;</code>
+       * @return The float.
        */
+      @java.lang.Override
       public float getFloat() {
         return float_;
       }
       /**
        * <code>required float float = 6;</code>
+       * @param value The float to set.
+       * @return This builder for chaining.
        */
       public Builder setFloat(float value) {
         bitField0_ |= 0x00000020;
@@ -8182,6 +8787,7 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required float float = 6;</code>
+       * @return This builder for chaining.
        */
       public Builder clearFloat() {
         bitField0_ = (bitField0_ & ~0x00000020);
@@ -8193,18 +8799,24 @@ public final class AllSupportedOuterClass {
       private int short_ ;
       /**
        * <code>required int32 short = 7;</code>
+       * @return Whether the short field is set.
        */
+      @java.lang.Override
       public boolean hasShort() {
-        return ((bitField0_ & 0x00000040) == 0x00000040);
+        return ((bitField0_ & 0x00000040) != 0);
       }
       /**
        * <code>required int32 short = 7;</code>
+       * @return The short.
        */
+      @java.lang.Override
       public int getShort() {
         return short_;
       }
       /**
        * <code>required int32 short = 7;</code>
+       * @param value The short to set.
+       * @return This builder for chaining.
        */
       public Builder setShort(int value) {
         bitField0_ |= 0x00000040;
@@ -8214,6 +8826,7 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required int32 short = 7;</code>
+       * @return This builder for chaining.
        */
       public Builder clearShort() {
         bitField0_ = (bitField0_ & ~0x00000040);
@@ -8225,18 +8838,24 @@ public final class AllSupportedOuterClass {
       private double double_ ;
       /**
        * <code>required double double = 8;</code>
+       * @return Whether the double field is set.
        */
+      @java.lang.Override
       public boolean hasDouble() {
-        return ((bitField0_ & 0x00000080) == 0x00000080);
+        return ((bitField0_ & 0x00000080) != 0);
       }
       /**
        * <code>required double double = 8;</code>
+       * @return The double.
        */
+      @java.lang.Override
       public double getDouble() {
         return double_;
       }
       /**
        * <code>required double double = 8;</code>
+       * @param value The double to set.
+       * @return This builder for chaining.
        */
       public Builder setDouble(double value) {
         bitField0_ |= 0x00000080;
@@ -8246,6 +8865,7 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required double double = 8;</code>
+       * @return This builder for chaining.
        */
       public Builder clearDouble() {
         bitField0_ = (bitField0_ & ~0x00000080);
@@ -8257,18 +8877,24 @@ public final class AllSupportedOuterClass {
       private com.google.protobuf.ByteString byteArray_ = com.google.protobuf.ByteString.EMPTY;
       /**
        * <code>required bytes byteArray = 9;</code>
+       * @return Whether the byteArray field is set.
        */
+      @java.lang.Override
       public boolean hasByteArray() {
-        return ((bitField0_ & 0x00000100) == 0x00000100);
+        return ((bitField0_ & 0x00000100) != 0);
       }
       /**
        * <code>required bytes byteArray = 9;</code>
+       * @return The byteArray.
        */
+      @java.lang.Override
       public com.google.protobuf.ByteString getByteArray() {
         return byteArray_;
       }
       /**
        * <code>required bytes byteArray = 9;</code>
+       * @param value The byteArray to set.
+       * @return This builder for chaining.
        */
       public Builder setByteArray(com.google.protobuf.ByteString value) {
         if (value == null) {
@@ -8281,6 +8907,7 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required bytes byteArray = 9;</code>
+       * @return This builder for chaining.
        */
       public Builder clearByteArray() {
         bitField0_ = (bitField0_ & ~0x00000100);
@@ -8292,18 +8919,24 @@ public final class AllSupportedOuterClass {
       private long localDate_ ;
       /**
        * <code>required int64 localDate = 10;</code>
+       * @return Whether the localDate field is set.
        */
+      @java.lang.Override
       public boolean hasLocalDate() {
-        return ((bitField0_ & 0x00000200) == 0x00000200);
+        return ((bitField0_ & 0x00000200) != 0);
       }
       /**
        * <code>required int64 localDate = 10;</code>
+       * @return The localDate.
        */
+      @java.lang.Override
       public long getLocalDate() {
         return localDate_;
       }
       /**
        * <code>required int64 localDate = 10;</code>
+       * @param value The localDate to set.
+       * @return This builder for chaining.
        */
       public Builder setLocalDate(long value) {
         bitField0_ |= 0x00000200;
@@ -8313,6 +8946,7 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required int64 localDate = 10;</code>
+       * @return This builder for chaining.
        */
       public Builder clearLocalDate() {
         bitField0_ = (bitField0_ & ~0x00000200);
@@ -8321,17 +8955,19 @@ public final class AllSupportedOuterClass {
         return this;
       }
 
-      private AllSupportedOuterClass.AllSupported.Timestamp localDateTime_ = null;
+      private AllSupportedOuterClass.AllSupported.Timestamp localDateTime_;
       private com.google.protobuf.SingleFieldBuilderV3<
           AllSupportedOuterClass.AllSupported.Timestamp, AllSupportedOuterClass.AllSupported.Timestamp.Builder, AllSupportedOuterClass.AllSupported.TimestampOrBuilder> localDateTimeBuilder_;
       /**
        * <code>required .AllSupported.Timestamp localDateTime = 11;</code>
+       * @return Whether the localDateTime field is set.
        */
       public boolean hasLocalDateTime() {
-        return ((bitField0_ & 0x00000400) == 0x00000400);
+        return ((bitField0_ & 0x00000400) != 0);
       }
       /**
        * <code>required .AllSupported.Timestamp localDateTime = 11;</code>
+       * @return The localDateTime.
        */
       public AllSupportedOuterClass.AllSupported.Timestamp getLocalDateTime() {
         if (localDateTimeBuilder_ == null) {
@@ -8375,7 +9011,7 @@ public final class AllSupportedOuterClass {
        */
       public Builder mergeLocalDateTime(AllSupportedOuterClass.AllSupported.Timestamp value) {
         if (localDateTimeBuilder_ == null) {
-          if (((bitField0_ & 0x00000400) == 0x00000400) &&
+          if (((bitField0_ & 0x00000400) != 0) &&
               localDateTime_ != null &&
               localDateTime_ != AllSupportedOuterClass.AllSupported.Timestamp.getDefaultInstance()) {
             localDateTime_ =
@@ -8442,12 +9078,14 @@ public final class AllSupportedOuterClass {
       private java.lang.Object uuid_ = "";
       /**
        * <code>required string uuid = 12;</code>
+       * @return Whether the uuid field is set.
        */
       public boolean hasUuid() {
-        return ((bitField0_ & 0x00000800) == 0x00000800);
+        return ((bitField0_ & 0x00000800) != 0);
       }
       /**
        * <code>required string uuid = 12;</code>
+       * @return The uuid.
        */
       public java.lang.String getUuid() {
         java.lang.Object ref = uuid_;
@@ -8465,6 +9103,7 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string uuid = 12;</code>
+       * @return The bytes for uuid.
        */
       public com.google.protobuf.ByteString
           getUuidBytes() {
@@ -8481,6 +9120,8 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string uuid = 12;</code>
+       * @param value The uuid to set.
+       * @return This builder for chaining.
        */
       public Builder setUuid(
           java.lang.String value) {
@@ -8494,6 +9135,7 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string uuid = 12;</code>
+       * @return This builder for chaining.
        */
       public Builder clearUuid() {
         bitField0_ = (bitField0_ & ~0x00000800);
@@ -8503,6 +9145,8 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string uuid = 12;</code>
+       * @param value The bytes for uuid to set.
+       * @return This builder for chaining.
        */
       public Builder setUuidBytes(
           com.google.protobuf.ByteString value) {
@@ -8518,12 +9162,14 @@ public final class AllSupportedOuterClass {
       private java.lang.Object enumeration_ = "";
       /**
        * <code>required string enumeration = 13;</code>
+       * @return Whether the enumeration field is set.
        */
       public boolean hasEnumeration() {
-        return ((bitField0_ & 0x00001000) == 0x00001000);
+        return ((bitField0_ & 0x00001000) != 0);
       }
       /**
        * <code>required string enumeration = 13;</code>
+       * @return The enumeration.
        */
       public java.lang.String getEnumeration() {
         java.lang.Object ref = enumeration_;
@@ -8541,6 +9187,7 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string enumeration = 13;</code>
+       * @return The bytes for enumeration.
        */
       public com.google.protobuf.ByteString
           getEnumerationBytes() {
@@ -8557,6 +9204,8 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string enumeration = 13;</code>
+       * @param value The enumeration to set.
+       * @return This builder for chaining.
        */
       public Builder setEnumeration(
           java.lang.String value) {
@@ -8570,6 +9219,7 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string enumeration = 13;</code>
+       * @return This builder for chaining.
        */
       public Builder clearEnumeration() {
         bitField0_ = (bitField0_ & ~0x00001000);
@@ -8579,6 +9229,8 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string enumeration = 13;</code>
+       * @param value The bytes for enumeration to set.
+       * @return This builder for chaining.
        */
       public Builder setEnumerationBytes(
           com.google.protobuf.ByteString value) {
@@ -8594,12 +9246,14 @@ public final class AllSupportedOuterClass {
       private java.lang.Object bigDecimal_ = "";
       /**
        * <code>required string bigDecimal = 14;</code>
+       * @return Whether the bigDecimal field is set.
        */
       public boolean hasBigDecimal() {
-        return ((bitField0_ & 0x00002000) == 0x00002000);
+        return ((bitField0_ & 0x00002000) != 0);
       }
       /**
        * <code>required string bigDecimal = 14;</code>
+       * @return The bigDecimal.
        */
       public java.lang.String getBigDecimal() {
         java.lang.Object ref = bigDecimal_;
@@ -8617,6 +9271,7 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string bigDecimal = 14;</code>
+       * @return The bytes for bigDecimal.
        */
       public com.google.protobuf.ByteString
           getBigDecimalBytes() {
@@ -8633,6 +9288,8 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string bigDecimal = 14;</code>
+       * @param value The bigDecimal to set.
+       * @return This builder for chaining.
        */
       public Builder setBigDecimal(
           java.lang.String value) {
@@ -8646,6 +9303,7 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string bigDecimal = 14;</code>
+       * @return This builder for chaining.
        */
       public Builder clearBigDecimal() {
         bitField0_ = (bitField0_ & ~0x00002000);
@@ -8655,6 +9313,8 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required string bigDecimal = 14;</code>
+       * @param value The bytes for bigDecimal to set.
+       * @return This builder for chaining.
        */
       public Builder setBigDecimalBytes(
           com.google.protobuf.ByteString value) {
@@ -8668,14 +9328,18 @@ public final class AllSupportedOuterClass {
       }
 
       /**
-       * <code>optional string eitherFieldLeft = 15;</code>
+       * <code>string eitherFieldLeft = 15;</code>
+       * @return Whether the eitherFieldLeft field is set.
        */
+      @java.lang.Override
       public boolean hasEitherFieldLeft() {
         return eitherFieldCase_ == 15;
       }
       /**
-       * <code>optional string eitherFieldLeft = 15;</code>
+       * <code>string eitherFieldLeft = 15;</code>
+       * @return The eitherFieldLeft.
        */
+      @java.lang.Override
       public java.lang.String getEitherFieldLeft() {
         java.lang.Object ref = "";
         if (eitherFieldCase_ == 15) {
@@ -8696,8 +9360,10 @@ public final class AllSupportedOuterClass {
         }
       }
       /**
-       * <code>optional string eitherFieldLeft = 15;</code>
+       * <code>string eitherFieldLeft = 15;</code>
+       * @return The bytes for eitherFieldLeft.
        */
+      @java.lang.Override
       public com.google.protobuf.ByteString
           getEitherFieldLeftBytes() {
         java.lang.Object ref = "";
@@ -8717,7 +9383,9 @@ public final class AllSupportedOuterClass {
         }
       }
       /**
-       * <code>optional string eitherFieldLeft = 15;</code>
+       * <code>string eitherFieldLeft = 15;</code>
+       * @param value The eitherFieldLeft to set.
+       * @return This builder for chaining.
        */
       public Builder setEitherFieldLeft(
           java.lang.String value) {
@@ -8730,7 +9398,8 @@ public final class AllSupportedOuterClass {
         return this;
       }
       /**
-       * <code>optional string eitherFieldLeft = 15;</code>
+       * <code>string eitherFieldLeft = 15;</code>
+       * @return This builder for chaining.
        */
       public Builder clearEitherFieldLeft() {
         if (eitherFieldCase_ == 15) {
@@ -8741,7 +9410,9 @@ public final class AllSupportedOuterClass {
         return this;
       }
       /**
-       * <code>optional string eitherFieldLeft = 15;</code>
+       * <code>string eitherFieldLeft = 15;</code>
+       * @param value The bytes for eitherFieldLeft to set.
+       * @return This builder for chaining.
        */
       public Builder setEitherFieldLeftBytes(
           com.google.protobuf.ByteString value) {
@@ -8755,13 +9426,15 @@ public final class AllSupportedOuterClass {
       }
 
       /**
-       * <code>optional int32 eitherFieldRight = 16;</code>
+       * <code>int32 eitherFieldRight = 16;</code>
+       * @return Whether the eitherFieldRight field is set.
        */
       public boolean hasEitherFieldRight() {
         return eitherFieldCase_ == 16;
       }
       /**
-       * <code>optional int32 eitherFieldRight = 16;</code>
+       * <code>int32 eitherFieldRight = 16;</code>
+       * @return The eitherFieldRight.
        */
       public int getEitherFieldRight() {
         if (eitherFieldCase_ == 16) {
@@ -8770,7 +9443,9 @@ public final class AllSupportedOuterClass {
         return 0;
       }
       /**
-       * <code>optional int32 eitherFieldRight = 16;</code>
+       * <code>int32 eitherFieldRight = 16;</code>
+       * @param value The eitherFieldRight to set.
+       * @return This builder for chaining.
        */
       public Builder setEitherFieldRight(int value) {
         eitherFieldCase_ = 16;
@@ -8779,7 +9454,8 @@ public final class AllSupportedOuterClass {
         return this;
       }
       /**
-       * <code>optional int32 eitherFieldRight = 16;</code>
+       * <code>int32 eitherFieldRight = 16;</code>
+       * @return This builder for chaining.
        */
       public Builder clearEitherFieldRight() {
         if (eitherFieldCase_ == 16) {
@@ -8790,17 +9466,19 @@ public final class AllSupportedOuterClass {
         return this;
       }
 
-      private AllSupportedOuterClass.AllSupported.Child child_ = null;
+      private AllSupportedOuterClass.AllSupported.Child child_;
       private com.google.protobuf.SingleFieldBuilderV3<
           AllSupportedOuterClass.AllSupported.Child, AllSupportedOuterClass.AllSupported.Child.Builder, AllSupportedOuterClass.AllSupported.ChildOrBuilder> childBuilder_;
       /**
        * <code>required .AllSupported.Child child = 17;</code>
+       * @return Whether the child field is set.
        */
       public boolean hasChild() {
-        return ((bitField0_ & 0x00010000) == 0x00010000);
+        return ((bitField0_ & 0x00010000) != 0);
       }
       /**
        * <code>required .AllSupported.Child child = 17;</code>
+       * @return The child.
        */
       public AllSupportedOuterClass.AllSupported.Child getChild() {
         if (childBuilder_ == null) {
@@ -8844,7 +9522,7 @@ public final class AllSupportedOuterClass {
        */
       public Builder mergeChild(AllSupportedOuterClass.AllSupported.Child value) {
         if (childBuilder_ == null) {
-          if (((bitField0_ & 0x00010000) == 0x00010000) &&
+          if (((bitField0_ & 0x00010000) != 0) &&
               child_ != null &&
               child_ != AllSupportedOuterClass.AllSupported.Child.getDefaultInstance()) {
             child_ =
@@ -8911,14 +9589,18 @@ public final class AllSupportedOuterClass {
       private com.google.protobuf.SingleFieldBuilderV3<
           AllSupportedOuterClass.AllSupported.Digital, AllSupportedOuterClass.AllSupported.Digital.Builder, AllSupportedOuterClass.AllSupported.DigitalOrBuilder> digitalBuilder_;
       /**
-       * <code>optional .AllSupported.Digital digital = 18;</code>
+       * <code>.AllSupported.Digital digital = 18;</code>
+       * @return Whether the digital field is set.
        */
+      @java.lang.Override
       public boolean hasDigital() {
         return digitalOneofCase_ == 18;
       }
       /**
-       * <code>optional .AllSupported.Digital digital = 18;</code>
+       * <code>.AllSupported.Digital digital = 18;</code>
+       * @return The digital.
        */
+      @java.lang.Override
       public AllSupportedOuterClass.AllSupported.Digital getDigital() {
         if (digitalBuilder_ == null) {
           if (digitalOneofCase_ == 18) {
@@ -8933,7 +9615,7 @@ public final class AllSupportedOuterClass {
         }
       }
       /**
-       * <code>optional .AllSupported.Digital digital = 18;</code>
+       * <code>.AllSupported.Digital digital = 18;</code>
        */
       public Builder setDigital(AllSupportedOuterClass.AllSupported.Digital value) {
         if (digitalBuilder_ == null) {
@@ -8949,7 +9631,7 @@ public final class AllSupportedOuterClass {
         return this;
       }
       /**
-       * <code>optional .AllSupported.Digital digital = 18;</code>
+       * <code>.AllSupported.Digital digital = 18;</code>
        */
       public Builder setDigital(
           AllSupportedOuterClass.AllSupported.Digital.Builder builderForValue) {
@@ -8963,7 +9645,7 @@ public final class AllSupportedOuterClass {
         return this;
       }
       /**
-       * <code>optional .AllSupported.Digital digital = 18;</code>
+       * <code>.AllSupported.Digital digital = 18;</code>
        */
       public Builder mergeDigital(AllSupportedOuterClass.AllSupported.Digital value) {
         if (digitalBuilder_ == null) {
@@ -8985,7 +9667,7 @@ public final class AllSupportedOuterClass {
         return this;
       }
       /**
-       * <code>optional .AllSupported.Digital digital = 18;</code>
+       * <code>.AllSupported.Digital digital = 18;</code>
        */
       public Builder clearDigital() {
         if (digitalBuilder_ == null) {
@@ -9004,14 +9686,15 @@ public final class AllSupportedOuterClass {
         return this;
       }
       /**
-       * <code>optional .AllSupported.Digital digital = 18;</code>
+       * <code>.AllSupported.Digital digital = 18;</code>
        */
       public AllSupportedOuterClass.AllSupported.Digital.Builder getDigitalBuilder() {
         return getDigitalFieldBuilder().getBuilder();
       }
       /**
-       * <code>optional .AllSupported.Digital digital = 18;</code>
+       * <code>.AllSupported.Digital digital = 18;</code>
        */
+      @java.lang.Override
       public AllSupportedOuterClass.AllSupported.DigitalOrBuilder getDigitalOrBuilder() {
         if ((digitalOneofCase_ == 18) && (digitalBuilder_ != null)) {
           return digitalBuilder_.getMessageOrBuilder();
@@ -9023,7 +9706,7 @@ public final class AllSupportedOuterClass {
         }
       }
       /**
-       * <code>optional .AllSupported.Digital digital = 18;</code>
+       * <code>.AllSupported.Digital digital = 18;</code>
        */
       private com.google.protobuf.SingleFieldBuilderV3<
           AllSupportedOuterClass.AllSupported.Digital, AllSupportedOuterClass.AllSupported.Digital.Builder, AllSupportedOuterClass.AllSupported.DigitalOrBuilder> 
@@ -9047,14 +9730,18 @@ public final class AllSupportedOuterClass {
       private com.google.protobuf.SingleFieldBuilderV3<
           AllSupportedOuterClass.AllSupported.CompactDisc, AllSupportedOuterClass.AllSupported.CompactDisc.Builder, AllSupportedOuterClass.AllSupported.CompactDiscOrBuilder> compactDiscBuilder_;
       /**
-       * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+       * <code>.AllSupported.CompactDisc compact_disc = 19;</code>
+       * @return Whether the compactDisc field is set.
        */
+      @java.lang.Override
       public boolean hasCompactDisc() {
         return digitalOneofCase_ == 19;
       }
       /**
-       * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+       * <code>.AllSupported.CompactDisc compact_disc = 19;</code>
+       * @return The compactDisc.
        */
+      @java.lang.Override
       public AllSupportedOuterClass.AllSupported.CompactDisc getCompactDisc() {
         if (compactDiscBuilder_ == null) {
           if (digitalOneofCase_ == 19) {
@@ -9069,7 +9756,7 @@ public final class AllSupportedOuterClass {
         }
       }
       /**
-       * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+       * <code>.AllSupported.CompactDisc compact_disc = 19;</code>
        */
       public Builder setCompactDisc(AllSupportedOuterClass.AllSupported.CompactDisc value) {
         if (compactDiscBuilder_ == null) {
@@ -9085,7 +9772,7 @@ public final class AllSupportedOuterClass {
         return this;
       }
       /**
-       * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+       * <code>.AllSupported.CompactDisc compact_disc = 19;</code>
        */
       public Builder setCompactDisc(
           AllSupportedOuterClass.AllSupported.CompactDisc.Builder builderForValue) {
@@ -9099,7 +9786,7 @@ public final class AllSupportedOuterClass {
         return this;
       }
       /**
-       * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+       * <code>.AllSupported.CompactDisc compact_disc = 19;</code>
        */
       public Builder mergeCompactDisc(AllSupportedOuterClass.AllSupported.CompactDisc value) {
         if (compactDiscBuilder_ == null) {
@@ -9121,7 +9808,7 @@ public final class AllSupportedOuterClass {
         return this;
       }
       /**
-       * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+       * <code>.AllSupported.CompactDisc compact_disc = 19;</code>
        */
       public Builder clearCompactDisc() {
         if (compactDiscBuilder_ == null) {
@@ -9140,14 +9827,15 @@ public final class AllSupportedOuterClass {
         return this;
       }
       /**
-       * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+       * <code>.AllSupported.CompactDisc compact_disc = 19;</code>
        */
       public AllSupportedOuterClass.AllSupported.CompactDisc.Builder getCompactDiscBuilder() {
         return getCompactDiscFieldBuilder().getBuilder();
       }
       /**
-       * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+       * <code>.AllSupported.CompactDisc compact_disc = 19;</code>
        */
+      @java.lang.Override
       public AllSupportedOuterClass.AllSupported.CompactDiscOrBuilder getCompactDiscOrBuilder() {
         if ((digitalOneofCase_ == 19) && (compactDiscBuilder_ != null)) {
           return compactDiscBuilder_.getMessageOrBuilder();
@@ -9159,7 +9847,7 @@ public final class AllSupportedOuterClass {
         }
       }
       /**
-       * <code>optional .AllSupported.CompactDisc compact_disc = 19;</code>
+       * <code>.AllSupported.CompactDisc compact_disc = 19;</code>
        */
       private com.google.protobuf.SingleFieldBuilderV3<
           AllSupportedOuterClass.AllSupported.CompactDisc, AllSupportedOuterClass.AllSupported.CompactDisc.Builder, AllSupportedOuterClass.AllSupported.CompactDiscOrBuilder> 
@@ -9183,14 +9871,18 @@ public final class AllSupportedOuterClass {
       private com.google.protobuf.SingleFieldBuilderV3<
           AllSupportedOuterClass.AllSupported.Album, AllSupportedOuterClass.AllSupported.Album.Builder, AllSupportedOuterClass.AllSupported.AlbumOrBuilder> albumBuilder_;
       /**
-       * <code>optional .AllSupported.Album album = 20;</code>
+       * <code>.AllSupported.Album album = 20;</code>
+       * @return Whether the album field is set.
        */
+      @java.lang.Override
       public boolean hasAlbum() {
         return digitalOneofCase_ == 20;
       }
       /**
-       * <code>optional .AllSupported.Album album = 20;</code>
+       * <code>.AllSupported.Album album = 20;</code>
+       * @return The album.
        */
+      @java.lang.Override
       public AllSupportedOuterClass.AllSupported.Album getAlbum() {
         if (albumBuilder_ == null) {
           if (digitalOneofCase_ == 20) {
@@ -9205,7 +9897,7 @@ public final class AllSupportedOuterClass {
         }
       }
       /**
-       * <code>optional .AllSupported.Album album = 20;</code>
+       * <code>.AllSupported.Album album = 20;</code>
        */
       public Builder setAlbum(AllSupportedOuterClass.AllSupported.Album value) {
         if (albumBuilder_ == null) {
@@ -9221,7 +9913,7 @@ public final class AllSupportedOuterClass {
         return this;
       }
       /**
-       * <code>optional .AllSupported.Album album = 20;</code>
+       * <code>.AllSupported.Album album = 20;</code>
        */
       public Builder setAlbum(
           AllSupportedOuterClass.AllSupported.Album.Builder builderForValue) {
@@ -9235,7 +9927,7 @@ public final class AllSupportedOuterClass {
         return this;
       }
       /**
-       * <code>optional .AllSupported.Album album = 20;</code>
+       * <code>.AllSupported.Album album = 20;</code>
        */
       public Builder mergeAlbum(AllSupportedOuterClass.AllSupported.Album value) {
         if (albumBuilder_ == null) {
@@ -9257,7 +9949,7 @@ public final class AllSupportedOuterClass {
         return this;
       }
       /**
-       * <code>optional .AllSupported.Album album = 20;</code>
+       * <code>.AllSupported.Album album = 20;</code>
        */
       public Builder clearAlbum() {
         if (albumBuilder_ == null) {
@@ -9276,14 +9968,15 @@ public final class AllSupportedOuterClass {
         return this;
       }
       /**
-       * <code>optional .AllSupported.Album album = 20;</code>
+       * <code>.AllSupported.Album album = 20;</code>
        */
       public AllSupportedOuterClass.AllSupported.Album.Builder getAlbumBuilder() {
         return getAlbumFieldBuilder().getBuilder();
       }
       /**
-       * <code>optional .AllSupported.Album album = 20;</code>
+       * <code>.AllSupported.Album album = 20;</code>
        */
+      @java.lang.Override
       public AllSupportedOuterClass.AllSupported.AlbumOrBuilder getAlbumOrBuilder() {
         if ((digitalOneofCase_ == 20) && (albumBuilder_ != null)) {
           return albumBuilder_.getMessageOrBuilder();
@@ -9295,7 +9988,7 @@ public final class AllSupportedOuterClass {
         }
       }
       /**
-       * <code>optional .AllSupported.Album album = 20;</code>
+       * <code>.AllSupported.Album album = 20;</code>
        */
       private com.google.protobuf.SingleFieldBuilderV3<
           AllSupportedOuterClass.AllSupported.Album, AllSupportedOuterClass.AllSupported.Album.Builder, AllSupportedOuterClass.AllSupported.AlbumOrBuilder> 
@@ -9319,18 +10012,24 @@ public final class AllSupportedOuterClass {
       private int int2_ ;
       /**
        * <code>required int32 int2 = 21;</code>
+       * @return Whether the int2 field is set.
        */
+      @java.lang.Override
       public boolean hasInt2() {
-        return ((bitField0_ & 0x00100000) == 0x00100000);
+        return ((bitField0_ & 0x00100000) != 0);
       }
       /**
        * <code>required int32 int2 = 21;</code>
+       * @return The int2.
        */
+      @java.lang.Override
       public int getInt2() {
         return int2_;
       }
       /**
        * <code>required int32 int2 = 21;</code>
+       * @param value The int2 to set.
+       * @return This builder for chaining.
        */
       public Builder setInt2(int value) {
         bitField0_ |= 0x00100000;
@@ -9340,6 +10039,7 @@ public final class AllSupportedOuterClass {
       }
       /**
        * <code>required int32 int2 = 21;</code>
+       * @return This builder for chaining.
        */
       public Builder clearInt2() {
         bitField0_ = (bitField0_ & ~0x00100000);
@@ -9469,18 +10169,10 @@ public final class AllSupportedOuterClass {
       "Quality\030\003 \002(\tB\016\n\014either_fieldB\017\n\rDigital" +
       "_oneof"
     };
-    com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
-        new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
-          public com.google.protobuf.ExtensionRegistry assignDescriptors(
-              com.google.protobuf.Descriptors.FileDescriptor root) {
-            descriptor = root;
-            return null;
-          }
-        };
-    com.google.protobuf.Descriptors.FileDescriptor
+    descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
-        }, assigner);
+        });
     internal_static_AllSupported_descriptor =
       getDescriptor().getMessageTypes().get(0);
     internal_static_AllSupported_fieldAccessorTable = new
