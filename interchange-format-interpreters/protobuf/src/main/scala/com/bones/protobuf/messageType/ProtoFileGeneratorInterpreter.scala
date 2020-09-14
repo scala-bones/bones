@@ -167,11 +167,9 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
         val tailF = eachKvpCoproduct(op.kvpTail)
         lastIndex =>
           {
-//            val left = leftF(lastIndex)
             val right = tailF(left._3)
             val allNested = NestedMessage(name, left._1) +: left._2.appendedAll(right._1)
             (allNested, right._2)
-//            (left._1.appendedAll(right._1), left._2.appendedAll(right._2), right._3)
           }
       }
     }

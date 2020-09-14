@@ -17,6 +17,7 @@ class AllSupportedOuterClassTest extends AnyFunSuite with Matchers {
   val decode = com.bones.protobuf.values.defaultUtcValidator
     .fromCustomBytes(Schemas.allSupportCaseClass)
 
+  //TODO: coproduct does not currently work.
   ignore("integration test") {
     val build = AllSupportedOuterClass.AllSupported.newBuilder
     build.setBoolean(true)
@@ -71,7 +72,7 @@ class AllSupportedOuterClassTest extends AnyFunSuite with Matchers {
     val encoded = output.toByteArray
 
     val base64 = Base64.getEncoder().encode(encoded)
-//    println(s"BASE:${new String(base64)}")
+    println(s"BASE:${new String(base64)}")
 
     decode(output.toByteArray) match {
       case Left(err) => fail(err.toString())
