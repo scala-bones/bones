@@ -351,14 +351,13 @@ trait SwaggerCoreInterpreter[ALG[_]] extends KvpCollectionMatch[ALG, SwaggerSche
     co match {
       case _: KvpCoNil[_] => SwaggerSchemas(new ComposedSchema())
       case co: KvpCoproductCollectionHead[ALG, a, c, o] @unchecked => {
-        val name = co.manifestOfHead.runtimeClass.getSimpleName
         val lSchema = fromKvpCollection(co.kvpCollection)
         val composedSchema = fromKvpCoproduct(co.kvpTail)
-        val objectSchema = new ObjectSchema().$ref(name)
+        val objectSchema = new ObjectSchema().$ref(co.typeNameOfA)
         val mainSchema = composedSchema.mainSchema.addOneOfItem(objectSchema)
         SwaggerSchemas(
           mainSchema,
-          (name, lSchema.mainSchema) :: lSchema.referenceSchemas ::: composedSchema.referenceSchemas)
+          (co.typeNameOfA, lSchema.mainSchema) :: lSchema.referenceSchemas ::: composedSchema.referenceSchemas)
       }
     }
 
@@ -366,7 +365,7 @@ trait SwaggerCoreInterpreter[ALG[_]] extends KvpCollectionMatch[ALG, SwaggerSche
     kvp: KvpCoproduct[ALG, C]): SwaggerSchemas[ObjectSchema] = {
     val composedSchema = fromKvpCoproduct(kvp)
     val name =
-      KvpCollection.headManifest(kvp).map(_.runtimeClass.getSimpleName).getOrElse("unknown")
+      KvpCollection.headTypeName(kvp).getOrElse("Unknown")
     val main = new ObjectSchema()
     main.$ref(name)
 //    validations(kvp.)(main)
@@ -403,14 +402,14 @@ trait SwaggerCoreInterpreter[ALG[_]] extends KvpCollectionMatch[ALG, SwaggerSche
   override def kvpWrappedHList[A, H <: HList, HL <: Nat](
     wrappedHList: KvpWrappedHList[ALG, A, H, HL]): SwaggerSchemas[ObjectSchema] = {
     val schema = fromKvpCollection(wrappedHList.wrappedEncoding)
-    schema.mainSchema.name(wrappedHList.manifestOfA.runtimeClass.getSimpleName)
+    schema.mainSchema.name(wrappedHList.typeNameOfA)
     schema
   }
 
   override def kvpWrappedCoproduct[A, C <: Coproduct](
     wrappedCoproduct: KvpWrappedCoproduct[ALG, A, C]): SwaggerSchemas[ObjectSchema] = {
     val schema = fromKvpCollection(wrappedCoproduct.wrappedEncoding)
-    schema.mainSchema.name(wrappedCoproduct.manifestOfA.runtimeClass.getSimpleName)
+    schema.mainSchema.name(wrappedCoproduct.typeNameOfA)
     schema
   }
 

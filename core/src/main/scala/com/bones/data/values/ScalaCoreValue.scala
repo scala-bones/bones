@@ -6,39 +6,59 @@ import com.bones.validation.ValidationDefinition._
 import shapeless.Coproduct
 import shapeless.ops.coproduct.Inject
 
-sealed abstract class ScalaCoreValue[A: Manifest] extends PrimitiveValue[A] {
-  override val manifestOfA: Manifest[A] = manifest[A]
-}
+sealed abstract class ScalaCoreValue[A] extends PrimitiveValue[A]
 
 /** Schema type for Boolean Data */
 final case class BooleanData(validations: List[ValidationOp[Boolean]])
-    extends ScalaCoreValue[Boolean]
+    extends ScalaCoreValue[Boolean] {
+  override val typeName: String = "Boolean"
+}
 
-final case class IntData(validations: List[ValidationOp[Int]]) extends ScalaCoreValue[Int]
+final case class IntData(validations: List[ValidationOp[Int]]) extends ScalaCoreValue[Int] {
+  override val typeName: String = "Int"
+}
 
-final case class LongData(validations: List[ValidationOp[Long]]) extends ScalaCoreValue[Long]
+final case class LongData(validations: List[ValidationOp[Long]]) extends ScalaCoreValue[Long] {
+  override val typeName: String = "Long"
+}
 
-final case class ShortData(validations: List[ValidationOp[Short]]) extends ScalaCoreValue[Short]
+final case class ShortData(validations: List[ValidationOp[Short]]) extends ScalaCoreValue[Short] {
+  override val typeName: String = "Short"
+}
 
-final case class StringData(validations: List[ValidationOp[String]]) extends ScalaCoreValue[String]
+final case class StringData(validations: List[ValidationOp[String]])
+    extends ScalaCoreValue[String] {
+  override val typeName: String = "String"
+}
 
-final case class FloatData(validations: List[ValidationOp[Float]]) extends ScalaCoreValue[Float]
+final case class FloatData(validations: List[ValidationOp[Float]]) extends ScalaCoreValue[Float] {
+  override val typeName: String = "Float"
+}
 
-final case class DoubleData(validations: List[ValidationOp[Double]]) extends ScalaCoreValue[Double]
+final case class DoubleData(validations: List[ValidationOp[Double]])
+    extends ScalaCoreValue[Double] {
+  override val typeName: String = "Double"
+}
 
 final case class BigDecimalData(validations: List[ValidationOp[BigDecimal]])
-    extends ScalaCoreValue[BigDecimal]
+    extends ScalaCoreValue[BigDecimal] {
+  override val typeName: String = "BigDecimal"
+}
 
 /** base64-encoded characters, for example,
   * @example "U3dhZ2dlciByb2Nrcw=="
   * */
 final case class ByteArrayData(validations: List[ValidationOp[Array[Byte]]])
-    extends ScalaCoreValue[Array[Byte]]
+    extends ScalaCoreValue[Array[Byte]] {
+  override val typeName: String = "Array[Byte]"
+}
 
 final case class EnumerationData[E <: Enumeration, V: Manifest](
   enumeration: E,
   validations: List[ValidationOp[V]]
-) extends ScalaCoreValue[V]
+) extends ScalaCoreValue[V] {
+  override val typeName: String = enumeration.getClass.getSimpleName
+}
 
 trait BaseScalaCoreInterpreter[OUT] {
 

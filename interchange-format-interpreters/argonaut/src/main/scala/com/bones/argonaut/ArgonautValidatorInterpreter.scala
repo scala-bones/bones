@@ -8,11 +8,7 @@ import cats.data.NonEmptyList
 import cats.syntax.all._
 import com.bones.data.Error.{ExtractionError, ParsingError, RequiredValue, WrongTypeError}
 import com.bones.data.{KeyDefinition, _}
-import com.bones.interpreter.{
-  InterchangeFormatPrimitiveValidator,
-  InterchangeFormatValidatorValue,
-  KvpInterchangeFormatValidatorInterpreter
-}
+import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
 
 import scala.util.control.NonFatal
 
@@ -66,13 +62,13 @@ trait ArgonautValidatorInterpreter[ALG[_]]
 
     in.obj
       .toRight[NonEmptyList[ExtractionError]](
-        NonEmptyList.one(WrongTypeError(path, classOf[Array[_]], in.getClass, None))
+        NonEmptyList.one(WrongTypeError(path, kv.typeName, in.getClass.getSimpleName, None))
       )
       .flatMap(
         _.toList
           .find(f => f._1 === kv.key)
           .toRight[NonEmptyList[ExtractionError]](
-            NonEmptyList.one(RequiredValue.fromDef(path, kv.dataDefinition))
+            NonEmptyList.one(RequiredValue(path, kv.typeName))
           )
       )
       .flatMap(j => headInterpreter.apply(Some(j._2), path))
@@ -80,7 +76,7 @@ trait ArgonautValidatorInterpreter[ALG[_]]
 
   override def invalidValue[T](
     in: Json,
-    expected: Class[T],
+    typeName: String,
     path: List[String]
   ): Left[NonEmptyList[ExtractionError], Nothing] = {
     val invalid = in.fold(
@@ -91,7 +87,7 @@ trait ArgonautValidatorInterpreter[ALG[_]]
       _ => classOf[Array[_]],
       _ => classOf[Object]
     )
-    Left(NonEmptyList.one(WrongTypeError(path, expected, invalid, None)))
+    Left(NonEmptyList.one(WrongTypeError(path, typeName, invalid.getSimpleName, None)))
   }
 
 }

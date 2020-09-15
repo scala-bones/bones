@@ -1,7 +1,6 @@
 package com.bones.data
 
 import com.bones.validation.ValidationDefinition.ValidationOp
-import shapeless.{HList, Nat}
 
 /** A String key and it's value description where A is the type the value.
   *
@@ -13,14 +12,13 @@ import shapeless.{HList, Nat}
   *             It can be a single data type such as [[com.bones.data.values.JavaTimeValue]]
   *             It can be any shapeless.Coproduct of Algebras.
   */
-case class KeyDefinition[ALG[_], A: Manifest](
+case class KeyDefinition[ALG[_], A](
   key: String,
   dataDefinition: Either[HigherOrderValue[ALG, A], ALG[A]],
+  typeName: String,
   description: Option[String],
   example: Option[A]
-) {
-  val manifestOfA: Manifest[A] = manifest[A]
-}
+)
 
 object KeyDefinition {
 
@@ -33,17 +31,15 @@ trait KeyValueDefinitionSugar {
 
   def kvp[ALG[_], A: Manifest](
     key: String,
-    valueDefinitionOp: HigherOrderValue[ALG, A]): KeyDefinition[ALG, A] =
-    KeyDefinition[ALG, A](key, Left(valueDefinitionOp), None, None)
+    valueDefinitionOp: HigherOrderValue[ALG, A]): KeyDefinition[ALG, A] = {
+    val typeName = manifest[A].runtimeClass.getSimpleName
+    KeyDefinition[ALG, A](key, Left(valueDefinitionOp), typeName, None, None)
+  }
 
-  def kvpCov[ALG[_], A: Manifest](key: String, valueDefinitionOp: ALG[A]): KeyDefinition[ALG, A] =
-    KeyDefinition[ALG, A](key, Right(valueDefinitionOp), None, None)
-
-//  def kvpHList[ALG[_], H <: HList: Manifest, HL <: Nat](
-//    key: String,
-//    kvpHList: KvpHListCollection[ALG, H, HL]
-//  ): KeyDefinition[ALG, H] =
-//    KeyDefinition[ALG, H](key, Left(KvpCollectionValue(kvpHList, List.empty)), None, None)
+  def kvpCov[ALG[_], A: Manifest](key: String, valueDefinitionOp: ALG[A]): KeyDefinition[ALG, A] = {
+    val typeName = manifest[A].runtimeClass.getSimpleName
+    KeyDefinition[ALG, A](key, Right(valueDefinitionOp), typeName, None, None)
+  }
 
 }
 
@@ -51,20 +47,23 @@ trait KeyValueDefinitionSugar {
 trait Sugar[ALG[_]] {
 
   implicit class WrapKvpValueInCollection[A: Manifest](hm: ALG[A]) { self =>
+    val typeName = manifest[A].runtimeClass.getSimpleName
+
     def list(validationOps: ValidationOp[List[A]]*): ListData[ALG, A] =
-      ListData[ALG, A](Right(hm), validationOps.toList)
+      ListData[ALG, A](Right(hm), typeName, validationOps.toList)
 
     def optional: OptionalValue[ALG, A] =
-      OptionalValue[ALG, A](Right(hm))
+      OptionalValue[ALG, A](Right(hm), typeName)
   }
 
   implicit class WrapKvpCollectionInCollection[A: Manifest](hm: HigherOrderValue[ALG, A]) {
     self =>
+    val typeName = manifest[A].runtimeClass.getSimpleName
     def list(validationOps: ValidationOp[List[A]]*): ListData[ALG, A] =
-      ListData[ALG, A](Left(hm), validationOps.toList)
+      ListData[ALG, A](Left(hm), typeName, validationOps.toList)
 
     def optional: OptionalValue[ALG, A] =
-      OptionalValue[ALG, A](Left(hm))
+      OptionalValue[ALG, A](Left(hm), typeName)
   }
 
   /**
@@ -79,39 +78,55 @@ trait Sugar[ALG[_]] {
   def list[T: Manifest](
     dataDefinitionOp: ALG[T],
     v: ValidationOp[List[T]]*
-  ): ListData[ALG, T] =
-    ListData[ALG, T](Right(dataDefinitionOp), v.toList)
+  ): ListData[ALG, T] = {
+    val typeName = manifest[T].runtimeClass.getSimpleName
+    ListData[ALG, T](Right(dataDefinitionOp), typeName, v.toList)
+  }
 
   def list[T: Manifest](
     kvpValue: HigherOrderValue[ALG, T],
     v: ValidationOp[List[T]]*
-  ): ListData[ALG, T] =
-    ListData[ALG, T](Left(kvpValue), v.toList)
+  ): ListData[ALG, T] = {
+    val typeName = manifest[T].runtimeClass.getSimpleName
+    ListData[ALG, T](Left(kvpValue), typeName, v.toList)
+  }
 
   def either[A: Manifest, B: Manifest](
     definitionA: ALG[A],
     definitionB: ALG[B]
-  ): EitherData[ALG, A, B] =
-    EitherData(Right(definitionA), Right(definitionB))
+  ): EitherData[ALG, A, B] = {
+    val typeNameOfA = manifest[A].runtimeClass.getSimpleName
+    val typeNameOfB = manifest[B].runtimeClass.getSimpleName
+    EitherData(Right(definitionA), typeNameOfA, Right(definitionB), typeNameOfB)
+  }
 
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
   def either[A: Manifest, B: Manifest](
     definitionA: HigherOrderValue[ALG, A],
     definitionB: HigherOrderValue[ALG, B]
-  ): EitherData[ALG, A, B] =
-    EitherData(Left(definitionA), Left(definitionB))
+  ): EitherData[ALG, A, B] = {
+    val typeNameOfA = manifest[A].runtimeClass.getSimpleName
+    val typeNameOfB = manifest[B].runtimeClass.getSimpleName
+    EitherData(Left(definitionA), typeNameOfA, Left(definitionB), typeNameOfB)
+  }
 
   def either[A: Manifest, B: Manifest](
     definitionA: HigherOrderValue[ALG, A],
     definitionB: ALG[B]
-  ): EitherData[ALG, A, B] =
-    EitherData(Left(definitionA), Right(definitionB))
+  ): EitherData[ALG, A, B] = {
+    val typeNameOfA = manifest[A].runtimeClass.getSimpleName
+    val typeNameOfB = manifest[B].runtimeClass.getSimpleName
+    EitherData(Left(definitionA), typeNameOfA, Right(definitionB), typeNameOfB)
+  }
 
   def either[A: Manifest, B: Manifest](
     definitionA: ALG[A],
     definitionB: HigherOrderValue[ALG, B]
-  ): EitherData[ALG, A, B] =
-    EitherData(Right(definitionA), Left(definitionB))
+  ): EitherData[ALG, A, B] = {
+    val typeNameOfA = manifest[A].runtimeClass.getSimpleName
+    val typeNameOfB = manifest[B].runtimeClass.getSimpleName
+    EitherData(Right(definitionA), typeNameOfA, Left(definitionB), typeNameOfB)
+  }
 
   def kvpNil = new KvpNil[ALG]()
 

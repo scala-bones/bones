@@ -1,6 +1,6 @@
 package com.bones
 
-import com.bones.data.KvpCollection.headManifest
+import com.bones.data.KvpCollection.headTypeName
 import com.bones.data.values.DefaultValues
 import com.bones.data.{KvpCollection, KvpNil, KvpWrappedHList}
 import com.bones.jdbc.column.{ColumnNameInterpreter, ColumnValue}
@@ -29,10 +29,8 @@ package object jdbc {
 
     def asTuple: (String, ALG[ID]) = (key, value)
 
-    def prependSchema[A](schema: KvpCollection[ALG, A])
+    def prependSchema[A: Manifest](schema: KvpCollection[ALG, A])
       : KvpWrappedHList[ALG, (ID, A), ID :: A :: HNil, Succ[Succ[_0]]] = {
-      implicit val manifest: Manifest[A] = headManifest(schema).getOrElse(
-        throw new IllegalStateException("TODO: Need to avoid this state.")) //TODO: Need to fix this
       (asTuple :: schema :: new KvpNil[ALG]).tupled[(ID, A)]
     }
 

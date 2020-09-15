@@ -4,7 +4,7 @@ import java.sql.{Connection, SQLException}
 
 import cats.data.NonEmptyList
 import com.bones.data.Error.SystemError
-import com.bones.data.KvpCollection.headManifest
+import com.bones.data.KvpCollection.headTypeName
 import com.bones.data._
 import com.bones.jdbc.DbUtil._
 import com.bones.jdbc.IdDefinition
@@ -17,8 +17,7 @@ trait DbUpdate[ALG[_]] {
 
   def updateQuery[A, ID](bonesSchema: KvpCollection[ALG, A], idDef: IdDefinition[ALG, ID])
     : (ID, A) => Connection => Either[NonEmptyList[SystemError], (ID, A)] = {
-    val tableName = camelToSnake(
-      headManifest(bonesSchema).map(_.runtimeClass.getSimpleName).getOrElse("unknown"))
+    val tableName = camelToSnake(headTypeName(bonesSchema).getOrElse("Unknown"))
     val updates = jdbcStatementInterpreter.fromKvpCollection(bonesSchema)(1)
     val idIndex = updates.lastIndex
     val idUpdateFunction =

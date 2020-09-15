@@ -56,7 +56,7 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
 
   def invalidValue[T](
     in: IN,
-    expected: Class[T],
+    typeName: String,
     path: Path): Left[NonEmptyList[ExtractionError], Nothing]
 
   override def coproductType(in: IN): Option[CoproductType] =
@@ -105,7 +105,7 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
                   optionalB(in, path) match {
                     case Right(b) => Right(Right(b))
                     case Left(err2) => {
-                      val errors = RequiredValue.fromDef(path, Left(ed)) :: err2 ::: err1
+                      val errors = RequiredValue(path, ed.typeNameOfA) :: err2 ::: err1
                       Left(errors)
                     }
                   }
@@ -141,7 +141,7 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
           (inOpt: Option[IN], path: Path) =>
             {
               for {
-                in <- inOpt.toRight(NonEmptyList.one(RequiredValue.fromDef(path, Left(op))))
+                in <- inOpt.toRight(NonEmptyList.one(RequiredValue(path, op.typeNameOfT)))
                 arr <- interchangeFormatPrimitiveValidator.extractArray(op)(in, path)
                 listOfIn <- traverseArray(arr, path)
               } yield listOfIn
@@ -155,7 +155,7 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
                 case Some(json) =>
                   fg(json, path)
                     .flatMap(res => vu.validate[A](op.validations)(res, path))
-                case None => Left(NonEmptyList.one(RequiredValue.fromDef(path, Left(op))))
+                case None => Left(NonEmptyList.one(RequiredValue(path, op.typeName)))
               }
             }
         }

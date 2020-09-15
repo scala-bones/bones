@@ -16,7 +16,7 @@ import com.bones.circe.{
   IsoCirceEncoderInterpreter
 }
 import com.bones.data.Error.ExtractionError
-import com.bones.data.KvpCollection.headManifest
+import com.bones.data.KvpCollection.headTypeName
 import com.bones.data._
 import com.bones.data.values.ScalaCoreValue
 import com.bones.http4s.CrudInterpreterDescription._
@@ -97,7 +97,12 @@ object BaseCrudInterpreter {
         ExtractionErrorEncoder.extractionErrorGeneric)
 
     private val errorResponseHList =
-      ("errors", ListData[ScalaCoreValue, ExtractionError](Left(error.asValue), List.empty)) :<:
+      (
+        "errors",
+        ListData[ScalaCoreValue, ExtractionError](
+          Left(error.asValue),
+          "ExtractionError",
+          List.empty)) :<:
         new KvpNil[ScalaCoreValue]
 
     val errorResponseSchema = errorResponseHList.convert[ErrorResponse]
@@ -151,12 +156,9 @@ object BaseCrudInterpreter {
     }
   }
 
-  def schemaWithId[ALG[_], A, ID: Manifest](
+  def schemaWithId[ALG[_], A: Manifest, ID: Manifest](
     idDefinition: ALG[ID],
     schema: KvpCollection[ALG, A]) = {
-    implicit def manifestA =
-      headManifest(schema).getOrElse(
-        throw new UnsupportedOperationException("No manifest for A available"))
     (("id", idDefinition) :: schema :: new KvpNil[ALG]).tupled[(ID, A)]
   }
 

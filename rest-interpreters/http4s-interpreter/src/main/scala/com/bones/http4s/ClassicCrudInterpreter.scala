@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 
 import cats.effect._
 import cats.syntax.all._
-import com.bones.data.KvpCollection.headManifest
+import com.bones.data.KvpCollection.headTypeName
 import com.bones.data.{KvpCollection, KvpNil}
 import com.bones.http4s.BaseCrudInterpreter.StringToIdError
 import com.bones.http4s.config.InterpreterConfig
@@ -24,7 +24,7 @@ object ClassicCrudInterpreter {
     *   Use the [allVerbs] method if all CRUD endpoints should be implemented.
     *   See [ClassicCrudInterpreter] for details on the parameters.
     */
-  def empty[ALG[_], A, E, F[_], ID: Manifest](
+  def empty[ALG[_], A: Manifest, E, F[_], ID: Manifest](
     path: String,
     interpreters: InterpreterConfig[ALG, ID],
     schema: KvpCollection[ALG, A],
@@ -52,7 +52,7 @@ object ClassicCrudInterpreter {
     * are desired, see [emptyCoreAlgebra].
     *   See [ClassicCrudInterpreter] for details on the parameters.
     */
-  def allVerbs[ALG[_], A, E, F[_], ID: Manifest](
+  def allVerbs[ALG[_], A: Manifest, E, F[_], ID: Manifest](
     interpreters: InterpreterConfig[ALG, ID],
     path: String,
     schema: KvpCollection[ALG, A],
@@ -105,7 +105,7 @@ object ClassicCrudInterpreter {
   * @tparam F An subclass of the Sync type class
   * @tparam ID The ID type.
   */
-case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
+case class ClassicCrudInterpreter[ALG[_], A: Manifest, E, F[_], ID: Manifest](
   interpreters: InterpreterConfig[ALG, ID],
   path: String,
   schema: KvpCollection[ALG, A],
@@ -159,9 +159,6 @@ case class ClassicCrudInterpreter[ALG[_], A, E, F[_], ID: Manifest](
     this.copy(searchF = Some(search))
 
   val schemaWithId: KvpCollection[ALG, (ID, A)] = {
-    implicit def manifestA: Manifest[A] =
-      headManifest(schema).getOrElse(
-        throw new UnsupportedOperationException("No manifest for A available"))
     (("id", interpreters.idDefinition) :: schema :: new KvpNil[ALG]).tupled[(ID, A)]
   }
 

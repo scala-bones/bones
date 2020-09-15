@@ -1,7 +1,7 @@
 package com.bones.bson.values
 
 import cats.data.NonEmptyList
-import com.bones.bson.{BsonPrimitiveValidator, BsonValidatorInterpreter}
+import com.bones.bson.BsonPrimitiveValidator
 import com.bones.data.Error
 import com.bones.data.Error.RequiredValue
 import com.bones.data.values.CustomStringValue
@@ -17,9 +17,9 @@ trait BsonCustomStringValidator
       bson match {
         case Some(bsonVal) =>
           BsonPrimitiveValidator
-            .extractString(Right(alg), classOf[String])(bsonVal, path)
+            .extractString(Right(alg), "String")(bsonVal, path)
             .asInstanceOf[Either[NonEmptyList[Error.ExtractionError], A]]
-        case None => Left(NonEmptyList.one(RequiredValue.fromDef(path, Right(alg))))
+        case None => Left(NonEmptyList.one(RequiredValue(path, alg.typeName)))
 
     }
 }
