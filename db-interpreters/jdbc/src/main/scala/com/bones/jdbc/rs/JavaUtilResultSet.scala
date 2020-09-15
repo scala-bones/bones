@@ -14,7 +14,7 @@ trait JavaUtilResultSet extends ResultSetValue[JavaUtilValue] {
     alg match {
       case uu: UuidData =>
         (path, fieldName) => rs =>
-          catchSql[String](rs.getString(fieldName), path, uu)
+          catchSql[String](rs.getString(fieldName), uu.typeName, path, uu)
             .flatMap(str => stringToUuid(str, path))
 
     }

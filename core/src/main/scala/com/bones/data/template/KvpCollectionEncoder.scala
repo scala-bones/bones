@@ -101,8 +101,9 @@ trait KvpCollectionEncoder[ALG[_], OUT] {
         o match {
           case Inl(a) => {
             val out = headF(a)
-            val manifest = KvpCollection.headManifest(kvpCoproductCollectionHead.kvpCollection)
-            val typeName = manifest.map(_.runtimeClass.getSimpleName).getOrElse("unknown")
+            val typeName = KvpCollection
+              .headTypeName(kvpCoproductCollectionHead.kvpCollection)
+              .getOrElse("unknown")
             addStringField(out, coproductTypeKey, typeName)
           }
           case Inr(tail) => tailF(tail)

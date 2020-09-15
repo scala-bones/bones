@@ -103,12 +103,13 @@ object Util {
   /** Convert the String to an Enumeration using scala.Enumeration.withName returning Left[NonEmptyList[ExtractionError],Object]
     * if there is an parse error.
     */
-  def stringToEnumeration[E <: Enumeration, V](str: String, path: List[String], enumeration: E)(
-    implicit manifest: Manifest[V])
-    : Either[NonEmptyList[CanNotConvert[String, V]], enumeration.Value] =
+  def stringToEnumeration[E <: Enumeration, V](
+    str: String,
+    path: List[String],
+    enumeration: E): Either[NonEmptyList[CanNotConvert[String, V]], enumeration.Value] =
     try {
-      val clazz = manifest.runtimeClass.asInstanceOf[Class[enumeration.Value]]
-      Right(clazz.cast(enumeration.withName(str)))
+//      val clazz = manifest.runtimeClass.asInstanceOf[Class[enumeration.Value]]
+      Right(enumeration.withName(str))
     } catch {
       case e: NoSuchElementException =>
         Left(

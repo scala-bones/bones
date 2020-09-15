@@ -15,11 +15,11 @@ trait JavaTimeResultSet extends ResultSetValue[JavaTimeValue] {
     alg match {
       case ld: LocalDateData =>
         (path, fieldName) => rs =>
-          catchSql(rs.getDate(fieldName, utcCalendar), path, ld)
+          catchSql(rs.getDate(fieldName, utcCalendar), ld.typeName, path, ld)
             .map(date => date.toLocalDate)
       case dd: LocalDateTimeData =>
         (path, fieldName) => rs =>
-          catchSql(rs.getDate(fieldName, utcCalendar), path, dd)
+          catchSql(rs.getDate(fieldName, utcCalendar), dd.typeName, path, dd)
             .map(date =>
               LocalDateTime.ofInstant(new Date(date.getTime).toInstant, ZoneId.of("UTC")))
       case _ => ??? // TODO

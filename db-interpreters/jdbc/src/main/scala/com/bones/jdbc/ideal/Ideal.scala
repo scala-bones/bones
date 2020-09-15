@@ -1,6 +1,6 @@
 package com.bones.jdbc.ideal
 
-import com.bones.data.KvpCollection.headManifest
+import com.bones.data.KvpCollection.headTypeName
 import com.bones.data.template.KvpCollectionMatch
 import com.bones.data.{ConcreteValueTemplate, _}
 import com.bones.jdbc.DbUtil
@@ -14,7 +14,8 @@ trait Ideal[ALG[_]] extends KvpCollectionMatch[ALG, TableCollection => TableColl
   val addColumnToWorkingTable = new ConcreteValueTemplate[
     ALG,
     (TableCollection, ColumnName, Option[Description]) => TableCollection] {
-    override protected def optionalToOut[B: Manifest](opt: OptionalValue[ALG, B])
+
+    override protected def optionalToOut[B](opt: OptionalValue[ALG, B])
       : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
       opt.valueDefinitionOp match {
         case Left(collection) => fromConcreteValue(collection)
@@ -32,24 +33,22 @@ trait Ideal[ALG[_]] extends KvpCollectionMatch[ALG, TableCollection => TableColl
       * @tparam B The right type
       * @return A function to create the tables.
       */
-    override protected def eitherToOut[A: Manifest, B: Manifest](either: EitherData[ALG, A, B])
+    override protected def eitherToOut[A, B](either: EitherData[ALG, A, B])
       : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
       val fa = determineValueDefinition(either.definitionA)
       val fb = determineValueDefinition(either.definitionB)
 
       (tc, columnName, desc) =>
         {
-          val fullNameOfA = columnName + "_" + DbUtil.camelToSnake(
-            either.manifestOfRight.runtimeClass.getSimpleName)
-          val fullNameOfB = columnName + "_" + DbUtil.camelToSnake(
-            either.manifestOfLeft.runtimeClass.getSimpleName)
+          val fullNameOfA = columnName + "_" + DbUtil.camelToSnake(either.typeNameOfA)
+          val fullNameOfB = columnName + "_" + DbUtil.camelToSnake(either.typeNameOfB)
           val a = fa.apply(tc, fullNameOfA, desc)
           fb.apply(a, fullNameOfB, desc)
         }
 
     }
 
-    override protected def listToOut[A: Manifest](list: ListData[ALG, A])
+    override protected def listToOut[A](list: ListData[ALG, A])
       : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
       list.tDefinition match {
         case Left(col) => fromConcreteValue(col)
@@ -138,10 +137,7 @@ trait Ideal[ALG[_]] extends KvpCollectionMatch[ALG, TableCollection => TableColl
     dataDefinition match {
       case Left(primitiveWrapper) =>
         (tc, name, desc) =>
-          addColumnToWorkingTable.fromConcreteValue(primitiveWrapper)(primitiveWrapper.manifestOfA)(
-            tc,
-            name,
-            desc)
+          addColumnToWorkingTable.fromConcreteValue(primitiveWrapper)(tc, name, desc)
       case Right(alg) => algInterpreter.columns(alg)
     }
   }
@@ -169,8 +165,7 @@ trait Ideal[ALG[_]] extends KvpCollectionMatch[ALG, TableCollection => TableColl
     name: Option[String] = None,
     description: Option[String] = None): TableCollection = {
     val tableName =
-      DbUtil.camelToSnake(
-        headManifest(schema).map(_.runtimeClass.getSimpleName).getOrElse("unknown"))
+      DbUtil.camelToSnake(headTypeName(schema).getOrElse("Unknown"))
     val tableCol = TableCollection.init(tableName, description)
     fromKvpCollection(schema).apply(tableCol)
   }

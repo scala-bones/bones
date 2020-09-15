@@ -1,25 +1,18 @@
 package com.bones.bson
 
 import cats.data.NonEmptyList
-import cats.syntax.all._
 import com.bones.data.Error._
 import com.bones.data._
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
-import reactivemongo.bson.buffer.ArrayReadableBuffer
 import reactivemongo.bson.{
   BSONArray,
   BSONBoolean,
-  BSONDecimal,
   BSONDocument,
   BSONDouble,
-  BSONInteger,
-  BSONLong,
   BSONNull,
   BSONString,
   BSONValue
 }
-
-import scala.util.Try
 
 /**
   * Module responsible for validating data from BSON and convering to Values.
@@ -43,7 +36,7 @@ trait BsonValidatorInterpreter[ALG[_]]
 
   override def invalidValue[T](
     bson: BSONValue,
-    expected: Class[T],
+    typeName: String,
     path: List[String]): Left[NonEmptyList[ExtractionError], Nothing] = {
     val invalid = bson match {
       case _: BSONBoolean  => classOf[Boolean]
@@ -53,7 +46,7 @@ trait BsonValidatorInterpreter[ALG[_]]
       case _: BSONDocument => classOf[Object]
       case _               => classOf[Any]
     }
-    Left(NonEmptyList.one(WrongTypeError(path, expected, invalid, None)))
+    Left(NonEmptyList.one(WrongTypeError(path, typeName, invalid.getSimpleName, None)))
   }
 
   override def headValue[A](
@@ -65,7 +58,7 @@ trait BsonValidatorInterpreter[ALG[_]]
       case doc: BSONDocument =>
         val fields = doc.elements
         headInterpreter(fields.find(_.name == kv.key).map(_.value), path)
-      case _ => invalidValue(in, classOf[BSONDocument], path)
+      case _ => invalidValue(in, kv.typeName, path)
     }
 
   }

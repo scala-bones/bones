@@ -114,14 +114,14 @@ object ExtractionErrorEncoder {
       validationErrorToHList)
 
   def requiredValueHList(requiredValue: RequiredValue[_]): String :: String :: HNil = {
-    requiredValue.path.mkString(".") :: requiredValue.description :: HNil
+    requiredValue.path.mkString(".") :: requiredValue.typeName :: HNil
   }
 
   def wrongTypeToHList(wrongTypeError: WrongTypeError[_])
     : String :: String :: String :: Option[String] :: Option[String] :: HNil = {
     wrongTypeError.path.mkString(".") ::
-      wrongTypeError.providedType.getSimpleName ::
-      wrongTypeError.expectedType.getSimpleName ::
+      wrongTypeError.providedType ::
+      wrongTypeError.expectedType ::
       wrongTypeError.cause.map(_.getMessage) ::
       wrongTypeError.cause.map(_.getStackTrace.mkString("\n")) ::
       HNil
@@ -209,7 +209,7 @@ trait ExtractionErrorEncoder[OUT]
   val scalaCoreInterpreter: ScalaCoreEncoder[OUT]
 
   def requiredValueToHList(requiredValue: RequiredValue[_]): String :: String :: HNil = {
-    requiredValue.path.mkString(".") :: requiredValue.description :: HNil
+    requiredValue.path.mkString(".") :: requiredValue.typeName :: HNil
   }
 
   def requiredValueSchema =

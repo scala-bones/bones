@@ -132,7 +132,7 @@ trait KvpCollectionValidateAndDecode[ALG[_], IN] {
           val fTail = nestedKvpCoproduct[r](co.kvpTail)
           (in, path, coType) =>
             {
-              if (coType == co.manifestOfHead.runtimeClass.getSimpleName)
+              if (coType == co.typeNameOfA)
                 fValue(in, path).map(Inl(_).asInstanceOf[C2])
               else fTail(in, path, coType).map(Inr(_).asInstanceOf[C2])
             }
@@ -144,7 +144,7 @@ trait KvpCollectionValidateAndDecode[ALG[_], IN] {
       {
         coproductType(in) match {
           case None =>
-            Left(NonEmptyList.one(RequiredValue(path, s"${headCoproduct.manifestOfHead}")))
+            Left(NonEmptyList.one(RequiredValue(path, s"${headCoproduct.typeNameOfA}")))
           case Some(typeString) => nextedF(in, path, typeString)
         }
       }

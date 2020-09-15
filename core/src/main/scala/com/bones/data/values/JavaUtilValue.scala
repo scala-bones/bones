@@ -2,14 +2,12 @@ package com.bones.data.values
 
 import java.util.UUID
 
-import com.bones.PrimitiveValue
+import com.bones.{PrimitiveValue, PrimitiveValueManifestTypeName}
 import com.bones.validation.ValidationDefinition.ValidationOp
 import shapeless.Coproduct
 import shapeless.ops.coproduct.Inject
 
-abstract class JavaUtilValue[A: Manifest] extends PrimitiveValue[A] {
-  override val manifestOfA: Manifest[A] = manifest[A]
-}
+abstract class JavaUtilValue[A: Manifest] extends PrimitiveValueManifestTypeName[A]
 
 final case class UuidData(validations: List[ValidationOp[UUID]]) extends JavaUtilValue[UUID]
 

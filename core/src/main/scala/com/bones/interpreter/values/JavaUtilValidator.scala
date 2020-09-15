@@ -1,16 +1,10 @@
 package com.bones.interpreter.values
 
-import java.util.UUID
-
 import cats.data.NonEmptyList
 import com.bones.Util.stringToUuid
 import com.bones.data.Error
 import com.bones.data.values.{JavaUtilValue, UuidData}
-import com.bones.interpreter.{
-  InterchangeFormatPrimitiveValidator,
-  InterchangeFormatValidatorValue,
-  KvpInterchangeFormatValidatorInterpreter
-}
+import com.bones.interpreter.{InterchangeFormatPrimitiveValidator, InterchangeFormatValidatorValue}
 
 trait JavaUtilValidator[IN] extends InterchangeFormatValidatorValue[JavaUtilValue, IN] {
 
@@ -22,9 +16,10 @@ trait JavaUtilValidator[IN] extends InterchangeFormatValidatorValue[JavaUtilValu
       case UuidData(validations) => {
         baseValidator.required(
           Right(alg),
+          alg.typeName,
           validations,
           (in, path) =>
-            baseValidator.extractString(alg, classOf[UUID])(in, path).flatMap(stringToUuid(_, path))
+            baseValidator.extractString(alg, alg.typeName)(in, path).flatMap(stringToUuid(_, path))
         )
       }
     }

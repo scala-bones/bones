@@ -142,9 +142,8 @@ object CustomStringValue {
 
 }
 
-sealed abstract class CustomStringValue[A: Manifest] extends PrimitiveValue[String] {
-  val manifestOfA: Manifest[String] = manifest[String]
-
+sealed abstract class CustomStringValue[A] extends PrimitiveValue[String] {
+  override val typeName: String = "String"
   val validations: List[ValidationOp[String]]
 
   val customValidation: ValidationOp[String]

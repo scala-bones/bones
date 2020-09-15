@@ -4,12 +4,12 @@ import java.sql.Connection
 
 import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionError, NotFound, SystemError}
-import com.bones.data.KvpCollection.headManifest
-import com.bones.data.{KvpCollection, KvpCollectionValue, HigherOrderValue}
+import com.bones.data.KvpCollection
+import com.bones.data.KvpCollection.headTypeName
 import com.bones.jdbc.DbUtil.{camelToSnake, withStatement}
 import com.bones.jdbc.column.ColumnNameInterpreter
 import com.bones.jdbc.rs.ResultSetInterpreter
-import com.bones.jdbc.update.{DbUpdate, JdbcStatementInterpreter, UpdateStatementValue}
+import com.bones.jdbc.update.JdbcStatementInterpreter
 import shapeless.HNil
 
 import scala.util.control.NonFatal
@@ -34,7 +34,7 @@ trait DbGetInterpreter[ALG[_]] {
     idDefinition: IdDefinition[ALG, ID],
   ): ID => Connection => Either[NonEmptyList[ExtractionError], (ID, A)] = {
 
-    val entityName = headManifest(schema).map(_.runtimeClass.getSimpleName).getOrElse("unknown")
+    val entityName = headTypeName(schema).getOrElse("Unknown")
     val tableName = camelToSnake(entityName)
     val resultSetF =
       resultSetInterpreter

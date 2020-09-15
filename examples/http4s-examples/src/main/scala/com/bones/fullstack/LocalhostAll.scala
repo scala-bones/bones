@@ -63,7 +63,7 @@ object LocalhostAllIOApp {
     }
   }
 
-  def serviceRoutesWithCrudMiddleware[A, ID: Manifest](
+  def serviceRoutesWithCrudMiddleware[A: Manifest, ID: Manifest](
     interpreters: InterpreterConfig[DefaultValues, ID],
     path: String,
     schema: KvpCollection[DefaultValues, A],

@@ -5,7 +5,7 @@ import java.sql._
 import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionError, SystemError}
 import com.bones.data.KeyDefinition.CoproductDataDefinition
-import com.bones.data.KvpCollection.headManifest
+import com.bones.data.KvpCollection.headTypeName
 import com.bones.data._
 import com.bones.data.template.KvpCollectionFunctor
 import com.bones.jdbc.DbUtil._
@@ -45,8 +45,7 @@ trait DbInsert[ALG[_]]
     collection: KvpCollection[ALG, A],
     idSchema: KvpCollection[ALG, ID])
     : A => Connection => Either[NonEmptyList[ExtractionError], (ID, A)] = {
-    val tableName = camelToSnake(
-      headManifest(collection).map(_.runtimeClass.getSimpleName).getOrElse("unknown"))
+    val tableName = camelToSnake(headTypeName(collection).getOrElse("Unknown"))
     val updates = fromKvpCollection(collection)
     val rs = resultSetInterpreter.fromKvpCollection(idSchema)
     a: A =>
