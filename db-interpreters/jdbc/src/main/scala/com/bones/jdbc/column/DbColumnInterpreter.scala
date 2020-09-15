@@ -1,7 +1,7 @@
 package com.bones.jdbc.column
 
 import com.bones.data.KeyDefinition.CoproductDataDefinition
-import com.bones.data.KvpCollection.headManifest
+import com.bones.data.KvpCollection.headTypeName
 import com.bones.data._
 import com.bones.data.template.KvpCollectionMatch
 import com.bones.jdbc.DbUtil.camelToSnake
@@ -15,8 +15,7 @@ trait DbColumnInterpreter[ALG[_]] extends KvpCollectionMatch[ALG, List[Column]] 
   def tableDefinitionCustomAlgebra[A](collection: KvpCollection[ALG, A]): String = {
     def nullableString(nullable: Boolean) = if (nullable) "" else " not null"
     val result = fromKvpCollection(collection)
-    val tableName = camelToSnake(
-      headManifest(collection).map(_.runtimeClass.getSimpleName).getOrElse("unknown"))
+    val tableName = camelToSnake(headTypeName(collection).getOrElse("Unknown"))
     val columnsWithId = Column("id", "SERIAL", false) :: result
     val columnString = columnsWithId
       .map(c => s"${c.name} ${c.columnDefinition}${nullableString(c.nullable)}")

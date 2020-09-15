@@ -28,12 +28,13 @@ package object rs {
 
   def catchSql[A](
     f: => A,
+    typeName: String,
     path: Path,
     op: PrimitiveValue[_]): Either[NonEmptyList[ExtractionError], A] =
     try {
       val result = f
       if (result == null) {
-        Left(NonEmptyList.one(RequiredValue.fromDef(path, Right(op))))
+        Left(NonEmptyList.one(RequiredValue(path, typeName)))
       } else {
         Right(result)
       }

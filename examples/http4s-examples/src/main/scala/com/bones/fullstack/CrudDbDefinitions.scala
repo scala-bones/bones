@@ -17,7 +17,7 @@ import javax.sql.DataSource
   * @param ds
   * @tparam A
   */
-case class CrudDbDefinitions[ALG[_], A, ID](
+case class CrudDbDefinitions[ALG[_], A: Manifest, ID](
   schema: KvpCollection[ALG, A],
   idDef: IdDefinition[ALG, ID],
   dbGet: DbGetInterpreter[ALG],
@@ -30,7 +30,7 @@ case class CrudDbDefinitions[ALG[_], A, ID](
   // TODO: deal with error better
   val searchF: Stream[IO, (ID, A)] = {
     dbSearch
-      .getEntity(schema, idDef)(ds)
+      .getEntity(schema, idDef)(manifest[A])(ds)
       .flatMap({
         case Left(errO) => Stream.empty
         case Right(ro) =>

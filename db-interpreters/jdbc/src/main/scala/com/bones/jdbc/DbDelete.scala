@@ -4,11 +4,10 @@ import java.sql.Connection
 
 import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionError, SystemError}
-import com.bones.data.KvpCollection.headManifest
-import com.bones.data.{KvpCollection, KvpCollectionValue, HigherOrderValue}
+import com.bones.data.KvpCollection
+import com.bones.data.KvpCollection.headTypeName
 import com.bones.jdbc.DbUtil.{camelToSnake, withStatement}
-import com.bones.jdbc.rs.{ResultSetInterpreter, ResultSetValue}
-import com.bones.jdbc.update.{DbUpdate, JdbcStatementInterpreter, UpdateStatementValue}
+import com.bones.jdbc.update.JdbcStatementInterpreter
 import shapeless.HNil
 
 import scala.util.control.NonFatal
@@ -31,8 +30,7 @@ trait DbDelete[ALG[_]] {
     schema: KvpCollection[ALG, A],
     idDef: IdDefinition[ALG, ID],
   ): ID => Connection => Either[NonEmptyList[ExtractionError], (ID, A)] = {
-    val tableName = camelToSnake(
-      headManifest(schema).map(_.runtimeClass.getSimpleName).getOrElse("unknown"))
+    val tableName = camelToSnake(headTypeName(schema).getOrElse("Unknown"))
     val updateF =
       jdbcStatementInterpreter.fromKvpCollection(idDef.asSchema)(1)
     val sql =

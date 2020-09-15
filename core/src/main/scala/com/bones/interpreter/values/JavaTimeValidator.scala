@@ -33,7 +33,6 @@ object JavaTimeValidator {
   def parseTime[ALG[_], A, OUT](
     baseValidator: InterchangeFormatPrimitiveValidator[OUT],
     javaTimeAlgebra: JavaTimeValue[A],
-    clazz: Class[A],
     f: String => A,
     validations: List[ValidationOp[A]]
   ): (Option[OUT], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] = {
@@ -42,11 +41,11 @@ object JavaTimeValidator {
         jsonOpt match {
           case Some(json) =>
             baseValidator
-              .extractString(javaTimeAlgebra, clazz)(json, path)
+              .extractString(javaTimeAlgebra, javaTimeAlgebra.typeName)(json, path)
               .flatMap(result => errorHandleTimeParsing(path, f, result))
               .flatMap(result => ValidationUtil.validate(validations)(result, path))
           case None =>
-            Left(NonEmptyList.one(RequiredValue.fromDef(path, Right(javaTimeAlgebra))))
+            Left(NonEmptyList.one(RequiredValue(path, javaTimeAlgebra.typeName)))
         }
       }
   }
@@ -64,7 +63,7 @@ object JavaTimeValidator {
             .map(result => Year.of(result))
             .flatMap(result => ValidationUtil.validate(validations)(result, path))
         case None =>
-          Left(NonEmptyList.one(RequiredValue.fromDef(path, Right(javaTimeValue))))
+          Left(NonEmptyList.one(RequiredValue(path, javaTimeValue.typeName)))
       }
     }
 }
@@ -87,28 +86,21 @@ trait JavaTimeValidator[IN] extends InterchangeFormatValidatorValue[JavaTimeValu
 
     alg match {
       case d: DateTimeExceptionData =>
-        parseTime(
-          baseValidator,
-          alg,
-          classOf[DateTimeException],
-          input => new DateTimeException(input),
-          d.validations)
+        parseTime(baseValidator, alg, input => new DateTimeException(input), d.validations)
       case d: DayOfWeekData =>
-        parseTime(baseValidator, alg, classOf[DayOfWeek], DayOfWeek.valueOf, d.validations)
+        parseTime(baseValidator, alg, DayOfWeek.valueOf, d.validations)
       case d: DurationData =>
-        parseTime(baseValidator, alg, classOf[Duration], Duration.parse, d.validations)
+        parseTime(baseValidator, alg, Duration.parse, d.validations)
       case i: InstantData =>
         parseTime(
           baseValidator,
           alg,
-          classOf[Instant],
           input => Instant.from(instantFormatter.parse(input)),
           i.validations)
       case op @ LocalDateTimeData(validations) =>
         parseTime(
           baseValidator,
           alg,
-          classOf[LocalDateTime],
           LocalDateTime.parse(_, localDateTimeFormatter),
           op.validations
         )
@@ -116,7 +108,6 @@ trait JavaTimeValidator[IN] extends InterchangeFormatValidatorValue[JavaTimeValu
         parseTime(
           baseValidator,
           alg,
-          classOf[LocalDate],
           LocalDate.parse(_, localDateFormatter),
           op.validations
         )
@@ -124,44 +115,32 @@ trait JavaTimeValidator[IN] extends InterchangeFormatValidatorValue[JavaTimeValu
         parseTime(
           baseValidator,
           alg,
-          classOf[LocalTime],
           LocalTime.parse(_, localTimeFormatter),
           op.validations
         )
       case m: MonthData =>
-        parseTime(baseValidator, alg, classOf[Month], Month.valueOf, m.validations)
+        parseTime(baseValidator, alg, Month.valueOf, m.validations)
       case m: MonthDayData =>
-        parseTime(baseValidator, alg, classOf[MonthDay], MonthDay.parse, m.validations)
+        parseTime(baseValidator, alg, MonthDay.parse, m.validations)
       case o: OffsetDateTimeData =>
         parseTime(
           baseValidator,
           alg,
-          classOf[OffsetDateTime],
           OffsetDateTime.parse(_, offsetDateTimeFormatter),
           o.validations)
       case o: OffsetTimeData =>
-        parseTime(
-          baseValidator,
-          alg,
-          classOf[OffsetTime],
-          OffsetTime.parse(_, offsetTimeFormatter),
-          o.validations)
+        parseTime(baseValidator, alg, OffsetTime.parse(_, offsetTimeFormatter), o.validations)
       case p: PeriodData =>
-        parseTime(baseValidator, alg, classOf[Period], Period.parse, p.validations)
+        parseTime(baseValidator, alg, Period.parse, p.validations)
       case y: YearData => parseYear(baseValidator, alg, y.validations)
       case y: YearMonthData =>
-        parseTime(baseValidator, alg, classOf[YearMonth], YearMonth.parse, y.validations)
+        parseTime(baseValidator, alg, YearMonth.parse, y.validations)
       case z: ZoneIdData =>
-        parseTime(baseValidator, alg, classOf[ZoneId], ZoneId.of, z.validations)
+        parseTime(baseValidator, alg, ZoneId.of, z.validations)
       case z: ZonedDateTimeData =>
-        parseTime(
-          baseValidator,
-          alg,
-          classOf[ZonedDateTime],
-          ZonedDateTime.parse(_, zonedDateTimeFormatter),
-          z.validations)
+        parseTime(baseValidator, alg, ZonedDateTime.parse(_, zonedDateTimeFormatter), z.validations)
       case z: ZoneOffsetData =>
-        parseTime(baseValidator, alg, classOf[ZoneOffset], ZoneOffset.of, z.validations)
+        parseTime(baseValidator, alg, ZoneOffset.of, z.validations)
     }
   }
 

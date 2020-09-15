@@ -26,7 +26,7 @@ trait CirceValidatorInterpreter[ALG[_]]
   override def isEmpty(json: Json): Boolean = json.isNull
   override def invalidValue[T](
     json: Json,
-    expected: Class[T],
+    typeName: String,
     path: List[String]): Left[NonEmptyList[WrongTypeError[T]], Nothing] = {
     val invalid = json.fold(
       classOf[Nothing],
@@ -36,7 +36,7 @@ trait CirceValidatorInterpreter[ALG[_]]
       _ => classOf[Array[_]],
       _ => classOf[Object]
     )
-    Left(NonEmptyList.one(WrongTypeError(path, expected, invalid, None)))
+    Left(NonEmptyList.one(WrongTypeError(path, typeName, invalid.getSimpleName, None)))
   }
 
   override def headValue[A](
@@ -49,7 +49,7 @@ trait CirceValidatorInterpreter[ALG[_]]
         val fields = jsonObj.toList
         headInterpreter(fields.find(_._1 == kv.key).map(_._2), path)
       case None =>
-        Left(NonEmptyList.one(WrongTypeError(path, classOf[Object], in.getClass, None)))
+        Left(NonEmptyList.one(WrongTypeError(path, kv.typeName, in.getClass.getSimpleName, None)))
     }
 
   def generateByteArrayValidator[A](

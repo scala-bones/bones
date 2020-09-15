@@ -6,7 +6,7 @@ import com.bones.data._
 import com.bones.data.template.KvpCollectionMatch
 import com.bones.data.values.AnyAlg
 import com.bones.jdbc.DbUtil.camelToSnake
-import shapeless.{Coproduct, HList, Nat, ::}
+import shapeless.{::, Coproduct, HList, Nat}
 
 object FindInterpreter {
 
@@ -20,18 +20,20 @@ object TableName {
 
   def getTableName[ALG[_], B](dc: KvpCollection[ALG, B]): String = dc match {
     case wrapped: WrappedEncoding[ALG, B] =>
-      camelToSnake(wrapped.manifestOfA.runtimeClass.getSimpleName)
-    case _ => "unknown"
+      camelToSnake(wrapped.typeNameOfA)
+    case _ => "Unknown"
+  }
+}
+
+object FieldNames {
+  trait CustomFieldNamesInterpreter[ALG[_]] {
+    def fieldNames[A](alg: ALG[A]): List[String]
   }
 }
 
 trait FieldNames[ALG[_]] extends KvpCollectionMatch[ALG, List[String]] {
 
-  def customFieldNamesInterpreter: CustomFieldNamesInterpreter[ALG]
-
-  trait CustomFieldNamesInterpreter[ALG[_]] {
-    def fieldNames[A](alg: ALG[A]): List[String]
-  }
+  def customFieldNamesInterpreter: FieldNames.CustomFieldNamesInterpreter[ALG]
 
   def fromCustomSchema[A](dc: KvpCollection[ALG, A]): List[String] = fromKvpCollection(dc)
 

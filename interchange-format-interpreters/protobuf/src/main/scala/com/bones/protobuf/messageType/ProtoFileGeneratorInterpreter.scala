@@ -1,6 +1,6 @@
 package com.bones.protobuf.messageType
 
-import com.bones.data.KvpCollection.headManifest
+import com.bones.data.KvpCollection.headTypeName
 import com.bones.data._
 import com.bones.data.template.KvpCollectionMatch
 import shapeless.{::, Coproduct, HList, Nat}
@@ -125,10 +125,7 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
     dc: KvpCollection[ALG, A]
   ): Message = {
     val (messageFields, nestedTypes, _) = fromKvpCollection(dc).apply(0)
-    Message(
-      headManifest(dc).map(_.runtimeClass.getSimpleName).getOrElse("unknown"),
-      messageFields,
-      nestedTypes)
+    Message(headTypeName(dc).getOrElse("unknown"), messageFields, nestedTypes)
   }
 
   override def kvpCoproduct[C <: Coproduct](
@@ -161,8 +158,7 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
       case op: KvpCoproductCollectionHead[ALG, a, c, o] @unchecked => {
         val left = fromKvpCollection(op.kvpCollection)(0)
         val name = KvpCollection
-          .headManifest(op.kvpCollection)
-          .map(_.runtimeClass.getSimpleName)
+          .headTypeName(op.kvpCollection)
           .getOrElse("unknown")
         val tailF = eachKvpCoproduct(op.kvpTail)
         lastIndex =>

@@ -32,8 +32,8 @@ object Error {
     */
   final case class WrongTypeError[T](
     path: List[String],
-    expectedType: Class[T],
-    providedType: Class[_],
+    expectedType: String,
+    providedType: String,
     cause: Option[Throwable])
       extends ExtractionError
 
@@ -58,22 +58,10 @@ object Error {
   /** Used when a required piece of data is missing
     *
     * @param path                    The path within the schema to the offending definition
-    * @param description The description of the required value
+    * @param typeName The description of the required value
     * @tparam A The type of the required value
     */
-  final case class RequiredValue[A](path: List[String], description: String) extends ExtractionError
-
-  object RequiredValue {
-    def fromDef[ALG[_], A](
-      path: List[String],
-      dataDefinition: Either[HigherOrderValue[ALG, A], ALG[A]]): RequiredValue[A] = {
-      val description: String = dataDefinition match {
-        case Left(x)  => x.manifestOfA.runtimeClass.getSimpleName
-        case Right(x) => x.getClass.getSimpleName
-      }
-      RequiredValue(path, description)
-    }
-  }
+  final case class RequiredValue[A](path: List[String], typeName: String) extends ExtractionError
 
   final case class SumTypeError(path: List[String], problem: String) extends ExtractionError
 

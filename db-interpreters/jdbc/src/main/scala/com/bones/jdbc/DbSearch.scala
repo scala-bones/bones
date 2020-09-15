@@ -5,11 +5,11 @@ import java.sql.{Connection, ResultSet}
 import cats.data.NonEmptyList
 import cats.effect.IO
 import com.bones.data.Error.ExtractionError
-import com.bones.data.KvpCollection.headManifest
-import com.bones.data.{KvpCollection, KvpCollectionValue, KvpWrappedHList, HigherOrderValue}
+import com.bones.data.KvpCollection
+import com.bones.data.KvpCollection.headTypeName
 import com.bones.jdbc.DbUtil.camelToSnake
 import com.bones.jdbc.column.ColumnNameInterpreter
-import com.bones.jdbc.rs.{ResultSetInterpreter, ResultSetValue => ResultSetCustomInterpreter}
+import com.bones.jdbc.rs.ResultSetInterpreter
 import fs2.Stream
 import fs2.Stream.bracket
 import javax.sql.DataSource
@@ -19,7 +19,7 @@ trait DbSearch[ALG[_]] {
   def resultSetInterpreter: ResultSetInterpreter[ALG]
   def columnNameInterpreter: ColumnNameInterpreter[ALG]
 
-  def getEntity[A, ID](
+  def getEntity[A: Manifest, ID](
     schema: KvpCollection[ALG, A],
     idDef: IdDefinition[ALG, ID]
   ): DataSource => Stream[IO, Either[NonEmptyList[ExtractionError], (ID, A)]] = {
@@ -43,12 +43,11 @@ trait DbSearch[ALG[_]] {
     }
   }
 
-  def searchEntityWithConnection[A, ID](
+  def searchEntityWithConnection[A: Manifest, ID](
     schema: KvpCollection[ALG, A],
     idDef: IdDefinition[ALG, ID]
   ): Connection => Stream[IO, Either[NonEmptyList[ExtractionError], (ID, A)]] = {
-    val tableName = camelToSnake(
-      headManifest(schema).map(_.runtimeClass.getSimpleName).getOrElse("unknown"))
+    val tableName = camelToSnake(headTypeName(schema).getOrElse("Unknown"))
     val schemaWithId: KvpCollection[ALG, (ID, A)] = idDef.prependSchema(schema)
 
     val resultSetF: ResultSet => Either[NonEmptyList[ExtractionError], (ID, A)] =

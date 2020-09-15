@@ -200,26 +200,26 @@ trait JavaTimeValidator extends ProtobufValidatorValue[JavaTimeValue] {
   override def extractFromProto[A](alg: JavaTimeValue[A]): ExtractFromProto[A] =
     alg match {
       case dt: DateTimeExceptionData =>
-        stringDataWithFlatMap(dt, stringToDateTimeException, dt.validations)
-      case dt: DayOfWeekData      => intDataWithFlatMap(dt, intToDayOfWeek, dt.validations)
-      case dd: DurationData       => stringDataWithFlatMap(dd, stringToDuration, dd.validations)
+        stringDataWithFlatMap(dt.typeName, stringToDateTimeException, dt.validations)
+      case dt: DayOfWeekData      => intDataWithFlatMap(intToDayOfWeek, dt.validations)
+      case dd: DurationData       => stringDataWithFlatMap(dd.typeName, stringToDuration, dd.validations)
       case id: InstantData        => timestampWithMap(timestampToInstant, id.validations)
       case dd: LocalDateTimeData  => localDateTimeData(dd, defaultZoneOffset, dd.validations)
-      case dt: LocalDateData      => longDataWithFlatMap(dt, longToLocalDate, dt.validations)
-      case lt: LocalTimeData      => longDataWithFlatMap(lt, longToLocalTime, lt.validations)
-      case md: MonthData          => intDataWithFlatMap(md, intToMonth, md.validations)
-      case md: MonthDayData       => intDataWithFlatMap(md, intToMonthDay, md.validations)
+      case dt: LocalDateData      => longDataWithFlatMap(longToLocalDate, dt.validations)
+      case lt: LocalTimeData      => longDataWithFlatMap(longToLocalTime, lt.validations)
+      case md: MonthData          => intDataWithFlatMap(intToMonth, md.validations)
+      case md: MonthDayData       => intDataWithFlatMap(intToMonthDay, md.validations)
       case dt: OffsetDateTimeData => ??? // TODO
 //        valueDefThenValidation(offsetDateTimeSchema, dt.validations)
       case dt: OffsetTimeData => ??? // TODO
 //        valueDefThenValidation(offsetTimeSchema, dt.validations)
-      case pd: PeriodData        => stringDataWithFlatMap(pd, stringToPeriod, pd.validations)
-      case yd: YearData          => intDataWithFlatMap(yd, intToYear, yd.validations)
-      case ym: YearMonthData     => longDataWithFlatMap(ym, longToYearMonth, ym.validations)
+      case pd: PeriodData        => stringDataWithFlatMap(pd.typeName, stringToPeriod, pd.validations)
+      case yd: YearData          => intDataWithFlatMap(intToYear, yd.validations)
+      case ym: YearMonthData     => longDataWithFlatMap(longToYearMonth, ym.validations)
       case zd: ZonedDateTimeData => ??? // TODO
 //        valueDefThenValidation(zonedDateTimeSchema, zd.validations)
-      case zi: ZoneIdData     => stringDataWithFlatMap(zi, stringToZoneId, zi.validations)
-      case zo: ZoneOffsetData => intDataWithFlatMap(zo, intToZoneOffset, zo.validations)
+      case zi: ZoneIdData     => stringDataWithFlatMap(zi.typeName, stringToZoneId, zi.validations)
+      case zo: ZoneOffsetData => intDataWithFlatMap(intToZoneOffset, zo.validations)
     }
 
 }

@@ -4,11 +4,7 @@ import cats.data.NonEmptyList
 import com.bones.data.Error
 import com.bones.data.Error.RequiredValue
 import com.bones.data.values.CustomStringValue
-import com.bones.interpreter.{
-  InterchangeFormatPrimitiveValidator,
-  InterchangeFormatValidatorValue,
-  KvpInterchangeFormatValidatorInterpreter
-}
+import com.bones.interpreter.{InterchangeFormatPrimitiveValidator, InterchangeFormatValidatorValue}
 import com.bones.validation.ValidationUtil
 
 trait CustomStringValidator[IN] extends InterchangeFormatValidatorValue[CustomStringValue, IN] {
@@ -22,7 +18,7 @@ trait CustomStringValidator[IN] extends InterchangeFormatValidatorValue[CustomSt
         in match {
           case Some(json) =>
             baseValidator
-              .extractString(alg, classOf[String])(json, path)
+              .extractString(alg, alg.typeName)(json, path)
               .flatMap(result => {
                 val allValidations = alg.customValidation :: alg.validations
                 ValidationUtil
@@ -30,7 +26,7 @@ trait CustomStringValidator[IN] extends InterchangeFormatValidatorValue[CustomSt
                   .asInstanceOf[Either[NonEmptyList[Error.ExtractionError], A]]
               })
           case None =>
-            Left(NonEmptyList.one(RequiredValue.fromDef(path, Right(alg))))
+            Left(NonEmptyList.one(RequiredValue(path, alg.typeName)))
         }
       }
   }

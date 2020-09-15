@@ -5,9 +5,11 @@ import com.bones.swagger.SwaggerCoreInterpreter
 import com.bones.swagger.SwaggerCoreInterpreter.{CustomSwaggerInterpreter, Name}
 import io.swagger.v3.oas.models.media.Schema
 
-trait ScalaCoreInterpreter extends CustomSwaggerInterpreter[ScalaCoreValue]{
-  override def toSchema[A](scv: ScalaCoreValue[A], description: Option[String], example: Option[A]):
-    Name => SwaggerCoreInterpreter.SwaggerSchemas[Schema[_]] = {
+trait ScalaCoreInterpreter extends CustomSwaggerInterpreter[ScalaCoreValue] {
+  override def toSchema[A](
+    scv: ScalaCoreValue[A],
+    description: Option[String],
+    example: Option[A]): Name => SwaggerCoreInterpreter.SwaggerSchemas[Schema[_]] = {
 
     import SwaggerCoreInterpreter._
 
@@ -24,13 +26,13 @@ trait ScalaCoreInterpreter extends CustomSwaggerInterpreter[ScalaCoreValue]{
             validations(sd.validations))
       case sd: ShortData =>
         name =>
-        {
-          addShortSchema(
-            name,
-            description.getOrElse("value of type short"),
-            example.asInstanceOf[Option[Short]].getOrElse((123: Short)),
-            validations(sd.validations))
-        }
+          {
+            addShortSchema(
+              name,
+              description.getOrElse("value of type short"),
+              example.asInstanceOf[Option[Short]].getOrElse((123: Short)),
+              validations(sd.validations))
+          }
       case id: IntData =>
         name =>
           addIntSchema(
@@ -83,7 +85,7 @@ trait ScalaCoreInterpreter extends CustomSwaggerInterpreter[ScalaCoreValue]{
         name =>
           addEnumerationData(
             name.toString,
-            description.getOrElse(s"enumeration of type ${esd.manifestOfA.getClass.getSimpleName}"),
+            description.getOrElse(s"enumeration of type ${esd.typeName}"),
             example.orElse(esd.enumeration.values.headOption).map(_.toString).getOrElse(""),
             esd.enumeration.values.toList.map(_.toString),
             validations(esd.validations)

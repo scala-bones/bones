@@ -8,6 +8,6 @@ import com.bones.protobuf.{ExtractFromProto, ProtobufValidatorValue}
 trait JavaUtilValidator extends ProtobufValidatorValue[JavaUtilValue] {
   override def extractFromProto[A](alg: JavaUtilValue[A]): ExtractFromProto[A] =
     alg match {
-      case uu: UuidData => stringDataWithFlatMap(Left(uu), stringToUuid, uu.validations)
+      case uu: UuidData => stringDataWithFlatMap(uu.typeName, stringToUuid, uu.validations)
     }
 }
