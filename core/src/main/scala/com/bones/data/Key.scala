@@ -92,6 +92,28 @@ trait Sugar[ALG[_]] {
   }
 
   def either[A: Manifest, B: Manifest](
+    definitionA: (String, ALG[A]),
+    definitionB: (String, ALG[B])
+  ): EitherData[ALG, A, B] =
+    EitherData(Right(definitionA._2), definitionA._1, Right(definitionB._2), definitionB._1)
+
+  def either[A: Manifest, B: Manifest](
+    definitionA: (String, ALG[A]),
+    definitionB: ALG[B]
+  ): EitherData[ALG, A, B] = {
+    val typeNameOfB = manifest[B].runtimeClass.getSimpleName
+    EitherData(Right(definitionA._2), definitionA._1, Right(definitionB), typeNameOfB)
+  }
+
+  def either[A: Manifest, B: Manifest](
+    definitionA: ALG[A],
+    definitionB: (String, ALG[B])
+  ): EitherData[ALG, A, B] = {
+    val typeNameOfA = manifest[A].runtimeClass.getSimpleName
+    EitherData(Right(definitionA), typeNameOfA, Right(definitionB._2), definitionB._1)
+  }
+
+  def either[A: Manifest, B: Manifest](
     definitionA: ALG[A],
     definitionB: ALG[B]
   ): EitherData[ALG, A, B] = {

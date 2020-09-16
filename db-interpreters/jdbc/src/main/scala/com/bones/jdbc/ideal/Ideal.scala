@@ -18,7 +18,21 @@ trait Ideal[ALG[_]] extends KvpCollectionMatch[ALG, TableCollection => TableColl
     override protected def optionalToOut[B](opt: OptionalValue[ALG, B])
       : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
       opt.valueDefinitionOp match {
-        case Left(collection) => fromConcreteValue(collection)
+        case Left(higherOrderValue) => {
+          (collection: TableCollection, columnName: String, description: Option[String]) =>
+            {
+              val oldColumns = collection.activeTable.columns
+              val subCollection =
+                fromConcreteValue(higherOrderValue)(collection, columnName, description)
+              //Find new columns and make them optional
+              val newColumns =
+                subCollection.activeTable.columns.filterNot(col => oldColumns.contains(col))
+              val optionalColumns = newColumns.map(_.copy(nullable = true))
+              val newActiveTable =
+                subCollection.activeTable.copy(columns = oldColumns ::: optionalColumns)
+              subCollection.copy(activeTable = newActiveTable)
+            }
+        }
         case Right(value) =>
           (collection: TableCollection, columnName: String, description: Option[String]) =>
             algInterpreter.columns(value)(collection, columnName, description)
@@ -78,13 +92,6 @@ trait Ideal[ALG[_]] extends KvpCollectionMatch[ALG, TableCollection => TableColl
     }
   }
 
-//  val columnCollectionInterpreter = new IdealCollectionInterpreter[ALG] {
-//    override def fromConcreteValue[A: Manifest](
-//      concreteValue: PrimitiveWrapperValue[ALG, A]): TableCollection => TableCollection =
-//      tableFromConcreteValue.fromConcreteValue(concreteValue)
-//    override val algInterpreter: IdealValue[ALG] = self.algInterpreter
-//  }
-
   override def kvpNil(kvp: KvpNil[ALG]): TableCollection => TableCollection =
     identity
 
@@ -135,9 +142,9 @@ trait Ideal[ALG[_]] extends KvpCollectionMatch[ALG, TableCollection => TableColl
   def determineValueDefinition[A](dataDefinition: Either[HigherOrderValue[ALG, A], ALG[A]])
     : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
     dataDefinition match {
-      case Left(primitiveWrapper) =>
+      case Left(higherOrderValue) =>
         (tc, name, desc) =>
-          addColumnToWorkingTable.fromConcreteValue(primitiveWrapper)(tc, name, desc)
+          addColumnToWorkingTable.fromConcreteValue(higherOrderValue)(tc, name, desc)
       case Right(alg) => algInterpreter.columns(alg)
     }
   }
