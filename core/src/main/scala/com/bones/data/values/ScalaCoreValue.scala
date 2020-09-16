@@ -53,11 +53,12 @@ final case class ByteArrayData(validations: List[ValidationOp[Array[Byte]]])
   override val typeName: String = "Array[Byte]"
 }
 
-final case class EnumerationData[E <: Enumeration, V: Manifest](
+final case class EnumerationData[E <: Enumeration: Manifest, V](
   enumeration: E,
   validations: List[ValidationOp[V]]
 ) extends ScalaCoreValue[V] {
-  override val typeName: String = enumeration.getClass.getSimpleName
+
+  override val typeName: String = "Enumeration"
 }
 
 trait BaseScalaCoreInterpreter[OUT] {
@@ -179,7 +180,7 @@ trait ScalaCoreSugar extends ScalaCoreValidation {
     * @param e The base enumeration type.
     * @tparam E The enumeration
     */
-  def enumeration[E <: Enumeration, V: Manifest](
+  def enumeration[E <: Enumeration: Manifest, V](
     e: E,
     validationOp: ValidationOp[V]*
   ): EnumerationData[E, V] =
@@ -256,7 +257,7 @@ trait ScalaCoreInjectedSugar[ALG[_] <: Coproduct] extends ScalaCoreValidation {
     * @param e The base enumeration type.
     * @tparam E The enumeration
     */
-  def enumeration[E <: Enumeration, V: Manifest](
+  def enumeration[E <: Enumeration: Manifest, V](
     e: E,
     validationOp: ValidationOp[V]*
   ): ALG[V] =
