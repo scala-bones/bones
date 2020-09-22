@@ -63,6 +63,8 @@ object WaterfallDefinitions {
       kvpNil
   ).convert[WaterfallVisit]
 
+  val idSchema = (("id", long(lv.positive)) :: kvpNil).encodedHead[Long]()
+
 }
 
 object WaterfallApp extends LocalhostAllIOApp() {
@@ -77,8 +79,9 @@ object WaterfallApp extends LocalhostAllIOApp() {
       com.bones.http4s.config.defaultLong,
       "waterfall",
       waterfallSchema,
+      idSchema,
       parseIdF,
-      com.bones.jdbc.dbGetDefaultInterpreter,
+      com.bones.jdbc.select.defaultSelectInterpreter,
       com.bones.jdbc.dbSearchInterpreter,
       com.bones.jdbc.insert.defaultDbInsertInterpreter,
       com.bones.jdbc.update.defaultDbUpdate,

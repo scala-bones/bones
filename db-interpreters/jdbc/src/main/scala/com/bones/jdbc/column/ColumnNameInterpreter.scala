@@ -48,7 +48,7 @@ trait ColumnNameInterpreter[ALG[_]] extends KvpCollectionMatch[ALG, List[ColumnN
 
   override def kvpWrappedHList[A, H <: HList, HL <: Nat](
     wrappedHList: KvpWrappedHList[ALG, A, H, HL]): List[ColumnName] =
-    "dtype" :: fromKvpCollection(wrappedHList.wrappedEncoding)
+    fromKvpCollection(wrappedHList.wrappedEncoding)
 
   override def kvpWrappedCoproduct[A, C <: Coproduct](
     wrappedCoproduct: KvpWrappedCoproduct[ALG, A, C]): List[ColumnName] =
@@ -69,11 +69,23 @@ trait ColumnNameInterpreter[ALG[_]] extends KvpCollectionMatch[ALG, List[ColumnN
       case op: OptionalValue[ALG, a] @unchecked =>
         determineValueDefinition(op.valueDefinitionOp)
       case _: ListData[ALG, t] @unchecked => keyToColumnNames
-      case _: EitherData[ALG, a, b] @unchecked =>
+      case ed: EitherData[ALG, a, b] @unchecked =>
         key =>
           {
-            val baseName = camelToSnake(key)
-            List("left_" + baseName, "right_" + baseName)
+            val leftColumns = determineValueDefinition(ed.definitionA)(key)
+            val rightColumns = determineValueDefinition(ed.definitionB)(key)
+
+            //If there are duplicate names, then we will append the name of the type
+            val (matchingLeft, uniqueLeft) =
+              leftColumns.partition(colA => rightColumns.contains(colA))
+            val (matchingRight, uniqueRight) =
+              rightColumns.partition(colB => leftColumns.contains(colB))
+
+            matchingLeft.map(_ + "_" + camelToSnake(ed.typeNameOfA)) :::
+              uniqueLeft :::
+              matchingRight.map(_ + "_" + camelToSnake(ed.typeNameOfB)) :::
+              uniqueRight :::
+              Nil
           }
       case kvp: KvpCollectionValue[ALG, a] @unchecked =>
         _ =>

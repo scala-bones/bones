@@ -6,6 +6,7 @@ import com.bones.data.Error.ExtractionError
 import com.bones.data.KvpCollection
 import com.bones.jdbc._
 import com.bones.jdbc.insert.DbInsert
+import com.bones.jdbc.select.SelectInterpreter
 import com.bones.jdbc.update.DbUpdate
 import fs2.Stream
 import javax.sql.DataSource
@@ -17,10 +18,10 @@ import javax.sql.DataSource
   * @param ds
   * @tparam A
   */
-case class CrudDbDefinitions[ALG[_], A: Manifest, ID](
+case class CrudDbDefinitions[ALG[_], A: Manifest, ID: Manifest](
   schema: KvpCollection[ALG, A],
-  idDef: IdDefinition[ALG, ID],
-  dbGet: DbGetInterpreter[ALG],
+  idDef: KvpCollection[ALG, ID],
+  dbGet: SelectInterpreter[ALG],
   dbSearch: DbSearch[ALG],
   insert: DbInsert[ALG],
   update: DbUpdate[ALG],
@@ -30,7 +31,7 @@ case class CrudDbDefinitions[ALG[_], A: Manifest, ID](
   // TODO: deal with error better
   val searchF: Stream[IO, (ID, A)] = {
     dbSearch
-      .getEntity(schema, idDef)(manifest[A])(ds)
+      .getEntity(schema, idDef)(manifest[A], manifest[ID])(ds)
       .flatMap({
         case Left(errO) => Stream.empty
         case Right(ro) =>
@@ -40,17 +41,17 @@ case class CrudDbDefinitions[ALG[_], A: Manifest, ID](
       })
   }
 
-  def createF: A => IO[Either[NonEmptyList[ExtractionError], (ID, A)]] = {
-    val insertQuery = insert.insertQuery(schema, idDef.asSchema)(ds)
+  def createF: A => IO[Either[NonEmptyList[ExtractionError], ID]] = {
+    val insertQuery = insert.insertQuery(schema, idDef)(ds)
     input: A =>
       IO {
-        insertQuery(input).map(x => (x._1.head, x._2))
+        insertQuery(input)
       }
   }
 
   val readF: ID => IO[Either[NonEmptyList[ExtractionError], (ID, A)]] = { id: ID =>
     val getF =
-      dbGet.getEntity(schema, idDef)
+      dbGet.selectEntity(schema, idDef)
     IO {
       DbUtil.withDataSource(ds)(con => {
         getF(id)(con)
@@ -58,7 +59,7 @@ case class CrudDbDefinitions[ALG[_], A: Manifest, ID](
     }
   }
 
-  val updateF: (ID, A) => IO[Either[NonEmptyList[ExtractionError], (ID, A)]] = {
+  val updateF: (ID, A) => IO[Either[NonEmptyList[ExtractionError], ID]] = {
     val updateF = update.updateQuery(schema, idDef)
 
     (id: ID, input: A) =>

@@ -10,7 +10,7 @@ trait Named {
   def name: String
 }
 
-trait ConcreteValueTemplate[ALG[_], OUT] {
+trait HigherOrderTemplate[ALG[_], OUT] {
   def fromConcreteValue[A](kvpCollection: HigherOrderValue[ALG, A]): OUT = {
     kvpCollection match {
       case ov: OptionalValue[ALG, b] =>

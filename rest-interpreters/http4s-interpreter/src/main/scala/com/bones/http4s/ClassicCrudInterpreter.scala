@@ -58,9 +58,9 @@ object ClassicCrudInterpreter {
     schema: KvpCollection[ALG, A],
     pathStringToId: String => Either[StringToIdError, ID],
     errorSchema: KvpCollection[ALG, E],
-    createF: A => F[Either[E, (ID, A)]],
+    createF: A => F[Either[E, ID]],
     readF: ID => F[Either[E, (ID, A)]],
-    updateF: (ID, A) => F[Either[E, (ID, A)]],
+    updateF: (ID, A) => F[Either[E, ID]],
     deleteF: ID => F[Either[E, (ID, A)]],
     searchF: () => Stream[F, (ID, A)]
   )(
@@ -111,9 +111,9 @@ case class ClassicCrudInterpreter[ALG[_], A: Manifest, E, F[_], ID: Manifest](
   schema: KvpCollection[ALG, A],
   pathStringToId: String => Either[StringToIdError, ID],
   errorSchema: KvpCollection[ALG, E],
-  createF: Option[A => F[Either[E, (ID, A)]]] = None,
+  createF: Option[A => F[Either[E, ID]]] = None,
   readF: Option[ID => F[Either[E, (ID, A)]]] = None,
-  updateF: Option[(ID, A) => F[Either[E, (ID, A)]]] = None,
+  updateF: Option[(ID, A) => F[Either[E, ID]]] = None,
   deleteF: Option[ID => F[Either[E, (ID, A)]]] = None,
   searchF: Option[() => Stream[F, (ID, A)]]
 )(implicit F: Sync[F], H: Http4sDsl[F]) {
@@ -123,7 +123,7 @@ case class ClassicCrudInterpreter[ALG[_], A: Manifest, E, F[_], ID: Manifest](
     * @param create The function which is to be called during Create input.
     * @return Copy of ClassicCrudInterpreter with the new create function.
     */
-  def withCreate(create: A => F[Either[E, (ID, A)]]): ClassicCrudInterpreter[ALG, A, E, F, ID] =
+  def withCreate(create: A => F[Either[E, ID]]): ClassicCrudInterpreter[ALG, A, E, F, ID] =
     this.copy(createF = Some(create))
 
   /** Add or overwrite the existing user defined function to find data in a data store.  Adding
@@ -139,7 +139,7 @@ case class ClassicCrudInterpreter[ALG[_], A: Manifest, E, F[_], ID: Manifest](
     * @param update The function to be called to update an entity in a data store.
     * @return Copy of the ClassicCrudInterpreter with the new update function
     */
-  def withRead(update: (ID, A) => F[Either[E, (ID, A)]]): ClassicCrudInterpreter[ALG, A, E, F, ID] =
+  def withUpdate(update: (ID, A) => F[Either[E, ID]]): ClassicCrudInterpreter[ALG, A, E, F, ID] =
     this.copy(updateF = Some(update))
 
   /** Add or overwrite the existing user defined function to delete data in a data store.  Adding
@@ -162,6 +162,10 @@ case class ClassicCrudInterpreter[ALG[_], A: Manifest, E, F[_], ID: Manifest](
     (("id", interpreters.idDefinition) :: schema :: new KvpNil[ALG]).tupled[(ID, A)]
   }
 
+  val idSchema: KvpCollection[ALG, ID] = {
+    (("id", interpreters.idDefinition) :: new KvpNil[ALG]).encodedHead()
+  }
+
   def createRoutes: HttpRoutes[F] = {
 
     object http extends BaseCrudInterpreter[ALG, A, E, (ID, A), F, ID]
@@ -174,7 +178,7 @@ case class ClassicCrudInterpreter[ALG[_], A: Manifest, E, F[_], ID: Manifest](
           update,
           schema,
           errorSchema,
-          schemaWithId,
+          idSchema,
           interpreters.jsonValidator,
           interpreters.jsonEncoder,
           interpreters.bsonValidator,
@@ -215,7 +219,7 @@ case class ClassicCrudInterpreter[ALG[_], A: Manifest, E, F[_], ID: Manifest](
         create,
         schema,
         errorSchema,
-        schemaWithId,
+        idSchema,
         interpreters.jsonValidator,
         interpreters.jsonEncoder,
         interpreters.bsonValidator,
