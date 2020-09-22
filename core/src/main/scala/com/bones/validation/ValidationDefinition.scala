@@ -14,7 +14,7 @@ import scala.math.Ordering.{
   ShortOrdering
 }
 import scala.math.Ordering.Float.{TotalOrdering => FloatOrdering}
-import scala.math.Ordering.Double.{TotalOrdering => DoubleOrdering }
+import scala.math.Ordering.Double.{TotalOrdering => DoubleOrdering}
 import scala.util.matching.Regex
 
 /**
@@ -59,6 +59,18 @@ object ValidationDefinition {
       s"not one of ${invalidValues.mkString("('", "','", "')")}"
   }
 
+  case class UniqueValue[T]() extends ValidationOp[T] {
+
+    /** Returns true  */
+    override def isValid: T => Boolean = _ => true
+
+    /** If t is not valid, this will return the error message in English. */
+    override def defaultError(t: T): String = "The value is not unique"
+
+    /** Gives an English text description of the validation. */
+    override def description: String = "The value must be unique."
+  }
+
   /** Base trait for validation as to include valid and invalid values */
   trait BaseValidationOp[T] {
     def validVector(validValues: Vector[T]) = ValidValue(validValues)
@@ -68,6 +80,8 @@ object ValidationDefinition {
     def invalidVector(invalidValues: Vector[T]) = InvalidValue(invalidValues)
 
     def invalid(t: T*): InvalidValue[T] = invalidVector(t.toVector)
+
+    val unique: UniqueValue[T] = UniqueValue()
   }
 
   case class EnumerationValidation[E <: Enumeration]() extends BaseValidationOp[E]
@@ -472,6 +486,5 @@ object ValidationDefinition {
     def max(maxDate: A): MaxTime = MaxTime(maxDate, defaultFormatToString, instantDescription, this)
 
   }
-
 
 }

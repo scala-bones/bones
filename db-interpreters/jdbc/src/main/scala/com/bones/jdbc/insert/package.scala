@@ -4,6 +4,7 @@ import java.sql.PreparedStatement
 
 import com.bones.data.values.DefaultValues
 import com.bones.jdbc.DbUtil.camelToSnake
+import com.bones.jdbc.column.ColumnNameInterpreter
 import com.bones.jdbc.rs.ResultSetInterpreter
 
 package object insert {
@@ -28,12 +29,15 @@ package object insert {
         (DefaultJavaTimeDbInsert ++
           (DefaultJavaUtilDbInsert ++ CNilInsertInterpreter)))
 
-  val defaultDbInsertInterpreter = new DbInsert[DefaultValues] {
+  val defaultDbInsertInterpreter: DbInsert[DefaultValues] = new DbInsert[DefaultValues] {
     override def resultSetInterpreter: ResultSetInterpreter[DefaultValues] =
       com.bones.jdbc.rs.defaultResultSetInterpreter
 
     override def customInterpreter: DbInsertValue[DefaultValues] =
       com.bones.jdbc.insert.defaultDbInsertValues
+
+    override def columnNameInterpreter: ColumnNameInterpreter[DefaultValues] =
+      com.bones.jdbc.column.defaultColumnNameInterpreter
   }
 
   /** Create the return type for valueDefinition given the arguments */

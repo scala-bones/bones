@@ -5,28 +5,28 @@ import java.sql.{Connection, ResultSet}
 import cats.data.NonEmptyList
 import cats.effect.IO
 import com.bones.data.Error.ExtractionError
-import com.bones.data.KvpCollection
+import com.bones.data.{KvpCollection, KvpNil}
 import com.bones.data.KvpCollection.headTypeName
 import com.bones.jdbc.DbUtil.camelToSnake
 import com.bones.jdbc.column.ColumnNameInterpreter
 import com.bones.jdbc.rs.ResultSetInterpreter
-import fs2.Stream
-import fs2.Stream.bracket
 import javax.sql.DataSource
+import fs2.Stream
 
 trait DbSearch[ALG[_]] {
 
   def resultSetInterpreter: ResultSetInterpreter[ALG]
   def columnNameInterpreter: ColumnNameInterpreter[ALG]
 
-  def getEntity[A: Manifest, ID](
+  def getEntity[A: Manifest, ID: Manifest](
     schema: KvpCollection[ALG, A],
-    idDef: IdDefinition[ALG, ID]
+    idSchema: KvpCollection[ALG, ID]
   ): DataSource => Stream[IO, Either[NonEmptyList[ExtractionError], (ID, A)]] = {
-    val withConnection = searchEntityWithConnection(schema, idDef)
+    val withConnection = searchEntityWithConnection(schema, idSchema)
     ds =>
       {
-        bracket(IO { ds.getConnection })(con => IO { con.close() })
+        Stream
+          .bracket(IO { ds.getConnection })(con => IO { con.close() })
           .flatMap(con => withConnection(con))
       }
   }
@@ -43,12 +43,13 @@ trait DbSearch[ALG[_]] {
     }
   }
 
-  def searchEntityWithConnection[A: Manifest, ID](
+  def searchEntityWithConnection[A: Manifest, ID: Manifest](
     schema: KvpCollection[ALG, A],
-    idDef: IdDefinition[ALG, ID]
+    idSchema: KvpCollection[ALG, ID]
   ): Connection => Stream[IO, Either[NonEmptyList[ExtractionError], (ID, A)]] = {
     val tableName = camelToSnake(headTypeName(schema).getOrElse("Unknown"))
-    val schemaWithId: KvpCollection[ALG, (ID, A)] = idDef.prependSchema(schema)
+    val schemaWithId: KvpCollection[ALG, (ID, A)] =
+      (idSchema :: schema :: new KvpNil[ALG]).tupled[(ID, A)]
 
     val resultSetF: ResultSet => Either[NonEmptyList[ExtractionError], (ID, A)] =
       resultSetInterpreter.fromKvpCollection[(ID, A)](schemaWithId)(List.empty)
@@ -58,8 +59,8 @@ trait DbSearch[ALG[_]] {
     con =>
       {
         for {
-          statement <- bracket(IO { con.prepareCall(sql) })(s => IO { s.close() })
-          resultSet <- bracket(IO { statement.executeQuery() })(s => IO { s.close() })
+          statement <- Stream.bracket(IO { con.prepareCall(sql) })(s => IO { s.close() })
+          resultSet <- Stream.bracket(IO { statement.executeQuery() })(s => IO { s.close() })
           a <- extractToStream(resultSet, resultSetF)
         } yield {
           a

@@ -1,19 +1,32 @@
 package com.bones.jdbc.ideal
 
-import com.bones.data.values.{Base64Data, BaseCustomStringValue, CreditCardData, CustomStringValue, EmailData, GuidData, HexStringData, HostnameData, IpV4Data, IpV6Data, UriData, UrlData}
+import com.bones.data.values.{
+  Base64Data,
+  BaseCustomStringValue,
+  CreditCardData,
+  CustomStringValue,
+  EmailData,
+  GuidData,
+  HexStringData,
+  HostnameData,
+  IpV4Data,
+  IpV6Data,
+  UriData,
+  UrlData
+}
 import com.bones.si.ideal.{IdealColumn, IdealDataType, StringType}
 
-object IdealCustomStringInterpreter extends IdealValue[CustomStringValue] with BaseCustomStringValue[IdealDataType] {
+object IdealCustomStringInterpreter
+    extends IdealValue[CustomStringValue]
+    with BaseCustomStringValue[IdealDataType] {
 
-
-  override def columns[A](alg: CustomStringValue[A]): (TableCollection, ColumnName, Option[Description]) => TableCollection =
-    (tableCollection, name, description) =>
-    {
+  override def columns[A](alg: CustomStringValue[A])
+    : (TableCollection, ColumnName, Option[Description]) => TableCollection =
+    (tableCollection, name, description) => {
       val newType = matchCustomStringValue(alg)
       val newColumn = IdealColumn(name, newType, false, description)
       tableCollection.prependColumn(newColumn)
     }
-
 
   override def emailData(emailData: EmailData): IdealDataType = StringType.unbounded
 

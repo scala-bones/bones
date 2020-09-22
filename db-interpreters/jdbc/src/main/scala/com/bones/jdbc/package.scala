@@ -5,7 +5,9 @@ import com.bones.data.values.DefaultValues
 import com.bones.data.{KvpCollection, KvpNil, KvpWrappedHList}
 import com.bones.jdbc.column.{ColumnNameInterpreter, ColumnValue}
 import com.bones.jdbc.rs.ResultSetInterpreter
+import com.bones.jdbc.select.SelectInterpreter
 import com.bones.jdbc.update.{JdbcStatementInterpreter, UpdateStatementValue}
+import com.bones.validation.ValidationDefinition.{UniqueValue, ValidationOp}
 import shapeless.Nat._0
 import shapeless.{::, HNil, Succ}
 
@@ -40,17 +42,6 @@ package object jdbc {
 
   }
 
-  val dbGetDefaultInterpreter = new DbGetInterpreter[DefaultValues] {
-    override def columnNameInterpreter: ColumnNameInterpreter[DefaultValues] =
-      com.bones.jdbc.column.defaultColumnNameInterpreter
-
-    override def jdbcStatementInterpreter: JdbcStatementInterpreter[DefaultValues] =
-      com.bones.jdbc.update.defaultJdbcStatementInterpreter
-
-    override def resultSetInterpreter: ResultSetInterpreter[DefaultValues] =
-      com.bones.jdbc.rs.defaultResultSetInterpreter
-  }
-
   val dbSearchInterpreter = new DbSearch[DefaultValues] {
     override def resultSetInterpreter: ResultSetInterpreter[DefaultValues] =
       com.bones.jdbc.rs.defaultResultSetInterpreter
@@ -60,11 +51,14 @@ package object jdbc {
   }
 
   val dbDeleteInterpreter = new DbDelete[DefaultValues] {
-    override def dbGet: DbGetInterpreter[DefaultValues] =
-      dbGetDefaultInterpreter
+    override def dbGet: SelectInterpreter[DefaultValues] =
+      select.defaultSelectInterpreter
 
     override def jdbcStatementInterpreter: JdbcStatementInterpreter[DefaultValues] =
       com.bones.jdbc.update.defaultJdbcStatementInterpreter
   }
+
+  def hasUniqueConstraint(v: List[ValidationOp[_]]): Boolean =
+    v.exists(_.isInstanceOf[UniqueValue[_]])
 
 }

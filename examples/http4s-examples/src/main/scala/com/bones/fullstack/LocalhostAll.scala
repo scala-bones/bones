@@ -11,10 +11,11 @@ import com.bones.data.values.DefaultValues
 import com.bones.data.{KvpCollection, KvpNil}
 import com.bones.http4s.BaseCrudInterpreter.StringToIdError
 import com.bones.http4s.ClassicCrudInterpreter
-import com.bones.http4s.config.InterpreterConfig
+import com.bones.http4s.config.{InterpreterConfig, longIdDefinition}
 import com.bones.jdbc.insert.DbInsert
+import com.bones.jdbc.select.SelectInterpreter
 import com.bones.jdbc.update.DbUpdate
-import com.bones.jdbc.{DbDelete, DbGetInterpreter, DbSearch, IdDefinition}
+import com.bones.jdbc.{DbDelete, DbSearch, IdDefinition}
 import com.bones.syntax._
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import javax.sql.DataSource
@@ -67,20 +68,19 @@ object LocalhostAllIOApp {
     interpreters: InterpreterConfig[DefaultValues, ID],
     path: String,
     schema: KvpCollection[DefaultValues, A],
+    idSchema: KvpCollection[DefaultValues, ID],
     parseIdF: String => Either[StringToIdError, ID],
-    dbGet: DbGetInterpreter[DefaultValues],
+    dbGet: SelectInterpreter[DefaultValues],
     dbSearch: DbSearch[DefaultValues],
     dbInsert: DbInsert[DefaultValues],
     dbUpdate: DbUpdate[DefaultValues],
     dbDelete: DbDelete[DefaultValues],
     ds: DataSource): HttpRoutes[IO] = {
 
-    val idDef = IdDefinition("id", interpreters.idDefinition)
-
     val middleware =
       CrudDbDefinitions[DefaultValues, A, ID](
         schema,
-        idDef,
+        idSchema,
         dbGet,
         dbSearch,
         dbInsert,

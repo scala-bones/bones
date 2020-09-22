@@ -7,8 +7,8 @@ object IdealScalaCoreInterpreter
     extends IdealValue[ScalaCoreValue]
     with BaseScalaCoreInterpreter[IdealDataType] {
 
-  override def columns[A](
-    alg: ScalaCoreValue[A]): (TableCollection, ColumnName, Option[Description]) => TableCollection = {
+  override def columns[A](alg: ScalaCoreValue[A])
+    : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
     (tableCollection, name, description) =>
       {
         val newType = matchScalaCoreValue(alg)
