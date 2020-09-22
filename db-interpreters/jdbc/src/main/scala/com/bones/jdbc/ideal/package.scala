@@ -29,6 +29,8 @@ package object ideal {
     * @param otherTables The list of sub tables.
     */
   case class TableCollection(activeTable: IdealTable, otherTables: List[IdealTable]) {
+
+    def allTables: List[IdealTable] = activeTable :: otherTables
     def prependPrimaryKey(column: IdealColumn): TableCollection = {
       val newActiveTable =
         activeTable.copy(primaryKeyColumns = column :: activeTable.primaryKeyColumns)

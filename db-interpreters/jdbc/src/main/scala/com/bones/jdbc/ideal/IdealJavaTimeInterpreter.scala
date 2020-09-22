@@ -1,20 +1,53 @@
 package com.bones.jdbc.ideal
 
-import com.bones.data.values.{BaseJavaTimeInterpreter, DateTimeExceptionData, DayOfWeekData, DurationData, InstantData, JavaTimeValue, LocalDateData, LocalDateTimeData, LocalTimeData, MonthData, MonthDayData, OffsetDateTimeData, OffsetTimeData, PeriodData, YearData, YearMonthData, ZoneIdData, ZoneOffsetData, ZonedDateTimeData}
-import com.bones.si.ideal.{DateType, IdealColumn, IdealDataType, IntegerType, LongType, SmallIntType, StringType, TimeType, TimestampType}
+import com.bones.data.values.{
+  BaseJavaTimeInterpreter,
+  DateTimeExceptionData,
+  DayOfWeekData,
+  DurationData,
+  InstantData,
+  JavaTimeValue,
+  LocalDateData,
+  LocalDateTimeData,
+  LocalTimeData,
+  MonthData,
+  MonthDayData,
+  OffsetDateTimeData,
+  OffsetTimeData,
+  PeriodData,
+  YearData,
+  YearMonthData,
+  ZoneIdData,
+  ZoneOffsetData,
+  ZonedDateTimeData
+}
+import com.bones.si.ideal.{
+  DateType,
+  IdealColumn,
+  IdealDataType,
+  IntegerType,
+  LongType,
+  SmallIntType,
+  StringType,
+  TimeType,
+  TimestampType
+}
 
-object IdealJavaTimeInterpreter extends IdealValue[JavaTimeValue] with BaseJavaTimeInterpreter[IdealDataType] {
-  override def columns[A](alg: JavaTimeValue[A]): (TableCollection, ColumnName, Option[Description]) => TableCollection = {
+object IdealJavaTimeInterpreter
+    extends IdealValue[JavaTimeValue]
+    with BaseJavaTimeInterpreter[IdealDataType] {
+  override def columns[A](alg: JavaTimeValue[A])
+    : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
     (tableCollection, name, description) =>
-    {
-      val newType = matchJavaTimeValue(alg)
-      val newColumn = IdealColumn(name, newType, false, description)
-      tableCollection.prependColumn(newColumn)
-    }
+      {
+        val newType = matchJavaTimeValue(alg)
+        val newColumn = IdealColumn(name, newType, false, description)
+        tableCollection.prependColumn(newColumn)
+      }
   }
 
-  override def dateTimeExceptionData(dateTimeExceptionData: DateTimeExceptionData):
-    IdealDataType = StringType.unbounded
+  override def dateTimeExceptionData(dateTimeExceptionData: DateTimeExceptionData): IdealDataType =
+    StringType.unbounded
 
   override def dayOfWeekData(dayOfWeekData: DayOfWeekData): IdealDataType = SmallIntType
 
@@ -44,12 +77,12 @@ object IdealJavaTimeInterpreter extends IdealValue[JavaTimeValue] with BaseJavaT
   override def periodData(periodData: PeriodData): IdealDataType =
     StringType.unbounded
 
-
   override def yearData(yearData: YearData): IdealDataType = IntegerType()
 
   override def yearMonthData(yearMonthData: YearMonthData): IdealDataType = StringType.unbounded
 
-  override def zonedDateTimeData(zonedDateTimeData: ZonedDateTimeData): IdealDataType = TimestampType.withTimeZone()
+  override def zonedDateTimeData(zonedDateTimeData: ZonedDateTimeData): IdealDataType =
+    TimestampType.withTimeZone()
 
   override def zoneIdData(zoneIdData: ZoneIdData): IdealDataType = StringType(10)
 
