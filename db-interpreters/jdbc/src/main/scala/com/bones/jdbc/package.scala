@@ -58,7 +58,10 @@ package object jdbc {
       com.bones.jdbc.update.defaultJdbcStatementInterpreter
   }
 
-  def hasUniqueConstraint(v: List[ValidationOp[_]]): Boolean =
-    v.exists(_.isInstanceOf[UniqueValue[_]])
+  def findUniqueConstraint(v: List[ValidationOp[_]]): List[UniqueValue[_]] =
+    v.flatMap {
+      case uv: UniqueValue[_] => Some(uv)
+      case _                  => None
+    }
 
 }

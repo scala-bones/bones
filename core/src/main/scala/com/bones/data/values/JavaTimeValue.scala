@@ -11,6 +11,7 @@ import shapeless.ops.coproduct.Inject
 
 sealed abstract class JavaTimeValue[A: Manifest] extends PrimitiveValueManifestTypeName[A] {
   val manifestOfA: Manifest[A] = manifest[A]
+  val validations: List[ValidationOp[A]]
 }
 
 /** Note that Deserializing DateTimeException, although support throughout, will contain a misleading stack trace.  This is because

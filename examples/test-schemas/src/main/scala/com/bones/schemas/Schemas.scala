@@ -214,9 +214,9 @@ object Schemas {
       ("int", int(iv.between(0, 4000))) ::
       ("long", long(lv.min(0))) ::
       ("listOfInt", list(int)) :<:
-      ("string", string(sv.min(0), sv.words)) ::
-      ("float", float(fv.max(100))) ::
-      ("short", short(shv.max(100))) ::
+      ("string", string(sv.min(0), sv.words, sv.unique)) ::
+      ("float", float(fv.max(100), fv.unique("floatShort"))) ::
+      ("short", short(shv.max(100), shv.unique("floatShort"))) ::
       ("double", double(dv.min(0))) ::
       ("byteArray", byteArray) ::
       ("localDate", localDate(jt_ld.min(LocalDate.of(1800, 1, 1)))) ::
