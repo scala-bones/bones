@@ -4,42 +4,71 @@ import cats.implicits.catsSyntaxSemigroup
 import com.bones.data.KvpCollection.headTypeName
 import com.bones.data.template.KvpCollectionMatch
 import com.bones.data.{HigherOrderTemplate, _}
-import com.bones.jdbc.{DbUtil, hasUniqueConstraint}
+import com.bones.jdbc.DbUtil
 import com.bones.jdbc.DbUtil.camelToSnake
-import com.bones.si.ideal.{IdealColumn, StringType}
-import com.bones.validation.ValidationDefinition.{UniqueValue, ValidationOp}
+import com.bones.si.ideal.{IdealColumn, StringType, UniqueConstraint}
 import shapeless.{::, Coproduct, HList, Nat}
 
+/**
+  *
+  * There are three ways a column can be part of a group.
+  *   1. It can be solo unique, which is a unique constraint on a value w/o a group name
+  *    or with a group name, but without a partner.
+  *   2.It can be grouped unique, which has a group name and a partner.
+  *   3.It can be part of a larger unique construct, such as if an entire HList or Class is designated as unique.
+  *
+  *   For 1 and 2 above, the IdealColumn wil be added
+  *      to the UniqueGroup list at the time the IdealColumn is created in the Value Interpreter.
+  *   For 3 above, we will search for all new columns added to the child of a group and add those
+  *       columns to the UniqueGroup list.
+  *
+  * @tparam ALG
+  */
 trait Ideal[ALG[_]]
     extends KvpCollectionMatch[
       ALG,
-      (TableCollection, Option[ColumnName], Option[Description]) => TableCollection] {
+      (TableCollection, List[UniqueGroup], Option[ColumnName], Option[Description]) => (
+        TableCollection,
+        List[UniqueGroup])] {
   self =>
 
   def algInterpreter: IdealValue[ALG]
 
   val addColumnToWorkingTable = new HigherOrderTemplate[
     ALG,
-    (TableCollection, ColumnName, Option[Description]) => TableCollection] {
+    (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
+      TableCollection,
+      List[UniqueGroup])] {
 
     override protected def optionalToOut[B](opt: OptionalValue[ALG, B])
-      : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
+      : (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
+        TableCollection,
+        List[UniqueGroup]) = {
       opt.valueDefinitionOp match {
         case Left(higherOrderValue) =>
-          (collection: TableCollection, columnName: String, description: Option[String]) =>
+          (
+            collection: TableCollection,
+            ug: List[UniqueGroup],
+            columnName: String,
+            description: Option[String]) =>
             nullableNewColumns(collection)(
-              fromConcreteValue(higherOrderValue)(collection, columnName, description))
+              fromConcreteValue(higherOrderValue)(collection, ug, columnName, description))
         case Right(value) =>
-          (collection: TableCollection, columnName: String, description: Option[String]) =>
+          (
+            collection: TableCollection,
+            ug: List[UniqueGroup],
+            columnName: String,
+            description: Option[String]) =>
             nullableNewColumns(collection)(
               algInterpreter
-                .columns(value)(collection, columnName, description))
+                .columns(value)(collection, ug, columnName, description))
       }
     }
 
-    private def nullableNewColumns(collection: TableCollection)(f: => TableCollection) = {
+    private def nullableNewColumns(collection: TableCollection)(
+      f: => (TableCollection, List[UniqueGroup])) = {
       val oldColumns = collection.activeTable.columns
-      val subCollection = f
+      val (subCollection, uGroups) = f
 
       //Find new columns and make them optional
       val newColumns =
@@ -47,7 +76,7 @@ trait Ideal[ALG[_]]
       val optionalColumns = newColumns.map(_.copy(nullable = true))
       val newActiveTable =
         subCollection.activeTable.copy(columns = oldColumns ::: optionalColumns)
-      subCollection.copy(activeTable = newActiveTable)
+      (subCollection.copy(activeTable = newActiveTable), uGroups)
     }
 
     /**
@@ -59,19 +88,21 @@ trait Ideal[ALG[_]]
       * @return A function to create the tables.
       */
     override protected def eitherToOut[A, B](either: EitherData[ALG, A, B])
-      : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
+      : (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
+        TableCollection,
+        List[UniqueGroup]) = {
       val fa = determineValueDefinition(either.definitionA)
       val fb = determineValueDefinition(either.definitionB)
 
-      (tc, columnName, desc) =>
+      (tc, ug, columnName, desc) =>
         {
-          val a = fa.apply(tc, columnName, desc)
+          val (aTc, aUg) = fa.apply(tc, ug, columnName, desc)
           //find new columns
           val aColumns =
-            a.activeTable.columns.filterNot(col => tc.activeTable.columns.exists(_ eq col))
-          val b = fb.apply(a, columnName, desc)
+            aTc.activeTable.columns.filterNot(col => tc.activeTable.columns.exists(_ eq col))
+          val (bTc, bUg) = fb.apply(aTc, aUg, columnName, desc)
           val bColumns =
-            b.activeTable.columns.filterNot(col => a.activeTable.columns.exists(_ eq col))
+            bTc.activeTable.columns.filterNot(col => aTc.activeTable.columns.exists(_ eq col))
 
           //If there are duplicate names, then we will append the name of the type
           val (aMatching, aUnique) =
@@ -89,14 +120,16 @@ trait Ideal[ALG[_]]
           // Since this is an either, all columns become optional.
           val newColumnsOptional = newColumns.map(col => col.copy(nullable = true))
 
-          b.copy(activeTable = b.activeTable.copy(columns = newColumnsOptional))
+          (bTc.copy(activeTable = bTc.activeTable.copy(columns = newColumnsOptional)), bUg)
 
         }
 
     }
 
     override protected def listToOut[A](list: ListData[ALG, A])
-      : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
+      : (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
+        TableCollection,
+        List[UniqueGroup]) = {
       list.tDefinition match {
         case Left(col)  => fromConcreteValue(col)
         case Right(alg) => algInterpreter.columns(alg)
@@ -109,16 +142,24 @@ trait Ideal[ALG[_]]
       * @return
       */
     override protected def kvpCollectionToOut[A](hList: KvpCollectionValue[ALG, A])
-      : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
+      : (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
+        TableCollection,
+        List[UniqueGroup]) = {
 
-      (tableCollection: TableCollection, columnName: String, description: Option[String]) =>
-        fromKvpCollection(hList.kvpCollection)(tableCollection, Some(columnName), description)
+      (
+        tableCollection: TableCollection,
+        ug: List[UniqueGroup],
+        columnName: String,
+        description: Option[String]) =>
+        fromKvpCollection(hList.kvpCollection)(tableCollection, ug, Some(columnName), description)
     }
   }
 
   override def kvpNil(kvp: KvpNil[ALG])
-    : (TableCollection, Option[ColumnName], Option[Description]) => TableCollection =
-    (tc, _, _) => tc
+    : (TableCollection, List[UniqueGroup], Option[ColumnName], Option[Description]) => (
+      TableCollection,
+      List[UniqueGroup]) =
+    (tc, ug, _, _) => (tc, ug)
 
   override def kvpHListCollectionHead[
     HO <: HList,
@@ -127,85 +168,100 @@ trait Ideal[ALG[_]]
     HL <: Nat,
     T <: HList,
     TL <: Nat](kvp: KvpHListCollectionHead[ALG, HO, NO, H, HL, T, TL])
-    : (TableCollection, Option[ColumnName], Option[Description]) => TableCollection = {
+    : (TableCollection, List[UniqueGroup], Option[ColumnName], Option[Description]) => (
+      TableCollection,
+      List[UniqueGroup]) = {
     val head = fromKvpCollection(kvp.head)
     val tail = fromKvpCollection(kvp.tail)
-    (tableCollection: TableCollection, columnName, description) =>
+    (tableCollection: TableCollection, ug: List[UniqueGroup], columnName, description) =>
       {
-        val headTableCollection = head(tableCollection, columnName, description)
-        tail(headTableCollection, columnName, description)
+        val (headTc, headUg) = head(tableCollection, ug, columnName, description)
+        tail(headTc, headUg, columnName, description)
       }
   }
 
   override def kvpWrappedHList[A, H <: HList, HL <: Nat](
     wrappedHList: KvpWrappedHList[ALG, A, H, HL])
-    : (TableCollection, Option[ColumnName], Option[Description]) => TableCollection =
+    : (TableCollection, List[UniqueGroup], Option[ColumnName], Option[Description]) => (
+      TableCollection,
+      List[UniqueGroup]) =
     fromKvpCollection(wrappedHList.wrappedEncoding)
 
   override def kvpWrappedCoproduct[A, C <: Coproduct](
     wrappedCoproduct: KvpWrappedCoproduct[ALG, A, C])
-    : (TableCollection, Option[ColumnName], Option[Description]) => TableCollection = {
-    (tc, columnName, description) =>
-      {
-        val result =
-          fromKvpCollection(wrappedCoproduct.wrappedEncoding)(tc, columnName, description)
-        val dtypeColumn = IdealColumn(
-          "dtype",
-          StringType.unbounded,
-          false,
-          Some(s"Column to specify sub type of ${wrappedCoproduct.typeNameOfA}")
-        )
-        val at = result.activeTable
-        val newTable = at.copy(columns = dtypeColumn :: at.columns)
-        result.copy(activeTable = newTable)
-      }
+    : (TableCollection, List[UniqueGroup], Option[ColumnName], Option[Description]) => (
+      TableCollection,
+      List[UniqueGroup]) = { (tc, ug, columnName, description) =>
+    {
+      val (kvpTc, kvpUg) =
+        fromKvpCollection(wrappedCoproduct.wrappedEncoding)(tc, ug, columnName, description)
+      val dtypeColumn = IdealColumn(
+        "dtype",
+        StringType.unbounded,
+        false,
+        Some(s"Column to specify sub type of ${wrappedCoproduct.typeNameOfA}")
+      )
+      val at = kvpTc.activeTable
+      val newTable = at.copy(columns = dtypeColumn :: at.columns)
+      (tc.copy(activeTable = newTable), kvpUg)
+    }
   }
 
   override def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
     kvp: KvpSingleValueHead[ALG, H, T, TL, O])
-    : (TableCollection, Option[ColumnName], Option[Description]) => TableCollection = {
+    : (TableCollection, List[UniqueGroup], Option[ColumnName], Option[Description]) => (
+      TableCollection,
+      List[UniqueGroup]) = {
     val headResult = kvp.head match {
       case Left(keyDef) => {
-        (tc: TableCollection, columnName: Option[ColumnName], description: Option[Description]) =>
+        (
+          tc: TableCollection,
+          ug: List[UniqueGroup],
+          columnName: Option[ColumnName],
+          description: Option[Description]) =>
           val camelKey = camelToSnake(keyDef.key)
           val newColumnName = columnName.fold(camelKey)(cn => cn + "_" + camelKey)
           val newDescription = description |+| keyDef.description
-          determineValueDefinition(keyDef.dataDefinition)(tc, newColumnName, newDescription)
+          determineValueDefinition(keyDef.dataDefinition)(tc, ug, newColumnName, newDescription)
       }
       case Right(kvpColl) => fromKvpCollection(kvpColl)
     }
-    val tailResult = fromKvpCollection(kvp.tail)
-    (tc, cn, de) =>
+    val tailResultF = fromKvpCollection(kvp.tail)
+    (tc, ug, cn, de) =>
       {
-        val headTc = headResult(tc, cn, de)
-        tailResult(headTc, cn, de)
+        val (headTc, headUg) = headResult(tc, ug, cn, de)
+        tailResultF(headTc, headUg, cn, de)
       }
   }
 
   def determineValueDefinition[A](dataDefinition: Either[HigherOrderValue[ALG, A], ALG[A]])
-    : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
+    : (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
+      TableCollection,
+      List[UniqueGroup]) = {
     dataDefinition match {
       case Left(higherOrderValue) =>
-        (tc, name, desc) =>
-          addColumnToWorkingTable.fromConcreteValue(higherOrderValue)(tc, name, desc)
+        (tc, ug, name, desc) =>
+          addColumnToWorkingTable.fromConcreteValue(higherOrderValue)(tc, ug, name, desc)
       case Right(alg) => algInterpreter.columns(alg)
     }
   }
 
   override def kvpCoproduct[C <: Coproduct](value: KvpCoproduct[ALG, C])
-    : (TableCollection, Option[ColumnName], Option[Description]) => TableCollection = {
+    : (TableCollection, List[UniqueGroup], Option[ColumnName], Option[Description]) => (
+      TableCollection,
+      List[UniqueGroup]) = {
 
     value match {
       case _: KvpCoNil[ALG] =>
-        (tc, _, _) =>
-          tc
+        (tc, ug, _, _) =>
+          (tc, ug)
       case kvp: KvpCoproductCollectionHead[ALG, a, C, o] @unchecked => {
         val head = fromKvpCollection(kvp.kvpCollection)
         val tail = kvpCoproduct(kvp.kvpTail)
-        (tc, cn, de) =>
+        (tc, ug, cn, de) =>
           {
-            val headTc = head(tc, cn, de)
-            val tailTc = tail(headTc, cn, de)
+            val (headTc, headUg) = head(tc, ug, cn, de)
+            val (tailTc, tailUg) = tail(headTc, headUg, cn, de)
 
             // columns that are not in both head and tail become optional or
             // if tail is CNil and has no columns, then we will not mark anything as optional
@@ -217,7 +273,7 @@ trait Ideal[ALG[_]]
                 headTc.activeTable.columns.exists(_ eq col))
 
             if (newTailColumns.isEmpty) {
-              tailTc
+              (tailTc, tailUg)
             } else {
               val (uniqueHeadColumns, headSharedColumns) =
                 newHeadColumns.partition(col => newTailColumns.exists(_.name == col.name))
@@ -233,7 +289,7 @@ trait Ideal[ALG[_]]
                   Nil
               }
               val newActiveTable = tailTc.activeTable.copy(columns = newColumns)
-              tailTc.copy(activeTable = newActiveTable)
+              (tailTc.copy(activeTable = newActiveTable), tailUg)
             }
 
           }
@@ -249,7 +305,26 @@ trait Ideal[ALG[_]]
     val tableName =
       DbUtil.camelToSnake(headTypeName(schema).getOrElse("Unknown"))
     val tableCol = TableCollection.init(tableName, description)
-    fromKvpCollection(schema).apply(tableCol, None, None)
+    val (tc, ug) = fromKvpCollection(schema).apply(tableCol, List.empty, None, None)
+
+    ug.foldLeft(tc) {
+      case (tc, ug) => {
+        val uc = UniqueConstraint(ug.name, ug.columns)
+
+        // Find table for which the unique constraints belongs and update
+        if (tc.activeTable.name == ug.tableName) {
+          val newTable =
+            tc.activeTable.copy(uniqueConstraints = uc :: tc.activeTable.uniqueConstraints)
+          tc.copy(activeTable = newTable)
+        } else {
+          val (tables, otherTables) = tc.otherTables.partition(_.name == ug.tableName)
+          val newTables = tables.map(t => t.copy(uniqueConstraints = uc :: t.uniqueConstraints))
+          tc.copy(otherTables = otherTables ::: newTables)
+        }
+
+      }
+    }
+
   }
 
 }

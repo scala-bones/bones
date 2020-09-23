@@ -7,7 +7,9 @@ import com.bones.validation.ValidationDefinition.ValidationOp
 import shapeless.Coproduct
 import shapeless.ops.coproduct.Inject
 
-abstract class JavaUtilValue[A: Manifest] extends PrimitiveValueManifestTypeName[A]
+abstract class JavaUtilValue[A: Manifest] extends PrimitiveValueManifestTypeName[A] {
+  val validations: List[ValidationOp[A]]
+}
 
 final case class UuidData(validations: List[ValidationOp[UUID]]) extends JavaUtilValue[UUID]
 

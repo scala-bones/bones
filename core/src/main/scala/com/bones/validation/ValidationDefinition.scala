@@ -59,7 +59,7 @@ object ValidationDefinition {
       s"not one of ${invalidValues.mkString("('", "','", "')")}"
   }
 
-  case class UniqueValue[T]() extends ValidationOp[T] {
+  case class UniqueValue[T](uniqueKey: Option[String]) extends ValidationOp[T] {
 
     /** Returns true  */
     override def isValid: T => Boolean = _ => true
@@ -81,7 +81,10 @@ object ValidationDefinition {
 
     def invalid(t: T*): InvalidValue[T] = invalidVector(t.toVector)
 
-    val unique: UniqueValue[T] = UniqueValue()
+    val unique: UniqueValue[T] = UniqueValue(None)
+
+    /** If multiple fields contain the same group key, they will be considered in the same unique group. */
+    def unique(uniqueGroup: String) = UniqueValue[T](Some(uniqueGroup))
   }
 
   case class EnumerationValidation[E <: Enumeration]() extends BaseValidationOp[E]

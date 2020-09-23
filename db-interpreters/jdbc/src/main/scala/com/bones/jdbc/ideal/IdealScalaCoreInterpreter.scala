@@ -1,6 +1,7 @@
 package com.bones.jdbc.ideal
 
 import com.bones.data.values._
+import com.bones.jdbc.findUniqueConstraint
 import com.bones.si.ideal._
 
 object IdealScalaCoreInterpreter
@@ -8,13 +9,11 @@ object IdealScalaCoreInterpreter
     with BaseScalaCoreInterpreter[IdealDataType] {
 
   override def columns[A](alg: ScalaCoreValue[A])
-    : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
-    (tableCollection, name, description) =>
-      {
-        val newType = matchScalaCoreValue(alg)
-        val newColumn = IdealColumn(name, newType, false, description)
-        tableCollection.prependColumn(newColumn)
-      }
+    : (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
+      TableCollection,
+      List[UniqueGroup]) = {
+    val uniqueConstraint = findUniqueConstraint(alg.validations)
+    defaultColumns(matchScalaCoreValue(alg), uniqueConstraint)
   }
 
   override def boolDataToOut(booleanData: BooleanData): IdealDataType = BooleanType

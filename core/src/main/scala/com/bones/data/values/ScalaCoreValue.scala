@@ -6,7 +6,9 @@ import com.bones.validation.ValidationDefinition._
 import shapeless.Coproduct
 import shapeless.ops.coproduct.Inject
 
-sealed abstract class ScalaCoreValue[A] extends PrimitiveValue[A]
+sealed abstract class ScalaCoreValue[A] extends PrimitiveValue[A] {
+  val validations: List[ValidationOp[A]]
+}
 
 /** Schema type for Boolean Data */
 final case class BooleanData(validations: List[ValidationOp[Boolean]])

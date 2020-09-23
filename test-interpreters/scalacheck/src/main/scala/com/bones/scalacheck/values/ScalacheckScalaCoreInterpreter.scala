@@ -1,9 +1,45 @@
 package com.bones.scalacheck.values
 
-import com.bones.data.values.{BigDecimalData, BooleanData, ByteArrayData, DoubleData, EnumerationData, FloatData, IntData, LongData, ScalaCoreValue, ShortData, StringData}
+import com.bones.data.values.{
+  BigDecimalData,
+  BooleanData,
+  ByteArrayData,
+  DoubleData,
+  EnumerationData,
+  FloatData,
+  IntData,
+  LongData,
+  ScalaCoreValue,
+  ShortData,
+  StringData
+}
 import com.bones.scalacheck.GenValue
-import com.bones.validation.ValidationDefinition.StringValidation.{IsAlphanumeric, Length, Lowercase, MatchesRegex, MaxLength, MinLength, Sentence, Token, Uppercase, Words}
-import com.bones.validation.ValidationDefinition.{BaseValidationOp, BigDecimalValidation, DoubleValidation, FloatValidation, IntValidation, LongValidation, OrderingValidation, ShortValidation, StringValidation, ValidValue, ValidationOp, ZeroValidations}
+import com.bones.validation.ValidationDefinition.StringValidation.{
+  IsAlphanumeric,
+  Length,
+  Lowercase,
+  MatchesRegex,
+  MaxLength,
+  MinLength,
+  Sentence,
+  Token,
+  Uppercase,
+  Words
+}
+import com.bones.validation.ValidationDefinition.{
+  BaseValidationOp,
+  BigDecimalValidation,
+  DoubleValidation,
+  FloatValidation,
+  IntValidation,
+  LongValidation,
+  OrderingValidation,
+  ShortValidation,
+  StringValidation,
+  ValidValue,
+  ValidationOp,
+  ZeroValidations
+}
 import com.bones.validation.ValidationUtil
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Gen
@@ -34,7 +70,8 @@ object ScalacheckScalaCoreInterpreter {
   def stringConstraints(ops: List[ValidationOp[String]]): Gen[String] = {
 
     val regex: Gen[String] =
-      ops.to(LazyList)
+      ops
+        .to(LazyList)
         .collectFirst {
           case Words =>
             for {
@@ -92,22 +129,21 @@ object ScalacheckScalaCoreInterpreter {
   }
 
   case class NumberConstraints[N](
-                                   valid: Option[List[N]],
-                                   invalid: Option[List[N]],
-                                   max: Option[N],
-                                   maxIsInclusive: Boolean,
-                                   min: Option[N],
-                                   minIsInclusive: Boolean)
-
+    valid: Option[List[N]],
+    invalid: Option[List[N]],
+    max: Option[N],
+    maxIsInclusive: Boolean,
+    min: Option[N],
+    minIsInclusive: Boolean)
 
   /** Uses known Bones validations to create a Number which passes validation */
   def validationConstraints[A](
-                                ops: List[ValidationOp[A]],
-                                vop: BaseValidationOp[A] with OrderingValidation[A] with ZeroValidations[A],
-                                incrementF: A => A,
-                                decrementF: A => A,
-                                min: A,
-                                max: A)(implicit c: Gen.Choose[A]): Gen[A] = {
+    ops: List[ValidationOp[A]],
+    vop: BaseValidationOp[A] with OrderingValidation[A] with ZeroValidations[A],
+    incrementF: A => A,
+    decrementF: A => A,
+    min: A,
+    max: A)(implicit c: Gen.Choose[A]): Gen[A] = {
     val constraints = ops.foldLeft(NumberConstraints[A](None, None, None, true, None, true)) {
       (nc, op) =>
         op match {
@@ -123,6 +159,7 @@ object ScalacheckScalaCoreInterpreter {
           case vop.Max(max)     => nc.copy(max = Some(max), maxIsInclusive = true)
           case vop.Min(min)     => nc.copy(min = Some(min), minIsInclusive = true)
           case vop.Negative     => nc.copy(max = Some(vop.zero), maxIsInclusive = false)
+          case _                => nc
         }
     }
 

@@ -1,49 +1,18 @@
 package com.bones.jdbc.ideal
 
-import com.bones.data.values.{
-  BaseJavaTimeInterpreter,
-  DateTimeExceptionData,
-  DayOfWeekData,
-  DurationData,
-  InstantData,
-  JavaTimeValue,
-  LocalDateData,
-  LocalDateTimeData,
-  LocalTimeData,
-  MonthData,
-  MonthDayData,
-  OffsetDateTimeData,
-  OffsetTimeData,
-  PeriodData,
-  YearData,
-  YearMonthData,
-  ZoneIdData,
-  ZoneOffsetData,
-  ZonedDateTimeData
-}
-import com.bones.si.ideal.{
-  DateType,
-  IdealColumn,
-  IdealDataType,
-  IntegerType,
-  LongType,
-  SmallIntType,
-  StringType,
-  TimeType,
-  TimestampType
-}
+import com.bones.data.values._
+import com.bones.jdbc.findUniqueConstraint
+import com.bones.si.ideal._
 
 object IdealJavaTimeInterpreter
     extends IdealValue[JavaTimeValue]
     with BaseJavaTimeInterpreter[IdealDataType] {
   override def columns[A](alg: JavaTimeValue[A])
-    : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
-    (tableCollection, name, description) =>
-      {
-        val newType = matchJavaTimeValue(alg)
-        val newColumn = IdealColumn(name, newType, false, description)
-        tableCollection.prependColumn(newColumn)
-      }
+    : (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
+      TableCollection,
+      List[UniqueGroup]) = {
+    val uniqueConstraint = findUniqueConstraint(alg.validations)
+    defaultColumns(matchJavaTimeValue(alg), uniqueConstraint)
   }
 
   override def dateTimeExceptionData(dateTimeExceptionData: DateTimeExceptionData): IdealDataType =

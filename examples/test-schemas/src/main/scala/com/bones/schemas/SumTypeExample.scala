@@ -2,6 +2,7 @@ package com.bones.schemas
 
 import com.bones.schemas.SumTypeExample.Quality.Quality
 import com.bones.syntax._
+import com.bones.validation.ValidationDefinition.BaseValidationOp
 import shapeless.{:+:, CNil, Generic}
 
 object SumTypeExample {
@@ -28,13 +29,16 @@ object SumTypeExample {
   }
 
   object Album {
+
+    object V extends BaseValidationOp[Album]
+
     private val fields =
       MusicMedium.baseFields :::
         ("albumQuality", Quality.bonesSchema) ::
         ("coverQuality", Quality.bonesSchema) ::
         kvpNil
 
-    val bonesSchema = fields.convert[Album]
+    val bonesSchema = fields.convert[Album](V.unique)
   }
   case class Album(name: String, albumQuality: Quality, coverQuality: Quality) extends MusicMedium
 
