@@ -1,10 +1,14 @@
 package com.bones.jdbc
 
 import com.bones.data.values.{CNilF, DefaultValues}
-import com.bones.si.ideal.{IdealColumn, IdealForeignKey, IdealTable}
+import com.bones.si.ideal.{IdealColumn, IdealDataType, IdealForeignKey, IdealTable}
+import com.bones.validation.ValidationDefinition.UniqueValue
 import shapeless.{:+:, Coproduct, Inl, Inr}
 
 package object ideal {
+
+  type UniqueUmbrella = List[String]
+  case class UniqueGroup(tableName: String, name: Option[String], columns: List[IdealColumn])
 
   val defaultIdealValue: IdealValue[DefaultValues] =
     IdealScalaCoreInterpreter ++
@@ -81,8 +85,10 @@ package object ideal {
       ri: IdealValue[R]
     ): IdealValue[Lambda[A => L[A] :+: R[A]]] =
       new IdealValue[Lambda[A => L[A] :+: R[A]]] {
-        override def columns[A](alg: L[A] :+: R[A])
-          : (TableCollection, ColumnName, Option[Description]) => TableCollection = {
+        override def columns[B](alg: L[B] :+: R[B])
+          : (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
+            TableCollection,
+            List[UniqueGroup]) = {
           alg match {
             case Inl(l) => li.columns(l)
             case Inr(r) => ri.columns(r)
@@ -102,13 +108,45 @@ package object ideal {
 
   trait IdealValue[ALG[_]] {
     def columns[A](
-      alg: ALG[A]): (TableCollection, ColumnName, Option[Description]) => TableCollection
+      alg: ALG[A]): (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
+      TableCollection,
+      List[UniqueGroup])
   }
 
   object CNilIdealInterpreter extends IdealValue[CNilF] {
     override def columns[A](
-      alg: CNilF[A]): (TableCollection, ColumnName, Option[Description]) => TableCollection =
+      alg: CNilF[A]): (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
+      TableCollection,
+      List[UniqueGroup]) =
       sys.error("Unreachable code")
+  }
+
+  def defaultColumns(newType: IdealDataType, uniqueConstraint: List[UniqueValue[_]])
+    : (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
+      TableCollection,
+      List[UniqueGroup]) = { (tableCollection, uniqueGroups, name, description) =>
+    {
+      val newColumn = IdealColumn(name, newType, false, description)
+      val newUg =
+        uniqueConstraint.foldLeft(uniqueGroups)((groups, value) => {
+          value.uniqueKey match {
+            case Some(key) =>
+              val (matching, others) = groups
+                .partition(ug => ug.name.contains(key))
+              val newMatching =
+                matching.map(m => m.copy(columns = newColumn :: m.columns))
+              if (newMatching.isEmpty)
+                UniqueGroup(tableCollection.activeTable.name, Some(key), List(newColumn)) :: groups
+              else
+                newMatching ::: others
+
+            case None =>
+              UniqueGroup(tableCollection.activeTable.name, None, List(newColumn)) :: groups
+          }
+        })
+
+      (tableCollection.prependColumn(newColumn), newUg)
+    }
   }
 
 }
