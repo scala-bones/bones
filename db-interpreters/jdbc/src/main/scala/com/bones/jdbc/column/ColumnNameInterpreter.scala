@@ -37,7 +37,7 @@ trait ColumnNameInterpreter[ALG[_]] extends KvpCollectionMatch[ALG, List[ColumnN
     value match {
       case _: KvpCoNil[_] => List.empty
       case co: KvpCoproductCollectionHead[ALG, a, c, o] =>
-        val head = fromKvpCollection(value)
+        val head = fromKvpCollection(co.kvpCollection)
         val tail = kvpCoproduct(co.kvpTail)
         head ::: tail
     }

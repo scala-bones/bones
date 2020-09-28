@@ -298,14 +298,22 @@ trait Ideal[ALG[_]]
 
   }
 
-  def toIdeal[A: Manifest](
+  def toIdeal[A: Manifest, ID](
+    idSchema: KvpCollection[ALG, ID],
     schema: KvpCollection[ALG, A],
     name: Option[String] = None,
     description: Option[String] = None): TableCollection = {
     val tableName =
       DbUtil.camelToSnake(headTypeName(schema).getOrElse("Unknown"))
     val tableCol = TableCollection.init(tableName, description)
-    val (tc, ug) = fromKvpCollection(schema).apply(tableCol, List.empty, None, None)
+    val (idTc, _) = fromKvpCollection(idSchema)(tableCol, List.empty, None, None)
+    // all columns are primary key columns
+    val idTableCol = {
+      val at = idTc.activeTable
+      val newActiveTable = at.copy(primaryKeyColumns = at.allColumns).copy(columns = List.empty)
+      tableCol.copy(activeTable = newActiveTable)
+    }
+    val (tc, ug) = fromKvpCollection(schema).apply(idTableCol, List.empty, None, None)
 
     ug.foldLeft(tc) {
       case (tc, ug) => {
