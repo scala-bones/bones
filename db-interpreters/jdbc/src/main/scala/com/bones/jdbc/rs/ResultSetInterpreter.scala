@@ -11,7 +11,7 @@ import com.bones.data._
 import com.bones.data.template.{KvpCollectionFunctor, KvpCollectionMatch}
 import com.bones.jdbc.DbUtil.camelToSnake
 import com.bones.jdbc.FindInterpreter.{FieldName, Path}
-import shapeless.{Coproduct, HList, HNil, Nat, ::}
+import shapeless.{::, Coproduct, HList, HNil, Inl, Inr, Nat}
 
 /** Responsible for converting a result set into the result type */
 trait ResultSetInterpreter[ALG[_]]
@@ -149,6 +149,31 @@ trait ResultSetInterpreter[ALG[_]]
     }
 
   override def kvpCoproduct[C <: Coproduct](
-    value: KvpCoproduct[ALG, C]): Path => ResultSet => Either[NonEmptyList[ExtractionError], C] =
-    throw new UnsupportedOperationException("currently not supported") //TODO support this, probably by making this a a typeclass
+    value: KvpCoproduct[ALG, C]): Path => ResultSet => Either[NonEmptyList[ExtractionError], C] = {
+    path =>
+      { rs =>
+        {
+          val dtype = rs.getString("dtype")
+          coproductWithDtype(value, rs, dtype, path)
+        }
+      }
+  }
+
+  private def coproductWithDtype[C <: Coproduct](
+    kvp: KvpCoproduct[ALG, C],
+    rs: ResultSet,
+    dtype: String,
+    path: List[String]): Either[NonEmptyList[ExtractionError], C] = {
+    kvp match {
+      case _: KvpCoNil[ALG] => Left(NonEmptyList.one(RequiredValue(path, "unknown")))
+      case head: KvpCoproductCollectionHead[ALG, a, c, C] => {
+        if (head.typeNameOfA.capitalize == dtype) {
+          fromKvpCollection(head.kvpCollection)(path)(rs).map(Inl(_).asInstanceOf[C])
+        } else {
+          coproductWithDtype(head.kvpTail, rs, dtype, path).map(Inr(_).asInstanceOf[C])
+        }
+      }
+    }
+  }
+
 }
