@@ -1,6 +1,7 @@
 package com.bones.jdbc.integration
 
 import com.bones.jdbc.ideal.TableCollection
+import com.bones.jdbc.longId
 import com.bones.schemas.Schemas
 import com.bones.si.ideal.{Diff, IdealSchema}
 import com.bones.si.jdbc.load.{DatabaseMetadataCache, DatabaseQuery}
@@ -13,7 +14,7 @@ class JdbcIntegrationTest extends AnyFunSuite with Matchers {
 
     val allSupported = Schemas.allSupportCaseClass
 
-    val tableCollection = com.bones.jdbc.ideal.defaultIdealInterpreter.toIdeal(allSupported)
+    val tableCollection = com.bones.jdbc.ideal.defaultIdealInterpreter.toIdeal(longId, allSupported)
 
     val pkgpiSchemaQuery = DatabaseQuery.everything.schemas("public")
     val pkgpiIdealSchema = IdealSchema("public", tableCollection.allTables)

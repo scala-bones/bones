@@ -30,11 +30,12 @@ trait SelectInterpreter[ALG[_]] {
     */
   def selectEntity[A, ID](
     schema: KvpCollection[ALG, A],
-    idSchema: KvpCollection[ALG, ID]
+    idSchema: KvpCollection[ALG, ID],
+    tableNameOverride: Option[String] = None
   ): ID => Connection => Either[NonEmptyList[ExtractionError], (ID, A)] = {
 
     val entityName = headTypeName(schema).getOrElse("Unknown")
-    val tableName = camelToSnake(entityName)
+    val tableName = tableNameOverride.getOrElse(camelToSnake(entityName))
     val resultSetF =
       resultSetInterpreter
         .generateResultSet(schema)

@@ -1,17 +1,30 @@
 package com.bones
 
+import java.util.UUID
+
 import com.bones.data.KvpCollection.headTypeName
 import com.bones.data.values.DefaultValues
-import com.bones.data.{KvpCollection, KvpNil, KvpWrappedHList}
+import com.bones.data.{KvpCollection, KvpNil, KvpSingleValueHead, KvpWrappedHList}
 import com.bones.jdbc.column.{ColumnNameInterpreter, ColumnValue}
 import com.bones.jdbc.rs.ResultSetInterpreter
 import com.bones.jdbc.select.SelectInterpreter
 import com.bones.jdbc.update.{JdbcStatementInterpreter, UpdateStatementValue}
+import com.bones.syntax.{int, iv, kvpNil, long, lv, uuid, uuidV}
 import com.bones.validation.ValidationDefinition.{UniqueValue, ValidationOp}
 import shapeless.Nat._0
 import shapeless.{::, HNil, Succ}
 
 package object jdbc {
+
+  val longId: KvpSingleValueHead[DefaultValues, Long, HNil, _0, Long :: HNil] = (
+    "id",
+    long(lv.min(0), lv.unique)) :: kvpNil
+  val intId: KvpSingleValueHead[DefaultValues, Int, HNil, _0, Int :: HNil] = (
+    "id",
+    int(iv.min(0), iv.unique)) :: kvpNil
+  val uuidId: KvpSingleValueHead[DefaultValues, UUID, HNil, _0, UUID :: HNil] = (
+    "id",
+    uuid(uuidV.unique)) :: kvpNil
 
   case class JdbcColumnInterpreter[ALG[_]](
     resultSet: rs.ResultSetInterpreter[ALG],

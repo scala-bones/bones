@@ -3,7 +3,11 @@ package com.bones.data.values
 import java.util.UUID
 
 import com.bones.{PrimitiveValue, PrimitiveValueManifestTypeName}
-import com.bones.validation.ValidationDefinition.ValidationOp
+import com.bones.validation.ValidationDefinition.{
+  BaseValidationOp,
+  OrderingValidation,
+  ValidationOp
+}
 import shapeless.Coproduct
 import shapeless.ops.coproduct.Inject
 
@@ -23,7 +27,7 @@ trait BaseJavaUtilInterpreter[OUT] {
   def uuidData(uuidData: UuidData): OUT
 }
 
-trait JavaUtilSugar {
+trait JavaUtilSugar extends JavaUtilValidation {
 
   /** Indicates that the data tied to this key is a UUID type that must pass the specified validations. */
   def uuid(v: ValidationOp[UUID]*): UuidData = UuidData(v.toList)
@@ -33,7 +37,7 @@ trait JavaUtilSugar {
 
 }
 
-trait JavaUtilInjectedSugar[ALG[_] <: Coproduct] {
+trait JavaUtilInjectedSugar[ALG[_] <: Coproduct] extends JavaUtilValidation {
   def javaUtilInjected[A]: Inject[ALG[A], JavaUtilValue[A]]
 
   /** Indicates that the data tied to this key is a UUID type that must pass the specified validations. */
@@ -42,4 +46,10 @@ trait JavaUtilInjectedSugar[ALG[_] <: Coproduct] {
 
   /** Alias for UUID without validations */
   def uuid: ALG[UUID] = uuid()
+}
+
+trait JavaUtilValidation {
+
+  object uuidV extends BaseValidationOp[UUID]
+
 }

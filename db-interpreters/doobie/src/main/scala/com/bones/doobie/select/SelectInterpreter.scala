@@ -13,9 +13,12 @@ trait SelectInterpreter[ALG[_]] {
 
   val jdbcSelectInterpreter: com.bones.jdbc.select.SelectInterpreter[ALG]
 
-  def select[A, ID](kvp: KvpCollection[ALG, A], idSchema: KvpCollection[ALG, ID])
+  def select[A, ID](
+    kvp: KvpCollection[ALG, A],
+    idSchema: KvpCollection[ALG, ID],
+    tableNameOverride: Option[String] = None)
     : ID => ConnectionIO[Either[NonEmptyList[ExtractionError], (ID, A)]] = {
-    val selectF = jdbcSelectInterpreter.selectEntity(kvp, idSchema)
+    val selectF = jdbcSelectInterpreter.selectEntity(kvp, idSchema, tableNameOverride)
     id =>
       {
         raw(con => {
