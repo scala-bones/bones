@@ -66,5 +66,4 @@ object DbUtil {
       con.close()
     }
 
-  val longIdKeyValueDef = ("id", long(lv.min(0)))
 }
