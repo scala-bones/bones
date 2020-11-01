@@ -113,7 +113,7 @@ object ExtractionErrorEncoder {
       _ => sys.error("Mapping to a ValidationError is not supported"),
       validationErrorToHList)
 
-  def requiredValueHList(requiredValue: RequiredValue[_]): String :: String :: HNil = {
+  def requiredValueHList(requiredValue: RequiredValue): String :: String :: HNil = {
     requiredValue.path.mkString(".") :: requiredValue.typeName :: HNil
   }
 
@@ -144,14 +144,14 @@ object ExtractionErrorEncoder {
       ("path", string(sv.words)) ::
         ("description", string) ::
         kvpNil
-    ).hListXmap[RequiredValue[_]](
+    ).hListXmap[RequiredValue](
       _ => sys.error("Mapping to a Required Value is not supported"),
       requiredValueHList)
 
   type ExtractionErrorGeneric = ValidationError[_] :+:
     WrongTypeError[_] :+:
     CanNotConvert[_, _] :+:
-    RequiredValue[_] :+:
+    RequiredValue :+:
     SumTypeError :+:
     ParsingError :+:
     SystemError :+:
@@ -166,7 +166,7 @@ object ExtractionErrorEncoder {
         case v: ValidationError[_]  => Inl(v)
         case w: WrongTypeError[_]   => Inr(Inl(w))
         case c: CanNotConvert[_, _] => Inr(Inr(Inl(c)))
-        case r: RequiredValue[_]    => Inr(Inr(Inr(Inl(r))))
+        case r: RequiredValue       => Inr(Inr(Inr(Inl(r))))
         case s: SumTypeError        => Inr(Inr(Inr(Inr(Inl(s)))))
         case p: ParsingError        => Inr(Inr(Inr(Inr(Inr(Inl(p))))))
         case s: SystemError         => Inr(Inr(Inr(Inr(Inr(Inr(Inl(s)))))))
@@ -208,7 +208,7 @@ trait ExtractionErrorEncoder[OUT]
   def defaultEncoder: KvpInterchangeFormatEncoderInterpreter[ScalaCoreValue, OUT]
   val scalaCoreInterpreter: ScalaCoreEncoder[OUT]
 
-  def requiredValueToHList(requiredValue: RequiredValue[_]): String :: String :: HNil = {
+  def requiredValueToHList(requiredValue: RequiredValue): String :: String :: HNil = {
     requiredValue.path.mkString(".") :: requiredValue.typeName :: HNil
   }
 
@@ -217,7 +217,7 @@ trait ExtractionErrorEncoder[OUT]
       ("path", string) ::
         ("valueDescription", string) ::
         kvpNil
-    ).hListXmap[RequiredValue[_]](
+    ).hListXmap[RequiredValue](
       h => sys.error("Mapping to an RequiredValue is not supported"),
       requiredValueToHList)
 
@@ -233,7 +233,7 @@ trait ExtractionErrorEncoder[OUT]
       .generateEncoder[ParsingError](parsingErrorSchema)
   def requiredValueEncoder =
     defaultEncoder
-      .generateEncoder[RequiredValue[_]](requiredValueSchema)
+      .generateEncoder[RequiredValue](requiredValueSchema)
   def sumTypeErrorEncoder =
     defaultEncoder
       .generateEncoder[SumTypeError](sumTypeErrorSchema)

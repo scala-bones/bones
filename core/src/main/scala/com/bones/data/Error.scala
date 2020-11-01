@@ -1,11 +1,14 @@
 package com.bones.data
 
+import cats.data.NonEmptyList
 import com.bones.validation.ValidationDefinition.ValidationOp
 
 /**
   * Various Errors for use in Bones interpreters.
   */
 object Error {
+
+  type ExtractionErrors = NonEmptyList[ExtractionError]
 
   /** Error Case */
   sealed abstract class ExtractionError {
@@ -59,9 +62,8 @@ object Error {
     *
     * @param path                    The path within the schema to the offending definition
     * @param typeName The description of the required value
-    * @tparam A The type of the required value
     */
-  final case class RequiredValue[A](path: List[String], typeName: String) extends ExtractionError
+  final case class RequiredValue(path: List[String], typeName: String) extends ExtractionError
 
   final case class SumTypeError(path: List[String], problem: String) extends ExtractionError
 
