@@ -3,7 +3,7 @@ package com.bones.jdbc.select
 import java.sql.Connection
 
 import cats.data.NonEmptyList
-import com.bones.data.Error.{ExtractionError, NotFound, SystemError}
+import com.bones.data.Error.{ExtractionErrors, NotFound, SystemError}
 import com.bones.data.KvpCollection
 import com.bones.data.KvpCollection.headTypeName
 import com.bones.jdbc.DbUtil.{camelToSnake, withStatement}
@@ -32,7 +32,7 @@ trait SelectInterpreter[ALG[_]] {
     schema: KvpCollection[ALG, A],
     idSchema: KvpCollection[ALG, ID],
     tableNameOverride: Option[String] = None
-  ): ID => Connection => Either[NonEmptyList[ExtractionError], (ID, A)] = {
+  ): ID => Connection => Either[ExtractionErrors, (ID, A)] = {
 
     val entityName = headTypeName(schema).getOrElse("Unknown")
     val tableName = tableNameOverride.getOrElse(camelToSnake(entityName))

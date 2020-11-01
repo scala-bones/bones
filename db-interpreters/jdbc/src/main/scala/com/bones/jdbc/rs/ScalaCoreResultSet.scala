@@ -3,50 +3,57 @@ package com.bones.jdbc.rs
 import java.sql.ResultSet
 
 import cats.data.NonEmptyList
-import com.bones.Util.stringToEnumeration
-import com.bones.data.Error
+import com.bones.Util.{NullableResult, stringToEnumeration}
+import com.bones.data.Error.ExtractionErrors
 import com.bones.data.values._
 import com.bones.jdbc.FindInterpreter.{FieldName, Path}
 
 trait ScalaCoreResultSet extends ResultSetValue[ScalaCoreValue] {
   override def resultSet[A](alg: ScalaCoreValue[A])
-    : (Path, FieldName) => ResultSet => Either[NonEmptyList[Error.ExtractionError], A] =
+    : (Path, FieldName) => ResultSet => Either[ExtractionErrors, NullableResult[A]] =
     alg match {
       case ob: BooleanData =>
         (path, fieldName) => rs =>
-          catchSql(rs.getBoolean(fieldName), alg.typeName, path, ob)
+          catchSql(rs.getBoolean(fieldName), alg.typeName, fieldName, path)
       case sd: StringData =>
         (path, fieldName) => rs =>
-          catchSql(rs.getString(fieldName), alg.typeName, path, sd)
+          catchSql(rs.getString(fieldName), alg.typeName, fieldName, path)
       case id: ShortData =>
         (path, fieldName) => rs =>
-          catchSql(rs.getShort(fieldName), alg.typeName, path, id)
+          catchSql(rs.getShort(fieldName), alg.typeName, fieldName, path)
       case id: IntData =>
         (path, fieldName) => rs =>
-          catchSql(rs.getInt(fieldName), alg.typeName, path, id)
+          catchSql(rs.getInt(fieldName), alg.typeName, fieldName, path)
       case ri: LongData =>
         (path, fieldName) => rs =>
-          catchSql(rs.getLong(fieldName), alg.typeName, path, ri)
+          catchSql(rs.getLong(fieldName), alg.typeName, fieldName, path)
       case fd: FloatData =>
         (path, fieldName) => rs =>
-          catchSql(rs.getFloat(fieldName), alg.typeName, path, fd)
+          catchSql(rs.getFloat(fieldName), alg.typeName, fieldName, path)
       case dd: DoubleData =>
         (path, fieldName) => rs =>
-          catchSql(rs.getDouble(fieldName), alg.typeName, path, dd)
+          catchSql(rs.getDouble(fieldName), alg.typeName, fieldName, path)
       case bd: BigDecimalData =>
         (path, fieldName) => rs =>
-          catchSql(rs.getBigDecimal(fieldName), alg.typeName, path, bd).map(bd => BigDecimal(bd))
+          catchSql(rs.getBigDecimal(fieldName), alg.typeName, fieldName, path)
       case ba: ByteArrayData =>
         (path, fieldName) => rs =>
-          catchSql(rs.getBytes(fieldName), alg.typeName, path, ba)
+          catchSql(rs.getBytes(fieldName), alg.typeName, fieldName, path)
       case esd: EnumerationData[e, a] =>
         (path, fieldName) => rs =>
           {
             for {
-              r <- catchSql(rs.getString(fieldName), alg.typeName, path, esd)
-              e <- stringToEnumeration[e, a](r, path, esd.enumeration)
-            } yield e.asInstanceOf[A]
-          }: Either[NonEmptyList[com.bones.data.Error.ExtractionError], A]
+              r <- catchSql(rs.getString(fieldName), alg.typeName, fieldName, path)
+              e <- {
+                r match {
+                  case Left(nv) => Right(Left(nv))
+                  case Right(str) =>
+                    stringToEnumeration[e, a](str, path, esd.enumeration).map(v =>
+                      Right(v.asInstanceOf[A]))
+                }
+              }
+            } yield e
+          }: Either[NonEmptyList[com.bones.data.Error.ExtractionError], NullableResult[A]]
 
     }
 }
