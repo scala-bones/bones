@@ -8,7 +8,7 @@ sealed abstract class ExtractionErrorValue[T]
 case object CanNotConvertData extends ExtractionErrorValue[CanNotConvert[_, _]]
 case object NotFoundData extends ExtractionErrorValue[NotFound[_]]
 case object ParsingErrorData extends ExtractionErrorValue[ParsingError]
-case object RequiredValueData extends ExtractionErrorValue[RequiredValue[_]]
+case object RequiredValueData extends ExtractionErrorValue[RequiredValue]
 case object SumTypeErrorData extends ExtractionErrorValue[SumTypeError]
 case object SystemErrorData extends ExtractionErrorValue[SystemError]
 case object ValidationErrorData extends ExtractionErrorValue[ValidationError[_]]
@@ -46,10 +46,10 @@ trait ExtractionErrorValueSugar extends Sugar[ExtractionErrorValue] {
 
   private val requiredValue =
     (("name", scalaCoreSugar.string) :: sugar.kvpNil)
-      .xmap[RequiredValue[_], String](
+      .xmap[RequiredValue, String](
         (_: String) =>
           throw new UnsupportedOperationException("Decoding of ExtractionError not supported"),
-        (_: RequiredValue[_]) => "ParsingError"
+        (_: RequiredValue) => "ParsingError"
       )
 
   private val sumTypeError =
@@ -84,7 +84,7 @@ trait ExtractionErrorValueSugar extends Sugar[ExtractionErrorValue] {
       )
 
   type ExtractionErrorCoproduct =
-    CanNotConvert[_, _] :+: NotFound[_] :+: ParsingError :+: RequiredValue[_] :+: SumTypeError :+: ValidationError[
+    CanNotConvert[_, _] :+: NotFound[_] :+: ParsingError :+: RequiredValue :+: SumTypeError :+: ValidationError[
       _] :+:
       WrongTypeError[_] :+: SystemError :+: CNil
 
@@ -97,7 +97,7 @@ trait ExtractionErrorValueSugar extends Sugar[ExtractionErrorValue] {
           case c: CanNotConvert[_, _] => Inl(c)
           case n: NotFound[_]         => Inr(Inl(n))
           case p: ParsingError        => Inr(Inr(Inl(p)))
-          case r: RequiredValue[_]    => Inr(Inr(Inr(Inl(r))))
+          case r: RequiredValue       => Inr(Inr(Inr(Inl(r))))
           case s: SumTypeError        => Inr(Inr(Inr(Inr(Inl(s)))))
           case v: ValidationError[_]  => Inr(Inr(Inr(Inr(Inr(Inl(v))))))
           case w: WrongTypeError[_]   => Inr(Inr(Inr(Inr(Inr(Inr(Inl(w)))))))

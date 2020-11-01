@@ -4,14 +4,15 @@ import java.sql.{Connection, ResultSet}
 
 import cats.data.NonEmptyList
 import cats.effect.IO
-import com.bones.data.Error.ExtractionError
-import com.bones.data.{KvpCollection, KvpNil}
+import com.bones.Util.NullableResult
+import com.bones.data.Error.{ExtractionError, ExtractionErrors}
 import com.bones.data.KvpCollection.headTypeName
+import com.bones.data.{KvpCollection, KvpNil}
 import com.bones.jdbc.DbUtil.camelToSnake
 import com.bones.jdbc.column.ColumnNameInterpreter
 import com.bones.jdbc.rs.ResultSetInterpreter
-import javax.sql.DataSource
 import fs2.Stream
+import javax.sql.DataSource
 
 trait DbSearch[ALG[_]] {
 
@@ -21,7 +22,7 @@ trait DbSearch[ALG[_]] {
   def getEntity[A: Manifest, ID: Manifest](
     schema: KvpCollection[ALG, A],
     idSchema: KvpCollection[ALG, ID]
-  ): DataSource => Stream[IO, Either[NonEmptyList[ExtractionError], (ID, A)]] = {
+  ): DataSource => Stream[IO, Either[ExtractionErrors, (ID, A)]] = {
     val withConnection = searchEntityWithConnection(schema, idSchema)
     ds =>
       {
@@ -46,13 +47,13 @@ trait DbSearch[ALG[_]] {
   def searchEntityWithConnection[A: Manifest, ID: Manifest](
     schema: KvpCollection[ALG, A],
     idSchema: KvpCollection[ALG, ID]
-  ): Connection => Stream[IO, Either[NonEmptyList[ExtractionError], (ID, A)]] = {
+  ): Connection => Stream[IO, Either[ExtractionErrors, (ID, A)]] = {
     val tableName = camelToSnake(headTypeName(schema).getOrElse("Unknown"))
     val schemaWithId: KvpCollection[ALG, (ID, A)] =
       (idSchema :: schema :: new KvpNil[ALG]).tupled[(ID, A)]
 
-    val resultSetF: ResultSet => Either[NonEmptyList[ExtractionError], (ID, A)] =
-      resultSetInterpreter.fromKvpCollection[(ID, A)](schemaWithId)(List.empty)
+    val resultSetF: ResultSet => Either[ExtractionErrors, (ID, A)] =
+      resultSetInterpreter.generateResultSet[(ID, A)](schemaWithId)(List.empty)
 
     val fields = columnNameInterpreter.fromKvpCollection(schemaWithId)
     val sql = s"""select ${fields.mkString(",")} from $tableName limit 50"""

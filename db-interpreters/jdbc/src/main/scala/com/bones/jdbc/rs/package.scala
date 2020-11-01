@@ -4,7 +4,8 @@ import java.sql.SQLException
 
 import cats.data.NonEmptyList
 import com.bones.PrimitiveValue
-import com.bones.data.Error.{ExtractionError, RequiredValue, SystemError}
+import com.bones.Util.{NullValue, NullableResult}
+import com.bones.data.Error.{ExtractionError, ExtractionErrors, RequiredValue, SystemError}
 import com.bones.data.values.DefaultValues
 import com.bones.jdbc.FindInterpreter.Path
 
@@ -29,18 +30,18 @@ package object rs {
   def catchSql[A](
     f: => A,
     typeName: String,
-    path: Path,
-    op: PrimitiveValue[_]): Either[NonEmptyList[ExtractionError], A] =
+    fieldName: String,
+    path: Path): Either[ExtractionErrors, NullableResult[A]] =
     try {
       val result = f
       if (result == null) {
-        Left(NonEmptyList.one(RequiredValue(path, typeName)))
+        Right(Left(NonEmptyList.one(NullValue(fieldName, typeName, path))))
       } else {
-        Right(result)
+        Right(Right(result))
       }
     } catch {
       case ex: SQLException =>
-        Left(NonEmptyList.one(SystemError(path, ex, None)))
+        Left(NonEmptyList.one(SystemError(path, ex, Some(s"Error extracting field: ${fieldName}"))))
     }
 
 }

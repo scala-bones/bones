@@ -15,6 +15,10 @@ import scala.util.Try
   */
 object Util {
 
+  case class NullValue(fieldName: String, typeName: String, path: Path)
+
+  type NullableResult[T] = Either[NonEmptyList[NullValue], T]
+
   def allValidCars(str: String, isNegative: Boolean) =
     if (isNegative) str.drop(1).forall(Character.isDigit)
     else str.forall(Character.isDigit)
@@ -108,7 +112,6 @@ object Util {
     path: List[String],
     enumeration: E): Either[NonEmptyList[CanNotConvert[String, V]], enumeration.Value] =
     try {
-//      val clazz = manifest.runtimeClass.asInstanceOf[Class[enumeration.Value]]
       Right(enumeration.withName(str))
     } catch {
       case e: NoSuchElementException =>
@@ -164,6 +167,29 @@ object Util {
       case (Left(err1), _)          => Left(err1)
       case (_, Left(err2))          => Left(err2)
       case (Right(a), Right(b))     => Right(f(a, b))
+    }
+  }
+
+  /**
+    * Accumulates error on the left or combines success on the right, just
+    * like Applicative.map2 if Either was a Validation.
+    */
+  def eitherMap2Nullable[A, B, Z](
+    e1: Either[NonEmptyList[ExtractionError], NullableResult[A]],
+    e2: Either[NonEmptyList[ExtractionError], NullableResult[B]])(
+    f: (A, B) => Z): Either[NonEmptyList[ExtractionError], NullableResult[Z]] = {
+    (e1, e2) match {
+      case (Left(err1), Left(err2)) => Left(err1 concatNel err2)
+      case (Left(err1), _)          => Left(err1)
+      case (_, Left(err2))          => Left(err2)
+      case (Right(a), Right(b)) => {
+        (a, b) match {
+          case (Left(nullA), Left(nullB))     => Right(Left(nullA ::: nullB))
+          case (Left(nullA), _)               => Right(Left(nullA))
+          case (_, Left(nullB))               => Right(Left(nullB))
+          case (Right(valueA), Right(valueB)) => Right(Right(f(valueA, valueB)))
+        }
+      }
     }
   }
 

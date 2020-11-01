@@ -94,7 +94,7 @@ trait DbInsert[ALG[_]]
     : A => Connection => Either[NonEmptyList[ExtractionError], ID] = {
     val tableName = camelToSnake(headTypeName(collection).getOrElse("Unknown"))
     val updates = fromKvpCollection(collection)
-    val rs = resultSetInterpreter.fromKvpCollection(idSchema)
+    val rs = resultSetInterpreter.generateResultSet(idSchema)
     a: A =>
       {
         val result = updates(1, a)
