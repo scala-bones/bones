@@ -87,14 +87,14 @@ lazy val swaggerOas3 = (project in file("interchange-format-interpreters/swagger
     commonSettings,
     name := "Bones DataDefinition to OAS3 Interpreter",
     libraryDependencies ++= Seq(
-      "io.swagger.core.v3" % "swagger-core" % "2.1.4",
+      "io.swagger.core.v3" % "swagger-core" % "2.1.5",
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
       "org.scalatest" %% "scalatest" % "3.2.2" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
   )
   .dependsOn(core, testSchemas % "test")
-lazy val doobieVersion = "0.9.0"
+lazy val doobieVersion = "0.9.2"
 // lazy val directEncoders = (project in file("interchange-format-interpreters/direct-encoders"))
 //  .settings(
 //    commonSettings,
@@ -166,7 +166,7 @@ lazy val dbJdbc = (project in file("db-interpreters/jdbc"))
     commonSettings,
     name := "Bones JDBC",
     libraryDependencies ++= Seq(
-      "org.postgresql" % "postgresql" % "42.2.16",
+      "org.postgresql" % "postgresql" % "42.2.18",
       "io.github.scala-bones" %% "scatonic-ideal" % "0.2.0-SNAPSHOT",
       "co.fs2" %% "fs2-core" % "2.4.4",
       "org.scalacheck" %% "scalacheck" % "1.14.3" % Test,
@@ -193,7 +193,7 @@ lazy val dbDoobie = (project in file("db-interpreters/doobie"))
   )
   .dependsOn(core, dbJdbc, testSchemas % "test->compile")
 
-lazy val http4sVersion = "0.21.7"
+lazy val http4sVersion = "0.21.8"
 lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
   .settings(
     commonSettings,
@@ -236,7 +236,7 @@ lazy val examples = (project in file("examples/http4s-examples"))
     commonSettings,
     name := "Bones Examples",
     libraryDependencies ++= Seq(
-      "io.swagger.core.v3" % "swagger-jaxrs2" % "2.1.4",
+      "io.swagger.core.v3" % "swagger-jaxrs2" % "2.1.5",
       "io.swagger" % "swagger-parser" % "1.0.52",
       "org.slf4j" % "slf4j-simple" % "1.7.30",
       "com.zaxxer" % "HikariCP" % "3.4.5",
