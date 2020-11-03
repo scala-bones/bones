@@ -317,7 +317,7 @@ trait Ideal[ALG[_]]
 
     ug.foldLeft(tc) {
       case (tc, ug) => {
-        val uc = UniqueConstraint(ug.name, ug.columns)
+        val uc = UniqueConstraint(ug.columns)
 
         // Find table for which the unique constraints belongs and update
         if (tc.activeTable.name == ug.tableName) {
