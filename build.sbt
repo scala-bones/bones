@@ -153,7 +153,7 @@ lazy val bson = (project in file("interchange-format-interpreters/bson"))
     commonSettings,
     name := "Bones Bson",
     libraryDependencies ++= Seq(
-      "org.reactivemongo" %% "reactivemongo-bson" % "0.20.12",
+      "org.reactivemongo" %% "reactivemongo-bson" % "0.20.13",
       "org.reactivemongo" %% "reactivemongo" % "1.0.0",
       "org.scalacheck" %% "scalacheck" % "1.15.0" % Test,
       "org.scalatest" %% "scalatest" % "3.2.2" % Test,
