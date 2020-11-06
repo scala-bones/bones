@@ -10,7 +10,7 @@ trait Named {
   def name: String
 }
 
-trait HigherOrderTemplate[ALG[_], OUT] {
+trait HigherOrderTemplate[K, ALG[_], OUT] {
   def fromConcreteValue[A](kvpCollection: HigherOrderValue[ALG, A]): OUT = {
     kvpCollection match {
       case ov: OptionalValue[ALG, b] =>
@@ -19,14 +19,14 @@ trait HigherOrderTemplate[ALG[_], OUT] {
         eitherToOut(ed)
       case ld: ListData[ALG, t] =>
         listToOut(ld)
-      case hl: KvpCollectionValue[ALG, a] => kvpCollectionToOut(hl)
+      case hl: KvpCollectionValue[K, ALG, a] => kvpCollectionToOut(hl)
     }
   }
 
   protected def optionalToOut[B](opt: OptionalValue[ALG, B]): OUT
   protected def eitherToOut[A, B](either: EitherData[ALG, A, B]): OUT
   protected def listToOut[A](list: ListData[ALG, A]): OUT
-  protected def kvpCollectionToOut[A](hList: KvpCollectionValue[ALG, A]): OUT
+  protected def kvpCollectionToOut[A](hList: KvpCollectionValue[K, ALG, A]): OUT
 
 }
 
@@ -80,8 +80,8 @@ final case class ListData[ALG[_], T](
 }
 
 /** Represents a type where the value is an KvpCollection */
-final case class KvpCollectionValue[ALG[_], A](
-  kvpCollection: KvpCollection[ALG, A],
+final case class KvpCollectionValue[K, ALG[_], A](
+  kvpCollection: KvpCollection[K, ALG, A],
   typeName: String,
   validations: List[ValidationOp[A]])
     extends HigherOrderValue[ALG, A] {

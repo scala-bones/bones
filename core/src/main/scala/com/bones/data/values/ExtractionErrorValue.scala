@@ -5,14 +5,14 @@ import com.bones.data.{KvpCoproductCollectionHead, KvpWrappedCoproduct, Sugar}
 import shapeless.{:+:, CNil, _}
 sealed abstract class ExtractionErrorValue[T]
 
-case object CanNotConvertData extends ExtractionErrorValue[CanNotConvert[_, _]]
-case object NotFoundData extends ExtractionErrorValue[NotFound[_]]
-case object ParsingErrorData extends ExtractionErrorValue[ParsingError]
-case object RequiredValueData extends ExtractionErrorValue[RequiredValue]
-case object SumTypeErrorData extends ExtractionErrorValue[SumTypeError]
-case object SystemErrorData extends ExtractionErrorValue[SystemError]
-case object ValidationErrorData extends ExtractionErrorValue[ValidationError[_]]
-case object WrongTypeErrorData extends ExtractionErrorValue[WrongTypeError[_]]
+case object CanNotConvertData extends ExtractionErrorValue[CanNotConvert[String, _, _]]
+case object NotFoundData extends ExtractionErrorValue[NotFound[String, _]]
+case object ParsingErrorData extends ExtractionErrorValue[ParsingError[String]]
+case object RequiredValueData extends ExtractionErrorValue[RequiredValue[String]]
+case object SumTypeErrorData extends ExtractionErrorValue[SumTypeError[String]]
+case object SystemErrorData extends ExtractionErrorValue[SystemError[String]]
+case object ValidationErrorData extends ExtractionErrorValue[ValidationError[String, _]]
+case object WrongTypeErrorData extends ExtractionErrorValue[WrongTypeError[String, _]]
 
 /**
   * Provides convenience methods for creating ExtractionErrorValue types.
@@ -24,87 +24,88 @@ trait ExtractionErrorValueSugar extends Sugar[ExtractionErrorValue] {
 
   private val canNotConvert =
     (("name", scalaCoreSugar.string) :: sugar.kvpNil)
-      .xmap[CanNotConvert[_, _], String](
+      .xmap[CanNotConvert[String, _, _], String](
         (_: String) =>
           throw new UnsupportedOperationException("Decoding of ExtractionError not supported"),
-        (_: CanNotConvert[_, _]) => "CanNotConvert"
+        (_: CanNotConvert[String, _, _]) => "CanNotConvert"
       )
 
   private val notFound =
     (("name", scalaCoreSugar.string) :: sugar.kvpNil)
-      .xmap[NotFound[_], String](
+      .xmap[NotFound[String, _], String](
         (_: String) =>
           throw new UnsupportedOperationException("Decoding of ExtractionError not supported"),
-        (_: NotFound[_]) => "NotFound")
+        (_: NotFound[String, _]) => "NotFound")
 
   private val parsingError =
     (("name", scalaCoreSugar.string) :: sugar.kvpNil)
-      .xmap[ParsingError, String](
+      .xmap[ParsingError[String], String](
         (_: String) =>
           throw new UnsupportedOperationException("Decoding of ExtractionError not supported"),
-        (_: ParsingError) => "ParsingError")
+        (_: ParsingError[String]) => "ParsingError")
 
   private val requiredValue =
     (("name", scalaCoreSugar.string) :: sugar.kvpNil)
-      .xmap[RequiredValue, String](
+      .xmap[RequiredValue[String], String](
         (_: String) =>
           throw new UnsupportedOperationException("Decoding of ExtractionError not supported"),
-        (_: RequiredValue) => "ParsingError"
+        (_: RequiredValue[String]) => "ParsingError"
       )
 
   private val sumTypeError =
     (("name", scalaCoreSugar.string) :: sugar.kvpNil)
-      .xmap[SumTypeError, String](
+      .xmap[SumTypeError[String], String](
         (_: String) =>
           throw new UnsupportedOperationException("Decoding of ExtractionError not supported"),
-        (_: SumTypeError) => "SumTypeError"
+        (_: SumTypeError[String]) => "SumTypeError"
       )
 
   private val validationError =
     (("name", scalaCoreSugar.string) :: sugar.kvpNil)
-      .xmap[ValidationError[_], String](
+      .xmap[ValidationError[String, _], String](
         (_: String) =>
           throw new UnsupportedOperationException("Decoding of ExtractionError not supported"),
-        (_: ValidationError[_]) => "ValidationError"
+        (_: ValidationError[String, _]) => "ValidationError"
       )
 
   private val wrongTypeError =
     (("name", scalaCoreSugar.string) :: sugar.kvpNil)
-      .xmap[WrongTypeError[_], String](
+      .xmap[WrongTypeError[String, _], String](
         (_: String) =>
           throw new UnsupportedOperationException("Decoding of ExtractionError not supported"),
-        (_: WrongTypeError[_]) => "WrongTypeError"
+        (_: WrongTypeError[String, _]) => "WrongTypeError"
       )
   private val systemError =
     (("name", scalaCoreSugar.string) :: sugar.kvpNil)
-      .xmap[SystemError, String](
+      .xmap[SystemError[String], String](
         (_: String) =>
           throw new UnsupportedOperationException("Decoding of ExtractionError not supported"),
-        (_: SystemError) => "SystemError"
+        (_: SystemError[String]) => "SystemError"
       )
 
   type ExtractionErrorCoproduct =
-    CanNotConvert[_, _] :+: NotFound[_] :+: ParsingError :+: RequiredValue :+: SumTypeError :+: ValidationError[
-      _] :+:
-      WrongTypeError[_] :+: SystemError :+: CNil
+    CanNotConvert[String, _, _] :+: NotFound[String, _] :+: ParsingError[String] :+: RequiredValue[
+      String] :+:
+      SumTypeError[String] :+: ValidationError[String, _] :+:
+      WrongTypeError[String, _] :+: SystemError[String] :+: CNil
 
-  implicit val gen: Generic[ExtractionError] { type Repr = ExtractionErrorCoproduct } =
-    new Generic[ExtractionError] {
+  implicit val gen: Generic[ExtractionError[String]] { type Repr = ExtractionErrorCoproduct } =
+    new Generic[ExtractionError[String]] {
       override type Repr = ExtractionErrorCoproduct
 
-      override def to(t: ExtractionError): ExtractionErrorCoproduct =
+      override def to(t: ExtractionError[String]): ExtractionErrorCoproduct =
         t match {
-          case c: CanNotConvert[_, _] => Inl(c)
-          case n: NotFound[_]         => Inr(Inl(n))
-          case p: ParsingError        => Inr(Inr(Inl(p)))
-          case r: RequiredValue       => Inr(Inr(Inr(Inl(r))))
-          case s: SumTypeError        => Inr(Inr(Inr(Inr(Inl(s)))))
-          case v: ValidationError[_]  => Inr(Inr(Inr(Inr(Inr(Inl(v))))))
-          case w: WrongTypeError[_]   => Inr(Inr(Inr(Inr(Inr(Inr(Inl(w)))))))
-          case s: SystemError         => Inr(Inr(Inr(Inr(Inr(Inr(Inr(Inl(s))))))))
+          case c: CanNotConvert[String, _, _] => Inl(c)
+          case n: NotFound[String, _]         => Inr(Inl(n))
+          case p: ParsingError[String]        => Inr(Inr(Inl(p)))
+          case r: RequiredValue[String]       => Inr(Inr(Inr(Inl(r))))
+          case s: SumTypeError[String]        => Inr(Inr(Inr(Inr(Inl(s)))))
+          case v: ValidationError[String, _]  => Inr(Inr(Inr(Inr(Inr(Inl(v))))))
+          case w: WrongTypeError[String, _]   => Inr(Inr(Inr(Inr(Inr(Inr(Inl(w)))))))
+          case s: SystemError[String]         => Inr(Inr(Inr(Inr(Inr(Inr(Inr(Inl(s))))))))
         }
 
-      override def from(r: ExtractionErrorCoproduct): ExtractionError =
+      override def from(r: ExtractionErrorCoproduct): ExtractionError[String] =
         r match {
           case Inl(c)                                    => c
           case Inr(Inl(n))                               => n
@@ -118,15 +119,22 @@ trait ExtractionErrorValueSugar extends Sugar[ExtractionErrorValue] {
         }
     }
 
-  implicit val genAux: Generic.Aux[ExtractionError, ExtractionErrorCoproduct] = gen
+  implicit val genAux: Generic.Aux[ExtractionError[String], ExtractionErrorCoproduct] = gen
 
-  val kvpCoproduct
-    : KvpCoproductCollectionHead[ScalaCoreValue, _, _, ExtractionErrorCoproduct] = (canNotConvert :+: notFound :+: parsingError :+: requiredValue :+: sumTypeError :+:
+  val kvpCoproduct: KvpCoproductCollectionHead[
+    String,
+    ScalaCoreValue,
+    _,
+    _,
+    ExtractionErrorCoproduct] = (canNotConvert :+: notFound :+: parsingError :+: requiredValue :+: sumTypeError :+:
     validationError :+: wrongTypeError :+: systemError :+: sugar.kvpCoNil)
 
-  val extractionErrors
-    : KvpWrappedCoproduct[ScalaCoreValue, ExtractionError, ExtractionErrorCoproduct] =
+  val extractionErrors: KvpWrappedCoproduct[
+    String,
+    ScalaCoreValue,
+    ExtractionError[String],
+    ExtractionErrorCoproduct] =
     kvpCoproduct
-      .toSuperclassOf[ExtractionError]()(manifest[ExtractionError], genAux)
+      .toSuperclassOf[ExtractionError[String]]()(manifest[ExtractionError[String]], genAux)
 
 }

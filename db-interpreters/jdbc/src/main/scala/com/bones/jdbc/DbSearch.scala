@@ -4,7 +4,6 @@ import java.sql.{Connection, ResultSet}
 
 import cats.data.NonEmptyList
 import cats.effect.IO
-import com.bones.Util.NullableResult
 import com.bones.data.Error.{ExtractionError, ExtractionErrors}
 import com.bones.data.KvpCollection.headTypeName
 import com.bones.data.{KvpCollection, KvpNil}
@@ -20,9 +19,9 @@ trait DbSearch[ALG[_]] {
   def columnNameInterpreter: ColumnNameInterpreter[ALG]
 
   def getEntity[A: Manifest, ID: Manifest](
-    schema: KvpCollection[ALG, A],
-    idSchema: KvpCollection[ALG, ID]
-  ): DataSource => Stream[IO, Either[ExtractionErrors, (ID, A)]] = {
+    schema: KvpCollection[String, ALG, A],
+    idSchema: KvpCollection[String, ALG, ID]
+  ): DataSource => Stream[IO, Either[ExtractionErrors[String], (ID, A)]] = {
     val withConnection = searchEntityWithConnection(schema, idSchema)
     ds =>
       {
@@ -34,8 +33,8 @@ trait DbSearch[ALG[_]] {
 
   private def extractToStream[A, ID](
     rs: ResultSet,
-    resultSetF: ResultSet => Either[NonEmptyList[ExtractionError], (ID, A)])
-    : Stream[IO, Either[NonEmptyList[ExtractionError], (ID, A)]] = {
+    resultSetF: ResultSet => Either[NonEmptyList[ExtractionError[String]], (ID, A)])
+    : Stream[IO, Either[NonEmptyList[ExtractionError[String]], (ID, A)]] = {
     if (rs.next()) {
       val next = resultSetF(rs)
       Stream(next) ++ extractToStream(rs, resultSetF)
@@ -45,14 +44,14 @@ trait DbSearch[ALG[_]] {
   }
 
   def searchEntityWithConnection[A: Manifest, ID: Manifest](
-    schema: KvpCollection[ALG, A],
-    idSchema: KvpCollection[ALG, ID]
-  ): Connection => Stream[IO, Either[ExtractionErrors, (ID, A)]] = {
+    schema: KvpCollection[String, ALG, A],
+    idSchema: KvpCollection[String, ALG, ID]
+  ): Connection => Stream[IO, Either[ExtractionErrors[String], (ID, A)]] = {
     val tableName = camelToSnake(headTypeName(schema).getOrElse("Unknown"))
-    val schemaWithId: KvpCollection[ALG, (ID, A)] =
-      (idSchema :: schema :: new KvpNil[ALG]).tupled[(ID, A)]
+    val schemaWithId: KvpCollection[String, ALG, (ID, A)] =
+      (idSchema :: schema :: new KvpNil[String, ALG]).tupled[(ID, A)]
 
-    val resultSetF: ResultSet => Either[ExtractionErrors, (ID, A)] =
+    val resultSetF: ResultSet => Either[ExtractionErrors[String], (ID, A)] =
       resultSetInterpreter.generateResultSet[(ID, A)](schemaWithId)(List.empty)
 
     val fields = columnNameInterpreter.fromKvpCollection(schemaWithId)

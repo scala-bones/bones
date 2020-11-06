@@ -6,7 +6,7 @@ import cats.data.{Kleisli, NonEmptyList}
 import cats.effect._
 import cats.implicits._
 import com.bones.Util
-import com.bones.data.Error.ExtractionError
+import com.bones.data.Error.{ExtractionError, ExtractionErrors}
 import com.bones.data.values.DefaultValues
 import com.bones.data.{KvpCollection, KvpNil}
 import com.bones.http4s.BaseCrudInterpreter.StringToIdError
@@ -34,12 +34,12 @@ object LocalhostAllIOApp {
 
   case class BasicError(message: String)
   private val basicErrorSchema =
-    (("message", com.bones.syntax.string) :: new KvpNil[DefaultValues]).convert[BasicError]
+    (("message", com.bones.syntax.string) :: new KvpNil[String, DefaultValues]).convert[BasicError]
 
-  def extractionErrorToBasicError(extractionError: ExtractionError): BasicError = {
+  def extractionErrorToBasicError(extractionError: ExtractionError[String]): BasicError = {
     BasicError(extractionError.toString)
   }
-  def extractionErrorsToBasicError(extractionErrors: NonEmptyList[ExtractionError]): BasicError = {
+  def extractionErrorsToBasicError(extractionErrors: ExtractionErrors[String]): BasicError = {
     BasicError(extractionErrors.toList.mkString("."))
   }
 
@@ -55,7 +55,9 @@ object LocalhostAllIOApp {
     new HikariDataSource(config)
   }
 
-  def dbSchemaEndpoint[A](path: String, schema: KvpCollection[DefaultValues, A]): HttpRoutes[IO] = {
+  def dbSchemaEndpoint[A](
+    path: String,
+    schema: KvpCollection[String, DefaultValues, A]): HttpRoutes[IO] = {
     val dbSchema =
       com.bones.jdbc.column.defaultDbColumnInterpreter.tableDefinitionCustomAlgebra(schema)
     HttpRoutes.of[IO] {
@@ -67,8 +69,8 @@ object LocalhostAllIOApp {
   def serviceRoutesWithCrudMiddleware[A: Manifest, ID: Manifest](
     interpreters: InterpreterConfig[DefaultValues, ID],
     path: String,
-    schema: KvpCollection[DefaultValues, A],
-    idSchema: KvpCollection[DefaultValues, ID],
+    schema: KvpCollection[String, DefaultValues, A],
+    idSchema: KvpCollection[String, DefaultValues, ID],
     parseIdF: String => Either[StringToIdError, ID],
     dbGet: SelectInterpreter[DefaultValues],
     dbSearch: DbSearch[DefaultValues],

@@ -22,9 +22,9 @@ object CrudOasInterpreter {
     title: String,
     version: String,
     contentTypes: List[String],
-    schema: KvpCollection[ALG, A],
-    schemaWithId: KvpCollection[ALG, (ID, A)],
-    errorSchema: KvpCollection[ALG, E],
+    schema: KvpCollection[String, ALG, A],
+    schemaWithId: KvpCollection[String, ALG, (ID, A)],
+    errorSchema: KvpCollection[String, ALG, E],
     customAlgebraInterpreter: SwaggerCoreInterpreter[ALG],
     withCreate: Boolean,
     withRead: Boolean,
@@ -108,7 +108,7 @@ object CrudOasInterpreter {
   }
 
   def get[ALG[_], A](
-    outputSchema: (KvpCollection[ALG, A], String),
+    outputSchema: (KvpCollection[String, ALG, A], String),
     urlPath: String,
     interpreter: SwaggerCoreInterpreter[ALG]
   ): OpenAPI => OpenAPI = { openAPI =>
@@ -148,7 +148,7 @@ object CrudOasInterpreter {
   }
 
   def delete[ALG[_], O](
-    outputSchemaWithName: (KvpCollection[ALG, O], String),
+    outputSchemaWithName: (KvpCollection[String, ALG, O], String),
     urlPath: String,
     contentTypes: List[String],
     swaggerInterpreter: SwaggerCoreInterpreter[ALG]
@@ -187,9 +187,9 @@ object CrudOasInterpreter {
   }
 
   def put[ALG[_], I, O, E](
-    inputSchemaAndName: (KvpCollection[ALG, I], String),
-    outputSchemaAndName: (KvpCollection[ALG, O], String),
-    errorSchemaAndName: (KvpCollection[ALG, E], String),
+    inputSchemaAndName: (KvpCollection[String, ALG, I], String),
+    outputSchemaAndName: (KvpCollection[String, ALG, O], String),
+    errorSchemaAndName: (KvpCollection[String, ALG, E], String),
     urlPath: String,
     contentTypes: List[String],
     swaggerInterpreter: SwaggerCoreInterpreter[ALG]
@@ -260,9 +260,9 @@ object CrudOasInterpreter {
   }
 
   def post[ALG[_], I, O, E](
-    inputSchemaAndName: (KvpCollection[ALG, I], String),
-    outputSchemaAndName: (KvpCollection[ALG, O], String),
-    errorSchemaAndName: (KvpCollection[ALG, E], String),
+    inputSchemaAndName: (KvpCollection[String, ALG, I], String),
+    outputSchemaAndName: (KvpCollection[String, ALG, O], String),
+    errorSchemaAndName: (KvpCollection[String, ALG, E], String),
     urlPath: String,
     contentTypes: List[String],
     interpreter: SwaggerCoreInterpreter[ALG]

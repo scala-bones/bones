@@ -27,7 +27,7 @@ trait CirceValidatorInterpreter[ALG[_]]
   override def invalidValue[T](
     json: Json,
     typeName: String,
-    path: List[String]): Left[NonEmptyList[WrongTypeError[T]], Nothing] = {
+    path: List[String]): Left[NonEmptyList[WrongTypeError[String, T]], Nothing] = {
     val invalid = json.fold(
       classOf[Nothing],
       _ => classOf[Boolean],
@@ -41,9 +41,11 @@ trait CirceValidatorInterpreter[ALG[_]]
 
   override def headValue[A](
     in: Json,
-    kv: KeyDefinition[ALG, A],
-    headInterpreter: (Option[Json], List[String]) => Either[NonEmptyList[ExtractionError], A],
-    path: List[String]): Either[NonEmptyList[ExtractionError], A] =
+    kv: KeyDefinition[String, ALG, A],
+    headInterpreter: (
+      Option[Json],
+      List[String]) => Either[NonEmptyList[ExtractionError[String]], A],
+    path: List[String]): Either[NonEmptyList[ExtractionError[String]], A] =
     in.asObject match {
       case Some(jsonObj) =>
         val fields = jsonObj.toList
@@ -53,9 +55,9 @@ trait CirceValidatorInterpreter[ALG[_]]
     }
 
   def generateByteArrayValidator[A](
-    schema: KvpCollection[ALG, A],
+    schema: KvpCollection[String, ALG, A],
     charset: Charset
-  ): Array[Byte] => Either[NonEmptyList[ExtractionError], A] = {
+  ): Array[Byte] => Either[NonEmptyList[ExtractionError[String]], A] = {
     val f = fromKvpCollection(schema)
     bytes =>
       fromByteArray(bytes, charset).flatMap(f(_, List.empty))
@@ -63,7 +65,7 @@ trait CirceValidatorInterpreter[ALG[_]]
 
   private def fromByteArray(
     arr: Array[Byte],
-    charSet: Charset): Either[NonEmptyList[ParsingError], Json] = {
+    charSet: Charset): Either[NonEmptyList[ParsingError[String]], Json] = {
     val input = new String(arr, charSet)
     io.circe.parser
       .parse(input)

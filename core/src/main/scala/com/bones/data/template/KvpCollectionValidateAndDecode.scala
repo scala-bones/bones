@@ -2,7 +2,7 @@ package com.bones.data.template
 
 import cats.data.NonEmptyList
 import com.bones.{Path, Util}
-import com.bones.data.Error.{ExtractionError, RequiredValue, SumTypeError}
+import com.bones.data.Error.{ExtractionError, ExtractionErrors, RequiredValue, SumTypeError}
 import com.bones.data.{
   KeyDefinition,
   KvpCoNil,
@@ -18,35 +18,36 @@ import com.bones.data.{
 import com.bones.validation.ValidationUtil
 import shapeless.{:+:, ::, Coproduct, HList, HNil, Inl, Inr, Nat}
 
-trait KvpCollectionValidateAndDecode[ALG[_], IN] {
+trait KvpCollectionValidateAndDecode[K, ALG[_], IN] {
 
   type CoproductType
-  type Path = List[String]
-  type InputF[A] = (IN, Path) => Either[NonEmptyList[ExtractionError], A]
+  type Path[K] = List[K]
+  type InputF[K, A] = (IN, Path[K]) => Either[ExtractionErrors[K], A]
 
   def keyDefinition[A](
-    value: KeyDefinition[ALG, A]): (IN, List[String]) => Either[NonEmptyList[ExtractionError], A]
+    value: KeyDefinition[K, ALG, A]): (IN, List[K]) => Either[ExtractionErrors[K], A]
 
   def coproductType(in: IN): Option[CoproductType]
 
-  def fromKvpCollection[A](kvpCollection: KvpCollection[ALG, A]): InputF[A] = {
+  def fromKvpCollection[A](kvpCollection: KvpCollection[K, ALG, A]): InputF[K, A] = {
     kvpCollection match {
-      case kvp: KvpWrappedHList[ALG, a, h, n] @unchecked  => kvpClass(kvp)
-      case kvp: KvpWrappedCoproduct[ALG, a, c] @unchecked => kvpSuperclass(kvp)
-      case kvp: KvpCoNil[ALG] =>
+      case kvp: KvpWrappedHList[K, ALG, a, h, n] @unchecked  => kvpClass(kvp)
+      case kvp: KvpWrappedCoproduct[K, ALG, a, c] @unchecked => kvpSuperclass(kvp)
+      case kvp: KvpCoNil[K, ALG] =>
         (_, path) =>
           Left(NonEmptyList.one(RequiredValue(path, "Coproduct")))
-      case kvp: KvpCoproductCollectionHead[ALG, a, c, o] =>
-        kvpCoproductCollectionHead[a, c, o](kvp).asInstanceOf[InputF[A]]
-      case kvp: KvpSingleValueHead[ALG, h, t, tl, a] @unchecked =>
-        kvpSingleValueHead[h, t, tl, a](kvp).asInstanceOf[InputF[A]]
-      case kvp: KvpHListCollectionHead[ALG, a, no, h, hl, t, tl] @unchecked =>
-        kvpCollectionHead(kvp).asInstanceOf[InputF[A]]
-      case kvp: KvpNil[ALG] => kvpNil(kvp).asInstanceOf[InputF[A]]
+      case kvp: KvpCoproductCollectionHead[K, ALG, a, c, o] =>
+        kvpCoproductCollectionHead[a, c, o](kvp).asInstanceOf[InputF[K, A]]
+      case kvp: KvpSingleValueHead[K, ALG, h, t, tl, a] @unchecked =>
+        kvpSingleValueHead[h, t, tl, a](kvp).asInstanceOf[InputF[K, A]]
+      case kvp: KvpHListCollectionHead[K, ALG, a, no, h, hl, t, tl] @unchecked =>
+        kvpCollectionHead(kvp).asInstanceOf[InputF[K, A]]
+      case kvp: KvpNil[K, ALG] => kvpNil(kvp).asInstanceOf[InputF[K, A]]
     }
   }
 
-  def kvpClass[A, H <: HList, HL <: Nat](kvpClass: KvpWrappedHList[ALG, A, H, HL]): InputF[A] = {
+  def kvpClass[A, H <: HList, HL <: Nat](
+    kvpClass: KvpWrappedHList[K, ALG, A, H, HL]): InputF[K, A] = {
     val wrappedF = fromKvpCollection(kvpClass.wrappedEncoding)
     (in, path) =>
       {
@@ -55,7 +56,8 @@ trait KvpCollectionValidateAndDecode[ALG[_], IN] {
       }
   }
 
-  def kvpSuperclass[A, C <: Coproduct](kvpSuperclass: KvpWrappedCoproduct[ALG, A, C]): InputF[A] = {
+  def kvpSuperclass[A, C <: Coproduct](
+    kvpSuperclass: KvpWrappedCoproduct[K, ALG, A, C]): InputF[K, A] = {
     val wrappedF = fromKvpCollection(kvpSuperclass.wrappedEncoding)
     (in, path) =>
       {
@@ -64,7 +66,7 @@ trait KvpCollectionValidateAndDecode[ALG[_], IN] {
       }
   }
   def kvpCollectionHead[HO <: HList, NO <: Nat, H <: HList, HL <: Nat, T <: HList, TL <: Nat](
-    kvp: KvpHListCollectionHead[ALG, HO, NO, H, HL, T, TL]): InputF[HO] = {
+    kvp: KvpHListCollectionHead[K, ALG, HO, NO, H, HL, T, TL]): InputF[K, HO] = {
     val headF = fromKvpCollection(kvp.head)
     val tailF = fromKvpCollection(kvp.tail)
     (in, path) =>
@@ -85,10 +87,10 @@ trait KvpCollectionValidateAndDecode[ALG[_], IN] {
       }
   }
 
-  def kvpNil(kvp: KvpNil[ALG]): InputF[HNil] = (_, _) => Right(HNil)
+  def kvpNil(kvp: KvpNil[K, ALG]): InputF[K, HNil] = (_, _) => Right(HNil)
 
   def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
-    kvp: KvpSingleValueHead[ALG, H, T, TL, O]): InputF[O] = {
+    kvp: KvpSingleValueHead[K, ALG, H, T, TL, O]): InputF[K, O] = {
 
     val headF = kvp.head match {
       case Left(value)       => keyDefinition(value)
@@ -119,15 +121,15 @@ trait KvpCollectionValidateAndDecode[ALG[_], IN] {
   }
 
   def kvpCoproductCollectionHead[A, C <: Coproduct, O <: A :+: C](
-    headCoproduct: KvpCoproductCollectionHead[ALG, A, C, O]): InputF[O] = {
+    headCoproduct: KvpCoproductCollectionHead[K, ALG, A, C, O]): InputF[K, O] = {
 
-    def nestedKvpCoproduct[C2 <: Coproduct](co: KvpCoproduct[ALG, C2])
-      : (IN, Path, CoproductType) => Either[NonEmptyList[ExtractionError], C2] =
+    def nestedKvpCoproduct[C2 <: Coproduct](co: KvpCoproduct[K, ALG, C2])
+      : (IN, Path[K], CoproductType) => Either[ExtractionErrors[K], C2] =
       co match {
-        case _: KvpCoNil[_] =>
-          (_: IN, path: Path, coType: CoproductType) =>
+        case _: KvpCoNil[K, _] =>
+          (_: IN, path: Path[K], coType: CoproductType) =>
             Left(NonEmptyList.one(SumTypeError(path, s"Unexpected type value: ${coType}")))
-        case co: KvpCoproductCollectionHead[ALG, a, r, o] @unchecked => {
+        case co: KvpCoproductCollectionHead[K, ALG, a, r, o] @unchecked => {
           val fValue = fromKvpCollection[a](co.kvpCollection)
           val fTail = nestedKvpCoproduct[r](co.kvpTail)
           (in, path, coType) =>

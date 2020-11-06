@@ -48,7 +48,10 @@ object ProtoFileGeneratorInterpreter {
   * Create a Protobuf file descriptor based on the Kvp.
   */
 trait ProtoFileGeneratorInterpreter[ALG[_]]
-    extends KvpCollectionMatch[ALG, Index => (Vector[MessageField], Vector[NestedType], Index)] {
+    extends KvpCollectionMatch[
+      String,
+      ALG,
+      Index => (Vector[MessageField], Vector[NestedType], Index)] {
 
   def customInterpreter: CustomInterpreter[ALG]
 
@@ -107,7 +110,7 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
   }
 
   def fromSchemaToProtoFile[A](
-    dc: KvpCollection[ALG, A]
+    dc: KvpCollection[String, ALG, A]
   ): String =
     messageToProtoFile(fromSchemaCustomAlgebra(dc))
 
@@ -122,14 +125,14 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
   }
 
   def fromSchemaCustomAlgebra[A](
-    dc: KvpCollection[ALG, A]
+    dc: KvpCollection[String, ALG, A]
   ): Message = {
     val (messageFields, nestedTypes, _) = fromKvpCollection(dc).apply(0)
     Message(headTypeName(dc).getOrElse("unknown"), messageFields, nestedTypes)
   }
 
   override def kvpCoproduct[C <: Coproduct](
-    kvp: KvpCoproduct[ALG, C]
+    kvp: KvpCoproduct[String, ALG, C]
   ): Int => (Vector[MessageField], Vector[NestedType], Int) = index => {
     val thisIndex = index + 1
     val (nestedTypes, nextIndex) =
@@ -150,12 +153,12 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
   }
 
   private def eachKvpCoproduct[C <: Coproduct](
-    co: KvpCoproduct[ALG, C]): Int => (Vector[NestedType], Int) =
+    co: KvpCoproduct[String, ALG, C]): Int => (Vector[NestedType], Int) =
     co match {
-      case _: KvpCoNil[_] =>
+      case _: KvpCoNil[String, _] @unchecked =>
         lastIndex =>
           (Vector.empty, lastIndex)
-      case op: KvpCoproductCollectionHead[ALG, a, c, o] @unchecked => {
+      case op: KvpCoproductCollectionHead[String, ALG, a, c, o] @unchecked => {
         val left = fromKvpCollection(op.kvpCollection)(0)
         val name = KvpCollection
           .headTypeName(op.kvpCollection)
@@ -171,11 +174,11 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
     }
 
   override def kvpNil(
-    kvp: KvpNil[ALG]): Index => (Vector[MessageField], Vector[NestedType], Index) =
+    kvp: KvpNil[String, ALG]): Index => (Vector[MessageField], Vector[NestedType], Index) =
     (lastIndex) => (Vector.empty, Vector.empty, lastIndex)
 
   override def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
-    kvp: KvpSingleValueHead[ALG, H, T, TL, O])
+    kvp: KvpSingleValueHead[String, ALG, H, T, TL, O])
     : Index => (Vector[MessageField], Vector[NestedType], Index) = lastIndex => {
     val thisIndex = lastIndex + 1
     val head = kvp.head match {
@@ -199,7 +202,7 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
     H <: HList,
     HL <: Nat,
     T <: HList,
-    TL <: Nat](kvp: KvpHListCollectionHead[ALG, HO, NO, H, HL, T, TL])
+    TL <: Nat](kvp: KvpHListCollectionHead[String, ALG, HO, NO, H, HL, T, TL])
     : Index => (Vector[MessageField], Vector[NestedType], Index) = lastIndex => {
     val head = fromKvpCollection(kvp.head)(lastIndex)
     val tail = fromKvpCollection(kvp.tail)(head._3)
@@ -207,18 +210,18 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
   }
 
   override def kvpWrappedHList[A, H <: HList, HL <: Nat](
-    wrappedHList: KvpWrappedHList[ALG, A, H, HL])
+    wrappedHList: KvpWrappedHList[String, ALG, A, H, HL])
     : Index => (Vector[MessageField], Vector[NestedType], Index) = {
     fromKvpCollection(wrappedHList.wrappedEncoding)
   }
 
   override def kvpWrappedCoproduct[A, C <: Coproduct](
-    wrappedCoproduct: KvpWrappedCoproduct[ALG, A, C])
+    wrappedCoproduct: KvpWrappedCoproduct[String, ALG, A, C])
     : Index => (Vector[MessageField], Vector[NestedType], Index) =
     fromKvpCollection(wrappedCoproduct.wrappedEncoding)
 
   def fromBonesSchema[A](
-    bonesSchema: KvpCollectionValue[ALG, A]
+    bonesSchema: KvpCollectionValue[String, ALG, A]
   ): Int => (Vector[MessageField], Vector[NestedType], Int) = {
     fromKvpCollection(bonesSchema.kvpCollection)
   }
@@ -268,7 +271,7 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
             Vector.empty,
             lastIndex
           )
-      case kvp: KvpCollectionValue[ALG, a] @unchecked =>
+      case kvp: KvpCollectionValue[String, ALG, a] @unchecked =>
         (name, index) =>
           val result = fromKvpCollection(kvp.kvpCollection)(0)
           val nested = result._2.appended(NestedMessage(name, result._1))

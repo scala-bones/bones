@@ -1,7 +1,5 @@
 package com.bones.argonaut
 
-import java.util.Base64
-
 import argonaut._
 import com.bones.data.KeyDefinition
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
@@ -23,7 +21,7 @@ trait ArgonautEncoderInterpreter[ALG[_]] extends KvpInterchangeFormatEncoderInte
   override def addStringField(element: Json, name: String, value: String): Json =
     Json.obj((name, Json.jString(value)) :: element.obj.toList.flatMap(_.toList): _*)
 
-  override def toObj[A](kvDef: KeyDefinition[ALG, A], value: Json): Json =
+  override def toObj[A](kvDef: KeyDefinition[String, ALG, A], value: Json): Json =
     Json.obj((kvDef.key, value))
 
 }

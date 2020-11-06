@@ -3,7 +3,7 @@ package com.bones.jdbc.insert
 import java.sql._
 
 import cats.data.NonEmptyList
-import com.bones.data.Error.{ExtractionError, SystemError}
+import com.bones.data.Error.{ExtractionError, ExtractionErrors, SystemError}
 import com.bones.data.KeyDefinition.CoproductDataDefinition
 import com.bones.data.KvpCollection.headTypeName
 import com.bones.data._
@@ -18,6 +18,7 @@ import scala.util.control.NonFatal
 
 trait DbInsert[ALG[_]]
     extends KvpCollectionFunctor[
+      String,
       ALG,
       Lambda[A => (Index, A) => (Index, List[(ColumnName, SetValue)])]] {
 
@@ -25,8 +26,10 @@ trait DbInsert[ALG[_]]
   def customInterpreter: DbInsertValue[ALG]
   def columnNameInterpreter: ColumnNameInterpreter[ALG]
 
-  def insertQuery[A, ID](collection: KvpCollection[ALG, A], idSchema: KvpCollection[ALG, ID])
-    : DataSource => A => Either[NonEmptyList[ExtractionError], ID] = {
+  def insertQuery[A, ID](
+    collection: KvpCollection[String, ALG, A],
+    idSchema: KvpCollection[String, ALG, ID])
+    : DataSource => A => Either[ExtractionErrors[String], ID] = {
     val iq = insertQueryWithConnection(collection, idSchema)
     ds =>
       { a =>
@@ -46,8 +49,8 @@ trait DbInsert[ALG[_]]
   }
 
   def batchInsertQueryWithConnection[A](
-    collection: KvpCollection[ALG, A]
-  ): Seq[A] => Connection => Either[NonEmptyList[ExtractionError], Int] = {
+    collection: KvpCollection[String, ALG, A]
+  ): Seq[A] => Connection => Either[ExtractionErrors[String], Int] = {
     val tableName = camelToSnake(headTypeName(collection).getOrElse("Unknown"))
     val updates = fromKvpCollection(collection)
 
@@ -89,9 +92,9 @@ trait DbInsert[ALG[_]]
       .mkString(",")} ) values ( ${columns.map(_ => "?").mkString(",")}  )"""
 
   def insertQueryWithConnection[A, ID](
-    collection: KvpCollection[ALG, A],
-    idSchema: KvpCollection[ALG, ID])
-    : A => Connection => Either[NonEmptyList[ExtractionError], ID] = {
+    collection: KvpCollection[String, ALG, A],
+    idSchema: KvpCollection[String, ALG, ID])
+    : A => Connection => Either[ExtractionErrors[String], ID] = {
     val tableName = camelToSnake(headTypeName(collection).getOrElse("Unknown"))
     val updates = fromKvpCollection(collection)
     val rs = resultSetInterpreter.generateResultSet(idSchema)
@@ -124,11 +127,12 @@ trait DbInsert[ALG[_]]
       }
   }
 
-  override def kvpNil(kvp: KvpNil[ALG]): (Index, HNil) => (Index, List[(ColumnName, SetValue)]) =
+  override def kvpNil(
+    kvp: KvpNil[String, ALG]): (Index, HNil) => (Index, List[(ColumnName, SetValue)]) =
     (i, h) => (i, List.empty)
 
   override def kvpWrappedHList[A, H <: HList, HL <: Nat](
-    wrappedHList: KvpWrappedHList[ALG, A, H, HL])
+    wrappedHList: KvpWrappedHList[String, ALG, A, H, HL])
     : (Index, A) => (Index, List[(ColumnName, SetValue)]) = {
     val wrappedF = fromKvpCollection(wrappedHList.wrappedEncoding)
     (i, a) =>
@@ -136,7 +140,7 @@ trait DbInsert[ALG[_]]
   }
 
   override def kvpWrappedCoproduct[A, C <: Coproduct](
-    wrappedCoproduct: KvpWrappedCoproduct[ALG, A, C])
+    wrappedCoproduct: KvpWrappedCoproduct[String, ALG, A, C])
     : (Index, A) => (Index, List[(ColumnName, SetValue)]) = {
     val wrappedF = fromKvpCollection(wrappedCoproduct.wrappedEncoding)
     (i, a) =>
@@ -146,7 +150,7 @@ trait DbInsert[ALG[_]]
   }
 
   override def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
-    kvp: KvpSingleValueHead[ALG, H, T, TL, O])
+    kvp: KvpSingleValueHead[String, ALG, H, T, TL, O])
     : (Index, O) => (Index, List[(ColumnName, SetValue)]) = {
     val headF = kvp.head match {
       case Left(keyDef)         => determineValueDefinition(keyDef.dataDefinition)(keyDef.key)
@@ -171,7 +175,7 @@ trait DbInsert[ALG[_]]
     H <: HList,
     HL <: Nat,
     T <: HList,
-    TL <: Nat](kvp: KvpHListCollectionHead[ALG, HO, NO, H, HL, T, TL])
+    TL <: Nat](kvp: KvpHListCollectionHead[String, ALG, HO, NO, H, HL, T, TL])
     : (Index, HO) => (Index, List[(ColumnName, SetValue)]) = {
     val headF = fromKvpCollection(kvp.head)
     val tailF = fromKvpCollection(kvp.tail)
@@ -186,13 +190,13 @@ trait DbInsert[ALG[_]]
   }
 
   override def kvpCoproduct[C <: Coproduct](
-    value: KvpCoproduct[ALG, C]): (Index, C) => (Index, List[(ColumnName, SetValue)]) = {
+    value: KvpCoproduct[String, ALG, C]): (Index, C) => (Index, List[(ColumnName, SetValue)]) = {
 
     value match {
-      case _: KvpCoNil[ALG] =>
+      case _: KvpCoNil[String, ALG] @unchecked =>
         (i, _) =>
           (i, List.empty) //Should not actually get here
-      case kvp: KvpCoproductCollectionHead[ALG, a, c, C] => {
+      case kvp: KvpCoproductCollectionHead[String, ALG, a, c, C] => {
         val headF = fromKvpCollection(kvp.kvpCollection)
         val tailF = kvpCoproduct(kvp.kvpTail)
         (i, c) =>
@@ -254,7 +258,7 @@ trait DbInsert[ALG[_]]
               }
             }
           }
-      case kvp: KvpCollectionValue[ALG, a] @unchecked =>
+      case kvp: KvpCollectionValue[String, ALG, a] @unchecked =>
         val groupF = fromKvpCollection(kvp.kvpCollection)
         k =>
           { (index, a) =>

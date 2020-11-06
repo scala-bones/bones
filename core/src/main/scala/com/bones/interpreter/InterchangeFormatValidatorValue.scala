@@ -9,16 +9,16 @@ object InterchangeFormatValidatorValue {
 
   /** using kind projector allows us to create a new interpreter by merging two existing interpreters */
   def merge[L[_], R[_] <: Coproduct, A, OUT](
-                                              li: InterchangeFormatValidatorValue[L, OUT],
-                                              ri: InterchangeFormatValidatorValue[R, OUT]
+    li: InterchangeFormatValidatorValue[L, OUT],
+    ri: InterchangeFormatValidatorValue[R, OUT]
   ): InterchangeFormatValidatorValue[Lambda[A => L[A] :+: R[A]], OUT] =
     new InterchangeFormatValidatorValue[Lambda[A => L[A] :+: R[A]], OUT] {
-      override def validate[A](lr: L[A] :+: R[A])
-        : (Option[OUT], List[String]) => Either[NonEmptyList[ExtractionError], A] = lr match {
-        case Inl(l) => li.validate(l)
-        case Inr(r) => ri.validate(r)
-      }
-
+      override def validate[AA](lr: L[AA] :+: R[AA])
+        : (Option[OUT], List[String]) => Either[NonEmptyList[ExtractionError[String]], AA] =
+        lr match {
+          case Inl(l) => li.validate(l)
+          case Inr(r) => ri.validate(r)
+        }
     }
 
   implicit class InterpreterOps[ALG[_], OUT](val base: InterchangeFormatValidatorValue[ALG, OUT])
@@ -29,14 +29,15 @@ object InterchangeFormatValidatorValue {
 
   }
 
-  case class CNilInterchangeFormatValidator[OUT]() extends InterchangeFormatValidatorValue[CNilF, OUT] {
-    override def validate[A](
-      alg: CNilF[A]): (Option[OUT], List[String]) => Either[NonEmptyList[ExtractionError], A] =
+  case class CNilInterchangeFormatValidator[OUT]()
+      extends InterchangeFormatValidatorValue[CNilF, OUT] {
+    override def validate[A](alg: CNilF[A])
+      : (Option[OUT], List[String]) => Either[NonEmptyList[ExtractionError[String]], A] =
       sys.error("Unreachable code")
   }
 }
 
 trait InterchangeFormatValidatorValue[ALG[_], IN] {
   def validate[A](
-    alg: ALG[A]): (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A]
+    alg: ALG[A]): (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError[String]], A]
 }

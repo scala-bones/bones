@@ -19,15 +19,15 @@ import com.bones.data.template.KvpCollectionFunctor
 import shapeless.{::, CNil, Coproduct, HList, HNil, Inl, Inr, Nat}
 
 trait JdbcStatementInterpreter[ALG[_]]
-    extends KvpCollectionFunctor[ALG, Lambda[A => Index => JdbcColumnStatement[A]]] {
+    extends KvpCollectionFunctor[String, ALG, Lambda[A => Index => JdbcColumnStatement[A]]] {
 
   def customDbUpdateInterpreter: UpdateStatementValue[ALG]
 
-  override def kvpNil(kvp: KvpNil[ALG]): Index => JdbcColumnStatement[HNil] =
+  override def kvpNil(kvp: KvpNil[String, ALG]): Index => JdbcColumnStatement[HNil] =
     i => JdbcColumnStatement(i, List.empty, (h: HNil) => List.empty)
 
   override def kvpWrappedHList[A, H <: HList, HL <: Nat](
-    wrappedHList: KvpWrappedHList[ALG, A, H, HL]): Index => JdbcColumnStatement[A] = {
+    wrappedHList: KvpWrappedHList[String, ALG, A, H, HL]): Index => JdbcColumnStatement[A] = {
     val wrappedF = fromKvpCollection(wrappedHList.wrappedEncoding)
     i =>
       {
@@ -41,7 +41,7 @@ trait JdbcStatementInterpreter[ALG[_]]
   }
 
   override def kvpWrappedCoproduct[A, C <: Coproduct](
-    wrappedCoproduct: KvpWrappedCoproduct[ALG, A, C]): Index => JdbcColumnStatement[A] = {
+    wrappedCoproduct: KvpWrappedCoproduct[String, ALG, A, C]): Index => JdbcColumnStatement[A] = {
     val wrappedF = fromKvpCollection(wrappedCoproduct.wrappedEncoding)
     (i: Index) =>
       {
@@ -52,7 +52,7 @@ trait JdbcStatementInterpreter[ALG[_]]
   }
 
   override def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
-    kvp: KvpSingleValueHead[ALG, H, T, TL, O]): Index => JdbcColumnStatement[O] = {
+    kvp: KvpSingleValueHead[String, ALG, H, T, TL, O]): Index => JdbcColumnStatement[O] = {
     val headF = kvp.head match {
       case Left(kd) => {
         val f = determineValueDefinition(kd.dataDefinition)
@@ -88,8 +88,8 @@ trait JdbcStatementInterpreter[ALG[_]]
     H <: HList,
     HL <: Nat,
     T <: HList,
-    TL <: Nat](
-    kvp: KvpHListCollectionHead[ALG, HO, NO, H, HL, T, TL]): Index => JdbcColumnStatement[HO] = {
+    TL <: Nat](kvp: KvpHListCollectionHead[String, ALG, HO, NO, H, HL, T, TL])
+    : Index => JdbcColumnStatement[HO] = {
     val headF = fromKvpCollection(kvp.head)
     val tailF = fromKvpCollection(kvp.tail)
     (i: Index) =>
@@ -137,18 +137,18 @@ trait JdbcStatementInterpreter[ALG[_]]
           ops.copy(predicates = f)
       case _: ListData[ALG, t] @unchecked      => ???
       case _: EitherData[ALG, a, b] @unchecked => ???
-      case kvp: KvpCollectionValue[ALG, a] @unchecked => { (i: Index, _: Key) =>
+      case kvp: KvpCollectionValue[String, ALG, a] @unchecked => { (i: Index, _: Key) =>
         fromKvpCollection(kvp.kvpCollection)(i).asInstanceOf[JdbcColumnStatement[A]]
       }
     }
 
   override def kvpCoproduct[C <: Coproduct](
-    value: KvpCoproduct[ALG, C]): Index => JdbcColumnStatement[C] = {
+    value: KvpCoproduct[String, ALG, C]): Index => JdbcColumnStatement[C] = {
     value match {
-      case _: KvpCoNil[ALG] =>
+      case _: KvpCoNil[String, ALG] =>
         i =>
           JdbcColumnStatement[CNil](i, List.empty, _ => List.empty)
-      case kvp: KvpCoproductCollectionHead[ALG, a, c, C] => {
+      case kvp: KvpCoproductCollectionHead[String, ALG, a, c, C] => {
         val headF = fromKvpCollection(kvp.kvpCollection)
         val tailF = kvpCoproduct(kvp.kvpTail)
         i =>

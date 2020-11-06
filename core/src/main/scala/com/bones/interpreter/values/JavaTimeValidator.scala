@@ -5,7 +5,7 @@ import java.time.format.{DateTimeFormatter, DateTimeParseException}
 
 import cats.data.NonEmptyList
 import com.bones.data.Error
-import com.bones.data.Error.{CanNotConvert, RequiredValue}
+import com.bones.data.Error.{CanNotConvert, ExtractionErrors, RequiredValue}
 import com.bones.data.values._
 import com.bones.interpreter.{
   InterchangeFormatPrimitiveValidator,
@@ -20,7 +20,7 @@ object JavaTimeValidator {
   def errorHandleTimeParsing[A](
     path: List[String],
     f: String => A,
-    input: String): Either[NonEmptyList[Error.ExtractionError], A] =
+    input: String): Either[ExtractionErrors[String], A] =
     try {
       Right(f(input))
     } catch {
@@ -35,7 +35,7 @@ object JavaTimeValidator {
     javaTimeAlgebra: JavaTimeValue[A],
     f: String => A,
     validations: List[ValidationOp[A]]
-  ): (Option[OUT], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] = {
+  ): (Option[OUT], List[String]) => Either[ExtractionErrors[String], A] = {
     (jsonOpt: Option[OUT], path: List[String]) =>
       {
         jsonOpt match {
@@ -54,7 +54,7 @@ object JavaTimeValidator {
     baseValidator: InterchangeFormatPrimitiveValidator[OUT],
     javaTimeValue: JavaTimeValue[A],
     validations: List[ValidationOp[Year]])
-    : (Option[OUT], List[String]) => Either[NonEmptyList[Error.ExtractionError], Year] =
+    : (Option[OUT], List[String]) => Either[ExtractionErrors[String], Year] =
     (jsonOpt: Option[OUT], path: List[String]) => {
       jsonOpt match {
         case Some(json) =>
@@ -81,8 +81,8 @@ trait JavaTimeValidator[IN] extends InterchangeFormatValidatorValue[JavaTimeValu
   val zonedDateTimeFormatter: DateTimeFormatter
   val baseValidator: InterchangeFormatPrimitiveValidator[IN]
 
-  override def validate[A](alg: JavaTimeValue[A])
-    : (Option[IN], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] = {
+  override def validate[A](
+    alg: JavaTimeValue[A]): (Option[IN], List[String]) => Either[ExtractionErrors[String], A] = {
 
     alg match {
       case d: DateTimeExceptionData =>

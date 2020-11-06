@@ -28,9 +28,9 @@ trait DbDelete[ALG[_]] {
     * @return
     */
   def delete[A, ID](
-    schema: KvpCollection[ALG, A],
-    idSchema: KvpCollection[ALG, ID],
-  ): ID => Connection => Either[NonEmptyList[ExtractionError], (ID, A)] = {
+    schema: KvpCollection[String, ALG, A],
+    idSchema: KvpCollection[String, ALG, ID],
+  ): ID => Connection => Either[NonEmptyList[ExtractionError[String]], (ID, A)] = {
     val tableName = camelToSnake(headTypeName(schema).getOrElse("Unknown"))
     val updateF =
       jdbcStatementInterpreter.fromKvpCollection(idSchema)(1)

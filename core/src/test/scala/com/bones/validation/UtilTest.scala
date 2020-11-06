@@ -12,7 +12,7 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.scalacheck.Checkers
 
 class UtilTest extends AnyFunSuite with Checkers with Matchers {
-  val path = List("a","b")
+  val path = List("a", "b")
 
   test("string to big decimal success") {
     Util.stringToBigDecimal("123.345", path) mustBe Right(BigDecimal("123.345"))
@@ -23,7 +23,7 @@ class UtilTest extends AnyFunSuite with Checkers with Matchers {
       case Right(success) => fail(s"unexpected success ${success}")
       case Left(err) => {
         err.head match {
-          case cnc: CanNotConvert[_,_] => {
+          case cnc: CanNotConvert[String, _, _] => {
             cnc.path mustBe path
             cnc.input mustBe input
             cnc.toType mustBe classOf[BigDecimal]
@@ -46,7 +46,7 @@ class UtilTest extends AnyFunSuite with Checkers with Matchers {
       case Right(success) => fail(s"unexpected success ${success}")
       case Left(err) => {
         err.head match {
-          case cnc: CanNotConvert[_,_] => {
+          case cnc: CanNotConvert[String, _, _] => {
             cnc.path mustBe path
             cnc.input mustBe input
             cnc.toType mustBe classOf[ju.UUID]
@@ -61,7 +61,7 @@ class UtilTest extends AnyFunSuite with Checkers with Matchers {
   test("string to local date success") {
     val input = "2019-04-01"
     val dateFormat = DateTimeFormatter.ISO_LOCAL_DATE
-    Util.stringToLocalDate(input, dateFormat, path) mustBe Right(LocalDate.of(2019,4,1))
+    Util.stringToLocalDate(input, dateFormat, path) mustBe Right(LocalDate.of(2019, 4, 1))
   }
 
   test("string to local date failure") {
@@ -71,7 +71,7 @@ class UtilTest extends AnyFunSuite with Checkers with Matchers {
       case Right(success) => fail(s"unexpected success ${success}")
       case Left(err) => {
         err.head match {
-          case cnc: CanNotConvert[_, _] => {
+          case cnc: CanNotConvert[String, _, _] => {
             cnc.path mustBe path
             cnc.input mustBe input
             cnc.toType mustBe classOf[LocalDate]
@@ -83,27 +83,26 @@ class UtilTest extends AnyFunSuite with Checkers with Matchers {
     }
   }
 
-
   val error1 = CanNotConvert(path, "input1", classOf[LocalDate], Some(new Throwable()))
   val error2 = CanNotConvert(path, "input2", classOf[LocalDate], Some(new Throwable()))
   test("eitherMap2 accumulate error") {
-    val result = Util.eitherMap2(Left(NonEmptyList.one(error1)), Left(NonEmptyList.one(error2)))( (a,b) => ??? )
+    val result =
+      Util.eitherMap2(Left(NonEmptyList.one(error1)), Left(NonEmptyList.one(error2)))((a, b) => ???)
     result mustBe Left(NonEmptyList(error1, List(error2)))
   }
 
   test("eitherMap2 error on first input") {
-    val result = Util.eitherMap2(Left(NonEmptyList.one(error1)), Right("good"))( (a,b) => ???)
+    val result = Util.eitherMap2(Left(NonEmptyList.one(error1)), Right("good"))((a, b) => ???)
     result mustBe Left(NonEmptyList.one(error1))
   }
 
   test("eitherMap2 error on second input") {
-    val result = Util.eitherMap2(Right("good"), Left(NonEmptyList.one(error2)))( (a,b) => ???)
+    val result = Util.eitherMap2(Right("good"), Left(NonEmptyList.one(error2)))((a, b) => ???)
     result mustBe Left(NonEmptyList.one(error2))
   }
   test("either map2 success") {
-    val result = Util.eitherMap2(Right("good"), Right("job"))((a,b) => a+b)
+    val result = Util.eitherMap2(Right("good"), Right("job"))((a, b) => a + b)
     result mustBe Right("goodjob")
   }
-
 
 }

@@ -3,9 +3,8 @@ package com.bones.bson.values
 import java.time._
 import java.time.format.DateTimeFormatter
 
-import cats.data.NonEmptyList
-import com.bones.bson.{BsonPrimitiveValidator, BsonValidatorInterpreter}
-import com.bones.data.Error
+import com.bones.bson.BsonPrimitiveValidator
+import com.bones.data.Error.ExtractionErrors
 import com.bones.data.values._
 import com.bones.interpreter.InterchangeFormatValidatorValue
 import com.bones.interpreter.values.JavaTimeValidator.{parseTime, parseYear}
@@ -21,7 +20,7 @@ trait BsonJavaTimeValidator extends InterchangeFormatValidatorValue[JavaTimeValu
 
   def extractLocalDateTime[ALG[_], A](op: ALG[A])(
     in: BSONValue,
-    path: List[String]): Either[NonEmptyList[Error.ExtractionError], LocalDateTime] =
+    path: List[String]): Either[ExtractionErrors[String], LocalDateTime] =
     in match {
       case BSONDateTime(date) =>
         val i = Instant.ofEpochMilli(date)
@@ -29,25 +28,23 @@ trait BsonJavaTimeValidator extends InterchangeFormatValidatorValue[JavaTimeValu
       case x => baseValidator.invalidValue(x, "DateTime", path)
     }
 
-  def extractLocalDate[ALG[_], A](op: ALG[A])(
-    in: BSONValue,
-    path: List[String]): Either[NonEmptyList[Error.ExtractionError], LocalDate] =
+  def extractLocalDate[ALG[_], A](
+    op: ALG[A])(in: BSONValue, path: List[String]): Either[ExtractionErrors[String], LocalDate] =
     in match {
       case BSONDateTime(date) =>
         Right(LocalDate.ofEpochDay(date))
       case x => baseValidator.invalidValue(x, "DateTime", path)
     }
 
-  def extractLocalTime[ALG[_], A](op: ALG[A])(
-    in: BSONValue,
-    path: List[String]): Either[NonEmptyList[Error.ExtractionError], LocalTime] =
+  def extractLocalTime[ALG[_], A](
+    op: ALG[A])(in: BSONValue, path: List[String]): Either[ExtractionErrors[String], LocalTime] =
     in match {
       case BSONLong(time) => Right(LocalTime.ofNanoOfDay(time))
       case x              => baseValidator.invalidValue(x, "Long", path)
     }
 
   override def validate[A](alg: JavaTimeValue[A])
-    : (Option[BSONValue], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] =
+    : (Option[BSONValue], List[String]) => Either[ExtractionErrors[String], A] =
     alg match {
       case d: DateTimeExceptionData =>
         parseTime(baseValidator, alg, input => new DateTimeException(input), d.validations)
