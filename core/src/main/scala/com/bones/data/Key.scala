@@ -12,8 +12,8 @@ import com.bones.validation.ValidationDefinition.ValidationOp
   *             It can be a single data type such as [[com.bones.data.values.JavaTimeValue]]
   *             It can be any shapeless.Coproduct of Algebras.
   */
-case class KeyDefinition[ALG[_], A](
-  key: String,
+case class KeyDefinition[K, ALG[_], A](
+  key: K,
   dataDefinition: Either[HigherOrderValue[ALG, A], ALG[A]],
   typeName: String,
   description: Option[String],
@@ -29,16 +29,18 @@ object KeyDefinition {
 /** Useful DSL builder */
 trait KeyValueDefinitionSugar {
 
-  def kvp[ALG[_], A: Manifest](
-    key: String,
-    valueDefinitionOp: HigherOrderValue[ALG, A]): KeyDefinition[ALG, A] = {
+  def kvp[K, ALG[_], A: Manifest](
+    key: K,
+    valueDefinitionOp: HigherOrderValue[ALG, A]): KeyDefinition[K, ALG, A] = {
     val typeName = manifest[A].runtimeClass.getSimpleName
-    KeyDefinition[ALG, A](key, Left(valueDefinitionOp), typeName, None, None)
+    KeyDefinition[K, ALG, A](key, Left(valueDefinitionOp), typeName, None, None)
   }
 
-  def kvpCov[ALG[_], A: Manifest](key: String, valueDefinitionOp: ALG[A]): KeyDefinition[ALG, A] = {
+  def kvpCov[K, ALG[_], A: Manifest](
+    key: K,
+    valueDefinitionOp: ALG[A]): KeyDefinition[K, ALG, A] = {
     val typeName = manifest[A].runtimeClass.getSimpleName
-    KeyDefinition[ALG, A](key, Right(valueDefinitionOp), typeName, None, None)
+    KeyDefinition[K, ALG, A](key, Right(valueDefinitionOp), typeName, None, None)
   }
 
 }
@@ -150,8 +152,8 @@ trait Sugar[ALG[_]] {
     EitherData(Right(definitionA), typeNameOfA, Left(definitionB), typeNameOfB)
   }
 
-  def kvpNil = new KvpNil[ALG]()
+  def kvpNil[K] = new KvpNil[K, ALG]()
 
-  def kvpCoNil = new KvpCoNil[ALG]()
+  def kvpCoNil[K] = new KvpCoNil[K, ALG]()
 
 }

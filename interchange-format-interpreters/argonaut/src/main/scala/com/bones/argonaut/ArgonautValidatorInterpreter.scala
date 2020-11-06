@@ -6,7 +6,7 @@ import argonaut.Argonaut._
 import argonaut._
 import cats.data.NonEmptyList
 import cats.syntax.all._
-import com.bones.data.Error.{ExtractionError, ParsingError, RequiredValue, WrongTypeError}
+import com.bones.data.Error.{ExtractionErrors, ParsingError, RequiredValue, WrongTypeError}
 import com.bones.data.{KeyDefinition, _}
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
 
@@ -33,9 +33,9 @@ trait ArgonautValidatorInterpreter[ALG[_]]
     * @return a function validating a Json Byte Array with the specified data.
     */
   def generateByteArrayValidator[A](
-    schema: KvpCollection[ALG, A],
+    schema: KvpCollection[String, ALG, A],
     charset: Charset
-  ): Array[Byte] => Either[NonEmptyList[ExtractionError], A] = {
+  ): Array[Byte] => Either[ExtractionErrors[String], A] = {
     val fromSchemaFunction = fromKvpCollection(schema)
     bytes =>
       {
@@ -44,7 +44,7 @@ trait ArgonautValidatorInterpreter[ALG[_]]
           Parse
             .parse(str)
             .left
-            .map(str => NonEmptyList.one(ParsingError(str)))
+            .map(str => NonEmptyList.one(ParsingError[String](str)))
             .flatMap(fromSchemaFunction(_, List.empty))
         } catch {
           case NonFatal(ex) =>
@@ -55,19 +55,19 @@ trait ArgonautValidatorInterpreter[ALG[_]]
 
   override def headValue[A](
     in: Json,
-    kv: KeyDefinition[ALG, A],
-    headInterpreter: (Option[Json], List[String]) => Either[NonEmptyList[ExtractionError], A],
+    kv: KeyDefinition[String, ALG, A],
+    headInterpreter: (Option[Json], List[String]) => Either[ExtractionErrors[String], A],
     path: List[String]
-  ): Either[NonEmptyList[ExtractionError], A] = {
+  ): Either[ExtractionErrors[String], A] = {
 
     in.obj
-      .toRight[NonEmptyList[ExtractionError]](
+      .toRight[ExtractionErrors[String]](
         NonEmptyList.one(WrongTypeError(path, kv.typeName, in.getClass.getSimpleName, None))
       )
       .flatMap(
         _.toList
           .find(f => f._1 === kv.key)
-          .toRight[NonEmptyList[ExtractionError]](
+          .toRight[ExtractionErrors[String]](
             NonEmptyList.one(RequiredValue(path, kv.typeName))
           )
       )
@@ -78,7 +78,7 @@ trait ArgonautValidatorInterpreter[ALG[_]]
     in: Json,
     typeName: String,
     path: List[String]
-  ): Left[NonEmptyList[ExtractionError], Nothing] = {
+  ): Left[ExtractionErrors[String], Nothing] = {
     val invalid = in.fold(
       classOf[Nothing],
       _ => classOf[Boolean],

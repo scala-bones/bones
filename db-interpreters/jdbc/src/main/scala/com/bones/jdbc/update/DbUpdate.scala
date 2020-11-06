@@ -13,8 +13,10 @@ trait DbUpdate[ALG[_]] {
 
   def jdbcStatementInterpreter: JdbcStatementInterpreter[ALG]
 
-  def updateQuery[A, ID](bonesSchema: KvpCollection[ALG, A], idSchema: KvpCollection[ALG, ID])
-    : (ID, A) => Connection => Either[NonEmptyList[SystemError], ID] = {
+  def updateQuery[A, ID](
+    bonesSchema: KvpCollection[String, ALG, A],
+    idSchema: KvpCollection[String, ALG, ID])
+    : (ID, A) => Connection => Either[NonEmptyList[SystemError[String]], ID] = {
     val tableName = camelToSnake(headTypeName(bonesSchema).getOrElse("Unknown"))
     val updates = jdbcStatementInterpreter.fromKvpCollection(bonesSchema)(1)
     val idIndex = updates.lastIndex

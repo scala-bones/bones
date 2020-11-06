@@ -30,14 +30,14 @@ trait BsonValidatorInterpreter[ALG[_]]
   }
 
   type ValidatedFromJsonOption[A] =
-    Option[BSONValue] => Either[NonEmptyList[ExtractionError], A]
+    Option[BSONValue] => Either[ExtractionErrors[String], A]
   type ValidatedFromJson[A] =
-    BSONValue => Either[NonEmptyList[ExtractionError], A]
+    BSONValue => Either[ExtractionErrors[String], A]
 
   override def invalidValue[T](
     bson: BSONValue,
     typeName: String,
-    path: List[String]): Left[NonEmptyList[ExtractionError], Nothing] = {
+    path: List[String]): Left[ExtractionErrors[String], Nothing] = {
     val invalid = bson match {
       case _: BSONBoolean  => classOf[Boolean]
       case _: BSONDouble   => classOf[Double]
@@ -51,9 +51,9 @@ trait BsonValidatorInterpreter[ALG[_]]
 
   override def headValue[A](
     in: BSONValue,
-    kv: KeyDefinition[ALG, A],
-    headInterpreter: (Option[BSONValue], List[String]) => Either[NonEmptyList[ExtractionError], A],
-    path: List[String]): Either[NonEmptyList[ExtractionError], A] = {
+    kv: KeyDefinition[String, ALG, A],
+    headInterpreter: (Option[BSONValue], List[String]) => Either[ExtractionErrors[String], A],
+    path: List[String]): Either[ExtractionErrors[String], A] = {
     in match {
       case doc: BSONDocument =>
         val fields = doc.elements

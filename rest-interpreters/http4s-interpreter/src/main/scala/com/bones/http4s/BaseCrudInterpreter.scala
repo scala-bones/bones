@@ -92,22 +92,22 @@ object BaseCrudInterpreter {
   object ErrorResponse {
 
     val error = ExtractionErrorEncoder.extractionErrorSchema
-      .toSuperclassOf[ExtractionError](
-        manifest[ExtractionError],
+      .toSuperclassOf[ExtractionError[String]](
+        manifest[ExtractionError[String]],
         ExtractionErrorEncoder.extractionErrorGeneric)
 
     private val errorResponseHList =
       (
         "errors",
-        ListData[ScalaCoreValue, ExtractionError](
+        ListData[ScalaCoreValue, ExtractionError[String]](
           Left(error.asValue),
           "ExtractionError",
           List.empty)) :<:
-        new KvpNil[ScalaCoreValue]
+        new KvpNil[String, ScalaCoreValue]
 
     val errorResponseSchema = errorResponseHList.convert[ErrorResponse]
   }
-  case class ErrorResponse(errors: List[ExtractionError])
+  case class ErrorResponse(errors: List[ExtractionError[String]])
   private val jsonEncoder =
     IsoCirceEncoderInterpreter(BaseScalaCoreEncoder)
       .generateEncoder(ErrorResponse.errorResponseSchema)
@@ -131,9 +131,9 @@ object BaseCrudInterpreter {
     * @param H The Http4s DSL
     * @return Response with the errors encoded appropriately
     */
-  def extractionErrorToResponse[F[_]](ee: NonEmptyList[ExtractionError], contentType: String)(
-    implicit F: Sync[F],
-    H: Http4sDsl[F]): F[Response[F]] = {
+  def extractionErrorToResponse[F[_]](
+    ee: NonEmptyList[ExtractionError[String]],
+    contentType: String)(implicit F: Sync[F], H: Http4sDsl[F]): F[Response[F]] = {
     // This import os for the EntityResponseGenerator
     import H._
     val errorResponse = ErrorResponse(ee.toList)
@@ -158,16 +158,16 @@ object BaseCrudInterpreter {
 
   def schemaWithId[ALG[_], A: Manifest, ID: Manifest](
     idDefinition: ALG[ID],
-    schema: KvpCollection[ALG, A]) = {
-    (("id", idDefinition) :: schema :: new KvpNil[ALG]).tupled[(ID, A)]
+    schema: KvpCollection[String, ALG, A]) = {
+    (("id", idDefinition) :: schema :: new KvpNil[String, ALG]).tupled[(ID, A)]
   }
 
   def httpDeleteRoutes[F[_], ALG[_], A, E, B, ID](
     path: String,
     pathStringToId: String => Either[StringToIdError, ID],
     del: ID => F[Either[E, B]],
-    errorSchema: KvpCollection[ALG, E],
-    outputSchema: KvpCollection[ALG, B],
+    errorSchema: KvpCollection[String, ALG, E],
+    outputSchema: KvpCollection[String, ALG, B],
     circeEncoderInterpreter: CirceEncoderInterpreter[ALG],
     bsonEncoder: BsonEncoderInterpreter[ALG],
     protobufEncoder: ProtobufSequentialEncoderInterpreter[ALG],
@@ -244,9 +244,9 @@ object BaseCrudInterpreter {
   def httpPostRoutes[F[_], ALG[_], A, E, B, ID](
     path: String,
     create: A => F[Either[E, B]],
-    inputSchema: KvpCollection[ALG, A],
-    errorSchema: KvpCollection[ALG, E],
-    outputSchema: KvpCollection[ALG, B],
+    inputSchema: KvpCollection[String, ALG, A],
+    errorSchema: KvpCollection[String, ALG, E],
+    outputSchema: KvpCollection[String, ALG, B],
     validatedFromCirceInterpreter: CirceValidatorInterpreter[ALG],
     encodeToCirceInterpreter: CirceEncoderInterpreter[ALG],
     bsonValidator: BsonValidatorInterpreter[ALG],
@@ -348,8 +348,8 @@ object BaseCrudInterpreter {
     path: String,
     pathStringToId: String => Either[StringToIdError, ID],
     read: ID => F[Either[E, B]],
-    errorSchema: KvpCollection[ALG, E],
-    outputSchema: KvpCollection[ALG, B],
+    errorSchema: KvpCollection[String, ALG, E],
+    outputSchema: KvpCollection[String, ALG, B],
     jsonEncoder: CirceEncoderInterpreter[ALG],
     bsonEncoder: BsonEncoderInterpreter[ALG],
     protobufSequentialOutputInterpreter: ProtobufSequentialEncoderInterpreter[ALG],
@@ -435,9 +435,9 @@ object BaseCrudInterpreter {
     path: String,
     pathStringToId: String => Either[StringToIdError, ID],
     updateF: (ID, A) => F[Either[E, B]],
-    inputSchema: KvpCollection[ALG, A],
-    errorSchema: KvpCollection[ALG, E],
-    outputSchema: KvpCollection[ALG, B],
+    inputSchema: KvpCollection[String, ALG, A],
+    errorSchema: KvpCollection[String, ALG, E],
+    outputSchema: KvpCollection[String, ALG, B],
     jsonValidator: CirceValidatorInterpreter[ALG],
     jsonEncoder: CirceEncoderInterpreter[ALG],
     bsonValidator: BsonValidatorInterpreter[ALG],
@@ -549,7 +549,7 @@ object BaseCrudInterpreter {
   def httpSearch[F[_], ALG[_], E, B](
     path: String,
     searchF: () => Stream[F, B],
-    outputSchema: KvpCollection[ALG, B],
+    outputSchema: KvpCollection[String, ALG, B],
     jsonEncoder: CirceEncoderInterpreter[ALG],
     charset: Charset
   )(implicit F: Sync[F], H: Http4sDsl[F]) = {
@@ -604,13 +604,13 @@ trait BaseCrudInterpreter[ALG[_], A, E, B, F[_], ID] extends Http4sDsl[F] {
   def protoBuff(
     path: String,
     customProtobufInterpreter: ProtoFileGeneratorInterpreter[ALG],
-    schema: KvpCollection[ALG, A],
-    schemaWithId: KvpCollection[ALG, (ID, A)],
-    errorSchema: KvpCollection[ALG, E]
+    schema: KvpCollection[String, ALG, A],
+    schemaWithId: KvpCollection[String, ALG, (ID, A)],
+    errorSchema: KvpCollection[String, ALG, E]
   )(implicit F: Sync[F]): HttpRoutes[F] = {
     def toFile[B] =
       customProtobufInterpreter
-        .fromSchemaToProtoFile(_: KvpCollection[ALG, B])
+        .fromSchemaToProtoFile(_: KvpCollection[String, ALG, B])
 
     val text =
       s"""

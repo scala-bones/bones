@@ -1,8 +1,7 @@
 package com.bones.fullstack
 
-import cats.data.NonEmptyList
 import cats.effect.IO
-import com.bones.data.Error.ExtractionError
+import com.bones.data.Error.ExtractionErrors
 import com.bones.data.KvpCollection
 import com.bones.jdbc._
 import com.bones.jdbc.insert.DbInsert
@@ -19,8 +18,8 @@ import javax.sql.DataSource
   * @tparam A
   */
 case class CrudDbDefinitions[ALG[_], A: Manifest, ID: Manifest](
-  schema: KvpCollection[ALG, A],
-  idDef: KvpCollection[ALG, ID],
+  schema: KvpCollection[String, ALG, A],
+  idDef: KvpCollection[String, ALG, ID],
   dbGet: SelectInterpreter[ALG],
   dbSearch: DbSearch[ALG],
   insert: DbInsert[ALG],
@@ -41,7 +40,7 @@ case class CrudDbDefinitions[ALG[_], A: Manifest, ID: Manifest](
       })
   }
 
-  def createF: A => IO[Either[NonEmptyList[ExtractionError], ID]] = {
+  def createF: A => IO[Either[ExtractionErrors[String], ID]] = {
     val insertQuery = insert.insertQuery(schema, idDef)(ds)
     input: A =>
       IO {
@@ -49,7 +48,7 @@ case class CrudDbDefinitions[ALG[_], A: Manifest, ID: Manifest](
       }
   }
 
-  val readF: ID => IO[Either[NonEmptyList[ExtractionError], (ID, A)]] = { id: ID =>
+  val readF: ID => IO[Either[ExtractionErrors[String], (ID, A)]] = { id: ID =>
     val getF =
       dbGet.selectEntity(schema, idDef)
     IO {
@@ -59,7 +58,7 @@ case class CrudDbDefinitions[ALG[_], A: Manifest, ID: Manifest](
     }
   }
 
-  val updateF: (ID, A) => IO[Either[NonEmptyList[ExtractionError], ID]] = {
+  val updateF: (ID, A) => IO[Either[ExtractionErrors[String], ID]] = {
     val updateF = update.updateQuery(schema, idDef)
 
     (id: ID, input: A) =>
@@ -70,7 +69,7 @@ case class CrudDbDefinitions[ALG[_], A: Manifest, ID: Manifest](
       }
   }
 
-  val deleteF: ID => IO[Either[NonEmptyList[ExtractionError], (ID, A)]] = {
+  val deleteF: ID => IO[Either[ExtractionErrors[String], (ID, A)]] = {
     val deleteQuery =
       dbDelete.delete(schema, idDef)
     id: ID =>

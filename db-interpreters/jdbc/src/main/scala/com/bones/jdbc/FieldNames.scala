@@ -12,14 +12,13 @@ object FindInterpreter {
 
   val utcCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
   type FieldName = String
-  type Path = List[String]
 
 }
 
 object TableName {
 
-  def getTableName[ALG[_], B](dc: KvpCollection[ALG, B]): String = dc match {
-    case wrapped: WrappedEncoding[ALG, B] =>
+  def getTableName[ALG[_], B](dc: KvpCollection[String, ALG, B]): String = dc match {
+    case wrapped: WrappedEncoding[String, ALG, B] =>
       camelToSnake(wrapped.typeNameOfA)
     case _ => "Unknown"
   }
@@ -31,13 +30,13 @@ object FieldNames {
   }
 }
 
-trait FieldNames[ALG[_]] extends KvpCollectionMatch[ALG, List[String]] {
+trait FieldNames[ALG[_]] extends KvpCollectionMatch[String, ALG, List[String]] {
 
   def customFieldNamesInterpreter: FieldNames.CustomFieldNamesInterpreter[ALG]
 
-  def fromCustomSchema[A](dc: KvpCollection[ALG, A]): List[String] = fromKvpCollection(dc)
+  def fromCustomSchema[A](dc: KvpCollection[String, ALG, A]): List[String] = fromKvpCollection(dc)
 
-  override def kvpNil(kvp: KvpNil[ALG]): List[String] = List.empty
+  override def kvpNil(kvp: KvpNil[String, ALG]): List[String] = List.empty
 
   override def kvpHListCollectionHead[
     HO <: HList,
@@ -45,32 +44,32 @@ trait FieldNames[ALG[_]] extends KvpCollectionMatch[ALG, List[String]] {
     H <: HList,
     HL <: Nat,
     T <: HList,
-    TL <: Nat](kvp: KvpHListCollectionHead[ALG, HO, NO, H, HL, T, TL]): List[String] =
+    TL <: Nat](kvp: KvpHListCollectionHead[String, ALG, HO, NO, H, HL, T, TL]): List[String] =
     fromKvpCollection(kvp.head) ::: fromKvpCollection(kvp.tail)
 
   override def kvpWrappedHList[A, H <: HList, HL <: Nat](
-    wrappedHList: KvpWrappedHList[ALG, A, H, HL]): List[String] =
+    wrappedHList: KvpWrappedHList[String, ALG, A, H, HL]): List[String] =
     fromKvpCollection(wrappedHList.wrappedEncoding)
 
   override def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
-    kvp: KvpSingleValueHead[ALG, H, T, TL, O]): List[String] = {
+    kvp: KvpSingleValueHead[String, ALG, H, T, TL, O]): List[String] = {
     kvp.head match {
       case Left(keyDef)         => determineValueDefinition(keyDef.dataDefinition)
       case Right(kvpCollection) => fromKvpCollection(kvpCollection)
     }
   }
 
-  override def kvpCoproduct[C <: Coproduct](value: KvpCoproduct[ALG, C]): List[String] = {
+  override def kvpCoproduct[C <: Coproduct](value: KvpCoproduct[String, ALG, C]): List[String] = {
     value match {
-      case _: KvpCoNil[ALG] => List.empty
-      case pr: KvpCoproductCollectionHead[ALG, a, c, o] => {
+      case _: KvpCoNil[String, ALG] => List.empty
+      case pr: KvpCoproductCollectionHead[String, ALG, a, c, o] => {
         fromKvpCollection(pr.kvpCollection) ::: kvpCoproduct(pr.kvpTail)
       }
     }
   }
 
   override def kvpWrappedCoproduct[A, C <: Coproduct](
-    wrappedCoproduct: KvpWrappedCoproduct[ALG, A, C]): List[String] =
+    wrappedCoproduct: KvpWrappedCoproduct[String, ALG, A, C]): List[String] =
     "dtype" :: fromKvpCollection(wrappedCoproduct.wrappedEncoding)
 
   def determineValueDefinition[A](
@@ -88,7 +87,7 @@ trait FieldNames[ALG[_]] extends KvpCollectionMatch[ALG, List[String]] {
         determineValueDefinition(op.valueDefinitionOp)
       case _: ListData[ALG, t] @unchecked      => List.empty
       case _: EitherData[ALG, a, b] @unchecked => List.empty
-      case kvp: KvpCollectionValue[ALG, a] @unchecked =>
+      case kvp: KvpCollectionValue[String, ALG, a] @unchecked =>
         fromKvpCollection(kvp.kvpCollection)
     }
 

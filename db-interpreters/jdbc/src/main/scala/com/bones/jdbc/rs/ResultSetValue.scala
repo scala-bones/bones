@@ -2,10 +2,11 @@ package com.bones.jdbc.rs
 
 import java.sql.ResultSet
 
+import com.bones.Path
 import com.bones.Util.NullableResult
 import com.bones.data.Error.ExtractionErrors
 import com.bones.data.values.CNilF
-import com.bones.jdbc.FindInterpreter.{FieldName, Path}
+import com.bones.jdbc.FindInterpreter.FieldName
 import shapeless.{:+:, Coproduct, Inl, Inr}
 
 object ResultSetValue {
@@ -19,8 +20,9 @@ object ResultSetValue {
   ): ResultSetValue[Lambda[A => L[A] :+: R[A]]] =
     new ResultSetValue[Lambda[A => L[A] :+: R[A]]] {
 
-      override def resultSet[A](alg: L[A] :+: R[A])
-        : (Path, FieldName) => ResultSet => Either[ExtractionErrors, NullableResult[A]] =
+      override def resultSet[A](alg: L[A] :+: R[A]): (
+        Path[String],
+        FieldName) => ResultSet => Either[ExtractionErrors[String], NullableResult[String, A]] =
         alg match {
           case Inl(l) => li.resultSet(l)
           case Inr(r) => ri.resultSet(r)
@@ -37,12 +39,14 @@ object ResultSetValue {
   }
 
   object CNilResultSetValue extends ResultSetValue[CNilF] {
-    override def resultSet[A](alg: CNilF[A])
-      : (Path, FieldName) => ResultSet => Either[ExtractionErrors, NullableResult[A]] =
+    override def resultSet[A](alg: CNilF[A]): (
+      Path[String],
+      FieldName) => ResultSet => Either[ExtractionErrors[String], NullableResult[String, A]] =
       sys.error("Unreachable")
   }
 }
 trait ResultSetValue[ALG[_]] {
-  def resultSet[A](
-    alg: ALG[A]): (Path, FieldName) => ResultSet => Either[ExtractionErrors, NullableResult[A]]
+  def resultSet[A](alg: ALG[A]): (
+    Path[String],
+    FieldName) => ResultSet => Either[ExtractionErrors[String], NullableResult[String, A]]
 }

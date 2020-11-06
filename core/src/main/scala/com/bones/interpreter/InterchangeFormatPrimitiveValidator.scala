@@ -1,10 +1,10 @@
 package com.bones.interpreter
 
 import cats.data.NonEmptyList
-import com.bones.data.Error.{ExtractionError, RequiredValue}
-import com.bones.data.ListData
 import com.bones.Path
+import com.bones.data.Error.{ExtractionErrors, RequiredValue}
 import com.bones.data.KeyDefinition.CoproductDataDefinition
+import com.bones.data.ListData
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.ValidationUtil
 
@@ -20,32 +20,33 @@ trait InterchangeFormatPrimitiveValidator[IN] {
     */
   def extractString[ALG2[_], A](dataDefinition: ALG2[A], typeName: String)(
     in: IN,
-    path: Path): Either[NonEmptyList[ExtractionError], String]
+    path: Path[String]): Either[ExtractionErrors[String], String]
   def extractInt[ALG2[_], A](
-    dataDefinition: ALG2[A])(in: IN, path: Path): Either[NonEmptyList[ExtractionError], Int]
+    dataDefinition: ALG2[A])(in: IN, path: Path[String]): Either[ExtractionErrors[String], Int]
   def extractLong[ALG2[_], A](
-    dataDefinition: ALG2[A])(in: IN, path: Path): Either[NonEmptyList[ExtractionError], Long]
+    dataDefinition: ALG2[A])(in: IN, path: Path[String]): Either[ExtractionErrors[String], Long]
   def extractBool[ALG2[_], A](
-    dataDefinition: ALG2[A])(in: IN, path: Path): Either[NonEmptyList[ExtractionError], Boolean]
+    dataDefinition: ALG2[A])(in: IN, path: Path[String]): Either[ExtractionErrors[String], Boolean]
   def extractArray[ALG2[_], A](
-    op: ListData[ALG2, A])(in: IN, path: Path): Either[NonEmptyList[ExtractionError], Seq[IN]]
+    op: ListData[ALG2, A])(in: IN, path: Path[String]): Either[ExtractionErrors[String], Seq[IN]]
   def extractFloat[ALG2[_], A](
-    dataDefinition: ALG2[A])(in: IN, path: Path): Either[NonEmptyList[ExtractionError], Float]
+    dataDefinition: ALG2[A])(in: IN, path: Path[String]): Either[ExtractionErrors[String], Float]
   def extractDouble[ALG2[_], A](
-    dataDefinition: ALG2[A])(in: IN, path: Path): Either[NonEmptyList[ExtractionError], Double]
+    dataDefinition: ALG2[A])(in: IN, path: Path[String]): Either[ExtractionErrors[String], Double]
   def extractShort[ALG2[_], A](
-    dataDefinition: ALG2[A])(in: IN, path: Path): Either[NonEmptyList[ExtractionError], Short]
-  def extractBigDecimal[ALG2[_], A](
-    dataDefinition: ALG2[A])(in: IN, path: Path): Either[NonEmptyList[ExtractionError], BigDecimal]
+    dataDefinition: ALG2[A])(in: IN, path: Path[String]): Either[ExtractionErrors[String], Short]
+  def extractBigDecimal[ALG2[_], A](dataDefinition: ALG2[A])(
+    in: IN,
+    path: Path[String]): Either[ExtractionErrors[String], BigDecimal]
   def stringValue(in: IN, elementName: String): Option[String]
 
   def required[ALG2[_], A](
     coproductDataDefinition: CoproductDataDefinition[ALG2, A],
     typeName: String,
     validations: List[ValidationOp[A]],
-    f: (IN, List[String]) => Either[NonEmptyList[ExtractionError], A],
-  ): (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A] =
-    (inOpt: Option[IN], path: Path) =>
+    f: (IN, List[String]) => Either[ExtractionErrors[String], A],
+  ): (Option[IN], List[String]) => Either[ExtractionErrors[String], A] =
+    (inOpt: Option[IN], path: Path[String]) =>
       for {
         json <- inOpt
           .toRight(NonEmptyList.one(RequiredValue(path, typeName)))

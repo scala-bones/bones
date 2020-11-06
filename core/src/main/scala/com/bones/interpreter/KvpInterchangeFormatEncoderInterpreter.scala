@@ -8,7 +8,8 @@ import com.bones.data.{KeyDefinition, _}
   *
   * @tparam OUT The interchange format.
   */
-trait KvpInterchangeFormatEncoderInterpreter[ALG[_], OUT] extends KvpCollectionEncoder[ALG, OUT] {
+trait KvpInterchangeFormatEncoderInterpreter[ALG[_], OUT]
+    extends KvpCollectionEncoder[String, ALG, OUT] {
 
   def coproductTypeKey: String
 
@@ -27,16 +28,16 @@ trait KvpInterchangeFormatEncoderInterpreter[ALG[_], OUT] extends KvpCollectionE
     * @return
     */
   def generateEncoder[A](
-    collection: KvpCollection[ALG, A]
+    collection: KvpCollection[String, ALG, A]
   ): A => OUT = fromKvpCollection(collection)
 
   /** Takes a value definition and the actual value and create
     * a key value pair wrapped in the OUT type.  Analogous to
     * wrapping a key value pair in a JSON Object.
     * */
-  def toObj[A](kvDef: KeyDefinition[ALG, A], value: OUT): OUT
+  def toObj[A](kvDef: KeyDefinition[String, ALG, A], value: OUT): OUT
 
-  override def primitiveEncoder[A](keyDefinition: KeyDefinition[ALG, A]): A => OUT = {
+  override def primitiveEncoder[A](keyDefinition: KeyDefinition[String, ALG, A]): A => OUT = {
     val f = determineValueDefinition(keyDefinition.dataDefinition)
     (a: A) =>
       {
@@ -84,7 +85,7 @@ trait KvpInterchangeFormatEncoderInterpreter[ALG[_], OUT] extends KvpCollectionE
               case Right(bInput) => bF(bInput)
             }
           }
-      case gd: KvpCollectionValue[ALG, A] @unchecked =>
+      case gd: KvpCollectionValue[String, ALG, A] @unchecked =>
         val fh = fromKvpCollection[A](gd.kvpCollection)
         input =>
           fh(input)

@@ -5,7 +5,7 @@ import java.time.{LocalDateTime, ZoneOffset}
 
 import cats.data.NonEmptyList
 import cats.syntax.all._
-import com.bones.{Util, data}
+import com.bones.{Path, Util, data}
 import com.bones.data.Error._
 import com.bones.data.values.CNilF
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpCoproductCollectionHead, _}
@@ -25,11 +25,12 @@ object ProtobufSequentialValidatorInterpreter {
   private val LENGTH_DELIMITED = 2 // Length-delimited	string, bytes, embedded messages, packed repeated fields
   private val BIT32 = 5 // 32-bit	fixed32, sfixed32, float
 
-  def identitySuccess[A]: (A, Path) => Either[NonEmptyList[ExtractionError], A] = (a, _) => Right(a)
+  def identitySuccess[A]: (A, Path[String]) => Either[ExtractionErrors[String], A] =
+    (a, _) => Right(a)
 
   /** Returns a function reads boolean data from the codedInputStream */
   def booleanData[ALG[_], A](validations: List[ValidationOp[Boolean]]): ExtractFromProto[Boolean] =
-    (fieldNumber: LastFieldNumber, path: Path) => {
+    (fieldNumber: LastFieldNumber, path: Path[String]) => {
       val thisTag = fieldNumber << 3 | VARINT
       (List(thisTag), fieldNumber + 1, (canReadTag: CanReadTag, in: CodedInputStream) => {
         if (in.getLastTag == thisTag) {
@@ -40,7 +41,7 @@ object ProtobufSequentialValidatorInterpreter {
         } else {
           (canReadTag, Left(NonEmptyList.one(RequiredValue(path, "Boolean"))))
         }
-      }: (CanReadTag, Either[NonEmptyList[ExtractionError], Boolean]))
+      }: (CanReadTag, Either[ExtractionErrors[String], Boolean]))
     }
 
   /** Returns a function which reads String data as UTF from the CodedInputStream */
@@ -49,9 +50,9 @@ object ProtobufSequentialValidatorInterpreter {
 
   def stringDataWithFlatMap[ALG[_], A](
     typeName: String,
-    f: (String, Path) => Either[NonEmptyList[ExtractionError], A],
+    f: (String, Path[String]) => Either[ExtractionErrors[String], A],
     validations: List[ValidationOp[A]]): ExtractFromProto[A] =
-    (fieldNumber: LastFieldNumber, path: Path) => {
+    (fieldNumber: LastFieldNumber, path: Path[String]) => {
       val thisTag = fieldNumber << 3 | LENGTH_DELIMITED
       (List(thisTag), fieldNumber + 1, (canReadTag, in) => {
         val lastTag = in.getLastTag
@@ -65,7 +66,7 @@ object ProtobufSequentialValidatorInterpreter {
         } else {
           (canReadTag, Left(NonEmptyList.one(RequiredValue(path, typeName))))
         }
-      }: (CanReadTag, Either[NonEmptyList[ExtractionError], A]))
+      }: (CanReadTag, Either[ExtractionErrors[String], A]))
     }
 
   /**
@@ -83,10 +84,10 @@ object ProtobufSequentialValidatorInterpreter {
     intDataWithFlatMap(identitySuccess, validations)
 
   def intDataWithFlatMap[ALG[_], A](
-    f: (Int, Path) => Either[NonEmptyList[ExtractionError], A],
+    f: (Int, Path[String]) => Either[ExtractionErrors[String], A],
     validations: List[ValidationOp[A]]
   ): ExtractFromProto[A] =
-    (fieldNumber: LastFieldNumber, path: Path) => {
+    (fieldNumber: LastFieldNumber, path: Path[String]) => {
       val thisTag = fieldNumber << 3 | VARINT
       (List(thisTag), fieldNumber + 1, (canReadTag, in) => {
         if (in.getLastTag == thisTag) {
@@ -95,16 +96,16 @@ object ProtobufSequentialValidatorInterpreter {
         } else {
           (canReadTag, Left(NonEmptyList.one(RequiredValue(path, "Int"))))
         }
-      }: (CanReadTag, Either[NonEmptyList[ExtractionError], A]))
+      }: (CanReadTag, Either[ExtractionErrors[String], A]))
     }
 
   def longData[ALG[_]](validations: List[ValidationOp[Long]]): ExtractFromProto[Long] =
     longDataWithFlatMap(identitySuccess, validations)
 
   def longDataWithFlatMap[ALG[_], A](
-    f: (Long, Path) => Either[NonEmptyList[ExtractionError], A],
+    f: (Long, Path[String]) => Either[ExtractionErrors[String], A],
     validations: List[ValidationOp[A]]): ExtractFromProto[A] =
-    (fieldNumber: LastFieldNumber, path: Path) => {
+    (fieldNumber: LastFieldNumber, path: Path[String]) => {
       val thisTag = fieldNumber << 3 | VARINT
       (List(thisTag), fieldNumber + 1, (canReadTag, in) => {
         if (in.getLastTag == thisTag) {
@@ -115,12 +116,12 @@ object ProtobufSequentialValidatorInterpreter {
         } else {
           (canReadTag, Left(NonEmptyList.one(RequiredValue(path, "Long"))))
         }
-      }: (CanReadTag, Either[NonEmptyList[ExtractionError], A]))
+      }: (CanReadTag, Either[ExtractionErrors[String], A]))
     }
 
   def byteArrayData[ALG[_], A](
     validations: List[ValidationOp[Array[Byte]]]): ExtractFromProto[Array[Byte]] =
-    (fieldNumber: LastFieldNumber, path: Path) => {
+    (fieldNumber: LastFieldNumber, path: Path[String]) => {
       val thisField = fieldNumber << 3 | LENGTH_DELIMITED
       (List(thisField), fieldNumber + 1, (canReadTag, in) => {
         if (in.getLastTag == thisField) {
@@ -130,14 +131,14 @@ object ProtobufSequentialValidatorInterpreter {
         } else {
           (canReadTag, Left(NonEmptyList.one(RequiredValue(path, "arrayOfByte"))))
         }
-      }: (CanReadTag, Either[NonEmptyList[ExtractionError], Array[Byte]]))
+      }: (CanReadTag, Either[ExtractionErrors[String], Array[Byte]]))
     }
 
   def timestampWithMap[A](
-    f: (Long, Int, Path) => Either[NonEmptyList[ExtractionError], A],
+    f: (Long, Int, Path[String]) => Either[ExtractionErrors[String], A],
     validations: List[ValidationOp[A]]
   ): ExtractFromProto[A] =
-    (fieldNumber: LastFieldNumber, path: Path) => {
+    (fieldNumber: LastFieldNumber, path: Path[String]) => {
       val thisTag = fieldNumber << 3 | LENGTH_DELIMITED
       (List(thisTag), fieldNumber + 1, (canReadTag: CanReadTag, in: CodedInputStream) => {
         val length = in.readRawVarint32()
@@ -165,11 +166,11 @@ object ProtobufSequentialValidatorInterpreter {
               Left(NonEmptyList.one(WrongTypeError(path, "Timestamp", "Unknown", Some(io)))))
           }
         }
-      }: (CanReadTag, Either[NonEmptyList[ExtractionError], A]))
+      }: (CanReadTag, Either[ExtractionErrors[String], A]))
     }
 
   def floatData[ALG[_], A](validations: List[ValidationOp[Float]]): ExtractFromProto[Float] =
-    (fieldNumber: LastFieldNumber, path: Path) => {
+    (fieldNumber: LastFieldNumber, path: Path[String]) => {
       val thisTag = fieldNumber << 3 | BIT32
       (List(thisTag), fieldNumber + 1, (canReadTag, in) => {
         if (in.getLastTag == thisTag) {
@@ -180,11 +181,11 @@ object ProtobufSequentialValidatorInterpreter {
         } else {
           (canReadTag, Left(NonEmptyList.one(RequiredValue(path, "Float"))))
         }
-      }: (CanReadTag, Either[NonEmptyList[ExtractionError], Float]))
+      }: (CanReadTag, Either[ExtractionErrors[String], Float]))
     }
 
   def doubleData[ALG[_], A](validations: List[ValidationOp[Double]]): ExtractFromProto[Double] =
-    (fieldNumber: LastFieldNumber, path: Path) => {
+    (fieldNumber: LastFieldNumber, path: Path[String]) => {
       val thisTag = fieldNumber << 3 | BIT64
       (List(thisTag), fieldNumber + 1, (canReadTag, in) => {
         if (in.getLastTag == thisTag) {
@@ -194,14 +195,14 @@ object ProtobufSequentialValidatorInterpreter {
         } else {
           (canReadTag, Left(NonEmptyList.one(RequiredValue(path, "Double"))))
         }
-      }: (CanReadTag, Either[cats.data.NonEmptyList[com.bones.data.Error.ExtractionError], Double]))
+      }: (CanReadTag, Either[ExtractionErrors[String], Double]))
     }
 
   def convert[A](
     in: CodedInputStream,
     clazz: Class[A],
     path: List[String]
-  )(f: CodedInputStream => A): Either[NonEmptyList[CanNotConvert[CodedInputStream, A]], A] =
+  )(f: CodedInputStream => A): Either[NonEmptyList[CanNotConvert[String, CodedInputStream, A]], A] =
     try {
       Right(f(in))
     } catch {
@@ -235,7 +236,7 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
   val zoneOffset: ZoneOffset
 
   def fromCustomBytes[A](
-    dc: KvpCollection[ALG, A]): Array[Byte] => Either[NonEmptyList[ExtractionError], A] = {
+    dc: KvpCollection[String, ALG, A]): Array[Byte] => Either[ExtractionErrors[String], A] = {
     val (_, _, f) =
       fromKvpCollection(dc)(1, List.empty)
     (bytes: Array[Byte]) =>
@@ -243,22 +244,22 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
         val is = new ByteArrayInputStream(bytes)
         val cis: CodedInputStream = CodedInputStream.newInstance(is)
         f(true, cis)._2
-      }: Either[NonEmptyList[ExtractionError], A]
+      }: Either[ExtractionErrors[String], A]
   }
 
   protected def kvpCoproduct[C <: Coproduct, A](
-    kvp: KvpCoproduct[ALG, C]
+    kvp: KvpCoproduct[String, ALG, C]
   ): ExtractFromProto[C] = {
 
     kvp match {
-      case _: KvpCoNil[_] =>
+      case _: KvpCoNil[String, _] @unchecked =>
         (lastFieldNumber, path) =>
           (
             List.empty,
             lastFieldNumber,
             (canRead, _) =>
               (canRead, Left(NonEmptyList.one(RequiredValue(path, s"coproduct ${kvp} not found")))))
-      case op: KvpCoproductCollectionHead[ALG, a, c, C] @unchecked =>
+      case op: KvpCoproductCollectionHead[String, ALG, a, c, C] @unchecked =>
         val head = fromKvpCollection(op.kvpCollection)
         (lastFieldNumber, path) =>
           val (headTags, headFieldNumber, fHead) = head(lastFieldNumber, path)
@@ -278,13 +279,13 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
     }
   }
 
-  def fromKvpCollection[A](group: KvpCollection[ALG, A]): ExtractFromProto[A] = {
+  def fromKvpCollection[A](group: KvpCollection[String, ALG, A]): ExtractFromProto[A] = {
     group match {
-      case _: KvpNil[ALG] =>
+      case _: KvpNil[String, ALG] =>
         (lastFieldNumber, path) =>
           (List.empty, lastFieldNumber, (canRead, _) => (canRead, Right(HNil)))
 
-      case op: KvpSingleValueHead[ALG, h, t, tl, a] @unchecked =>
+      case op: KvpSingleValueHead[String, ALG, h, t, tl, a] @unchecked =>
         val headF = op.head match {
           case Left(keyValueDef) =>
             determineValueDefinition(keyValueDef.key, keyValueDef.dataDefinition)
@@ -310,7 +311,7 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
               (canReadTail, result.map(_.asInstanceOf[A]))
             })
           }
-      case op: KvpHListCollectionHead[ALG, ho, no, h, hl, t, tl] @unchecked =>
+      case op: KvpHListCollectionHead[String, ALG, ho, no, h, hl, t, tl] @unchecked =>
         val head = fromKvpCollection(op.head)
         val tail = fromKvpCollection(op.tail)
         (lastFieldNumber, path) =>
@@ -333,11 +334,11 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
               (canReadTail, totalResult.map(_.asInstanceOf[A]))
             })
           }
-      case op: KvpCoproduct[ALG, c] => kvpCoproduct(op).asInstanceOf[ExtractFromProto[A]]
-      case op: KvpWrappedCoproduct[ALG, a, c] =>
+      case op: KvpCoproduct[String, ALG, c] => kvpCoproduct(op).asInstanceOf[ExtractFromProto[A]]
+      case op: KvpWrappedCoproduct[String, ALG, a, c] =>
         val groupF = fromKvpCollection(op.wrappedEncoding)
         unwrap(groupF, op.fCtoA)
-      case op: KvpWrappedHList[ALG, a, xs, xsl] =>
+      case op: KvpWrappedHList[String, ALG, a, xs, xsl] =>
         val groupF = fromKvpCollection(op.wrappedEncoding)
         unwrap(groupF, op.fHtoA)
     }
@@ -345,7 +346,7 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
   }
 
   private def unwrap[A, B](extractF: ExtractFromProto[A], fAtoB: A => B): ExtractFromProto[B] = {
-    (last: LastFieldNumber, path: Path) =>
+    (last: LastFieldNumber, path: Path[String]) =>
       {
         val (tags, lastFieldNumber, childF) = extractF(last, path)
         val f = (canReadInput: CanReadTag, in: CodedInputStream) => {
@@ -364,9 +365,9 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
         listData[t](key, ld)
       case ed: EitherData[ALG, a, b] @unchecked =>
         eitherData[a, b](key, ed)
-      case kvp: KvpCollectionValue[ALG, A] @unchecked => {
+      case kvp: KvpCollectionValue[String, ALG, A] @unchecked => {
         val groupExtract = fromKvpCollection[A](kvp.kvpCollection)
-        (last: LastFieldNumber, path: Path) =>
+        (last: LastFieldNumber, path: Path[String]) =>
           {
             val thisTag = last << 3 | LENGTH_DELIMITED
             val (tags, lastFieldNumber, fIn) = groupExtract(1, path)
@@ -381,7 +382,7 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
                 (
                   true,
                   result
-                    .asInstanceOf[Either[NonEmptyList[ExtractionError], A]]
+                    .asInstanceOf[Either[ExtractionErrors[String], A]]
                     .flatMap(i => vu.validate(kvp.validations)(i, path)))
               } catch {
                 case ex: InvalidProtocolBufferException => {
@@ -400,7 +401,7 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
     key: String,
     op: OptionalValue[ALG, B]): ExtractFromProto[Option[B]] = {
     val vd = determineValueDefinition(key, op.valueDefinitionOp)
-    (fieldNumber: LastFieldNumber, path: Path) =>
+    (fieldNumber: LastFieldNumber, path: Path[String]) =>
       {
         val (tags, childFieldNumber, fa) = vd(fieldNumber, path)
 
@@ -411,7 +412,7 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
           } else {
             (canReadInput, Right(None))
           }
-        }: (CanReadTag, Either[NonEmptyList[ExtractionError], Option[B]]))
+        }: (CanReadTag, Either[ExtractionErrors[String], Option[B]]))
       }
   }
 
@@ -424,9 +425,9 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
       canReadListTag: Boolean,
       codedInputStream: CodedInputStream,
       path: List[String],
-      accumulated: List[Either[NonEmptyList[ExtractionError], C]],
-      f: (CanReadTag, CodedInputStream) => (CanReadTag, Either[NonEmptyList[ExtractionError], C])
-    ): List[Either[NonEmptyList[ExtractionError], C]] = {
+      accumulated: List[Either[ExtractionErrors[String], C]],
+      f: (CanReadTag, CodedInputStream) => (CanReadTag, Either[ExtractionErrors[String], C])
+    ): List[Either[ExtractionErrors[String], C]] = {
       if (canReadListTag) {
         codedInputStream.readTag()
       }
@@ -440,7 +441,7 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
       }
     }
 
-    (fieldNumber: LastFieldNumber, path: Path) =>
+    (fieldNumber: LastFieldNumber, path: Path[String]) =>
       {
         val (tags, lastFieldNumber, f) = child(fieldNumber, path)
         (tags, lastFieldNumber, (canReadTag, in) => {
@@ -473,12 +474,12 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
           } else {
             (canReadTag, Left(NonEmptyList.one(RequiredValue(path, ed.typeName))))
           }
-        }: (CanReadTag, Either[NonEmptyList[ExtractionError], Either[B, C]]))
+        }: (CanReadTag, Either[ExtractionErrors[String], Either[B, C]]))
       }
   }
 
   def newGroup[A](extract: ExtractFromProto[A]): ExtractFromProto[A] = {
-    (last: LastFieldNumber, path: Path) =>
+    (last: LastFieldNumber, path: Path[String]) =>
       {
         val tag = (last + 1) << 3 | LENGTH_DELIMITED
         val (tags, lastFieldNumber, f) = extract.apply(0, path)
@@ -489,14 +490,14 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
           try {
             in.checkLastTagWas(0)
             in.popLimit(oldLimit)
-            (true, result.asInstanceOf[Either[NonEmptyList[ExtractionError], A]])
+            (true, result.asInstanceOf[Either[ExtractionErrors[String], A]])
           } catch {
             case ex: InvalidProtocolBufferException => {
               in.getLastTag
               (true, Left(NonEmptyList.one(WrongTypeError(path, "Object", "Unknown", Some(ex)))))
             }
           }
-        }: (CanReadTag, Either[NonEmptyList[ExtractionError], A]))
+        }: (CanReadTag, Either[ExtractionErrors[String], A]))
       }
   }
 

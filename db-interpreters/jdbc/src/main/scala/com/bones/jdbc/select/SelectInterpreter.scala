@@ -29,10 +29,10 @@ trait SelectInterpreter[ALG[_]] {
     * @return A Curried Function which when given a Connection and an ID, will fetch the data from the DB.
     */
   def selectEntity[A, ID](
-    schema: KvpCollection[ALG, A],
-    idSchema: KvpCollection[ALG, ID],
+    schema: KvpCollection[String, ALG, A],
+    idSchema: KvpCollection[String, ALG, ID],
     tableNameOverride: Option[String] = None
-  ): ID => Connection => Either[ExtractionErrors, (ID, A)] = {
+  ): ID => Connection => Either[ExtractionErrors[String], (ID, A)] = {
 
     val entityName = headTypeName(schema).getOrElse("Unknown")
     val tableName = tableNameOverride.getOrElse(camelToSnake(entityName))

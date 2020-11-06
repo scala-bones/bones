@@ -26,7 +26,7 @@ import scala.util.control.NonFatal
 /** Bson dates do not support nano seconds.  need to override LocalDateTime generation in Bson
   * so that it only generates seconds
   */
-object BsonScalacheck extends ScalacheckBase[DefaultValues] {
+object BsonScalacheck extends ScalacheckBase[String, DefaultValues] {
 
   val allInterpreters: GenValue[DefaultValues] =
     DefaultScalacheckScalaCoreInterpreter ++

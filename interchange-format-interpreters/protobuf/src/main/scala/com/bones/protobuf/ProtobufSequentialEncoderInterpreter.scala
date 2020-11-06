@@ -181,7 +181,7 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
       })
   }
 
-  def generateProtobufEncoder[A](dc: KvpCollection[ALG, A]): A => Array[Byte] = {
+  def generateProtobufEncoder[A](dc: KvpCollection[String, ALG, A]): A => Array[Byte] = {
     val (_, group) = fromKvpCollection(dc).apply(1)
     (a: A) =>
       {
@@ -197,16 +197,16 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
   }
 
   protected def kvpCoproduct[C <: Coproduct](
-    co: KvpCoproduct[ALG, C]
+    co: KvpCoproduct[String, ALG, C]
   ): EncodeToProto[C] = {
     co match {
-      case nil: KvpCoNil[_] =>
+      case nil: KvpCoNil[String, _] @unchecked =>
         (fieldNumber: FieldNumber) =>
           (
             fieldNumber,
             (_: C) => (() => 0, (os: CodedOutputStream) => Right(os))
           )
-      case kvp: KvpCoproductCollectionHead[ALG, l, r, C] @unchecked => {
+      case kvp: KvpCoproductCollectionHead[String, ALG, l, r, C] @unchecked => {
         (fieldNumber: FieldNumber) =>
           val (nextFieldLeft, leftComputeEncode) =
             fromKvpCollection[l](kvp.kvpCollection)(fieldNumber)
@@ -224,15 +224,15 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
     }
   }
 
-  def fromKvpCollection[A](group: KvpCollection[ALG, A]): EncodeToProto[A] = {
+  def fromKvpCollection[A](group: KvpCollection[String, ALG, A]): EncodeToProto[A] = {
     group match {
-      case nil: KvpNil[_] =>
+      case nil: KvpNil[String, _] @unchecked =>
         (fieldNumber: FieldNumber) =>
           (
             fieldNumber,
             (_: A) => (() => 0, (os: CodedOutputStream) => Right(os))
           )
-      case op: KvpSingleValueHead[ALG, h, t, tl, o] =>
+      case op: KvpSingleValueHead[String, ALG, h, t, tl, o] =>
         (fieldNumber: FieldNumber) =>
           val (nextFieldHead, headF) = op.head match {
             case Left(keyDef)         => determineValueDefinition(keyDef.dataDefinition)(fieldNumber)
@@ -257,7 +257,7 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
               (fCompute, fEncode)
             }
           )
-      case op: KvpHListCollectionHead[ALG, ho, hon, h, hl, t, tl] @unchecked =>
+      case op: KvpHListCollectionHead[String, ALG, ho, hon, h, hl, t, tl] @unchecked =>
         (fieldNumber: FieldNumber) =>
           implicit val split = op.split
           val (nextFieldHead, headF) = fromKvpCollection(op.head)(fieldNumber)
@@ -279,15 +279,18 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
               (fCompute, fEncode)
             }
           )
-      case op: KvpWrappedCoproduct[ALG, A, c] =>
+      case op: KvpWrappedCoproduct[String, ALG, A, c] @unchecked =>
         mapEncodeToProto(op.fAtoC, fromKvpCollection(op.wrappedEncoding))
-      case op: KvpWrappedHList[ALG, A, xs, xsl] =>
+      case op: KvpWrappedHList[String, ALG, A, xs, xsl] @unchecked =>
         mapEncodeToProto(op.fAtoH, fromKvpCollection(op.wrappedEncoding))
-      case co: KvpCoproduct[ALG, c] => kvpCoproduct[c](co).asInstanceOf[EncodeToProto[A]]
+      case co: KvpCoproduct[String, ALG, c] @unchecked =>
+        kvpCoproduct[c](co).asInstanceOf[EncodeToProto[A]]
     }
   }
 
-  private def wrappedChild[A, B](f: A => B, child: KvpCollection[ALG, B]): EncodeToProto[A] =
+  private def wrappedChild[A, B](
+    f: A => B,
+    child: KvpCollection[String, ALG, B]): EncodeToProto[A] =
     fieldNumber => {
       (fieldNumber + 1, (a: A) => {
         val b = f(a)
@@ -306,7 +309,7 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
       })
     }
 
-  private def subObject[A](child: KvpCollectionValue[ALG, A]): EncodeToProto[A] =
+  private def subObject[A](child: KvpCollectionValue[String, ALG, A]): EncodeToProto[A] =
     fieldNumber => {
       (fieldNumber + 1, (a: A) => {
         val (_, computeEncode) = fromKvpCollection(child.kvpCollection).apply(1)
@@ -364,7 +367,7 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
                 case Right(bInput) => withFieldNumberB(bInput)
             }
           )
-      case kvp: KvpCollectionValue[ALG, A] @unchecked =>
+      case kvp: KvpCollectionValue[String, ALG, A] @unchecked =>
         fromKvpCollection(kvp.kvpCollection)
 
     }

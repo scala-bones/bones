@@ -27,9 +27,9 @@ object ClassicCrudInterpreter {
   def empty[ALG[_], A: Manifest, E, F[_], ID: Manifest](
     path: String,
     interpreters: InterpreterConfig[ALG, ID],
-    schema: KvpCollection[ALG, A],
+    schema: KvpCollection[String, ALG, A],
     pathStringToId: String => Either[StringToIdError, ID],
-    errorSchema: KvpCollection[ALG, E]
+    errorSchema: KvpCollection[String, ALG, E]
   )(
     implicit F: Sync[F],
     H: Http4sDsl[F]
@@ -55,9 +55,9 @@ object ClassicCrudInterpreter {
   def allVerbs[ALG[_], A: Manifest, E, F[_], ID: Manifest](
     interpreters: InterpreterConfig[ALG, ID],
     path: String,
-    schema: KvpCollection[ALG, A],
+    schema: KvpCollection[String, ALG, A],
     pathStringToId: String => Either[StringToIdError, ID],
-    errorSchema: KvpCollection[ALG, E],
+    errorSchema: KvpCollection[String, ALG, E],
     createF: A => F[Either[E, ID]],
     readF: ID => F[Either[E, (ID, A)]],
     updateF: (ID, A) => F[Either[E, ID]],
@@ -108,9 +108,9 @@ object ClassicCrudInterpreter {
 case class ClassicCrudInterpreter[ALG[_], A: Manifest, E, F[_], ID: Manifest](
   interpreters: InterpreterConfig[ALG, ID],
   path: String,
-  schema: KvpCollection[ALG, A],
+  schema: KvpCollection[String, ALG, A],
   pathStringToId: String => Either[StringToIdError, ID],
-  errorSchema: KvpCollection[ALG, E],
+  errorSchema: KvpCollection[String, ALG, E],
   createF: Option[A => F[Either[E, ID]]] = None,
   readF: Option[ID => F[Either[E, (ID, A)]]] = None,
   updateF: Option[(ID, A) => F[Either[E, ID]]] = None,
@@ -158,12 +158,12 @@ case class ClassicCrudInterpreter[ALG[_], A: Manifest, E, F[_], ID: Manifest](
   def withSearch(search: () => Stream[F, (ID, A)]): ClassicCrudInterpreter[ALG, A, E, F, ID] =
     this.copy(searchF = Some(search))
 
-  val schemaWithId: KvpCollection[ALG, (ID, A)] = {
-    (("id", interpreters.idDefinition) :: schema :: new KvpNil[ALG]).tupled[(ID, A)]
+  val schemaWithId: KvpCollection[String, ALG, (ID, A)] = {
+    (("id", interpreters.idDefinition) :: schema :: new KvpNil[String, ALG]).tupled[(ID, A)]
   }
 
-  val idSchema: KvpCollection[ALG, ID] = {
-    (("id", interpreters.idDefinition) :: new KvpNil[ALG]).encodedHead()
+  val idSchema: KvpCollection[String, ALG, ID] = {
+    (("id", interpreters.idDefinition) :: new KvpNil[String, ALG]).encodedHead()
   }
 
   def createRoutes: HttpRoutes[F] = {
@@ -269,9 +269,9 @@ case class ClassicCrudInterpreter[ALG[_], A: Manifest, E, F[_], ID: Manifest](
   def swaggerDoc(
     contentTypes: List[String],
     customInterpreter: SwaggerCoreInterpreter[ALG],
-    schema: KvpCollection[ALG, A],
-    schemaWithId: KvpCollection[ALG, (ID, A)],
-    errorSchema: KvpCollection[ALG, E],
+    schema: KvpCollection[String, ALG, A],
+    schemaWithId: KvpCollection[String, ALG, (ID, A)],
+    errorSchema: KvpCollection[String, ALG, E],
     path: String
   ): String = {
 

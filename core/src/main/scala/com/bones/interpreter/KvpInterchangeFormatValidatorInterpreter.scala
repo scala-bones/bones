@@ -24,7 +24,7 @@ import shapeless.{:+:, ::, CNil, Coproduct, HList, HNil, Inl, Inr, Nat}
   * @tparam IN The base data type of the interchange format, such as io.circe.Json
   */
 trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
-    extends KvpCollectionValidateAndDecode[ALG, IN] {
+    extends KvpCollectionValidateAndDecode[String, ALG, IN] {
 
   /** An additional string in the serialized format which states the coproduct type */
   val coproductTypeKey: String
@@ -34,7 +34,7 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
   val interchangeFormatPrimitiveValidator: InterchangeFormatPrimitiveValidator[IN]
 
   def generateValidator[A](
-    kvpCollection: KvpCollection[ALG, A]): IN => Either[NonEmptyList[ExtractionError], A] = {
+    kvpCollection: KvpCollection[String, ALG, A]): IN => Either[ExtractionErrors[String], A] = {
     fromKvpCollection(kvpCollection)(_, List.empty)
 
   }
@@ -50,14 +50,14 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
     */
   protected def headValue[A](
     in: IN,
-    kv: KeyDefinition[ALG, A],
-    headInterpreterF: (Option[IN], Path) => Either[NonEmptyList[ExtractionError], A],
-    path: Path): Either[NonEmptyList[ExtractionError], A]
+    kv: KeyDefinition[String, ALG, A],
+    headInterpreterF: (Option[IN], Path[String]) => Either[ExtractionErrors[String], A],
+    path: Path[String]): Either[ExtractionErrors[String], A]
 
   def invalidValue[T](
     in: IN,
     typeName: String,
-    path: Path): Left[NonEmptyList[ExtractionError], Nothing]
+    path: Path[String]): Left[ExtractionErrors[String], Nothing]
 
   override def coproductType(in: IN): Option[CoproductType] =
     interchangeFormatPrimitiveValidator.stringValue(in, coproductTypeKey)
@@ -66,8 +66,8 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
 
   protected def isEmpty(json: IN): Boolean
 
-  override def keyDefinition[A](value: KeyDefinition[ALG, A])
-    : (IN, List[String]) => Either[NonEmptyList[ExtractionError], A] = { (in, path) =>
+  override def keyDefinition[A](value: KeyDefinition[String, ALG, A])
+    : (IN, List[String]) => Either[ExtractionErrors[String], A] = { (in, path) =>
     {
       headValue(in, value, determineValidator(value.dataDefinition), path)
     }
@@ -75,7 +75,7 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
 
   protected def determineValidator[A](
     value: Either[HigherOrderValue[ALG, A], ALG[A]]
-  ): (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A] = {
+  ): (Option[IN], List[String]) => Either[ExtractionErrors[String], A] = {
     value match {
       case Left(kvp)  => valueDefinition(kvp)
       case Right(ext) => interchangeFormatValidator.validate(ext)
@@ -83,12 +83,12 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
   }
 
   protected def valueDefinition[A](fgo: HigherOrderValue[ALG, A])
-    : (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A] = {
-    val result: (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError], A] =
+    : (Option[IN], List[String]) => Either[ExtractionErrors[String], A] = {
+    val result: (Option[IN], List[String]) => Either[ExtractionErrors[String], A] =
       fgo match {
         case op: OptionalValue[ALG, a] @unchecked =>
           val applied = determineValidator(op.valueDefinitionOp)
-          (in: Option[IN], path: Path) =>
+          (in: Option[IN], path: Path[String]) =>
             in match {
               case None                  => Right(None)
               case Some(n) if isEmpty(n) => Right(None)
@@ -98,7 +98,7 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
         case ed: EitherData[ALG, a, b] @unchecked =>
           val optionalA = determineValidator(ed.definitionA)
           val optionalB = determineValidator(ed.definitionB)
-          (in: Option[IN], path: Path) =>
+          (in: Option[IN], path: Path[String]) =>
             {
               optionalA(in, path) match {
                 case Left(err1) =>
@@ -115,7 +115,7 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
         case op: ListData[ALG, t] @unchecked =>
           val valueF = determineValidator(op.tDefinition)
 
-          def appendArrayIndex(path: Path, index: Int): List[String] = {
+          def appendArrayIndex(path: Path[String], index: Int): List[String] = {
             if (path.isEmpty) path
             else
               path.updated(path.length - 1, path(path.length - 1) + s"[${index}]")
@@ -123,13 +123,13 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
 
           def traverseArray(
             arr: Seq[IN],
-            path: Path): Either[NonEmptyList[ExtractionError], List[t]] = {
-            val arrayApplied: Seq[Either[NonEmptyList[ExtractionError], t]] =
+            path: Path[String]): Either[ExtractionErrors[String], List[t]] = {
+            val arrayApplied: Seq[Either[ExtractionErrors[String], t]] =
               arr.zipWithIndex.map(jValue =>
                 valueF(Some(jValue._1), appendArrayIndex(path, jValue._2)))
 
             arrayApplied
-              .foldLeft[Either[NonEmptyList[ExtractionError], List[t]]](Right(List.empty))((b, v) =>
+              .foldLeft[Either[ExtractionErrors[String], List[t]]](Right(List.empty))((b, v) =>
                 (b, v) match {
                   case (Right(a), Right(i)) => Right(a :+ i)
                   case (Left(a), Left(b))   => Left(a ::: b)
@@ -138,7 +138,7 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
               })
           }
 
-          (inOpt: Option[IN], path: Path) =>
+          (inOpt: Option[IN], path: Path[String]) =>
             {
               for {
                 in <- inOpt.toRight(NonEmptyList.one(RequiredValue(path, op.typeNameOfT)))
@@ -146,15 +146,15 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
                 listOfIn <- traverseArray(arr, path)
               } yield listOfIn
             }
-        case op: KvpCollectionValue[ALG, A] @unchecked => {
-          val fg: (IN, List[String]) => Either[NonEmptyList[ExtractionError], A] =
+        case op: KvpCollectionValue[String, ALG, A] @unchecked => {
+          val fg: (IN, List[String]) => Either[ExtractionErrors[String], A] =
             fromKvpCollection(op.kvpCollection)
-          (jsonOpt: Option[IN], path: Path) =>
+          (jsonOpt: Option[IN], path: Path[String]) =>
             {
               jsonOpt match {
                 case Some(json) =>
                   fg(json, path)
-                    .flatMap(res => vu.validate[A](op.validations)(res, path))
+                    .flatMap(res => vu.validate[String, A](op.validations)(res, path))
                 case None => Left(NonEmptyList.one(RequiredValue(path, op.typeName)))
               }
             }
@@ -165,8 +165,8 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
 
   private def combine[H <: HList, T <: HList, HO <: HList](
     path: List[String],
-    head: Either[NonEmptyList[Error.ExtractionError], H],
-    tail: Either[NonEmptyList[Error.ExtractionError], T],
+    head: Either[ExtractionErrors[String], H],
+    tail: Either[ExtractionErrors[String], T],
     prepend: Prepend.Aux[H, T, HO],
     validations: List[ValidationOp[HO]]) = {
     Util
@@ -174,7 +174,7 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
         prepend.apply(l1, l2)
       })
       .flatMap { l =>
-        vu.validate[HO](validations)(l, path)
+        vu.validate[String, HO](validations)(l, path)
       }
   }
 }

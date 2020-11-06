@@ -4,13 +4,9 @@ import java.time._
 
 import cats.data.NonEmptyList
 import com.bones.Util.{longToLocalDate, longToLocalTime}
-import com.bones.data.Error.{CanNotConvert, ExtractionError}
+import com.bones.data.Error.{CanNotConvert, ExtractionErrors}
 import com.bones.data.values._
-import com.bones.protobuf.{
-  ExtractFromProto,
-  ProtobufSequentialValidatorInterpreter,
-  ProtobufValidatorValue
-}
+import com.bones.protobuf.{ExtractFromProto, ProtobufValidatorValue}
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.ValidationUtil
 
@@ -18,19 +14,18 @@ import scala.util.Try
 
 object JavaTimeValidator {
   val stringToDateTimeException
-    : (String, List[String]) => Either[NonEmptyList[ExtractionError], DateTimeException] =
+    : (String, List[String]) => Either[ExtractionErrors[String], DateTimeException] =
     (str, _) => Right(new DateTimeException(str))
 
-  val intToDayOfWeek: (Int, List[String]) => Either[NonEmptyList[ExtractionError], DayOfWeek] =
+  val intToDayOfWeek: (Int, List[String]) => Either[ExtractionErrors[String], DayOfWeek] =
     (int, _) => Right(DayOfWeek.of(int))
 
-  val stringToDuration: (String, List[String]) => Either[NonEmptyList[ExtractionError], Duration] =
+  val stringToDuration: (String, List[String]) => Either[ExtractionErrors[String], Duration] =
     (str, path) =>
       Try { Duration.parse(str) }.toEither.left
         .map(th => NonEmptyList.one(CanNotConvert(path, str, classOf[Duration], Some(th))))
 
-  val timestampToInstant
-    : (Long, Int, List[String]) => Either[NonEmptyList[ExtractionError], Instant] =
+  val timestampToInstant: (Long, Int, List[String]) => Either[ExtractionErrors[String], Instant] =
     (seconds, nanos, path) =>
       Try { Instant.ofEpochSecond(seconds, nanos) }.toEither.left
         .map(th =>
@@ -39,13 +34,13 @@ object JavaTimeValidator {
   val instantToTimestamp: Instant => (Long, Int) =
     instant => (instant.getEpochSecond, instant.getNano)
 
-  val intToMonth: (Int, List[String]) => Either[NonEmptyList[ExtractionError], Month] =
+  val intToMonth: (Int, List[String]) => Either[ExtractionErrors[String], Month] =
     (int, path) =>
       Try { Month.of(int) }.toEither.left
         .map(th => NonEmptyList.one(CanNotConvert(path, int, classOf[Month], Some(th))))
 
   /** Since max of month = 12 and max day = 31, we can embed both values in an Int */
-  val intToMonthDay: (Int, List[String]) => Either[NonEmptyList[ExtractionError], MonthDay] =
+  val intToMonthDay: (Int, List[String]) => Either[ExtractionErrors[String], MonthDay] =
     (int, path) =>
       Try {
         val month = (int >> 16)
@@ -62,23 +57,23 @@ object JavaTimeValidator {
       month << 16 | day.toShort
     }
 
-  val intToZoneOffset: (Int, List[String]) => Either[NonEmptyList[ExtractionError], ZoneOffset] =
+  val intToZoneOffset: (Int, List[String]) => Either[ExtractionErrors[String], ZoneOffset] =
     (int, path) =>
       Try { ZoneOffset.ofTotalSeconds(int) }.toEither.left.map(th =>
         NonEmptyList.one(CanNotConvert(path, int, classOf[Month], Some(th))))
 
-  val stringToPeriod: (String, List[String]) => Either[NonEmptyList[ExtractionError], Period] =
+  val stringToPeriod: (String, List[String]) => Either[ExtractionErrors[String], Period] =
     (string, path) =>
       Try { Period.parse(string) }.toEither.left.map(th =>
         NonEmptyList.one(CanNotConvert(path, string, classOf[Period], Some(th))))
 
-  val intToYear: (Int, List[String]) => Either[NonEmptyList[ExtractionError], Year] =
+  val intToYear: (Int, List[String]) => Either[ExtractionErrors[String], Year] =
     (int, path) =>
       Try { Year.of(int) }.toEither.left.map(th =>
         NonEmptyList.one(CanNotConvert(path, int, classOf[Period], Some(th))))
 
   /** Year and Month are encoded as a single long.  This function splits the long into two int values, year/month. */
-  val longToYearMonth: (Long, List[String]) => Either[NonEmptyList[ExtractionError], YearMonth] =
+  val longToYearMonth: (Long, List[String]) => Either[ExtractionErrors[String], YearMonth] =
     (long, path) =>
       Try {
         val year = (long >> 16).toInt
@@ -95,7 +90,7 @@ object JavaTimeValidator {
       year << 16 | month
     }
 
-  val stringToZoneId: (String, List[String]) => Either[NonEmptyList[ExtractionError], ZoneId] =
+  val stringToZoneId: (String, List[String]) => Either[ExtractionErrors[String], ZoneId] =
     (string, path) =>
       Try { ZoneId.of(string) }.toEither.left.map(th =>
         NonEmptyList.one(CanNotConvert(path, string, classOf[ZoneId], Some(th))))
@@ -109,7 +104,6 @@ object JavaTimeValidator {
 trait JavaTimeValidator extends ProtobufValidatorValue[JavaTimeValue] {
 
   import JavaTimeValidator._
-  import ProtobufSequentialValidatorInterpreter._
 
 //  def offsetDateTime(lt: OffsetDateTimeData): ExtractFromProto[OffsetDateTime] = {
 //
@@ -121,9 +115,9 @@ trait JavaTimeValidator extends ProtobufValidatorValue[JavaTimeValue] {
 //      val zoneResult = zoneOffsetExtract(ldtResult._2, path)
 //
 //      val tags = ldtResult._1 ::: zoneResult._1
-//      val f: (CanReadTag, CodedInputStream) => (CanReadTag, Either[NonEmptyList[ExtractionError], OffsetDateTime]) =
+//      val f: (CanReadTag, CodedInputStream) => (CanReadTag, Either[ExtractionErrors[String], OffsetDateTime]) =
 //        (canReadTag, is) => {
-//          val ldtReadResult: (CanReadTag, Either[NonEmptyList[ExtractionError], (Long, Int)]) =
+//          val ldtReadResult: (CanReadTag, Either[ExtractionErrors[String], (Long, Int)]) =
 //            ldtResult._3.apply(canReadTag, is)
 //          val zoneReadResult = zoneResult._3(ldtReadResult._1, is)
 //          val offsetDateTimeResult = Util.eitherMap2(ldtReadResult._2, zoneReadResult._2)( (ldt, zone) => {
@@ -185,7 +179,7 @@ trait JavaTimeValidator extends ProtobufValidatorValue[JavaTimeValue] {
     def f(
       seconds: Long,
       nanos: Int,
-      path: List[String]): Either[NonEmptyList[ExtractionError], LocalDateTime] =
+      path: List[String]): Either[ExtractionErrors[String], LocalDateTime] =
       Try {
         LocalDateTime.ofEpochSecond(seconds, nanos, zoneOffset)
       }.toEither.left

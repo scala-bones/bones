@@ -19,14 +19,14 @@ class KvpCollectionFunctorTest extends AnyFunSuite with Matchers {
   test("extend functor") {
 
     case class KvpCollectionFunctorImplTest()
-        extends KvpCollectionFunctor[DefaultValues, String => *] {
-      override def kvpNil(kvp: KvpNil[DefaultValues]): String => HNil = _ => HNil
+        extends KvpCollectionFunctor[String, DefaultValues, String => *] {
+      override def kvpNil(kvp: KvpNil[String, DefaultValues]): String => HNil = _ => HNil
 
       override def kvpWrappedHList[A, H <: HList, HL <: Nat](
-        wrappedHList: KvpWrappedHList[DefaultValues, A, H, HL]): String => A = ???
+        wrappedHList: KvpWrappedHList[String, DefaultValues, A, H, HL]): String => A = ???
 
       override def kvpWrappedCoproduct[A, C <: Coproduct](
-        wrappedCoproduct: KvpWrappedCoproduct[DefaultValues, A, C]): String => A = ???
+        wrappedCoproduct: KvpWrappedCoproduct[String, DefaultValues, A, C]): String => A = ???
 
       override def kvpHListCollectionHead[
         HO <: HList,
@@ -34,14 +34,15 @@ class KvpCollectionFunctorTest extends AnyFunSuite with Matchers {
         H <: HList,
         HL <: Nat,
         T <: HList,
-        TL <: Nat](kvp: KvpHListCollectionHead[DefaultValues, HO, NO, H, HL, T, TL]): String => HO =
+        TL <: Nat](
+        kvp: KvpHListCollectionHead[String, DefaultValues, HO, NO, H, HL, T, TL]): String => HO =
         ???
 
       override def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
-        kvp: KvpSingleValueHead[DefaultValues, H, T, TL, O]): String => O = ???
+        kvp: KvpSingleValueHead[String, DefaultValues, H, T, TL, O]): String => O = ???
 
       override def kvpCoproduct[C <: Coproduct](
-        value: KvpCoproduct[DefaultValues, C]): String => C = ???
+        value: KvpCoproduct[String, DefaultValues, C]): String => C = ???
     }
 
   }

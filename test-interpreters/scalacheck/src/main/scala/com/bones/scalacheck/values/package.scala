@@ -17,7 +17,7 @@ package object values {
   object DefaultScalacheckScalaCoreInterpreter extends ScalacheckScalaCoreInterpreter
   object DefaultScalacheckJavaUtilInterpreter extends ScalacheckJavaUtilInterpreter
 
-  val defaultValuesScalacheck = new ScalacheckBase[DefaultValues] {
+  def defaultValuesScalacheck[K] = new ScalacheckBase[K, DefaultValues] {
     override val genValue: GenValue[DefaultValues] = allInterpreters
   }
 

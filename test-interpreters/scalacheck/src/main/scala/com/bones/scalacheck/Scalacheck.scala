@@ -43,11 +43,11 @@ trait GenValue[ALG[_]] {
   def gen[A](ag: ALG[A]): Gen[A]
 }
 
-trait ScalacheckBase[ALG[_]] extends KvpCollectionTransformation[ALG, Gen] {
+trait ScalacheckBase[K, ALG[_]] extends KvpCollectionTransformation[K, ALG, Gen] {
 
   val genValue: GenValue[ALG]
 
-  def generateGen[A](collection: KvpCollection[ALG, A]): Gen[A] =
+  def generateGen[A](collection: KvpCollection[K, ALG, A]): Gen[A] =
     fromKvpCollection(collection)
 
   override implicit def applicativeOfOut: Applicative[Gen] = new Applicative[Gen] {
@@ -60,13 +60,13 @@ trait ScalacheckBase[ALG[_]] extends KvpCollectionTransformation[ALG, Gen] {
     }
   }
 
-  override def primitiveEncoder[A](keyDefinition: KeyDefinition[ALG, A]): Gen[A] =
+  override def primitiveEncoder[A](keyDefinition: KeyDefinition[K, ALG, A]): Gen[A] =
     determineValueDefinition(keyDefinition.dataDefinition)
 
   private def coproductFrequencies[O <: Coproduct](
-    kvpCoproduct: KvpCoproduct[ALG, O]): List[(Int, Gen[O])] = {
+    kvpCoproduct: KvpCoproduct[K, ALG, O]): List[(Int, Gen[O])] = {
     kvpCoproduct match {
-      case kvpCoproductCollectionHead: KvpCoproductCollectionHead[ALG, h, c, O] => {
+      case kvpCoproductCollectionHead: KvpCoproductCollectionHead[K, ALG, h, c, O] => {
         val tailFrequencies =
           coproductFrequencies[c](kvpCoproductCollectionHead.kvpTail)
             .map(freq => (freq._1, freq._2.map(o => Inr(o).asInstanceOf[O])))
@@ -74,11 +74,11 @@ trait ScalacheckBase[ALG[_]] extends KvpCollectionTransformation[ALG, Gen] {
           .map(h => Inl(h).asInstanceOf[O])
         (1, headGen) :: tailFrequencies
       }
-      case _: KvpCoNil[ALG] => List.empty[(Int, Gen[O])]
+      case _: KvpCoNil[K, ALG] => List.empty[(Int, Gen[O])]
     }
   }
   override def kvpCoproductCollectionHead[A, C <: Coproduct, O <: A :+: C](
-    kvpCoproductCollectionHead: KvpCoproductCollectionHead[ALG, A, C, O]): Gen[O] = {
+    kvpCoproductCollectionHead: KvpCoproductCollectionHead[K, ALG, A, C, O]): Gen[O] = {
 
     val frequencies = coproductFrequencies(kvpCoproductCollectionHead)
     Gen.frequency(frequencies: _*)
@@ -112,7 +112,7 @@ trait ScalacheckBase[ALG[_]] extends KvpCollectionTransformation[ALG, Gen] {
         val right = determineValueDefinition(ed.definitionB).map(Right(_))
         Gen.frequency((1, left), (1, right))
       }
-      case kvp: KvpCollectionValue[ALG, A] @unchecked =>
+      case kvp: KvpCollectionValue[K, ALG, A] @unchecked =>
         fromKvpCollection(kvp.kvpCollection)
     }
 

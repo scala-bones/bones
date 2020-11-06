@@ -2,15 +2,16 @@ package com.bones.jdbc.rs
 
 import java.sql.ResultSet
 
-import cats.data.NonEmptyList
+import com.bones.Path
 import com.bones.Util.{NullableResult, stringToEnumeration}
 import com.bones.data.Error.ExtractionErrors
 import com.bones.data.values._
-import com.bones.jdbc.FindInterpreter.{FieldName, Path}
+import com.bones.jdbc.FindInterpreter.FieldName
 
 trait ScalaCoreResultSet extends ResultSetValue[ScalaCoreValue] {
-  override def resultSet[A](alg: ScalaCoreValue[A])
-    : (Path, FieldName) => ResultSet => Either[ExtractionErrors, NullableResult[A]] =
+  override def resultSet[A](alg: ScalaCoreValue[A]): (
+    Path[String],
+    FieldName) => ResultSet => Either[ExtractionErrors[String], NullableResult[String, A]] =
     alg match {
       case ob: BooleanData =>
         (path, fieldName) => rs =>
@@ -48,12 +49,12 @@ trait ScalaCoreResultSet extends ResultSetValue[ScalaCoreValue] {
                 r match {
                   case Left(nv) => Right(Left(nv))
                   case Right(str) =>
-                    stringToEnumeration[e, a](str, path, esd.enumeration).map(v =>
+                    stringToEnumeration[String, e, a](str, path, esd.enumeration).map(v =>
                       Right(v.asInstanceOf[A]))
                 }
               }
             } yield e
-          }: Either[NonEmptyList[com.bones.data.Error.ExtractionError], NullableResult[A]]
+          }: Either[ExtractionErrors[String], NullableResult[String, A]]
 
     }
 }

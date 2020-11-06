@@ -11,7 +11,6 @@ import shapeless.{Coproduct, HList}
 package object protobuf {
 
   /******* Encoder Types ******/
-  type Path = List[String]
   type FieldNumber = Int
   type LastFieldNumber = Int
   type ComputeSize = () => Int
@@ -39,10 +38,12 @@ package object protobuf {
     * @tparam A
     */
   type ExtractFromProto[A] =
-    (LastFieldNumber, Path) => (
+    (LastFieldNumber, Path[String]) => (
       List[Tag],
       LastFieldNumber,
-      (CanReadTag, CodedInputStream) => (CanReadTag, Either[NonEmptyList[ExtractionError], A])
+      (CanReadTag, CodedInputStream) => (
+        CanReadTag,
+        Either[NonEmptyList[ExtractionError[String]], A])
     )
 //  type ExtractHListFromProto[H <: HList] =
 //    (LastFieldNumber, Path) => (

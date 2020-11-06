@@ -2,7 +2,6 @@ package com.bones
 
 import java.util.UUID
 
-import com.bones.data.KvpCollection.headTypeName
 import com.bones.data.values.DefaultValues
 import com.bones.data.{KvpCollection, KvpNil, KvpSingleValueHead, KvpWrappedHList}
 import com.bones.jdbc.column.{ColumnNameInterpreter, ColumnValue}
@@ -16,13 +15,13 @@ import shapeless.{::, HNil, Succ}
 
 package object jdbc {
 
-  val longId: KvpSingleValueHead[DefaultValues, Long, HNil, _0, Long :: HNil] = (
+  val longId: KvpSingleValueHead[String, DefaultValues, Long, HNil, _0, Long :: HNil] = (
     "id",
     long(lv.min(0), lv.unique)) :: kvpNil
-  val intId: KvpSingleValueHead[DefaultValues, Int, HNil, _0, Int :: HNil] = (
+  val intId: KvpSingleValueHead[String, DefaultValues, Int, HNil, _0, Int :: HNil] = (
     "id",
     int(iv.min(0), iv.unique)) :: kvpNil
-  val uuidId: KvpSingleValueHead[DefaultValues, UUID, HNil, _0, UUID :: HNil] = (
+  val uuidId: KvpSingleValueHead[String, DefaultValues, UUID, HNil, _0, UUID :: HNil] = (
     "id",
     uuid(uuidV.unique)) :: kvpNil
 
@@ -44,13 +43,13 @@ package object jdbc {
 
     def asTuple: (String, ALG[ID]) = (key, value)
 
-    def prependSchema[A: Manifest](schema: KvpCollection[ALG, A])
-      : KvpWrappedHList[ALG, (ID, A), ID :: A :: HNil, Succ[Succ[_0]]] = {
-      (asTuple :: schema :: new KvpNil[ALG]).tupled[(ID, A)]
+    def prependSchema[A: Manifest](schema: KvpCollection[String, ALG, A])
+      : KvpWrappedHList[String, ALG, (ID, A), ID :: A :: HNil, Succ[Succ[_0]]] = {
+      (asTuple :: schema :: new KvpNil[String, ALG]).tupled[(ID, A)]
     }
 
-    def asSchema: KvpCollection[ALG, ID :: HNil] = {
-      asTuple :: new KvpNil[ALG]
+    def asSchema: KvpCollection[String, ALG, ID :: HNil] = {
+      asTuple :: new KvpNil[String, ALG]
     }
 
   }
