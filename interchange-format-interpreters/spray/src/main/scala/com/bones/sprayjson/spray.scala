@@ -13,7 +13,7 @@ package object sprayjson {
 
   val coproductTypeKeyConst: String = "type"
 
-  case class IsoCirceEncoderInterpreter[ALG[_]](
+  case class IsoSprayEncoderInterpreter[ALG[_]](
     override val encoder: InterchangeFormatEncoderValue[ALG, JsValue]
   ) extends SprayEncoderInterpreter[ALG] {
     override val coproductTypeKey: String = coproductTypeKeyConst
@@ -21,7 +21,7 @@ package object sprayjson {
       SprayPrimitiveEncoder
   }
 
-  case class IsoCirceValidatorInterpreter[ALG[_]](
+  case class IsoSprayValidatorInterpreter[ALG[_]](
     override val interchangeFormatValidator: InterchangeFormatValidatorValue[ALG, JsValue]
   ) extends SprayValidatorInterpreter[ALG] {
 
