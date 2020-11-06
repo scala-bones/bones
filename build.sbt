@@ -135,6 +135,18 @@ lazy val jsonArgonaut = (project in file("interchange-format-interpreters/argona
     )
   )
   .dependsOn(core, testSchemas % "test", scalacheck % "test")
+lazy val jsonSpray = (project in file("interchange-format-interpreters/spray"))
+  .settings(
+    commonSettings,
+    name := "Bones Spray Json",
+    libraryDependencies ++= Seq(
+      "io.spray" %%  "spray-json" % "1.3.5",
+      "org.scalacheck" %% "scalacheck" % "1.15.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.2" % Test,
+      "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
+    )
+  )
+  .dependsOn(core, testSchemas % "test", scalacheck % "test")
 lazy val protobuf = (project in file("interchange-format-interpreters/protobuf"))
   .settings(
     commonSettings,
