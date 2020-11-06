@@ -1,8 +1,6 @@
 package com.bones.fullstack
 
-import java.nio.charset.StandardCharsets
-
-import cats.data.{Kleisli, NonEmptyList}
+import cats.data.Kleisli
 import cats.effect._
 import cats.implicits._
 import com.bones.Util
@@ -11,7 +9,7 @@ import com.bones.data.values.DefaultValues
 import com.bones.data.{KvpCollection, KvpNil}
 import com.bones.http4s.BaseCrudInterpreter.StringToIdError
 import com.bones.http4s.ClassicCrudInterpreter
-import com.bones.http4s.config.{InterpreterConfig, longIdDefinition}
+import com.bones.http4s.config.InterpreterConfig
 import com.bones.jdbc.insert.DbInsert
 import com.bones.jdbc.select.SelectInterpreter
 import com.bones.jdbc.update.DbUpdate
