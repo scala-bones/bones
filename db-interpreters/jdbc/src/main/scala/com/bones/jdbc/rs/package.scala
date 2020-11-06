@@ -3,11 +3,10 @@ package com.bones.jdbc
 import java.sql.SQLException
 
 import cats.data.NonEmptyList
-import com.bones.PrimitiveValue
+import com.bones.Path
 import com.bones.Util.{NullValue, NullableResult}
-import com.bones.data.Error.{ExtractionError, ExtractionErrors, RequiredValue, SystemError}
+import com.bones.data.Error.{ExtractionErrors, SystemError}
 import com.bones.data.values.DefaultValues
-import com.bones.jdbc.FindInterpreter.Path
 
 package object rs {
 
@@ -31,7 +30,7 @@ package object rs {
     f: => A,
     typeName: String,
     fieldName: String,
-    path: Path): Either[ExtractionErrors, NullableResult[A]] =
+    path: Path[String]): Either[ExtractionErrors[String], NullableResult[String, A]] =
     try {
       val result = f
       if (result == null) {

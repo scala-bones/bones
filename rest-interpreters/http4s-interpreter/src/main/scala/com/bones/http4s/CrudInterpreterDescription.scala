@@ -1,7 +1,7 @@
 package com.bones.http4s
 
 import cats.data.NonEmptyList
-import com.bones.data.Error.ExtractionError
+import com.bones.data.Error.{ExtractionError, ExtractionErrors}
 import fs2.Stream
 
 object CrudInterpreterDescription {
@@ -9,7 +9,7 @@ object CrudInterpreterDescription {
   /** Collection of items used to to create a Post endpoint in this HttpInterpreter. */
   case class PutPostInterpreterGroup[UI, UE, UO](
     contentType: String,
-    inInterpreter: Array[Byte] => Either[NonEmptyList[ExtractionError], UI],
+    inInterpreter: Array[Byte] => Either[ExtractionErrors[String], UI],
     outInterpreter: UO => Array[Byte],
     errorInterpreter: UE => Array[Byte]
   )

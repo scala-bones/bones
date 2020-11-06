@@ -17,9 +17,9 @@ class RpcInterpreter[ALG[_], ID: Manifest](
 
   def create[F[_], A, E, B](
     createF: A => F[Either[E, B]],
-    inputSchema: KvpCollection[ALG, A],
-    errorSchema: KvpCollection[ALG, E],
-    outputSchema: KvpCollection[ALG, B]
+    inputSchema: KvpCollection[String, ALG, A],
+    errorSchema: KvpCollection[String, ALG, E],
+    outputSchema: KvpCollection[String, ALG, B]
   )(implicit F: Sync[F], H: Http4sDsl[F]): List[HttpRoutes[F]] =
     BaseCrudInterpreter.httpPostRoutes(
       path,

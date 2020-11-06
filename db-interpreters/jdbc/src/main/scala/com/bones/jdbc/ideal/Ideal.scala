@@ -26,6 +26,7 @@ import shapeless.{::, Coproduct, HList, Nat}
   */
 trait Ideal[ALG[_]]
     extends KvpCollectionMatch[
+      String,
       ALG,
       (TableCollection, List[UniqueGroup], Option[ColumnName], Option[Description]) => (
         TableCollection,
@@ -35,6 +36,7 @@ trait Ideal[ALG[_]]
   def algInterpreter: IdealValue[ALG]
 
   val addColumnToWorkingTable = new HigherOrderTemplate[
+    String,
     ALG,
     (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
       TableCollection,
@@ -141,7 +143,7 @@ trait Ideal[ALG[_]]
       * @param hList
       * @return
       */
-    override protected def kvpCollectionToOut[A](hList: KvpCollectionValue[ALG, A])
+    override protected def kvpCollectionToOut[A](hList: KvpCollectionValue[String, ALG, A])
       : (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
         TableCollection,
         List[UniqueGroup]) = {
@@ -155,7 +157,7 @@ trait Ideal[ALG[_]]
     }
   }
 
-  override def kvpNil(kvp: KvpNil[ALG])
+  override def kvpNil(kvp: KvpNil[String, ALG])
     : (TableCollection, List[UniqueGroup], Option[ColumnName], Option[Description]) => (
       TableCollection,
       List[UniqueGroup]) =
@@ -167,7 +169,7 @@ trait Ideal[ALG[_]]
     H <: HList,
     HL <: Nat,
     T <: HList,
-    TL <: Nat](kvp: KvpHListCollectionHead[ALG, HO, NO, H, HL, T, TL])
+    TL <: Nat](kvp: KvpHListCollectionHead[String, ALG, HO, NO, H, HL, T, TL])
     : (TableCollection, List[UniqueGroup], Option[ColumnName], Option[Description]) => (
       TableCollection,
       List[UniqueGroup]) = {
@@ -181,14 +183,14 @@ trait Ideal[ALG[_]]
   }
 
   override def kvpWrappedHList[A, H <: HList, HL <: Nat](
-    wrappedHList: KvpWrappedHList[ALG, A, H, HL])
+    wrappedHList: KvpWrappedHList[String, ALG, A, H, HL])
     : (TableCollection, List[UniqueGroup], Option[ColumnName], Option[Description]) => (
       TableCollection,
       List[UniqueGroup]) =
     fromKvpCollection(wrappedHList.wrappedEncoding)
 
   override def kvpWrappedCoproduct[A, C <: Coproduct](
-    wrappedCoproduct: KvpWrappedCoproduct[ALG, A, C])
+    wrappedCoproduct: KvpWrappedCoproduct[String, ALG, A, C])
     : (TableCollection, List[UniqueGroup], Option[ColumnName], Option[Description]) => (
       TableCollection,
       List[UniqueGroup]) = { (tc, ug, columnName, description) =>
@@ -208,7 +210,7 @@ trait Ideal[ALG[_]]
   }
 
   override def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
-    kvp: KvpSingleValueHead[ALG, H, T, TL, O])
+    kvp: KvpSingleValueHead[String, ALG, H, T, TL, O])
     : (TableCollection, List[UniqueGroup], Option[ColumnName], Option[Description]) => (
       TableCollection,
       List[UniqueGroup]) = {
@@ -246,16 +248,16 @@ trait Ideal[ALG[_]]
     }
   }
 
-  override def kvpCoproduct[C <: Coproduct](value: KvpCoproduct[ALG, C])
+  override def kvpCoproduct[C <: Coproduct](value: KvpCoproduct[String, ALG, C])
     : (TableCollection, List[UniqueGroup], Option[ColumnName], Option[Description]) => (
       TableCollection,
       List[UniqueGroup]) = {
 
     value match {
-      case _: KvpCoNil[ALG] =>
+      case _: KvpCoNil[String, ALG] =>
         (tc, ug, _, _) =>
           (tc, ug)
-      case kvp: KvpCoproductCollectionHead[ALG, a, C, o] @unchecked => {
+      case kvp: KvpCoproductCollectionHead[String, ALG, a, C, o] @unchecked => {
         val head = fromKvpCollection(kvp.kvpCollection)
         val tail = kvpCoproduct(kvp.kvpTail)
         (tc, ug, cn, de) =>
@@ -299,8 +301,8 @@ trait Ideal[ALG[_]]
   }
 
   def toIdeal[A: Manifest, ID](
-    idSchema: KvpCollection[ALG, ID],
-    schema: KvpCollection[ALG, A],
+    idSchema: KvpCollection[String, ALG, ID],
+    schema: KvpCollection[String, ALG, A],
     name: Option[String] = None,
     description: Option[String] = None): TableCollection = {
     val tableName =

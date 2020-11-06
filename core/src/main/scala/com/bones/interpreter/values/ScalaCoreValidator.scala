@@ -6,7 +6,7 @@ import cats.data.NonEmptyList
 import com.bones.Path
 import com.bones.Util.stringToEnumeration
 import com.bones.data.Error
-import com.bones.data.Error.{CanNotConvert, ExtractionError, RequiredValue}
+import com.bones.data.Error.{CanNotConvert, ExtractionError, ExtractionErrors, RequiredValue}
 import com.bones.data.values._
 import com.bones.interpreter.{
   InterchangeFormatPrimitiveValidator,
@@ -20,8 +20,8 @@ trait ScalaCoreValidator[IN] extends InterchangeFormatValidatorValue[ScalaCoreVa
 
   val baseValidator: InterchangeFormatPrimitiveValidator[IN]
 
-  override def validate[A](alg: ScalaCoreValue[A])
-    : (Option[IN], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] = {
+  override def validate[A](
+    alg: ScalaCoreValue[A]): (Option[IN], List[String]) => Either[ExtractionErrors[String], A] = {
     alg match {
       case op: StringData =>
         baseValidator.required(
@@ -49,9 +49,9 @@ trait ScalaCoreValidator[IN] extends InterchangeFormatValidatorValue[ScalaCoreVa
           baseValidator.extractBool(Right(op)))
       case op @ ByteArrayData(validations) =>
         val decoder = Base64.getDecoder
-        (inOpt: Option[IN], path: Path) =>
+        (inOpt: Option[IN], path: Path[String]) =>
           for {
-            in <- inOpt.toRight[NonEmptyList[ExtractionError]](
+            in <- inOpt.toRight[ExtractionErrors[String]](
               NonEmptyList.one(RequiredValue(path, alg.typeName)))
             str <- baseValidator.extractString(Right(op), alg.typeName)(in, path)
             arr <- Try {
@@ -84,12 +84,12 @@ trait ScalaCoreValidator[IN] extends InterchangeFormatValidatorValue[ScalaCoreVa
           op.validations,
           baseValidator.extractBigDecimal(alg))
       case op: EnumerationData[e, A] =>
-        (inOpt: Option[IN], path: Path) =>
+        (inOpt: Option[IN], path: Path[String]) =>
           for {
-            in <- inOpt.toRight[NonEmptyList[ExtractionError]](
+            in <- inOpt.toRight[ExtractionErrors[String]](
               NonEmptyList.one(RequiredValue(path, alg.typeName)))
             str <- baseValidator.extractString(Right(alg), alg.typeName)(in, path)
-            enum <- stringToEnumeration[e, A](str, path, op.enumeration.asInstanceOf[e])
+            enum <- stringToEnumeration[String, e, A](str, path, op.enumeration.asInstanceOf[e])
           } yield enum.asInstanceOf[A]
 
     }

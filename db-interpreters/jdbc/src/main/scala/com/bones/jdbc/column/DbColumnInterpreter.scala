@@ -8,11 +8,11 @@ import com.bones.jdbc.DbUtil.camelToSnake
 import shapeless.{::, Coproduct, HList, Nat}
 
 /** Responsible for getting a list of columns for the select or insert clause */
-trait DbColumnInterpreter[ALG[_]] extends KvpCollectionMatch[ALG, List[Column]] {
+trait DbColumnInterpreter[ALG[_]] extends KvpCollectionMatch[String, ALG, List[Column]] {
 
   def customInterpreter: ColumnValue[ALG]
 
-  def tableDefinitionCustomAlgebra[A](collection: KvpCollection[ALG, A]): String = {
+  def tableDefinitionCustomAlgebra[A](collection: KvpCollection[String, ALG, A]): String = {
     def nullableString(nullable: Boolean) = if (nullable) "" else " not null"
     val result = fromKvpCollection(collection)
     val tableName = camelToSnake(headTypeName(collection).getOrElse("Unknown"))
@@ -23,14 +23,14 @@ trait DbColumnInterpreter[ALG[_]] extends KvpCollectionMatch[ALG, List[Column]] 
     s"create table $tableName $columnString"
   }
 
-  override def kvpNil(kvp: KvpNil[ALG]): List[Column] = List.empty
+  override def kvpNil(kvp: KvpNil[String, ALG]): List[Column] = List.empty
 
   override def kvpWrappedHList[A, H <: HList, HL <: Nat](
-    wrappedHList: KvpWrappedHList[ALG, A, H, HL]): List[Column] =
+    wrappedHList: KvpWrappedHList[String, ALG, A, H, HL]): List[Column] =
     fromKvpCollection(wrappedHList.wrappedEncoding)
 
   override def kvpWrappedCoproduct[A, C <: Coproduct](
-    wrappedCoproduct: KvpWrappedCoproduct[ALG, A, C]): List[Column] =
+    wrappedCoproduct: KvpWrappedCoproduct[String, ALG, A, C]): List[Column] =
     Column("dtype", "Used to specify the specific coproduct type", true) :: fromKvpCollection(
       wrappedCoproduct.wrappedEncoding)
 
@@ -40,14 +40,14 @@ trait DbColumnInterpreter[ALG[_]] extends KvpCollectionMatch[ALG, List[Column]] 
     H <: HList,
     HL <: Nat,
     T <: HList,
-    TL <: Nat](kvp: KvpHListCollectionHead[ALG, HO, NO, H, HL, T, TL]): List[Column] = {
+    TL <: Nat](kvp: KvpHListCollectionHead[String, ALG, HO, NO, H, HL, T, TL]): List[Column] = {
     val head = fromKvpCollection(kvp.head)
     val tail = fromKvpCollection(kvp.tail)
     head ::: tail
   }
 
   override def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
-    kvp: KvpSingleValueHead[ALG, H, T, TL, O]): List[Column] = {
+    kvp: KvpSingleValueHead[String, ALG, H, T, TL, O]): List[Column] = {
     kvp.head match {
       case Left(keyDef)  => determineValueDefinition(keyDef.dataDefinition)(keyDef.key)
       case Right(kvpCol) => fromKvpCollection(kvpCol)
@@ -76,15 +76,15 @@ trait DbColumnInterpreter[ALG[_]] extends KvpCollectionMatch[ALG, List[Column]] 
             determineValueDefinition(ed.definitionA)(name) ::: determineValueDefinition(
               ed.definitionB)(name)
           }
-      case kvp: KvpCollectionValue[ALG, a] @unchecked =>
+      case kvp: KvpCollectionValue[String, ALG, a] @unchecked =>
         _ =>
           fromKvpCollection(kvp.kvpCollection)
     }
 
-  override def kvpCoproduct[C <: Coproduct](value: KvpCoproduct[ALG, C]): List[Column] = {
+  override def kvpCoproduct[C <: Coproduct](value: KvpCoproduct[String, ALG, C]): List[Column] = {
     value match {
-      case _: KvpCoNil[ALG] => List.empty
-      case kvpHead: KvpCoproductCollectionHead[ALG, a, c, o] => {
+      case _: KvpCoNil[String, ALG] => List.empty
+      case kvpHead: KvpCoproductCollectionHead[String, ALG, a, c, o] => {
         val head = fromKvpCollection(kvpHead.kvpCollection)
         val tail = kvpCoproduct(kvpHead.kvpTail)
         head ::: tail

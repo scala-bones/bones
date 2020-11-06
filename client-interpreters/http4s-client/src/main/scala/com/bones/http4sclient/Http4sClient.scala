@@ -15,11 +15,11 @@ object Http4sClient {
 
   type ID = Long
 
-  type Error[E] = NonEmptyList[Either[ExtractionError, E]]
+  type Error[E] = NonEmptyList[Either[ExtractionError[String], E]]
 
   def getF[ALG[_], O, E](
     path: String,
-    outputSchema: KvpCollection[ALG, O],
+    outputSchema: KvpCollection[String, ALG, O],
     circeValidator: CirceValidatorInterpreter[ALG],
     charset: Charset,
     validatorInterpreter: InterchangeFormatValidatorValue[ALG, Json]

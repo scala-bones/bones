@@ -2,7 +2,7 @@ package com.bones.circe
 
 import cats.data.NonEmptyList
 import com.bones.Path
-import com.bones.data.Error.{ExtractionError, RequiredValue, WrongTypeError}
+import com.bones.data.Error.{ExtractionErrors, RequiredValue, WrongTypeError}
 import com.bones.data.ListData
 import com.bones.interpreter.InterchangeFormatPrimitiveValidator
 import io.circe.Json
@@ -11,50 +11,52 @@ object CircePrimitiveValidator extends InterchangeFormatPrimitiveValidator[Json]
 
   override def extractString[ALG2[_], A](op: ALG2[A], typeName: String)(
     in: Json,
-    path: List[String]): Either[NonEmptyList[ExtractionError], String] =
+    path: List[String]): Either[ExtractionErrors[String], String] =
     in.asString.toRight(determineError(in, op, typeName, path))
 
   override def extractInt[ALG2[_], A](
-    op: ALG2[A])(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Int] =
+    op: ALG2[A])(in: Json, path: List[String]): Either[ExtractionErrors[String], Int] =
     in.asNumber
       .flatMap(_.toInt)
       .toRight(NonEmptyList.one(WrongTypeError(path, "Int", in.getClass.getSimpleName, None)))
 
   override def extractFloat[ALG2[_], A](
-    op: ALG2[A])(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Float] =
+    op: ALG2[A])(in: Json, path: List[String]): Either[ExtractionErrors[String], Float] =
     in.asNumber
       .map(_.toDouble.toFloat)
       .toRight(NonEmptyList.one(WrongTypeError(path, "Float", in.getClass.getSimpleName, None)))
 
   override def extractDouble[ALG2[_], A](
-    op: ALG2[A])(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Double] =
+    op: ALG2[A])(in: Json, path: List[String]): Either[ExtractionErrors[String], Double] =
     in.asNumber
       .map(_.toDouble)
       .toRight(NonEmptyList.one(WrongTypeError(path, "Double", in.getClass.getSimpleName, None)))
 
-  override def extractLong[ALG2[_], A](
-    op: ALG2[A])(in: Json, path: List[String]): Either[NonEmptyList[WrongTypeError[Long]], Long] =
+  override def extractLong[ALG2[_], A](op: ALG2[A])(
+    in: Json,
+    path: List[String]): Either[NonEmptyList[WrongTypeError[String, Long]], Long] =
     in.asNumber
       .flatMap(_.toLong)
       .toRight(NonEmptyList.one(WrongTypeError(path, "Long", in.getClass.getSimpleName, None)))
 
   override def extractShort[ALG2[_], A](
-    op: ALG2[A])(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Short] =
+    op: ALG2[A])(in: Json, path: List[String]): Either[ExtractionErrors[String], Short] =
     in.asNumber
       .flatMap(_.toShort)
       .toRight(NonEmptyList.one(WrongTypeError(path, "Short", in.getClass.getSimpleName, None)))
 
   override def extractBool[ALG2[_], A](
-    op: ALG2[A])(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], Boolean] =
+    op: ALG2[A])(in: Json, path: List[String]): Either[ExtractionErrors[String], Boolean] =
     in.asBoolean.toRight(determineError(in, op, "Boolean", path))
 
-  override def extractArray[ALG2[_], A](
-    op: ListData[ALG2, A])(in: Json, path: Path): Either[NonEmptyList[ExtractionError], Seq[Json]] =
+  override def extractArray[ALG2[_], A](op: ListData[ALG2, A])(
+    in: Json,
+    path: Path[String]): Either[ExtractionErrors[String], Seq[Json]] =
     in.asArray
       .toRight(determineError(in, Left(op), op.typeNameOfT, path))
 
   override def extractBigDecimal[ALG2[_], A](
-    op: ALG2[A])(in: Json, path: List[String]): Either[NonEmptyList[ExtractionError], BigDecimal] =
+    op: ALG2[A])(in: Json, path: List[String]): Either[ExtractionErrors[String], BigDecimal] =
     in.asNumber
       .flatMap(_.toBigDecimal)
       .toRight(determineError(in, op, "BigDecimal", path))
@@ -70,7 +72,7 @@ object CircePrimitiveValidator extends InterchangeFormatPrimitiveValidator[Json]
     in: Json,
     op: ALG2[A],
     typeName: String,
-    path: List[String]): NonEmptyList[ExtractionError] = {
+    path: List[String]): ExtractionErrors[String] = {
     val error =
       if (in.isNull) RequiredValue(path, typeName)
       else WrongTypeError(path, typeName, in.getClass.getSimpleName, None)

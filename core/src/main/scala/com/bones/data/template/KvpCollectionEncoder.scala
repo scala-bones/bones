@@ -13,31 +13,31 @@ import com.bones.data.{
 }
 import shapeless.{:+:, ::, CNil, Coproduct, HList, Inl, Inr, Nat}
 
-trait KvpCollectionEncoder[ALG[_], OUT] {
+trait KvpCollectionEncoder[K, ALG[_], OUT] {
 
-  def primitiveEncoder[A](keyDefinition: KeyDefinition[ALG, A]): A => OUT
+  def primitiveEncoder[A](keyDefinition: KeyDefinition[K, ALG, A]): A => OUT
   def combine(a: OUT, b: OUT): OUT
   def empty: OUT
   def coproductTypeKey: String
   def addStringField(element: OUT, name: String, value: String): OUT
 
-  def fromKvpCollection[A](kvpCollection: KvpCollection[ALG, A]): A => OUT = {
+  def fromKvpCollection[A](kvpCollection: KvpCollection[K, ALG, A]): A => OUT = {
     kvpCollection match {
-      case kvp: KvpWrappedHList[ALG, a, h, n] @unchecked  => kvpWrappedHList(kvp)
-      case kvp: KvpWrappedCoproduct[ALG, a, c] @unchecked => kvpWrappedCoproduct(kvp)
-      case kvp: KvpCoNil[ALG]                             => kvpCoNil(kvp)
-      case kvp: KvpCoproductCollectionHead[ALG, a, c, o] =>
+      case kvp: KvpWrappedHList[K, ALG, a, h, n] @unchecked  => kvpWrappedHList(kvp)
+      case kvp: KvpWrappedCoproduct[K, ALG, a, c] @unchecked => kvpWrappedCoproduct(kvp)
+      case kvp: KvpCoNil[K, ALG]                             => kvpCoNil(kvp)
+      case kvp: KvpCoproductCollectionHead[K, ALG, a, c, o] =>
         kvpCoproductCollectionHead[a, c, o](kvp).asInstanceOf[A => OUT]
-      case kvp: KvpSingleValueHead[ALG, A, t, tl, ht] @unchecked =>
+      case kvp: KvpSingleValueHead[K, ALG, A, t, tl, ht] @unchecked =>
         kvpSingleValueHead[A, t, tl, ht](kvp).asInstanceOf[A => OUT]
-      case kvp: KvpHListCollectionHead[ALG, ho, no, h, hl, t, tl] @unchecked =>
+      case kvp: KvpHListCollectionHead[K, ALG, ho, no, h, hl, t, tl] @unchecked =>
         kvpHListCollectionHead(kvp).asInstanceOf[A => OUT]
-      case kvp: KvpNil[ALG] => kvpNil(kvp)
+      case kvp: KvpNil[K, ALG] => kvpNil(kvp)
     }
   }
 
   def kvpWrappedHList[A, H <: HList, HL <: Nat](
-    wrappedHList: KvpWrappedHList[ALG, A, H, HL]): A => OUT = {
+    wrappedHList: KvpWrappedHList[K, ALG, A, H, HL]): A => OUT = {
     val wrappedF = fromKvpCollection(wrappedHList.wrappedEncoding)
     (a: A) =>
       {
@@ -47,7 +47,7 @@ trait KvpCollectionEncoder[ALG[_], OUT] {
   }
 
   def kvpWrappedCoproduct[A, C <: Coproduct](
-    wrappedCoproduct: KvpWrappedCoproduct[ALG, A, C]): A => OUT = {
+    wrappedCoproduct: KvpWrappedCoproduct[K, ALG, A, C]): A => OUT = {
     val wrappedF = fromKvpCollection(wrappedCoproduct.wrappedEncoding)
     (a: A) =>
       {
@@ -57,7 +57,7 @@ trait KvpCollectionEncoder[ALG[_], OUT] {
   }
 
   def kvpHListCollectionHead[HO <: HList, NO <: Nat, H <: HList, HL <: Nat, T <: HList, TL <: Nat](
-    kvp: KvpHListCollectionHead[ALG, HO, NO, H, HL, T, TL]): HO => OUT = {
+    kvp: KvpHListCollectionHead[K, ALG, HO, NO, H, HL, T, TL]): HO => OUT = {
     val headF = fromKvpCollection(kvp.head)
     val tailF = fromKvpCollection(kvp.tail)
     implicit val split = kvp.split
@@ -70,10 +70,10 @@ trait KvpCollectionEncoder[ALG[_], OUT] {
       }
   }
 
-  def kvpNil(kvp: KvpNil[ALG]): HList => OUT = (_: HList) => empty
+  def kvpNil(kvp: KvpNil[K, ALG]): HList => OUT = (_: HList) => empty
 
   def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
-    kvp: KvpSingleValueHead[ALG, H, T, TL, O]): O => OUT = {
+    kvp: KvpSingleValueHead[K, ALG, H, T, TL, O]): O => OUT = {
     val headF: H => OUT = kvp.head match {
       case Left(value) => primitiveEncoder(value)
       case Right(collection) =>
@@ -90,10 +90,10 @@ trait KvpCollectionEncoder[ALG[_], OUT] {
       }
   }
 
-  def kvpCoNil(kvpCoNil: KvpCoNil[ALG]): CNil => OUT = (_: CNil) => empty
+  def kvpCoNil(kvpCoNil: KvpCoNil[K, ALG]): CNil => OUT = (_: CNil) => empty
 
   def kvpCoproductCollectionHead[A, C <: Coproduct, O <: A :+: C](
-    kvpCoproductCollectionHead: KvpCoproductCollectionHead[ALG, A, C, O]): O => OUT = {
+    kvpCoproductCollectionHead: KvpCoproductCollectionHead[K, ALG, A, C, O]): O => OUT = {
     val headF = fromKvpCollection(kvpCoproductCollectionHead.kvpCollection)
     val tailF = fromKvpCollection(kvpCoproductCollectionHead.kvpTail)
     (o: A :+: C) =>

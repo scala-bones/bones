@@ -38,25 +38,25 @@ trait GenGadt {
   val types: Gen[String] = Gen.oneOf("String", "Double", "Object")
   val false90Percent: Gen[Boolean] = Gen.frequency((1, true), (9, false))
 
-  def genHListValue(): Gen[KvpCollectionValue[ALG, _]] =
+  def genHListValue(): Gen[KvpCollectionValue[String, ALG, _]] =
     for {
       strHead <- genStringData
       t <- types
-      hList <- nextGen(false, "first", strHead, KvpNil[ALG](), t)
+      hList <- nextGen(false, "first", strHead, KvpNil[String, ALG](), t)
     } yield KvpCollectionValue(hList, "TestType", List.empty)
 
   def nextGen[A, H <: HList, N <: Nat](
     done: Boolean,
     key: String,
     newHead: ALG[A],
-    tail: KvpHListCollection[ALG, H, N],
+    tail: KvpHListCollection[String, ALG, H, N],
     nextType: String
-  ): Gen[KvpHListCollection[ALG, _ <: HList, _ <: Nat]] = {
+  ): Gen[KvpHListCollection[String, ALG, _ <: HList, _ <: Nat]] = {
 
     val isHCons = implicitly[IsHCons.Aux[A :: H, A, H]]
-    val thisValue: KvpHListCollection[ALG, A :: H, Succ[N]] = KvpSingleValueHead(
+    val thisValue: KvpHListCollection[String, ALG, A :: H, Succ[N]] = KvpSingleValueHead(
       Left(
-        KeyDefinition[ALG, A](
+        KeyDefinition[String, ALG, A](
           key,
           Right(newHead),
           "TestType",
@@ -79,7 +79,7 @@ trait GenGadt {
             genKvpSingleValueHead(dd, thisValue)
           })
         case "Object" => {
-          genKvpSingleValueHead(StringData(List.empty), KvpNil[ALG]()).flatMap(kvpHList => {
+          genKvpSingleValueHead(StringData(List.empty), KvpNil[String, ALG]()).flatMap(kvpHList => {
             val next = KvpCollectionValue(kvpHList, "TestType", List.empty)
             genKeys.map(objKey => {
               KvpSingleValueHead(
@@ -103,8 +103,8 @@ trait GenGadt {
 
   def genKvpSingleValueHead[A, H <: HList, N <: Nat](
     newHead: ALG[A],
-    tail: KvpHListCollection[ALG, H, N]
-  ): Gen[KvpHListCollection[ALG, _ <: HList, _ <: Nat]] = {
+    tail: KvpHListCollection[String, ALG, H, N]
+  ): Gen[KvpHListCollection[String, ALG, _ <: HList, _ <: Nat]] = {
     for {
       key <- genKeys
       t <- types

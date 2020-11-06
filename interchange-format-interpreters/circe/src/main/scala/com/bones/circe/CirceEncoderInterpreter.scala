@@ -22,7 +22,7 @@ trait CirceEncoderInterpreter[ALG[_]] extends KvpInterchangeFormatEncoderInterpr
     Json.obj(fields: _*)
   }
 
-  override def toObj[A](kvDef: KeyDefinition[ALG, A], value: Json): Json =
+  override def toObj[A](kvDef: KeyDefinition[String, ALG, A], value: Json): Json =
     Json.obj((kvDef.key, value))
 
 }

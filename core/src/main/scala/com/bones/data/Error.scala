@@ -8,11 +8,11 @@ import com.bones.validation.ValidationDefinition.ValidationOp
   */
 object Error {
 
-  type ExtractionErrors = NonEmptyList[ExtractionError]
+  type ExtractionErrors[K] = NonEmptyList[ExtractionError[K]]
 
   /** Error Case */
-  sealed abstract class ExtractionError {
-    def path: List[String]
+  sealed abstract class ExtractionError[K] {
+    def path: List[K]
   }
 
   /**
@@ -22,8 +22,8 @@ object Error {
     * @param input        The input, if available.
     * @tparam T Type that was validated.
     */
-  final case class ValidationError[T](path: List[String], failurePoint: ValidationOp[T], input: T)
-      extends ExtractionError
+  final case class ValidationError[K, T](path: List[K], failurePoint: ValidationOp[T], input: T)
+      extends ExtractionError[K]
 
   /** Used when we receive a type that doesn't match the expected type.
     * For instance if we are expecting an Int, but we receive a String.
@@ -33,12 +33,12 @@ object Error {
     * @param providedType What was actually provided.
     * @tparam T The expected type
     */
-  final case class WrongTypeError[T](
-    path: List[String],
+  final case class WrongTypeError[K, T](
+    path: List[K],
     expectedType: String,
     providedType: String,
     cause: Option[Throwable])
-      extends ExtractionError
+      extends ExtractionError[K]
 
   /**
     * Used when we can not convert an input type to the type defined in the schema.
@@ -51,21 +51,21 @@ object Error {
     * @tparam A Input type
     * @tparam T Type to convert to
     */
-  final case class CanNotConvert[A, T](
-    path: List[String],
+  final case class CanNotConvert[K, A, T](
+    path: List[K],
     input: A,
     toType: Class[T],
     cause: Option[Throwable])
-      extends ExtractionError
+      extends ExtractionError[K]
 
   /** Used when a required piece of data is missing
     *
     * @param path                    The path within the schema to the offending definition
     * @param typeName The description of the required value
     */
-  final case class RequiredValue(path: List[String], typeName: String) extends ExtractionError
+  final case class RequiredValue[K](path: List[K], typeName: String) extends ExtractionError[K]
 
-  final case class SumTypeError(path: List[String], problem: String) extends ExtractionError
+  final case class SumTypeError[K](path: List[K], problem: String) extends ExtractionError[K]
 
   /**
     * Used when we can not parse the input to its expected format -- for instance, an invalid JSON document.
@@ -73,9 +73,9 @@ object Error {
     * @param message   Message from the parser.
     * @param throwable Exception from the parser.
     */
-  final case class ParsingError(message: String, throwable: Option[Throwable] = None)
-      extends ExtractionError {
-    override def path: List[String] = List.empty
+  final case class ParsingError[K](message: String, throwable: Option[Throwable] = None)
+      extends ExtractionError[K] {
+    override def path: List[K] = List.empty
   }
 
   /**
@@ -85,13 +85,13 @@ object Error {
     * @param th      The Exception.
     * @param message Context specific message about the exception.
     */
-  final case class SystemError(path: List[String], th: Throwable, message: Option[String])
-      extends ExtractionError
+  final case class SystemError[K](path: List[K], th: Throwable, message: Option[String])
+      extends ExtractionError[K]
 
   object SystemError {
 
     /** Alias for SystemError without a path */
-    def apply(th: Throwable, message: Option[String]): SystemError =
+    def apply[K](th: Throwable, message: Option[String]): SystemError[K] =
       SystemError(List.empty, th, message)
   }
 
@@ -103,7 +103,7 @@ object Error {
     * @param path       The path to the entity
     * @tparam ID The type of the ID (such as Long or UUID)
     */
-  final case class NotFound[ID](id: ID, entityName: String, path: List[String])
-      extends ExtractionError
+  final case class NotFound[K, ID](id: ID, entityName: String, path: List[K])
+      extends ExtractionError[K]
 
 }

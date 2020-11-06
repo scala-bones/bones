@@ -1,7 +1,6 @@
 package com.bones.doobie.insert
 
-import cats.data.NonEmptyList
-import com.bones.data.Error.ExtractionError
+import com.bones.data.Error.ExtractionErrors
 import com.bones.data.KvpCollection
 import com.bones.jdbc.insert.DbInsert
 import doobie.ConnectionIO
@@ -15,15 +14,17 @@ trait InsertInterpreter[ALG[_]] {
 
   val insert: DbInsert[ALG]
 
-  def insertAll[A, ID](collection: KvpCollection[ALG, A])
-    : Seq[A] => ConnectionIO[Either[NonEmptyList[ExtractionError], Int]] = {
+  def insertAll[A, ID](collection: KvpCollection[String, ALG, A])
+    : Seq[A] => ConnectionIO[Either[ExtractionErrors[String], Int]] = {
     val insertF = insert.batchInsertQueryWithConnection(collection)
     aList =>
       raw(con => insertF(aList)(con))
   }
 
-  def insert[A, ID](collection: KvpCollection[ALG, A], idSchema: KvpCollection[ALG, ID])
-    : A => ConnectionIO[Either[NonEmptyList[ExtractionError], ID]] = {
+  def insert[A, ID](
+    collection: KvpCollection[String, ALG, A],
+    idSchema: KvpCollection[String, ALG, ID])
+    : A => ConnectionIO[Either[ExtractionErrors[String], ID]] = {
     val insertF = insert.insertQueryWithConnection(collection, idSchema)
     a =>
       {

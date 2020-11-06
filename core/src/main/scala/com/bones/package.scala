@@ -8,7 +8,7 @@ import com.bones.data.values.{DefaultValues, DefaultValuesSyntax}
   */
 package object bones {
 
-  type Path = List[String]
+  type Path[A] = List[A]
 
   /** So we can just import com.bones.syntax._ */
   object syntax extends Sugar[DefaultValues] with DefaultValuesSyntax

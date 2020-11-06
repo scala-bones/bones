@@ -324,7 +324,8 @@ object SwaggerCoreInterpreter {
 /**
   * Responsible for creating the data portion of the Swagger schema.
   */
-trait SwaggerCoreInterpreter[ALG[_]] extends KvpCollectionMatch[ALG, SwaggerSchemas[ObjectSchema]] {
+trait SwaggerCoreInterpreter[ALG[_]]
+    extends KvpCollectionMatch[String, ALG, SwaggerSchemas[ObjectSchema]] {
 
   import SwaggerCoreInterpreter._
 
@@ -338,7 +339,7 @@ trait SwaggerCoreInterpreter[ALG[_]] extends KvpCollectionMatch[ALG, SwaggerSche
   }
 
   def generateSchemas[A](
-    collection: KvpCollection[ALG, A]
+    collection: KvpCollection[String, ALG, A]
   ): Name => List[(Name, Schema[_])] = name => {
     val schemas = fromKvpCollection(collection)
     schemas.mainSchema.name(name)
@@ -346,11 +347,11 @@ trait SwaggerCoreInterpreter[ALG[_]] extends KvpCollectionMatch[ALG, SwaggerSche
   }
 
   private def fromKvpCoproduct[C <: Coproduct](
-    co: KvpCoproduct[ALG, C]
+    co: KvpCoproduct[String, ALG, C]
   ): SwaggerSchemas[ComposedSchema] =
     co match {
-      case _: KvpCoNil[_] => SwaggerSchemas(new ComposedSchema())
-      case co: KvpCoproductCollectionHead[ALG, a, c, o] @unchecked => {
+      case _: KvpCoNil[String, _] @unchecked => SwaggerSchemas(new ComposedSchema())
+      case co: KvpCoproductCollectionHead[String, ALG, a, c, o] @unchecked => {
         val lSchema = fromKvpCollection(co.kvpCollection)
         val composedSchema = fromKvpCoproduct(co.kvpTail)
         val objectSchema = new ObjectSchema().$ref(co.typeNameOfA)
@@ -362,24 +363,23 @@ trait SwaggerCoreInterpreter[ALG[_]] extends KvpCollectionMatch[ALG, SwaggerSche
     }
 
   override def kvpCoproduct[C <: Coproduct](
-    kvp: KvpCoproduct[ALG, C]): SwaggerSchemas[ObjectSchema] = {
+    kvp: KvpCoproduct[String, ALG, C]): SwaggerSchemas[ObjectSchema] = {
     val composedSchema = fromKvpCoproduct(kvp)
     val name =
       KvpCollection.headTypeName(kvp).getOrElse("Unknown")
     val main = new ObjectSchema()
     main.$ref(name)
-//    validations(kvp.)(main)
     SwaggerSchemas(main, (name, composedSchema.mainSchema) :: composedSchema.referenceSchemas)
   }
 
-  override def kvpNil(kvp: KvpNil[ALG]): SwaggerSchemas[ObjectSchema] = {
+  override def kvpNil(kvp: KvpNil[String, ALG]): SwaggerSchemas[ObjectSchema] = {
     val schema = new ObjectSchema()
     schema.nullable(false)
     SwaggerSchemas(schema)
   }
 
   override def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
-    kvp: KvpSingleValueHead[ALG, H, T, TL, O]): SwaggerSchemas[ObjectSchema] = {
+    kvp: KvpSingleValueHead[String, ALG, H, T, TL, O]): SwaggerSchemas[ObjectSchema] = {
 
     val tailSchemas = fromKvpCollection(kvp.tail)
 
@@ -400,14 +400,14 @@ trait SwaggerCoreInterpreter[ALG[_]] extends KvpCollectionMatch[ALG, SwaggerSche
   }
 
   override def kvpWrappedHList[A, H <: HList, HL <: Nat](
-    wrappedHList: KvpWrappedHList[ALG, A, H, HL]): SwaggerSchemas[ObjectSchema] = {
+    wrappedHList: KvpWrappedHList[String, ALG, A, H, HL]): SwaggerSchemas[ObjectSchema] = {
     val schema = fromKvpCollection(wrappedHList.wrappedEncoding)
     schema.mainSchema.name(wrappedHList.typeNameOfA)
     schema
   }
 
   override def kvpWrappedCoproduct[A, C <: Coproduct](
-    wrappedCoproduct: KvpWrappedCoproduct[ALG, A, C]): SwaggerSchemas[ObjectSchema] = {
+    wrappedCoproduct: KvpWrappedCoproduct[String, ALG, A, C]): SwaggerSchemas[ObjectSchema] = {
     val schema = fromKvpCollection(wrappedCoproduct.wrappedEncoding)
     schema.mainSchema.name(wrappedCoproduct.typeNameOfA)
     schema
@@ -419,8 +419,8 @@ trait SwaggerCoreInterpreter[ALG[_]] extends KvpCollectionMatch[ALG, SwaggerSche
     H <: HList,
     HL <: Nat,
     T <: HList,
-    TL <: Nat](
-    kvp: KvpHListCollectionHead[ALG, HO, NO, H, HL, T, TL]): SwaggerSchemas[ObjectSchema] = {
+    TL <: Nat](kvp: KvpHListCollectionHead[String, ALG, HO, NO, H, HL, T, TL])
+    : SwaggerSchemas[ObjectSchema] = {
     val headSchemas = fromKvpCollection(kvp.head)
     val tailSchemas = fromKvpCollection(kvp.tail)
     val schema = copySchema(headSchemas.mainSchema, tailSchemas.mainSchema)
@@ -477,7 +477,7 @@ trait SwaggerCoreInterpreter[ALG[_]] extends KvpCollectionMatch[ALG, SwaggerSche
             .description(description.getOrElse("value of type either"))
             .name(name)
           SwaggerSchemas(composedSchema, a.referenceSchemas ::: b.referenceSchemas)
-      case gd: KvpCollectionValue[ALG, a] @unchecked =>
+      case gd: KvpCollectionValue[String, ALG, a] @unchecked =>
         name =>
           val schemas = fromKvpCollection(gd.kvpCollection)
           schemas.mainSchema.name(name).description(description.getOrElse("value of type object"))

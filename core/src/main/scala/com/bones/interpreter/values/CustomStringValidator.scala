@@ -1,8 +1,7 @@
 package com.bones.interpreter.values
 
 import cats.data.NonEmptyList
-import com.bones.data.Error
-import com.bones.data.Error.RequiredValue
+import com.bones.data.Error.{ExtractionErrors, RequiredValue}
 import com.bones.data.values.CustomStringValue
 import com.bones.interpreter.{InterchangeFormatPrimitiveValidator, InterchangeFormatValidatorValue}
 import com.bones.validation.ValidationUtil
@@ -12,7 +11,7 @@ trait CustomStringValidator[IN] extends InterchangeFormatValidatorValue[CustomSt
   val baseValidator: InterchangeFormatPrimitiveValidator[IN]
 
   override def validate[A](alg: CustomStringValue[A])
-    : (Option[IN], List[String]) => Either[NonEmptyList[Error.ExtractionError], A] = {
+    : (Option[IN], List[String]) => Either[ExtractionErrors[String], A] = {
     (in: Option[IN], path: List[String]) =>
       {
         in match {
@@ -22,8 +21,8 @@ trait CustomStringValidator[IN] extends InterchangeFormatValidatorValue[CustomSt
               .flatMap(result => {
                 val allValidations = alg.customValidation :: alg.validations
                 ValidationUtil
-                  .validate[String](allValidations)(result, path)
-                  .asInstanceOf[Either[NonEmptyList[Error.ExtractionError], A]]
+                  .validate(allValidations)(result, path)
+                  .asInstanceOf[Either[ExtractionErrors[String], A]]
               })
           case None =>
             Left(NonEmptyList.one(RequiredValue(path, alg.typeName)))

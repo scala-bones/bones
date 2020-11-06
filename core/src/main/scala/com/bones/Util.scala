@@ -5,7 +5,7 @@ import java.time.{LocalDate, LocalTime}
 import java.util.UUID
 
 import cats.data.NonEmptyList
-import com.bones.data.Error.{CanNotConvert, ExtractionError}
+import com.bones.data.Error.{CanNotConvert, ExtractionError, ExtractionErrors}
 import com.bones.data.HigherOrderValue
 
 import scala.util.Try
@@ -15,9 +15,9 @@ import scala.util.Try
   */
 object Util {
 
-  case class NullValue(fieldName: String, typeName: String, path: Path)
+  case class NullValue[K](fieldName: String, typeName: String, path: Path[K])
 
-  type NullableResult[T] = Either[NonEmptyList[NullValue], T]
+  type NullableResult[K, T] = Either[NonEmptyList[NullValue[K]], T]
 
   def allValidCars(str: String, isNegative: Boolean) =
     if (isNegative) str.drop(1).forall(Character.isDigit)
@@ -56,9 +56,7 @@ object Util {
 
   /** Convert a String to a UUID returning Left[NoneEmptyList[ExtractionError],UUID]
     * if there is a failure in conversion */
-  def stringToUuid(
-    uuidString: String,
-    path: List[String]): Either[NonEmptyList[ExtractionError], UUID] =
+  def stringToUuid[K](uuidString: String, path: List[K]): Either[ExtractionErrors[K], UUID] =
     try {
       Right(UUID.fromString(uuidString))
     } catch {
@@ -67,12 +65,12 @@ object Util {
     }
 
   /**
-    * Convert the String to a LocalDate returning Either[NonEmptyList[ExtractionError],LocalDate]
+    * Convert the String to a LocalDate returning Either[ExtractionErrors[K],LocalDate]
     */
-  def stringToLocalDate(
+  def stringToLocalDate[K](
     input: String,
     dateFormat: DateTimeFormatter,
-    path: List[String]): Either[NonEmptyList[ExtractionError], LocalDate] =
+    path: List[K]): Either[ExtractionErrors[K], LocalDate] =
     try {
       Right(LocalDate.parse(input, dateFormat))
     } catch {
@@ -80,10 +78,10 @@ object Util {
         Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDate], Some(e))))
     }
 
-  def stringToLocalTime(
+  def stringToLocalTime[K](
     input: String,
     dateFormat: DateTimeFormatter,
-    path: List[String]): Either[NonEmptyList[ExtractionError], LocalTime] =
+    path: List[K]): Either[ExtractionErrors[K], LocalTime] =
     try {
       Right(LocalTime.parse(input, dateFormat))
     } catch {
@@ -92,11 +90,9 @@ object Util {
     }
 
   /**
-    * Convert the String to a BigDecimal returning Either[NonEmptyList[ExtractionError],BigDecimal]
+    * Convert the String to a BigDecimal returning Either[ExtractionErrors[K],BigDecimal]
     */
-  def stringToBigDecimal(
-    input: String,
-    path: List[String]): Either[NonEmptyList[ExtractionError], BigDecimal] =
+  def stringToBigDecimal[K](input: String, path: List[K]): Either[ExtractionErrors[K], BigDecimal] =
     try {
       Right(BigDecimal(input))
     } catch {
@@ -104,13 +100,13 @@ object Util {
         Left(NonEmptyList.one(CanNotConvert(path, input, classOf[BigDecimal], Some(e))))
     }
 
-  /** Convert the String to an Enumeration using scala.Enumeration.withName returning Left[NonEmptyList[ExtractionError],Object]
+  /** Convert the String to an Enumeration using scala.Enumeration.withName returning Left[ExtractionErrors[K],Object]
     * if there is an parse error.
     */
-  def stringToEnumeration[E <: Enumeration, V](
+  def stringToEnumeration[K, E <: Enumeration, V](
     str: String,
-    path: List[String],
-    enumeration: E): Either[NonEmptyList[CanNotConvert[String, V]], enumeration.Value] =
+    path: List[K],
+    enumeration: E): Either[NonEmptyList[CanNotConvert[K, String, V]], enumeration.Value] =
     try {
       Right(enumeration.withName(str))
     } catch {
@@ -120,35 +116,39 @@ object Util {
             CanNotConvert(path, str, manifest.runtimeClass.asInstanceOf[Class[V]], Some(e))))
     }
 
-  /** Convert the string to an Enum using scala.Enumeration.withName returning Either[NonEmptyList[ExtractionError],A]
+  /** Convert the string to an Enum using scala.Enumeration.withName returning Either[ExtractionErrors[K],A]
     * if there is an parse error.
     */
-  def stringToEnum[A <: Enum[A]: Manifest](
+  def stringToEnum[K, A <: Enum[A]: Manifest](
     str: String,
-    path: List[String],
-    enums: List[A]): Either[NonEmptyList[CanNotConvert[String, A]], A] = {
+    path: List[K],
+    enums: List[A]): Either[NonEmptyList[CanNotConvert[K, String, A]], A] = {
     val manifestA = manifest[A]
     enums
       .find(_.toString == str)
-      .toRight(NonEmptyList.one(
-        CanNotConvert[String, A](path, str, manifestA.runtimeClass.asInstanceOf[Class[A]], None)))
+      .toRight(
+        NonEmptyList.one(
+          CanNotConvert[K, String, A](
+            path,
+            str,
+            manifestA.runtimeClass.asInstanceOf[Class[A]],
+            None)))
   }
 
   /** Converts a long to a LocalDate.  Never fails */
-  def longToLocalDate: (Long, List[String]) => Either[NonEmptyList[ExtractionError], LocalDate] =
+  def longToLocalDate[K]: (Long, List[String]) => Either[ExtractionErrors[K], LocalDate] =
     (l, p) => Right(LocalDate.ofEpochDay(l))
 
-  def longToLocalTime: (Long, List[String]) => Either[NonEmptyList[ExtractionError], LocalTime] =
+  def longToLocalTime[K]: (Long, List[String]) => Either[ExtractionErrors[K], LocalTime] =
     (l, p) => Right(LocalTime.ofNanoOfDay(l))
 
   /**
     * Accumulates error on the left or combines success on the right, just
     * like Applicative.map2 if Either was a Validation.
     */
-  def eitherMap2[A, B, Z](
-    e1: Either[NonEmptyList[ExtractionError], A],
-    e2: Either[NonEmptyList[ExtractionError], B])(
-    f: (A, B) => Z): Either[NonEmptyList[ExtractionError], Z] = {
+  def eitherMap2[K, A, B, Z](
+    e1: Either[ExtractionErrors[K], A],
+    e2: Either[ExtractionErrors[K], B])(f: (A, B) => Z): Either[ExtractionErrors[K], Z] = {
     (e1, e2) match {
       case (Left(err1), Left(err2)) => Left(err1 concatNel err2)
       case (Left(err1), _)          => Left(err1)
@@ -157,11 +157,11 @@ object Util {
     }
   }
 
-  def eitherMap2HigherOrder[ALG[_], A, B, Z](
-    e1: Either[NonEmptyList[(Either[HigherOrderValue[ALG, A], ALG[A]], ExtractionError)], A],
-    e2: Either[NonEmptyList[(Either[HigherOrderValue[ALG, A], ALG[A]], ExtractionError)], B])(
+  def eitherMap2HigherOrder[K, ALG[_], A, B, Z](
+    e1: Either[NonEmptyList[(Either[HigherOrderValue[ALG, A], ALG[A]], ExtractionError[K])], A],
+    e2: Either[NonEmptyList[(Either[HigherOrderValue[ALG, A], ALG[A]], ExtractionError[K])], B])(
     f: (A, B) => Z)
-    : Either[NonEmptyList[(Either[HigherOrderValue[ALG, A], ALG[A]], ExtractionError)], Z] = {
+    : Either[NonEmptyList[(Either[HigherOrderValue[ALG, A], ALG[A]], ExtractionError[K])], Z] = {
     (e1, e2) match {
       case (Left(err1), Left(err2)) => Left(err1 concatNel err2)
       case (Left(err1), _)          => Left(err1)
@@ -174,10 +174,10 @@ object Util {
     * Accumulates error on the left or combines success on the right, just
     * like Applicative.map2 if Either was a Validation.
     */
-  def eitherMap2Nullable[A, B, Z](
-    e1: Either[NonEmptyList[ExtractionError], NullableResult[A]],
-    e2: Either[NonEmptyList[ExtractionError], NullableResult[B]])(
-    f: (A, B) => Z): Either[NonEmptyList[ExtractionError], NullableResult[Z]] = {
+  def eitherMap2Nullable[K, A, B, Z](
+    e1: Either[ExtractionErrors[K], NullableResult[K, A]],
+    e2: Either[ExtractionErrors[K], NullableResult[K, B]])(
+    f: (A, B) => Z): Either[ExtractionErrors[K], NullableResult[K, Z]] = {
     (e1, e2) match {
       case (Left(err1), Left(err2)) => Left(err1 concatNel err2)
       case (Left(err1), _)          => Left(err1)
