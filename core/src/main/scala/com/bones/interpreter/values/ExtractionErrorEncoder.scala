@@ -1,7 +1,7 @@
 package com.bones.interpreter.values
 
 import com.bones.data.Error._
-import com.bones.data.Sugar
+import com.bones.data.{KvpNil, ListData, Sugar}
 import com.bones.data.values._
 import com.bones.interpreter.{
   InterchangeFormatEncoderValue,
@@ -197,6 +197,24 @@ object ExtractionErrorEncoder {
       systemErrorSchema :+:
       notFoundDataSchema :+:
       kvpCoNil
+
+  val error = ExtractionErrorEncoder.extractionErrorSchema
+    .toSuperclassOf[ExtractionError[String]](
+      manifest[ExtractionError[String]],
+      ExtractionErrorEncoder.extractionErrorGeneric)
+
+  private val errorResponseHList =
+    (
+      "errors",
+      ListData[ScalaCoreValue, ExtractionError[String]](
+        Left(error.asValue),
+        "ExtractionError",
+        List.empty)) :<:
+      new KvpNil[String, ScalaCoreValue]
+
+  case class ErrorResponse(errors: List[ExtractionError[String]])
+  val errorResponseSchema =
+    errorResponseHList.convert[ErrorResponse]
 
 }
 

@@ -1,6 +1,6 @@
 package com.bones.sprayjson
 
-import com.bones.data.KeyDefinition
+import com.bones.data.{KeyDefinition, KvpCollection}
 import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
 import spray.json.{JsObject, JsString, JsValue}
 

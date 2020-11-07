@@ -220,6 +220,24 @@ lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
     )
   )
   .dependsOn(core, jsonCirce, swaggerOas3, protobuf, bson)
+
+val AkkaVersion = "2.6.8"
+val AkkaHttpVersion = "10.2.1"
+lazy val restAkkHttp = (project in file("rest-interpreters/akka-http-interpreter"))
+  .settings(
+    commonSettings,
+    name := "Bones Akka Http Server",
+    libraryDependencies ++= Seq(
+      "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
+      "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion,
+      "com.typesafe.akka" %% "akka-http-spray-json" % AkkaHttpVersion,
+      "com.typesafe.akka" %% "akka-actor-typed" % AkkaVersion,
+      "org.scalacheck" %% "scalacheck" % "1.15.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.2" % Test,
+      "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
+    )
+  )
+  .dependsOn(core, jsonSpray, swaggerOas3)
 lazy val awsLambda = (project in file("rest-interpreters/aws-lambda"))
   .settings(
     commonSettings,
