@@ -221,7 +221,7 @@ lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
   )
   .dependsOn(core, jsonCirce, swaggerOas3, protobuf, bson)
 
-val AkkaVersion = "2.6.8"
+val AkkaVersion = "2.6.10"
 val AkkaHttpVersion = "10.2.1"
 lazy val restAkkHttp = (project in file("rest-interpreters/akka-http-interpreter"))
   .settings(
