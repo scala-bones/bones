@@ -1,10 +1,7 @@
 package com.bones.http4s
 
-import java.nio.charset.StandardCharsets
-
 import cats.effect._
 import cats.syntax.all._
-import com.bones.data.KvpCollection.headTypeName
 import com.bones.data.{KvpCollection, KvpNil}
 import com.bones.http4s.BaseCrudInterpreter.StringToIdError
 import com.bones.http4s.config.InterpreterConfig
