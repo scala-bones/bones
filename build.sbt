@@ -238,6 +238,23 @@ lazy val restAkkHttp = (project in file("rest-interpreters/akka-http-interpreter
     )
   )
   .dependsOn(core, jsonSpray, swaggerOas3)
+/*
+lazy val dbSlick = (project in file("db-interpreters/slick"))
+  .settings(
+    commonSettings,
+    name := "Bones Slick",
+    libraryDependencies ++= Seq(
+      "com.typesafe.slick" %% "slick" % "3.3.3",
+      "org.slf4j" % "slf4j-nop" % "1.6.4",
+      "org.scala-lang" % "scala-reflect" % "2.13.3",
+      "org.scalacheck" %% "scalacheck" % "1.15.0" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.2" % Test,
+      "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
+    )
+  )
+  .dependsOn(core)
+*/
+
 lazy val awsLambda = (project in file("rest-interpreters/aws-lambda"))
   .settings(
     commonSettings,
