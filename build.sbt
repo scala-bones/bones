@@ -140,7 +140,7 @@ lazy val jsonSpray = (project in file("interchange-format-interpreters/spray"))
     commonSettings,
     name := "Bones Spray Json",
     libraryDependencies ++= Seq(
-      "io.spray" %%  "spray-json" % "1.3.5",
+      "io.spray" %%  "spray-json" % "1.3.6",
       "org.scalacheck" %% "scalacheck" % "1.15.1" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
