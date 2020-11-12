@@ -17,7 +17,6 @@ package object bones {
     * @tparam A The type of the Wrapped Value
     */
   trait PrimitiveValue[A] {
-//    val manifestOfA: Manifest[A]
     val typeName: String
   }
 

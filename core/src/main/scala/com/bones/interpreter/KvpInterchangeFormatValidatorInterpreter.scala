@@ -36,7 +36,6 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
   def generateValidator[A](
     kvpCollection: KvpCollection[String, ALG, A]): IN => Either[ExtractionErrors[String], A] = {
     fromKvpCollection(kvpCollection)(_, List.empty)
-
   }
 
   /**
