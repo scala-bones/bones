@@ -1,4 +1,4 @@
-package com.bones.sprayjson
+package com.bones.sprayjson.impl
 
 import java.util.Base64
 

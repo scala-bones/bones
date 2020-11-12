@@ -147,6 +147,19 @@ lazy val jsonSpray = (project in file("interchange-format-interpreters/spray"))
     )
   )
   .dependsOn(core, testSchemas % "test", scalacheck % "test")
+lazy val json4s = (project in file("interchange-format-interpreters/json4s"))
+  .settings(
+    commonSettings,
+    name := "Bones Json4s",
+    libraryDependencies ++= Seq(
+      "org.json4s" %% "json4s-core" % "3.6.10",
+      "org.json4s" %% "json4s-native" % "3.6.10" % Test,
+      "org.scalacheck" %% "scalacheck" % "1.15.1" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.3" % Test,
+      "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
+    )
+  )
+  .dependsOn(core, testSchemas % "test", scalacheck % "test")
 lazy val protobuf = (project in file("interchange-format-interpreters/protobuf"))
   .settings(
     commonSettings,
