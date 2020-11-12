@@ -18,7 +18,12 @@ case class KeyDefinition[K, ALG[_], A](
   typeName: String,
   description: Option[String],
   example: Option[A]
-)
+) {
+
+  /** Copy this KeyDefinition, using the new key based on the */
+  def keyMap[KK](f: K => KK): KeyDefinition[KK, ALG, A] =
+    this.copy(key = f(key))
+}
 
 object KeyDefinition {
 
