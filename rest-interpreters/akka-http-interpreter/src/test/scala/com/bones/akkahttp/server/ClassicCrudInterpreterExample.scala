@@ -31,7 +31,7 @@ object ClassicCrudInterpreterExample extends App {
   val stringToId: String => Either[String, Long] = str =>
     Try(str.toLong).toEither.left.map(_.getMessage)
 
-  val interpreter = ClassicCrudInterpreter.empty[DefaultValues, Long, Customer, Error](
+  val interpreter = ClassicCrudDefinition.empty[DefaultValues, Long, Customer, Error](
     config.defaultLongConfig,
     "customer",
     customerSchema,
