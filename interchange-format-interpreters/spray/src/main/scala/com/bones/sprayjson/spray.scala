@@ -6,7 +6,8 @@ import com.bones.interpreter.{
   InterchangeFormatPrimitiveValidator,
   InterchangeFormatValidatorValue
 }
-import com.bones.sprayJsValue.{SprayPrimitiveValidator, SprayValidatorInterpreter}
+import com.bones.sprayJsValue.SprayValidatorInterpreter
+import com.bones.sprayjson.impl.{SprayPrimitiveEncoder, SprayPrimitiveValidator}
 import spray.json.JsValue
 
 package object sprayjson {
