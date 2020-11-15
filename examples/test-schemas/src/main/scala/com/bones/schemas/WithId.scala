@@ -4,7 +4,7 @@ import com.bones.data.values.DefaultValues
 import com.bones.data.{KvpCollectionValue, KvpNil, Sugar}
 import com.bones.schemas.Schemas.AllSupported
 
-object WithLongId extends WithId[DefaultValues] {
+object WithLongId extends WithId[String, DefaultValues] {
   import com.bones.syntax._
 
   val idDefinition = ("id", long(lv.positive))
@@ -13,7 +13,7 @@ object WithLongId extends WithId[DefaultValues] {
     schemaWithId[AllSupported, Long](idDefinition, Schemas.allSupportCaseClass.asValue)
 
 }
-trait WithId[ALG[_]] extends Sugar[ALG] {
+trait WithId[K, ALG[_]] extends Sugar[K, ALG] {
 
   def schemaWithId[A: Manifest, ID: Manifest](
     idDefinition: (String, ALG[ID]),

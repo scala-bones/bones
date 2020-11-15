@@ -12,7 +12,7 @@ import shapeless.syntax.std.tuple._
 import shapeless.{:+:, ::, CNil, Generic, HNil, Inl, Inr}
 
 /** Define the core dsl components */
-object syntax extends Sugar[ScalaCoreValue] with ScalaCoreSugar
+object syntax extends Sugar[String, ScalaCoreValue] with ScalaCoreSugar
 import com.bones.interpreter.values.syntax._
 
 object ExtractionErrorEncoder {
@@ -206,7 +206,7 @@ object ExtractionErrorEncoder {
   private val errorResponseHList =
     (
       "errors",
-      ListData[ScalaCoreValue, ExtractionError[String]](
+      ListData[String, ScalaCoreValue, ExtractionError[String]](
         Left(error.asValue),
         "ExtractionError",
         List.empty)) :<:

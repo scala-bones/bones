@@ -105,7 +105,7 @@ trait ResultSetInterpreter[ALG[_]]
       }
   }
 
-  def determineValueDefinition[A](coproduct: CoproductDataDefinition[ALG, A]): (
+  def determineValueDefinition[A](coproduct: CoproductDataDefinition[String, ALG, A]): (
     Path[String],
     FieldName) => ResultSet => Either[ExtractionErrors[String], NullableResult[String, A]] =
     coproduct match {
@@ -113,11 +113,11 @@ trait ResultSetInterpreter[ALG[_]]
       case Right(alg) => customInterpreter.resultSet(alg)
     }
 
-  def valueDefinition[A](fgo: HigherOrderValue[ALG, A]): (
+  def valueDefinition[A](fgo: HigherOrderValue[String, ALG, A]): (
     Path[String],
     FieldName) => ResultSet => Either[ExtractionErrors[String], NullableResult[String, A]] =
     fgo match {
-      case op: OptionalValue[ALG, a] @unchecked =>
+      case op: OptionalValue[String, ALG, a] @unchecked =>
         (path, fieldName) =>
           val child =
             determineValueDefinition(op.valueDefinitionOp)(path, fieldName)
@@ -128,8 +128,8 @@ trait ResultSetInterpreter[ALG[_]]
                 case Right(v) => Right(Some(v))
               }
               .map(_.asInstanceOf[NullableResult[String, Option[a]]])
-      case ld: ListData[ALG, t] @unchecked => ???
-      case ed: EitherData[ALG, a, b] @unchecked =>
+      case ld: ListData[String, ALG, t] @unchecked => ???
+      case ed: EitherData[String, ALG, a, b] @unchecked =>
         (path, fieldName) => rs =>
           {
             val leftField = determineValueDefinition(ed.definitionA)(path, "left_" + fieldName)(rs)

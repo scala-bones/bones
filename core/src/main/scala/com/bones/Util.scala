@@ -158,10 +158,10 @@ object Util {
   }
 
   def eitherMap2HigherOrder[K, ALG[_], A, B, Z](
-    e1: Either[NonEmptyList[(Either[HigherOrderValue[ALG, A], ALG[A]], ExtractionError[K])], A],
-    e2: Either[NonEmptyList[(Either[HigherOrderValue[ALG, A], ALG[A]], ExtractionError[K])], B])(
+    e1: Either[NonEmptyList[(Either[HigherOrderValue[K, ALG, A], ALG[A]], ExtractionError[K])], A],
+    e2: Either[NonEmptyList[(Either[HigherOrderValue[K, ALG, A], ALG[A]], ExtractionError[K])], B])(
     f: (A, B) => Z)
-    : Either[NonEmptyList[(Either[HigherOrderValue[ALG, A], ALG[A]], ExtractionError[K])], Z] = {
+    : Either[NonEmptyList[(Either[HigherOrderValue[K, ALG, A], ALG[A]], ExtractionError[K])], Z] = {
     (e1, e2) match {
       case (Left(err1), Left(err2)) => Left(err1 concatNel err2)
       case (Left(err1), _)          => Left(err1)
@@ -182,14 +182,13 @@ object Util {
       case (Left(err1), Left(err2)) => Left(err1 concatNel err2)
       case (Left(err1), _)          => Left(err1)
       case (_, Left(err2))          => Left(err2)
-      case (Right(a), Right(b)) => {
+      case (Right(a), Right(b)) =>
         (a, b) match {
           case (Left(nullA), Left(nullB))     => Right(Left(nullA ::: nullB))
           case (Left(nullA), _)               => Right(Left(nullA))
           case (_, Left(nullB))               => Right(Left(nullB))
           case (Right(valueA), Right(valueB)) => Right(Right(f(valueA, valueB)))
         }
-      }
     }
   }
 

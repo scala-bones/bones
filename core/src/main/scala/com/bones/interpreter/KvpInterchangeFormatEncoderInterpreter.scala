@@ -47,7 +47,7 @@ trait KvpInterchangeFormatEncoderInterpreter[ALG[_], OUT]
   }
 
   protected def determineValueDefinition[A](
-    dataDefinition: Either[HigherOrderValue[ALG, A], ALG[A]]
+    dataDefinition: Either[HigherOrderValue[String, ALG, A], ALG[A]]
   ): A => OUT = {
     dataDefinition match {
       case Left(kvp)  => primitiveWrapperDefinition(kvp)
@@ -56,10 +56,10 @@ trait KvpInterchangeFormatEncoderInterpreter[ALG[_], OUT]
   }
 
   protected def primitiveWrapperDefinition[A](
-    fgo: HigherOrderValue[ALG, A]
+    fgo: HigherOrderValue[String, ALG, A]
   ): A => OUT =
     fgo match {
-      case op: OptionalValue[ALG, b] @unchecked =>
+      case op: OptionalValue[String, ALG, b] @unchecked =>
         val valueF = determineValueDefinition(op.valueDefinitionOp)
         (input: A) =>
           {
@@ -68,14 +68,14 @@ trait KvpInterchangeFormatEncoderInterpreter[ALG[_], OUT]
               case None    => interchangeFormatEncoder.none
             }
           }
-      case ld: ListData[ALG, t] @unchecked =>
+      case ld: ListData[String, ALG, t] @unchecked =>
         val itemToOut = determineValueDefinition(ld.tDefinition)
         (input: A) =>
           {
             val listOfJson = input.asInstanceOf[List[t]].map(itemToOut)
             interchangeFormatEncoder.toOutList(listOfJson)
           }
-      case either: EitherData[ALG, a, b] @unchecked =>
+      case either: EitherData[String, ALG, a, b] @unchecked =>
         val aF = determineValueDefinition(either.definitionA)
         val bF = determineValueDefinition(either.definitionB)
         (input: A) =>

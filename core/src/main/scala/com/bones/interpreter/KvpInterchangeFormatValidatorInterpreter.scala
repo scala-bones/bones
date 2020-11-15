@@ -73,7 +73,7 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
   }
 
   protected def determineValidator[A](
-    value: Either[HigherOrderValue[ALG, A], ALG[A]]
+    value: Either[HigherOrderValue[String, ALG, A], ALG[A]]
   ): (Option[IN], List[String]) => Either[ExtractionErrors[String], A] = {
     value match {
       case Left(kvp)  => valueDefinition(kvp)
@@ -81,11 +81,11 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
     }
   }
 
-  protected def valueDefinition[A](fgo: HigherOrderValue[ALG, A])
+  protected def valueDefinition[A](fgo: HigherOrderValue[String, ALG, A])
     : (Option[IN], List[String]) => Either[ExtractionErrors[String], A] = {
     val result: (Option[IN], List[String]) => Either[ExtractionErrors[String], A] =
       fgo match {
-        case op: OptionalValue[ALG, a] @unchecked =>
+        case op: OptionalValue[String, ALG, a] @unchecked =>
           val applied = determineValidator(op.valueDefinitionOp)
           (in: Option[IN], path: Path[String]) =>
             in match {
@@ -94,7 +94,7 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
               case some @ Some(json)     => applied(some, path).map(Some(_))
             }
 
-        case ed: EitherData[ALG, a, b] @unchecked =>
+        case ed: EitherData[String, ALG, a, b] @unchecked =>
           val optionalA = determineValidator(ed.definitionA)
           val optionalB = determineValidator(ed.definitionB)
           (in: Option[IN], path: Path[String]) =>
@@ -111,7 +111,7 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
                 case Right(a) => Right(Left(a))
               }
             }
-        case op: ListData[ALG, t] @unchecked =>
+        case op: ListData[String, ALG, t] @unchecked =>
           val valueF = determineValidator(op.tDefinition)
 
           def appendArrayIndex(path: Path[String], index: Int): List[String] = {

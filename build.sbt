@@ -244,7 +244,7 @@ lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
   )
-  .dependsOn(core, jsonCirce, swaggerOas3, protobuf, bson)
+  .dependsOn(core, restHttpCommon, jsonCirce, swaggerOas3, protobuf, bson)
 
 val AkkaVersion = "2.6.10"
 val AkkaHttpVersion = "10.2.1"
@@ -262,7 +262,7 @@ lazy val restAkkHttp = (project in file("rest-interpreters/akka-http-interpreter
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
   )
-  .dependsOn(core, jsonSpray, swaggerOas3)
+  .dependsOn(core, jsonSpray, restHttpCommon, swaggerOas3)
 /*
 lazy val dbSlick = (project in file("db-interpreters/slick"))
   .settings(

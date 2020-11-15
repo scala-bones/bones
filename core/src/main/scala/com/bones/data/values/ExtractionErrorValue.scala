@@ -17,10 +17,10 @@ case object WrongTypeErrorData extends ExtractionErrorValue[WrongTypeError[Strin
 /**
   * Provides convenience methods for creating ExtractionErrorValue types.
   */
-trait ExtractionErrorValueSugar extends Sugar[ExtractionErrorValue] {
+trait ExtractionErrorValueSugar[K] extends Sugar[String, ExtractionErrorValue] {
 
   val scalaCoreSugar: ScalaCoreSugar
-  val sugar: Sugar[ScalaCoreValue]
+  val sugar: Sugar[String, ScalaCoreValue]
 
   private val canNotConvert =
     (("name", scalaCoreSugar.string) :: sugar.kvpNil)

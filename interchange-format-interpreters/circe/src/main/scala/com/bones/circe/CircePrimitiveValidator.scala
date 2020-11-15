@@ -49,7 +49,7 @@ object CircePrimitiveValidator extends InterchangeFormatPrimitiveValidator[Json]
     op: ALG2[A])(in: Json, path: List[String]): Either[ExtractionErrors[String], Boolean] =
     in.asBoolean.toRight(determineError(in, op, "Boolean", path))
 
-  override def extractArray[ALG2[_], A](op: ListData[ALG2, A])(
+  override def extractArray[ALG2[_], A](op: ListData[String, ALG2, A])(
     in: Json,
     path: Path[String]): Either[ExtractionErrors[String], Seq[Json]] =
     in.asArray

@@ -18,16 +18,15 @@ object CustomCovSchema {
   val instant = InstantData
 
   case class BlogPost(
-                       id: Int,
-                       title: String,
-                       tags: List[String],
-                       publishDate: Instant,
-                       content: String)
+    id: Int,
+    title: String,
+    tags: List[String],
+    publishDate: Instant,
+    content: String)
 
   type BlogAlgebra[A] = CustomAlgebra[A] :+: DateExtAlgebra[A] :+: ScalaCoreValue[A] :+: CNil
 
-  object BlogPost extends ScalaCoreInjectedSugar[BlogAlgebra] with Sugar[BlogAlgebra] {
-
+  object BlogPost extends ScalaCoreInjectedSugar[BlogAlgebra] with Sugar[String, BlogAlgebra] {
 
     override def scalaCoreInjected[A]: coproduct.Inject[BlogAlgebra[A], ScalaCoreValue[A]] =
       input => Inr(Inr(Inl(input)))

@@ -27,8 +27,9 @@ trait InterchangeFormatPrimitiveValidator[IN] {
     dataDefinition: ALG2[A])(in: IN, path: Path[String]): Either[ExtractionErrors[String], Long]
   def extractBool[ALG2[_], A](
     dataDefinition: ALG2[A])(in: IN, path: Path[String]): Either[ExtractionErrors[String], Boolean]
-  def extractArray[ALG2[_], A](
-    op: ListData[ALG2, A])(in: IN, path: Path[String]): Either[ExtractionErrors[String], Seq[IN]]
+  def extractArray[ALG2[_], A](op: ListData[String, ALG2, A])(
+    in: IN,
+    path: Path[String]): Either[ExtractionErrors[String], Seq[IN]]
   def extractFloat[ALG2[_], A](
     dataDefinition: ALG2[A])(in: IN, path: Path[String]): Either[ExtractionErrors[String], Float]
   def extractDouble[ALG2[_], A](
@@ -41,7 +42,7 @@ trait InterchangeFormatPrimitiveValidator[IN] {
   def stringValue(in: IN, elementName: String): Option[String]
 
   def required[ALG2[_], A](
-    coproductDataDefinition: CoproductDataDefinition[ALG2, A],
+    coproductDataDefinition: CoproductDataDefinition[String, ALG2, A],
     typeName: String,
     validations: List[ValidationOp[A]],
     f: (IN, List[String]) => Either[ExtractionErrors[String], A],

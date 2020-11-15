@@ -73,20 +73,20 @@ trait FieldNames[ALG[_]] extends KvpCollectionMatch[String, ALG, List[String]] {
     "dtype" :: fromKvpCollection(wrappedCoproduct.wrappedEncoding)
 
   def determineValueDefinition[A](
-    valueDefinitionOp: Either[HigherOrderValue[ALG, A], AnyAlg[A]]): List[String] =
+    valueDefinitionOp: Either[HigherOrderValue[String, ALG, A], AnyAlg[A]]): List[String] =
     valueDefinitionOp match {
       case Left(kvp) => valueDefinition(kvp)
       case Right(_)  => List.empty
     }
 
   def valueDefinition[A](
-    fgo: HigherOrderValue[ALG, A]
+    fgo: HigherOrderValue[String, ALG, A]
   ): List[String] =
     fgo match {
-      case op: OptionalValue[ALG, a] @unchecked =>
+      case op: OptionalValue[String, ALG, a] @unchecked =>
         determineValueDefinition(op.valueDefinitionOp)
-      case _: ListData[ALG, t] @unchecked      => List.empty
-      case _: EitherData[ALG, a, b] @unchecked => List.empty
+      case _: ListData[String, ALG, t] @unchecked      => List.empty
+      case _: EitherData[String, ALG, a, b] @unchecked => List.empty
       case kvp: KvpCollectionValue[String, ALG, a] @unchecked =>
         fromKvpCollection(kvp.kvpCollection)
     }

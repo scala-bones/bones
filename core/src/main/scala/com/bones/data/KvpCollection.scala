@@ -22,6 +22,8 @@ object KvpCollection {
       case _ => None
     }
   }
+
+  def empty[K, ALG[_]]: KvpNil[K, ALG] = KvpNil[K, ALG]()
 }
 
 /** Base Trait for anything that represents a collection KeyValue Pair.
@@ -41,13 +43,24 @@ sealed trait KvpCollection[K, ALG[_], A] {
 
   def keyMapKvpCollection[KK](f: K => KK): KvpCollection[KK, ALG, A] =
     this match {
-      case co: KvpCoproduct[K, ALG, c] =>
-        co.keyMapCoproduct(f).asInstanceOf[KvpCollection[KK, ALG, A]]
-      case co: KvpHListCollection[K, ALG, l, ll] =>
-        co.keyMapKvpCollection(f).asInstanceOf[KvpCollection[KK, ALG, A]]
-      case w: WrappedEncoding[K, ALG, A] =>
-        w.keyMapKvpCollection(f).asInstanceOf[KvpCollection[KK, ALG, A]]
+      case co: KvpCoproduct[K, ALG, A] @unchecked =>
+        co.keyMapCoproduct(f)
+      case co: KvpHListCollection[K, ALG, A, ll] @unchecked =>
+        co.keyMapKvpCollection(f)
+      case w: WrappedEncoding[K, ALG, A] @unchecked =>
+        w.keyMapKvpCollection(f)
     }
+
+  def algMapKvpCollection[ALG2[_]](f: ALG[_] => ALG2[_]): KvpCollection[K, ALG2, A] = {
+    this match {
+      case co: KvpCoproduct[K, ALG, A] @unchecked =>
+        co.algMapCoproduct(f)
+      case co: KvpHListCollection[K, ALG, A, ll] @unchecked =>
+        co.algMapKvpCollection(f)
+      case w: WrappedEncoding[K, ALG, A] @unchecked =>
+        w.algMapKvpCollection(f)
+    }
+  }
 }
 
 /**
@@ -112,6 +125,14 @@ sealed trait KvpCoproduct[K, ALG[_], C <: Coproduct] extends KvpCollection[K, AL
     }
   }
 
+  def algMapCoproduct[ALG2[_]](f: ALG[_] => ALG2[_]): KvpCoproduct[K, ALG2, C] = {
+    this match {
+      case co: KvpCoNil[K, ALG] => co.algMapKvpCoNil.asInstanceOf[KvpCoproduct[K, ALG2, C]]
+      case co: KvpCoproductCollectionHead[K, ALG, a, C, o] =>
+        co.algMapKvpCoproductCollectionHead(f).asInstanceOf[KvpCoproduct[K, ALG2, C]]
+    }
+  }
+
   def :+:[A: Manifest](
     head: KvpCollection[K, ALG, A]): KvpCoproductCollectionHead[K, ALG, A, C, A :+: C] = {
     val typeName = manifest[A].runtimeClass.getSimpleName
@@ -139,6 +160,8 @@ sealed trait KvpCoproduct[K, ALG[_], C <: Coproduct] extends KvpCollection[K, AL
 case class KvpCoNil[K, ALG[_]]() extends KvpCoproduct[K, ALG, CNil] {
   override val typeNameOfA: String = "CNil"
   def keyMapKvpCoNil[KK](f: K => KK): KvpCoNil[KK, ALG] = KvpCoNil[KK, ALG]()
+
+  def algMapKvpCoNil[ALG2[_]]: KvpCoNil[K, ALG2] = KvpCoNil[K, ALG2]()
 }
 
 /**
@@ -160,6 +183,13 @@ case class KvpCoproductCollectionHead[K, ALG[_], A, C <: Coproduct, O <: A :+: C
       kvpCollection.keyMapKvpCollection(f),
       typeNameOfA,
       kvpTail.keyMapCoproduct(f))
+
+  def algMapKvpCoproductCollectionHead[ALG2[_]](
+    f: ALG[_] => ALG2[_]): KvpCoproductCollectionHead[K, ALG2, A, C, Nothing] = {
+    this.copy(
+      kvpCollection = kvpCollection.algMapKvpCollection(f),
+      kvpTail = kvpTail.algMapCoproduct(f))
+  }
 }
 
 /**
@@ -178,6 +208,15 @@ sealed abstract class KvpHListCollection[K, ALG[_], L <: HList, LL <: Nat]
         kvp.keyMapKvpHListCollectionHead(f).asInstanceOf[KvpHListCollection[KK, ALG, L, LL]]
       case kvp: KvpSingleValueHead[K, ALG, x, xs, xsl, o] =>
         kvp.keyMapKvpSingleValueHead(f).asInstanceOf[KvpHListCollection[KK, ALG, L, LL]]
+    }
+
+  def algMapKvpHListCollection[ALG2[_]](f: ALG[_] => ALG2[_]): KvpHListCollection[K, ALG2, L, LL] =
+    this match {
+      case n: KvpNil[K, ALG] => n.algMapKvpNil.asInstanceOf[KvpHListCollection[K, ALG2, L, LL]]
+      case kvp: KvpHListCollectionHead[K, ALG, ho, no, h, hl, t, tl] =>
+        kvp.algMapKvpHListCollectionHead(f).asInstanceOf[KvpHListCollection[K, ALG2, L, LL]]
+      case kvp: KvpSingleValueHead[K, ALG, x, xs, xsl, o] =>
+        kvp.algMapKvpSingleValueHead(f).asInstanceOf[KvpHListCollection[K, ALG2, L, LL]]
     }
 
   def convert[A: Manifest](validation: ValidationOp[A]*)(
@@ -323,7 +362,7 @@ sealed abstract class KvpHListCollection[K, ALG[_], L <: HList, LL <: Nat]
     * @tparam A The wrapped type
     * @return KvpSingleValueHead prefixed to this HList
     */
-  def :<:[A: Manifest](input: (K, HigherOrderValue[ALG, A]))(
+  def :<:[A: Manifest](input: (K, HigherOrderValue[K, ALG, A]))(
     implicit isHCons: Aux[A :: L, A, L]): KvpSingleValueHead[K, ALG, A, L, LL, A :: L] = {
     val typeName = manifest[A].runtimeClass.getSimpleName
     consKeyDefinition(KeyDefinition(input._1, Left(input._2), typeName, None, None))(
@@ -331,7 +370,7 @@ sealed abstract class KvpHListCollection[K, ALG[_], L <: HList, LL <: Nat]
       isHCons)
   }
 
-  def :<:[A: Manifest](input: (K, HigherOrderValue[ALG, A], String, A))(
+  def :<:[A: Manifest](input: (K, HigherOrderValue[K, ALG, A], String, A))(
     implicit isHCons: Aux[A :: L, A, L]): KvpSingleValueHead[K, ALG, A, L, LL, A :: L] = {
     val typeName = manifest[A].runtimeClass.getSimpleName
     consKeyDefinition(
@@ -348,6 +387,7 @@ case class KvpNil[K, ALG[_]]() extends KvpHListCollection[K, ALG, HNil, Nat._0] 
   override val typeNameOfA: String = "KvpNil"
 
   def keyMapKvpNil[KK](f: K => KK): KvpNil[KK, ALG] = KvpNil[KK, ALG]()
+  def algMapKvpNil[ALG2[_]]() = KvpNil[K, ALG2]()
 }
 
 /** The head of the HList has a known KeyValueDefinition. */
@@ -365,6 +405,16 @@ final case class KvpSingleValueHead[K, ALG[_], X, XS <: HList, XSL <: Nat, OUT <
       case Right(kvp)   => Right(kvp.keyMapKvpCollection(f))
     }
     val newTail = tail.keyMapKvpHListCollection(f)
+    KvpSingleValueHead(newHead, typeNameOfA, validations, newTail, isHCons)
+  }
+
+  def algMapKvpSingleValueHead[ALG2[_]](
+    f: ALG[_] => ALG2[_]): KvpHListCollection[K, ALG2, OUT, Succ[XSL]] = {
+    val newHead = head match {
+      case Left(keyDef) => Left(keyDef.algMap(f))
+      case Right(kvp)   => Right(kvp.algMapKvpCollection(f))
+    }
+    val newTail = tail.algMapKvpHListCollection(f)
     KvpSingleValueHead(newHead, typeNameOfA, validations, newTail, isHCons)
   }
 
@@ -395,11 +445,9 @@ final case class KvpHListCollectionHead[
 
   def keyMapKvpHListCollectionHead[KK](
     f: K => KK): KvpHListCollectionHead[KK, ALG, HO, NO, H, HL, T, TL] =
-    KvpHListCollectionHead(
-      head.keyMapKvpHListCollection(f),
-      typeNameOfA,
-      tail.keyMapKvpHListCollection(f),
-      prepend,
-      split,
-      validations)
+    this.copy(head = head.keyMapKvpHListCollection(f), tail = tail.keyMapKvpHListCollection(f))
+
+  def algMapKvpHListCollectionHead[ALG2[_]](
+    f: ALG[_] => ALG2[_]): KvpHListCollectionHead[K, ALG2, HO, NO, H, HL, T, TL] =
+    this.copy(head = head.algMapKvpHListCollection(f), tail = tail.algMapKvpHListCollection(f))
 }

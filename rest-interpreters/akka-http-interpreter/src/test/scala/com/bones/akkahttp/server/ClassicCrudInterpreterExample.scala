@@ -21,12 +21,12 @@ object ClassicCrudInterpreterExample extends App {
     ("name", string(sv.words)) ::
       ("age", int(iv.between(0, 200))) ::
       ("weight", bigDecimal(bdv.between(BigDecimal(0), BigDecimal(5000))).optional) :<:
-      kvpNil[String]
+      kvpNil
   val customerSchema = customerSchemaBase.convert[Customer]
 
   case class Error(errorMessage: String)
   val errorSchema =
-    (("errorMessage", string()) :: kvpNil[String]).convert[Error]
+    (("errorMessage", string()) :: kvpNil).convert[Error]
 
   val stringToId: String => Either[String, Long] = str =>
     Try(str.toLong).toEither.left.map(_.getMessage)

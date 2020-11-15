@@ -224,7 +224,7 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
   /** Determine if we use the core algebra or the custom algebra and then pass control to the appropriate interpreter */
   def determineValueDefinition[A](
     key: String,
-    definition: Either[HigherOrderValue[ALG, A], ALG[A]]
+    definition: Either[HigherOrderValue[String, ALG, A], ALG[A]]
   ): ExtractFromProto[A] =
     definition match {
       case Left(kvp) => valueDefinition(key, kvp)
@@ -357,13 +357,13 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
       }
   }
 
-  def valueDefinition[A](key: String, fgo: HigherOrderValue[ALG, A]): ExtractFromProto[A] =
+  def valueDefinition[A](key: String, fgo: HigherOrderValue[String, ALG, A]): ExtractFromProto[A] =
     fgo match {
-      case op: OptionalValue[ALG, a] @unchecked =>
+      case op: OptionalValue[String, ALG, a] @unchecked =>
         optionalKvpValueDefinition[a](key, op)
-      case ld: ListData[ALG, t] @unchecked =>
+      case ld: ListData[String, ALG, t] @unchecked =>
         listData[t](key, ld)
-      case ed: EitherData[ALG, a, b] @unchecked =>
+      case ed: EitherData[String, ALG, a, b] @unchecked =>
         eitherData[a, b](key, ed)
       case kvp: KvpCollectionValue[String, ALG, A] @unchecked => {
         val groupExtract = fromKvpCollection[A](kvp.kvpCollection)
@@ -399,7 +399,7 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
 
   def optionalKvpValueDefinition[B](
     key: String,
-    op: OptionalValue[ALG, B]): ExtractFromProto[Option[B]] = {
+    op: OptionalValue[String, ALG, B]): ExtractFromProto[Option[B]] = {
     val vd = determineValueDefinition(key, op.valueDefinitionOp)
     (fieldNumber: LastFieldNumber, path: Path[String]) =>
       {
@@ -416,7 +416,7 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
       }
   }
 
-  def listData[B](key: String, ld: ListData[ALG, B]): ExtractFromProto[List[B]] = {
+  def listData[B](key: String, ld: ListData[String, ALG, B]): ExtractFromProto[List[B]] = {
     val child = determineValueDefinition[B](key, ld.tDefinition)
 
     @tailrec
@@ -454,7 +454,7 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
 
   def eitherData[B, C](
     key: String,
-    ed: EitherData[ALG, B, C]
+    ed: EitherData[String, ALG, B, C]
   ): ExtractFromProto[Either[B, C]] = {
     val extractA: ExtractFromProto[B] =
       determineValueDefinition[B](key, ed.definitionA)

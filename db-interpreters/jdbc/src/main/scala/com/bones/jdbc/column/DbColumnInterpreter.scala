@@ -55,7 +55,7 @@ trait DbColumnInterpreter[ALG[_]] extends KvpCollectionMatch[String, ALG, List[C
   }
 
   private def determineValueDefinition[A](
-    coDef: CoproductDataDefinition[ALG, A]
+    coDef: CoproductDataDefinition[String, ALG, A]
   ): ToColumns = {
     coDef match {
       case Left(kvp)  => valueDefinition(kvp)
@@ -63,14 +63,14 @@ trait DbColumnInterpreter[ALG[_]] extends KvpCollectionMatch[String, ALG, List[C
     }
   }
 
-  private def valueDefinition[A](fgo: HigherOrderValue[ALG, A]): ToColumns =
+  private def valueDefinition[A](fgo: HigherOrderValue[String, ALG, A]): ToColumns =
     fgo match {
-      case op: OptionalValue[ALG, b] @unchecked =>
+      case op: OptionalValue[String, ALG, b] @unchecked =>
         key =>
           determineValueDefinition(op.valueDefinitionOp)(key)
             .map(_.copy(nullable = true))
-      case ld: ListData[ALG, t] @unchecked => ???
-      case ed: EitherData[ALG, a, b] @unchecked =>
+      case ld: ListData[String, ALG, t] @unchecked => ???
+      case ed: EitherData[String, ALG, a, b] @unchecked =>
         name =>
           {
             determineValueDefinition(ed.definitionA)(name) ::: determineValueDefinition(

@@ -110,16 +110,17 @@ trait JdbcStatementInterpreter[ALG[_]]
   }
 
   def determineValueDefinition[A](
-    valueDef: Either[HigherOrderValue[ALG, A], ALG[A]]
+    valueDef: Either[HigherOrderValue[String, ALG, A], ALG[A]]
   ): (Index, Key) => JdbcColumnStatement[A] =
     valueDef match {
       case Left(kvp)  => valueDefinition[A](kvp)
       case Right(alg) => customDbUpdateInterpreter.definitionResult(alg)
     }
 
-  def valueDefinition[A](fgo: HigherOrderValue[ALG, A]): (Index, Key) => JdbcColumnStatement[A] =
+  def valueDefinition[A](
+    fgo: HigherOrderValue[String, ALG, A]): (Index, Key) => JdbcColumnStatement[A] =
     fgo match {
-      case op: OptionalValue[ALG, b] @unchecked =>
+      case op: OptionalValue[String, ALG, b] @unchecked =>
         val valueF = determineValueDefinition(op.valueDefinitionOp)
         (i, k) =>
           val ops = valueF.apply(i, k)
@@ -135,8 +136,8 @@ trait JdbcStatementInterpreter[ALG[_]]
             }
           }
           ops.copy(predicates = f)
-      case _: ListData[ALG, t] @unchecked      => ???
-      case _: EitherData[ALG, a, b] @unchecked => ???
+      case _: ListData[String, ALG, t] @unchecked      => ???
+      case _: EitherData[String, ALG, a, b] @unchecked => ???
       case kvp: KvpCollectionValue[String, ALG, a] @unchecked => { (i: Index, _: Key) =>
         fromKvpCollection(kvp.kvpCollection)(i).asInstanceOf[JdbcColumnStatement[A]]
       }
