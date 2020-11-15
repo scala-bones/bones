@@ -59,18 +59,19 @@ trait ColumnNameInterpreter[ALG[_]] extends KvpCollectionMatch[String, ALG, List
 
   private val keyToColumnNames: Key => List[ColumnName] = key => List(camelToSnake(key))
 
-  def determineValueDefinition[A](kvp: CoproductDataDefinition[ALG, A]): Key => List[ColumnName] =
+  def determineValueDefinition[A](
+    kvp: CoproductDataDefinition[String, ALG, A]): Key => List[ColumnName] =
     kvp match {
       case Left(kvp) => valueDefinition(kvp)
       case Right(_)  => keyToColumnNames
     }
 
-  def valueDefinition[A](fgo: HigherOrderValue[ALG, A]): Key => List[ColumnName] =
+  def valueDefinition[A](fgo: HigherOrderValue[String, ALG, A]): Key => List[ColumnName] =
     fgo match {
-      case op: OptionalValue[ALG, a] @unchecked =>
+      case op: OptionalValue[String, ALG, a] @unchecked =>
         determineValueDefinition(op.valueDefinitionOp)
-      case _: ListData[ALG, t] @unchecked => keyToColumnNames
-      case ed: EitherData[ALG, a, b] @unchecked =>
+      case _: ListData[String, ALG, t] @unchecked => keyToColumnNames
+      case ed: EitherData[String, ALG, a, b] @unchecked =>
         key =>
           {
             val leftColumns = determineValueDefinition(ed.definitionA)(key)

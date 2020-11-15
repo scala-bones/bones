@@ -42,7 +42,7 @@ trait Ideal[ALG[_]]
       TableCollection,
       List[UniqueGroup])] {
 
-    override protected def optionalToOut[B](opt: OptionalValue[ALG, B])
+    override protected def optionalToOut[B](opt: OptionalValue[String, ALG, B])
       : (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
         TableCollection,
         List[UniqueGroup]) = {
@@ -89,7 +89,7 @@ trait Ideal[ALG[_]]
       * @tparam B The right type
       * @return A function to create the tables.
       */
-    override protected def eitherToOut[A, B](either: EitherData[ALG, A, B])
+    override protected def eitherToOut[A, B](either: EitherData[String, ALG, A, B])
       : (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
         TableCollection,
         List[UniqueGroup]) = {
@@ -128,7 +128,7 @@ trait Ideal[ALG[_]]
 
     }
 
-    override protected def listToOut[A](list: ListData[ALG, A])
+    override protected def listToOut[A](list: ListData[String, ALG, A])
       : (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
         TableCollection,
         List[UniqueGroup]) = {
@@ -236,7 +236,7 @@ trait Ideal[ALG[_]]
       }
   }
 
-  def determineValueDefinition[A](dataDefinition: Either[HigherOrderValue[ALG, A], ALG[A]])
+  def determineValueDefinition[A](dataDefinition: Either[HigherOrderValue[String, ALG, A], ALG[A]])
     : (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
       TableCollection,
       List[UniqueGroup]) = {

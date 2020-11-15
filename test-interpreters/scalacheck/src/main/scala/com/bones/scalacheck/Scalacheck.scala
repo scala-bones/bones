@@ -85,29 +85,29 @@ trait ScalacheckBase[K, ALG[_]] extends KvpCollectionTransformation[K, ALG, Gen]
 
   }
 
-  def determineValueDefinition[A](value: Either[HigherOrderValue[ALG, A], ALG[A]]): Gen[A] = {
+  def determineValueDefinition[A](value: Either[HigherOrderValue[K, ALG, A], ALG[A]]): Gen[A] = {
     value match {
       case Left(kvp)  => valueDefinition(kvp)
       case Right(alg) => genValue.gen(alg)
     }
   }
 
-  def valueDefinition[A](fgo: HigherOrderValue[ALG, A]): Gen[A] =
+  def valueDefinition[A](fgo: HigherOrderValue[K, ALG, A]): Gen[A] =
     fgo match {
-      case op: OptionalValue[ALG, a] @unchecked => {
+      case op: OptionalValue[K, ALG, a] @unchecked => {
         val optionalGen = determineValueDefinition(op.valueDefinitionOp).map(Some(_))
         Gen.frequency(
           (9, optionalGen),
           (1, None)
         )
       }
-      case ld: ListData[ALG, t] @unchecked =>
+      case ld: ListData[K, ALG, t] @unchecked =>
         implicit val elemGenerator = determineValueDefinition(ld.tDefinition)
         for {
           numElems <- Gen.choose(1, 500)
           elem <- Gen.listOfN(numElems, elemGenerator)
         } yield elem
-      case ed: EitherData[ALG, a, b] @unchecked => {
+      case ed: EitherData[K, ALG, a, b] @unchecked => {
         val left = determineValueDefinition(ed.definitionA).map(Left(_))
         val right = determineValueDefinition(ed.definitionB).map(Right(_))
         Gen.frequency((1, left), (1, right))

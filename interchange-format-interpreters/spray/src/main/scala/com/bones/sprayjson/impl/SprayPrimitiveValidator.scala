@@ -68,7 +68,7 @@ object SprayPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JsVal
   }
 
   override def extractArray[ALG2[_], A](
-    op: ListData[ALG2, A]
+    op: ListData[String, ALG2, A]
   )(in: JsValue, path: Path[String]): Either[ExtractionErrors[String], Seq[JsValue]] = {
     in match {
       case JsArray(elements) => Right(elements.toSeq)

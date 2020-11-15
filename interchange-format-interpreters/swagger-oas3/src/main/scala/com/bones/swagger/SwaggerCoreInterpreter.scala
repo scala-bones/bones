@@ -428,7 +428,7 @@ trait SwaggerCoreInterpreter[ALG[_]]
   }
 
   def determineValueDefinition[A](
-    value: Either[HigherOrderValue[ALG, A], ALG[A]],
+    value: Either[HigherOrderValue[String, ALG, A], ALG[A]],
     description: Option[String],
     example: Option[A]
   ): Name => SwaggerSchemas[Schema[_]] =
@@ -443,17 +443,17 @@ trait SwaggerCoreInterpreter[ALG[_]]
     * @param vd The DataClass definition to convert to a Schema
     **/
   def valueDefinition[A](
-    vd: HigherOrderValue[ALG, A],
+    vd: HigherOrderValue[String, ALG, A],
     description: Option[String],
     example: Option[A]): Name => SwaggerSchemas[Schema[_]] = {
     vd match {
-      case op: OptionalValue[ALG, b] @unchecked =>
+      case op: OptionalValue[String, ALG, b] @unchecked =>
         name =>
           val oasSchema =
             determineValueDefinition[b](op.valueDefinitionOp, description, None)(name)
           oasSchema.copy(mainSchema = oasSchema.mainSchema.nullable(true))
 
-      case ld: ListData[ALG, t] @unchecked =>
+      case ld: ListData[String, ALG, t] @unchecked =>
         name =>
           val itemSchema =
             determineValueDefinition(ld.tDefinition, description, None)(name)
@@ -463,7 +463,7 @@ trait SwaggerCoreInterpreter[ALG[_]]
           arraySchema.name(name)
           val withValidation = validations(ld.validations)(arraySchema)
           SwaggerSchemas(withValidation, itemSchema.referenceSchemas)
-      case ed: EitherData[ALG, a, b] @unchecked =>
+      case ed: EitherData[String, ALG, a, b] @unchecked =>
         name =>
           val a =
             determineValueDefinition[a](ed.definitionA, description, None)("left" + name.capitalize)

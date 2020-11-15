@@ -227,7 +227,7 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
   }
 
   def determineValueDefinition[A](
-    value: Either[HigherOrderValue[ALG, A], ALG[A]]
+    value: Either[HigherOrderValue[String, ALG, A], ALG[A]]
   ): (Name, Int) => (MessageField, Vector[NestedType], Int) =
     value match {
       case Left(kvp)  => valueDefinition(kvp)
@@ -235,18 +235,18 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
     }
 
   def valueDefinition[A](
-    fgo: HigherOrderValue[ALG, A]): (Name, Int) => (MessageField, Vector[NestedType], Int) =
+    fgo: HigherOrderValue[String, ALG, A]): (Name, Int) => (MessageField, Vector[NestedType], Int) =
     fgo match {
-      case op: OptionalValue[ALG, a] @unchecked =>
+      case op: OptionalValue[String, ALG, a] @unchecked =>
         (name, index) =>
           val result =
             determineValueDefinition(op.valueDefinitionOp)(name, index)
           (result._1.copy(required = false), result._2, index)
-      case ld: ListData[ALG, t] @unchecked =>
+      case ld: ListData[String, ALG, t] @unchecked =>
         (name, index) =>
           val result = determineValueDefinition(ld.tDefinition)(name, index)
           (result._1.copy(repeated = true), result._2, index)
-      case ed: EitherData[ALG, a, b] @unchecked =>
+      case ed: EitherData[String, ALG, a, b] @unchecked =>
         (name, index) =>
           val (messageFieldA, nestedTypesA, nextIndex) =
             determineValueDefinition(ed.definitionA)(name, index)

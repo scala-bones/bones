@@ -104,7 +104,7 @@ object Json4sPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JVal
   }
 
   override def extractArray[ALG2[_], A](
-    op: ListData[ALG2, A]
+    op: ListData[String, ALG2, A]
   )(in: JValue, path: Path[String]): Either[ExtractionErrors[String], Seq[JValue]] = {
     in match {
       case JArray(elements) => Right(elements)

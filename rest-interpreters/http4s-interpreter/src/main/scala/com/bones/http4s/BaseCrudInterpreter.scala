@@ -99,7 +99,7 @@ object BaseCrudInterpreter {
     private val errorResponseHList =
       (
         "errors",
-        ListData[ScalaCoreValue, ExtractionError[String]](
+        ListData[String, ScalaCoreValue, ExtractionError[String]](
           Left(error.asValue),
           "ExtractionError",
           List.empty)) :<:

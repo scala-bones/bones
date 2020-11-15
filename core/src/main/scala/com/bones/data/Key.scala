@@ -14,21 +14,30 @@ import com.bones.validation.ValidationDefinition.ValidationOp
   */
 case class KeyDefinition[K, ALG[_], A](
   key: K,
-  dataDefinition: Either[HigherOrderValue[ALG, A], ALG[A]],
+  dataDefinition: Either[HigherOrderValue[K, ALG, A], ALG[A]],
   typeName: String,
   description: Option[String],
   example: Option[A]
 ) {
 
   /** Copy this KeyDefinition, using the new key based on the */
-  def keyMap[KK](f: K => KK): KeyDefinition[KK, ALG, A] =
-    this.copy(key = f(key))
+  def keyMap[KK](f: K => KK): KeyDefinition[KK, ALG, A] = {
+    val newDataDef = dataDefinition match {
+      case Left(hov)  => Left(hov.keyMap(f))
+      case Right(alg) => Right(alg)
+    }
+    this.copy(key = f(key), dataDefinition = newDataDef)
+  }
+
+  def algMap[ALG2[_]](f: ALG[_] => ALG2[_]): KeyDefinition[K, ALG2, A] =
+    this.copy(dataDefinition = HigherOrderValue.algMapEither[K, ALG, A, ALG2](dataDefinition, f))
+
 }
 
 object KeyDefinition {
 
   /** In the context of a given ALG, the data definition can be a collection type (left) or a value type (right) */
-  type CoproductDataDefinition[ALG[_], A] = Either[HigherOrderValue[ALG, A], ALG[A]]
+  type CoproductDataDefinition[K, ALG[_], A] = Either[HigherOrderValue[K, ALG, A], ALG[A]]
 }
 
 /** Useful DSL builder */
@@ -36,7 +45,7 @@ trait KeyValueDefinitionSugar {
 
   def kvp[K, ALG[_], A: Manifest](
     key: K,
-    valueDefinitionOp: HigherOrderValue[ALG, A]): KeyDefinition[K, ALG, A] = {
+    valueDefinitionOp: HigherOrderValue[K, ALG, A]): KeyDefinition[K, ALG, A] = {
     val typeName = manifest[A].runtimeClass.getSimpleName
     KeyDefinition[K, ALG, A](key, Left(valueDefinitionOp), typeName, None, None)
   }
@@ -51,26 +60,26 @@ trait KeyValueDefinitionSugar {
 }
 
 /** Starting point for obtaining a value definition. */
-trait Sugar[ALG[_]] {
+trait Sugar[K, ALG[_]] {
 
   implicit class WrapKvpValueInCollection[A: Manifest](hm: ALG[A]) { self =>
     val typeName = manifest[A].runtimeClass.getSimpleName
 
-    def list(validationOps: ValidationOp[List[A]]*): ListData[ALG, A] =
-      ListData[ALG, A](Right(hm), typeName, validationOps.toList)
+    def list(validationOps: ValidationOp[List[A]]*): ListData[K, ALG, A] =
+      ListData[K, ALG, A](Right(hm), typeName, validationOps.toList)
 
-    def optional: OptionalValue[ALG, A] =
-      OptionalValue[ALG, A](Right(hm), typeName)
+    def optional: OptionalValue[K, ALG, A] =
+      OptionalValue[K, ALG, A](Right(hm), typeName)
   }
 
-  implicit class WrapKvpCollectionInCollection[A: Manifest](hm: HigherOrderValue[ALG, A]) {
+  implicit class WrapKvpCollectionInCollection[A: Manifest](hm: HigherOrderValue[K, ALG, A]) {
     self =>
     val typeName = manifest[A].runtimeClass.getSimpleName
-    def list(validationOps: ValidationOp[List[A]]*): ListData[ALG, A] =
-      ListData[ALG, A](Left(hm), typeName, validationOps.toList)
+    def list(validationOps: ValidationOp[List[A]]*): ListData[K, ALG, A] =
+      ListData[K, ALG, A](Left(hm), typeName, validationOps.toList)
 
-    def optional: OptionalValue[ALG, A] =
-      OptionalValue[ALG, A](Left(hm), typeName)
+    def optional: OptionalValue[K, ALG, A] =
+      OptionalValue[K, ALG, A](Left(hm), typeName)
   }
 
   /**
@@ -85,29 +94,29 @@ trait Sugar[ALG[_]] {
   def list[T: Manifest](
     dataDefinitionOp: ALG[T],
     v: ValidationOp[List[T]]*
-  ): ListData[ALG, T] = {
+  ): ListData[K, ALG, T] = {
     val typeName = manifest[T].runtimeClass.getSimpleName
-    ListData[ALG, T](Right(dataDefinitionOp), typeName, v.toList)
+    ListData[K, ALG, T](Right(dataDefinitionOp), typeName, v.toList)
   }
 
   def list[T: Manifest](
-    kvpValue: HigherOrderValue[ALG, T],
+    kvpValue: HigherOrderValue[K, ALG, T],
     v: ValidationOp[List[T]]*
-  ): ListData[ALG, T] = {
+  ): ListData[K, ALG, T] = {
     val typeName = manifest[T].runtimeClass.getSimpleName
-    ListData[ALG, T](Left(kvpValue), typeName, v.toList)
+    ListData[K, ALG, T](Left(kvpValue), typeName, v.toList)
   }
 
   def either[A: Manifest, B: Manifest](
     definitionA: (String, ALG[A]),
     definitionB: (String, ALG[B])
-  ): EitherData[ALG, A, B] =
+  ): EitherData[K, ALG, A, B] =
     EitherData(Right(definitionA._2), definitionA._1, Right(definitionB._2), definitionB._1)
 
   def either[A: Manifest, B: Manifest](
     definitionA: (String, ALG[A]),
     definitionB: ALG[B]
-  ): EitherData[ALG, A, B] = {
+  ): EitherData[K, ALG, A, B] = {
     val typeNameOfB = manifest[B].runtimeClass.getSimpleName
     EitherData(Right(definitionA._2), definitionA._1, Right(definitionB), typeNameOfB)
   }
@@ -115,7 +124,7 @@ trait Sugar[ALG[_]] {
   def either[A: Manifest, B: Manifest](
     definitionA: ALG[A],
     definitionB: (String, ALG[B])
-  ): EitherData[ALG, A, B] = {
+  ): EitherData[K, ALG, A, B] = {
     val typeNameOfA = manifest[A].runtimeClass.getSimpleName
     EitherData(Right(definitionA), typeNameOfA, Right(definitionB._2), definitionB._1)
   }
@@ -123,7 +132,7 @@ trait Sugar[ALG[_]] {
   def either[A: Manifest, B: Manifest](
     definitionA: ALG[A],
     definitionB: ALG[B]
-  ): EitherData[ALG, A, B] = {
+  ): EitherData[K, ALG, A, B] = {
     val typeNameOfA = manifest[A].runtimeClass.getSimpleName
     val typeNameOfB = manifest[B].runtimeClass.getSimpleName
     EitherData(Right(definitionA), typeNameOfA, Right(definitionB), typeNameOfB)
@@ -131,18 +140,18 @@ trait Sugar[ALG[_]] {
 
   /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
   def either[A: Manifest, B: Manifest](
-    definitionA: HigherOrderValue[ALG, A],
-    definitionB: HigherOrderValue[ALG, B]
-  ): EitherData[ALG, A, B] = {
+    definitionA: HigherOrderValue[K, ALG, A],
+    definitionB: HigherOrderValue[K, ALG, B]
+  ): EitherData[K, ALG, A, B] = {
     val typeNameOfA = manifest[A].runtimeClass.getSimpleName
     val typeNameOfB = manifest[B].runtimeClass.getSimpleName
     EitherData(Left(definitionA), typeNameOfA, Left(definitionB), typeNameOfB)
   }
 
   def either[A: Manifest, B: Manifest](
-    definitionA: HigherOrderValue[ALG, A],
+    definitionA: HigherOrderValue[K, ALG, A],
     definitionB: ALG[B]
-  ): EitherData[ALG, A, B] = {
+  ): EitherData[K, ALG, A, B] = {
     val typeNameOfA = manifest[A].runtimeClass.getSimpleName
     val typeNameOfB = manifest[B].runtimeClass.getSimpleName
     EitherData(Left(definitionA), typeNameOfA, Right(definitionB), typeNameOfB)
@@ -150,15 +159,15 @@ trait Sugar[ALG[_]] {
 
   def either[A: Manifest, B: Manifest](
     definitionA: ALG[A],
-    definitionB: HigherOrderValue[ALG, B]
-  ): EitherData[ALG, A, B] = {
+    definitionB: HigherOrderValue[K, ALG, B]
+  ): EitherData[K, ALG, A, B] = {
     val typeNameOfA = manifest[A].runtimeClass.getSimpleName
     val typeNameOfB = manifest[B].runtimeClass.getSimpleName
     EitherData(Right(definitionA), typeNameOfA, Left(definitionB), typeNameOfB)
   }
 
-  def kvpNil[K] = new KvpNil[K, ALG]()
+  def kvpNil = new KvpNil[K, ALG]()
 
-  def kvpCoNil[K] = new KvpCoNil[K, ALG]()
+  def kvpCoNil = new KvpCoNil[K, ALG]()
 
 }

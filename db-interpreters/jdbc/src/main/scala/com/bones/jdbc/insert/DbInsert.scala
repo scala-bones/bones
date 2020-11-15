@@ -216,16 +216,17 @@ trait DbInsert[ALG[_]]
 
   }
 
-  def determineValueDefinition[A](coproduct: CoproductDataDefinition[ALG, A]): InsertPair[A] = {
+  def determineValueDefinition[A](
+    coproduct: CoproductDataDefinition[String, ALG, A]): InsertPair[A] = {
     coproduct match {
       case Left(kvp)  => valueDefinition(kvp)
       case Right(alg) => customInterpreter.insertPair(alg)
     }
   }
 
-  def valueDefinition[A](fgo: HigherOrderValue[ALG, A]): InsertPair[A] =
+  def valueDefinition[A](fgo: HigherOrderValue[String, ALG, A]): InsertPair[A] =
     fgo match {
-      case op: OptionalValue[ALG, b] @unchecked =>
+      case op: OptionalValue[String, ALG, b] @unchecked =>
         val valueF = determineValueDefinition(op.valueDefinitionOp)
         key =>
           { (index: Index, a: A) =>
@@ -236,8 +237,8 @@ trait DbInsert[ALG[_]]
               }
             }
           }
-      case ld: ListData[ALG, t] @unchecked => ???
-      case ed: EitherData[ALG, a, b] @unchecked =>
+      case ld: ListData[String, ALG, t] @unchecked => ???
+      case ed: EitherData[String, ALG, a, b] @unchecked =>
         val leftF = determineValueDefinition(ed.definitionA)
         val rightF = determineValueDefinition(ed.definitionB)
 
@@ -277,7 +278,7 @@ trait DbInsert[ALG[_]]
     *         right columns to rename.
     */
   private def calculateRename[aa, bb](
-    ed: EitherData[ALG, aa, bb],
+    ed: EitherData[String, ALG, aa, bb],
     key: String): (Map[String, String], Map[String, String]) = {
     val leftNames = columnNameInterpreter.determineValueDefinition(ed.definitionA)(key)
     val rightNames = columnNameInterpreter.determineValueDefinition(ed.definitionB)(key)

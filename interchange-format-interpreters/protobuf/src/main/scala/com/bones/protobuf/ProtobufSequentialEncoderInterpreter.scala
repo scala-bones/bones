@@ -159,14 +159,14 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
   import ProtobufSequentialEncoderInterpreter._
 
   def determineValueDefinition[A](
-    kvp: CoproductDataDefinition[ALG, A]
+    kvp: CoproductDataDefinition[String, ALG, A]
   ): EncodeToProto[A] =
     kvp match {
       case Left(kvp) => valueDefinition(kvp)
       case Right(vd) => customInterpreter.encodeToProto(vd)
     }
 
-  def optionalKvpValueDefinition[B](op: OptionalValue[ALG, B]): EncodeToProto[Option[B]] = {
+  def optionalKvpValueDefinition[B](op: OptionalValue[String, ALG, B]): EncodeToProto[Option[B]] = {
     (fieldNumber: FieldNumber) =>
       val (lastFieldNumber, computeEncode) =
         determineValueDefinition(op.valueDefinitionOp)(fieldNumber)
@@ -327,12 +327,12 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
       })
     }
 
-  def valueDefinition[A](fgo: HigherOrderValue[ALG, A]): EncodeToProto[A] = {
+  def valueDefinition[A](fgo: HigherOrderValue[String, ALG, A]): EncodeToProto[A] = {
     fgo match {
-      case op: OptionalValue[ALG, a] @unchecked =>
+      case op: OptionalValue[String, ALG, a] @unchecked =>
         optionalKvpValueDefinition[a](op).asInstanceOf[EncodeToProto[A]]
 
-      case ld: ListData[ALG, t] @unchecked =>
+      case ld: ListData[String, ALG, t] @unchecked =>
         (fieldNumber: FieldNumber) =>
           {
             val (lastFieldNumber, ft) = determineValueDefinition[t](ld.tDefinition)(fieldNumber)
@@ -347,7 +347,7 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
               }
             )
           }
-      case ed: EitherData[ALG, a, b] @unchecked =>
+      case ed: EitherData[String, ALG, a, b] @unchecked =>
         val encodeToProtobufA: EncodeToProto[a] =
           determineValueDefinition(ed.definitionA)
         val encodeToProtobufB: EncodeToProto[b] =

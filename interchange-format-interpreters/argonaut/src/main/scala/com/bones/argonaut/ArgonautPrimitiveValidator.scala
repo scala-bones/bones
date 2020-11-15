@@ -43,7 +43,7 @@ object ArgonautPrimitiveValidator extends InterchangeFormatPrimitiveValidator[Js
       NonEmptyList.one(WrongTypeError(path, "Boolean", in.getClass.getSimpleName, None)))
 
   override def extractArray[ALG[_], A](
-    op: ListData[ALG, A]
+    op: ListData[String, ALG, A]
   )(in: Json, path: List[String]): Either[ExtractionErrors[String], Seq[Json]] =
     in.array.toRight(
       NonEmptyList.one(WrongTypeError(path, op.typeName, in.getClass.getSimpleName, None)))

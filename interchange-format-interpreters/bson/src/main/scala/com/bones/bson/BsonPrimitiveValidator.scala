@@ -69,7 +69,7 @@ object BsonPrimitiveValidator extends InterchangeFormatPrimitiveValidator[BSONVa
       case x                 => invalidValue(x, "Boolean", path)
     }
 
-  override def extractArray[ALG[_], A](op: ListData[ALG, A])(
+  override def extractArray[ALG[_], A](op: ListData[String, ALG, A])(
     in: BSONValue,
     path: List[String]): Either[ExtractionErrors[String], Seq[BSONValue]] =
     in match {
