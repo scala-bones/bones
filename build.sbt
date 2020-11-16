@@ -46,8 +46,6 @@ lazy val core = (project in file("core"))
     commonSettings,
     name := "Bones",
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % "2.2.0",
-      "org.typelevel" %% "cats-free" % "2.2.0",
       "com.chuusai" %% "shapeless" % "2.3.3",
       "org.scalacheck" %% "scalacheck" % "1.15.1" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
@@ -56,6 +54,21 @@ lazy val core = (project in file("core"))
     ),
     description := "DSL for Data Description using ASTs and interpreters"
   )
+lazy val coreCats = (project in file("core-cats"))
+  .settings(
+    commonSettings,
+    name := "Bones Cats",
+    libraryDependencies ++= Seq(
+      "org.typelevel" %% "cats-core" % "2.2.0",
+      "com.chuusai" %% "shapeless" % "2.3.3",
+      "org.scalacheck" %% "scalacheck" % "1.15.1" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.3" % Test,
+      "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % "3.2.3" % Test
+    ),
+    description := "DSL for Data Description using ASTs and interpreters"
+  )
+  .dependsOn(core)
 lazy val testSchemas = (project in file("examples/test-schemas"))
   .settings(
     commonSettings,
@@ -81,7 +94,7 @@ lazy val scalacheck = (project in file("test-interpreters/scalacheck"))
     ),
     description := "Interpreter to generate scalacheck proper generators"
   )
-  .dependsOn(core, testSchemas % "test")
+  .dependsOn(coreCats, testSchemas % "test")
 lazy val swaggerOas3 = (project in file("interchange-format-interpreters/swagger-oas3"))
   .settings(
     commonSettings,
