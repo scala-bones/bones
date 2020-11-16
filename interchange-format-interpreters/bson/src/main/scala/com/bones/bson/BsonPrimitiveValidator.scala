@@ -1,7 +1,6 @@
 package com.bones.bson
 
-import cats.data.NonEmptyList
-import cats.implicits._
+import com.bones.Util
 import com.bones.data.Error.{CanNotConvert, ExtractionErrors, WrongTypeError}
 import com.bones.data.ListData
 import com.bones.interpreter.InterchangeFormatPrimitiveValidator
@@ -74,10 +73,9 @@ object BsonPrimitiveValidator extends InterchangeFormatPrimitiveValidator[BSONVa
     path: List[String]): Either[ExtractionErrors[String], Seq[BSONValue]] =
     in match {
       case BSONArray(arr) =>
-        arr.toList
-          .map(_.toEither.left.map(List(_)).toValidated)
-          .sequence
-          .toEither match {
+        Util.sequence(
+          arr.toList
+            .map(_.toEither.left.map(List(_)))) match {
           case Right(s) => Right(s)
           case Left(_) =>
             Left(List(CanNotConvert(path, arr, classOf[Seq[_]], None)))

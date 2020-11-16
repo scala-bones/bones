@@ -1,9 +1,8 @@
 package com.bones.data.template
 
-import cats._
-import cats.implicits._
+import cats.Applicative
 import com.bones.data._
-import shapeless.{:+:, ::, CNil, Coproduct, HList, HNil, Inl, Inr, Nat}
+import shapeless.{:+:, ::, CNil, Coproduct, HList, HNil, Nat}
 
 trait KvpCollectionTransformation[K, ALG[_], OUT[_]] {
 
@@ -27,19 +26,22 @@ trait KvpCollectionTransformation[K, ALG[_], OUT[_]] {
   }
 
   def kvpWrappedHList[A, H <: HList, HL <: Nat](
-    wrappedHList: KvpWrappedHList[K, ALG, A, H, HL]): OUT[A] = {
+    wrappedHList: KvpWrappedHList[K, ALG, A, H, HL]
+  ): OUT[A] = {
     val wrappedF = fromKvpCollection(wrappedHList.wrappedEncoding)
     applicativeOfOut.map(wrappedF)(wrappedHList.fHtoA)
   }
 
   def kvpWrappedCoproduct[A, C <: Coproduct](
-    wrappedCoproduct: KvpWrappedCoproduct[K, ALG, A, C]): OUT[A] = {
+    wrappedCoproduct: KvpWrappedCoproduct[K, ALG, A, C]
+  ): OUT[A] = {
     val wrappedF = fromKvpCollection(wrappedCoproduct.wrappedEncoding)
     applicativeOfOut.map(wrappedF)(wrappedCoproduct.fCtoA)
   }
 
   def kvpHListCollectionHead[HO <: HList, NO <: Nat, H <: HList, HL <: Nat, T <: HList, TL <: Nat](
-    kvp: KvpHListCollectionHead[K, ALG, HO, NO, H, HL, T, TL]): OUT[HO] = {
+    kvp: KvpHListCollectionHead[K, ALG, HO, NO, H, HL, T, TL]
+  ): OUT[HO] = {
     val head = fromKvpCollection(kvp.head)
     val tail = fromKvpCollection(kvp.tail)
     val combine = (h: H, t: T) => kvp.prepend(h, t)
@@ -49,7 +51,8 @@ trait KvpCollectionTransformation[K, ALG[_], OUT[_]] {
   def kvpNil(kvp: KvpNil[K, ALG]): OUT[HList] = Applicative[OUT].pure(HNil)
 
   def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
-    kvp: KvpSingleValueHead[K, ALG, H, T, TL, O]): OUT[O] = {
+    kvp: KvpSingleValueHead[K, ALG, H, T, TL, O]
+  ): OUT[O] = {
     val head: OUT[H] = kvp.head match {
       case Left(value) => primitiveEncoder(value)
       case Right(collection) =>
@@ -65,7 +68,8 @@ trait KvpCollectionTransformation[K, ALG[_], OUT[_]] {
     sys.error("Unreachable (I hope)")
 
   def kvpCoproductCollectionHead[A, C <: Coproduct, O <: A :+: C](
-    kvpCoproductCollectionHead: KvpCoproductCollectionHead[K, ALG, A, C, O]): OUT[O]
+    kvpCoproductCollectionHead: KvpCoproductCollectionHead[K, ALG, A, C, O]
+  ): OUT[O]
 
 // TODO: Struggling with a generic implementation for kvpCoproductCollectionHead.
 //       Will have to do some non-generic implementations in order to figure it out.

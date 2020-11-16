@@ -1,6 +1,5 @@
 package com.bones.sprayjson.impl
 
-import cats.data.NonEmptyList
 import com.bones.Path
 import com.bones.data.Error.{ExtractionErrors, RequiredValue, WrongTypeError}
 import com.bones.data.ListData

@@ -1,6 +1,5 @@
 package com.bones.bson
 
-import cats.data.NonEmptyList
 import com.bones.data.Error._
 import com.bones.data._
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
