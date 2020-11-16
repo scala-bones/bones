@@ -30,4 +30,7 @@ case class ClassicCrudDef[ALG[_], A: Manifest, ID: Manifest, CT, E, PE, K](
   val httpId: HttpData[ALG, ID, ID, HNil, ID, CT, K] =
     HttpData(interpreterConfig, idSchema, idSchema, KvpCollection.empty, scvToAlg)
 
+  val httpPathError: HttpData[ALG, HNil, PE, HNil, ID, CT, K] =
+    HttpData(interpreterConfig, KvpCollection.empty, pathErrorSchema, KvpCollection.empty, scvToAlg)
+
 }

@@ -1,10 +1,9 @@
 package com.bones.httpcommon
 
 import com.bones.data.KvpCollection
-import com.bones.data.values.{DefaultValues, ScalaCoreValue}
+import com.bones.data.values.ScalaCoreValue
 import com.bones.interpreter.values.ExtractionErrorEncoder
 import com.bones.interpreter.values.ExtractionErrorEncoder.ErrorResponse
-import shapeless.Inl
 
 /**
   * Creates the Encoders and Validators for the Request, Response and Error responses.
@@ -57,6 +56,12 @@ case class HttpData[ALG[_], REQ, RES, ERR, ID, CT, K](
   def encoderForContent(ct: CT): (CT, EncoderFunc[RES]) =
     if (defaultEncoder._1 == ct) (ct, defaultEncoder._2)
     else supportedEncoders.get(ct).map((ct, _)).getOrElse((defaultEncoder._1, defaultEncoder._2))
+
+  def encoderForOptionalContent(ctOpt: Option[CT]): (CT, EncoderFunc[RES]) =
+    ctOpt.fold(defaultEncoder)(encoderForContent)
+
+  def errorEncoderForOptionalContent(ctOpt: Option[CT]): (CT, EncoderFunc[ERR]) =
+    ctOpt.fold(defaultErrorEncoder)(errorEncoderForContent)
 
   def errorEncoderForContent(ct: CT): (CT, EncoderFunc[ERR]) =
     if (defaultErrorEncoder._1 == ct) (ct, defaultErrorEncoder._2)
