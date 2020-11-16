@@ -1,6 +1,5 @@
 package com.bones.interpreter
 
-import cats.data.NonEmptyList
 import com.bones.data.Error.ExtractionError
 import com.bones.data.values.CNilF
 import shapeless.{:+:, Coproduct, Inl, Inr}
@@ -14,7 +13,7 @@ object InterchangeFormatValidatorValue {
   ): InterchangeFormatValidatorValue[Lambda[A => L[A] :+: R[A]], OUT] =
     new InterchangeFormatValidatorValue[Lambda[A => L[A] :+: R[A]], OUT] {
       override def validate[AA](lr: L[AA] :+: R[AA])
-        : (Option[OUT], List[String]) => Either[NonEmptyList[ExtractionError[String]], AA] =
+        : (Option[OUT], List[String]) => Either[List[ExtractionError[String]], AA] =
         lr match {
           case Inl(l) => li.validate(l)
           case Inr(r) => ri.validate(r)
@@ -31,13 +30,13 @@ object InterchangeFormatValidatorValue {
 
   case class CNilInterchangeFormatValidator[OUT]()
       extends InterchangeFormatValidatorValue[CNilF, OUT] {
-    override def validate[A](alg: CNilF[A])
-      : (Option[OUT], List[String]) => Either[NonEmptyList[ExtractionError[String]], A] =
+    override def validate[A](
+      alg: CNilF[A]): (Option[OUT], List[String]) => Either[List[ExtractionError[String]], A] =
       sys.error("Unreachable code")
   }
 }
 
 trait InterchangeFormatValidatorValue[ALG[_], IN] {
   def validate[A](
-    alg: ALG[A]): (Option[IN], List[String]) => Either[NonEmptyList[ExtractionError[String]], A]
+    alg: ALG[A]): (Option[IN], List[String]) => Either[List[ExtractionError[String]], A]
 }

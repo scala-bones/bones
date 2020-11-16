@@ -2,7 +2,6 @@ package com.bones.jdbc
 
 import java.sql.SQLException
 
-import cats.data.NonEmptyList
 import com.bones.Path
 import com.bones.Util.{NullValue, NullableResult}
 import com.bones.data.Error.{ExtractionErrors, SystemError}
@@ -34,13 +33,13 @@ package object rs {
     try {
       val result = f
       if (result == null) {
-        Right(Left(NonEmptyList.one(NullValue(fieldName, typeName, path))))
+        Right(Left(List(NullValue(fieldName, typeName, path))))
       } else {
         Right(Right(result))
       }
     } catch {
       case ex: SQLException =>
-        Left(NonEmptyList.one(SystemError(path, ex, Some(s"Error extracting field: ${fieldName}"))))
+        Left(List(SystemError(path, ex, Some(s"Error extracting field: ${fieldName}"))))
     }
 
 }

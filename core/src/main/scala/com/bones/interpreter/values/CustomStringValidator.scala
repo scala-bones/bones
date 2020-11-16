@@ -1,6 +1,5 @@
 package com.bones.interpreter.values
 
-import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionErrors, RequiredValue}
 import com.bones.data.values.CustomStringValue
 import com.bones.interpreter.{InterchangeFormatPrimitiveValidator, InterchangeFormatValidatorValue}
@@ -25,7 +24,7 @@ trait CustomStringValidator[IN] extends InterchangeFormatValidatorValue[CustomSt
                   .asInstanceOf[Either[ExtractionErrors[String], A]]
               })
           case None =>
-            Left(NonEmptyList.one(RequiredValue(path, alg.typeName)))
+            Left(List(RequiredValue(path, alg.typeName)))
         }
       }
   }

@@ -14,8 +14,8 @@ import com.bones.data.values.ScalaCoreValue
 import com.bones.data.{KvpCollection, KvpNil}
 import com.bones.interpreter.values.ExtractionErrorEncoder
 import com.bones.interpreter.values.ExtractionErrorEncoder.ErrorResponse
-import com.bones.sprayJsValue.SprayValidatorInterpreter
-import com.bones.sprayjson.sprayjson.IsoSprayEncoderInterpreter
+import com.bones.sprayjson.SprayValidatorInterpreter
+import com.bones.sprayjson.IsoSprayEncoderInterpreter
 import com.bones.sprayjson.values.BaseScalaCoreEncoder
 import spray.json.{JsObject, JsString}
 

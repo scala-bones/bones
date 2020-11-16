@@ -3,11 +3,8 @@ package com.bones.protobuf
 import java.io.{ByteArrayInputStream, IOException}
 import java.time.{LocalDateTime, ZoneOffset}
 
-import cats.data.NonEmptyList
-import cats.syntax.all._
 import com.bones.{Path, Util, data}
 import com.bones.data.Error._
-import com.bones.data.values.CNilF
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpCoproductCollectionHead, _}
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.{ValidationUtil => vu}
@@ -39,7 +36,7 @@ object ProtobufSequentialValidatorInterpreter {
             convert(in, classOf[Boolean], path)(_.readBool()).flatMap(bool =>
               vu.validate(validations)(bool, path)))
         } else {
-          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, "Boolean"))))
+          (canReadTag, Left(List(RequiredValue(path, "Boolean"))))
         }
       }: (CanReadTag, Either[ExtractionErrors[String], Boolean]))
     }
@@ -64,7 +61,7 @@ object ProtobufSequentialValidatorInterpreter {
             .flatMap(bool => vu.validate(validations)(bool, path))
           (true, functionApplied)
         } else {
-          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, typeName))))
+          (canReadTag, Left(List(RequiredValue(path, typeName))))
         }
       }: (CanReadTag, Either[ExtractionErrors[String], A]))
     }
@@ -94,7 +91,7 @@ object ProtobufSequentialValidatorInterpreter {
           val intData = convert(in, classOf[Int], path)(_.readInt32())
           (true, intData.flatMap(i => f(i, path)).flatMap(i => vu.validate(validations)(i, path)))
         } else {
-          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, "Int"))))
+          (canReadTag, Left(List(RequiredValue(path, "Int"))))
         }
       }: (CanReadTag, Either[ExtractionErrors[String], A]))
     }
@@ -114,7 +111,7 @@ object ProtobufSequentialValidatorInterpreter {
             true,
             longResult.flatMap(l => f(l, path)).flatMap(a => vu.validate(validations)(a, path)))
         } else {
-          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, "Long"))))
+          (canReadTag, Left(List(RequiredValue(path, "Long"))))
         }
       }: (CanReadTag, Either[ExtractionErrors[String], A]))
     }
@@ -129,7 +126,7 @@ object ProtobufSequentialValidatorInterpreter {
             .flatMap(i => vu.validate(validations)(i, path))
           (true, result)
         } else {
-          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, "arrayOfByte"))))
+          (canReadTag, Left(List(RequiredValue(path, "arrayOfByte"))))
         }
       }: (CanReadTag, Either[ExtractionErrors[String], Array[Byte]]))
     }
@@ -155,15 +152,11 @@ object ProtobufSequentialValidatorInterpreter {
         } catch {
           case ex: InvalidProtocolBufferException => {
             in.getLastTag
-            (
-              canReadTag,
-              Left(NonEmptyList.one(WrongTypeError(path, "Timestamp", "Unknown", Some(ex)))))
+            (canReadTag, Left(List(WrongTypeError(path, "Timestamp", "Unknown", Some(ex)))))
           }
           case io: IOException => {
             in.getLastTag
-            (
-              canReadTag,
-              Left(NonEmptyList.one(WrongTypeError(path, "Timestamp", "Unknown", Some(io)))))
+            (canReadTag, Left(List(WrongTypeError(path, "Timestamp", "Unknown", Some(io)))))
           }
         }
       }: (CanReadTag, Either[ExtractionErrors[String], A]))
@@ -179,7 +172,7 @@ object ProtobufSequentialValidatorInterpreter {
             convert[Float](in, classOf[Float], path)(_.readFloat()).flatMap(i =>
               vu.validate(validations)(i, path)))
         } else {
-          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, "Float"))))
+          (canReadTag, Left(List(RequiredValue(path, "Float"))))
         }
       }: (CanReadTag, Either[ExtractionErrors[String], Float]))
     }
@@ -193,7 +186,7 @@ object ProtobufSequentialValidatorInterpreter {
             .flatMap(i => vu.validate(validations)(i, path))
           (true, result)
         } else {
-          (canReadTag, Left(NonEmptyList.one(RequiredValue(path, "Double"))))
+          (canReadTag, Left(List(RequiredValue(path, "Double"))))
         }
       }: (CanReadTag, Either[ExtractionErrors[String], Double]))
     }
@@ -202,12 +195,12 @@ object ProtobufSequentialValidatorInterpreter {
     in: CodedInputStream,
     clazz: Class[A],
     path: List[String]
-  )(f: CodedInputStream => A): Either[NonEmptyList[CanNotConvert[String, CodedInputStream, A]], A] =
+  )(f: CodedInputStream => A): Either[List[CanNotConvert[String, CodedInputStream, A]], A] =
     try {
       Right(f(in))
     } catch {
       case e: IOException =>
-        Left(NonEmptyList.one(CanNotConvert(path, in, clazz, Some(e))))
+        Left(List(CanNotConvert(path, in, clazz, Some(e))))
     }
 
 }
@@ -258,7 +251,7 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
             List.empty,
             lastFieldNumber,
             (canRead, _) =>
-              (canRead, Left(NonEmptyList.one(RequiredValue(path, s"coproduct ${kvp} not found")))))
+              (canRead, Left(List(RequiredValue(path, s"coproduct ${kvp} not found")))))
       case op: KvpCoproductCollectionHead[String, ALG, a, c, C] @unchecked =>
         val head = fromKvpCollection(op.kvpCollection)
         (lastFieldNumber, path) =>
@@ -387,9 +380,7 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
               } catch {
                 case ex: InvalidProtocolBufferException => {
                   in.getLastTag
-                  (
-                    canReadTag,
-                    Left(NonEmptyList.one(WrongTypeError(path, kvp.typeName, "Unknown", Some(ex)))))
+                  (canReadTag, Left(List(WrongTypeError(path, kvp.typeName, "Unknown", Some(ex)))))
                 }
               }
             })
@@ -445,8 +436,10 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
       {
         val (tags, lastFieldNumber, f) = child(fieldNumber, path)
         (tags, lastFieldNumber, (canReadTag, in) => {
-          val loopResult = loop(tags, canReadTag, in, path, List.empty, f).sequence
-            .flatMap(i => vu.validate(ld.validations)(i, path))
+          val loopResult =
+            Util
+              .sequence(loop(tags, canReadTag, in, path, List.empty, f))
+              .flatMap(i => vu.validate(ld.validations)(i, path))
           (false, loopResult) //we read in tag to see the last value
         })
       }
@@ -472,7 +465,7 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
             val (canReadResult, result) = cisFB(canReadTag, in)
             (canReadResult, result.map(Right(_)))
           } else {
-            (canReadTag, Left(NonEmptyList.one(RequiredValue(path, ed.typeName))))
+            (canReadTag, Left(List(RequiredValue(path, ed.typeName))))
           }
         }: (CanReadTag, Either[ExtractionErrors[String], Either[B, C]]))
       }
@@ -494,7 +487,7 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
           } catch {
             case ex: InvalidProtocolBufferException => {
               in.getLastTag
-              (true, Left(NonEmptyList.one(WrongTypeError(path, "Object", "Unknown", Some(ex)))))
+              (true, Left(List(WrongTypeError(path, "Object", "Unknown", Some(ex)))))
             }
           }
         }: (CanReadTag, Either[ExtractionErrors[String], A]))

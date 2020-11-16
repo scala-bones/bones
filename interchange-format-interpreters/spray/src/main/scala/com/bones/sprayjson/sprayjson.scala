@@ -1,4 +1,4 @@
-package com.bones.sprayjson
+package com.bones
 
 import com.bones.interpreter.{
   InterchangeFormatEncoderValue,
@@ -6,7 +6,6 @@ import com.bones.interpreter.{
   InterchangeFormatPrimitiveValidator,
   InterchangeFormatValidatorValue
 }
-import com.bones.sprayJsValue.SprayValidatorInterpreter
 import com.bones.sprayjson.impl.{SprayPrimitiveEncoder, SprayPrimitiveValidator}
 import spray.json.JsValue
 

@@ -1,6 +1,5 @@
 package com.bones.interpreter
 
-import cats.data.NonEmptyList
 import com.bones.Path
 import com.bones.data.Error.{ExtractionErrors, RequiredValue}
 import com.bones.data.KeyDefinition.CoproductDataDefinition
@@ -50,7 +49,7 @@ trait InterchangeFormatPrimitiveValidator[IN] {
     (inOpt: Option[IN], path: Path[String]) =>
       for {
         json <- inOpt
-          .toRight(NonEmptyList.one(RequiredValue(path, typeName)))
+          .toRight(List(RequiredValue(path, typeName)))
         a <- f(json, path)
         _ <- ValidationUtil.validate(validations)(a, path)
       } yield a

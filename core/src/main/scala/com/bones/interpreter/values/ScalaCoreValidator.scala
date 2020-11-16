@@ -2,17 +2,11 @@ package com.bones.interpreter.values
 
 import java.util.Base64
 
-import cats.data.NonEmptyList
 import com.bones.Path
 import com.bones.Util.stringToEnumeration
-import com.bones.data.Error
-import com.bones.data.Error.{CanNotConvert, ExtractionError, ExtractionErrors, RequiredValue}
+import com.bones.data.Error.{CanNotConvert, ExtractionErrors, RequiredValue}
 import com.bones.data.values._
-import com.bones.interpreter.{
-  InterchangeFormatPrimitiveValidator,
-  InterchangeFormatValidatorValue,
-  KvpInterchangeFormatValidatorInterpreter
-}
+import com.bones.interpreter.{InterchangeFormatPrimitiveValidator, InterchangeFormatValidatorValue}
 
 import scala.util.Try
 
@@ -51,13 +45,12 @@ trait ScalaCoreValidator[IN] extends InterchangeFormatValidatorValue[ScalaCoreVa
         val decoder = Base64.getDecoder
         (inOpt: Option[IN], path: Path[String]) =>
           for {
-            in <- inOpt.toRight[ExtractionErrors[String]](
-              NonEmptyList.one(RequiredValue(path, alg.typeName)))
+            in <- inOpt.toRight[ExtractionErrors[String]](List(RequiredValue(path, alg.typeName)))
             str <- baseValidator.extractString(Right(op), alg.typeName)(in, path)
             arr <- Try {
               decoder.decode(str)
             }.toEither.left.map(thr =>
-              NonEmptyList.one(CanNotConvert(path, str, classOf[Array[Byte]], Some(thr))))
+              List(CanNotConvert(path, str, classOf[Array[Byte]], Some(thr))))
           } yield arr
       case fd: FloatData =>
         baseValidator.required(
@@ -86,8 +79,7 @@ trait ScalaCoreValidator[IN] extends InterchangeFormatValidatorValue[ScalaCoreVa
       case op: EnumerationData[e, A] =>
         (inOpt: Option[IN], path: Path[String]) =>
           for {
-            in <- inOpt.toRight[ExtractionErrors[String]](
-              NonEmptyList.one(RequiredValue(path, alg.typeName)))
+            in <- inOpt.toRight[ExtractionErrors[String]](List(RequiredValue(path, alg.typeName)))
             str <- baseValidator.extractString(Right(alg), alg.typeName)(in, path)
             enum <- stringToEnumeration[String, e, A](str, path, op.enumeration.asInstanceOf[e])
           } yield enum.asInstanceOf[A]

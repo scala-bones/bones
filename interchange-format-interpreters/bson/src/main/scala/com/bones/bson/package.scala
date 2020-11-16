@@ -1,6 +1,5 @@
 package com.bones
 
-import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionErrors, ParsingError}
 import com.bones.interpreter.{InterchangeFormatEncoderValue, InterchangeFormatValidatorValue}
 import reactivemongo.bson.buffer.{ArrayBSONBuffer, ArrayReadableBuffer}
@@ -17,7 +16,7 @@ package object bson {
     val buffer = ArrayReadableBuffer(arr)
     Try {
       BSONDocument.read(buffer)
-    }.toEither.left.map(err => NonEmptyList.one(ParsingError(err.getMessage)))
+    }.toEither.left.map(err => List(ParsingError(err.getMessage)))
   }
 
   def bsonResultToBytes(bsonValue: BSONValue): Array[Byte] = {

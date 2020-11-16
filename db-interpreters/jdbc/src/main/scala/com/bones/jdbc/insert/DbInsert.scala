@@ -2,8 +2,7 @@ package com.bones.jdbc.insert
 
 import java.sql._
 
-import cats.data.NonEmptyList
-import com.bones.data.Error.{ExtractionError, ExtractionErrors, SystemError}
+import com.bones.data.Error.{ExtractionErrors, SystemError}
 import com.bones.data.KeyDefinition.CoproductDataDefinition
 import com.bones.data.KvpCollection.headTypeName
 import com.bones.data._
@@ -41,8 +40,7 @@ trait DbInsert[ALG[_]]
             result
           } catch {
             case ex: SQLException =>
-              Left(
-                NonEmptyList.one(SystemError(List.empty, ex, Some("Error retrieving connection"))))
+              Left(List(SystemError(List.empty, ex, Some("Error retrieving connection"))))
           }
         }
       }
@@ -77,7 +75,7 @@ trait DbInsert[ALG[_]]
               con.commit()
               Right(updates.map(_.sum).sum)
             } catch {
-              case NonFatal(ex) => Left(NonEmptyList.one(SystemError(List.empty, ex, None)))
+              case NonFatal(ex) => Left(List(SystemError(List.empty, ex, None)))
             } finally {
               con.setAutoCommit(originalAc)
             }
@@ -119,7 +117,7 @@ trait DbInsert[ALG[_]]
               }
             } catch {
               case e: SQLException =>
-                Left(NonEmptyList.one(SystemError(e, Some("SQL Statement: " + sql))))
+                Left(List(SystemError(e, Some("SQL Statement: " + sql))))
             } finally {
               statement.close()
             }

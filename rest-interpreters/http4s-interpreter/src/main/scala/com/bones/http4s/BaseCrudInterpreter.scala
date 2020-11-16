@@ -131,12 +131,12 @@ object BaseCrudInterpreter {
     * @param H The Http4s DSL
     * @return Response with the errors encoded appropriately
     */
-  def extractionErrorToResponse[F[_]](
-    ee: NonEmptyList[ExtractionError[String]],
-    contentType: String)(implicit F: Sync[F], H: Http4sDsl[F]): F[Response[F]] = {
+  def extractionErrorToResponse[F[_]](ee: List[ExtractionError[String]], contentType: String)(
+    implicit F: Sync[F],
+    H: Http4sDsl[F]): F[Response[F]] = {
     // This import os for the EntityResponseGenerator
     import H._
-    val errorResponse = ErrorResponse(ee.toList)
+    val errorResponse = ErrorResponse(ee)
     contentType match {
       case "application/ubjson" =>
         val bson = bsonEncoder(errorResponse)

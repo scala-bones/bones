@@ -1,6 +1,5 @@
 package com.bones.data.template
 
-import cats.data.NonEmptyList
 import com.bones.{Path, Util}
 import com.bones.data.Error.{ExtractionError, ExtractionErrors, RequiredValue, SumTypeError}
 import com.bones.data.{
@@ -35,7 +34,7 @@ trait KvpCollectionValidateAndDecode[K, ALG[_], IN] {
       case kvp: KvpWrappedCoproduct[K, ALG, a, c] @unchecked => kvpSuperclass(kvp)
       case kvp: KvpCoNil[K, ALG] =>
         (_, path) =>
-          Left(NonEmptyList.one(RequiredValue(path, "Coproduct")))
+          Left(List(RequiredValue(path, "Coproduct")))
       case kvp: KvpCoproductCollectionHead[K, ALG, a, c, o] =>
         kvpCoproductCollectionHead[a, c, o](kvp).asInstanceOf[InputF[K, A]]
       case kvp: KvpSingleValueHead[K, ALG, h, t, tl, a] @unchecked =>
@@ -128,7 +127,7 @@ trait KvpCollectionValidateAndDecode[K, ALG[_], IN] {
       co match {
         case _: KvpCoNil[K, _] =>
           (_: IN, path: Path[K], coType: CoproductType) =>
-            Left(NonEmptyList.one(SumTypeError(path, s"Unexpected type value: ${coType}")))
+            Left(List(SumTypeError(path, s"Unexpected type value: ${coType}")))
         case co: KvpCoproductCollectionHead[K, ALG, a, r, o] @unchecked => {
           val fValue = fromKvpCollection[a](co.kvpCollection)
           val fTail = nestedKvpCoproduct[r](co.kvpTail)
@@ -146,7 +145,7 @@ trait KvpCollectionValidateAndDecode[K, ALG[_], IN] {
       {
         coproductType(in) match {
           case None =>
-            Left(NonEmptyList.one(RequiredValue(path, s"${headCoproduct.typeNameOfA}")))
+            Left(List(RequiredValue(path, s"${headCoproduct.typeNameOfA}")))
           case Some(typeString) => nextedF(in, path, typeString)
         }
       }

@@ -46,7 +46,7 @@ trait BsonValidatorInterpreter[ALG[_]]
       case _: BSONDocument => classOf[Object]
       case _               => classOf[Any]
     }
-    Left(NonEmptyList.one(WrongTypeError(path, typeName, invalid.getSimpleName, None)))
+    Left(List(WrongTypeError(path, typeName, invalid.getSimpleName, None)))
   }
 
   override def headValue[A](

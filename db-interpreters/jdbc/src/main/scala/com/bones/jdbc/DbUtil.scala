@@ -2,7 +2,6 @@ package com.bones.jdbc
 
 import java.sql.{CallableStatement, Connection, SQLException}
 
-import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionErrors, SystemError}
 import javax.sql.DataSource
 
@@ -42,13 +41,13 @@ object DbUtil {
         result
       } catch {
         case ex: SQLException =>
-          Left(NonEmptyList.one(SystemError(List.empty, ex, None)))
+          Left(List(SystemError(List.empty, ex, None)))
       } finally {
         con.close()
       }
     } catch {
       case ex: SQLException =>
-        Left(NonEmptyList.one(SystemError(List.empty, ex, None)))
+        Left(List(SystemError(List.empty, ex, None)))
     }
   }
 
@@ -59,7 +58,7 @@ object DbUtil {
       f(con)
     } catch {
       case NonFatal(th) =>
-        Left(NonEmptyList.one(SystemError(th, Some("Error executing CallableStatement"))))
+        Left(List(SystemError(th, Some("Error executing CallableStatement"))))
     } finally {
       con.close()
     }

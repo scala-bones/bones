@@ -1,8 +1,6 @@
 package com.bones.bson.values
 
-import cats.data.NonEmptyList
 import com.bones.bson.BsonPrimitiveValidator
-import com.bones.data.Error
 import com.bones.data.Error.{ExtractionErrors, RequiredValue}
 import com.bones.data.values.CustomStringValue
 import com.bones.interpreter.InterchangeFormatValidatorValue
@@ -19,7 +17,7 @@ trait BsonCustomStringValidator
           BsonPrimitiveValidator
             .extractString(Right(alg), "String")(bsonVal, path)
             .asInstanceOf[Either[ExtractionErrors[String], A]]
-        case None => Left(NonEmptyList.one(RequiredValue(path, alg.typeName)))
+        case None => Left(List(RequiredValue(path, alg.typeName)))
 
     }
 }

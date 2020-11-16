@@ -1,6 +1,5 @@
 package com.bones.interpreter
 
-import cats.data.NonEmptyList
 import com.bones.data.Error._
 import com.bones.data.KeyDefinition.CoproductDataDefinition
 import com.bones.data.template.KvpCollectionValidateAndDecode
@@ -117,7 +116,7 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
           def appendArrayIndex(path: Path[String], index: Int): List[String] = {
             if (path.isEmpty) path
             else
-              path.updated(path.length - 1, path(path.length - 1) + s"[${index}]")
+              path.updated(path.length - 1, path.lastOption.getOrElse("") + s"[${index}]")
           }
 
           def traverseArray(
@@ -140,7 +139,7 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
           (inOpt: Option[IN], path: Path[String]) =>
             {
               for {
-                in <- inOpt.toRight(NonEmptyList.one(RequiredValue(path, op.typeNameOfT)))
+                in <- inOpt.toRight(List(RequiredValue(path, op.typeNameOfT)))
                 arr <- interchangeFormatPrimitiveValidator.extractArray(op)(in, path)
                 listOfIn <- traverseArray(arr, path)
               } yield listOfIn
@@ -154,7 +153,7 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
                 case Some(json) =>
                   fg(json, path)
                     .flatMap(res => vu.validate[String, A](op.validations)(res, path))
-                case None => Left(NonEmptyList.one(RequiredValue(path, op.typeName)))
+                case None => Left(List(RequiredValue(path, op.typeName)))
               }
             }
         }
@@ -162,18 +161,4 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
     result
   }
 
-  private def combine[H <: HList, T <: HList, HO <: HList](
-    path: List[String],
-    head: Either[ExtractionErrors[String], H],
-    tail: Either[ExtractionErrors[String], T],
-    prepend: Prepend.Aux[H, T, HO],
-    validations: List[ValidationOp[HO]]) = {
-    Util
-      .eitherMap2(head, tail)((l1: H, l2: T) => {
-        prepend.apply(l1, l2)
-      })
-      .flatMap { l =>
-        vu.validate[String, HO](validations)(l, path)
-      }
-  }
 }

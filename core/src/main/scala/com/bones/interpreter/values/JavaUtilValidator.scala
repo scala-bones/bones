@@ -1,8 +1,6 @@
 package com.bones.interpreter.values
 
-import cats.data.NonEmptyList
 import com.bones.Util.stringToUuid
-import com.bones.data.Error
 import com.bones.data.Error.ExtractionErrors
 import com.bones.data.values.{JavaUtilValue, UuidData}
 import com.bones.interpreter.{InterchangeFormatPrimitiveValidator, InterchangeFormatValidatorValue}

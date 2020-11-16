@@ -1,7 +1,5 @@
 package com.bones.validation
 
-import cats.data.NonEmptyList
-import cats.syntax.all._
 import com.bones.data.Error.ValidationError
 import com.bones.validation.ValidationDefinition.ValidationOp
 
@@ -15,12 +13,12 @@ object ValidationUtil {
   /** Validate the input with all specified validations.  If any failed then Left, else Right(input) */
   def validate[K, L](validations: List[ValidationOp[L]])(
     input: L,
-    path: List[K]): Either[NonEmptyList[ValidationError[K, L]], L] = {
+    path: List[K]): Either[List[ValidationError[K, L]], L] = {
     validations.flatMap(validation => {
       if (validation.isValid(input)) None
       else Some(ValidationError(path, validation, input))
     }) match {
-      case head :: tail => Left(NonEmptyList(head, tail))
+      case head :: tail => Left(head :: tail)
       case _            => Right(input)
     }
   }
@@ -30,7 +28,7 @@ object ValidationUtil {
   /** True if the string passes the Luhn algorithm using the specified mod variable. */
   def luhnCheck(mod: Int, str: String): Boolean = {
     str.reverse.toList match {
-      case x :: xs => (luhnSum(xs, 0, 2) * 9) % mod === digitToInt(x)
+      case x :: xs => (luhnSum(xs, 0, 2) * 9) % mod == digitToInt(x)
       case _       => false
     }
   }
