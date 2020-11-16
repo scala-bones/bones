@@ -1,6 +1,5 @@
 package com.bones.data
 
-import cats.data.NonEmptyList
 import com.bones.validation.ValidationDefinition.ValidationOp
 
 /**
@@ -8,7 +7,7 @@ import com.bones.validation.ValidationDefinition.ValidationOp
   */
 object Error {
 
-  type ExtractionErrors[K] = NonEmptyList[ExtractionError[K]]
+  type ExtractionErrors[K] = List[ExtractionError[K]]
 
   /** Error Case */
   sealed abstract class ExtractionError[K] {

@@ -1,12 +1,8 @@
 package com.bones
 import java.io.IOException
-import java.time.ZoneOffset
 
-import cats.data.NonEmptyList
 import com.bones.data.Error.ExtractionError
-import com.bones.data.values.DefaultValues
 import com.google.protobuf.{CodedInputStream, CodedOutputStream}
-import shapeless.{Coproduct, HList}
 
 package object protobuf {
 
@@ -15,7 +11,7 @@ package object protobuf {
   type LastFieldNumber = Int
   type ComputeSize = () => Int
   type Encode =
-    CodedOutputStream => Either[NonEmptyList[IOException], CodedOutputStream]
+    CodedOutputStream => Either[List[IOException], CodedOutputStream]
   type ComputeEncode[A] = A => (ComputeSize, Encode)
   type EncodeToProto[A] = FieldNumber => (LastFieldNumber, ComputeEncode[A])
 
@@ -41,9 +37,7 @@ package object protobuf {
     (LastFieldNumber, Path[String]) => (
       List[Tag],
       LastFieldNumber,
-      (CanReadTag, CodedInputStream) => (
-        CanReadTag,
-        Either[NonEmptyList[ExtractionError[String]], A])
+      (CanReadTag, CodedInputStream) => (CanReadTag, Either[List[ExtractionError[String]], A])
     )
 //  type ExtractHListFromProto[H <: HList] =
 //    (LastFieldNumber, Path) => (

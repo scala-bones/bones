@@ -128,8 +128,8 @@ class ValidationTest extends AnyFunSuite {
     val btCc = jsonToCCProgram.apply(parsed)
 
     btCc match {
-      case Left(NonEmptyList(head, tail)) => {
-        assert(head.path === List("billingLocation", "countryIso"))
+      case Left(list) => {
+        assert(list.head.path === List("billingLocation", "countryIso"))
       }
       case Right(x) => fail(s"Expected fail, received ${x}")
     }

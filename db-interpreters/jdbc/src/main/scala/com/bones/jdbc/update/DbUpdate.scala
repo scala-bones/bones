@@ -2,7 +2,6 @@ package com.bones.jdbc.update
 
 import java.sql.{Connection, SQLException}
 
-import cats.data.NonEmptyList
 import com.bones.data.Error.SystemError
 import com.bones.data.KvpCollection.headTypeName
 import com.bones.data._
@@ -16,7 +15,7 @@ trait DbUpdate[ALG[_]] {
   def updateQuery[A, ID](
     bonesSchema: KvpCollection[String, ALG, A],
     idSchema: KvpCollection[String, ALG, ID])
-    : (ID, A) => Connection => Either[NonEmptyList[SystemError[String]], ID] = {
+    : (ID, A) => Connection => Either[List[SystemError[String]], ID] = {
     val tableName = camelToSnake(headTypeName(bonesSchema).getOrElse("Unknown"))
     val updates = jdbcStatementInterpreter.fromKvpCollection(bonesSchema)(1)
     val idIndex = updates.lastIndex
@@ -42,7 +41,7 @@ trait DbUpdate[ALG[_]] {
             Right(id)
           } catch {
             case e: SQLException =>
-              Left(NonEmptyList.one(SystemError(e, Some(sql))))
+              Left(List(SystemError(e, Some(sql))))
           } finally {
             statement.close()
           }

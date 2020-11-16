@@ -1,9 +1,7 @@
-package com.bones.sprayJsValue
+package com.bones.sprayjson
 
 import java.nio.charset.Charset
-import java.security.KeyStore.TrustedCertificateEntry
 
-import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionError, ParsingError, WrongTypeError}
 import com.bones.data.{KeyDefinition, _}
 import com.bones.interpreter.{
@@ -12,7 +10,6 @@ import com.bones.interpreter.{
   KvpInterchangeFormatValidatorInterpreter
 }
 import spray.json._
-import DefaultJsonProtocol._
 
 import scala.util.Try
 
@@ -34,7 +31,7 @@ trait SprayValidatorInterpreter[ALG[_]]
   override def invalidValue[T](
     value: JsValue,
     typeName: String,
-    path: List[String]): Left[NonEmptyList[WrongTypeError[String, T]], Nothing] = {
+    path: List[String]): Left[List[WrongTypeError[String, T]], Nothing] = {
     val invalid = value match {
       case JsNull       => classOf[Nothing]
       case JsArray(_)   => classOf[Array[_]]
@@ -44,27 +41,25 @@ trait SprayValidatorInterpreter[ALG[_]]
       case JsString(_)  => classOf[String]
     }
 
-    Left(NonEmptyList.one(WrongTypeError(path, typeName, invalid.getSimpleName, None)))
+    Left(List(WrongTypeError(path, typeName, invalid.getSimpleName, None)))
   }
 
   override def headValue[A](
     in: JsValue,
     kv: KeyDefinition[String, ALG, A],
-    headInterpreter: (
-      Option[JsValue],
-      List[String]) => Either[NonEmptyList[ExtractionError[String]], A],
-    path: List[String]): Either[NonEmptyList[ExtractionError[String]], A] =
+    headInterpreter: (Option[JsValue], List[String]) => Either[List[ExtractionError[String]], A],
+    path: List[String]): Either[List[ExtractionError[String]], A] =
     Try(in.asJsObject).toOption match {
       case Some(value) =>
         headInterpreter(value.fields.find(_._1 == kv.key).map(_._2), path)
       case None =>
-        Left(NonEmptyList.one(WrongTypeError(path, kv.typeName, in.getClass.getSimpleName, None)))
+        Left(List(WrongTypeError(path, kv.typeName, in.getClass.getSimpleName, None)))
     }
 
   def generateByteArrayValidator[A](
     schema: KvpCollection[String, ALG, A],
     charset: Charset
-  ): Array[Byte] => Either[NonEmptyList[ExtractionError[String]], A] = {
+  ): Array[Byte] => Either[List[ExtractionError[String]], A] = {
     val f = fromKvpCollection(schema)
     bytes =>
       fromByteArray(bytes, charset).flatMap(f(_, List.empty))
@@ -72,9 +67,9 @@ trait SprayValidatorInterpreter[ALG[_]]
 
   private def fromByteArray(
     arr: Array[Byte],
-    charSet: Charset): Either[NonEmptyList[ParsingError[String]], JsValue] = {
+    charSet: Charset): Either[List[ParsingError[String]], JsValue] = {
     val input = new String(arr, charSet)
-    Try(input.parseJson).toEither.left.map(x => NonEmptyList.one(ParsingError(x.getMessage)))
+    Try(input.parseJson).toEither.left.map(x => List(ParsingError(x.getMessage)))
   }
 
 }

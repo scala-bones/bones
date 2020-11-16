@@ -3,15 +3,9 @@ package com.bones.interpreter.values
 import java.time._
 import java.time.format.{DateTimeFormatter, DateTimeParseException}
 
-import cats.data.NonEmptyList
-import com.bones.data.Error
 import com.bones.data.Error.{CanNotConvert, ExtractionErrors, RequiredValue}
 import com.bones.data.values._
-import com.bones.interpreter.{
-  InterchangeFormatPrimitiveValidator,
-  InterchangeFormatValidatorValue,
-  KvpInterchangeFormatValidatorInterpreter
-}
+import com.bones.interpreter.{InterchangeFormatPrimitiveValidator, InterchangeFormatValidatorValue}
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.ValidationUtil
 
@@ -25,9 +19,9 @@ object JavaTimeValidator {
       Right(f(input))
     } catch {
       case ex: DateTimeParseException =>
-        Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDateTime], Some(ex))))
+        Left(List(CanNotConvert(path, input, classOf[LocalDateTime], Some(ex))))
       case ex: IllegalArgumentException =>
-        Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDateTime], Some(ex))))
+        Left(List(CanNotConvert(path, input, classOf[LocalDateTime], Some(ex))))
     }
 
   def parseTime[ALG[_], A, OUT](
@@ -45,7 +39,7 @@ object JavaTimeValidator {
               .flatMap(result => errorHandleTimeParsing(path, f, result))
               .flatMap(result => ValidationUtil.validate(validations)(result, path))
           case None =>
-            Left(NonEmptyList.one(RequiredValue(path, javaTimeAlgebra.typeName)))
+            Left(List(RequiredValue(path, javaTimeAlgebra.typeName)))
         }
       }
   }
@@ -63,7 +57,7 @@ object JavaTimeValidator {
             .map(result => Year.of(result))
             .flatMap(result => ValidationUtil.validate(validations)(result, path))
         case None =>
-          Left(NonEmptyList.one(RequiredValue(path, javaTimeValue.typeName)))
+          Left(List(RequiredValue(path, javaTimeValue.typeName)))
       }
     }
 }

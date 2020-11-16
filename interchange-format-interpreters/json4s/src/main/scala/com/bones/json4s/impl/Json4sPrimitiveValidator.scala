@@ -1,6 +1,5 @@
 package com.bones.json4s.impl
 
-import cats.data.NonEmptyList
 import com.bones.Path
 import com.bones.data.Error.{CanNotConvert, ExtractionErrors, RequiredValue, WrongTypeError}
 import com.bones.data.ListData
@@ -26,7 +25,7 @@ object Json4sPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JVal
     value: N,
     f: N => NN): Either[ExtractionErrors[String], NN] =
     Try(f(value)).toEither.left.map(ex =>
-      NonEmptyList.one(CanNotConvert(path, value, manifest[NN].runtimeClass, Some(ex))))
+      List(CanNotConvert(path, value, manifest[NN].runtimeClass, Some(ex))))
 
   override def extractInt[ALG2[_], A](
     op: ALG2[A]
@@ -36,7 +35,7 @@ object Json4sPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JVal
       case JLong(l)    => tryNumberConversion[Long, Int](path, l, _.toInt)
       case JDecimal(d) => tryNumberConversion[BigDecimal, Int](path, d, _.toInt)
       case JDouble(d)  => tryNumberConversion[Double, Int](path, d, _.toInt)
-      case _           => Left(NonEmptyList.one(WrongTypeError(path, "Int", in.getClass.getSimpleName, None)))
+      case _           => Left(List(WrongTypeError(path, "Int", in.getClass.getSimpleName, None)))
     }
   }
 
@@ -49,7 +48,7 @@ object Json4sPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JVal
       case JDecimal(d) => tryNumberConversion[BigDecimal, Float](path, d, _.toFloat)
       case JDouble(d)  => tryNumberConversion[Double, Float](path, d, _.toFloat)
       case _ =>
-        Left(NonEmptyList.one(WrongTypeError(path, "Float", in.getClass.getSimpleName, None)))
+        Left(List(WrongTypeError(path, "Float", in.getClass.getSimpleName, None)))
     }
   }
 
@@ -62,7 +61,7 @@ object Json4sPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JVal
       case JDecimal(d) => tryNumberConversion[BigDecimal, Double](path, d, _.toDouble)
       case JDouble(d)  => Right(d)
       case _ =>
-        Left(NonEmptyList.one(WrongTypeError(path, "Double", in.getClass.getSimpleName, None)))
+        Left(List(WrongTypeError(path, "Double", in.getClass.getSimpleName, None)))
     }
   }
 
@@ -76,7 +75,7 @@ object Json4sPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JVal
         case JDecimal(d) => tryNumberConversion[BigDecimal, Long](path, d, _.toLong)
         case JDouble(d)  => tryNumberConversion[Double, Long](path, d, _.toLong)
         case _ =>
-          Left(NonEmptyList.one(WrongTypeError(path, "Long", in.getClass.getSimpleName, None)))
+          Left(List(WrongTypeError(path, "Long", in.getClass.getSimpleName, None)))
       }
     }
   }
@@ -90,7 +89,7 @@ object Json4sPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JVal
       case JDecimal(d) => tryNumberConversion[BigDecimal, Short](path, d, _.toShort)
       case JDouble(d)  => tryNumberConversion[Double, Short](path, d, _.toShort)
       case _ =>
-        Left(NonEmptyList.one(WrongTypeError(path, "Short", in.getClass.getSimpleName, None)))
+        Left(List(WrongTypeError(path, "Short", in.getClass.getSimpleName, None)))
     }
   }
 
@@ -121,7 +120,7 @@ object Json4sPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JVal
       case JDecimal(d) => Right(d)
       case JDouble(d)  => tryNumberConversion[Double, BigDecimal](path, d, BigDecimal(_))
       case _ =>
-        Left(NonEmptyList.one(WrongTypeError(path, "BigDecimal", in.getClass.getSimpleName, None)))
+        Left(List(WrongTypeError(path, "BigDecimal", in.getClass.getSimpleName, None)))
     }
   }
 
@@ -144,7 +143,7 @@ object Json4sPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JVal
       case JNull => RequiredValue(path, typeName)
       case _     => WrongTypeError(path, typeName, in.getClass.getSimpleName, None)
     }
-    NonEmptyList.one(error)
+    List(error)
   }
 
 }

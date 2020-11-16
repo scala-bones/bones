@@ -2,9 +2,8 @@ package com.bones.jdbc
 
 import java.sql.{Connection, ResultSet}
 
-import cats.data.NonEmptyList
 import cats.effect.IO
-import com.bones.data.Error.{ExtractionError, ExtractionErrors}
+import com.bones.data.Error.ExtractionErrors
 import com.bones.data.KvpCollection.headTypeName
 import com.bones.data.{KvpCollection, KvpNil}
 import com.bones.jdbc.DbUtil.camelToSnake
@@ -33,8 +32,8 @@ trait DbSearch[ALG[_]] {
 
   private def extractToStream[A, ID](
     rs: ResultSet,
-    resultSetF: ResultSet => Either[NonEmptyList[ExtractionError[String]], (ID, A)])
-    : Stream[IO, Either[NonEmptyList[ExtractionError[String]], (ID, A)]] = {
+    resultSetF: ResultSet => Either[ExtractionErrors[String], (ID, A)])
+    : Stream[IO, Either[ExtractionErrors[String], (ID, A)]] = {
     if (rs.next()) {
       val next = resultSetF(rs)
       Stream(next) ++ extractToStream(rs, resultSetF)

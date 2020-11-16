@@ -1,6 +1,5 @@
 package com.bones.json4s
 
-import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionErrors, WrongTypeError}
 import com.bones.data.KeyDefinition
 import com.bones.interpreter.{
@@ -25,7 +24,7 @@ trait Json4sValidatorInterpreter[ALG[_]]
   override def invalidValue[T](
     value: JValue,
     typeName: String,
-    path: List[String]): Left[NonEmptyList[WrongTypeError[String, T]], Nothing] = {
+    path: List[String]): Left[List[WrongTypeError[String, T]], Nothing] = {
     val invalid = value match {
       case JNull       => classOf[Nothing]
       case JArray(_)   => classOf[Array[_]]
@@ -40,7 +39,7 @@ trait Json4sValidatorInterpreter[ALG[_]]
       case JSet(_)     => classOf[Set[JValue]]
     }
 
-    Left(NonEmptyList.one(WrongTypeError(path, typeName, invalid.getSimpleName, None)))
+    Left(List(WrongTypeError(path, typeName, invalid.getSimpleName, None)))
   }
 
   override def headValue[A](

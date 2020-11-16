@@ -2,7 +2,6 @@ package com.bones.jdbc.rs
 
 import java.sql.ResultSet
 
-import cats.data.NonEmptyList
 import com.bones.Util.{NullValue, NullableResult, eitherMap2Nullable}
 import com.bones.data.Error.{ExtractionErrors, RequiredValue}
 import com.bones.data.KeyDefinition.CoproductDataDefinition
@@ -182,7 +181,7 @@ trait ResultSetInterpreter[ALG[_]]
     path: Path[String]): Either[ExtractionErrors[String], NullableResult[String, C]] = {
     kvp match {
       case _: KvpCoNil[String, ALG] =>
-        Right(Left(NonEmptyList.one(NullValue(kvp.typeNameOfA, kvp.typeNameOfA, path))))
+        Right(Left(List(NullValue(kvp.typeNameOfA, kvp.typeNameOfA, path))))
       case head: KvpCoproductCollectionHead[String, ALG, a, c, C] => {
         if (head.typeNameOfA.capitalize == dtype) {
           fromKvpCollection(head.kvpCollection)(path)(rs).map(nv => nv.map(Inl(_).asInstanceOf[C]))

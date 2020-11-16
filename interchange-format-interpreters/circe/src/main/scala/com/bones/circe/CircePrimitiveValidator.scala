@@ -1,6 +1,5 @@
 package com.bones.circe
 
-import cats.data.NonEmptyList
 import com.bones.Path
 import com.bones.data.Error.{ExtractionErrors, RequiredValue, WrongTypeError}
 import com.bones.data.ListData
@@ -18,32 +17,31 @@ object CircePrimitiveValidator extends InterchangeFormatPrimitiveValidator[Json]
     op: ALG2[A])(in: Json, path: List[String]): Either[ExtractionErrors[String], Int] =
     in.asNumber
       .flatMap(_.toInt)
-      .toRight(NonEmptyList.one(WrongTypeError(path, "Int", in.getClass.getSimpleName, None)))
+      .toRight(List(WrongTypeError(path, "Int", in.getClass.getSimpleName, None)))
 
   override def extractFloat[ALG2[_], A](
     op: ALG2[A])(in: Json, path: List[String]): Either[ExtractionErrors[String], Float] =
     in.asNumber
       .map(_.toDouble.toFloat)
-      .toRight(NonEmptyList.one(WrongTypeError(path, "Float", in.getClass.getSimpleName, None)))
+      .toRight(List(WrongTypeError(path, "Float", in.getClass.getSimpleName, None)))
 
   override def extractDouble[ALG2[_], A](
     op: ALG2[A])(in: Json, path: List[String]): Either[ExtractionErrors[String], Double] =
     in.asNumber
       .map(_.toDouble)
-      .toRight(NonEmptyList.one(WrongTypeError(path, "Double", in.getClass.getSimpleName, None)))
+      .toRight(List(WrongTypeError(path, "Double", in.getClass.getSimpleName, None)))
 
-  override def extractLong[ALG2[_], A](op: ALG2[A])(
-    in: Json,
-    path: List[String]): Either[NonEmptyList[WrongTypeError[String, Long]], Long] =
+  override def extractLong[ALG2[_], A](
+    op: ALG2[A])(in: Json, path: List[String]): Either[List[WrongTypeError[String, Long]], Long] =
     in.asNumber
       .flatMap(_.toLong)
-      .toRight(NonEmptyList.one(WrongTypeError(path, "Long", in.getClass.getSimpleName, None)))
+      .toRight(List(WrongTypeError(path, "Long", in.getClass.getSimpleName, None)))
 
   override def extractShort[ALG2[_], A](
     op: ALG2[A])(in: Json, path: List[String]): Either[ExtractionErrors[String], Short] =
     in.asNumber
       .flatMap(_.toShort)
-      .toRight(NonEmptyList.one(WrongTypeError(path, "Short", in.getClass.getSimpleName, None)))
+      .toRight(List(WrongTypeError(path, "Short", in.getClass.getSimpleName, None)))
 
   override def extractBool[ALG2[_], A](
     op: ALG2[A])(in: Json, path: List[String]): Either[ExtractionErrors[String], Boolean] =
@@ -76,7 +74,7 @@ object CircePrimitiveValidator extends InterchangeFormatPrimitiveValidator[Json]
     val error =
       if (in.isNull) RequiredValue(path, typeName)
       else WrongTypeError(path, typeName, in.getClass.getSimpleName, None)
-    NonEmptyList.one(error)
+    List(error)
   }
 
 }

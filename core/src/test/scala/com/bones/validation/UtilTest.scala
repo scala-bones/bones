@@ -4,7 +4,6 @@ import java.time.{LocalDate, LocalDateTime}
 import java.time.format.DateTimeFormatter
 import java.{util => ju}
 
-import cats.data.NonEmptyList
 import com.bones.Util
 import com.bones.data.Error.CanNotConvert
 import org.scalatest.funsuite.AnyFunSuite
@@ -87,18 +86,18 @@ class UtilTest extends AnyFunSuite with Checkers with Matchers {
   val error2 = CanNotConvert(path, "input2", classOf[LocalDate], Some(new Throwable()))
   test("eitherMap2 accumulate error") {
     val result =
-      Util.eitherMap2(Left(NonEmptyList.one(error1)), Left(NonEmptyList.one(error2)))((a, b) => ???)
-    result mustBe Left(NonEmptyList(error1, List(error2)))
+      Util.eitherMap2(Left(List(error1)), Left(List(error2)))((a, b) => ???)
+    result mustBe Left(List(error1, error2))
   }
 
   test("eitherMap2 error on first input") {
-    val result = Util.eitherMap2(Left(NonEmptyList.one(error1)), Right("good"))((a, b) => ???)
-    result mustBe Left(NonEmptyList.one(error1))
+    val result = Util.eitherMap2(Left(List(error1)), Right("good"))((a, b) => ???)
+    result mustBe Left(List(error1))
   }
 
   test("eitherMap2 error on second input") {
-    val result = Util.eitherMap2(Right("good"), Left(NonEmptyList.one(error2)))((a, b) => ???)
-    result mustBe Left(NonEmptyList.one(error2))
+    val result = Util.eitherMap2(Right("good"), Left(List(error2)))((a, b) => ???)
+    result mustBe Left(List(error2))
   }
   test("either map2 success") {
     val result = Util.eitherMap2(Right("good"), Right("job"))((a, b) => a + b)

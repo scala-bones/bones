@@ -35,11 +35,11 @@ object BsonPrimitiveValidator extends InterchangeFormatPrimitiveValidator[BSONVa
       case BSONInteger(i) =>
         Try({
           i.toShort
-        }).toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, "Short", "Integer", None)))
+        }).toEither.left.map(_ => List(WrongTypeError(path, "Short", "Integer", None)))
       case BSONLong(l) =>
         Try({
           l.toShort
-        }).toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, "Short", "Long", None)))
+        }).toEither.left.map(_ => List(WrongTypeError(path, "Short", "Long", None)))
       case x => invalidValue(x, "Long", path)
     }
 
@@ -50,7 +50,7 @@ object BsonPrimitiveValidator extends InterchangeFormatPrimitiveValidator[BSONVa
       case BSONLong(l) =>
         Try({
           l.toInt
-        }).toEither.left.map(_ => NonEmptyList.one(WrongTypeError(path, "Int", "Long", None)))
+        }).toEither.left.map(_ => List(WrongTypeError(path, "Int", "Long", None)))
       case x => invalidValue(x, "Long", path)
     }
 
@@ -75,12 +75,12 @@ object BsonPrimitiveValidator extends InterchangeFormatPrimitiveValidator[BSONVa
     in match {
       case BSONArray(arr) =>
         arr.toList
-          .map(_.toEither.left.map(NonEmptyList.one).toValidated)
+          .map(_.toEither.left.map(List(_)).toValidated)
           .sequence
           .toEither match {
           case Right(s) => Right(s)
           case Left(_) =>
-            Left(NonEmptyList.one(CanNotConvert(path, arr, classOf[Seq[_]], None)))
+            Left(List(CanNotConvert(path, arr, classOf[Seq[_]], None)))
         }
       case x => invalidValue(x, op.typeName, path)
 
@@ -91,20 +91,18 @@ object BsonPrimitiveValidator extends InterchangeFormatPrimitiveValidator[BSONVa
     in match {
       case BSONDouble(d) =>
         Try({ d.toFloat }).toEither.left.map(_ =>
-          NonEmptyList.one(WrongTypeError(path, "Float", "Double", None)))
+          List(WrongTypeError(path, "Float", "Double", None)))
       case dec: BSONDecimal =>
         BSONDecimal
           .toBigDecimal(dec)
           .flatMap(d => Try { d.toFloat })
           .toEither
           .left
-          .map(_ => NonEmptyList.one(WrongTypeError(path, "Float", "BSONDecimal", None)))
+          .map(_ => List(WrongTypeError(path, "Float", "BSONDecimal", None)))
       case BSONInteger(i) =>
-        Try({ i.toFloat }).toEither.left.map(_ =>
-          NonEmptyList.one(WrongTypeError(path, "Float", "Int", None)))
+        Try({ i.toFloat }).toEither.left.map(_ => List(WrongTypeError(path, "Float", "Int", None)))
       case BSONLong(l) =>
-        Try({ l.toFloat }).toEither.left.map(_ =>
-          NonEmptyList.one(WrongTypeError(path, "Float", "Long", None)))
+        Try({ l.toFloat }).toEither.left.map(_ => List(WrongTypeError(path, "Float", "Long", None)))
       case x => invalidValue(x, "Float", path)
     }
   }
@@ -120,13 +118,13 @@ object BsonPrimitiveValidator extends InterchangeFormatPrimitiveValidator[BSONVa
           .flatMap(d => Try { d.toDouble })
           .toEither
           .left
-          .map(_ => NonEmptyList.one(WrongTypeError(path, "Float", "BSONDecimal", None)))
+          .map(_ => List(WrongTypeError(path, "Float", "BSONDecimal", None)))
       case BSONInteger(i) =>
         Try({ i.toDouble }).toEither.left.map(_ =>
-          NonEmptyList.one(WrongTypeError(path, "Double", "Int", None)))
+          List(WrongTypeError(path, "Double", "Int", None)))
       case BSONLong(l) =>
         Try({ l.toDouble }).toEither.left.map(_ =>
-          NonEmptyList.one(WrongTypeError(path, "Double", "Long", None)))
+          List(WrongTypeError(path, "Double", "Long", None)))
       case x => invalidValue(x, "Double", path)
     }
 
@@ -138,7 +136,7 @@ object BsonPrimitiveValidator extends InterchangeFormatPrimitiveValidator[BSONVa
         BSONDecimal
           .toBigDecimal(bd)
           .map(Right(_))
-          .getOrElse(Left(NonEmptyList.one(CanNotConvert(path, in, classOf[BigDecimal], None))))
+          .getOrElse(Left(List(CanNotConvert(path, in, classOf[BigDecimal], None))))
       case BSONInteger(i) => Right(BigDecimal(i))
       case BSONLong(l)    => Right(BigDecimal(l))
       case x              => invalidValue(x, "BigDecimal", path)
@@ -158,6 +156,6 @@ object BsonPrimitiveValidator extends InterchangeFormatPrimitiveValidator[BSONVa
     bson: BSONValue,
     typeName: String,
     path: List[String]): Left[ExtractionErrors[String], Nothing] = {
-    Left(NonEmptyList.one(WrongTypeError(path, typeName, bson.getClass.getSimpleName, None)))
+    Left(List(WrongTypeError(path, typeName, bson.getClass.getSimpleName, None)))
   }
 }

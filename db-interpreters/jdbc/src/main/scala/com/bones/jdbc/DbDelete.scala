@@ -3,13 +3,12 @@ package com.bones.jdbc
 import java.sql.Connection
 
 import cats.data.NonEmptyList
-import com.bones.data.Error.{ExtractionError, SystemError}
+import com.bones.data.Error.{ExtractionErrors, SystemError}
 import com.bones.data.KvpCollection
 import com.bones.data.KvpCollection.headTypeName
 import com.bones.jdbc.DbUtil.{camelToSnake, withStatement}
 import com.bones.jdbc.select.SelectInterpreter
 import com.bones.jdbc.update.JdbcStatementInterpreter
-import shapeless.HNil
 
 import scala.util.control.NonFatal
 
@@ -30,7 +29,7 @@ trait DbDelete[ALG[_]] {
   def delete[A, ID](
     schema: KvpCollection[String, ALG, A],
     idSchema: KvpCollection[String, ALG, ID],
-  ): ID => Connection => Either[NonEmptyList[ExtractionError[String]], (ID, A)] = {
+  ): ID => Connection => Either[ExtractionErrors[String], (ID, A)] = {
     val tableName = camelToSnake(headTypeName(schema).getOrElse("Unknown"))
     val updateF =
       jdbcStatementInterpreter.fromKvpCollection(idSchema)(1)
@@ -52,7 +51,7 @@ trait DbDelete[ALG[_]] {
           } yield entity
         } catch {
           case NonFatal(ex) =>
-            Left(NonEmptyList.one(SystemError(ex, Some("Error deleting entity"))))
+            Left(List(SystemError(ex, Some("Error deleting entity"))))
         }
       }
   }

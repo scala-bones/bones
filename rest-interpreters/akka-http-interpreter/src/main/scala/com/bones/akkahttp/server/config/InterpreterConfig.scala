@@ -1,6 +1,6 @@
 package com.bones.akkahttp.server.config
 
-import com.bones.sprayJsValue.SprayValidatorInterpreter
+import com.bones.sprayjson.SprayValidatorInterpreter
 import com.bones.sprayjson.SprayEncoderInterpreter
 import com.bones.swagger.SwaggerCoreInterpreter
 

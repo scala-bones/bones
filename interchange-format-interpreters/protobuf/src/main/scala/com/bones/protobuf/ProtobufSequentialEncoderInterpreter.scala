@@ -3,8 +3,7 @@ package com.bones.protobuf
 import java.io.{ByteArrayOutputStream, IOException}
 import java.time.{LocalDateTime, ZoneOffset}
 
-import cats.Applicative
-import cats.data.NonEmptyList
+import com.bones.Util
 import com.bones.data.KeyDefinition.CoproductDataDefinition
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpCoproductCollectionHead, _}
 import com.google.protobuf.{CodedOutputStream, Timestamp}
@@ -19,7 +18,7 @@ object ProtobufSequentialEncoderInterpreter {
         f(codedOutputStream)
         Right(codedOutputStream)
       } catch {
-        case ex: IOException => Left(NonEmptyList.one(ex))
+        case ex: IOException => Left(List(ex))
     }
 
   val booleanData: EncodeToProto[Boolean] =
@@ -98,7 +97,7 @@ object ProtobufSequentialEncoderInterpreter {
             timestamp.writeTo(outputStream)
             Right(outputStream)
           } catch {
-            case ex: IOException => Left(NonEmptyList.one(ex))
+            case ex: IOException => Left(List(ex))
           }
         }
         val allSize = () => {
@@ -175,8 +174,8 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
         (
           () => optB.fold(0)(_._1()),
           (outputStream: CodedOutputStream) =>
-            optB.fold[Either[NonEmptyList[IOException], CodedOutputStream]](Right(outputStream))(
-              item => item._2(outputStream))
+            optB.fold[Either[List[IOException], CodedOutputStream]](Right(outputStream))(item =>
+              item._2(outputStream))
         )
       })
   }
@@ -248,11 +247,10 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
               val tailResult = tailF(isHCons.tail(input.asInstanceOf[o]))
               val fCompute: ComputeSize = () => headResult._1() + tailResult._1()
               val fEncode: Encode = (outputStream: CodedOutputStream) => {
-                Applicative[Either[NonEmptyList[IOException], ?]]
-                  .map2(headResult._2(outputStream), tailResult._2(outputStream))(
-                    (l1: CodedOutputStream, l2: CodedOutputStream) => {
-                      l2
-                    })
+                Util.eitherMap2(headResult._2(outputStream), tailResult._2(outputStream))(
+                  (l1: CodedOutputStream, l2: CodedOutputStream) => {
+                    l2
+                  })
               }
               (fCompute, fEncode)
             }
@@ -270,11 +268,10 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
               val tailResult = tailF(tail)
               val fCompute: ComputeSize = () => headResult._1() + tailResult._1()
               val fEncode = (outputStream: CodedOutputStream) => {
-                Applicative[Either[NonEmptyList[IOException], ?]]
-                  .map2(headResult._2(outputStream), tailResult._2(outputStream))(
-                    (l1: CodedOutputStream, l2: CodedOutputStream) => {
-                      l2
-                    })
+                Util.eitherMap2(headResult._2(outputStream), tailResult._2(outputStream))(
+                  (l1: CodedOutputStream, l2: CodedOutputStream) => {
+                    l2
+                  })
               }
               (fCompute, fEncode)
             }

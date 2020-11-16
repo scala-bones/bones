@@ -2,7 +2,6 @@ package com.bones.jdbc.select
 
 import java.sql.Connection
 
-import cats.data.NonEmptyList
 import com.bones.data.Error.{ExtractionErrors, NotFound, SystemError}
 import com.bones.data.KvpCollection
 import com.bones.data.KvpCollection.headTypeName
@@ -59,12 +58,12 @@ trait SelectInterpreter[ALG[_]] {
                 val x = resultSetF(rs).map((id, _))
                 x
               } else {
-                Left(NonEmptyList.one(NotFound(id, entityName, List.empty)))
+                Left(List(NotFound(id, entityName, List.empty)))
               }
             })
           } catch {
             case NonFatal(th) =>
-              Left(NonEmptyList.one(SystemError(th, Some(s"SQL Statement: $sql"))))
+              Left(List(SystemError(th, Some(s"SQL Statement: $sql"))))
           }
         }
       }

@@ -5,10 +5,9 @@ import java.time.format.DateTimeFormatter
 import com.bones.data.values.{DefaultValues, ScalaCoreValue}
 import com.bones.interpreter.InterchangeFormatEncoderValue.CNilInterchangeFormatEncoder
 import com.bones.interpreter.InterchangeFormatValidatorValue.CNilInterchangeFormatValidator
-import com.bones.interpreter.values._
 import com.bones.interpreter._
+import com.bones.interpreter.values._
 import com.bones.sprayjson.impl.{SprayPrimitiveEncoder, SprayPrimitiveValidator}
-import com.bones.sprayjson.sprayjson.{IsoSprayEncoderInterpreter, IsoSprayValidatorInterpreter}
 import spray.json.JsValue
 
 package object values {

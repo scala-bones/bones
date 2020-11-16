@@ -2,7 +2,6 @@ package com.bones.protobuf.values
 
 import java.time._
 
-import cats.data.NonEmptyList
 import com.bones.Util.{longToLocalDate, longToLocalTime}
 import com.bones.data.Error.{CanNotConvert, ExtractionErrors}
 import com.bones.data.values._
@@ -23,13 +22,12 @@ object JavaTimeValidator {
   val stringToDuration: (String, List[String]) => Either[ExtractionErrors[String], Duration] =
     (str, path) =>
       Try { Duration.parse(str) }.toEither.left
-        .map(th => NonEmptyList.one(CanNotConvert(path, str, classOf[Duration], Some(th))))
+        .map(th => List(CanNotConvert(path, str, classOf[Duration], Some(th))))
 
   val timestampToInstant: (Long, Int, List[String]) => Either[ExtractionErrors[String], Instant] =
     (seconds, nanos, path) =>
       Try { Instant.ofEpochSecond(seconds, nanos) }.toEither.left
-        .map(th =>
-          NonEmptyList.one(CanNotConvert(path, (seconds, nanos), classOf[Duration], Some(th))))
+        .map(th => List(CanNotConvert(path, (seconds, nanos), classOf[Duration], Some(th))))
 
   val instantToTimestamp: Instant => (Long, Int) =
     instant => (instant.getEpochSecond, instant.getNano)
@@ -37,7 +35,7 @@ object JavaTimeValidator {
   val intToMonth: (Int, List[String]) => Either[ExtractionErrors[String], Month] =
     (int, path) =>
       Try { Month.of(int) }.toEither.left
-        .map(th => NonEmptyList.one(CanNotConvert(path, int, classOf[Month], Some(th))))
+        .map(th => List(CanNotConvert(path, int, classOf[Month], Some(th))))
 
   /** Since max of month = 12 and max day = 31, we can embed both values in an Int */
   val intToMonthDay: (Int, List[String]) => Either[ExtractionErrors[String], MonthDay] =
@@ -46,8 +44,7 @@ object JavaTimeValidator {
         val month = (int >> 16)
         val day = (int & 0xFFFFL).toInt
         MonthDay.of(month, day)
-      }.toEither.left.map(th =>
-        NonEmptyList.one(CanNotConvert(path, int, classOf[MonthDay], Some(th))))
+      }.toEither.left.map(th => List(CanNotConvert(path, int, classOf[MonthDay], Some(th))))
 
   /** Month day is encoded into a single int, this function splits them into two short values */
   val monthDayToInt: MonthDay => Int =
@@ -60,17 +57,17 @@ object JavaTimeValidator {
   val intToZoneOffset: (Int, List[String]) => Either[ExtractionErrors[String], ZoneOffset] =
     (int, path) =>
       Try { ZoneOffset.ofTotalSeconds(int) }.toEither.left.map(th =>
-        NonEmptyList.one(CanNotConvert(path, int, classOf[Month], Some(th))))
+        List(CanNotConvert(path, int, classOf[Month], Some(th))))
 
   val stringToPeriod: (String, List[String]) => Either[ExtractionErrors[String], Period] =
     (string, path) =>
       Try { Period.parse(string) }.toEither.left.map(th =>
-        NonEmptyList.one(CanNotConvert(path, string, classOf[Period], Some(th))))
+        List(CanNotConvert(path, string, classOf[Period], Some(th))))
 
   val intToYear: (Int, List[String]) => Either[ExtractionErrors[String], Year] =
     (int, path) =>
       Try { Year.of(int) }.toEither.left.map(th =>
-        NonEmptyList.one(CanNotConvert(path, int, classOf[Period], Some(th))))
+        List(CanNotConvert(path, int, classOf[Period], Some(th))))
 
   /** Year and Month are encoded as a single long.  This function splits the long into two int values, year/month. */
   val longToYearMonth: (Long, List[String]) => Either[ExtractionErrors[String], YearMonth] =
@@ -79,8 +76,7 @@ object JavaTimeValidator {
         val year = (long >> 16).toInt
         val month = (long & 0xFFFFL).toInt
         YearMonth.of(year, month)
-      }.toEither.left.map(th =>
-        NonEmptyList.one(CanNotConvert(path, long, classOf[YearMonth], Some(th))))
+      }.toEither.left.map(th => List(CanNotConvert(path, long, classOf[YearMonth], Some(th))))
 
   /** Year and Month are both integers and therefor can be encoded as a single long.  This function does the combining. */
   val yearMonthToLong: YearMonth => Long =
@@ -93,7 +89,7 @@ object JavaTimeValidator {
   val stringToZoneId: (String, List[String]) => Either[ExtractionErrors[String], ZoneId] =
     (string, path) =>
       Try { ZoneId.of(string) }.toEither.left.map(th =>
-        NonEmptyList.one(CanNotConvert(path, string, classOf[ZoneId], Some(th))))
+        List(CanNotConvert(path, string, classOf[ZoneId], Some(th))))
 
 }
 
@@ -183,9 +179,7 @@ trait JavaTimeValidator extends ProtobufValidatorValue[JavaTimeValue] {
       Try {
         LocalDateTime.ofEpochSecond(seconds, nanos, zoneOffset)
       }.toEither.left
-        .map(err =>
-          NonEmptyList.one(
-            CanNotConvert(path, (seconds, nanos), classOf[LocalDateTime], Some(err))))
+        .map(err => List(CanNotConvert(path, (seconds, nanos), classOf[LocalDateTime], Some(err))))
         .flatMap(i => ValidationUtil.validate(validations)(i, path))
 
     timestampWithMap(f, validations)

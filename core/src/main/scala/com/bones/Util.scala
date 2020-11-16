@@ -4,7 +4,6 @@ import java.time.format.{DateTimeFormatter, DateTimeParseException}
 import java.time.{LocalDate, LocalTime}
 import java.util.UUID
 
-import cats.data.NonEmptyList
 import com.bones.data.Error.{CanNotConvert, ExtractionError, ExtractionErrors}
 import com.bones.data.HigherOrderValue
 
@@ -17,7 +16,7 @@ object Util {
 
   case class NullValue[K](fieldName: String, typeName: String, path: Path[K])
 
-  type NullableResult[K, T] = Either[NonEmptyList[NullValue[K]], T]
+  type NullableResult[K, T] = Either[List[NullValue[K]], T]
 
   def allValidCars(str: String, isNegative: Boolean) =
     if (isNegative) str.drop(1).forall(Character.isDigit)
@@ -61,7 +60,7 @@ object Util {
       Right(UUID.fromString(uuidString))
     } catch {
       case e: IllegalArgumentException =>
-        Left(NonEmptyList.one(CanNotConvert(path, uuidString, classOf[UUID], Some(e))))
+        Left(List(CanNotConvert(path, uuidString, classOf[UUID], Some(e))))
     }
 
   /**
@@ -75,7 +74,7 @@ object Util {
       Right(LocalDate.parse(input, dateFormat))
     } catch {
       case e: DateTimeParseException =>
-        Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDate], Some(e))))
+        Left(List(CanNotConvert(path, input, classOf[LocalDate], Some(e))))
     }
 
   def stringToLocalTime[K](
@@ -86,7 +85,7 @@ object Util {
       Right(LocalTime.parse(input, dateFormat))
     } catch {
       case e: DateTimeParseException =>
-        Left(NonEmptyList.one(CanNotConvert(path, input, classOf[LocalDate], Some(e))))
+        Left(List(CanNotConvert(path, input, classOf[LocalDate], Some(e))))
     }
 
   /**
@@ -97,7 +96,7 @@ object Util {
       Right(BigDecimal(input))
     } catch {
       case e: NumberFormatException =>
-        Left(NonEmptyList.one(CanNotConvert(path, input, classOf[BigDecimal], Some(e))))
+        Left(List(CanNotConvert(path, input, classOf[BigDecimal], Some(e))))
     }
 
   /** Convert the String to an Enumeration using scala.Enumeration.withName returning Left[ExtractionErrors[K],Object]
@@ -106,14 +105,12 @@ object Util {
   def stringToEnumeration[K, E <: Enumeration, V](
     str: String,
     path: List[K],
-    enumeration: E): Either[NonEmptyList[CanNotConvert[K, String, V]], enumeration.Value] =
+    enumeration: E): Either[List[CanNotConvert[K, String, V]], enumeration.Value] =
     try {
       Right(enumeration.withName(str))
     } catch {
       case e: NoSuchElementException =>
-        Left(
-          NonEmptyList.one(
-            CanNotConvert(path, str, manifest.runtimeClass.asInstanceOf[Class[V]], Some(e))))
+        Left(List(CanNotConvert(path, str, manifest.runtimeClass.asInstanceOf[Class[V]], Some(e))))
     }
 
   /** Convert the string to an Enum using scala.Enumeration.withName returning Either[ExtractionErrors[K],A]
@@ -122,12 +119,12 @@ object Util {
   def stringToEnum[K, A <: Enum[A]: Manifest](
     str: String,
     path: List[K],
-    enums: List[A]): Either[NonEmptyList[CanNotConvert[K, String, A]], A] = {
+    enums: List[A]): Either[List[CanNotConvert[K, String, A]], A] = {
     val manifestA = manifest[A]
     enums
       .find(_.toString == str)
       .toRight(
-        NonEmptyList.one(
+        List(
           CanNotConvert[K, String, A](
             path,
             str,
@@ -142,15 +139,29 @@ object Util {
   def longToLocalTime[K]: (Long, List[String]) => Either[ExtractionErrors[K], LocalTime] =
     (l, p) => Right(LocalTime.ofNanoOfDay(l))
 
+  def sequence[B, E](input: List[Either[List[E], B]]): Either[List[E], List[B]] = {
+    input match {
+      case Nil => Right(List.empty)
+      case x :: xs => {
+        val tail = sequence(xs)
+        (x, tail) match {
+          case (Left(errs1), Left(errs2)) => Left(errs1 ::: errs2)
+          case (Left(errs), _)            => Left(errs)
+          case (_, Left(errs))            => Left(errs)
+          case (Right(b1), Right(b2))     => Right(b1 :: b2)
+        }
+      }
+    }
+  }
+
   /**
     * Accumulates error on the left or combines success on the right, just
     * like Applicative.map2 if Either was a Validation.
     */
-  def eitherMap2[K, A, B, Z](
-    e1: Either[ExtractionErrors[K], A],
-    e2: Either[ExtractionErrors[K], B])(f: (A, B) => Z): Either[ExtractionErrors[K], Z] = {
+  def eitherMap2[K, A, B, Z, E](e1: Either[List[E], A], e2: Either[List[E], B])(
+    f: (A, B) => Z): Either[List[E], Z] = {
     (e1, e2) match {
-      case (Left(err1), Left(err2)) => Left(err1 concatNel err2)
+      case (Left(err1), Left(err2)) => Left(err1 ::: err2)
       case (Left(err1), _)          => Left(err1)
       case (_, Left(err2))          => Left(err2)
       case (Right(a), Right(b))     => Right(f(a, b))
@@ -158,12 +169,12 @@ object Util {
   }
 
   def eitherMap2HigherOrder[K, ALG[_], A, B, Z](
-    e1: Either[NonEmptyList[(Either[HigherOrderValue[K, ALG, A], ALG[A]], ExtractionError[K])], A],
-    e2: Either[NonEmptyList[(Either[HigherOrderValue[K, ALG, A], ALG[A]], ExtractionError[K])], B])(
+    e1: Either[List[(Either[HigherOrderValue[K, ALG, A], ALG[A]], ExtractionError[K])], A],
+    e2: Either[List[(Either[HigherOrderValue[K, ALG, A], ALG[A]], ExtractionError[K])], B])(
     f: (A, B) => Z)
-    : Either[NonEmptyList[(Either[HigherOrderValue[K, ALG, A], ALG[A]], ExtractionError[K])], Z] = {
+    : Either[List[(Either[HigherOrderValue[K, ALG, A], ALG[A]], ExtractionError[K])], Z] = {
     (e1, e2) match {
-      case (Left(err1), Left(err2)) => Left(err1 concatNel err2)
+      case (Left(err1), Left(err2)) => Left(err1 ::: err2)
       case (Left(err1), _)          => Left(err1)
       case (_, Left(err2))          => Left(err2)
       case (Right(a), Right(b))     => Right(f(a, b))
@@ -179,7 +190,7 @@ object Util {
     e2: Either[ExtractionErrors[K], NullableResult[K, B]])(
     f: (A, B) => Z): Either[ExtractionErrors[K], NullableResult[K, Z]] = {
     (e1, e2) match {
-      case (Left(err1), Left(err2)) => Left(err1 concatNel err2)
+      case (Left(err1), Left(err2)) => Left(err1 ::: err2)
       case (Left(err1), _)          => Left(err1)
       case (_, Left(err2))          => Left(err2)
       case (Right(a), Right(b)) =>

@@ -1,10 +1,7 @@
 package com.bones.validation
 
-import java.time.format.DateTimeFormatter
-import java.time.{LocalDate, LocalDateTime, LocalTime}
-
-import cats.syntax.all._
-
+import scala.math.Ordering.Double.{TotalOrdering => DoubleOrdering}
+import scala.math.Ordering.Float.{TotalOrdering => FloatOrdering}
 import scala.math.Ordering.{
   BigDecimalOrdering,
   ByteOrdering,
@@ -13,8 +10,6 @@ import scala.math.Ordering.{
   LongOrdering,
   ShortOrdering
 }
-import scala.math.Ordering.Float.{TotalOrdering => FloatOrdering}
-import scala.math.Ordering.Double.{TotalOrdering => DoubleOrdering}
 import scala.util.matching.Regex
 
 /**
@@ -73,18 +68,18 @@ object ValidationDefinition {
 
   /** Base trait for validation as to include valid and invalid values */
   trait BaseValidationOp[T] {
-    def validVector(validValues: Vector[T]) = ValidValue(validValues)
+    def validVector(validValues: Vector[T]): ValidValue[T] = ValidValue(validValues)
 
     def valid(t: T*): ValidValue[T] = validVector(t.toVector)
 
-    def invalidVector(invalidValues: Vector[T]) = InvalidValue(invalidValues)
+    def invalidVector(invalidValues: Vector[T]): InvalidValue[T] = InvalidValue(invalidValues)
 
     def invalid(t: T*): InvalidValue[T] = invalidVector(t.toVector)
 
     val unique: UniqueValue[T] = UniqueValue(None)
 
     /** If multiple fields contain the same group key, they will be considered in the same unique group. */
-    def unique(uniqueGroup: String) = UniqueValue[T](Some(uniqueGroup))
+    def unique(uniqueGroup: String): UniqueValue[T] = UniqueValue[T](Some(uniqueGroup))
   }
 
   case class EnumerationValidation[E <: Enumeration]() extends BaseValidationOp[E]
@@ -185,7 +180,7 @@ object ValidationDefinition {
     }
 
     object Uppercase extends ValidationOp[String] {
-      val isValid: String => Boolean = str => str.toUpperCase === str
+      val isValid: String => Boolean = str => str.toUpperCase == str
 
       override def defaultError(t: String): String = s"$t must be uppercase"
 
@@ -213,7 +208,7 @@ object ValidationDefinition {
     }
 
     object Lowercase extends ValidationOp[String] {
-      override def isValid: String => Boolean = str => str.toLowerCase === str
+      override def isValid: String => Boolean = str => str.toLowerCase == str
 
       override def defaultError(t: String): String = s"$t is not all lowercase"
 
@@ -249,7 +244,7 @@ object ValidationDefinition {
     val lowercase: Lowercase.type = Lowercase
 
     /** */
-    def custom(f: String => Boolean, defaultErrorF: String => String, description: String) =
+    def custom(f: String => Boolean, defaultErrorF: String => String, description: String): Custom =
       Custom(f, defaultErrorF, description)
 
     /** String must be a token, which is alpha numeric with underscore. */
@@ -368,7 +363,7 @@ object ValidationDefinition {
       override def description: String = s"multiple of $multipleOf"
     }
 
-    def multiple(n: N) = Multiple(n)
+    def multiple(n: N): Multiple = Multiple(n)
   }
 
   object CharValidation
@@ -407,7 +402,7 @@ object ValidationDefinition {
 
     case class InRanges(ranges: List[Range])
 
-    def inRanges(range: Range*) = InRanges(range.toList)
+    def inRanges(range: Range*): InRanges = InRanges(range.toList)
 
   }
 
@@ -484,7 +479,8 @@ object ValidationDefinition {
 
     def min(minDate: A): MinTime = MinTime(minDate, defaultFormatToString, instantDescription, this)
 
-    def max(maxDate: A, format: A => String) = MaxTime(maxDate, format(_), instantDescription, this)
+    def max(maxDate: A, format: A => String): MaxTime =
+      MaxTime(maxDate, format(_), instantDescription, this)
 
     def max(maxDate: A): MaxTime = MaxTime(maxDate, defaultFormatToString, instantDescription, this)
 

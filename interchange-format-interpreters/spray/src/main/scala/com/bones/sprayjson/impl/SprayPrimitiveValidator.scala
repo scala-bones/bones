@@ -37,7 +37,7 @@ object SprayPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JsVal
     in match {
       case JsNumber(value) =>
         Try(f(value)).toEither.left.map(ex =>
-          NonEmptyList.one(WrongTypeError(path, expectedType, in.getClass.getSimpleName, Some(ex))))
+          List(WrongTypeError(path, expectedType, in.getClass.getSimpleName, Some(ex))))
       case _ => Left(determineError(in, op, expectedType, path))
     }
 
@@ -104,7 +104,7 @@ object SprayPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JsVal
       case JsNull => RequiredValue(path, typeName)
       case _      => WrongTypeError(path, typeName, in.getClass.getSimpleName, None)
     }
-    NonEmptyList.one(error)
+    List(error)
   }
 
 }

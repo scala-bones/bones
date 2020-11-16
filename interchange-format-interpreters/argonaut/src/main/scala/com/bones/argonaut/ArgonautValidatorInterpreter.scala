@@ -4,8 +4,6 @@ import java.nio.charset.Charset
 
 import argonaut.Argonaut._
 import argonaut._
-import cats.data.NonEmptyList
-import cats.syntax.all._
 import com.bones.data.Error.{ExtractionErrors, ParsingError, RequiredValue, WrongTypeError}
 import com.bones.data.{KeyDefinition, _}
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
@@ -44,11 +42,11 @@ trait ArgonautValidatorInterpreter[ALG[_]]
           Parse
             .parse(str)
             .left
-            .map(str => NonEmptyList.one(ParsingError[String](str)))
+            .map(str => List(ParsingError[String](str)))
             .flatMap(fromSchemaFunction(_, List.empty))
         } catch {
           case NonFatal(ex) =>
-            Left(NonEmptyList.one(ParsingError(ex.getMessage, Some(ex))))
+            Left(List(ParsingError(ex.getMessage, Some(ex))))
         }
       }
   }
@@ -62,13 +60,13 @@ trait ArgonautValidatorInterpreter[ALG[_]]
 
     in.obj
       .toRight[ExtractionErrors[String]](
-        NonEmptyList.one(WrongTypeError(path, kv.typeName, in.getClass.getSimpleName, None))
+        List(WrongTypeError(path, kv.typeName, in.getClass.getSimpleName, None))
       )
       .flatMap(
         _.toList
-          .find(f => f._1 === kv.key)
+          .find(f => f._1 == kv.key)
           .toRight[ExtractionErrors[String]](
-            NonEmptyList.one(RequiredValue(path, kv.typeName))
+            List(RequiredValue(path, kv.typeName))
           )
       )
       .flatMap(j => headInterpreter.apply(Some(j._2), path))
@@ -87,7 +85,7 @@ trait ArgonautValidatorInterpreter[ALG[_]]
       _ => classOf[Array[_]],
       _ => classOf[Object]
     )
-    Left(NonEmptyList.one(WrongTypeError(path, typeName, invalid.getSimpleName, None)))
+    Left(List(WrongTypeError(path, typeName, invalid.getSimpleName, None)))
   }
 
 }
