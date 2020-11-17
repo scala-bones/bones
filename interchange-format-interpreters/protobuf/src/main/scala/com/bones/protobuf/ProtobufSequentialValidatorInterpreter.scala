@@ -245,7 +245,7 @@ trait ProtobufSequentialValidatorInterpreter[ALG[_]] {
   ): ExtractFromProto[C] = {
 
     kvp match {
-      case _: KvpCoNil[String, _] @unchecked =>
+      case _: KvpCoNil[String, ALG] @unchecked =>
         (lastFieldNumber, path) =>
           (
             List.empty,

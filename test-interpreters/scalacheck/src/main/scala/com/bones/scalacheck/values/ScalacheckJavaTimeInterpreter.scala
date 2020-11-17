@@ -2,23 +2,22 @@ package com.bones.scalacheck.values
 
 import java.time._
 
-import scala.jdk.CollectionConverters._
+//import scala.jdk.CollectionConverters._ //because cross compile 2.12
+import scala.collection.JavaConverters._
 import com.bones.data.values._
-import com.bones.scalacheck.{GenValue}
+import com.bones.scalacheck.GenValue
 import com.bones.validation.ValidationDefinition.{BaseDateValidation, ValidValue, ValidationOp}
 import com.bones.validation.values.JavaTimeValidation._
 import org.scalacheck.Gen
 import org.scalacheck.Gen.Choose
 
-import scala.collection.JavaConverters
-
 object ScalacheckJavaTimeInterpreter {
   def genTime[A](
-                  validations: List[ValidationOp[A]],
-                  validation: BaseDateValidation[A],
-                  globalMin: A,
-                  globalMax: A,
-                  choose: Gen.Choose[A]): Gen[A] = {
+    validations: List[ValidationOp[A]],
+    validation: BaseDateValidation[A],
+    globalMin: A,
+    globalMax: A,
+    choose: Gen.Choose[A]): Gen[A] = {
     // Using calendar results in invalid leap years, so we'll use Int instead
     val min = validations
       .collectFirst({
@@ -105,9 +104,7 @@ trait ScalacheckJavaTimeInterpreter extends GenValue[JavaTimeValue] {
     override def choose(min: OffsetDateTime, max: OffsetDateTime): Gen[OffsetDateTime] =
       (
         for {
-          dateTime <- chooseLocalDateTime.choose(
-            min.toLocalDateTime,
-            max.toLocalDateTime)
+          dateTime <- chooseLocalDateTime.choose(min.toLocalDateTime, max.toLocalDateTime)
           offset <- chooseZoneOffset.choose(ZoneOffset.MIN, ZoneOffset.MAX)
         } yield OffsetDateTime.of(dateTime, offset)
       ).retryUntil(x => (x == min || x.isAfter(min)) && (x == max || x.isBefore(max))) // TODO: think this through, might be able to remove the 'retryUntil'.
@@ -238,19 +235,9 @@ trait ScalacheckJavaTimeInterpreter extends GenValue[JavaTimeValue] {
         )(chooseDuration)
 
       case id: InstantData =>
-        genTime(
-          id.validations,
-          InstantValidation,
-          Instant.MIN,
-          Instant.MAX,
-          chooseInstant)
+        genTime(id.validations, InstantValidation, Instant.MIN, Instant.MAX, chooseInstant)
       case dd: LocalDateData =>
-        genTime(
-          dd.validations,
-          LocalDateValidation,
-          LocalDate.MIN,
-          LocalDate.MAX,
-          chooseLocalDate)
+        genTime(dd.validations, LocalDateValidation, LocalDate.MIN, LocalDate.MAX, chooseLocalDate)
       case dd: LocalDateTimeData =>
         genTime(
           dd.validations,
@@ -261,12 +248,7 @@ trait ScalacheckJavaTimeInterpreter extends GenValue[JavaTimeValue] {
           chooseLocalDateTime
         )
       case dt: LocalTimeData =>
-        genTime(
-          dt.validations,
-          LocalTimeValidation,
-          LocalTime.MIN,
-          LocalTime.MAX,
-          chooseLocalTime)
+        genTime(dt.validations, LocalTimeValidation, LocalTime.MIN, LocalTime.MAX, chooseLocalTime)
       case md: MonthData =>
         val values = md.validations
           .collectFirst[Seq[Month]] {

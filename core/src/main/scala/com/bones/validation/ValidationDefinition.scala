@@ -1,7 +1,5 @@
 package com.bones.validation
 
-import scala.math.Ordering.Double.{TotalOrdering => DoubleOrdering}
-import scala.math.Ordering.Float.{TotalOrdering => FloatOrdering}
 import scala.math.Ordering.{
   BigDecimalOrdering,
   ByteOrdering,
@@ -11,6 +9,18 @@ import scala.math.Ordering.{
   ShortOrdering
 }
 import scala.util.matching.Regex
+
+//import scala.math.Ordering.Double.{TotalOrdering => DoubleOrdering}
+//cross compiling compatibility
+trait DoubleOrdering extends Ordering[Double] {
+  def compare(x: Double, y: Double) = java.lang.Double.compare(x, y)
+}
+
+//import scala.math.Ordering.Float.{TotalOrdering => FloatOrdering}
+//cross compiling compatibility
+trait FloatOrdering extends Ordering[Float] {
+  override def compare(x: Float, y: Float): Int = java.lang.Float.compare(x, y)
+}
 
 /**
   * A collection of validation definition natively supported by Bones.

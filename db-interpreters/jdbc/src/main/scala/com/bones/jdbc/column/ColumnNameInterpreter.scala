@@ -36,7 +36,7 @@ trait ColumnNameInterpreter[ALG[_]] extends KvpCollectionMatch[String, ALG, List
   override def kvpCoproduct[C <: Coproduct](
     value: KvpCoproduct[String, ALG, C]): List[ColumnName] = {
     value match {
-      case _: KvpCoNil[String, _] @unchecked => List.empty
+      case _: KvpCoNil[String, ALG] @unchecked => List.empty
       case co: KvpCoproductCollectionHead[String, ALG, a, c, o] =>
         val head = fromKvpCollection(co.kvpCollection)
         val tail = kvpCoproduct(co.kvpTail)

@@ -14,7 +14,7 @@ object ResultSetValue {
   /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
     * see https://stackoverflow.com/a/60561575/387094
     * */
-  def merge[L[_], R[_] <: Coproduct, A, OUT](
+  def merge[L[_], R[_] <: Coproduct](
     li: ResultSetValue[L],
     ri: ResultSetValue[R]
   ): ResultSetValue[Lambda[A => L[A] :+: R[A]]] =
@@ -30,7 +30,7 @@ object ResultSetValue {
 
     }
 
-  implicit class InterpreterOps[ALG[_], OUT](val base: ResultSetValue[ALG]) extends AnyVal {
+  implicit class InterpreterOps[ALG[_]](val base: ResultSetValue[ALG]) extends AnyVal {
     def ++[R[_] <: Coproduct](
       r: ResultSetValue[R]
     ): ResultSetValue[Lambda[A => ALG[A] :+: R[A]]] =

@@ -8,7 +8,7 @@ object InterchangeFormatEncoderValue {
   /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
     * see https://stackoverflow.com/a/60561575/387094
     * */
-  def merge[L[_], R[_] <: Coproduct, A, OUT](
+  def merge[L[_], R[_] <: Coproduct, OUT](
     li: InterchangeFormatEncoderValue[L, OUT],
     ri: InterchangeFormatEncoderValue[R, OUT]
   ): InterchangeFormatEncoderValue[Lambda[A => L[A] :+: R[A]], OUT] =

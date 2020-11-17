@@ -195,15 +195,23 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
       }
   }
 
+  /*
+(com.bones.protobuf.FieldNumber, C => (() => Int, com.google.protobuf.CodedOutputStream => scala.util.Right[Nothing,com.google.protobuf.CodedOutputStream]))
+(Int, C => (() => Int, com.google.protobuf.CodedOutputStream => scala.util.Right[Nothing,com.google.protobuf.CodedOutputStream]))
+
+(com.bones.protobuf.FieldNumber, shapeless.CNil => (() => Int, com.google.protobuf.CodedOutputStream => scala.util.Right[Nothing,com.google.protobuf.CodedOutputStream]))
+(Int, shapeless.CNil => (() => Int, com.google.protobuf.CodedOutputStream => scala.util.Right[Nothing,com.google.protobuf.CodedOutputStream]))
+   */
+
   protected def kvpCoproduct[C <: Coproduct](
     co: KvpCoproduct[String, ALG, C]
   ): EncodeToProto[C] = {
     co match {
-      case nil: KvpCoNil[String, _] @unchecked =>
+      case nil: KvpCoNil[String, ALG] @unchecked =>
         (fieldNumber: FieldNumber) =>
           (
             fieldNumber,
-            (_: C) => (() => 0, (os: CodedOutputStream) => Right(os))
+            (_: CNil) => (() => 0, (os: CodedOutputStream) => Right(os))
           )
       case kvp: KvpCoproductCollectionHead[String, ALG, l, r, C] @unchecked => {
         (fieldNumber: FieldNumber) =>
@@ -225,11 +233,11 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
 
   def fromKvpCollection[A](group: KvpCollection[String, ALG, A]): EncodeToProto[A] = {
     group match {
-      case nil: KvpNil[String, _] @unchecked =>
+      case nil: KvpNil[String, ALG] @unchecked =>
         (fieldNumber: FieldNumber) =>
           (
             fieldNumber,
-            (_: A) => (() => 0, (os: CodedOutputStream) => Right(os))
+            (_: HNil) => (() => 0, (os: CodedOutputStream) => Right(os))
           )
       case op: KvpSingleValueHead[String, ALG, h, t, tl, o] =>
         (fieldNumber: FieldNumber) =>

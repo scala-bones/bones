@@ -2,7 +2,14 @@ package com.bones.protobuf
 
 import java.time.ZoneOffset
 
-import com.bones.data.values.{DefaultValues, JavaTimeValue}
+import com.bones.data.values.{
+  CNilF,
+  CustomStringValue,
+  DefaultValues,
+  JavaTimeValue,
+  JavaUtilValue,
+  ScalaCoreValue
+}
 import com.bones.protobuf.ProtobufEncoderValue.CNilProtobufValueEncoder
 import com.bones.protobuf.ProtobufValidatorValue.CNilProtobufValueValidator
 import com.bones.protobuf.messageType.{
@@ -10,20 +17,57 @@ import com.bones.protobuf.messageType.{
   CustomInterpreter,
   JavaUtilProtoFileInterpreter
 }
+import shapeless.:+:
 
 package object values {
 
-  def defaultEncoders[A]: ProtobufEncoderValue[DefaultValues] =
-    ProtobufScalaCoreEncoder ++
-      (ProtobufValueStringEncoder ++
-        (ProtobufUtcJavaTimeEncoder ++
-          (ProtobufJavaUtilEncoder ++ CNilProtobufValueEncoder)))
+//  def defaultEncoders[A]: ProtobufEncoderValue[DefaultValues] =
+//    ProtobufScalaCoreEncoder ++
+//      (ProtobufValueStringEncoder ++
+//        (ProtobufUtcJavaTimeEncoder ++
+//          (ProtobufJavaUtilEncoder ++ CNilProtobufValueEncoder)))
+//
+//  val defaultValidators: ProtobufValidatorValue[DefaultValues] =
+//    ProtobufScalaCoreValidator ++
+//      (ProtobufValueStringValidator ++
+//        (ProtobufUtcJavaTimeValidator ++
+//          (ProtobufJavaUtilValidator ++ CNilProtobufValueValidator)))
 
-  val defaultValidators: ProtobufValidatorValue[DefaultValues] =
-    ProtobufScalaCoreValidator ++
-      (ProtobufValueStringValidator ++
-        (ProtobufUtcJavaTimeValidator ++
-          (ProtobufJavaUtilValidator ++ CNilProtobufValueValidator)))
+  // Below is equivalent to the above.  Above compiles in 2.13, below compiles in both 2.12 and 2.13
+  //start 2.12
+
+  type JavaUtilValueCo[A] = JavaUtilValue[A] :+: CNilF[A]
+  type JavaTimeValueCo[A] = JavaTimeValue[A] :+: JavaUtilValueCo[A]
+  type CustomStringValueCo[A] = CustomStringValue[A] :+: JavaTimeValueCo[A]
+
+  val defaultEncoders: ProtobufEncoderValue[DefaultValues] = {
+    ProtobufEncoderValue.merge[ScalaCoreValue, CustomStringValueCo](
+      ProtobufScalaCoreEncoder,
+      ProtobufEncoderValue.merge[CustomStringValue, JavaTimeValueCo](
+        ProtobufValueStringEncoder,
+        ProtobufEncoderValue.merge[JavaTimeValue, JavaUtilValueCo](
+          ProtobufUtcJavaTimeEncoder,
+          ProtobufEncoderValue
+            .merge[JavaUtilValue, CNilF](ProtobufJavaUtilEncoder, CNilProtobufValueEncoder)
+        )
+      )
+    )
+  }
+
+  val defaultValidators: ProtobufValidatorValue[DefaultValues] = {
+    ProtobufValidatorValue.merge[ScalaCoreValue, CustomStringValueCo](
+      ProtobufScalaCoreValidator,
+      ProtobufValidatorValue.merge[CustomStringValue, JavaTimeValueCo](
+        ProtobufValueStringValidator,
+        ProtobufValidatorValue.merge[JavaTimeValue, JavaUtilValueCo](
+          ProtobufUtcJavaTimeValidator,
+          ProtobufValidatorValue
+            .merge[JavaUtilValue, CNilF](ProtobufJavaUtilValidator, CNilProtobufValueValidator)
+        )
+      )
+    )
+  }
+  //end 2.12
 
   object ProtobufScalaCoreEncoder extends ScalaCoreEncoder
 

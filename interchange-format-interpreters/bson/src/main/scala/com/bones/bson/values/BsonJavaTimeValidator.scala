@@ -59,13 +59,13 @@ trait BsonJavaTimeValidator extends InterchangeFormatValidatorValue[JavaTimeValu
               Right(Instant.ofEpochMilli(date))
             case x => baseValidator.invalidValue(x, "BSONDateTime", path)
         }
-        baseValidator.required(Right(id), id.typeName, id.validations, f)
+        baseValidator.required(id.typeName, id.validations, f)
       case ld: LocalDateTimeData =>
-        baseValidator.required(Right(ld), ld.typeName, ld.validations, extractLocalDateTime(ld))
+        baseValidator.required(ld.typeName, ld.validations, extractLocalDateTime(ld))
       case ld: LocalDateData =>
-        baseValidator.required(Right(ld), ld.typeName, ld.validations, extractLocalDate(ld))
+        baseValidator.required(ld.typeName, ld.validations, extractLocalDate(ld))
       case lt: LocalTimeData =>
-        baseValidator.required(Right(lt), lt.typeName, lt.validations, extractLocalTime(lt))
+        baseValidator.required(lt.typeName, lt.validations, extractLocalTime(lt))
       case md: MonthData =>
         parseTime(baseValidator, alg, Month.valueOf, md.validations)
       case md: MonthDayData =>

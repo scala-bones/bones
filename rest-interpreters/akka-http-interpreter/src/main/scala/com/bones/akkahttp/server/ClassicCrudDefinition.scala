@@ -5,7 +5,7 @@ import java.nio.charset.Charset
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.marshalling.PredefinedToEntityMarshallers.byteArrayMarshaller
 import akka.http.scaladsl.model.StatusCodes.InternalServerError
-import akka.http.scaladsl.model.{ContentType, MediaTypes, StatusCodes}
+import akka.http.scaladsl.model.{ContentType, HttpHeader, MediaTypes, StatusCodes}
 import akka.http.scaladsl.server.Directives.AsyncAuthenticator
 import akka.http.scaladsl.server.{Directives, Route, StandardRoute}
 import akka.http.scaladsl.unmarshalling.PredefinedFromEntityUnmarshallers.byteArrayUnmarshaller
@@ -129,7 +129,7 @@ case class ClassicCrudDefinition[ALG[_], ID: Manifest, A: Manifest, E](
                   case Left(systemError) =>
                     complete(StatusCodes.InternalServerError, errorMarshallerFunction(systemError))
                   case Right(value) =>
-                    complete(StatusCodes.OK, Seq.empty, schemaMarshallerFunction(value))
+                    complete(StatusCodes.OK, List.empty, schemaMarshallerFunction(value))
                 }
               }
               case Failure(ex) =>
@@ -157,7 +157,7 @@ case class ClassicCrudDefinition[ALG[_], ID: Manifest, A: Manifest, E](
                   case Left(systemError) =>
                     complete(StatusCodes.InternalServerError, errorMarshallerFunction(systemError))
                   case Right(value) =>
-                    complete(StatusCodes.OK, Seq.empty, idSchemaMarshallerFunction(value))
+                    complete(StatusCodes.OK, List.empty, idSchemaMarshallerFunction(value))
                 }
             }
             Await.result(futureResult, 5.seconds)

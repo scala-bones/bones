@@ -35,7 +35,7 @@ object JavaTimeValidator {
         jsonOpt match {
           case Some(json) =>
             baseValidator
-              .extractString(javaTimeAlgebra, javaTimeAlgebra.typeName)(json, path)
+              .extractString(javaTimeAlgebra.typeName)(json, path)
               .flatMap(result => errorHandleTimeParsing(path, f, result))
               .flatMap(result => ValidationUtil.validate(validations)(result, path))
           case None =>
@@ -53,7 +53,7 @@ object JavaTimeValidator {
       jsonOpt match {
         case Some(json) =>
           baseValidator
-            .extractInt(javaTimeValue)(json, path)
+            .extractInt(json, path)
             .map(result => Year.of(result))
             .flatMap(result => ValidationUtil.validate(validations)(result, path))
         case None =>

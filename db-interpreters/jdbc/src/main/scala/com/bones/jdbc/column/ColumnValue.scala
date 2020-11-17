@@ -8,7 +8,7 @@ object ColumnValue {
   /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
     * see https://stackoverflow.com/a/60561575/387094
     * */
-  def merge[L[_], R[_] <: Coproduct, A, OUT](
+  def merge[L[_], R[_] <: Coproduct](
     li: ColumnValue[L],
     ri: ColumnValue[R]
   ): ColumnValue[Lambda[A => L[A] :+: R[A]]] =
@@ -20,7 +20,7 @@ object ColumnValue {
       }
     }
 
-  implicit class InterpreterOps[ALG[_], OUT](val base: ColumnValue[ALG]) extends AnyVal {
+  implicit class InterpreterOps[ALG[_]](val base: ColumnValue[ALG]) extends AnyVal {
     def ++[R[_] <: Coproduct](
       r: ColumnValue[R]
     ): ColumnValue[Lambda[A => ALG[A] :+: R[A]]] =

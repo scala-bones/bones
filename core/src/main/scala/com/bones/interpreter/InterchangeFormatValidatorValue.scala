@@ -7,7 +7,7 @@ import shapeless.{:+:, Coproduct, Inl, Inr}
 object InterchangeFormatValidatorValue {
 
   /** using kind projector allows us to create a new interpreter by merging two existing interpreters */
-  def merge[L[_], R[_] <: Coproduct, A, OUT](
+  def merge[L[_], R[_] <: Coproduct, OUT](
     li: InterchangeFormatValidatorValue[L, OUT],
     ri: InterchangeFormatValidatorValue[R, OUT]
   ): InterchangeFormatValidatorValue[Lambda[A => L[A] :+: R[A]], OUT] =

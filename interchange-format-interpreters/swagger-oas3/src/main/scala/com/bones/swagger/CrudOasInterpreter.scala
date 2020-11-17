@@ -1,15 +1,14 @@
 package com.bones.swagger
 
-import com.bones.data.{KvpCollection, HigherOrderValue}
-import com.bones.swagger.SwaggerCoreInterpreter.CustomSwaggerInterpreter
-import com.bones.swagger._
+import com.bones.data.KvpCollection
 import io.swagger.v3.oas.models._
 import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.media._
 import io.swagger.v3.oas.models.parameters.{Parameter, RequestBody}
 import io.swagger.v3.oas.models.responses.{ApiResponse, ApiResponses}
 
-import scala.jdk.CollectionConverters._
+//import scala.jdk.CollectionConverters._ //because scala 2.12 cross compile
+import scala.collection.JavaConverters._
 
 /**
   * Responsible for creating a full CRUD Swagger definition including paths and data.

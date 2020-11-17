@@ -2,22 +2,70 @@ package com.bones.sprayjson
 
 import java.time.format.DateTimeFormatter
 
-import com.bones.data.values.{DefaultValues, ScalaCoreValue}
+import com.bones.data.values.{
+  CNilF,
+  CustomStringValue,
+  DefaultValues,
+  JavaTimeValue,
+  JavaUtilValue,
+  ScalaCoreValue
+}
 import com.bones.interpreter.InterchangeFormatEncoderValue.CNilInterchangeFormatEncoder
 import com.bones.interpreter.InterchangeFormatValidatorValue.CNilInterchangeFormatValidator
 import com.bones.interpreter._
 import com.bones.interpreter.values._
 import com.bones.sprayjson.impl.{SprayPrimitiveEncoder, SprayPrimitiveValidator}
+import shapeless.:+:
 import spray.json.JsValue
 
 package object values {
-  val defaultEncoders: InterchangeFormatEncoderValue[DefaultValues, JsValue] =
-    BaseScalaCoreEncoder ++ (CustomStringEncoder ++ (BaseCirceIsoJavaTimeEncoder ++
-      (BaseJavaUtilEncoder ++ CNilInterchangeFormatEncoder[JsValue]())))
+//  val defaultEncoders: InterchangeFormatEncoderValue[DefaultValues, JsValue] =
+//    BaseScalaCoreEncoder ++ (CustomStringEncoder ++ (BaseCirceIsoJavaTimeEncoder ++
+//      (BaseJavaUtilEncoder ++ CNilInterchangeFormatEncoder[JsValue]())))
+//
+//  val defaultValidators: InterchangeFormatValidatorValue[DefaultValues, JsValue] =
+//    BaseScalaCoreValidator ++ (CustomStringValidator ++ (BaseCirceIsoJavaTimeValidator ++
+//      (BaseJavaUtilValidator ++ CNilInterchangeFormatValidator[JsValue]())))
 
-  val defaultValidators: InterchangeFormatValidatorValue[DefaultValues, JsValue] =
-    BaseScalaCoreValidator ++ (CustomStringValidator ++ (BaseCirceIsoJavaTimeValidator ++
-      (BaseJavaUtilValidator ++ CNilInterchangeFormatValidator[JsValue]())))
+  // Below is equivalent to the above.  Above compiles in 2.13, below compiles in both 2.12 and 2.13
+  //start 2.12
+
+  type JavaUtilValueCo[A] = JavaUtilValue[A] :+: CNilF[A]
+  type JavaTimeValueCo[A] = JavaTimeValue[A] :+: JavaUtilValueCo[A]
+  type CustomStringValueCo[A] = CustomStringValue[A] :+: JavaTimeValueCo[A]
+
+  val defaultEncoders: InterchangeFormatEncoderValue[DefaultValues, JsValue] = {
+    InterchangeFormatEncoderValue.merge[ScalaCoreValue, CustomStringValueCo, JsValue](
+      BaseScalaCoreEncoder,
+      InterchangeFormatEncoderValue.merge[CustomStringValue, JavaTimeValueCo, JsValue](
+        CustomStringEncoder,
+        InterchangeFormatEncoderValue.merge[JavaTimeValue, JavaUtilValueCo, JsValue](
+          BaseCirceIsoJavaTimeEncoder,
+          InterchangeFormatEncoderValue
+            .merge[JavaUtilValue, CNilF, JsValue](
+              BaseJavaUtilEncoder,
+              CNilInterchangeFormatEncoder[JsValue]())
+        )
+      )
+    )
+  }
+
+  val defaultValidators: InterchangeFormatValidatorValue[DefaultValues, JsValue] = {
+    InterchangeFormatValidatorValue.merge[ScalaCoreValue, CustomStringValueCo, JsValue](
+      BaseScalaCoreValidator,
+      InterchangeFormatValidatorValue.merge[CustomStringValue, JavaTimeValueCo, JsValue](
+        CustomStringValidator,
+        InterchangeFormatValidatorValue.merge[JavaTimeValue, JavaUtilValueCo, JsValue](
+          BaseCirceIsoJavaTimeValidator,
+          InterchangeFormatValidatorValue
+            .merge[JavaUtilValue, CNilF, JsValue](
+              BaseJavaUtilValidator,
+              CNilInterchangeFormatValidator[JsValue]())
+        )
+      )
+    )
+  }
+  //end 2.12
 
   object BaseScalaCoreEncoder extends ScalaCoreEncoder[JsValue] {
     override val defaultEncoder: InterchangeFormatPrimitiveEncoder[JsValue] =

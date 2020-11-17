@@ -282,12 +282,12 @@ trait DbInsert[ALG[_]]
     val rightNames = columnNameInterpreter.determineValueDefinition(ed.definitionB)(key)
 
     val colsToRename = leftNames.intersect(rightNames)
-    val leftToRename = Map.from(
-      colsToRename.map(col => (col, col + "_" + camelToSnake(ed.typeNameOfA)))
-    )
-    val rightToRename = Map.from(
-      colsToRename.map(col => (col, col + "_" + camelToSnake(ed.typeNameOfB)))
-    )
+    val leftToRename =
+      colsToRename.map(col => (col, col + "_" + camelToSnake(ed.typeNameOfA))).toMap
+
+    val rightToRename =
+      colsToRename.map(col => (col, col + "_" + camelToSnake(ed.typeNameOfB))).toMap
+
     (leftToRename, rightToRename)
   }
 

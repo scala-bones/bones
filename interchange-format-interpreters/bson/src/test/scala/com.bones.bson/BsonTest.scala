@@ -2,10 +2,19 @@ package com.bones.bson
 
 import java.time._
 
-import com.bones.data.values.{DefaultValues, JavaTimeValue, LocalDateTimeData}
+import com.bones.data.values.{
+  CNilF,
+  CustomStringValue,
+  DefaultValues,
+  JavaTimeValue,
+  JavaUtilValue,
+  LocalDateTimeData,
+  ScalaCoreValue
+}
 import com.bones.scalacheck.GenValue.CNilGenEncoder
 import com.bones.scalacheck.values.{
   DefaultCustomStringValueInterpreter,
+  DefaultScalacheckJavaTimeInterpreter,
   DefaultScalacheckJavaUtilInterpreter,
   DefaultScalacheckScalaCoreInterpreter,
   ScalacheckJavaTimeInterpreter,
@@ -20,6 +29,7 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.scalacheck.Checkers
 import reactivemongo.bson.BSONDocument
 import reactivemongo.bson.buffer.{ArrayBSONBuffer, ArrayReadableBuffer}
+import shapeless.:+:
 
 import scala.util.control.NonFatal
 
@@ -28,12 +38,28 @@ import scala.util.control.NonFatal
   */
 object BsonScalacheck extends ScalacheckBase[String, DefaultValues] {
 
-  val allInterpreters: GenValue[DefaultValues] =
-    DefaultScalacheckScalaCoreInterpreter ++
-      (DefaultCustomStringValueInterpreter ++
-        (OverrideJavaTimeInterpreter ++
-          (DefaultScalacheckJavaUtilInterpreter ++
-            CNilGenEncoder)))
+//  val allInterpreters: GenValue[DefaultValues] =
+//    DefaultScalacheckScalaCoreInterpreter ++
+//      (DefaultCustomStringValueInterpreter ++
+//        (OverrideJavaTimeInterpreter ++
+//          (DefaultScalacheckJavaUtilInterpreter ++
+//            CNilGenEncoder)))
+  type JavaUtilValueCo[A] = JavaUtilValue[A] :+: CNilF[A]
+  type JavaTimeValueCo[A] = JavaTimeValue[A] :+: JavaUtilValueCo[A]
+  type CustomStringValueCo[A] = CustomStringValue[A] :+: JavaTimeValueCo[A]
+
+  val allInterpreters: GenValue[DefaultValues] = {
+    GenValue.merge[ScalaCoreValue, CustomStringValueCo](
+      DefaultScalacheckScalaCoreInterpreter,
+      GenValue.merge[CustomStringValue, JavaTimeValueCo](
+        DefaultCustomStringValueInterpreter,
+        GenValue.merge[JavaTimeValue, JavaUtilValueCo](
+          OverrideJavaTimeInterpreter,
+          GenValue
+            .merge[JavaUtilValue, CNilF](DefaultScalacheckJavaUtilInterpreter, CNilGenEncoder))
+      )
+    )
+  }
 
   override val genValue: GenValue[DefaultValues] = allInterpreters
 

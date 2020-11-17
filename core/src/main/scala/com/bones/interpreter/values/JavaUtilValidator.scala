@@ -14,11 +14,10 @@ trait JavaUtilValidator[IN] extends InterchangeFormatValidatorValue[JavaUtilValu
     alg match {
       case UuidData(validations) => {
         baseValidator.required(
-          Right(alg),
           alg.typeName,
           validations,
           (in, path) =>
-            baseValidator.extractString(alg, alg.typeName)(in, path).flatMap(stringToUuid(_, path))
+            baseValidator.extractString(alg.typeName)(in, path).flatMap(stringToUuid(_, path))
         )
       }
     }

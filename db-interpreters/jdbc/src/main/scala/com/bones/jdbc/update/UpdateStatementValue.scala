@@ -8,7 +8,7 @@ object UpdateStatementValue {
   /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
     * see https://stackoverflow.com/a/60561575/387094
     * */
-  def merge[L[_], R[_] <: Coproduct, A, OUT](
+  def merge[L[_], R[_] <: Coproduct](
     li: UpdateStatementValue[L],
     ri: UpdateStatementValue[R]
   ): UpdateStatementValue[Lambda[A => L[A] :+: R[A]]] =
@@ -22,7 +22,7 @@ object UpdateStatementValue {
 
     }
 
-  implicit class InterpreterOps[ALG[_], OUT](val base: UpdateStatementValue[ALG]) extends AnyVal {
+  implicit class InterpreterOps[ALG[_]](val base: UpdateStatementValue[ALG]) extends AnyVal {
     def ++[R[_] <: Coproduct](
       r: UpdateStatementValue[R]
     ): UpdateStatementValue[Lambda[A => ALG[A] :+: R[A]]] =

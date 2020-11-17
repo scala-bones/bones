@@ -3,26 +3,74 @@ package com.bones.argonaut
 import java.time.format.DateTimeFormatter
 
 import argonaut.Json
-import com.bones.data.values.{DefaultValues, ScalaCoreValue}
+import com.bones.data.values.{
+  CNilF,
+  CustomStringValue,
+  DefaultValues,
+  JavaTimeValue,
+  JavaUtilValue,
+  ScalaCoreValue
+}
 import com.bones.interpreter.InterchangeFormatEncoderValue.CNilInterchangeFormatEncoder
 import com.bones.interpreter.InterchangeFormatValidatorValue.CNilInterchangeFormatValidator
 import com.bones.interpreter.values._
 import com.bones.interpreter._
+import shapeless.:+:
 
 package object values {
 
-  val defaultEncoders: InterchangeFormatEncoderValue[DefaultValues, Json] =
-    ArgonautScalaCoreEncoder ++
-      (CustomStringEncoder ++
-        (ArgonautIsoJavaTimeEncoder ++
-          (ArgonautJavaUtilEncoder ++ CNilInterchangeFormatEncoder[Json]())))
+//  val defaultEncoders: InterchangeFormatEncoderValue[DefaultValues, Json] =
+//    ArgonautScalaCoreEncoder ++
+//      (CustomStringEncoder ++
+//        (ArgonautIsoJavaTimeEncoder ++
+//          (ArgonautJavaUtilEncoder ++ CNilInterchangeFormatEncoder[Json]())))
+//
+//  // Validator for the coproduct of all custom algebras
+//  val defaultValidators: InterchangeFormatValidatorValue[DefaultValues, Json] =
+//    ArgonautScalaCoreValidator ++
+//      (CustomStringValidator ++
+//        (ArgonautIsoJavaTimeValidator ++
+//          (ArgonautJavaUtilValidator ++ CNilInterchangeFormatValidator[Json]())))
 
-  // Validator for the coproduct of all custom algebras
-  val defaultValidators: InterchangeFormatValidatorValue[DefaultValues, Json] =
-    ArgonautScalaCoreValidator ++
-      (CustomStringValidator ++
-        (ArgonautIsoJavaTimeValidator ++
-          (ArgonautJavaUtilValidator ++ CNilInterchangeFormatValidator[Json]())))
+  // Below is equivalent to the above.  Above compiles in 2.13, below compiles in both 2.12 and 2.13
+  //start 2.12
+
+  type JavaUtilValueCo[A] = JavaUtilValue[A] :+: CNilF[A]
+  type JavaTimeValueCo[A] = JavaTimeValue[A] :+: JavaUtilValueCo[A]
+  type CustomStringValueCo[A] = CustomStringValue[A] :+: JavaTimeValueCo[A]
+
+  val defaultEncoders: InterchangeFormatEncoderValue[DefaultValues, Json] = {
+    InterchangeFormatEncoderValue.merge[ScalaCoreValue, CustomStringValueCo, Json](
+      ArgonautScalaCoreEncoder,
+      InterchangeFormatEncoderValue.merge[CustomStringValue, JavaTimeValueCo, Json](
+        CustomStringEncoder,
+        InterchangeFormatEncoderValue.merge[JavaTimeValue, JavaUtilValueCo, Json](
+          ArgonautIsoJavaTimeEncoder,
+          InterchangeFormatEncoderValue
+            .merge[JavaUtilValue, CNilF, Json](
+              ArgonautJavaUtilEncoder,
+              CNilInterchangeFormatEncoder[Json]())
+        )
+      )
+    )
+  }
+
+  val defaultValidators: InterchangeFormatValidatorValue[DefaultValues, Json] = {
+    InterchangeFormatValidatorValue.merge[ScalaCoreValue, CustomStringValueCo, Json](
+      ArgonautScalaCoreValidator,
+      InterchangeFormatValidatorValue.merge[CustomStringValue, JavaTimeValueCo, Json](
+        CustomStringValidator,
+        InterchangeFormatValidatorValue.merge[JavaTimeValue, JavaUtilValueCo, Json](
+          ArgonautIsoJavaTimeValidator,
+          InterchangeFormatValidatorValue
+            .merge[JavaUtilValue, CNilF, Json](
+              ArgonautJavaUtilValidator,
+              CNilInterchangeFormatValidator[Json]())
+        )
+      )
+    )
+  }
+  //end 2.12
 
   object ArgonautScalaCoreValidator extends ScalaCoreValidator[Json] {
     override val baseValidator: InterchangeFormatPrimitiveValidator[Json] =

@@ -1,6 +1,35 @@
+lazy val scala212 = "2.12.12"
+lazy val scala213 = "2.13.3"
+lazy val supportedScalaVersions = List(scala212, scala213)
+
+def versionSpecificOptions(scalaVersion: String): Seq[String] = {
+    CrossVersion.partialVersion(scalaVersion) match {
+         case Some((2, scalaMajor)) if scalaMajor == 13 => Nil
+         case _ => Seq("-Ypartial-unification")
+       }
+}
+
+def scalacOptionsVersion(scalaVersion: String) = {
+  Seq(
+//    "-deprecation",
+//    "-encoding", "UTF-8",
+//    "-unchecked",
+//    "-features",
+//    "-Xlint",
+//   "-Xfatal-warnings",
+//    "-Ywarn-dead-code",
+    "-language:implicitConversions",
+    "-language:higherKinds",
+    "-language:existentials",
+    "-language:postfixOps"
+  ) ++ versionSpecificOptions(scalaVersion) 
+}
+
 lazy val commonSettings = Seq(
   organization := "io.github.scala-bones",
   scalaVersion := "2.13.2",
+  crossScalaVersions := supportedScalaVersions,
+  scalacOptions := scalacOptionsVersion(scalaVersion.value),
   version := "0.7.0-SNAPSHOT",
   homepage := Some(url("https://github.com/oletraveler/bones")),
   startYear := Some(2018),
@@ -30,16 +59,6 @@ lazy val commonSettings = Seq(
   },
   publishMavenStyle := true,
   addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full),
-  scalacOptions ++= Seq(
-    "-encoding", "utf8", // Option and arguments on same line
-    "-Xfatal-warnings",  // New lines for each options
-    "-deprecation",
-    "-unchecked",
-    "-language:implicitConversions",
-    "-language:higherKinds",
-    "-language:existentials",
-    "-language:postfixOps"
-  )
 )
 lazy val core = (project in file("core"))
   .settings(
@@ -205,7 +224,7 @@ lazy val dbJdbc = (project in file("db-interpreters/jdbc"))
     name := "Bones JDBC",
     libraryDependencies ++= Seq(
       "org.postgresql" % "postgresql" % "42.2.18",
-      "io.github.scala-bones" %% "scatonic-ideal" % "0.2.0",
+      "io.github.scala-bones" %% "scatonic-ideal" % "0.3.0",
       "co.fs2" %% "fs2-core" % "2.4.5",
       "org.scalacheck" %% "scalacheck" % "1.15.1" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
@@ -223,7 +242,7 @@ lazy val dbDoobie = (project in file("db-interpreters/doobie"))
       "org.tpolecat" %% "doobie-postgres"  % doobieVersion,
 //      "org.postgresql" % "postgresql" % "42.2.16",
       "co.fs2" %% "fs2-core" % "2.4.5",
-      "io.github.scala-bones" %% "scatonic-ideal" % "0.2.0",
+      "io.github.scala-bones" %% "scatonic-ideal" % "0.3.0",
       "org.scalacheck" %% "scalacheck" % "1.15.1" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
@@ -261,7 +280,7 @@ lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
 
 val AkkaVersion = "2.6.10"
 val AkkaHttpVersion = "10.2.1"
-lazy val restAkkHttp = (project in file("rest-interpreters/akka-http-interpreter"))
+lazy val restAkkaHttp = (project in file("rest-interpreters/akka-http-interpreter"))
   .settings(
     commonSettings,
     name := "Bones Akka Http Server",

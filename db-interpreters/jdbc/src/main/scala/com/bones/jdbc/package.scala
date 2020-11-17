@@ -71,9 +71,8 @@ package object jdbc {
   }
 
   def findUniqueConstraint(v: List[ValidationOp[_]]): List[UniqueValue[_]] =
-    v.flatMap {
-      case uv: UniqueValue[_] => Some(uv)
-      case _                  => None
+    v.collect {
+      case uv: UniqueValue[_] => uv
     }
 
 }

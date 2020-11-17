@@ -155,7 +155,7 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
   private def eachKvpCoproduct[C <: Coproduct](
     co: KvpCoproduct[String, ALG, C]): Int => (Vector[NestedType], Int) =
     co match {
-      case _: KvpCoNil[String, _] @unchecked =>
+      case _: KvpCoNil[String, ALG] @unchecked =>
         lastIndex =>
           (Vector.empty, lastIndex)
       case op: KvpCoproductCollectionHead[String, ALG, a, c, o] @unchecked => {
@@ -167,7 +167,7 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
         lastIndex =>
           {
             val right = tailF(left._3)
-            val allNested = NestedMessage(name, left._1) +: left._2.appendedAll(right._1)
+            val allNested = NestedMessage(name, left._1) +: (left._2 ++ right._1)
             (allNested, right._2)
           }
       }
@@ -193,7 +193,7 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
 
     val tail = fromKvpCollection(kvp.tail)(thisIndex)
 
-    (head._1.appendedAll(tail._1), head._2.appendedAll(tail._2), tail._3)
+    (head._1 ++ tail._1, head._2 ++ tail._2, tail._3)
   }
 
   override def kvpHListCollectionHead[
@@ -274,7 +274,7 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
       case kvp: KvpCollectionValue[String, ALG, a] @unchecked =>
         (name, index) =>
           val result = fromKvpCollection(kvp.kvpCollection)(0)
-          val nested = result._2.appended(NestedMessage(name, result._1))
+          val nested = result._2 :+ NestedMessage(name, result._1)
           (MessageField(NestedDataType(name), true, false, name, index), nested, index)
     }
 

@@ -16,7 +16,7 @@ trait CustomStringValidator[IN] extends InterchangeFormatValidatorValue[CustomSt
         in match {
           case Some(json) =>
             baseValidator
-              .extractString(alg, alg.typeName)(json, path)
+              .extractString(alg.typeName)(json, path)
               .flatMap(result => {
                 val allValidations = alg.customValidation :: alg.validations
                 ValidationUtil

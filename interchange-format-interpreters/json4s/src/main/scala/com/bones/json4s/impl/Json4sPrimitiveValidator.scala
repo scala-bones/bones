@@ -2,7 +2,6 @@ package com.bones.json4s.impl
 
 import com.bones.Path
 import com.bones.data.Error.{CanNotConvert, ExtractionErrors, RequiredValue, WrongTypeError}
-import com.bones.data.ListData
 import com.bones.interpreter.InterchangeFormatPrimitiveValidator
 import org.json4s.JsonAST._
 import org.json4s.{JInt, JNull, JObject}
@@ -12,12 +11,11 @@ import scala.util.Try
 object Json4sPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JValue] {
 
   override def extractString[ALG2[_], A](
-    op: ALG2[A],
     typeName: String
   )(in: JValue, path: List[String]): Either[ExtractionErrors[String], String] =
     in match {
       case JString(value) => Right(value)
-      case _              => Left(determineError(in, op, typeName, path))
+      case _              => Left(determineError(in, typeName, path))
     }
 
   def tryNumberConversion[N, NN: Manifest](
@@ -28,8 +26,8 @@ object Json4sPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JVal
       List(CanNotConvert(path, value, manifest[NN].runtimeClass, Some(ex))))
 
   override def extractInt[ALG2[_], A](
-    op: ALG2[A]
-  )(in: JValue, path: List[String]): Either[ExtractionErrors[String], Int] = {
+    in: JValue,
+    path: List[String]): Either[ExtractionErrors[String], Int] = {
     in match {
       case JInt(i)     => Right(i.toInt)
       case JLong(l)    => tryNumberConversion[Long, Int](path, l, _.toInt)
@@ -40,8 +38,8 @@ object Json4sPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JVal
   }
 
   override def extractFloat[ALG2[_], A](
-    op: ALG2[A]
-  )(in: JValue, path: List[String]): Either[ExtractionErrors[String], Float] = {
+    in: JValue,
+    path: List[String]): Either[ExtractionErrors[String], Float] = {
     in match {
       case JInt(i)     => tryNumberConversion[BigInt, Float](path, i, _.toFloat)
       case JLong(l)    => tryNumberConversion[Long, Float](path, l, _.toFloat)
@@ -53,8 +51,8 @@ object Json4sPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JVal
   }
 
   override def extractDouble[ALG2[_], A](
-    op: ALG2[A]
-  )(in: JValue, path: List[String]): Either[ExtractionErrors[String], Double] = {
+    in: JValue,
+    path: List[String]): Either[ExtractionErrors[String], Double] = {
     in match {
       case JInt(i)     => tryNumberConversion[BigInt, Double](path, i, _.toDouble)
       case JLong(l)    => tryNumberConversion[Long, Double](path, l, _.toDouble)
@@ -66,8 +64,8 @@ object Json4sPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JVal
   }
 
   override def extractLong[ALG2[_], A](
-    op: ALG2[A]
-  )(in: JValue, path: List[String]): Either[ExtractionErrors[String], Long] = {
+    in: JValue,
+    path: List[String]): Either[ExtractionErrors[String], Long] = {
     {
       in match {
         case JInt(i)     => tryNumberConversion[BigInt, Long](path, i, _.toLong)
@@ -81,8 +79,8 @@ object Json4sPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JVal
   }
 
   override def extractShort[ALG2[_], A](
-    op: ALG2[A]
-  )(in: JValue, path: List[String]): Either[ExtractionErrors[String], Short] = {
+    in: JValue,
+    path: List[String]): Either[ExtractionErrors[String], Short] = {
     in match {
       case JInt(i)     => tryNumberConversion[BigInt, Short](path, i, _.toShort)
       case JLong(l)    => tryNumberConversion[Long, Short](path, l, _.toShort)
@@ -94,26 +92,26 @@ object Json4sPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JVal
   }
 
   override def extractBool[ALG2[_], A](
-    op: ALG2[A]
-  )(in: JValue, path: List[String]): Either[ExtractionErrors[String], Boolean] = {
+    in: JValue,
+    path: List[String]): Either[ExtractionErrors[String], Boolean] = {
     in match {
       case JBool(bool) => Right(bool)
-      case _           => Left(determineError(in, op, "Boolean", path))
+      case _           => Left(determineError(in, "Boolean", path))
     }
   }
 
   override def extractArray[ALG2[_], A](
-    op: ListData[String, ALG2, A]
+    typeName: String
   )(in: JValue, path: Path[String]): Either[ExtractionErrors[String], Seq[JValue]] = {
     in match {
       case JArray(elements) => Right(elements)
-      case _                => Left(determineError(in, Left(op), op.typeNameOfT, path))
+      case _                => Left(determineError(in, typeName, path))
     }
   }
 
   override def extractBigDecimal[ALG2[_], A](
-    op: ALG2[A]
-  )(in: JValue, path: List[String]): Either[ExtractionErrors[String], BigDecimal] = {
+    in: JValue,
+    path: List[String]): Either[ExtractionErrors[String], BigDecimal] = {
     in match {
       case JInt(i)     => tryNumberConversion[BigInt, BigDecimal](path, i, BigDecimal(_))
       case JLong(l)    => tryNumberConversion[Long, BigDecimal](path, l, BigDecimal(_))
@@ -135,7 +133,6 @@ object Json4sPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JVal
 
   protected def determineError[ALG2[_], A](
     in: JValue,
-    op: ALG2[A],
     typeName: String,
     path: List[String]
   ): ExtractionErrors[String] = {

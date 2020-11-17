@@ -1,17 +1,44 @@
 package com.bones.swagger
 import java.time.format.DateTimeFormatter
 
-import com.bones.data.values.DefaultValues
+import com.bones.data.values.{
+  CNilF,
+  CustomStringValue,
+  DefaultValues,
+  JavaTimeValue,
+  JavaUtilValue,
+  ScalaCoreValue
+}
+import com.bones.interpreter.InterchangeFormatEncoderValue
 import com.bones.swagger.SwaggerCoreInterpreter.CustomSwaggerInterpreter
 import com.bones.swagger.SwaggerCoreInterpreter.CustomSwaggerInterpreter.CNilCustomSwaggerInterpreter
+import shapeless.:+:
 
 package object values {
 
-  val defaultInterpreters: CustomSwaggerInterpreter[DefaultValues] =
-    DefaultScalaCoreInterpreter ++
-      (DefaultCustomStringInterpreter ++
-        (SwaggerIsoJavaTimeInterpreter ++
-          (DefaultJavaUtilInterpreter ++ CNilCustomSwaggerInterpreter)))
+//  val defaultInterpreters: CustomSwaggerInterpreter[DefaultValues] =
+//    DefaultScalaCoreInterpreter ++
+//      (DefaultCustomStringInterpreter ++
+//        (SwaggerIsoJavaTimeInterpreter ++
+//          (DefaultJavaUtilInterpreter ++ CNilCustomSwaggerInterpreter)))
+
+  type JavaUtilValueCo[A] = JavaUtilValue[A] :+: CNilF[A]
+  type JavaTimeValueCo[A] = JavaTimeValue[A] :+: JavaUtilValueCo[A]
+  type CustomStringValueCo[A] = CustomStringValue[A] :+: JavaTimeValueCo[A]
+
+  val defaultInterpreters: CustomSwaggerInterpreter[DefaultValues] = {
+    CustomSwaggerInterpreter.merge[ScalaCoreValue, CustomStringValueCo](
+      DefaultScalaCoreInterpreter,
+      CustomSwaggerInterpreter.merge[CustomStringValue, JavaTimeValueCo](
+        DefaultCustomStringInterpreter,
+        CustomSwaggerInterpreter.merge[JavaTimeValue, JavaUtilValueCo](
+          SwaggerIsoJavaTimeInterpreter,
+          CustomSwaggerInterpreter
+            .merge[JavaUtilValue, CNilF](DefaultJavaUtilInterpreter, CNilCustomSwaggerInterpreter)
+        )
+      )
+    )
+  }
 
   object DefaultCustomStringInterpreter extends CustomStringInterpreter
   object DefaultJavaUtilInterpreter extends JavaUtilInterpreter

@@ -1,6 +1,20 @@
 package com.bones.jdbc
 
-import com.bones.data.values.{CNilF, DefaultValues}
+import com.bones.data.values.{
+  CNilF,
+  CustomStringValue,
+  DefaultValues,
+  JavaTimeValue,
+  JavaUtilValue,
+  ScalaCoreValue
+}
+import com.bones.jdbc.column.ColumnValue.CNilColumnValue
+import com.bones.jdbc.column.{
+  DefaultColumnStringDbValue,
+  DefaultJavaTimeDbColumnValue,
+  DefaultJavaUtilDbColumnValue,
+  DefaultScalaCoreDbColumnValue
+}
 import com.bones.si.ideal.{IdealColumn, IdealDataType, IdealForeignKey, IdealTable}
 import com.bones.validation.ValidationDefinition.UniqueValue
 import shapeless.{:+:, Coproduct, Inl, Inr}
@@ -10,11 +24,34 @@ package object ideal {
   type UniqueUmbrella = List[String]
   case class UniqueGroup(tableName: String, name: Option[String], columns: List[IdealColumn])
 
-  val defaultIdealValue: IdealValue[DefaultValues] =
-    IdealScalaCoreInterpreter ++
-      (IdealCustomStringInterpreter ++
-        (IdealJavaTimeInterpreter ++
-          (IdealJavaUtilInterpreter ++ CNilIdealInterpreter)))
+//  val defaultIdealValue: IdealValue[DefaultValues] =
+//    IdealScalaCoreInterpreter ++
+//      (IdealCustomStringInterpreter ++
+//        (IdealJavaTimeInterpreter ++
+//          (IdealJavaUtilInterpreter ++ CNilIdealInterpreter)))
+
+  // Below is equivalent to the above.  Above compiles in 2.13, below compiles in both 2.12 and 2.13
+  //start 2.12
+
+  type JavaUtilValueCo[A] = JavaUtilValue[A] :+: CNilF[A]
+  type JavaTimeValueCo[A] = JavaTimeValue[A] :+: JavaUtilValueCo[A]
+  type CustomStringValueCo[A] = CustomStringValue[A] :+: JavaTimeValueCo[A]
+
+  val defaultIdealValue: IdealValue[DefaultValues] = {
+    IdealValue.merge[ScalaCoreValue, CustomStringValueCo](
+      IdealScalaCoreInterpreter,
+      IdealValue.merge[CustomStringValue, JavaTimeValueCo](
+        IdealCustomStringInterpreter,
+        IdealValue.merge[JavaTimeValue, JavaUtilValueCo](
+          IdealJavaTimeInterpreter,
+          IdealValue
+            .merge[JavaUtilValue, CNilF](IdealJavaUtilInterpreter, CNilIdealInterpreter)
+        )
+      )
+    )
+  }
+
+  //end 2.12
 
   val defaultIdealInterpreter = new Ideal[DefaultValues] {
     override def algInterpreter: IdealValue[DefaultValues] = defaultIdealValue
@@ -80,7 +117,7 @@ package object ideal {
     /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
       * see https://stackoverflow.com/a/60561575/387094
       * */
-    def merge[L[_], R[_] <: Coproduct, A, OUT](
+    def merge[L[_], R[_] <: Coproduct](
       li: IdealValue[L],
       ri: IdealValue[R]
     ): IdealValue[Lambda[A => L[A] :+: R[A]]] =
@@ -97,7 +134,7 @@ package object ideal {
 
       }
 
-    implicit class InterpreterOps[ALG[_], OUT](val base: IdealValue[ALG]) extends AnyVal {
+    implicit class InterpreterOps[ALG[_]](val base: IdealValue[ALG]) extends AnyVal {
       def ++[R[_] <: Coproduct](
         r: IdealValue[R]
       ): IdealValue[Lambda[A => ALG[A] :+: R[A]]] =

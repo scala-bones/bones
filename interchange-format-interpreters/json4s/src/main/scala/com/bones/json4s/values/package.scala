@@ -2,7 +2,14 @@ package com.bones.json4s
 
 import java.time.format.DateTimeFormatter
 
-import com.bones.data.values.{DefaultValues, ScalaCoreValue}
+import com.bones.data.values.{
+  CNilF,
+  CustomStringValue,
+  DefaultValues,
+  JavaTimeValue,
+  JavaUtilValue,
+  ScalaCoreValue
+}
 import com.bones.interpreter.{
   InterchangeFormatEncoderValue,
   InterchangeFormatPrimitiveEncoder,
@@ -25,15 +32,56 @@ import com.bones.interpreter.values.{
 }
 import com.bones.json4s.impl.{Json4sPrimitiveEncoder, Json4sPrimitiveValidator}
 import org.json4s.JValue
+import shapeless.:+:
 
 package object values {
-  val defaultEncoders: InterchangeFormatEncoderValue[DefaultValues, JValue] =
-    BaseScalaCoreEncoder ++ (CustomStringEncoder ++ (BaseCirceIsoJavaTimeEncoder ++
-      (BaseJavaUtilEncoder ++ CNilInterchangeFormatEncoder[JValue]())))
+//  val defaultEncoders: InterchangeFormatEncoderValue[DefaultValues, JValue] =
+//    BaseScalaCoreEncoder ++ (CustomStringEncoder ++ (BaseJson4sIsoJavaTimeEncoder ++
+//      (BaseJavaUtilEncoder ++ CNilInterchangeFormatEncoder[JValue]())))
+//
+//  val defaultValidators: InterchangeFormatValidatorValue[DefaultValues, JValue] =
+//    BaseScalaCoreValidator ++ (CustomStringValidator ++ (BaseJson4sIsoJavaTimeValidator ++
+//      (BaseJavaUtilValidator ++ CNilInterchangeFormatValidator[JValue]())))
 
-  val defaultValidators: InterchangeFormatValidatorValue[DefaultValues, JValue] =
-    BaseScalaCoreValidator ++ (CustomStringValidator ++ (BaseCirceIsoJavaTimeValidator ++
-      (BaseJavaUtilValidator ++ CNilInterchangeFormatValidator[JValue]())))
+  // Below is equivalent to the above.  Above compiles in 2.13, below compiles in both 2.12 and 2.13
+  //start 2.12
+
+  type JavaUtilValueCo[A] = JavaUtilValue[A] :+: CNilF[A]
+  type JavaTimeValueCo[A] = JavaTimeValue[A] :+: JavaUtilValueCo[A]
+  type CustomStringValueCo[A] = CustomStringValue[A] :+: JavaTimeValueCo[A]
+
+  val defaultEncoders: InterchangeFormatEncoderValue[DefaultValues, JValue] = {
+    InterchangeFormatEncoderValue.merge[ScalaCoreValue, CustomStringValueCo, JValue](
+      BaseScalaCoreEncoder,
+      InterchangeFormatEncoderValue.merge[CustomStringValue, JavaTimeValueCo, JValue](
+        CustomStringEncoder,
+        InterchangeFormatEncoderValue.merge[JavaTimeValue, JavaUtilValueCo, JValue](
+          BaseJson4sIsoJavaTimeEncoder,
+          InterchangeFormatEncoderValue
+            .merge[JavaUtilValue, CNilF, JValue](
+              BaseJavaUtilEncoder,
+              CNilInterchangeFormatEncoder[JValue]())
+        )
+      )
+    )
+  }
+
+  val defaultValidators: InterchangeFormatValidatorValue[DefaultValues, JValue] = {
+    InterchangeFormatValidatorValue.merge[ScalaCoreValue, CustomStringValueCo, JValue](
+      BaseScalaCoreValidator,
+      InterchangeFormatValidatorValue.merge[CustomStringValue, JavaTimeValueCo, JValue](
+        CustomStringValidator,
+        InterchangeFormatValidatorValue.merge[JavaTimeValue, JavaUtilValueCo, JValue](
+          BaseJson4sIsoJavaTimeValidator,
+          InterchangeFormatValidatorValue
+            .merge[JavaUtilValue, CNilF, JValue](
+              BaseJavaUtilValidator,
+              CNilInterchangeFormatValidator[JValue]())
+        )
+      )
+    )
+  }
+  //end 2.12
 
   object BaseScalaCoreEncoder extends ScalaCoreEncoder[JValue] {
     override val defaultEncoder: InterchangeFormatPrimitiveEncoder[JValue] =
@@ -55,11 +103,11 @@ package object values {
       Json4sPrimitiveValidator
   }
 
-  object BaseCirceIsoJavaTimeEncoder extends BaseCirceIsoJavaTimeEncoder
+  object BaseJson4sIsoJavaTimeEncoder extends BaseJson4sIsoJavaTimeEncoder
 
-  object BaseCirceIsoJavaTimeValidator extends BaseCirceIsoJavaTimeValidator
+  object BaseJson4sIsoJavaTimeValidator extends BaseJson4sIsoJavaTimeValidator
 
-  trait BaseCirceIsoJavaTimeValidator extends JavaTimeValidator[JValue] {
+  trait BaseJson4sIsoJavaTimeValidator extends JavaTimeValidator[JValue] {
 
     override val baseValidator: InterchangeFormatPrimitiveValidator[JValue] =
       Json4sPrimitiveValidator
@@ -72,7 +120,7 @@ package object values {
     override val localTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_TIME
   }
 
-  trait BaseCirceIsoJavaTimeEncoder extends JavaTimeEncoder[JValue] {
+  trait BaseJson4sIsoJavaTimeEncoder extends JavaTimeEncoder[JValue] {
 
     override val baseEncoder: InterchangeFormatPrimitiveEncoder[JValue] =
       Json4sPrimitiveEncoder
