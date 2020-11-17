@@ -262,7 +262,7 @@ lazy val restHttpCommon = (project in file("rest-interpreters/http-common"))
   )
   .dependsOn(core, swaggerOas3)
 
-lazy val http4sVersion = "0.21.8"
+lazy val http4sVersion = "0.21.9"
 lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
   .settings(
     commonSettings,
