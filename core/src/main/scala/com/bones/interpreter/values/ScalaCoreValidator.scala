@@ -19,68 +19,39 @@ trait ScalaCoreValidator[IN] extends InterchangeFormatValidatorValue[ScalaCoreVa
     alg match {
       case op: StringData =>
         baseValidator.required(
-          Right(op),
           alg.typeName,
           op.validations,
-          baseValidator.extractString(Right(op), alg.typeName))
+          baseValidator.extractString(alg.typeName))
       case id: IntData =>
-        baseValidator.required(
-          Right(id),
-          alg.typeName,
-          id.validations,
-          baseValidator.extractInt(Right(id)))
+        baseValidator.required(alg.typeName, id.validations, baseValidator.extractInt)
       case op: LongData =>
-        baseValidator.required(
-          Right(op),
-          alg.typeName,
-          op.validations,
-          baseValidator.extractLong(Right(op)))
+        baseValidator.required(alg.typeName, op.validations, baseValidator.extractLong)
       case op: BooleanData =>
-        baseValidator.required(
-          Right(op),
-          alg.typeName,
-          op.validations,
-          baseValidator.extractBool(Right(op)))
+        baseValidator.required(alg.typeName, op.validations, baseValidator.extractBool)
       case op @ ByteArrayData(validations) =>
         val decoder = Base64.getDecoder
         (inOpt: Option[IN], path: Path[String]) =>
           for {
             in <- inOpt.toRight[ExtractionErrors[String]](List(RequiredValue(path, alg.typeName)))
-            str <- baseValidator.extractString(Right(op), alg.typeName)(in, path)
+            str <- baseValidator.extractString(alg.typeName)(in, path)
             arr <- Try {
               decoder.decode(str)
             }.toEither.left.map(thr =>
               List(CanNotConvert(path, str, classOf[Array[Byte]], Some(thr))))
           } yield arr
       case fd: FloatData =>
-        baseValidator.required(
-          Right(fd),
-          alg.typeName,
-          fd.validations,
-          baseValidator.extractFloat(Left(alg)))
+        baseValidator.required(alg.typeName, fd.validations, baseValidator.extractFloat)
       case dd: DoubleData =>
-        baseValidator.required(
-          Right(dd),
-          alg.typeName,
-          dd.validations,
-          baseValidator.extractDouble(alg))
+        baseValidator.required(alg.typeName, dd.validations, baseValidator.extractDouble)
       case sd: ShortData =>
-        baseValidator.required(
-          Right(sd),
-          alg.typeName,
-          sd.validations,
-          baseValidator.extractShort(alg))
+        baseValidator.required(alg.typeName, sd.validations, baseValidator.extractShort)
       case op: BigDecimalData =>
-        baseValidator.required(
-          Right(op),
-          alg.typeName,
-          op.validations,
-          baseValidator.extractBigDecimal(alg))
+        baseValidator.required(alg.typeName, op.validations, baseValidator.extractBigDecimal)
       case op: EnumerationData[e, A] =>
         (inOpt: Option[IN], path: Path[String]) =>
           for {
             in <- inOpt.toRight[ExtractionErrors[String]](List(RequiredValue(path, alg.typeName)))
-            str <- baseValidator.extractString(Right(alg), alg.typeName)(in, path)
+            str <- baseValidator.extractString(alg.typeName)(in, path)
             enum <- stringToEnumeration[String, e, A](str, path, op.enumeration.asInstanceOf[e])
           } yield enum.asInstanceOf[A]
 

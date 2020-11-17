@@ -2,10 +2,18 @@ package com.bones.jdbc
 
 import java.sql.PreparedStatement
 
-import com.bones.data.values.DefaultValues
+import com.bones.data.values.{
+  CNilF,
+  CustomStringValue,
+  DefaultValues,
+  JavaTimeValue,
+  JavaUtilValue,
+  ScalaCoreValue
+}
 import com.bones.jdbc.DbUtil.camelToSnake
 import com.bones.jdbc.column.ColumnNameInterpreter
 import com.bones.jdbc.rs.ResultSetInterpreter
+import shapeless.:+:
 
 package object insert {
 
@@ -23,11 +31,34 @@ package object insert {
   object DefaultJavaTimeDbInsert extends JavaTimeDbInsert
   object DefaultCustomStringDbInsert extends CustomStringDbInsert
 
-  val defaultDbInsertValues: DbInsertValue[DefaultValues] =
-    DefaultScalaCoreDbInsert ++
-      (DefaultCustomStringDbInsert ++
-        (DefaultJavaTimeDbInsert ++
-          (DefaultJavaUtilDbInsert ++ CNilInsertInterpreter)))
+//  val defaultDbInsertValues: DbInsertValue[DefaultValues] =
+//    DefaultScalaCoreDbInsert ++
+//      (DefaultCustomStringDbInsert ++
+//        (DefaultJavaTimeDbInsert ++
+//          (DefaultJavaUtilDbInsert ++ CNilInsertInterpreter)))
+
+  // Below is equivalent to the above.  Above compiles in 2.13, below compiles in both 2.12 and 2.13
+  //start 2.12
+
+  type JavaUtilValueCo[A] = JavaUtilValue[A] :+: CNilF[A]
+  type JavaTimeValueCo[A] = JavaTimeValue[A] :+: JavaUtilValueCo[A]
+  type CustomStringValueCo[A] = CustomStringValue[A] :+: JavaTimeValueCo[A]
+
+  val defaultDbInsertValues: DbInsertValue[DefaultValues] = {
+    DbInsertValue.merge[ScalaCoreValue, CustomStringValueCo](
+      DefaultScalaCoreDbInsert,
+      DbInsertValue.merge[CustomStringValue, JavaTimeValueCo](
+        DefaultCustomStringDbInsert,
+        DbInsertValue.merge[JavaTimeValue, JavaUtilValueCo](
+          DefaultJavaTimeDbInsert,
+          DbInsertValue
+            .merge[JavaUtilValue, CNilF](DefaultJavaUtilDbInsert, CNilInsertInterpreter)
+        )
+      )
+    )
+  }
+
+  //end 2.12
 
   val defaultDbInsertInterpreter: DbInsert[DefaultValues] = new DbInsert[DefaultValues] {
     override def resultSetInterpreter: ResultSetInterpreter[DefaultValues] =

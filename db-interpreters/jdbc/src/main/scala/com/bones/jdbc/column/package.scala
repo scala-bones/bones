@@ -1,9 +1,16 @@
 package com.bones.jdbc
 
 import com.bones.data.KvpCoproduct
-import com.bones.data.values.DefaultValues
+import com.bones.data.values.{
+  CNilF,
+  CustomStringValue,
+  DefaultValues,
+  JavaTimeValue,
+  JavaUtilValue,
+  ScalaCoreValue
+}
 import com.bones.jdbc.column.ColumnValue.CNilColumnValue
-import shapeless.Coproduct
+import shapeless.{:+:, Coproduct}
 
 package object column {
 
@@ -16,11 +23,34 @@ package object column {
   def nameToColumn(columnDefinition: String): ToColumns =
     name => List(Column(DbUtil.camelToSnake(name), columnDefinition, false))
 
-  val defaultDbColumnValues: ColumnValue[DefaultValues] =
-    (DefaultScalaCoreDbColumnValue ++
-      (DefaultColumnStringDbValue ++
-        (DefaultJavaTimeDbColumnValue ++
-          (DefaultJavaUtilDbColumnValue ++ CNilColumnValue))))
+//  val defaultDbColumnValues: ColumnValue[DefaultValues] =
+//    (DefaultScalaCoreDbColumnValue ++
+//      (DefaultColumnStringDbValue ++
+//        (DefaultJavaTimeDbColumnValue ++
+//          (DefaultJavaUtilDbColumnValue ++ CNilColumnValue))))
+
+  // Below is equivalent to the above.  Above compiles in 2.13, below compiles in both 2.12 and 2.13
+  //start 2.12
+
+  type JavaUtilValueCo[A] = JavaUtilValue[A] :+: CNilF[A]
+  type JavaTimeValueCo[A] = JavaTimeValue[A] :+: JavaUtilValueCo[A]
+  type CustomStringValueCo[A] = CustomStringValue[A] :+: JavaTimeValueCo[A]
+
+  val defaultDbColumnValues: ColumnValue[DefaultValues] = {
+    ColumnValue.merge[ScalaCoreValue, CustomStringValueCo](
+      DefaultScalaCoreDbColumnValue,
+      ColumnValue.merge[CustomStringValue, JavaTimeValueCo](
+        DefaultColumnStringDbValue,
+        ColumnValue.merge[JavaTimeValue, JavaUtilValueCo](
+          DefaultJavaTimeDbColumnValue,
+          ColumnValue
+            .merge[JavaUtilValue, CNilF](DefaultJavaUtilDbColumnValue, CNilColumnValue)
+        )
+      )
+    )
+  }
+
+  //end 2.12
 
   object DefaultJavaTimeDbColumnValue extends JavaTimeDbColumnValue
   object DefaultJavaUtilDbColumnValue extends JavaUtilDbColumnValue

@@ -15,7 +15,7 @@ trait BsonCustomStringValidator
       bson match {
         case Some(bsonVal) =>
           BsonPrimitiveValidator
-            .extractString(Right(alg), "String")(bsonVal, path)
+            .extractString("String")(bsonVal, path)
             .asInstanceOf[Either[ExtractionErrors[String], A]]
         case None => Left(List(RequiredValue(path, alg.typeName)))
 

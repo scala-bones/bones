@@ -8,7 +8,7 @@ object ProtobufValidatorValue {
   /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
     * see https://stackoverflow.com/a/60561575/387094
     * */
-  def merge[L[_], R[_] <: Coproduct, A](
+  def merge[L[_], R[_] <: Coproduct](
     li: ProtobufValidatorValue[L],
     ri: ProtobufValidatorValue[R]): ProtobufValidatorValue[Lambda[A => L[A] :+: R[A]]] =
     new ProtobufValidatorValue[Lambda[A => L[A] :+: R[A]]] {

@@ -25,7 +25,7 @@ case class InterpreterConfig[ALG[_], ID, CT](
 ) {
 
   val allContentTypes: Map[CT, Content[ALG, CT]] =
-    Map.from((contentTypes + defaultContentType).map(ct => (ct.contentType, ct)))
+    (contentTypes + defaultContentType).map(ct => (ct.contentType, ct)).toMap
 
   def findWithDefault(ctOption: Option[CT]): Option[Content[ALG, CT]] =
     ctOption match {

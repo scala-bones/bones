@@ -18,6 +18,6 @@ trait WithId[K, ALG[_]] extends Sugar[K, ALG] {
   def schemaWithId[A: Manifest, ID: Manifest](
     idDefinition: (String, ALG[ID]),
     schema: KvpCollectionValue[String, ALG, A]) = {
-    (idDefinition :: schema.kvpCollection :: KvpNil[String, ALG]).tupled[(ID, A)]
+    (idDefinition :: schema.kvpCollection :: KvpNil[String, ALG]()).tupled[(ID, A)]
   }
 }

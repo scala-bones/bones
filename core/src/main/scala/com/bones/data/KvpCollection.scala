@@ -212,7 +212,7 @@ sealed abstract class KvpHListCollection[K, ALG[_], L <: HList, LL <: Nat]
 
   def algMapKvpHListCollection[ALG2[_]](f: ALG[_] => ALG2[_]): KvpHListCollection[K, ALG2, L, LL] =
     this match {
-      case n: KvpNil[K, ALG] => n.algMapKvpNil.asInstanceOf[KvpHListCollection[K, ALG2, L, LL]]
+      case n: KvpNil[K, ALG] => n.algMapKvpNil().asInstanceOf[KvpHListCollection[K, ALG2, L, LL]]
       case kvp: KvpHListCollectionHead[K, ALG, ho, no, h, hl, t, tl] =>
         kvp.algMapKvpHListCollectionHead(f).asInstanceOf[KvpHListCollection[K, ALG2, L, LL]]
       case kvp: KvpSingleValueHead[K, ALG, x, xs, xsl, o] =>
@@ -248,17 +248,20 @@ sealed abstract class KvpHListCollection[K, ALG[_], L <: HList, LL <: Nat]
   }
 
   def xmap[A: Manifest, B](f: B => A, g: A => B, validation: ValidationOp[A]*)(
-    implicit isEqual: (B :: HNil) =:= L
+    implicit isEqual1: (B :: HNil) =:= L,
+    isEqual2: L =:= (B :: HNil)
   ): KvpWrappedHList[K, ALG, A, L, LL] = {
     type T = B :: HNil
-    val witness = implicitly[(B :: HNil) =:= L]
-    val f2: L => A = h => f(witness.flip(h).head)
-    val g2: A => L = a => witness(g(a) :: HNil)
+    val witness1 = implicitly[(B :: HNil) =:= L]
+    val witness2 = implicitly[L =:= (B :: HNil)]
+    val f2: L => A = h => f(witness2(h).head)
+    val g2: A => L = a => witness1(g(a) :: HNil)
     hListXmap[A](f2, g2, validation.toList: _*)
   }
 
   def encodedHead[B: Manifest](validation: ValidationOp[B]*)(
-    implicit isEqual: (B :: HNil) =:= L
+    implicit isEqual1: (B :: HNil) =:= L,
+    isEqual2: L =:= (B :: HNil)
   ) =
     xmap[B, B](identity, identity)
 

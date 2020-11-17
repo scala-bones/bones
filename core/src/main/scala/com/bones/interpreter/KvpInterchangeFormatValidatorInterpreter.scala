@@ -140,7 +140,7 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
             {
               for {
                 in <- inOpt.toRight(List(RequiredValue(path, op.typeNameOfT)))
-                arr <- interchangeFormatPrimitiveValidator.extractArray(op)(in, path)
+                arr <- interchangeFormatPrimitiveValidator.extractArray(op.typeName)(in, path)
                 listOfIn <- traverseArray(arr, path)
               } yield listOfIn
             }

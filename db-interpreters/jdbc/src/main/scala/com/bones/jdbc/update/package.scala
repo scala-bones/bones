@@ -3,10 +3,18 @@ package com.bones.jdbc
 import java.sql.PreparedStatement
 
 import com.bones.data.KvpCoproduct
-import com.bones.data.values.DefaultValues
+import com.bones.data.values.{
+  CNilF,
+  CustomStringValue,
+  DefaultValues,
+  JavaTimeValue,
+  JavaUtilValue,
+  ScalaCoreValue
+}
 import com.bones.jdbc.DbUtil.camelToSnake
+import com.bones.jdbc.rs.{DefaultCustomStringResultSet, DefaultJavaTimeResultSet}
 import com.bones.jdbc.update.UpdateStatementValue.CNilUpdateStatementInterpreter$
-import shapeless.Coproduct
+import shapeless.{:+:, Coproduct}
 
 package object update {
 
@@ -29,11 +37,36 @@ package object update {
   object DefaultScalaCoreUpdateStatement extends ScalaCoreUpdateStatement
   object DefaultCustomStringUpdateStatement extends CustomStringUpdateStatement
 
-  val defaultUpdateStatementInterpreter: UpdateStatementValue[DefaultValues] =
-    DefaultScalaCoreUpdateStatement ++
-      (DefaultCustomStringUpdateStatement ++
-        (DefaultJavaTimeUpdateStatement ++
-          (DefaultJavaUtilUpdateStatement ++ CNilUpdateStatementInterpreter$)))
+//  val defaultUpdateStatementInterpreter: UpdateStatementValue[DefaultValues] =
+//    DefaultScalaCoreUpdateStatement ++
+//      (DefaultCustomStringUpdateStatement ++
+//        (DefaultJavaTimeUpdateStatement ++
+//          (DefaultJavaUtilUpdateStatement ++ CNilUpdateStatementInterpreter$)))
+
+  // Below is equivalent to the above.  Above compiles in 2.13, below compiles in both 2.12 and 2.13
+  //start 2.12
+
+  type JavaUtilValueCo[A] = JavaUtilValue[A] :+: CNilF[A]
+  type JavaTimeValueCo[A] = JavaTimeValue[A] :+: JavaUtilValueCo[A]
+  type CustomStringValueCo[A] = CustomStringValue[A] :+: JavaTimeValueCo[A]
+
+  val defaultUpdateStatementInterpreter: UpdateStatementValue[DefaultValues] = {
+    UpdateStatementValue.merge[ScalaCoreValue, CustomStringValueCo](
+      DefaultScalaCoreUpdateStatement,
+      UpdateStatementValue.merge[CustomStringValue, JavaTimeValueCo](
+        DefaultCustomStringUpdateStatement,
+        UpdateStatementValue.merge[JavaTimeValue, JavaUtilValueCo](
+          DefaultJavaTimeUpdateStatement,
+          UpdateStatementValue
+            .merge[JavaUtilValue, CNilF](
+              DefaultJavaUtilUpdateStatement,
+              CNilUpdateStatementInterpreter$)
+        )
+      )
+    )
+  }
+
+  //end 2.12
 
   val defaultJdbcStatementInterpreter = new JdbcStatementInterpreter[DefaultValues] {
     override def customDbUpdateInterpreter: UpdateStatementValue[DefaultValues] =

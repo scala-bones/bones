@@ -30,7 +30,7 @@ trait BsonEncoderInterpreter[ALG[_]]
   override def combine(pre: BSONValue, post: BSONValue): BSONValue = {
     (pre, post) match {
       case (BSONDocument(preElement), BSONDocument(postElements)) =>
-        BSONDocument(preElement.lazyAppendedAll(postElements))
+        BSONDocument(preElement ++ postElements)
       case _ =>
         throw new RuntimeException("pre and post must be BSONDocument options")
     }

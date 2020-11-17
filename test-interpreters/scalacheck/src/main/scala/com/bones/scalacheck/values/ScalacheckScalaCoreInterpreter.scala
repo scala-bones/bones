@@ -71,7 +71,6 @@ object ScalacheckScalaCoreInterpreter {
 
     val regex: Gen[String] =
       ops
-        .to(LazyList)
         .collectFirst {
           case Words =>
             for {

@@ -86,17 +86,35 @@ class UtilTest extends AnyFunSuite with Checkers with Matchers {
   val error2 = CanNotConvert(path, "input2", classOf[LocalDate], Some(new Throwable()))
   test("eitherMap2 accumulate error") {
     val result =
-      Util.eitherMap2(Left(List(error1)), Left(List(error2)))((a, b) => ???)
+      Util.eitherMap2[
+        String,
+        LocalDate,
+        LocalDate,
+        LocalDate,
+        CanNotConvert[String, String, LocalDate]](Left(List(error1)), Left(List(error2)))((a, b) =>
+        b)
     result mustBe Left(List(error1, error2))
   }
 
   test("eitherMap2 error on first input") {
-    val result = Util.eitherMap2(Left(List(error1)), Right("good"))((a, b) => ???)
+    val result = Util.eitherMap2[
+      String,
+      LocalDate,
+      LocalDate,
+      LocalDate,
+      CanNotConvert[String, String, LocalDate]](Left(List(error1)), Right(LocalDate.now()))(
+      (a, b) => b)
     result mustBe Left(List(error1))
   }
 
   test("eitherMap2 error on second input") {
-    val result = Util.eitherMap2(Right("good"), Left(List(error2)))((a, b) => ???)
+    val result = Util.eitherMap2[
+      String,
+      LocalDate,
+      LocalDate,
+      LocalDate,
+      CanNotConvert[String, String, LocalDate]](Right(LocalDate.now), Left(List(error2)))((a, b) =>
+      b)
     result mustBe Left(List(error2))
   }
   test("either map2 success") {

@@ -2,7 +2,14 @@ package com.bones.bson
 
 import java.time.format.DateTimeFormatter
 
-import com.bones.data.values.{DefaultValues, ScalaCoreValue}
+import com.bones.data.values.{
+  CNilF,
+  CustomStringValue,
+  DefaultValues,
+  JavaTimeValue,
+  JavaUtilValue,
+  ScalaCoreValue
+}
 import com.bones.interpreter.InterchangeFormatEncoderValue.CNilInterchangeFormatEncoder
 import com.bones.interpreter.InterchangeFormatValidatorValue.CNilInterchangeFormatValidator
 import com.bones.interpreter.values._
@@ -15,20 +22,61 @@ import com.bones.interpreter.{
   KvpInterchangeFormatValidatorInterpreter
 }
 import reactivemongo.bson.BSONValue
+import shapeless.:+:
 
 package object values {
 
-  val defaultEncoders: InterchangeFormatEncoderValue[DefaultValues, BSONValue] =
-    BsonScalaCoreEncoder ++
-      (DefaultBsonCustomStringEncoder ++
-        (IsoBsonJavaTimeEncoder ++
-          (BsonJavaUtilEncoder ++ CNilInterchangeFormatEncoder[BSONValue]())))
+//  val defaultEncoders: InterchangeFormatEncoderValue[DefaultValues, BSONValue] =
+//    BsonScalaCoreEncoder ++
+//      (DefaultBsonCustomStringEncoder ++
+//        (IsoBsonJavaTimeEncoder ++
+//          (BsonJavaUtilEncoder ++ CNilInterchangeFormatEncoder[BSONValue]())))
+//
+//  val defaultValidators: InterchangeFormatValidatorValue[DefaultValues, BSONValue] =
+//    BsonScalaCoreValidator ++
+//      (DefaultBsonCustomStringValidator ++
+//        (IsoBsonJavaTimeValidator ++
+//          (BsonJavaUtilValidator ++ CNilInterchangeFormatValidator[BSONValue]())))
 
-  val defaultValidators: InterchangeFormatValidatorValue[DefaultValues, BSONValue] =
-    BsonScalaCoreValidator ++
-      (DefaultBsonCustomStringValidator ++
-        (IsoBsonJavaTimeValidator ++
-          (BsonJavaUtilValidator ++ CNilInterchangeFormatValidator[BSONValue]())))
+  // Below is equivalent to the above.  Above compiles in 2.13, below compiles in both 2.12 and 2.13
+  //start 2.12
+
+  type JavaUtilValueCo[A] = JavaUtilValue[A] :+: CNilF[A]
+  type JavaTimeValueCo[A] = JavaTimeValue[A] :+: JavaUtilValueCo[A]
+  type CustomStringValueCo[A] = CustomStringValue[A] :+: JavaTimeValueCo[A]
+
+  val defaultEncoders: InterchangeFormatEncoderValue[DefaultValues, BSONValue] = {
+    InterchangeFormatEncoderValue.merge[ScalaCoreValue, CustomStringValueCo, BSONValue](
+      BsonScalaCoreEncoder,
+      InterchangeFormatEncoderValue.merge[CustomStringValue, JavaTimeValueCo, BSONValue](
+        DefaultBsonCustomStringEncoder,
+        InterchangeFormatEncoderValue.merge[JavaTimeValue, JavaUtilValueCo, BSONValue](
+          IsoBsonJavaTimeEncoder,
+          InterchangeFormatEncoderValue
+            .merge[JavaUtilValue, CNilF, BSONValue](
+              BsonJavaUtilEncoder,
+              CNilInterchangeFormatEncoder[BSONValue]())
+        )
+      )
+    )
+  }
+
+  val defaultValidators: InterchangeFormatValidatorValue[DefaultValues, BSONValue] = {
+    InterchangeFormatValidatorValue.merge[ScalaCoreValue, CustomStringValueCo, BSONValue](
+      BsonScalaCoreValidator,
+      InterchangeFormatValidatorValue.merge[CustomStringValue, JavaTimeValueCo, BSONValue](
+        DefaultBsonCustomStringValidator,
+        InterchangeFormatValidatorValue.merge[JavaTimeValue, JavaUtilValueCo, BSONValue](
+          IsoBsonJavaTimeValidator,
+          InterchangeFormatValidatorValue
+            .merge[JavaUtilValue, CNilF, BSONValue](
+              BsonJavaUtilValidator,
+              CNilInterchangeFormatValidator[BSONValue]())
+        )
+      )
+    )
+  }
+  //end 2.12
 
   /** Uses the default encoder interpreter for BSON */
   object DefaultBsonCustomStringEncoder extends CustomStringEncoder[BSONValue] {

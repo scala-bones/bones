@@ -8,7 +8,7 @@ object ProtobufEncoderValue {
   /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
     * see https://stackoverflow.com/a/60561575/387094
     * */
-  def merge[L[_], R[_] <: Coproduct, A](
+  def merge[L[_], R[_] <: Coproduct](
     li: ProtobufEncoderValue[L],
     ri: ProtobufEncoderValue[R]): ProtobufEncoderValue[Lambda[A => L[A] :+: R[A]]] =
     new ProtobufEncoderValue[Lambda[A => L[A] :+: R[A]]] {

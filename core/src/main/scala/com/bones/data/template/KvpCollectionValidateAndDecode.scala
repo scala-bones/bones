@@ -125,7 +125,7 @@ trait KvpCollectionValidateAndDecode[K, ALG[_], IN] {
     def nestedKvpCoproduct[C2 <: Coproduct](co: KvpCoproduct[K, ALG, C2])
       : (IN, Path[K], CoproductType) => Either[ExtractionErrors[K], C2] =
       co match {
-        case _: KvpCoNil[K, _] =>
+        case _: KvpCoNil[K, ALG] @unchecked =>
           (_: IN, path: Path[K], coType: CoproductType) =>
             Left(List(SumTypeError(path, s"Unexpected type value: ${coType}")))
         case co: KvpCoproductCollectionHead[K, ALG, a, r, o] @unchecked => {

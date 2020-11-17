@@ -5,11 +5,12 @@ import java.time.format.DateTimeFormatter
 
 import com.bones.data.values._
 import com.bones.swagger.SwaggerCoreInterpreter
-import com.bones.swagger.SwaggerCoreInterpreter.{CustomSwaggerInterpreter, Name, validations}
+import com.bones.swagger.SwaggerCoreInterpreter.{CustomSwaggerInterpreter}
 import com.bones.validation.ValidationDefinition.ValidationOp
 import io.swagger.v3.oas.models.media.Schema
 
-import scala.jdk.CollectionConverters._
+//import scala.jdk.CollectionConverters._ //because cross compile 2.12
+import scala.collection.JavaConverters._
 
 trait JavaTimeInterpreter extends CustomSwaggerInterpreter[JavaTimeValue] {
 
@@ -28,7 +29,6 @@ trait JavaTimeInterpreter extends CustomSwaggerInterpreter[JavaTimeValue] {
   private def localTimeExample = LocalTime.of(12, 0, 0, 0)
 
   private def localDateTimeExample = LocalDateTime.of(localDateExample, localTimeExample)
-
 
   val instantExample = Instant.ofEpochSecond(1581349194)
   val offsetDateTimeExample = OffsetDateTime.ofInstant(instantExample, ZoneId.of("Z"))

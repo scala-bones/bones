@@ -15,9 +15,10 @@ import com.bones.validation.ValidationDefinition.{
   StringValidation => sv
 }
 import io.swagger.v3.oas.models.media._
-import shapeless.{:+:, Coproduct, HList, Inl, Inr, Nat, ::}
+import shapeless.{:+:, ::, Coproduct, HList, Inl, Inr, Nat}
 
-import scala.jdk.CollectionConverters._
+//import scala.jdk.CollectionConverters._
+import scala.collection.JavaConverters._
 
 object SwaggerCoreInterpreter {
 
@@ -40,7 +41,7 @@ object SwaggerCoreInterpreter {
     /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
       * see https://stackoverflow.com/a/60561575/387094
       * */
-    def merge[L[_], R[_] <: Coproduct, A, OUT](
+    def merge[L[_], R[_] <: Coproduct](
       li: CustomSwaggerInterpreter[L],
       ri: CustomSwaggerInterpreter[R]): CustomSwaggerInterpreter[Lambda[A => L[A] :+: R[A]]] =
       new CustomSwaggerInterpreter[Lambda[A => L[A] :+: R[A]]] {
@@ -350,7 +351,7 @@ trait SwaggerCoreInterpreter[ALG[_]]
     co: KvpCoproduct[String, ALG, C]
   ): SwaggerSchemas[ComposedSchema] =
     co match {
-      case _: KvpCoNil[String, _] @unchecked => SwaggerSchemas(new ComposedSchema())
+      case _: KvpCoNil[String, ALG] @unchecked => SwaggerSchemas(new ComposedSchema())
       case co: KvpCoproductCollectionHead[String, ALG, a, c, o] @unchecked => {
         val lSchema = fromKvpCollection(co.kvpCollection)
         val composedSchema = fromKvpCoproduct(co.kvpTail)
