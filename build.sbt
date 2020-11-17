@@ -205,7 +205,7 @@ lazy val dbJdbc = (project in file("db-interpreters/jdbc"))
     name := "Bones JDBC",
     libraryDependencies ++= Seq(
       "org.postgresql" % "postgresql" % "42.2.18",
-      "io.github.scala-bones" %% "scatonic-ideal" % "0.2.0",
+      "io.github.scala-bones" %% "scatonic-ideal" % "0.3.0",
       "co.fs2" %% "fs2-core" % "2.4.5",
       "org.scalacheck" %% "scalacheck" % "1.15.1" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
@@ -223,7 +223,7 @@ lazy val dbDoobie = (project in file("db-interpreters/doobie"))
       "org.tpolecat" %% "doobie-postgres"  % doobieVersion,
 //      "org.postgresql" % "postgresql" % "42.2.16",
       "co.fs2" %% "fs2-core" % "2.4.5",
-      "io.github.scala-bones" %% "scatonic-ideal" % "0.2.0",
+      "io.github.scala-bones" %% "scatonic-ideal" % "0.3.0",
       "org.scalacheck" %% "scalacheck" % "1.15.1" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
