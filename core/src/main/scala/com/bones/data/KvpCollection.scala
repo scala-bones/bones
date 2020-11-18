@@ -58,7 +58,7 @@ sealed trait KvpCollection[K, ALG[_], A] {
       case co: KvpHListCollection[K, ALG, A, ll] @unchecked =>
         co.algMapKvpCollection(f)
       case w: WrappedEncoding[K, ALG, A] @unchecked =>
-        w.algMapKvpCollection(f)
+        w.algMapWrappedEncoding(f)
     }
   }
 }
@@ -77,6 +77,12 @@ sealed trait WrappedEncoding[K, ALG[_], A] extends KvpCollection[K, ALG, A] {
       case w: KvpWrappedCoproduct[K, ALG, A, c]   => w.keyMapKvpWrappedCoproduct(f)
       case w: KvpWrappedHList[K, ALG, A, xs, xsl] => w.keyMapKvpWrappedHList(f)
     }
+  def algMapWrappedEncoding[ALG2[_]](f: ALG[_] => ALG2[_]): WrappedEncoding[K, ALG2, A] = {
+    this match {
+      case w: KvpWrappedCoproduct[K, ALG, A, c]   => w.algMapKvpWrappedCoproduct(f)
+      case w: KvpWrappedHList[K, ALG, A, xs, xsl] => w.algMapKvpWrappedHList(f)
+    }
+  }
 
 }
 
@@ -87,14 +93,20 @@ case class KvpWrappedHList[K, ALG[_], A, XS <: HList, XSL <: Nat](
   fAtoH: A => XS,
   validations: List[ValidationOp[A]]
 ) extends WrappedEncoding[K, ALG, A] {
-  def keyMapKvpWrappedHList[KK](f: K => KK): KvpWrappedHList[KK, ALG, A, XS, XSL] = {
+  def keyMapKvpWrappedHList[KK](f: K => KK): KvpWrappedHList[KK, ALG, A, XS, XSL] =
     KvpWrappedHList(
       wrappedEncoding.keyMapKvpHListCollection(f),
       typeNameOfA,
       fHtoA,
       fAtoH,
       validations)
-  }
+  def algMapKvpWrappedHList[ALG2[_]](f: ALG[_] => ALG2[_]): KvpWrappedHList[K, ALG2, A, XS, XSL] =
+    KvpWrappedHList(
+      wrappedEncoding.algMapKvpHListCollection(f),
+      typeNameOfA,
+      fHtoA,
+      fAtoH,
+      validations)
 }
 
 case class KvpWrappedCoproduct[K, ALG[_], A, C <: Coproduct](
@@ -107,6 +119,15 @@ case class KvpWrappedCoproduct[K, ALG[_], A, C <: Coproduct](
   def keyMapKvpWrappedCoproduct[KK](f: K => KK): KvpWrappedCoproduct[KK, ALG, A, C] =
     KvpWrappedCoproduct[KK, ALG, A, C](
       wrappedEncoding.keyMapCoproduct(f),
+      typeNameOfA,
+      fCtoA,
+      fAtoC,
+      validationOp
+    )
+
+  def algMapKvpWrappedCoproduct[ALG2[_]](f: ALG[_] => ALG2[_]): KvpWrappedCoproduct[K, ALG2, A, C] =
+    KvpWrappedCoproduct[K, ALG2, A, C](
+      wrappedEncoding.algMapCoproduct(f),
       typeNameOfA,
       fCtoA,
       fAtoC,

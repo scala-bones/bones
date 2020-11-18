@@ -3,8 +3,7 @@ package com.bones.http4s
 import cats.data.EitherT
 import cats.effect.Sync
 import cats.syntax.all._
-import com.bones.http4s.BaseCrudInterpreter.contentType
-import com.bones.httpcommon.ClassicCrudDef
+import com.bones.http.common.ClassicCrudDef
 import com.bones.interpreter.values.ExtractionErrorEncoder.ErrorResponse
 import org.http4s.dsl.Http4sDsl
 import org.http4s._
@@ -17,23 +16,25 @@ object ClassicCrud {
     * @return Route for use in HTTP4s
     */
   def get[ALG[_], A, ID, E, PE, F[_]](
-    classicCrudDef: ClassicCrudDef[ALG, A, ID, String, E, PE, String],
-    getFunc: ID => F[Either[E, A]])(implicit F: Sync[F], H: Http4sDsl[F]): HttpRoutes[F] = {
+    classicCrudDef: ClassicCrudDef[ALG, A, ID, String, E, PE],
+    getFunc: ID => F[Either[E, (ID, A)]])(implicit F: Sync[F], H: Http4sDsl[F]): HttpRoutes[F] = {
     import H._
     implicit val entityEncoder = implicitly[EntityEncoder[F, Array[Byte]]]
     HttpRoutes.of[F] {
       case req @ Method.GET -> Root / path / idParam if classicCrudDef.path == path =>
-        pathIdOrError(idParam, contentType(req), classicCrudDef)
+        pathIdOrError(idParam, findContentType(req), classicCrudDef)
           .map(pathId => {
             getFunc(pathId)
               .flatMap({
                 case Left(re) => // getFunc returned the error state
                   val (ct, encoderFunc) =
-                    classicCrudDef.httpData.errorEncoderForOptionalContent(contentType(req))
+                    classicCrudDef.errorResponseSchemaEncoders.encoderForOptionalContent(
+                      findContentType(req))
                   BadRequest(encoderFunc(re), Header("Content-Type", ct))
                 case Right(ro) => // getFunc returned successfully
                   val (ct, encoderFunc) =
-                    classicCrudDef.httpData.encoderForOptionalContent(contentType(req))
+                    classicCrudDef.responseSchemaWithIdEncoder.encoderForOptionalContent(
+                      findContentType(req))
                   Ok(encoderFunc(ro), Header("Content-Type", ct))
               })
           })
@@ -42,7 +43,7 @@ object ClassicCrud {
   }
 
   def put[ALG[_], A, ID, E, PE, F[_]](
-    classicCrudDef: ClassicCrudDef[ALG, A, ID, String, E, PE, String],
+    classicCrudDef: ClassicCrudDef[ALG, A, ID, String, E, PE],
     updateFunc: (ID, A) => F[Either[E, ID]]
   )(implicit F: Sync[F], H: Http4sDsl[F]): HttpRoutes[F] = {
     import H._
@@ -54,20 +55,22 @@ object ClassicCrud {
             req.as[Array[Byte]].map(Right(_))
           }
           pathId <- EitherT.fromEither[F] {
-            pathIdOrError(idParam, contentType(req), classicCrudDef)
+            pathIdOrError(idParam, findContentType(req), classicCrudDef)
           }
           in <- EitherT.fromEither[F] {
-            classicCrudDef.httpData
-              .validatorForContent(contentType(req))
-              .toRight(UnsupportedMediaType(s"Unsupported Content-Type: '${contentType(req)}''"))
+            classicCrudDef.requestSchemaValidators
+              .validatorForOptionalContent(findContentType(req))
+              .toRight(
+                UnsupportedMediaType(s"Unsupported Content-Type: '${findContentType(req)}''"))
               .flatMap {
                 case (ct, f) =>
-                  f(body, classicCrudDef.interpreterConfig.charset).left
+                  f(body).left
                     .map(errs => {
                       val (outContentType, errorF) =
-                        classicCrudDef.httpData.extractionErrorEncoderForContent(ct)
+                        classicCrudDef.errorResponseEncoders
+                          .encoderForContent(ct)
                       BadRequest(
-                        errorF(ErrorResponse(errs.toList)),
+                        errorF(ErrorResponse(errs)),
                         Header("Content-Type", outContentType))
                     })
                     .map(a => (ct, a))
@@ -76,12 +79,13 @@ object ClassicCrud {
           out <- EitherT[F, F[Response[F]], ID] {
             updateFunc(pathId, in._2)
               .map(_.left.map(ce => {
-                val (ct, f) = classicCrudDef.httpData.errorEncoderForContent(in._1)
+                val (ct, f) =
+                  classicCrudDef.errorResponseSchemaEncoders.encoderForContent(in._1)
                 InternalServerError(f(ce), Header("Content-Type", ct))
               }))
           }
         } yield {
-          val (ct, f) = classicCrudDef.httpId.encoderForContent(in._1)
+          val (ct, f) = classicCrudDef.idEncoders.encoderForContent(in._1)
           Ok(f(out), Header("Content-Type", ct))
         }
         result.value.flatMap(_.merge)
@@ -91,7 +95,7 @@ object ClassicCrud {
   private def pathIdOrError[ALG[_], A, ID, E, PE, F[_]](
     idParam: String,
     contentType: Option[String],
-    classicCrudDef: ClassicCrudDef[ALG, A, ID, String, E, PE, String])(
+    classicCrudDef: ClassicCrudDef[ALG, A, ID, String, E, PE])(
     implicit F: Sync[F],
     H: Http4sDsl[F]): Either[F[Response[F]], ID] = {
     import H._
@@ -99,13 +103,13 @@ object ClassicCrud {
       .pathStringToId(idParam)
       .leftMap(e => {
         val (ct, f) =
-          classicCrudDef.httpPathError.encoderForOptionalContent(contentType)
+          classicCrudDef.pathErrorEncoder.encoderForOptionalContent(contentType)
         H.BadRequest(f(e), Header("Content-Type", ct))
       })
   }
 
   def delete[ALG[_], A, ID, E, PE, F[_]](
-    classicCrudDef: ClassicCrudDef[ALG, A, ID, String, E, PE, String],
+    classicCrudDef: ClassicCrudDef[ALG, A, ID, String, E, PE],
     deleteFunc: ID => F[Either[E, ID]]
   )(implicit F: Sync[F], H: Http4sDsl[F]): HttpRoutes[F] = {
     import H._
@@ -113,19 +117,21 @@ object ClassicCrud {
       case req @ Method.DELETE -> Root / path / idParam if classicCrudDef.path == path =>
         val result = for {
           pathId <- EitherT.fromEither[F] {
-            pathIdOrError(idParam, contentType(req), classicCrudDef)
+            pathIdOrError(idParam, findContentType(req), classicCrudDef)
           }
           entityId <- EitherT[F, F[Response[F]], ID] {
             deleteFunc(pathId).map(
               _.left.map(err => {
                 val (ct, encoder) =
-                  classicCrudDef.httpData.errorEncoderForOptionalContent(contentType(req))
+                  classicCrudDef.errorResponseSchemaEncoders.encoderForOptionalContent(
+                    findContentType(req))
                 InternalServerError(encoder(err), Header("Content-Type", ct))
               })
             )
           }
         } yield {
-          val (ct, encoder) = classicCrudDef.httpId.encoderForOptionalContent(contentType(req))
+          val (ct, encoder) =
+            classicCrudDef.idEncoders.encoderForOptionalContent(findContentType(req))
           Ok(
             encoder(entityId),
             Header("Content-Type", ct)
@@ -136,14 +142,14 @@ object ClassicCrud {
   }
 
   def post[ALG[_], A, ID, E, PE, F[_]](
-    classicCrudDef: ClassicCrudDef[ALG, A, ID, String, E, PE, String],
+    classicCrudDef: ClassicCrudDef[ALG, A, ID, String, E, PE],
     createF: A => F[Either[E, ID]])(implicit F: Sync[F], H: Http4sDsl[F]): HttpRoutes[F] = {
 
     import H._
     HttpRoutes.of[F] {
       case req @ Method.POST -> Root / path if classicCrudDef.path == path =>
-        val result = classicCrudDef.httpData
-          .validatorForContent(contentType(req))
+        val result = classicCrudDef.requestSchemaValidators
+          .validatorForOptionalContent(findContentType(req))
           .map {
             case (contentType, validatorFunc) => {
               val result: EitherT[F, F[Response[F]], F[Response[F]]] = for {
@@ -151,10 +157,10 @@ object ClassicCrud {
                   req.as[Array[Byte]].map(Right(_))
                 }
                 in <- EitherT.fromEither[F] {
-                  validatorFunc(body, classicCrudDef.interpreterConfig.charset).left
+                  validatorFunc(body).left
                     .map(errs => {
                       val (outContentType, errorF) =
-                        classicCrudDef.httpData.extractionErrorEncoderForContent(contentType)
+                        classicCrudDef.errorResponseEncoders.encoderForContent(contentType)
                       BadRequest(
                         errorF(ErrorResponse(errs.toList)),
                         Header("Content-Type", outContentType))
@@ -165,7 +171,7 @@ object ClassicCrud {
                   createF(in)
                     .map(_.left.map(ce => {
                       val (outContentType, errorF) =
-                        classicCrudDef.httpData.errorEncoderForContent(contentType)
+                        classicCrudDef.errorResponseSchemaEncoders.encoderForContent(contentType)
 
                       val out = errorF(ce)
                       InternalServerError(out, Header("Content-Type", outContentType))
@@ -173,7 +179,7 @@ object ClassicCrud {
                 }
               } yield {
                 val (outContent, responseDataF) =
-                  classicCrudDef.httpId.encoderForContent(contentType)
+                  classicCrudDef.idEncoders.encoderForContent(contentType)
                 Ok(
                   responseDataF(out),
                   Header("Content-Type", outContent)

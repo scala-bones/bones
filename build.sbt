@@ -276,7 +276,7 @@ lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
   )
-  .dependsOn(core, restHttpCommon, jsonCirce, swaggerOas3, protobuf, bson)
+  .dependsOn(core, restHttpCommon, swaggerOas3, jsonCirce % "test->compile" )
 
 val AkkaVersion = "2.6.10"
 val AkkaHttpVersion = "10.2.1"
@@ -356,9 +356,8 @@ lazy val examples = (project in file("examples/http4s-examples"))
     restHttp4s,
     swaggerOas3,
     protobuf,
-    jsonArgonaut % "test",
-    bson % "test",
-//    directEncoders % "test",
+    jsonCirce,
+    bson,
     testSchemas % "test",
     scalacheck % "test"
   )
