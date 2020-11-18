@@ -2,7 +2,11 @@ package com.bones
 
 import cats.effect.IO
 import cats.implicits._
+import com.bones.data.values.DefaultValues
 import com.bones.fullstack.LocalhostAllIOApp
+import com.bones.http.common.{ClassicCrudDef, DefaultIdDefinitions, Path, StringToIdError}
+import com.bones.interpreter.values.ExtractionErrorEncoder
+import com.bones.interpreter.values.ExtractionErrorEncoder.ErrorResponse
 import com.bones.syntax._
 import com.bones.validation.ValidationDefinition.{
   BigDecimalValidation => dv,
@@ -40,13 +44,24 @@ object DemoApp extends LocalhostAllIOApp() {
 
   val ds = localhostDataSource
 
-  override def services: HttpRoutes[IO] = {
-    serviceRoutesWithCrudMiddleware(
-      com.bones.http4s.config.defaultLong,
+  val interpreterConfig = Config.interpreterConfig
+  val crudDef =
+    ClassicCrudDef[DefaultValues, Waterfall, Long, String, ErrorResponse, StringToIdError](
+      interpreterConfig,
       "waterfall",
       waterfallSchema,
-      idSchema,
-      parseIdF,
+      Path.longParam,
+      StringToIdError.stringToIdErrorSchema,
+      ExtractionErrorEncoder.errorResponseSchema.algMapKvpCollection[DefaultValues](core =>
+        shapeless.Inl(core)),
+      DefaultIdDefinitions.longIdDefinition,
+      "id",
+      core => shapeless.Inl(core)
+    )
+
+  override def services: HttpRoutes[IO] = {
+    serviceRoutesWithCrudMiddleware[Waterfall, Long](
+      crudDef,
       com.bones.jdbc.select.defaultSelectInterpreter,
       com.bones.jdbc.dbSearchInterpreter,
       com.bones.jdbc.insert.defaultDbInsertInterpreter,

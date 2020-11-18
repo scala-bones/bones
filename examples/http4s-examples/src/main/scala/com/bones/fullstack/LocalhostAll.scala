@@ -1,20 +1,18 @@
 package com.bones.fullstack
 
-import cats.data.Kleisli
 import cats.effect._
 import cats.implicits._
-import com.bones.Util
-import com.bones.data.Error.{ExtractionError, ExtractionErrors}
+import com.bones.data.Error.ExtractionErrors
+import com.bones.data.KvpCollection
 import com.bones.data.values.DefaultValues
-import com.bones.data.{KvpCollection, KvpNil}
-import com.bones.http4s.BaseCrudInterpreter.StringToIdError
-import com.bones.http4s.ClassicCrudInterpreter
-import com.bones.http4s.config.InterpreterConfig
+import com.bones.http.common.{ClassicCrudDef, StringToIdError}
+import com.bones.http4s.ClassicCrud
+import com.bones.http.common.StringToIdError
+import com.bones.interpreter.values.ExtractionErrorEncoder.ErrorResponse
 import com.bones.jdbc.insert.DbInsert
 import com.bones.jdbc.select.SelectInterpreter
 import com.bones.jdbc.update.DbUpdate
-import com.bones.jdbc.{DbDelete, DbSearch, IdDefinition}
-import com.bones.syntax._
+import com.bones.jdbc.{DbDelete, DbSearch}
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import javax.sql.DataSource
 import org.http4s.dsl.io._
@@ -29,17 +27,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object LocalhostAllIOApp {
 
   implicit val dsl = org.http4s.dsl.io
-
-  case class BasicError(message: String)
-  private val basicErrorSchema =
-    (("message", com.bones.syntax.string) :: new KvpNil[String, DefaultValues]).convert[BasicError]
-
-  def extractionErrorToBasicError(extractionError: ExtractionError[String]): BasicError = {
-    BasicError(extractionError.toString)
-  }
-  def extractionErrorsToBasicError(extractionErrors: ExtractionErrors[String]): BasicError = {
-    BasicError(extractionErrors.toList.mkString("."))
-  }
 
   def localhostDataSource: HikariDataSource = {
     val config = new HikariConfig
@@ -64,12 +51,11 @@ object LocalhostAllIOApp {
     }
   }
 
+  def toErrorResponse[A, ID](io: IO[Either[ExtractionErrors[String], (ID, A)]]) =
+    io.map(_.left.map(ErrorResponse))
+
   def serviceRoutesWithCrudMiddleware[A: Manifest, ID: Manifest](
-    interpreters: InterpreterConfig[DefaultValues, ID],
-    path: String,
-    schema: KvpCollection[String, DefaultValues, A],
-    idSchema: KvpCollection[String, DefaultValues, ID],
-    parseIdF: String => Either[StringToIdError, ID],
+    classicCrudDef: ClassicCrudDef[DefaultValues, A, ID, String, ErrorResponse, StringToIdError],
     dbGet: SelectInterpreter[DefaultValues],
     dbSearch: DbSearch[DefaultValues],
     dbInsert: DbInsert[DefaultValues],
@@ -79,8 +65,8 @@ object LocalhostAllIOApp {
 
     val middleware =
       CrudDbDefinitions[DefaultValues, A, ID](
-        schema,
-        idSchema,
+        classicCrudDef.schema,
+        classicCrudDef.idSchema,
         dbGet,
         dbSearch,
         dbInsert,
@@ -88,34 +74,25 @@ object LocalhostAllIOApp {
         dbDelete,
         ds)
 
+    /*
+com.bones.httpcommon.ClassicCrudDef[com.bones.data.values.DefaultValues,A(in method serviceRoutesWithCrudMiddleware),ID,String,com.bones.interpreter.values.ExtractionErrorEncoder.ErrorResponse,com.bones.httpcommon.StringToIdError]
+com.bones.httpcommon.ClassicCrudDef[[A(in value <local DefaultValues>)]com.bones.data.values.DefaultValues[A(in value <local DefaultValues>)],Any,ID,String,com.bones.interpreter.values.ExtractionErrorEncoder.ErrorResponse,com.bones.httpcommon.StringToIdError]
+[error]     (which expands to)  com.bones.httpcommon.ClassicCrudDef[[A(in value <local DefaultValues>)]com.bones.data.values.ScalaCoreValue[A(in value <local DefaultValues>)] :+: com.bones.data.values.CustomStringValue[A(in value <local DefaultValues>)] :+: com.bones.data.values.JavaTimeValue[A(in value <local DefaultValues>)] :+: com.bones.data.values.JavaUtilValue[A(in value <local DefaultValues>)] :+: shapeless.CNil,Any,ID,String,com.bones.interpreter.values.ExtractionErrorEncoder.ErrorResponse,com.bones.httpcommon.StringToIdError]
+     */
     /** Create the REST interpreter with full CRUD capabilities which write data to the database */
-    val interpreter =
-      ClassicCrudInterpreter.allVerbs[DefaultValues, A, BasicError, IO, ID](
-        interpreters,
-        path,
-        schema,
-        parseIdF,
-        basicErrorSchema,
-        Kleisli(middleware.createF).map(_.left.map(e => extractionErrorsToBasicError(e))).run,
-        Kleisli(middleware.readF).map(_.left.map(e => extractionErrorsToBasicError(e))).run,
-        Function.untupled(
-          Kleisli(middleware.updateF.tupled)
-            .map(_.left.map(e => extractionErrorsToBasicError(e)))
-            .run),
-        Kleisli(middleware.deleteF).map(_.left.map(e => extractionErrorsToBasicError(e))).run,
-        () => middleware.searchF
-      )
-    val dbRoutes = dbSchemaEndpoint(path, schema)
-    interpreter.createRoutes <+> dbRoutes
+    val restRoutes =
+      ClassicCrud.get(classicCrudDef, middleware.readF) <+>
+        ClassicCrud.put(classicCrudDef, middleware.updateF) <+>
+        ClassicCrud.post(classicCrudDef, middleware.createF) <+>
+        ClassicCrud.delete(classicCrudDef, middleware.deleteF)
+
+    val dbRoutes = dbSchemaEndpoint(classicCrudDef.path, classicCrudDef.schema)
+    restRoutes <+> dbRoutes
 
   }
 }
 
 abstract class LocalhostAllIOApp() extends IOApp {
-
-  val idDef = IdDefinition("id", long(lv.positive))
-  val parseIdF: String => Either[StringToIdError, Long] =
-    str => Util.stringToLong(str).toRight(StringToIdError(str, "Could not convert to Long"))
 
   def services: HttpRoutes[IO]
 

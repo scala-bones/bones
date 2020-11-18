@@ -1,15 +1,15 @@
 package com.bones.protobuf
 
 import java.io.{ByteArrayInputStream, IOException}
-import java.time.{LocalDateTime, ZoneOffset}
+import java.time.ZoneOffset
 
-import com.bones.{Path, Util, data}
 import com.bones.data.Error._
 import com.bones.data.{KvpCoNil, KvpCoproduct, KvpCoproductCollectionHead, _}
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.{ValidationUtil => vu}
+import com.bones.{Path, Util}
 import com.google.protobuf.{CodedInputStream, InvalidProtocolBufferException, Timestamp}
-import shapeless.{:+:, Coproduct, HList, HNil, Inl, Inr, Nat}
+import shapeless.{Coproduct, HNil, Inl, Inr}
 
 import scala.annotation.tailrec
 

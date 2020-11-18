@@ -1,4 +1,4 @@
-package com.bones.httpcommon
+package com.bones.http.common
 
 import com.bones.validation.ValidationDefinition.ValidationOp
 

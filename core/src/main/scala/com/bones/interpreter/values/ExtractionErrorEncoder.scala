@@ -187,7 +187,7 @@ object ExtractionErrorEncoder {
     }
   }
 
-  val extractionErrorSchema =
+  private val extractionErrorCoproductSchema =
     validationErrorSchema :+:
       wrongTypeErrorSchema :+:
       canNotConvertSchema :+:
@@ -198,16 +198,19 @@ object ExtractionErrorEncoder {
       notFoundDataSchema :+:
       kvpCoNil
 
-  val error = ExtractionErrorEncoder.extractionErrorSchema
+  val extractionErrorSchema = ExtractionErrorEncoder.extractionErrorCoproductSchema
     .toSuperclassOf[ExtractionError[String]](
       manifest[ExtractionError[String]],
       ExtractionErrorEncoder.extractionErrorGeneric)
+
+  val extractionErrorSchemaList: ListData[String, ScalaCoreValue, ExtractionError[String]] =
+    extractionErrorSchema.asValue.list()
 
   private val errorResponseHList =
     (
       "errors",
       ListData[String, ScalaCoreValue, ExtractionError[String]](
-        Left(error.asValue),
+        Left(extractionErrorSchema.asValue),
         "ExtractionError",
         List.empty)) :<:
       new KvpNil[String, ScalaCoreValue]

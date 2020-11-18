@@ -1,5 +1,7 @@
 package com.bones.bson
 
+import java.nio.charset.Charset
+
 import com.bones.data.Error._
 import com.bones.data._
 import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
@@ -18,6 +20,14 @@ import reactivemongo.bson.{
   */
 trait BsonValidatorInterpreter[ALG[_]]
     extends KvpInterchangeFormatValidatorInterpreter[ALG, BSONValue] {
+
+  def generateByteArrayValidator[A](
+    schema: KvpCollection[String, ALG, A]
+  ): Array[Byte] => Either[List[ExtractionError[String]], A] = {
+    val f = fromKvpCollection(schema)
+    bytes =>
+      fromByteArray(bytes).flatMap(f(_, List.empty))
+  }
 
   /** An additional string in the serialized format which states the coproduct type.
     * TODO:  refactor this interpreter so this property can be overwritten. */

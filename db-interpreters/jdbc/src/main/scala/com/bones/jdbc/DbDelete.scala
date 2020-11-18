@@ -29,7 +29,7 @@ trait DbDelete[ALG[_]] {
   def delete[A, ID](
     schema: KvpCollection[String, ALG, A],
     idSchema: KvpCollection[String, ALG, ID],
-  ): ID => Connection => Either[ExtractionErrors[String], (ID, A)] = {
+  ): ID => Connection => Either[ExtractionErrors[String], ID] = {
     val tableName = camelToSnake(headTypeName(schema).getOrElse("Unknown"))
     val updateF =
       jdbcStatementInterpreter.fromKvpCollection(idSchema)(1)
@@ -41,14 +41,13 @@ trait DbDelete[ALG[_]] {
       {
         try {
           for {
-            entity <- getEntity(id)(con)
             _ <- {
               withStatement[Boolean](con.prepareCall(sql))(statement => {
                 updateF.predicates(id).foreach(_.apply(statement))
                 Right(statement.execute())
               })
             }
-          } yield entity
+          } yield id
         } catch {
           case NonFatal(ex) =>
             Left(List(SystemError(ex, Some("Error deleting entity"))))

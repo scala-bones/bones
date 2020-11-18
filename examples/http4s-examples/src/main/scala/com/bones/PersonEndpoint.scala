@@ -1,8 +1,13 @@
 package com.bones
 
 import cats.effect.IO
+import com.bones.DemoApp.interpreterConfig
+import com.bones.data.values.DefaultValues
 import com.bones.fullstack.LocalhostAllIOApp
 import com.bones.fullstack.LocalhostAllIOApp._
+import com.bones.http.common.{ClassicCrudDef, DefaultIdDefinitions, Path, StringToIdError}
+import com.bones.interpreter.values.ExtractionErrorEncoder
+import com.bones.interpreter.values.ExtractionErrorEncoder.ErrorResponse
 import com.bones.syntax._
 import com.bones.validation.ValidationDefinition.{IntValidation => iv, StringValidation => sv}
 import com.zaxxer.hikari.HikariDataSource
@@ -31,13 +36,23 @@ object PersonEndpoint extends LocalhostAllIOApp {
 
   val idSchema = (("id", long(lv.positive)) :: kvpNil).encodedHead[Long]()
 
-  override def services: HttpRoutes[IO] =
-    serviceRoutesWithCrudMiddleware(
-      com.bones.http4s.config.defaultLong,
+  val crudDef =
+    ClassicCrudDef[DefaultValues, Person, Long, String, ErrorResponse, StringToIdError](
+      interpreterConfig,
       "person",
       personSchema,
-      idSchema,
-      parseIdF,
+      Path.longParam,
+      StringToIdError.stringToIdErrorSchema,
+      ExtractionErrorEncoder.errorResponseSchema.algMapKvpCollection[DefaultValues](core =>
+        shapeless.Inl(core)),
+      DefaultIdDefinitions.longIdDefinition,
+      "id",
+      core => shapeless.Inl(core)
+    )
+
+  override def services: HttpRoutes[IO] =
+    serviceRoutesWithCrudMiddleware(
+      crudDef,
       com.bones.jdbc.select.defaultSelectInterpreter,
       com.bones.jdbc.dbSearchInterpreter,
       com.bones.jdbc.insert.defaultDbInsertInterpreter,
