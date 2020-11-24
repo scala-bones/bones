@@ -30,7 +30,7 @@ object Http4sEndpoints {
           .leftMap(e => {
             val (errContentType, errorEncoder) =
               endpointDef.pathErrorEncoder.encoderForContent(contentType)
-            BadRequest(errorEncoder(e), Header("Content-Type", errContentType))
+            BadRequest(errorEncoder.encode(e), Header("Content-Type", errContentType))
           })
           .map(id => {
             readF(id)
@@ -39,12 +39,12 @@ object Http4sEndpoints {
                   val (errContentType, errEncoder) =
                     endpointDef.errorResponseSchemaEncoders.encoderForContent(contentType)
                   BadRequest(
-                    errEncoder(re),
+                    errEncoder.encode(re),
                     Header("Content-Type", errContentType)
                   )
                 case Right(ro) =>
                   Ok(
-                    encoder(ro),
+                    encoder.encode(ro),
                     Header("Content-Type", contentType)
                   )
               })
@@ -85,7 +85,7 @@ object Http4sEndpoints {
                     val (errCt, errEncoder) =
                       endpointDef.pathErrorEncoder.encoderForContent(ct)
                     BadRequest(
-                      errEncoder(e),
+                      errEncoder.encode(e),
                       Header("Content-Type", errCt)
                     )
                   })
@@ -95,7 +95,9 @@ object Http4sEndpoints {
                     .map(err => {
                       val (errCt, errEncoder) =
                         endpointDef.errorResponseEncoders.encoderForContent(ct)
-                      BadRequest(errEncoder(ErrorResponse(err)), Header("Content-Type", errCt))
+                      BadRequest(
+                        errEncoder.encode(ErrorResponse(err)),
+                        Header("Content-Type", errCt))
                     })
                 }
                 out <- EitherT[F, F[Response[F]], RES] {
@@ -103,14 +105,14 @@ object Http4sEndpoints {
                     .map(_.left.map(ce => {
                       val (errCt, errEncoder) =
                         endpointDef.errorResponseSchemaEncoders.encoderForContent(ct)
-                      InternalServerError(errEncoder(ce), Header("Content-Type", errCt))
+                      InternalServerError(errEncoder.encode(ce), Header("Content-Type", errCt))
                     }))
                 }
               } yield {
                 val (resContentType, resEncoder) =
                   endpointDef.responseSchemaEncoders.encoderForContent(ct)
                 Ok(
-                  resEncoder(out),
+                  resEncoder.encode(out),
                   Header("Content-Type", resContentType)
                 )
               }
@@ -146,7 +148,7 @@ object Http4sEndpoints {
                       val (errContentType, errEncoder) =
                         endpointDef.errorResponseEncoders.encoderForContent(contentType)
                       BadRequest(
-                        errEncoder(ErrorResponse(x)),
+                        errEncoder.encode(ErrorResponse(x)),
                         Header("Content-Type", errContentType))
                     })
                 }
@@ -155,14 +157,16 @@ object Http4sEndpoints {
                     .map(_.left.map(ce => {
                       val (errContentType, errEncoder) =
                         endpointDef.errorResponseSchemaEncoders.encoderForContent(contentType)
-                      InternalServerError(errEncoder(ce), Header("Content-Type", errContentType))
+                      InternalServerError(
+                        errEncoder.encode(ce),
+                        Header("Content-Type", errContentType))
                     }))
                 }
               } yield {
                 val (resContentType, resEncoder) =
                   endpointDef.responseSchemaEncoders.encoderForContent(contentType)
                 Ok(
-                  resEncoder(out),
+                  resEncoder.encode(out),
                   Header("Content-Type", resContentType)
                 )
               }
@@ -189,7 +193,7 @@ object Http4sEndpoints {
           .leftMap(err => {
             val (errContentType, errEncoder) =
               endpointDef.pathErrorEncoder.encoderForOptionalContent(reqContentType)
-            BadRequest(errEncoder(err), Header("Content-Type", errContentType))
+            BadRequest(errEncoder.encode(err), Header("Content-Type", errContentType))
           })
           .map(id => {
             deleteF(id).flatMap {
@@ -197,13 +201,13 @@ object Http4sEndpoints {
                 val (resContentType, resEncoder) =
                   endpointDef.responseSchemaEncoders.encoderForOptionalContent(reqContentType)
                 Ok(
-                  resEncoder(entity),
+                  resEncoder.encode(entity),
                   Header("Content-Type", resContentType)
                 )
               case Left(err) =>
                 val (errContentType, errEncoder) =
                   endpointDef.errorResponseSchemaEncoders.encoderForOptionalContent(reqContentType)
-                InternalServerError(errEncoder(err), Header("Content-Type", errContentType))
+                InternalServerError(errEncoder.encode(err), Header("Content-Type", errContentType))
             }
           })
           .merge
@@ -222,7 +226,7 @@ object Http4sEndpoints {
         val (contentType, encoder) =
           endpointDef.responseSchemaEncoders.encoderForOptionalContent(findContentType(req))
         Ok(
-          searchF().map(res => encoder(res)),
+          searchF().map(res => encoder.encode(res)),
           Header("Content-Type", contentType)
         )
     }

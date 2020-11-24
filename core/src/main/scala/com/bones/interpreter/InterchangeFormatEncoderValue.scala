@@ -11,11 +11,17 @@ object InterchangeFormatEncoderValue {
   def merge[L[_], R[_] <: Coproduct, OUT](
     li: InterchangeFormatEncoderValue[L, OUT],
     ri: InterchangeFormatEncoderValue[R, OUT]
-  ): InterchangeFormatEncoderValue[Lambda[A => L[A] :+: R[A]], OUT] =
-    new InterchangeFormatEncoderValue[Lambda[A => L[A] :+: R[A]], OUT] {
-      override def encode[A](lr: L[A] :+: R[A]): A => OUT = lr match {
-        case Inl(l) => li.encode(l)
-        case Inr(r) => ri.encode(r)
+  ): InterchangeFormatEncoderValue[Lambda[V => L[V] :+: R[V]], OUT] =
+    new InterchangeFormatEncoderValue[Lambda[V => L[V] :+: R[V]], OUT] {
+      override def createEncoder[A](
+        alg: L[A] :+: R[A]): Encoder[Lambda[V => L[V] :+: R[V]], A, OUT] = {
+        new Encoder[Lambda[A => L[A] :+: R[A]], A, OUT] {
+          val encoder = alg match {
+            case Inl(l) => li.createEncoder(l).encode(_)
+            case Inr(r) => ri.createEncoder(r).encode(_)
+          }
+          override def encode(a: A): OUT = encoder(a)
+        }
       }
     }
 
@@ -29,11 +35,14 @@ object InterchangeFormatEncoderValue {
   }
 
   case class CNilInterchangeFormatEncoder[OUT]() extends InterchangeFormatEncoderValue[CNilF, OUT] {
-    override def encode[A](alg: CNilF[A]): A => OUT = sys.error("Unreachable code")
+    override def createEncoder[A](alg: CNilF[A]): Encoder[CNilF, A, OUT] =
+      new Encoder[CNilF, A, OUT] {
+        override def encode(a: A): OUT = sys.error("Unreachable code")
+      }
   }
 
 }
 
 trait InterchangeFormatEncoderValue[ALG[_], OUT] {
-  def encode[A](alg: ALG[A]): A => OUT
+  def createEncoder[A](alg: ALG[A]): Encoder[ALG, A, OUT]
 }

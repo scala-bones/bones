@@ -91,15 +91,15 @@ case class ClassicCrudDefinition[ALG[_], ID: Manifest, A: Manifest, E](
 
   val schemaMarshaller = byteArrayMarshaller(ContentType.apply(MediaTypes.`application/json`))
     .compose[(ID, A)](output => {
-      val json = schemaMarshallerFunction(output)
+      val json = schemaMarshallerFunction.encode(output)
       json.compactPrint.getBytes(config.charset)
     })
 
-  val errorMarshallerFunction = config.jsonEncoder.generateEncoder(errorSchema)
+  val errorEncoderFunction = config.jsonEncoder.generateEncoder(errorSchema)
 
   val errorMarshaller = byteArrayMarshaller(ContentType.apply(MediaTypes.`application/json`))
     .compose[E](err => {
-      errorMarshallerFunction(err).compactPrint.getBytes(config.charset)
+      errorEncoderFunction.encode(err).compactPrint.getBytes(config.charset)
     })
 
   def withCreate(f: A => Future[Either[E, ID]]): ClassicCrudDefinition[ALG, ID, A, E] =
@@ -127,9 +127,11 @@ case class ClassicCrudDefinition[ALG[_], ID: Manifest, A: Manifest, E](
               case Success(value) => {
                 value match {
                   case Left(systemError) =>
-                    complete(StatusCodes.InternalServerError, errorMarshallerFunction(systemError))
+                    complete(
+                      StatusCodes.InternalServerError,
+                      errorEncoderFunction.encode(systemError))
                   case Right(value) =>
-                    complete(StatusCodes.OK, List.empty, schemaMarshallerFunction(value))
+                    complete(StatusCodes.OK, List.empty, schemaMarshallerFunction.encode(value))
                 }
               }
               case Failure(ex) =>
@@ -151,13 +153,15 @@ case class ClassicCrudDefinition[ALG[_], ID: Manifest, A: Manifest, E](
                 Future.apply(
                   complete(
                     StatusCodes.UnprocessableEntity,
-                    validationErrorEncoder(ErrorResponse(err.toList))))
+                    validationErrorEncoder.encode(ErrorResponse(err.toList))))
               case Right(value) =>
                 f(value).map {
                   case Left(systemError) =>
-                    complete(StatusCodes.InternalServerError, errorMarshallerFunction(systemError))
+                    complete(
+                      StatusCodes.InternalServerError,
+                      errorEncoderFunction.encode(systemError))
                   case Right(value) =>
-                    complete(StatusCodes.OK, List.empty, idSchemaMarshallerFunction(value))
+                    complete(StatusCodes.OK, List.empty, idSchemaMarshallerFunction.encode(value))
                 }
             }
             Await.result(futureResult, 5.seconds)

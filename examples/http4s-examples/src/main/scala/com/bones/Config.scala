@@ -8,16 +8,18 @@ import com.bones.circe.{IsoCirceEncoderInterpreter, IsoCirceValidatorInterpreter
 import com.bones.data.KvpCollection
 import com.bones.data.values.DefaultValues
 import com.bones.http.common._
+import com.bones.interpreter.Encoder
 
 object Config {
 
   val charset: Charset = Charset.forName("UTF-8")
 
   val jsonInterpreter = new Interpreter[String, DefaultValues] {
-    override def generateEncoder[A](kvp: KvpCollection[String, DefaultValues, A]): EncoderFunc[A] =
+    override def generateEncoder[A](
+      kvp: KvpCollection[String, DefaultValues, A]): Encoder[DefaultValues, A, Array[Byte]] =
       IsoCirceEncoderInterpreter(com.bones.circe.values.defaultEncoders)
         .generateEncoder(kvp)
-        .andThen(_.noSpaces.getBytes(charset))
+        .map(_.noSpaces.getBytes(charset))
 
     override def generateValidator[A](
       kvp: KvpCollection[String, DefaultValues, A]): ValidatorFunc[A] =
@@ -26,10 +28,11 @@ object Config {
   }
 
   val bsonInterpreter = new Interpreter[String, DefaultValues] {
-    override def generateEncoder[A](kvp: KvpCollection[String, DefaultValues, A]): EncoderFunc[A] =
+    override def generateEncoder[A](
+      kvp: KvpCollection[String, DefaultValues, A]): Encoder[DefaultValues, A, Array[Byte]] =
       defaultBsonEncoderInterpreter
         .generateEncoder(kvp)
-        .andThen(bsonResultToBytes)
+        .map(bsonResultToBytes)
 
     override def generateValidator[A](
       kvp: KvpCollection[String, DefaultValues, A]): ValidatorFunc[A] = {
@@ -43,8 +46,9 @@ object Config {
   }
 
   val protobufInterpreter = new Interpreter[String, DefaultValues] {
-    override def generateEncoder[A](kvp: KvpCollection[String, DefaultValues, A]): EncoderFunc[A] =
-      com.bones.protobuf.values.defaultEncoder.generateProtobufEncoder(kvp)
+    override def generateEncoder[A](
+      kvp: KvpCollection[String, DefaultValues, A]): Encoder[DefaultValues, A, Array[Byte]] =
+      com.bones.protobuf.values.defaultEncoder.generateProtobufEncoder(kvp).apply(_)
 
     override def generateValidator[A](
       kvp: KvpCollection[String, DefaultValues, A]): ValidatorFunc[A] =

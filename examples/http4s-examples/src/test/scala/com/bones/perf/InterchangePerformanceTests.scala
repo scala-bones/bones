@@ -50,7 +50,7 @@ object InterchangePerformanceTests extends App {
 
   //bson
   val bsonEncoderStart = System.currentTimeMillis()
-  val bsonObjects = objects.map(o => com.bones.bson.bsonResultToBytes(bsonEncoder(o)))
+  val bsonObjects = objects.map(o => com.bones.bson.bsonResultToBytes(bsonEncoder.encode(o)))
   val bsonEncoderEnd = System.currentTimeMillis()
   val bsonSize = bsonObjects.map(_.length).sum
   println(s"bson encoder size: ${bsonSize} time: ${bsonEncoderEnd - bsonEncoderStart}")
@@ -72,7 +72,7 @@ object InterchangePerformanceTests extends App {
   System.gc()
 
   val circeEncoderStart = System.currentTimeMillis()
-  objects.map(o => circeEncoder.apply(o).noSpaces)
+  objects.map(o => circeEncoder.encode(o).noSpaces)
   val circeEncoderEnd = System.currentTimeMillis()
   println(s"circe encoder time: ${circeEncoderEnd - circeEncoderStart}")
   System.gc()

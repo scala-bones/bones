@@ -17,6 +17,7 @@ import com.bones.http.common.{
   StringToIdError,
   ValidatorFunc
 }
+import com.bones.interpreter.Encoder
 import com.bones.syntax._
 import fs2.Stream
 import org.http4s._
@@ -43,10 +44,11 @@ class BaseCrudInterpreterTest extends AnyFunSuite {
   val error = (("message", string) :: kvpNil).convert[Error]
 
   val jsonInterpreter = new Interpreter[String, DefaultValues] {
-    override def generateEncoder[A](kvp: KvpCollection[String, DefaultValues, A]): EncoderFunc[A] =
+    override def generateEncoder[A](
+      kvp: KvpCollection[String, DefaultValues, A]): Encoder[DefaultValues, A, Array[Byte]] =
       IsoCirceEncoderInterpreter(com.bones.circe.values.defaultEncoders)
         .generateEncoder(kvp)
-        .andThen(_.noSpaces.getBytes(Charset.forName("UTF-8")))
+        .map(_.noSpaces.getBytes(Charset.forName("UTF-8")))
 
     override def generateValidator[A](
       kvp: KvpCollection[String, DefaultValues, A]): ValidatorFunc[A] =

@@ -32,7 +32,7 @@ class SchemaWithIdTest extends AnyFunSuite with Checkers with Matchers {
 
   test("scalacheck allSupport types - marshall then unmarshall") {
     check((cc: (Long, AllSupported)) => {
-      val json = ccToJson.apply(cc)
+      val json = ccToJson.encode(cc)
       val jsonString = pretty(render(json))
       val newCc = jsonToCc(parse(jsonString))
       newCc match {

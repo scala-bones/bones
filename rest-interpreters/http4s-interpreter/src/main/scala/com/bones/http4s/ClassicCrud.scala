@@ -27,15 +27,15 @@ object ClassicCrud {
             getFunc(pathId)
               .flatMap({
                 case Left(re) => // getFunc returned the error state
-                  val (ct, encoderFunc) =
+                  val (ct, encoder) =
                     classicCrudDef.errorResponseSchemaEncoders.encoderForOptionalContent(
                       findContentType(req))
-                  BadRequest(encoderFunc(re), Header("Content-Type", ct))
+                  BadRequest(encoder.encode(re), Header("Content-Type", ct))
                 case Right(ro) => // getFunc returned successfully
-                  val (ct, encoderFunc) =
+                  val (ct, encoder) =
                     classicCrudDef.responseSchemaWithIdEncoder.encoderForOptionalContent(
                       findContentType(req))
-                  Ok(encoderFunc(ro), Header("Content-Type", ct))
+                  Ok(encoder.encode(ro), Header("Content-Type", ct))
               })
           })
           .merge
@@ -70,7 +70,7 @@ object ClassicCrud {
                         classicCrudDef.errorResponseEncoders
                           .encoderForContent(ct)
                       BadRequest(
-                        errorF(ErrorResponse(errs)),
+                        errorF.encode(ErrorResponse(errs)),
                         Header("Content-Type", outContentType))
                     })
                     .map(a => (ct, a))
@@ -81,12 +81,12 @@ object ClassicCrud {
               .map(_.left.map(ce => {
                 val (ct, f) =
                   classicCrudDef.errorResponseSchemaEncoders.encoderForContent(in._1)
-                InternalServerError(f(ce), Header("Content-Type", ct))
+                InternalServerError(f.encode(ce), Header("Content-Type", ct))
               }))
           }
         } yield {
           val (ct, f) = classicCrudDef.idEncoders.encoderForContent(in._1)
-          Ok(f(out), Header("Content-Type", ct))
+          Ok(f.encode(out), Header("Content-Type", ct))
         }
         result.value.flatMap(_.merge)
     }
@@ -104,7 +104,7 @@ object ClassicCrud {
       .leftMap(e => {
         val (ct, f) =
           classicCrudDef.pathErrorEncoder.encoderForOptionalContent(contentType)
-        H.BadRequest(f(e), Header("Content-Type", ct))
+        H.BadRequest(f.encode(e), Header("Content-Type", ct))
       })
   }
 
@@ -125,7 +125,7 @@ object ClassicCrud {
                 val (ct, encoder) =
                   classicCrudDef.errorResponseSchemaEncoders.encoderForOptionalContent(
                     findContentType(req))
-                InternalServerError(encoder(err), Header("Content-Type", ct))
+                InternalServerError(encoder.encode(err), Header("Content-Type", ct))
               })
             )
           }
@@ -133,7 +133,7 @@ object ClassicCrud {
           val (ct, encoder) =
             classicCrudDef.idEncoders.encoderForOptionalContent(findContentType(req))
           Ok(
-            encoder(entityId),
+            encoder.encode(entityId),
             Header("Content-Type", ct)
           )
         }
@@ -162,7 +162,7 @@ object ClassicCrud {
                       val (outContentType, errorF) =
                         classicCrudDef.errorResponseEncoders.encoderForContent(contentType)
                       BadRequest(
-                        errorF(ErrorResponse(errs.toList)),
+                        errorF.encode(ErrorResponse(errs.toList)),
                         Header("Content-Type", outContentType))
                     })
 
@@ -173,7 +173,7 @@ object ClassicCrud {
                       val (outContentType, errorF) =
                         classicCrudDef.errorResponseSchemaEncoders.encoderForContent(contentType)
 
-                      val out = errorF(ce)
+                      val out = errorF.encode(ce)
                       InternalServerError(out, Header("Content-Type", outContentType))
                     }))
                 }
@@ -181,7 +181,7 @@ object ClassicCrud {
                 val (outContent, responseDataF) =
                   classicCrudDef.idEncoders.encoderForContent(contentType)
                 Ok(
-                  responseDataF(out),
+                  responseDataF.encode(out),
                   Header("Content-Type", outContent)
                 )
               }

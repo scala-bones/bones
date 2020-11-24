@@ -28,7 +28,7 @@ class SprayTest extends AnyFunSuite with Checkers with Matchers {
   test("scalacheck allSupport types - marshall then unmarshall") {
     check((cc: AllSupported) => {
       try {
-        val json = ccToJson.apply(cc)
+        val json = ccToJson.encode(cc)
         val jsonString = json.prettyPrint.getBytes(utf8)
         val newCc = jsonToCc(jsonString)
         newCc match {

@@ -1,6 +1,7 @@
 package com.bones.http.common
 
 import com.bones.data.KvpCollection
+import com.bones.interpreter.Encoder
 
 /**
   * Define now each interpreter serializes to an Array[Byte]
@@ -8,7 +9,7 @@ import com.bones.data.KvpCollection
   * @tparam ALG
   */
 trait Interpreter[K, ALG[_]] {
-  def generateEncoder[A](kvp: KvpCollection[K, ALG, A]): EncoderFunc[A]
+  def generateEncoder[A](kvp: KvpCollection[K, ALG, A]): Encoder[ALG, A, Array[Byte]]
   def generateValidator[A](kvp: KvpCollection[K, ALG, A]): ValidatorFunc[A]
 }
 
@@ -34,14 +35,14 @@ case class Content[K, ALG[_], CT](contentType: CT, encoderInterpreter: Interpret
   * @tparam CT ContentType
   */
 case class ConvertedEncoder[ALG[_], A, CT](
-  defaultEncoder: (CT, EncoderFunc[A]),
-  supportedEncoders: Map[CT, (CT, EncoderFunc[A])]) {
+  defaultEncoder: (CT, Encoder[ALG, A, Array[Byte]]),
+  supportedEncoders: Map[CT, (CT, Encoder[ALG, A, Array[Byte]])]) {
 
-  def encoderForContent(ct: CT): (CT, EncoderFunc[A]) =
+  def encoderForContent(ct: CT): (CT, Encoder[ALG, A, Array[Byte]]) =
     if (defaultEncoder._1 == ct) defaultEncoder
     else supportedEncoders.getOrElse(ct, defaultEncoder)
 
-  def encoderForOptionalContent(ctOpt: Option[CT]): (CT, EncoderFunc[A]) =
+  def encoderForOptionalContent(ctOpt: Option[CT]): (CT, Encoder[ALG, A, Array[Byte]]) =
     ctOpt.fold(defaultEncoder)(encoderForContent)
 }
 

@@ -3,6 +3,15 @@ package com.bones.interpreter
 import com.bones.data.template.KvpCollectionEncoder
 import com.bones.data.{KeyDefinition, _}
 
+trait Encoder[ALG[_], A, OUT] { self =>
+  def encode(a: A): OUT
+
+  def map[OUTB](f: OUT => OUTB): Encoder[ALG, A, OUTB] = new Encoder[ALG, A, OUTB] {
+    override def encode(a: A): OUTB = f(self.encode(a))
+  }
+
+}
+
 /**
   * Base trait for converting from HList or Case class to an interchange format such as JSON.
   *
@@ -29,7 +38,7 @@ trait KvpInterchangeFormatEncoderInterpreter[ALG[_], OUT]
     */
   def generateEncoder[A](
     collection: KvpCollection[String, ALG, A]
-  ): A => OUT = fromKvpCollection(collection)
+  ): Encoder[ALG, A, OUT] = fromKvpCollection(collection)
 
   /** Takes a value definition and the actual value and create
     * a key value pair wrapped in the OUT type.  Analogous to
@@ -37,34 +46,35 @@ trait KvpInterchangeFormatEncoderInterpreter[ALG[_], OUT]
     * */
   def toObj[A](kvDef: KeyDefinition[String, ALG, A], value: OUT): OUT
 
-  override def primitiveEncoder[A](keyDefinition: KeyDefinition[String, ALG, A]): A => OUT = {
+  override def primitiveEncoder[A](
+    keyDefinition: KeyDefinition[String, ALG, A]): Encoder[ALG, A, OUT] = {
     val f = determineValueDefinition(keyDefinition.dataDefinition)
     (a: A) =>
       {
-        val value = f(a)
+        val value = f.encode(a)
         toObj(keyDefinition, value)
       }
   }
 
   protected def determineValueDefinition[A](
     dataDefinition: Either[HigherOrderValue[String, ALG, A], ALG[A]]
-  ): A => OUT = {
+  ): Encoder[ALG, A, OUT] = {
     dataDefinition match {
       case Left(kvp)  => primitiveWrapperDefinition(kvp)
-      case Right(cov) => encoder.encode[A](cov)
+      case Right(cov) => encoder.createEncoder[A](cov)
     }
   }
 
   protected def primitiveWrapperDefinition[A](
     fgo: HigherOrderValue[String, ALG, A]
-  ): A => OUT =
+  ): Encoder[ALG, A, OUT] =
     fgo match {
       case op: OptionalValue[String, ALG, b] @unchecked =>
-        val valueF = determineValueDefinition(op.valueDefinitionOp)
+        val encoder = determineValueDefinition(op.valueDefinitionOp)
         (input: A) =>
           {
             input match {
-              case Some(x) => valueF(x)
+              case Some(x) => encoder.encode(x)
               case None    => interchangeFormatEncoder.none
             }
           }
@@ -72,7 +82,7 @@ trait KvpInterchangeFormatEncoderInterpreter[ALG[_], OUT]
         val itemToOut = determineValueDefinition(ld.tDefinition)
         (input: A) =>
           {
-            val listOfJson = input.asInstanceOf[List[t]].map(itemToOut)
+            val listOfJson = input.asInstanceOf[List[t]].map(itemToOut.encode)
             interchangeFormatEncoder.toOutList(listOfJson)
           }
       case either: EitherData[String, ALG, a, b] @unchecked =>
@@ -81,14 +91,14 @@ trait KvpInterchangeFormatEncoderInterpreter[ALG[_], OUT]
         (input: A) =>
           {
             input match {
-              case Left(aInput)  => aF(aInput)
-              case Right(bInput) => bF(bInput)
+              case Left(aInput)  => aF.encode(aInput)
+              case Right(bInput) => bF.encode(bInput)
             }
           }
       case gd: KvpCollectionValue[String, ALG, A] @unchecked =>
         val fh = fromKvpCollection[A](gd.kvpCollection)
         input =>
-          fh(input)
+          fh.encode(input)
     }
 
 }

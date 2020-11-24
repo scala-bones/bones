@@ -5,7 +5,7 @@ import java.time._
 
 import com.bones.bson.{BsonEncoderInterpreter, BsonPrimitiveEncoder}
 import com.bones.data.values._
-import com.bones.interpreter.InterchangeFormatEncoderValue
+import com.bones.interpreter.{Encoder, InterchangeFormatEncoderValue}
 import reactivemongo.bson.{BSONDateTime, BSONLong, BSONValue}
 
 trait BsonJavaTimeEncoder extends InterchangeFormatEncoderValue[JavaTimeValue, BSONValue] {
@@ -15,7 +15,7 @@ trait BsonJavaTimeEncoder extends InterchangeFormatEncoderValue[JavaTimeValue, B
   val offsetTimeFormatter: DateTimeFormatter
   val zonedDateTimeFormatter: DateTimeFormatter
 
-  override def encode[A](alg: JavaTimeValue[A]): A => BSONValue =
+  override def createEncoder[A](alg: JavaTimeValue[A]): Encoder[JavaTimeValue, A, BSONValue] =
     alg match {
       case dte: DateTimeExceptionData =>
         val f = baseEncoder.stringToOut

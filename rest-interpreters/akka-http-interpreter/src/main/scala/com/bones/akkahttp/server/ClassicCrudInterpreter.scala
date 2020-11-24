@@ -1,7 +1,7 @@
 package com.bones.akkahttp.server
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.model.{HttpHeader, StatusCodes}
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.StatusCodes.InternalServerError
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.unmarshalling.PredefinedFromEntityUnmarshallers.byteArrayUnmarshaller
@@ -34,9 +34,12 @@ case class ClassicCrudInterpreter[ALG[_], ID, A, E](
                   case Left(systemError) =>
                     complete(
                       StatusCodes.InternalServerError,
-                      definition.errorMarshallerFunction(systemError))
+                      definition.errorEncoderFunction.encode(systemError))
                   case Right(value) =>
-                    complete(StatusCodes.OK, List.empty, definition.schemaMarshallerFunction(value))
+                    complete(
+                      StatusCodes.OK,
+                      List.empty,
+                      definition.schemaMarshallerFunction.encode(value))
                 }
               case Failure(ex) =>
                 complete(InternalServerError, s"An error occurred: ${ex.getMessage}")
@@ -60,7 +63,7 @@ case class ClassicCrudInterpreter[ALG[_], ID, A, E](
               case Left(err) =>
                 complete(
                   StatusCodes.UnprocessableEntity,
-                  definition.validationErrorEncoder(ErrorResponse(err.toList)))
+                  definition.validationErrorEncoder.encode(ErrorResponse(err)))
               case Right(value) =>
                 onComplete(f(value)) {
                   case Success(value) =>
@@ -68,12 +71,12 @@ case class ClassicCrudInterpreter[ALG[_], ID, A, E](
                       case Left(systemError) =>
                         complete(
                           StatusCodes.InternalServerError,
-                          definition.errorMarshallerFunction(systemError))
+                          definition.errorEncoderFunction.encode(systemError))
                       case Right(value) =>
                         complete(
                           StatusCodes.OK,
                           List.empty,
-                          definition.idSchemaMarshallerFunction(value))
+                          definition.idSchemaMarshallerFunction.encode(value))
                     }
                   case Failure(ex) =>
                     complete(InternalServerError, s"An error occurred: ${ex.getMessage}")

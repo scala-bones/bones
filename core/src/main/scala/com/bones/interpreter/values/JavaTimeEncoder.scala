@@ -3,7 +3,11 @@ package com.bones.interpreter.values
 import java.time.format.DateTimeFormatter
 
 import com.bones.data.values._
-import com.bones.interpreter.{InterchangeFormatEncoderValue, InterchangeFormatPrimitiveEncoder}
+import com.bones.interpreter.{
+  Encoder,
+  InterchangeFormatEncoderValue,
+  InterchangeFormatPrimitiveEncoder
+}
 
 trait JavaTimeEncoder[OUT] extends InterchangeFormatEncoderValue[JavaTimeValue, OUT] {
 
@@ -16,7 +20,7 @@ trait JavaTimeEncoder[OUT] extends InterchangeFormatEncoderValue[JavaTimeValue, 
   val localDateFormatter: DateTimeFormatter
   val localTimeFormatter: DateTimeFormatter
 
-  override def encode[A](alg: JavaTimeValue[A]): A => OUT =
+  override def createEncoder[A](alg: JavaTimeValue[A]): Encoder[JavaTimeValue, A, OUT] = {
     alg match {
       case dte: DateTimeExceptionData =>
         val f = baseEncoder.stringToOut
@@ -84,5 +88,6 @@ trait JavaTimeEncoder[OUT] extends InterchangeFormatEncoderValue[JavaTimeValue, 
         zoneOffset =>
           f(zoneOffset.toString)
     }
+  }
 
 }

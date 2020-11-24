@@ -4,6 +4,7 @@ import com.bones.data.Error._
 import com.bones.data.{KvpNil, ListData, Sugar}
 import com.bones.data.values._
 import com.bones.interpreter.{
+  Encoder,
   InterchangeFormatEncoderValue,
   InterchangeFormatPrimitiveEncoder,
   KvpInterchangeFormatEncoderInterpreter
@@ -269,8 +270,9 @@ trait ExtractionErrorEncoder[OUT]
     defaultEncoder
       .generateEncoder[WrongTypeError[String, _]](wrongTypeErrorSchema)
 
-  override def encode[A](alg: ExtractionErrorValue[A]): A => OUT =
-    alg match {
+  override def createEncoder[A](
+    alg: ExtractionErrorValue[A]): Encoder[ExtractionErrorValue, A, OUT] = {
+    val result: Encoder[ScalaCoreValue, A, OUT] = alg match {
       case CanNotConvertData   => canNotConvertEncoder
       case NotFoundData        => notFoundEncoder
       case ParsingErrorData    => parsingErrorEncoder
@@ -280,5 +282,9 @@ trait ExtractionErrorEncoder[OUT]
       case ValidationErrorData => validationErrorEncoder
       case WrongTypeErrorData  => wrongTypeErrorEncoder
     }
+    new Encoder[ExtractionErrorValue, A, OUT] {
+      override def encode(a: A): OUT = result.encode(a)
+    }
+  }
 
 }

@@ -5,7 +5,11 @@ import java.time.{Instant, ZoneId}
 import java.util.Locale
 
 import com.bones.circe.values._
-import com.bones.interpreter.{InterchangeFormatEncoderValue, InterchangeFormatPrimitiveEncoder}
+import com.bones.interpreter.{
+  Encoder,
+  InterchangeFormatEncoderValue,
+  InterchangeFormatPrimitiveEncoder
+}
 import com.bones.schemas.CustomCovSchema._
 import io.circe.Json
 import org.scalatest.funsuite.AnyFunSuite
@@ -26,30 +30,36 @@ class CovCirceTest extends AnyFunSuite with Checkers with Matchers {
         .withLocale(Locale.FRANCE)
         .withZone(ZoneId.of("UTC"))
 
-    def customAlgebraEncoder[A]: CustomAlgebra[A] => A => Json =
-      alg =>
-        alg match {
+    def customAlgebraEncoder[A](algebra: CustomAlgebra[A]): Encoder[CustomAlgebra, A, Json] =
+      new Encoder[CustomAlgebra, A, Json] {
+        val f = algebra match {
           case MarkdownData =>
-            str =>
-              Json.fromString(str.asInstanceOf[String])
+            (str: String) =>
+              Json.fromString(str)
+        }
+        override def encode(a: A): Json = f(a.asInstanceOf[String])
       }
 
-    def dateExtAlgebraEncoder[A]: DateExtAlgebra[A] => A => Json =
-      alg =>
-        alg match {
-          case InstantData =>
-            i =>
-              Json.fromString(dateFormatter.format(i.asInstanceOf[Instant]))
+    def dateExtAlgebraEncoder[A](alg: DateExtAlgebra[A]): Encoder[DateExtAlgebra, A, Json] = {
+      val encoder = alg match {
+        case InstantData =>
+          new Encoder[DateExtAlgebra, Instant, Json] {
+            override def encode(i: Instant): Json =
+              Json.fromString(dateFormatter.format(i))
+          }
       }
+      encoder.asInstanceOf[Encoder[DateExtAlgebra, A, Json]]
+    }
 
     object BlogEncoder extends InterchangeFormatEncoderValue[BlogAlgebra, Json] {
 
-      def encode[A](alg: BlogAlgebra[A]): A => Json =
+      override def createEncoder[A](alg: BlogAlgebra[A]): Encoder[BlogAlgebra, A, Json] =
         alg match {
-          case Inl(customAlgebra)            => customAlgebraEncoder(customAlgebra)
-          case Inr(Inl(dateExtAlgebra))      => dateExtAlgebraEncoder(dateExtAlgebra)
-          case Inr(Inr(Inl(scalaCoreValue))) => BaseScalaCoreEncoder.encode(scalaCoreValue)
-          case Inr(Inr(Inr(_)))              => sys.error("Unreachable code")
+          case Inl(customAlgebra)       => customAlgebraEncoder(customAlgebra).encode(_)
+          case Inr(Inl(dateExtAlgebra)) => dateExtAlgebraEncoder(dateExtAlgebra).encode(_)
+          case Inr(Inr(Inl(scalaCoreValue))) =>
+            BaseScalaCoreEncoder.createEncoder(scalaCoreValue).encode(_)
+          case Inr(Inr(Inr(_))) => sys.error("Unreachable code")
         }
     }
 
@@ -67,7 +77,7 @@ class CovCirceTest extends AnyFunSuite with Checkers with Matchers {
 
     val blogPost = BlogPost(1, "title", List("tag1", "tag2"), instant, "Here is some content")
 
-    val json = blogPostToJson.apply(blogPost)
+    val json = blogPostToJson.encode(blogPost)
     val jsonString = json.spaces2
 
     val expectedResult =

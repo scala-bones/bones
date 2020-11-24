@@ -96,7 +96,7 @@ class BsonTest extends AnyFunSuite with Checkers with Matchers {
     check((cc: AllSupported) => {
       try {
         val buffer = new ArrayBSONBuffer()
-        ccToBson(cc) match {
+        ccToBson.encode(cc) match {
           case doc: BSONDocument => BSONDocument.write(doc, buffer)
           case x                 => fail(s"expected BSONDocument, received $x")
         }

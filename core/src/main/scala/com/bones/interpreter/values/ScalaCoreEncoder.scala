@@ -2,6 +2,7 @@ package com.bones.interpreter.values
 
 import com.bones.data.values._
 import com.bones.interpreter.{
+  Encoder,
   InterchangeFormatEncoderValue,
   InterchangeFormatPrimitiveEncoder,
   KvpInterchangeFormatEncoderInterpreter
@@ -10,8 +11,8 @@ import com.bones.interpreter.{
 trait ScalaCoreEncoder[OUT] extends InterchangeFormatEncoderValue[ScalaCoreValue, OUT] {
   val defaultEncoder: InterchangeFormatPrimitiveEncoder[OUT]
 
-  override def encode[A](alg: ScalaCoreValue[A]): A => OUT =
-    alg match {
+  override def createEncoder[A](alg: ScalaCoreValue[A]): Encoder[ScalaCoreValue, A, OUT] = {
+    val result: A => OUT = alg match {
       case _: BooleanData    => defaultEncoder.booleanToOut
       case _: StringData     => defaultEncoder.stringToOut
       case _: IntData        => defaultEncoder.intToOut
@@ -24,6 +25,9 @@ trait ScalaCoreEncoder[OUT] extends InterchangeFormatEncoderValue[ScalaCoreValue
       case e: EnumerationData[e, a] => { enum =>
         defaultEncoder.stringToOut(enum.toString)
       }
-
     }
+    new Encoder[ScalaCoreValue, A, OUT] {
+      override def encode(a: A): OUT = result(a)
+    }
+  }
 }
