@@ -126,7 +126,7 @@ lazy val swaggerOas3 = (project in file("interchange-format-interpreters/swagger
     )
   )
   .dependsOn(core, testSchemas % "test")
-lazy val doobieVersion = "0.9.2"
+lazy val doobieVersion = "0.9.4"
 // lazy val directEncoders = (project in file("interchange-format-interpreters/direct-encoders"))
 //  .settings(
 //    commonSettings,
