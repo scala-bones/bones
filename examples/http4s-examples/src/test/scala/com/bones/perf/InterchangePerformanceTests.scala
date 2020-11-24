@@ -3,6 +3,8 @@ package com.bones.perf
 import java.nio.charset.Charset
 
 import cats.implicits._
+import com.bones.circe.CirceFromByteArray
+import com.bones.circe.values.isoCirceValidatorInterpreter
 import com.bones.schemas.Schemas.allSupportCaseClass
 
 object InterchangePerformanceTests extends App {
@@ -16,13 +18,10 @@ object InterchangePerformanceTests extends App {
 //    JsonStringEncoderInterpreter.isoEncoder.fAtoString(schema, com.bones.sjson.values.allEncoders)
 
   val circeValidator =
-    com.bones.circe.values.isoCirceValidatorInterpreter
-      .generateByteArrayValidator(schema, Charset.defaultCharset())
+    CirceFromByteArray()
+      .flatMap(isoCirceValidatorInterpreter.generateValidator(schema))
 
   val circeEncoder = com.bones.circe.values.isoCirceEncoderInterpreter.generateEncoder(schema)
-
-  val argValidator = com.bones.circe.values.isoCirceValidatorInterpreter
-    .generateByteArrayValidator(schema, Charset.defaultCharset())
 
   val argEncoder = com.bones.circe.values.isoCirceEncoderInterpreter.generateEncoder(schema)
 
@@ -58,7 +57,7 @@ object InterchangePerformanceTests extends App {
 
   val bsonStart = System.currentTimeMillis()
   val bsonResult =
-    bsonObjects.map(b => bsonValidator(com.bones.bson.fromByteArray(b).toOption.get))
+    bsonObjects.map(b => bsonValidator.validate(com.bones.bson.fromByteArray(b).toOption.get))
   val bsonEnd = System.currentTimeMillis()
   val badBsonResults = bsonResult.indices.filterNot(i => {
     (bsonResult.get(i).flatMap(_.toOption), objects.get(i)) match {

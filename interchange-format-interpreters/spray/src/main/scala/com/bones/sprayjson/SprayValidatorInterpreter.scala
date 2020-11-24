@@ -7,7 +7,8 @@ import com.bones.data.{KeyDefinition, _}
 import com.bones.interpreter.{
   InterchangeFormatPrimitiveValidator,
   InterchangeFormatValidatorValue,
-  KvpInterchangeFormatValidatorInterpreter
+  KvpInterchangeFormatValidatorInterpreter,
+  OptionalInputValidator
 }
 import spray.json._
 
@@ -47,11 +48,11 @@ trait SprayValidatorInterpreter[ALG[_]]
   override def headValue[A](
     in: JsValue,
     kv: KeyDefinition[String, ALG, A],
-    headInterpreter: (Option[JsValue], List[String]) => Either[List[ExtractionError[String]], A],
+    headInterpreter: OptionalInputValidator[String, ALG, A, JsValue],
     path: List[String]): Either[List[ExtractionError[String]], A] =
     Try(in.asJsObject).toOption match {
       case Some(value) =>
-        headInterpreter(value.fields.find(_._1 == kv.key).map(_._2), path)
+        headInterpreter.validateWithPath(value.fields.find(_._1 == kv.key).map(_._2), path)
       case None =>
         Left(List(WrongTypeError(path, kv.typeName, in.getClass.getSimpleName, None)))
     }
@@ -60,9 +61,9 @@ trait SprayValidatorInterpreter[ALG[_]]
     schema: KvpCollection[String, ALG, A],
     charset: Charset
   ): Array[Byte] => Either[List[ExtractionError[String]], A] = {
-    val f = fromKvpCollection(schema)
+    val encoder = fromKvpCollection(schema)
     bytes =>
-      fromByteArray(bytes, charset).flatMap(f(_, List.empty))
+      fromByteArray(bytes, charset).flatMap(encoder.validateWithPath(_, List.empty))
   }
 
   private def fromByteArray(

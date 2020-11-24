@@ -1,10 +1,12 @@
 package com.bones.bson
 
-import java.nio.charset.Charset
-
 import com.bones.data.Error._
 import com.bones.data._
-import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
+import com.bones.interpreter.{
+  KvpInterchangeFormatValidatorInterpreter,
+  OptionalInputValidator,
+  Validator
+}
 import reactivemongo.bson.{
   BSONArray,
   BSONBoolean,
@@ -23,10 +25,10 @@ trait BsonValidatorInterpreter[ALG[_]]
 
   def generateByteArrayValidator[A](
     schema: KvpCollection[String, ALG, A]
-  ): Array[Byte] => Either[List[ExtractionError[String]], A] = {
+  ): Validator[String, ALG, A, Array[Byte]] = {
     val f = fromKvpCollection(schema)
-    bytes =>
-      fromByteArray(bytes).flatMap(f(_, List.empty))
+    (bytes, path) =>
+      fromByteArray(bytes).flatMap(f.validateWithPath(_, path))
   }
 
   /** An additional string in the serialized format which states the coproduct type.
@@ -61,12 +63,12 @@ trait BsonValidatorInterpreter[ALG[_]]
   override def headValue[A](
     in: BSONValue,
     kv: KeyDefinition[String, ALG, A],
-    headInterpreter: (Option[BSONValue], List[String]) => Either[ExtractionErrors[String], A],
+    headInterpreter: OptionalInputValidator[String, ALG, A, BSONValue],
     path: List[String]): Either[ExtractionErrors[String], A] = {
     in match {
       case doc: BSONDocument =>
         val fields = doc.elements
-        headInterpreter(fields.find(_.name == kv.key).map(_.value), path)
+        headInterpreter.validateWithPath(fields.find(_.name == kv.key).map(_.value), path)
       case _ => invalidValue(in, kv.typeName, path)
     }
 

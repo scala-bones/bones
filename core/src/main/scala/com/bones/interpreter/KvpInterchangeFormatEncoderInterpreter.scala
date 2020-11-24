@@ -3,15 +3,6 @@ package com.bones.interpreter
 import com.bones.data.template.KvpCollectionEncoder
 import com.bones.data.{KeyDefinition, _}
 
-trait Encoder[ALG[_], A, OUT] { self =>
-  def encode(a: A): OUT
-
-  def map[OUTB](f: OUT => OUTB): Encoder[ALG, A, OUTB] = new Encoder[ALG, A, OUTB] {
-    override def encode(a: A): OUTB = f(self.encode(a))
-  }
-
-}
-
 /**
   * Base trait for converting from HList or Case class to an interchange format such as JSON.
   *

@@ -6,7 +6,11 @@ import com.bones.Path
 import com.bones.Util.stringToEnumeration
 import com.bones.data.Error.{CanNotConvert, ExtractionErrors, RequiredValue}
 import com.bones.data.values._
-import com.bones.interpreter.{InterchangeFormatPrimitiveValidator, InterchangeFormatValidatorValue}
+import com.bones.interpreter.{
+  InterchangeFormatPrimitiveValidator,
+  InterchangeFormatValidatorValue,
+  OptionalInputValidator
+}
 
 import scala.util.Try
 
@@ -14,8 +18,8 @@ trait ScalaCoreValidator[IN] extends InterchangeFormatValidatorValue[ScalaCoreVa
 
   val baseValidator: InterchangeFormatPrimitiveValidator[IN]
 
-  override def validate[A](
-    alg: ScalaCoreValue[A]): (Option[IN], List[String]) => Either[ExtractionErrors[String], A] = {
+  override def createValidator[A](
+    alg: ScalaCoreValue[A]): OptionalInputValidator[String, ScalaCoreValue, A, IN] = {
     alg match {
       case op: StringData =>
         baseValidator.required(
@@ -31,14 +35,17 @@ trait ScalaCoreValidator[IN] extends InterchangeFormatValidatorValue[ScalaCoreVa
       case op @ ByteArrayData(validations) =>
         val decoder = Base64.getDecoder
         (inOpt: Option[IN], path: Path[String]) =>
-          for {
-            in <- inOpt.toRight[ExtractionErrors[String]](List(RequiredValue(path, alg.typeName)))
-            str <- baseValidator.extractString(alg.typeName)(in, path)
-            arr <- Try {
-              decoder.decode(str)
-            }.toEither.left.map(thr =>
-              List(CanNotConvert(path, str, classOf[Array[Byte]], Some(thr))))
-          } yield arr
+          {
+            val result = for {
+              in <- inOpt.toRight[ExtractionErrors[String]](List(RequiredValue(path, alg.typeName)))
+              str <- baseValidator.extractString(alg.typeName).validateWithPath(in, path)
+              arr <- Try {
+                decoder.decode(str)
+              }.toEither.left.map(thr =>
+                List(CanNotConvert(path, str, classOf[Array[Byte]], Some(thr))))
+            } yield arr
+            result.asInstanceOf[Either[ExtractionErrors[String], A]]
+          }
       case fd: FloatData =>
         baseValidator.required(alg.typeName, fd.validations, baseValidator.extractFloat)
       case dd: DoubleData =>
@@ -51,7 +58,7 @@ trait ScalaCoreValidator[IN] extends InterchangeFormatValidatorValue[ScalaCoreVa
         (inOpt: Option[IN], path: Path[String]) =>
           for {
             in <- inOpt.toRight[ExtractionErrors[String]](List(RequiredValue(path, alg.typeName)))
-            str <- baseValidator.extractString(alg.typeName)(in, path)
+            str <- baseValidator.extractString(alg.typeName).validateWithPath(in, path)
             enum <- stringToEnumeration[String, e, A](str, path, op.enumeration.asInstanceOf[e])
           } yield enum.asInstanceOf[A]
 

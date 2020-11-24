@@ -1,7 +1,7 @@
 package com.bones.http.common
 
 import com.bones.data.KvpCollection
-import com.bones.interpreter.Encoder
+import com.bones.interpreter.{Encoder, Validator}
 
 /**
   * Define now each interpreter serializes to an Array[Byte]
@@ -10,7 +10,7 @@ import com.bones.interpreter.Encoder
   */
 trait Interpreter[K, ALG[_]] {
   def generateEncoder[A](kvp: KvpCollection[K, ALG, A]): Encoder[ALG, A, Array[Byte]]
-  def generateValidator[A](kvp: KvpCollection[K, ALG, A]): ValidatorFunc[A]
+  def generateValidator[A](kvp: KvpCollection[K, ALG, A]): Validator[K, ALG, A, Array[Byte]]
 }
 
 /**
@@ -56,15 +56,16 @@ case class ConvertedEncoder[ALG[_], A, CT](
   * @tparam A Entity
   * @tparam CT ContentType
   */
-case class ConvertedValidator[ALG[_], A, CT](
-  defaultValidator: (CT, ValidatorFunc[A]),
-  supportedValidators: Map[CT, (CT, ValidatorFunc[A])]) {
+case class ConvertedValidator[K, ALG[_], A, CT](
+  defaultValidator: (CT, Validator[K, ALG, A, Array[Byte]]),
+  supportedValidators: Map[CT, (CT, Validator[K, ALG, A, Array[Byte]])]) {
 
-  def validatorForContent(ct: CT): Option[(CT, ValidatorFunc[A])] =
+  def validatorForContent(ct: CT): Option[(CT, Validator[K, ALG, A, Array[Byte]])] =
     if (defaultValidator._1 == ct) Some(defaultValidator)
     else supportedValidators.get(ct)
 
-  def validatorForOptionalContent(ctOpt: Option[CT]): Option[(CT, ValidatorFunc[A])] =
+  def validatorForOptionalContent(
+    ctOpt: Option[CT]): Option[(CT, Validator[K, ALG, A, Array[Byte]])] =
     ctOpt.map(validatorForContent).getOrElse(Some(defaultValidator))
 
 }
@@ -112,7 +113,7 @@ case class ContentInterpreters[K, ALG[_], CT](
   /** Given a schema, generate the encoders for each content type.
     * @return Tuple - First is the default Encoder, second are the other supported encoders
    **/
-  def generateValidators[A](schema: KvpCollection[K, ALG, A]): ConvertedValidator[ALG, A, CT] = {
+  def generateValidators[A](schema: KvpCollection[K, ALG, A]): ConvertedValidator[K, ALG, A, CT] = {
     val defaultValidator = (
       defaultContentType.contentType,
       defaultContentType.encoderInterpreter.generateValidator(schema)

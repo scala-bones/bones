@@ -64,7 +64,8 @@ object ClassicCrud {
                 UnsupportedMediaType(s"Unsupported Content-Type: '${findContentType(req)}''"))
               .flatMap {
                 case (ct, f) =>
-                  f(body).left
+                  f.validate(body)
+                    .left
                     .map(errs => {
                       val (outContentType, errorF) =
                         classicCrudDef.errorResponseEncoders
@@ -151,13 +152,15 @@ object ClassicCrud {
         val result = classicCrudDef.requestSchemaValidators
           .validatorForOptionalContent(findContentType(req))
           .map {
-            case (contentType, validatorFunc) => {
+            case (contentType, validator) => {
               val result: EitherT[F, F[Response[F]], F[Response[F]]] = for {
                 body <- EitherT[F, F[Response[F]], Array[Byte]] {
                   req.as[Array[Byte]].map(Right(_))
                 }
                 in <- EitherT.fromEither[F] {
-                  validatorFunc(body).left
+                  validator
+                    .validate(body)
+                    .left
                     .map(errs => {
                       val (outContentType, errorF) =
                         classicCrudDef.errorResponseEncoders.encoderForContent(contentType)

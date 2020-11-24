@@ -4,11 +4,17 @@ import java.nio.charset.Charset
 
 import com.bones.bson.values.{defaultBsonEncoderInterpreter, defaultBsonValidatorInterpreter}
 import com.bones.bson.{bsonResultToBytes, fromByteArray}
-import com.bones.circe.{IsoCirceEncoderInterpreter, IsoCirceValidatorInterpreter}
+import com.bones.circe.values.isoCirceValidatorInterpreter
+import com.bones.circe.{
+  CirceFromByteArray,
+  IsoCirceEncoderInterpreter,
+  IsoCirceValidatorInterpreter
+}
+import com.bones.data.Error.ExtractionErrors
 import com.bones.data.KvpCollection
 import com.bones.data.values.DefaultValues
 import com.bones.http.common._
-import com.bones.interpreter.Encoder
+import com.bones.interpreter.{Encoder, Validator}
 
 object Config {
 
@@ -21,10 +27,12 @@ object Config {
         .generateEncoder(kvp)
         .map(_.noSpaces.getBytes(charset))
 
-    override def generateValidator[A](
-      kvp: KvpCollection[String, DefaultValues, A]): ValidatorFunc[A] =
-      IsoCirceValidatorInterpreter(com.bones.circe.values.defaultValidators)
-        .generateByteArrayValidator(kvp, charset)
+    override def generateValidator[A](kvp: KvpCollection[String, DefaultValues, A])
+      : Validator[String, DefaultValues, A, Array[Byte]] = {
+      CirceFromByteArray(charset).flatMap(
+        isoCirceValidatorInterpreter.generateValidator(kvp)
+      )
+    }
   }
 
   val bsonInterpreter = new Interpreter[String, DefaultValues] {
@@ -34,13 +42,13 @@ object Config {
         .generateEncoder(kvp)
         .map(bsonResultToBytes)
 
-    override def generateValidator[A](
-      kvp: KvpCollection[String, DefaultValues, A]): ValidatorFunc[A] = {
+    override def generateValidator[A](kvp: KvpCollection[String, DefaultValues, A])
+      : Validator[String, DefaultValues, A, Array[Byte]] = {
       val f = defaultBsonValidatorInterpreter
         .generateValidator(kvp)
-      (bytes: Array[Byte]) =>
+      (bytes: Array[Byte], path: List[String]) =>
         {
-          fromByteArray(bytes).flatMap(f)
+          fromByteArray(bytes).flatMap(bson => f.validateWithPath(bson, path))
         }
     }
   }
@@ -50,9 +58,15 @@ object Config {
       kvp: KvpCollection[String, DefaultValues, A]): Encoder[DefaultValues, A, Array[Byte]] =
       com.bones.protobuf.values.defaultEncoder.generateProtobufEncoder(kvp).apply(_)
 
-    override def generateValidator[A](
-      kvp: KvpCollection[String, DefaultValues, A]): ValidatorFunc[A] =
-      com.bones.protobuf.values.defaultUtcValidator.fromCustomBytes(kvp)
+    override def generateValidator[A](kvp: KvpCollection[String, DefaultValues, A])
+      : Validator[String, DefaultValues, A, Array[Byte]] =
+      new Validator[String, DefaultValues, A, Array[Byte]] {
+        override def validateWithPath(
+          in: Array[Byte],
+          path: List[String]): Either[ExtractionErrors[String], A] =
+          com.bones.protobuf.values.defaultUtcValidator.fromCustomBytes(kvp).apply(in)
+      }
+
   }
 
   val defaultContentType = Content("application/json", jsonInterpreter)

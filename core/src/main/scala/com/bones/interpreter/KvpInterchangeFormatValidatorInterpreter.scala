@@ -18,6 +18,15 @@ import com.bones.{Path, Util}
 import shapeless.ops.hlist.Prepend
 import shapeless.{:+:, ::, CNil, Coproduct, HList, HNil, Inl, Inr, Nat}
 
+trait OptionalInputValidator[K, ALG[_], A, IN] { self =>
+  def validate(in: Option[IN]): Either[ExtractionErrors[K], A] = validateWithPath(in, List.empty)
+  def validateWithPath(in: Option[IN], path: List[K]): Either[ExtractionErrors[K], A]
+
+  def map[B](f: A => B): OptionalInputValidator[K, ALG, B, IN] =
+    (in: Option[IN], path: List[K]) => self.validateWithPath(in, path).map(f)
+
+}
+
 /**
   * Base trait for converting from an interchange format such as JSON to an HList or Case class.
   * @tparam IN The base data type of the interchange format, such as io.circe.Json
@@ -33,8 +42,8 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
   val interchangeFormatPrimitiveValidator: InterchangeFormatPrimitiveValidator[IN]
 
   def generateValidator[A](
-    kvpCollection: KvpCollection[String, ALG, A]): IN => Either[ExtractionErrors[String], A] = {
-    fromKvpCollection(kvpCollection)(_, List.empty)
+    kvpCollection: KvpCollection[String, ALG, A]): Validator[String, ALG, A, IN] = {
+    fromKvpCollection(kvpCollection)
   }
 
   /**
@@ -49,7 +58,7 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
   protected def headValue[A](
     in: IN,
     kv: KeyDefinition[String, ALG, A],
-    headInterpreterF: (Option[IN], Path[String]) => Either[ExtractionErrors[String], A],
+    headInterpreterF: OptionalInputValidator[String, ALG, A, IN],
     path: Path[String]): Either[ExtractionErrors[String], A]
 
   def invalidValue[T](
@@ -64,25 +73,23 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
 
   protected def isEmpty(json: IN): Boolean
 
-  override def keyDefinition[A](value: KeyDefinition[String, ALG, A])
-    : (IN, List[String]) => Either[ExtractionErrors[String], A] = { (in, path) =>
-    {
-      headValue(in, value, determineValidator(value.dataDefinition), path)
-    }
+  override def keyDefinition[A](
+    value: KeyDefinition[String, ALG, A]): Validator[String, ALG, A, IN] = { (in, path) =>
+    headValue(in, value, determineValidator(value.dataDefinition), path)
   }
 
   protected def determineValidator[A](
     value: Either[HigherOrderValue[String, ALG, A], ALG[A]]
-  ): (Option[IN], List[String]) => Either[ExtractionErrors[String], A] = {
+  ): OptionalInputValidator[String, ALG, A, IN] = {
     value match {
       case Left(kvp)  => valueDefinition(kvp)
-      case Right(ext) => interchangeFormatValidator.validate(ext)
+      case Right(ext) => interchangeFormatValidator.createValidator(ext)
     }
   }
 
-  protected def valueDefinition[A](fgo: HigherOrderValue[String, ALG, A])
-    : (Option[IN], List[String]) => Either[ExtractionErrors[String], A] = {
-    val result: (Option[IN], List[String]) => Either[ExtractionErrors[String], A] =
+  protected def valueDefinition[A](
+    fgo: HigherOrderValue[String, ALG, A]): OptionalInputValidator[String, ALG, A, IN] = {
+    val result: OptionalInputValidator[String, ALG, A, IN] =
       fgo match {
         case op: OptionalValue[String, ALG, a] @unchecked =>
           val applied = determineValidator(op.valueDefinitionOp)
@@ -90,7 +97,7 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
             in match {
               case None                  => Right(None)
               case Some(n) if isEmpty(n) => Right(None)
-              case some @ Some(json)     => applied(some, path).map(Some(_))
+              case some @ Some(json)     => applied.validateWithPath(some, path).map(Some(_))
             }
 
         case ed: EitherData[String, ALG, a, b] @unchecked =>
@@ -98,9 +105,9 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
           val optionalB = determineValidator(ed.definitionB)
           (in: Option[IN], path: Path[String]) =>
             {
-              optionalA(in, path) match {
+              optionalA.validateWithPath(in, path) match {
                 case Left(err1) =>
-                  optionalB(in, path) match {
+                  optionalB.validateWithPath(in, path) match {
                     case Right(b) => Right(Right(b))
                     case Left(err2) => {
                       val errors = RequiredValue(path, ed.typeNameOfA) :: err2 ::: err1
@@ -124,7 +131,7 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
             path: Path[String]): Either[ExtractionErrors[String], List[t]] = {
             val arrayApplied: Seq[Either[ExtractionErrors[String], t]] =
               arr.zipWithIndex.map(jValue =>
-                valueF(Some(jValue._1), appendArrayIndex(path, jValue._2)))
+                valueF.validateWithPath(Some(jValue._1), appendArrayIndex(path, jValue._2)))
 
             arrayApplied
               .foldLeft[Either[ExtractionErrors[String], List[t]]](Right(List.empty))((b, v) =>
@@ -138,20 +145,23 @@ trait KvpInterchangeFormatValidatorInterpreter[ALG[_], IN]
 
           (inOpt: Option[IN], path: Path[String]) =>
             {
-              for {
+              val result = for {
                 in <- inOpt.toRight(List(RequiredValue(path, op.typeNameOfT)))
-                arr <- interchangeFormatPrimitiveValidator.extractArray(op.typeName)(in, path)
+                arr <- interchangeFormatPrimitiveValidator
+                  .extractArray(op.typeName)
+                  .validateWithPath(in, path)
                 listOfIn <- traverseArray(arr, path)
               } yield listOfIn
+              result.asInstanceOf[Either[ExtractionErrors[String], A]]
             }
         case op: KvpCollectionValue[String, ALG, A] @unchecked => {
-          val fg: (IN, List[String]) => Either[ExtractionErrors[String], A] =
+          val fg: Validator[String, ALG, A, IN] =
             fromKvpCollection(op.kvpCollection)
           (jsonOpt: Option[IN], path: Path[String]) =>
             {
               jsonOpt match {
                 case Some(json) =>
-                  fg(json, path)
+                  fg.validateWithPath(json, path)
                     .flatMap(res => vu.validate[String, A](op.validations)(res, path))
                 case None => Left(List(RequiredValue(path, op.typeName)))
               }

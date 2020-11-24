@@ -5,7 +5,8 @@ import com.bones.data.KeyDefinition
 import com.bones.interpreter.{
   InterchangeFormatPrimitiveValidator,
   InterchangeFormatValidatorValue,
-  KvpInterchangeFormatValidatorInterpreter
+  KvpInterchangeFormatValidatorInterpreter,
+  OptionalInputValidator
 }
 import org.json4s.JsonAST._
 import org.json4s.{JNull, JObject}
@@ -45,11 +46,12 @@ trait Json4sValidatorInterpreter[ALG[_]]
   override def headValue[A](
     in: JValue,
     kv: KeyDefinition[String, ALG, A],
-    headInterpreter: (Option[JValue], List[String]) => Either[ExtractionErrors[String], A],
+    headInterpreter: OptionalInputValidator[String, ALG, A, JValue],
     path: List[String]): Either[ExtractionErrors[String], A] =
     in match {
-      case JObject(obj) => headInterpreter(obj.find(_._1 == kv.key).map(_._2), path)
-      case _            => sys.error(s"Expected JObject, received: ${in}")
+      case JObject(obj) =>
+        headInterpreter.validateWithPath(obj.find(_._1 == kv.key).map(_._2), path)
+      case _ => sys.error(s"Expected JObject, received: ${in}")
     }
 
 }

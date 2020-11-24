@@ -17,9 +17,9 @@ class SchemaWithIdTest extends AnyFunSuite with Checkers with Matchers {
     PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)
 
   val jsonToCc =
-    isoCirceValidatorInterpreter.generateByteArrayValidator[(Long, AllSupported)](
-      WithLongId.allSupportedWithId,
-      StandardCharsets.UTF_8)
+    CirceFromByteArray(StandardCharsets.UTF_8)
+      .flatMap(isoCirceValidatorInterpreter.generateValidator(WithLongId.allSupportedWithId))
+
   val ccToJson =
     isoCirceEncoderInterpreter.generateEncoder(WithLongId.allSupportedWithId)
 
@@ -32,7 +32,7 @@ class SchemaWithIdTest extends AnyFunSuite with Checkers with Matchers {
     check((cc: (Long, AllSupported)) => {
       val json = ccToJson.encode(cc)
       val jsonString = json.spaces2.getBytes(utf8)
-      val newCc = jsonToCc(jsonString)
+      val newCc = jsonToCc.validate(jsonString)
       newCc match {
         case Left(x) =>
           fail(s"expected success, received $x for JSON string ${io.circe.parser

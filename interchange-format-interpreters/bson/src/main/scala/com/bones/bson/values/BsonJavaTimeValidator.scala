@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter
 import com.bones.bson.BsonPrimitiveValidator
 import com.bones.data.Error.ExtractionErrors
 import com.bones.data.values._
-import com.bones.interpreter.InterchangeFormatValidatorValue
+import com.bones.interpreter.{InterchangeFormatValidatorValue, OptionalInputValidator, Validator}
 import com.bones.interpreter.values.JavaTimeValidator.{parseTime, parseYear}
 import reactivemongo.bson.{BSONDateTime, BSONLong, BSONValue}
 
@@ -28,13 +28,14 @@ trait BsonJavaTimeValidator extends InterchangeFormatValidatorValue[JavaTimeValu
       case x => baseValidator.invalidValue(x, "DateTime", path)
     }
 
-  def extractLocalDate[ALG[_], A](
-    op: ALG[A])(in: BSONValue, path: List[String]): Either[ExtractionErrors[String], LocalDate] =
-    in match {
-      case BSONDateTime(date) =>
-        Right(LocalDate.ofEpochDay(date))
-      case x => baseValidator.invalidValue(x, "DateTime", path)
-    }
+  def extractLocalDate[ALG[_], A](op: ALG[A]): Validator[String, ALG, LocalDate, BSONValue] = {
+    (in: BSONValue, path: List[String]) =>
+      in match {
+        case BSONDateTime(date) =>
+          Right(LocalDate.ofEpochDay(date))
+        case x => baseValidator.invalidValue(x, "DateTime", path)
+      }
+  }
 
   def extractLocalTime[ALG[_], A](
     op: ALG[A])(in: BSONValue, path: List[String]): Either[ExtractionErrors[String], LocalTime] =
@@ -43,8 +44,8 @@ trait BsonJavaTimeValidator extends InterchangeFormatValidatorValue[JavaTimeValu
       case x              => baseValidator.invalidValue(x, "Long", path)
     }
 
-  override def validate[A](alg: JavaTimeValue[A])
-    : (Option[BSONValue], List[String]) => Either[ExtractionErrors[String], A] =
+  override def createValidator[A](
+    alg: JavaTimeValue[A]): OptionalInputValidator[String, JavaTimeValue, A, BSONValue] =
     alg match {
       case d: DateTimeExceptionData =>
         parseTime(baseValidator, alg, input => new DateTimeException(input), d.validations)
@@ -53,19 +54,25 @@ trait BsonJavaTimeValidator extends InterchangeFormatValidatorValue[JavaTimeValu
       case d: DurationData =>
         parseTime(baseValidator, alg, Duration.parse, d.validations)
       case id: InstantData =>
-        val f = (in: BSONValue, path: List[String]) =>
-          in match {
-            case BSONDateTime(date) =>
-              Right(Instant.ofEpochMilli(date))
-            case x => baseValidator.invalidValue(x, "BSONDateTime", path)
-        }
+        val f: Validator[String, JavaTimeValue, Instant, BSONValue] =
+          (in: BSONValue, path: List[String]) =>
+            in match {
+              case BSONDateTime(date) =>
+                Right(Instant.ofEpochMilli(date))
+              case x => baseValidator.invalidValue(x, "BSONDateTime", path)
+          }
         baseValidator.required(id.typeName, id.validations, f)
       case ld: LocalDateTimeData =>
-        baseValidator.required(ld.typeName, ld.validations, extractLocalDateTime(ld))
+        baseValidator
+          .required[JavaTimeValue, LocalDateTime](
+            ld.typeName,
+            ld.validations,
+            extractLocalDateTime(ld))
       case ld: LocalDateData =>
         baseValidator.required(ld.typeName, ld.validations, extractLocalDate(ld))
       case lt: LocalTimeData =>
-        baseValidator.required(lt.typeName, lt.validations, extractLocalTime(lt))
+        baseValidator
+          .required[JavaTimeValue, LocalTime](lt.typeName, lt.validations, extractLocalTime(lt))
       case md: MonthData =>
         parseTime(baseValidator, alg, Month.valueOf, md.validations)
       case md: MonthDayData =>

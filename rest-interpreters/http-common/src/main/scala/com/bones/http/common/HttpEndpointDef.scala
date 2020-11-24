@@ -31,7 +31,7 @@ case class HttpEndpointDef[ALG[_], REQ: Manifest, RES: Manifest, CT, E, PE](
   scvToAlg: ScalaCoreValue[_] => ALG[_]
 ) {
 
-  val requestSchemaValidators: ConvertedValidator[ALG, REQ, CT] =
+  val requestSchemaValidators: ConvertedValidator[String, ALG, REQ, CT] =
     contentInterpreters.generateValidators(requestSchema)
 
   val responseSchemaEncoders: ConvertedEncoder[ALG, RES, CT] =

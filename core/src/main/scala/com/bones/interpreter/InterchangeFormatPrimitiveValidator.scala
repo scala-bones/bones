@@ -1,7 +1,7 @@
 package com.bones.interpreter
 
 import com.bones.Path
-import com.bones.data.Error.{ExtractionErrors, RequiredValue}
+import com.bones.data.Error.RequiredValue
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.ValidationUtil
 
@@ -10,38 +10,30 @@ trait InterchangeFormatPrimitiveValidator[IN] {
   /**
     * Override this to provide the ability to extract a String from the IN type.
     * @param typeName The resulting class we are tyring to extract.
-    * @param in The interchange format input type.
-    * @param path The path hierarchy.
     * @tparam A The expected resulting type, eg String or Enumerated Type which we are trying to extract from a string.
     * @return The extracted String or an Error
     */
-  def extractString[ALG2[_], A](
-    typeName: String)(in: IN, path: Path[String]): Either[ExtractionErrors[String], String]
-  def extractInt[ALG2[_], A](in: IN, path: Path[String]): Either[ExtractionErrors[String], Int]
-  def extractLong[ALG2[_], A](in: IN, path: Path[String]): Either[ExtractionErrors[String], Long]
-  def extractBool[ALG2[_], A](in: IN, path: Path[String]): Either[ExtractionErrors[String], Boolean]
-  def extractArray[ALG2[_], A](
-    typeName: String)(in: IN, path: Path[String]): Either[ExtractionErrors[String], Seq[IN]]
-  def extractFloat[ALG2[_], A](in: IN, path: Path[String]): Either[ExtractionErrors[String], Float]
-  def extractDouble[ALG2[_], A](
-    in: IN,
-    path: Path[String]): Either[ExtractionErrors[String], Double]
-  def extractShort[ALG2[_], A](in: IN, path: Path[String]): Either[ExtractionErrors[String], Short]
-  def extractBigDecimal[ALG2[_], A](
-    in: IN,
-    path: Path[String]): Either[ExtractionErrors[String], BigDecimal]
+  def extractString[ALG2[_], A](typeName: String): Validator[String, ALG2, String, IN]
+  def extractInt[ALG2[_], A]: Validator[String, ALG2, Int, IN]
+  def extractLong[ALG2[_], A]: Validator[String, ALG2, Long, IN]
+  def extractBool[ALG2[_], A]: Validator[String, ALG2, Boolean, IN]
+  def extractArray[ALG2[_], A](typeName: String): Validator[String, ALG2, Seq[IN], IN]
+  def extractFloat[ALG2[_], A]: Validator[String, ALG2, Float, IN]
+  def extractDouble[ALG2[_], A]: Validator[String, ALG2, Double, IN]
+  def extractShort[ALG2[_], A]: Validator[String, ALG2, Short, IN]
+  def extractBigDecimal[ALG2[_], A]: Validator[String, ALG2, BigDecimal, IN]
   def stringValue(in: IN, elementName: String): Option[String]
 
   def required[ALG2[_], A](
     typeName: String,
     validations: List[ValidationOp[A]],
-    f: (IN, List[String]) => Either[ExtractionErrors[String], A],
-  ): (Option[IN], List[String]) => Either[ExtractionErrors[String], A] =
+    f: Validator[String, ALG2, A, IN],
+  ): OptionalInputValidator[String, ALG2, A, IN] =
     (inOpt: Option[IN], path: Path[String]) =>
       for {
         json <- inOpt
           .toRight(List(RequiredValue(path, typeName)))
-        a <- f(json, path)
+        a <- f.validateWithPath(json, path)
         _ <- ValidationUtil.validate(validations)(a, path)
       } yield a
 

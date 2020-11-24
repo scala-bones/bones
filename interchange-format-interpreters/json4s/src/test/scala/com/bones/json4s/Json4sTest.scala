@@ -31,7 +31,7 @@ class Json4sTest extends AnyFunSuite with Checkers with Matchers {
       try {
         val json = ccToJson.encode(cc)
         val jsonString = pretty(render(json))
-        val newCc = jsonToCc(parse(jsonString))
+        val newCc = jsonToCc.validate(parse(jsonString))
         newCc match {
           case Left(x) =>
             fail(s"expected success, received $x for JSON string ${compact(render(jsonString))}")

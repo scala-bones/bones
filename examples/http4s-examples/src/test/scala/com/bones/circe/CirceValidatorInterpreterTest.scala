@@ -28,7 +28,8 @@ class CirceValidatorInterpreterTest extends AnyFunSuite {
     val str = ("name", string(sv.length(3))) :: kvpNil
 
     com.bones.circe.values.isoCirceValidatorInterpreter
-      .fromKvpCollection(str)(circeDoc, List.empty) match {
+      .fromKvpCollection(str)
+      .validate(circeDoc) match {
       case Left(err) => fail(s"expected success, received: ${err}")
       case Right(r)  => assert(r.head === "Foo")
     }
@@ -40,7 +41,7 @@ class CirceValidatorInterpreterTest extends AnyFunSuite {
 
     com.bones.circe.values.isoCirceValidatorInterpreter
       .fromKvpCollection(str)
-      .apply(circeDoc, List.empty) match {
+      .validate(circeDoc) match {
       case Left(err) => succeed
       case Right(r)  => fail(s"expected validation failure, received: ${r}")
     }

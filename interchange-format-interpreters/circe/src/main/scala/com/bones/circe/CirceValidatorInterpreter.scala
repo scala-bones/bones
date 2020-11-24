@@ -7,7 +7,9 @@ import com.bones.data.{KeyDefinition, _}
 import com.bones.interpreter.{
   InterchangeFormatPrimitiveValidator,
   InterchangeFormatValidatorValue,
-  KvpInterchangeFormatValidatorInterpreter
+  KvpInterchangeFormatValidatorInterpreter,
+  OptionalInputValidator,
+  Validator
 }
 import io.circe.Json
 
@@ -41,33 +43,23 @@ trait CirceValidatorInterpreter[ALG[_]]
   override def headValue[A](
     in: Json,
     kv: KeyDefinition[String, ALG, A],
-    headInterpreter: (Option[Json], List[String]) => Either[List[ExtractionError[String]], A],
+    headInterpreter: OptionalInputValidator[String, ALG, A, Json],
     path: List[String]): Either[List[ExtractionError[String]], A] =
     in.asObject match {
       case Some(jsonObj) =>
         val fields = jsonObj.toList
-        headInterpreter(fields.find(_._1 == kv.key).map(_._2), path)
+        headInterpreter.validateWithPath(fields.find(_._1 == kv.key).map(_._2), path)
       case None =>
         Left(List(WrongTypeError(path, kv.typeName, in.getClass.getSimpleName, None)))
     }
 
-  def generateByteArrayValidator[A](
-    schema: KvpCollection[String, ALG, A],
-    charset: Charset
-  ): Array[Byte] => Either[List[ExtractionError[String]], A] = {
-    val f = fromKvpCollection(schema)
-    bytes =>
-      fromByteArray(bytes, charset).flatMap(f(_, List.empty))
-  }
-
-  private def fromByteArray(
-    arr: Array[Byte],
-    charSet: Charset): Either[List[ParsingError[String]], Json] = {
-    val input = new String(arr, charSet)
-    io.circe.parser
-      .parse(input)
-      .left
-      .map(x => List(ParsingError(x.message)))
-  }
+//  def generateByteArrayValidator[A](
+//    schema: KvpCollection[String, ALG, A],
+//    charset: Charset
+//  ): Validator[String, ALG, A, Array[Byte]] = {
+//    val validator = fromKvpCollection(schema)
+//    (bytes, path) =>
+//      fromByteArray(bytes, charset).flatMap(validator.validateWithPath(_, path))
+//  }
 
 }

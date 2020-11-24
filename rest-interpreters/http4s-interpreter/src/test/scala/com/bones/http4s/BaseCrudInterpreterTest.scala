@@ -1,23 +1,19 @@
 package com.bones.http4s
 
-import java.nio.charset.Charset
+import java.nio.charset.{Charset, StandardCharsets}
 
 import cats.effect.SyncIO
 import cats.implicits._
-import com.bones.circe.{IsoCirceEncoderInterpreter, IsoCirceValidatorInterpreter}
+import com.bones.circe.values.isoCirceValidatorInterpreter
+import com.bones.circe.{
+  CirceFromByteArray,
+  IsoCirceEncoderInterpreter,
+  IsoCirceValidatorInterpreter
+}
 import com.bones.data.KvpCollection
 import com.bones.data.values.DefaultValues
-import com.bones.http.common.{
-  Content,
-  ContentInterpreters,
-  EncoderFunc,
-  HttpEndpointDef,
-  Interpreter,
-  Path,
-  StringToIdError,
-  ValidatorFunc
-}
-import com.bones.interpreter.Encoder
+import com.bones.http.common._
+import com.bones.interpreter.{Encoder, Validator}
 import com.bones.syntax._
 import fs2.Stream
 import org.http4s._
@@ -25,7 +21,6 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.implicits._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers._
-import shapeless.Inl
 
 class BaseCrudInterpreterTest extends AnyFunSuite {
 
@@ -48,12 +43,13 @@ class BaseCrudInterpreterTest extends AnyFunSuite {
       kvp: KvpCollection[String, DefaultValues, A]): Encoder[DefaultValues, A, Array[Byte]] =
       IsoCirceEncoderInterpreter(com.bones.circe.values.defaultEncoders)
         .generateEncoder(kvp)
-        .map(_.noSpaces.getBytes(Charset.forName("UTF-8")))
+        .map(_.noSpaces.getBytes(StandardCharsets.UTF_8))
 
-    override def generateValidator[A](
-      kvp: KvpCollection[String, DefaultValues, A]): ValidatorFunc[A] =
-      IsoCirceValidatorInterpreter(com.bones.circe.values.defaultValidators)
-        .generateByteArrayValidator(kvp, Charset.forName("UTF-8"))
+    override def generateValidator[A](kvp: KvpCollection[String, DefaultValues, A])
+      : Validator[String, DefaultValues, A, Array[Byte]] = {
+      CirceFromByteArray()
+        .flatMap(isoCirceValidatorInterpreter.generateValidator(kvp))
+    }
   }
 
   val contentInterpreters =

@@ -15,8 +15,10 @@ class CirceTest extends AnyFunSuite with Checkers with Matchers {
   implicit override val generatorDrivenConfig =
     PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)
 
-  val jsonToCc = isoCirceValidatorInterpreter
-    .generateByteArrayValidator[AllSupported](allSupportCaseClass, StandardCharsets.UTF_8)
+  val jsonToCc =
+    CirceFromByteArray(StandardCharsets.UTF_8)
+      .flatMap(isoCirceValidatorInterpreter.generateValidator(allSupportCaseClass))
+
   val ccToJson =
     isoCirceEncoderInterpreter.generateEncoder(allSupportCaseClass)
 
@@ -28,7 +30,7 @@ class CirceTest extends AnyFunSuite with Checkers with Matchers {
       try {
         val json = ccToJson.encode(cc)
         val jsonString = json.spaces2.getBytes(utf8)
-        val newCc = jsonToCc(jsonString)
+        val newCc = jsonToCc.validate(jsonString)
         newCc match {
           case Left(x) =>
             fail(s"expected success, received $x for JSON string ${io.circe.parser

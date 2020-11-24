@@ -1,18 +1,18 @@
 package com.bones.json4s
 
-import java.nio.charset.{Charset, StandardCharsets}
+import java.nio.charset.Charset
 
 import com.bones.json4s.values.{isoJson4sEncoderInterpreter, isoJson4sValidatorInterpreter}
 import com.bones.scalacheck.values.defaultValuesScalacheck
 import com.bones.schemas.Schemas.AllSupported
 import com.bones.schemas.WithLongId
+import org.json4s.JsonDSL._
+import org.json4s._
+import org.json4s.native.JsonMethods._
 import org.scalacheck.Arbitrary
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.scalacheck.Checkers
-import org.json4s._
-import org.json4s.native.JsonMethods._
-import org.json4s.JsonDSL._
 
 class SchemaWithIdTest extends AnyFunSuite with Checkers with Matchers {
 
@@ -34,7 +34,7 @@ class SchemaWithIdTest extends AnyFunSuite with Checkers with Matchers {
     check((cc: (Long, AllSupported)) => {
       val json = ccToJson.encode(cc)
       val jsonString = pretty(render(json))
-      val newCc = jsonToCc(parse(jsonString))
+      val newCc = jsonToCc.validate(parse(jsonString))
       newCc match {
         case Left(x) =>
           fail(s"expected success, received $x for JSON string ${compact(render(jsonString))}")

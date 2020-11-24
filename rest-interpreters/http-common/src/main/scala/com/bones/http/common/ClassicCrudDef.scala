@@ -54,7 +54,7 @@ case class ClassicCrudDef[ALG[_], A: Manifest, ID: Manifest, CT, E, PE](
   val schemaWithId: KvpCollection[String, ALG, (ID, A)] =
     ((idKey, idDefinition) :: schema :: KvpNil[String, ALG]()).tupled[(ID, A)]
 
-  val requestSchemaValidators: ConvertedValidator[ALG, A, CT] =
+  val requestSchemaValidators: ConvertedValidator[String, ALG, A, CT] =
     contentInterpreters.generateValidators(schema)
 
   val responseSchemaEncoders: ConvertedEncoder[ALG, A, CT] =

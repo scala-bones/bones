@@ -7,36 +7,34 @@ import shapeless.{:+:, Coproduct, Inl, Inr}
 object InterchangeFormatValidatorValue {
 
   /** using kind projector allows us to create a new interpreter by merging two existing interpreters */
-  def merge[L[_], R[_] <: Coproduct, OUT](
-    li: InterchangeFormatValidatorValue[L, OUT],
-    ri: InterchangeFormatValidatorValue[R, OUT]
-  ): InterchangeFormatValidatorValue[Lambda[A => L[A] :+: R[A]], OUT] =
-    new InterchangeFormatValidatorValue[Lambda[A => L[A] :+: R[A]], OUT] {
-      override def validate[AA](lr: L[AA] :+: R[AA])
-        : (Option[OUT], List[String]) => Either[List[ExtractionError[String]], AA] =
+  def merge[L[_], R[_] <: Coproduct, IN](
+    li: InterchangeFormatValidatorValue[L, IN],
+    ri: InterchangeFormatValidatorValue[R, IN]
+  ): InterchangeFormatValidatorValue[Lambda[A => L[A] :+: R[A]], IN] =
+    new InterchangeFormatValidatorValue[Lambda[A => L[A] :+: R[A]], IN] {
+      override def createValidator[AA](
+        lr: L[AA] :+: R[AA]): OptionalInputValidator[String, Lambda[A => L[A] :+: R[A]], AA, IN] =
         lr match {
-          case Inl(l) => li.validate(l)
-          case Inr(r) => ri.validate(r)
+          case Inl(l) => li.createValidator(l).validateWithPath(_, _)
+          case Inr(r) => ri.createValidator(r).validateWithPath(_, _)
         }
     }
 
-  implicit class InterpreterOps[ALG[_], OUT](val base: InterchangeFormatValidatorValue[ALG, OUT])
+  implicit class InterpreterOps[ALG[_], IN](val base: InterchangeFormatValidatorValue[ALG, IN])
       extends AnyVal {
-    def ++[R[_] <: Coproduct](r: InterchangeFormatValidatorValue[R, OUT])
-      : InterchangeFormatValidatorValue[Lambda[A => ALG[A] :+: R[A]], OUT] =
+    def ++[R[_] <: Coproduct](r: InterchangeFormatValidatorValue[R, IN])
+      : InterchangeFormatValidatorValue[Lambda[A => ALG[A] :+: R[A]], IN] =
       merge(base, r)
 
   }
 
-  case class CNilInterchangeFormatValidator[OUT]()
-      extends InterchangeFormatValidatorValue[CNilF, OUT] {
-    override def validate[A](
-      alg: CNilF[A]): (Option[OUT], List[String]) => Either[List[ExtractionError[String]], A] =
+  case class CNilInterchangeFormatValidator[IN]()
+      extends InterchangeFormatValidatorValue[CNilF, IN] {
+    override def createValidator[A](alg: CNilF[A]): OptionalInputValidator[String, CNilF, A, IN] =
       sys.error("Unreachable code")
   }
 }
 
 trait InterchangeFormatValidatorValue[ALG[_], IN] {
-  def validate[A](
-    alg: ALG[A]): (Option[IN], List[String]) => Either[List[ExtractionError[String]], A]
+  def createValidator[A](alg: ALG[A]): OptionalInputValidator[String, ALG, A, IN]
 }

@@ -105,7 +105,7 @@ class BsonTest extends AnyFunSuite with Checkers with Matchers {
         val readBuffer = ArrayReadableBuffer.apply(bytes)
         val doc = BSONDocument.read(readBuffer)
 
-        val newCc = bsonToCc.apply(doc)
+        val newCc = bsonToCc.validate(doc)
 
         newCc match {
           case Left(x) =>

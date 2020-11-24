@@ -6,7 +6,7 @@ import argonaut.Argonaut._
 import argonaut._
 import com.bones.data.Error.{ExtractionErrors, ParsingError, RequiredValue, WrongTypeError}
 import com.bones.data.{KeyDefinition, _}
-import com.bones.interpreter.KvpInterchangeFormatValidatorInterpreter
+import com.bones.interpreter.{KvpInterchangeFormatValidatorInterpreter, OptionalInputValidator}
 
 import scala.util.control.NonFatal
 
@@ -43,7 +43,7 @@ trait ArgonautValidatorInterpreter[ALG[_]]
             .parse(str)
             .left
             .map(str => List(ParsingError[String](str)))
-            .flatMap(fromSchemaFunction(_, List.empty))
+            .flatMap(fromSchemaFunction.validate)
         } catch {
           case NonFatal(ex) =>
             Left(List(ParsingError(ex.getMessage, Some(ex))))
@@ -54,7 +54,7 @@ trait ArgonautValidatorInterpreter[ALG[_]]
   override def headValue[A](
     in: Json,
     kv: KeyDefinition[String, ALG, A],
-    headInterpreter: (Option[Json], List[String]) => Either[ExtractionErrors[String], A],
+    headInterpreter: OptionalInputValidator[String, ALG, A, Json],
     path: List[String]
   ): Either[ExtractionErrors[String], A] = {
 
@@ -69,7 +69,7 @@ trait ArgonautValidatorInterpreter[ALG[_]]
             List(RequiredValue(path, kv.typeName))
           )
       )
-      .flatMap(j => headInterpreter.apply(Some(j._2), path))
+      .flatMap(j => headInterpreter.validateWithPath(Some(j._2), path))
   }
 
   override def invalidValue[T](

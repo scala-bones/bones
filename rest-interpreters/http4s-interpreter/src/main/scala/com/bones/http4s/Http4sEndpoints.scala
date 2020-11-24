@@ -74,7 +74,7 @@ object Http4sEndpoints {
         endpointDef.requestSchemaValidators
           .validatorForOptionalContent(findContentType(req))
           .map {
-            case (ct, validatorFunc) => {
+            case (ct, validator) => {
 
               val result: EitherT[F, F[Response[F]], F[Response[F]]] = for {
                 body <- EitherT[F, F[Response[F]], Array[Byte]] {
@@ -91,7 +91,9 @@ object Http4sEndpoints {
                   })
                 }
                 in <- EitherT.fromEither[F] {
-                  validatorFunc(body).left
+                  validator
+                    .validate(body)
+                    .left
                     .map(err => {
                       val (errCt, errEncoder) =
                         endpointDef.errorResponseEncoders.encoderForContent(ct)
@@ -143,7 +145,9 @@ object Http4sEndpoints {
                   req.as[Array[Byte]].map(Right(_))
                 }
                 in <- EitherT.fromEither[F] {
-                  validator(body).left
+                  validator
+                    .validate(body)
+                    .left
                     .map(x => {
                       val (errContentType, errEncoder) =
                         endpointDef.errorResponseEncoders.encoderForContent(contentType)

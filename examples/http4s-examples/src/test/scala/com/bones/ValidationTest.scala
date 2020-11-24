@@ -125,7 +125,7 @@ class ValidationTest extends AnyFunSuite {
       com.bones.circe.values.isoCirceValidatorInterpreter.generateValidator(creditCardSchema)
 
     //here, we will test that just the validations step is working
-    val btCc = jsonToCCProgram.apply(parsed)
+    val btCc = jsonToCCProgram.validate(parsed)
 
     btCc match {
       case Left(list) => {
