@@ -341,7 +341,7 @@ lazy val examples = (project in file("examples/http4s-examples"))
     name := "Bones Examples",
     libraryDependencies ++= Seq(
       "io.swagger.core.v3" % "swagger-jaxrs2" % "2.1.5",
-      "io.swagger" % "swagger-parser" % "1.0.52",
+      "io.swagger" % "swagger-parser" % "1.0.53",
       "org.slf4j" % "slf4j-simple" % "1.7.30",
       "com.zaxxer" % "HikariCP" % "3.4.5",
       "org.scalacheck" %% "scalacheck" % "1.15.1" % Test,
