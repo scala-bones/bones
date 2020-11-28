@@ -148,7 +148,8 @@ sealed abstract class CustomStringValue[A] extends PrimitiveValue[String] {
 
   val customValidation: ValidationOp[String]
 
-  val example: A
+  val example: String
+  val description: String
 
 }
 
@@ -157,6 +158,7 @@ final case class EmailData(validations: List[ValidationOp[String]])
 
   override val customValidation: ValidationOp[String] = CustomStringValue.EmailDataValidationOp
   override val example: String = "john.doe@example.com"
+  override val description: String = "Email"
 }
 
 final case class GuidData(validations: List[ValidationOp[String]])
@@ -165,30 +167,35 @@ final case class GuidData(validations: List[ValidationOp[String]])
 
   val exampleUuid = "322dd565-0a28-4959-9b7e-42ba84149870"
   override val example: String = exampleUuid
+  override val description: String = "Globally Unique Identifier (GUID)"
 }
 
 final case class CreditCardData(validations: List[ValidationOp[String]])
     extends CustomStringValue[String] {
   override val customValidation: ValidationOp[String] = CustomStringValue.CreditCardValidationOp
   override val example: String = "5454545454545454"
+  override val description: String = "Credit Card Number"
 }
 
 final case class HexStringData(validations: List[ValidationOp[String]])
     extends CustomStringValue[String] {
   override val customValidation: ValidationOp[String] = CustomStringValue.HexStringValidationOp
   override val example: String = "0123456789abcdef"
+  override val description: String = "Hex String"
 }
 
 final case class Base64Data(validations: List[ValidationOp[String]])
     extends CustomStringValue[String] {
   override val customValidation: ValidationOp[String] = CustomStringValue.Base64ValidationOp
   override val example: String = "A1B2C3E4F567890$"
+  override val description: String = "Base64"
 }
 
 final case class HostnameData(validations: List[ValidationOp[String]])
     extends CustomStringValue[String] {
   override val customValidation: ValidationOp[String] = CustomStringValue.HostnameValidationOp
   override val example: String = "www.example.com"
+  override val description: String = "Hostname"
 }
 
 final case class UriData(validations: List[ValidationOp[String]])
@@ -196,6 +203,8 @@ final case class UriData(validations: List[ValidationOp[String]])
   override val customValidation: ValidationOp[String] = CustomStringValue.UriValidationOp
   override val example: String =
     URI.create("http://www.math.uio.no/faq/compression-faq/part1.html").toString
+  override val description: String = "Uniform Resource Identifier (URI)"
+
 }
 
 final case class UrlData(validations: List[ValidationOp[String]])
@@ -203,18 +212,21 @@ final case class UrlData(validations: List[ValidationOp[String]])
   override val customValidation: ValidationOp[String] = CustomStringValue.UrlValidationOp
   override val example
     : String = new URL("http://www.math.uio.no/faq/compression-faq/part1.html").toExternalForm
+  override val description: String = "Uniform Resource Locator (URL)"
 }
 
 final case class IpV4Data(validations: List[ValidationOp[String]])
     extends CustomStringValue[String] {
   override val customValidation: ValidationOp[String] = CustomStringValue.Ipv4ValidationOp
   override val example: String = "10.0.0.1"
+  override val description: String = "Internet Protocol Version 4 (IPv4)"
 }
 
 final case class IpV6Data(validations: List[ValidationOp[String]])
     extends CustomStringValue[String] {
   override val customValidation: ValidationOp[String] = CustomStringValue.Ipv6ValidationOp
   override val example: String = "::1"
+  override val description: String = "Internet Protocol Version 6 (IPv6)"
 }
 
 trait CustomStringAlgebraSugar {

@@ -126,6 +126,18 @@ lazy val swaggerOas3 = (project in file("interchange-format-interpreters/swagger
     )
   )
   .dependsOn(core, testSchemas % "test")
+lazy val tapirTransformation = (project in file("transformation/tapir"))
+  .settings(
+    commonSettings,
+    name := "Bones Tapir Transformation",
+    libraryDependencies ++= Seq(
+      "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.17.0-M9",
+      "org.scalacheck" %% "scalacheck" % "1.15.1" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.3" % Test,
+      "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
+    )
+  )
+  .dependsOn(core, testSchemas % "test")
 lazy val doobieVersion = "0.9.2"
 // lazy val directEncoders = (project in file("interchange-format-interpreters/direct-encoders"))
 //  .settings(

@@ -39,7 +39,7 @@ trait CustomStringInterpreter extends CustomSwaggerInterpreter[CustomStringValue
       SwaggerCoreInterpreter.addStringSchema(
         name,
         alg.customValidation.description,
-        alg.example.toString,
+        alg.example,
         withSchema(alg))
 
 }

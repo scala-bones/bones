@@ -8,7 +8,6 @@ package object values {
   type CNilF[A] = CNil // trick to make things consistent on kind-level
   type AnyAlg[_] = Any // when an algebra interpreter can accept any algebra (for instance when the output is based on the keys and not the values)
 
-
   /* This Type ties all the algebras together into a single coproduct */
   type DefaultValues[A] =
     ScalaCoreValue[A] :+: CustomStringValue[A] :+: JavaTimeValue[A] :+: JavaUtilValue[A] :+:
