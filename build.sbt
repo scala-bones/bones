@@ -78,7 +78,7 @@ lazy val coreCats = (project in file("core-cats"))
     commonSettings,
     name := "Bones Cats",
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % "2.2.0",
+      "org.typelevel" %% "cats-core" % "2.3.0",
       "com.chuusai" %% "shapeless" % "2.3.3",
       "org.scalacheck" %% "scalacheck" % "1.15.1" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
@@ -120,6 +120,18 @@ lazy val swaggerOas3 = (project in file("interchange-format-interpreters/swagger
     name := "Bones DataDefinition to OAS3 Interpreter",
     libraryDependencies ++= Seq(
       "io.swagger.core.v3" % "swagger-core" % "2.1.5",
+      "org.scalacheck" %% "scalacheck" % "1.15.1" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.3" % Test,
+      "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
+    )
+  )
+  .dependsOn(core, testSchemas % "test")
+lazy val tapirTransformation = (project in file("transformation/tapir"))
+  .settings(
+    commonSettings,
+    name := "Bones Tapir Transformation",
+    libraryDependencies ++= Seq(
+      "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.17.0-M9",
       "org.scalacheck" %% "scalacheck" % "1.15.1" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
@@ -262,7 +274,7 @@ lazy val restHttpCommon = (project in file("rest-interpreters/http-common"))
   )
   .dependsOn(core, swaggerOas3)
 
-lazy val http4sVersion = "0.21.11"
+lazy val http4sVersion = "0.21.13"
 lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
   .settings(
     commonSettings,
@@ -341,7 +353,7 @@ lazy val examples = (project in file("examples/http4s-examples"))
     name := "Bones Examples",
     libraryDependencies ++= Seq(
       "io.swagger.core.v3" % "swagger-jaxrs2" % "2.1.5",
-      "io.swagger" % "swagger-parser" % "1.0.52",
+      "io.swagger" % "swagger-parser" % "1.0.53",
       "org.slf4j" % "slf4j-simple" % "1.7.30",
       "com.zaxxer" % "HikariCP" % "3.4.5",
       "org.scalacheck" %% "scalacheck" % "1.15.1" % Test,

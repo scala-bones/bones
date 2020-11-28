@@ -1,14 +1,14 @@
 package com.bones.data.values
 
 import java.time._
+import java.time.format.DateTimeFormatter
 
-import com.bones.{PrimitiveValue, PrimitiveValueManifestTypeName}
+import com.bones.PrimitiveValueManifestTypeName
 import com.bones.validation.ValidationDefinition.ValidationOp
 import com.bones.validation.values.JavaTimeValidation
 import com.bones.validation.values.JavaTimeValidation._
 import shapeless.Coproduct
-import shapeless.ops.coproduct.Inject
-
+import shapeless.ops.coproduct.Inject // because scala 2.12
 sealed abstract class JavaTimeValue[A: Manifest] extends PrimitiveValueManifestTypeName[A] {
   val manifestOfA: Manifest[A] = manifest[A]
   val validations: List[ValidationOp[A]]
@@ -277,4 +277,94 @@ trait JavaTimeValueSugarInjected[ALG[_] <: Coproduct] extends JavaTimeValidation
     javaTimeInject(ZoneOffsetData(validations.toList))
 
   def zoneOffset: ALG[ZoneOffset] = zoneOffset()
+}
+
+object JavaTimeValueDefaultJsonMetadata {
+
+  val instantExample = Instant.ofEpochSecond(1581349194)
+  val offsetDateTimeExample = OffsetDateTime.ofInstant(instantExample, ZoneId.of("Z"))
+  val periodExample = Period.ofMonths(3)
+  val localDateExample = LocalDate.of(1970, 1, 1)
+  val localTimeExample = LocalTime.of(12, 0, 0, 0)
+  val localDateTimeExample = LocalDateTime.of(localDateExample, localTimeExample)
+
+  def getDefaultDescription[A](alg: JavaTimeValue[A]): String = {
+    alg match {
+      case dte: DateTimeExceptionData =>
+        "Value representing an Error With Date Time"
+      case dow: DayOfWeekData =>
+        "day of the week"
+      case d: DurationData =>
+        "duration"
+      case id: InstantData =>
+        "instant"
+      case ldt: LocalDateTimeData =>
+        "local date time"
+      case ld: LocalDateData =>
+        "local date"
+      case lt: LocalTimeData =>
+        "local time"
+      case md: MonthData =>
+        "month of year"
+      case md: MonthDayData =>
+        "month/day"
+      case od: OffsetDateTimeData =>
+        "offset date/time"
+      case od: OffsetTimeData =>
+        "offset time"
+      case pd: PeriodData =>
+        "time period"
+      case yd: YearData =>
+        "year"
+      case ym: YearMonthData =>
+        "year/month"
+      case z: ZoneIdData =>
+        "zone id offset"
+      case z: ZonedDateTimeData =>
+        "zoned date time"
+      case z: ZoneOffsetData =>
+        "zone offset"
+    }
+
+  }
+
+  def getDefaultExample[A](alg: JavaTimeValue[A]): A = {
+    val example = alg match {
+      case dte: DateTimeExceptionData =>
+        new DateTimeException("Example Date Time Exception Message")
+      case dow: DayOfWeekData =>
+        DayOfWeek.FRIDAY
+      case d: DurationData =>
+        Duration.ofHours(24)
+      case id: InstantData =>
+        instantExample
+      case ldt: LocalDateTimeData =>
+        localDateTimeExample
+      case ld: LocalDateData =>
+        localDateExample
+      case lt: LocalTimeData =>
+        localTimeExample
+      case md: MonthData =>
+        Month.JANUARY
+      case md: MonthDayData =>
+        MonthDay.of(Month.JANUARY, 1)
+      case od: OffsetDateTimeData =>
+        offsetDateTimeExample
+      case od: OffsetTimeData =>
+        offsetDateTimeExample.toOffsetTime
+      case pd: PeriodData =>
+        periodExample
+      case yd: YearData =>
+        Year.of(2020)
+      case ym: YearMonthData =>
+        YearMonth.of(2020, Month.JANUARY)
+      case z: ZoneIdData =>
+        ZoneId.systemDefault
+      case z: ZonedDateTimeData =>
+        instantExample
+      case z: ZoneOffsetData =>
+        ZoneOffset.UTC
+    }
+    example.asInstanceOf[A]
+  }
 }

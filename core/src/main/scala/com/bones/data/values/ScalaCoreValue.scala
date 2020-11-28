@@ -60,7 +60,7 @@ final case class EnumerationData[E <: Enumeration: Manifest, V](
   validations: List[ValidationOp[V]]
 ) extends ScalaCoreValue[V] {
 
-  override val typeName: String = "Enumeration"
+  override val typeName: String = manifest[E].runtimeClass.getSimpleName.dropRight(1)
 }
 
 trait BaseScalaCoreInterpreter[OUT] {
@@ -272,4 +272,58 @@ trait ScalaCoreInjectedSugar[ALG[_] <: Coproduct] extends ScalaCoreValidation {
   /** Alias for byte array without validations */
   def byteArray: ALG[Array[Byte]] = byteArray()
 
+}
+
+object ScalaCoreValueDefaultMetadata {
+
+  def getDefaultDescription[A](alg: ScalaCoreValue[A]): String = {
+    alg match {
+      case bd: BooleanData =>
+        "value of type boolean"
+      case sd: StringData =>
+        "value of type string"
+      case sd: ShortData =>
+        "value of type short"
+      case id: IntData =>
+        "value of type short"
+      case ld: LongData =>
+        "value of type long"
+      case dd: DoubleData =>
+        "value of type double"
+      case fd: FloatData =>
+        "value of type float"
+      case bd: BigDecimalData =>
+        "value fo type big decimal"
+      case ba: ByteArrayData =>
+        "base64 encoded byte array"
+      case esd: EnumerationData[e, a] @unchecked =>
+        s"enumeration of type ${esd.typeName}"
+    }
+  }
+
+  def getDefaultExample[A](alg: ScalaCoreValue[A]): A = {
+    val value = alg match {
+      case bd: BooleanData =>
+        true
+      case sd: StringData =>
+        "ABC123"
+      case sd: ShortData =>
+        123: Short
+      case id: IntData =>
+        123
+      case ld: LongData =>
+        123L
+      case dd: DoubleData =>
+        3.14D
+      case fd: FloatData =>
+        3.14F
+      case bd: BigDecimalData =>
+        BigDecimal("3.14")
+      case ba: ByteArrayData =>
+        "0123456789abcdef".getBytes
+      case esd: EnumerationData[e, a] @unchecked =>
+        esd.enumeration.values.head
+    }
+    value.asInstanceOf[A]
+  }
 }

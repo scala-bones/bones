@@ -13,6 +13,10 @@ trait ScalaCoreInterpreter extends CustomSwaggerInterpreter[ScalaCoreValue] {
 
     import SwaggerCoreInterpreter._
 
+    val swaggerDescription =
+      description.getOrElse(ScalaCoreValueDefaultMetadata.getDefaultDescription(scv))
+    val swaggerExample: A = example.getOrElse(ScalaCoreValueDefaultMetadata.getDefaultExample(scv))
+
     scv match {
       case bd: BooleanData =>
         name =>
@@ -21,72 +25,72 @@ trait ScalaCoreInterpreter extends CustomSwaggerInterpreter[ScalaCoreValue] {
         name =>
           addStringSchema(
             name,
-            description.getOrElse("value of type string"),
-            example.getOrElse("ABC"),
+            swaggerDescription,
+            swaggerExample.asInstanceOf[String],
             validations(sd.validations))
       case sd: ShortData =>
         name =>
           {
             addShortSchema(
               name,
-              description.getOrElse("value of type short"),
-              example.asInstanceOf[Option[Short]].getOrElse((123: Short)),
+              swaggerDescription,
+              swaggerExample.asInstanceOf[Short],
               validations(sd.validations))
           }
       case id: IntData =>
         name =>
           addIntSchema(
             name,
-            description.getOrElse("value of type integer"),
-            example.asInstanceOf[Option[Int]].getOrElse(123),
+            swaggerDescription,
+            swaggerExample.asInstanceOf[Int],
             validations(id.validations)
           )
       case ld: LongData =>
         name =>
           addLongSchema(
             name,
-            description.getOrElse("value of type long"),
-            example.asInstanceOf[Option[Long]].getOrElse(123L),
+            swaggerDescription,
+            swaggerExample.asInstanceOf[Long],
             validations(ld.validations)
           )
       case dd: DoubleData =>
         name =>
           addNumberSchema(
             name,
-            description.getOrElse("value of type double"),
-            example.map(_.toString).getOrElse("3.14"),
+            swaggerDescription,
+            swaggerExample.asInstanceOf[Double].toString,
             validations(dd.validations)
           )
       case fd: FloatData =>
         name =>
           addNumberSchema(
             name,
-            description.getOrElse("value of type float"),
-            example.map(_.toString).getOrElse("3.14"),
+            swaggerDescription,
+            swaggerExample.asInstanceOf[Float].toString,
             validations(fd.validations)
           )
       case bd: BigDecimalData =>
         name =>
           addStringSchema(
             name,
-            description.getOrElse("value fo type big decimal"),
-            example.getOrElse(BigDecimal("3.14")).toString,
+            swaggerDescription,
+            swaggerExample.asInstanceOf[BigDecimal].toString,
             validations(bd.validations)
           )
       case ba: ByteArrayData =>
         name =>
           addBase64ByteArraySchema(
             name,
-            description.getOrElse("base64 encoded byte array"),
-            example.getOrElse("0123456789abcdef".getBytes).asInstanceOf[Array[Byte]],
+            swaggerDescription,
+            swaggerExample.asInstanceOf[Array[Byte]],
             validations(ba.validations)
           )
       case esd: EnumerationData[e, a] @unchecked =>
         name =>
           addEnumerationData(
-            name.toString,
-            description.getOrElse(s"enumeration of type ${esd.typeName}"),
-            example.orElse(esd.enumeration.values.headOption).map(_.toString).getOrElse(""),
+            name,
+            swaggerDescription,
+            swaggerExample.toString,
             esd.enumeration.values.toList.map(_.toString),
             validations(esd.validations)
           )
