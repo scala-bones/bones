@@ -12,6 +12,7 @@ object Error {
   /** Error Case */
   sealed abstract class ExtractionError[K] {
     def path: List[K]
+    def prependPath(p: K): ExtractionError[K]
   }
 
   /**
@@ -22,7 +23,9 @@ object Error {
     * @tparam T Type that was validated.
     */
   final case class ValidationError[K, T](path: List[K], failurePoint: ValidationOp[T], input: T)
-      extends ExtractionError[K]
+      extends ExtractionError[K] {
+    override def prependPath(p: K): ValidationError[K, T] = copy(path = p :: path)
+  }
 
   /** Used when we receive a type that doesn't match the expected type.
     * For instance if we are expecting an Int, but we receive a String.
@@ -37,7 +40,10 @@ object Error {
     expectedType: String,
     providedType: String,
     cause: Option[Throwable])
-      extends ExtractionError[K]
+      extends ExtractionError[K] {
+    override def prependPath(p: K): WrongTypeError[K, T] = copy(path = p :: path)
+
+  }
 
   /**
     * Used when we can not convert an input type to the type defined in the schema.
@@ -55,16 +61,23 @@ object Error {
     input: A,
     toType: Class[T],
     cause: Option[Throwable])
-      extends ExtractionError[K]
+      extends ExtractionError[K] {
+    override def prependPath(p: K): CanNotConvert[K, A, T] = copy(path = p :: path)
+
+  }
 
   /** Used when a required piece of data is missing
     *
     * @param path                    The path within the schema to the offending definition
     * @param typeName The description of the required value
     */
-  final case class RequiredValue[K](path: List[K], typeName: String) extends ExtractionError[K]
+  final case class RequiredValue[K](path: List[K], typeName: String) extends ExtractionError[K] {
+    override def prependPath(p: K): RequiredValue[K] = copy(path = p :: path)
+  }
 
-  final case class SumTypeError[K](path: List[K], problem: String) extends ExtractionError[K]
+  final case class SumTypeError[K](path: List[K], problem: String) extends ExtractionError[K] {
+    override def prependPath(p: K): SumTypeError[K] = copy(path = p :: path)
+  }
 
   /**
     * Used when we can not parse the input to its expected format -- for instance, an invalid JSON document.
@@ -75,6 +88,8 @@ object Error {
   final case class ParsingError[K](message: String, throwable: Option[Throwable] = None)
       extends ExtractionError[K] {
     override def path: List[K] = List.empty
+    override def prependPath(p: K): ParsingError[K] = this
+
   }
 
   /**
@@ -85,7 +100,9 @@ object Error {
     * @param message Context specific message about the exception.
     */
   final case class SystemError[K](path: List[K], th: Throwable, message: Option[String])
-      extends ExtractionError[K]
+      extends ExtractionError[K] {
+    override def prependPath(p: K): SystemError[K] = copy(path = p :: path)
+  }
 
   object SystemError {
 
@@ -103,6 +120,9 @@ object Error {
     * @tparam ID The type of the ID (such as Long or UUID)
     */
   final case class NotFound[K, ID](id: ID, entityName: String, path: List[K])
-      extends ExtractionError[K]
+      extends ExtractionError[K] {
+    override def prependPath(p: K): NotFound[K, ID] = copy(path = p :: path)
+
+  }
 
 }

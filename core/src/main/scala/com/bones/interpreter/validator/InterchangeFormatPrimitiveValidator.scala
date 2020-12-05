@@ -1,4 +1,4 @@
-package com.bones.interpreter
+package com.bones.interpreter.validator
 
 import com.bones.Path
 import com.bones.data.Error.RequiredValue
@@ -7,8 +7,7 @@ import com.bones.validation.ValidationUtil
 
 trait InterchangeFormatPrimitiveValidator[IN] {
 
-  /**
-    * Override this to provide the ability to extract a String from the IN type.
+  /** Override this to provide the ability to extract a String from the IN type.
     * @param typeName The resulting class we are tyring to extract.
     * @tparam A The expected resulting type, eg String or Enumerated Type which we are trying to extract from a string.
     * @return The extracted String or an Error
@@ -27,7 +26,7 @@ trait InterchangeFormatPrimitiveValidator[IN] {
   def required[ALG2[_], A](
     typeName: String,
     validations: List[ValidationOp[A]],
-    f: Validator[String, ALG2, A, IN],
+    f: Validator[String, ALG2, A, IN]
   ): OptionalInputValidator[String, ALG2, A, IN] =
     (inOpt: Option[IN], path: Path[String]) =>
       for {

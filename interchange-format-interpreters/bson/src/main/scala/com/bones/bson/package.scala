@@ -1,7 +1,8 @@
 package com.bones
 
 import com.bones.data.Error.{ExtractionErrors, ParsingError}
-import com.bones.interpreter.{InterchangeFormatEncoderValue, InterchangeFormatValidatorValue}
+import com.bones.interpreter.encoder.InterchangeFormatEncoderValue
+import com.bones.interpreter.validator.InterchangeFormatValidatorValue
 import reactivemongo.bson.buffer.{ArrayBSONBuffer, ArrayReadableBuffer}
 import reactivemongo.bson.{BSONDocument, BSONValue}
 

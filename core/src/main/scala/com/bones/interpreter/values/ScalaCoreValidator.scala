@@ -6,7 +6,7 @@ import com.bones.Path
 import com.bones.Util.stringToEnumeration
 import com.bones.data.Error.{CanNotConvert, ExtractionErrors, RequiredValue}
 import com.bones.data.values._
-import com.bones.interpreter.{
+import com.bones.interpreter.validator.{
   InterchangeFormatPrimitiveValidator,
   InterchangeFormatValidatorValue,
   OptionalInputValidator

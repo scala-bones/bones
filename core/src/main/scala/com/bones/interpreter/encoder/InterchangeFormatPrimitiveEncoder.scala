@@ -1,9 +1,9 @@
-package com.bones.interpreter
+package com.bones.interpreter.encoder
 
-/**
-  * Base trait defines the set of functions which need to be defined
+/** Base trait defines the set of functions which need to be defined
   *  by a specific JSON library in order for the generic [[KvpInterchangeFormatEncoderInterpreter]].
   *  to encoder to be able to encode data to a specific library.
+  *
   * @tparam OUT - One of the JSON types defined by a specific json library.
   */
 trait InterchangeFormatPrimitiveEncoder[OUT] {

@@ -12,14 +12,16 @@ import com.bones.data.values.{
 }
 import com.bones.interpreter.InterchangeFormatEncoderValue.CNilInterchangeFormatEncoder
 import com.bones.interpreter.InterchangeFormatValidatorValue.CNilInterchangeFormatValidator
-import com.bones.interpreter.values._
-import com.bones.interpreter.{
+import com.bones.interpreter.encoder.{
   InterchangeFormatEncoderValue,
   InterchangeFormatPrimitiveEncoder,
-  InterchangeFormatPrimitiveValidator,
-  InterchangeFormatValidatorValue,
   KvpInterchangeFormatEncoderInterpreter
 }
+import com.bones.interpreter.validator.{
+  InterchangeFormatPrimitiveValidator,
+  InterchangeFormatValidatorValue
+}
+import com.bones.interpreter.values._
 import io.circe.Json
 import shapeless.:+:
 

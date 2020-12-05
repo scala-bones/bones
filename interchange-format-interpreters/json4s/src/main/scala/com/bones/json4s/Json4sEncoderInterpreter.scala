@@ -1,7 +1,7 @@
 package com.bones.json4s
 
 import com.bones.data.KeyDefinition
-import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
+import com.bones.interpreter.encoder.KvpInterchangeFormatEncoderInterpreter
 import org.json4s.{JObject, JString, JValue}
 
 trait Json4sEncoderInterpreter[ALG[_]] extends KvpInterchangeFormatEncoderInterpreter[ALG, JValue] {

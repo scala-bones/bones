@@ -2,7 +2,7 @@ package com.bones.bson
 
 import java.util.Base64
 
-import com.bones.interpreter.InterchangeFormatPrimitiveEncoder
+import com.bones.interpreter.encoder.InterchangeFormatPrimitiveEncoder
 import reactivemongo.bson.{
   BSONArray,
   BSONBoolean,

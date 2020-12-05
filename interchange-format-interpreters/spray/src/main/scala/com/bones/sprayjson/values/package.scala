@@ -13,6 +13,15 @@ import com.bones.data.values.{
 import com.bones.interpreter.InterchangeFormatEncoderValue.CNilInterchangeFormatEncoder
 import com.bones.interpreter.InterchangeFormatValidatorValue.CNilInterchangeFormatValidator
 import com.bones.interpreter._
+import com.bones.interpreter.encoder.{
+  InterchangeFormatEncoderValue,
+  InterchangeFormatPrimitiveEncoder,
+  KvpInterchangeFormatEncoderInterpreter
+}
+import com.bones.interpreter.validator.{
+  InterchangeFormatPrimitiveValidator,
+  InterchangeFormatValidatorValue
+}
 import com.bones.interpreter.values._
 import com.bones.sprayjson.impl.{SprayPrimitiveEncoder, SprayPrimitiveValidator}
 import shapeless.:+:

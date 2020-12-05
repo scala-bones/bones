@@ -5,7 +5,7 @@ import java.time._
 
 import com.bones.bson.{BsonEncoderInterpreter, BsonPrimitiveEncoder}
 import com.bones.data.values._
-import com.bones.interpreter.{Encoder, InterchangeFormatEncoderValue}
+import com.bones.interpreter.encoder.{Encoder, InterchangeFormatEncoderValue}
 import reactivemongo.bson.{BSONDateTime, BSONLong, BSONValue}
 
 trait BsonJavaTimeEncoder extends InterchangeFormatEncoderValue[JavaTimeValue, BSONValue] {

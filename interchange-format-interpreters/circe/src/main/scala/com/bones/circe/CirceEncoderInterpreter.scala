@@ -1,7 +1,7 @@
 package com.bones.circe
 
 import com.bones.data.KeyDefinition
-import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
+import com.bones.interpreter.encoder.KvpInterchangeFormatEncoderInterpreter
 import io.circe._
 
 /**

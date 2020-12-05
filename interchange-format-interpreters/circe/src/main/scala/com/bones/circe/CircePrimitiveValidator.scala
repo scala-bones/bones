@@ -1,7 +1,7 @@
 package com.bones.circe
 
 import com.bones.data.Error.{ExtractionErrors, RequiredValue, WrongTypeError}
-import com.bones.interpreter.{InterchangeFormatPrimitiveValidator, Validator}
+import com.bones.interpreter.validator.{InterchangeFormatPrimitiveValidator, Validator}
 import io.circe.Json
 
 object CircePrimitiveValidator extends InterchangeFormatPrimitiveValidator[Json] {

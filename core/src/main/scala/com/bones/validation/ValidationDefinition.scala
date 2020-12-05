@@ -410,9 +410,34 @@ object ValidationDefinition {
     override val modulo: (Int, Int) => Int = (i1, i2) => i1 % i2
     val zero = 0
 
-    case class InRanges(ranges: List[Range])
+    case class InRange(range: Range) extends ValidationOp[Int] {
+
+      /** Returns true if T passes the validation */
+      override def isValid: Int => Boolean = range.contains
+
+      /** If t is not valid, this will return the error message in English. */
+      override def defaultError(t: Int): String = s"Value ${t} is not in range of $range"
+
+      /** Gives an English text description of the validation. */
+      override def description: String = s"In Range of ${range}"
+    }
+
+    case class InRanges(ranges: List[Range]) extends ValidationOp[Int] {
+
+      /** Returns true if T passes the validation */
+      override def isValid: Int => Boolean = i => ranges.exists(_.contains(i))
+
+      /** If t is not valid, this will return the error message in English. */
+      override def defaultError(t: Int): String =
+        s"Values ${t} is not in ranges ${ranges.mkString("(", ",", ")")}"
+
+      /** Gives an English text description of the validation. */
+      override def description: String =
+        s"In one of the ranges: ${ranges.mkString("(", ",", ")")}"
+    }
 
     def inRanges(range: Range*): InRanges = InRanges(range.toList)
+    def inRange(range: Range): InRange = InRange(range)
 
   }
 

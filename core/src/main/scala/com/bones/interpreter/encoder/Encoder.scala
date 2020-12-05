@@ -1,4 +1,4 @@
-package com.bones.interpreter
+package com.bones.interpreter.encoder
 
 trait Encoder[ALG[_], A, OUT] { self =>
   def encode(a: A): OUT

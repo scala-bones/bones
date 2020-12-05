@@ -6,7 +6,11 @@ import java.time.format.DateTimeFormatter
 import com.bones.bson.BsonPrimitiveValidator
 import com.bones.data.Error.ExtractionErrors
 import com.bones.data.values._
-import com.bones.interpreter.{InterchangeFormatValidatorValue, OptionalInputValidator, Validator}
+import com.bones.interpreter.validator.{
+  InterchangeFormatValidatorValue,
+  OptionalInputValidator,
+  Validator
+}
 import com.bones.interpreter.values.JavaTimeValidator.{parseTime, parseYear}
 import reactivemongo.bson.{BSONDateTime, BSONLong, BSONValue}
 

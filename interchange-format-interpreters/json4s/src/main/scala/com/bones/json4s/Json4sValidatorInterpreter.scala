@@ -2,7 +2,7 @@ package com.bones.json4s
 
 import com.bones.data.Error.{ExtractionErrors, WrongTypeError}
 import com.bones.data.KeyDefinition
-import com.bones.interpreter.{
+import com.bones.interpreter.validator.{
   InterchangeFormatPrimitiveValidator,
   InterchangeFormatValidatorValue,
   KvpInterchangeFormatValidatorInterpreter,

@@ -2,7 +2,7 @@ package com.bones.interpreter.values
 
 import com.bones.data.Error.{ExtractionErrors, RequiredValue}
 import com.bones.data.values.CustomStringValue
-import com.bones.interpreter.{
+import com.bones.interpreter.validator.{
   InterchangeFormatPrimitiveValidator,
   InterchangeFormatValidatorValue,
   OptionalInputValidator

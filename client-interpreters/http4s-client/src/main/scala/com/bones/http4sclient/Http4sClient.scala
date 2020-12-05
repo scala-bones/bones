@@ -4,10 +4,10 @@ import java.nio.charset.Charset
 
 import cats.data.NonEmptyList
 import cats.effect.IO
-import com.bones.circe.{CirceFromByteArray, CirceValidatorInterpreter}
+import com.bones.circe.{CirceValidatorFromByteArray, CirceValidatorInterpreter}
 import com.bones.data.Error.ExtractionError
 import com.bones.data.KvpCollection
-import com.bones.interpreter.InterchangeFormatValidatorValue
+import com.bones.interpreter.validator.InterchangeFormatValidatorValue
 import io.circe.Json
 import org.http4s.client.Client
 
@@ -26,7 +26,7 @@ object Http4sClient {
   ): Client[IO] => ID => IO[Either[Error[E], O]] = {
 
     val validator =
-      CirceFromByteArray(charset).flatMap(circeValidator.generateValidator(outputSchema))
+      CirceValidatorFromByteArray(charset).andThen(circeValidator.generateValidator(outputSchema))
 
     httpClient => id =>
       {

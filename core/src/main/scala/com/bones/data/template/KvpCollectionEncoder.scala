@@ -11,7 +11,7 @@ import com.bones.data.{
   KvpWrappedCoproduct,
   KvpWrappedHList
 }
-import com.bones.interpreter.Encoder
+import com.bones.interpreter.encoder.Encoder
 import shapeless.{:+:, ::, CNil, Coproduct, HList, Inl, Inr, Nat}
 
 trait KvpCollectionEncoder[K, ALG[_], OUT] {

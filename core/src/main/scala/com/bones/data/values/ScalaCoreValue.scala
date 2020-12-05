@@ -232,7 +232,7 @@ trait ScalaCoreInjectedSugar[ALG[_] <: Coproduct] extends ScalaCoreValidation {
     scalaCoreInjected(IntData(f.toList))
 
   /** Alias for int without any validations */
-  def int: ALG[Int] = int()
+  val int: ALG[Int] = int()
 
   /** Indicates that the data tied to this key is an Int type that must pass the specified validations */
   def long(f: ValidationOp[Long]*): ALG[Long] =

@@ -2,7 +2,7 @@ package com.bones.sprayjson.impl
 
 import java.util.Base64
 
-import com.bones.interpreter.InterchangeFormatPrimitiveEncoder
+import com.bones.interpreter.encoder.InterchangeFormatPrimitiveEncoder
 import spray.json.{JsArray, JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue}
 
 object SprayPrimitiveEncoder extends InterchangeFormatPrimitiveEncoder[JsValue] {

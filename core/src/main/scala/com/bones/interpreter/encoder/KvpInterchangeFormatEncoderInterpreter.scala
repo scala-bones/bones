@@ -1,10 +1,9 @@
-package com.bones.interpreter
+package com.bones.interpreter.encoder
 
 import com.bones.data.template.KvpCollectionEncoder
-import com.bones.data.{KeyDefinition, _}
+import com.bones.data._
 
-/**
-  * Base trait for converting from HList or Case class to an interchange format such as JSON.
+/** Base trait for converting from HList or Case class to an interchange format such as JSON.
   *
   * @tparam OUT The interchange format.
   */
@@ -34,11 +33,12 @@ trait KvpInterchangeFormatEncoderInterpreter[ALG[_], OUT]
   /** Takes a value definition and the actual value and create
     * a key value pair wrapped in the OUT type.  Analogous to
     * wrapping a key value pair in a JSON Object.
-    * */
+    */
   def toObj[A](kvDef: KeyDefinition[String, ALG, A], value: OUT): OUT
 
   override def primitiveEncoder[A](
-    keyDefinition: KeyDefinition[String, ALG, A]): Encoder[ALG, A, OUT] = {
+    keyDefinition: KeyDefinition[String, ALG, A]
+  ): Encoder[ALG, A, OUT] = {
     val f = determineValueDefinition(keyDefinition.dataDefinition)
     (a: A) =>
       {

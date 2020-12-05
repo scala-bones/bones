@@ -4,7 +4,7 @@ import java.nio.charset.Charset
 
 import com.bones.data.Error.{ExtractionError, ParsingError, WrongTypeError}
 import com.bones.data.{KeyDefinition, _}
-import com.bones.interpreter.{
+import com.bones.interpreter.validator.{
   InterchangeFormatPrimitiveValidator,
   InterchangeFormatValidatorValue,
   KvpInterchangeFormatValidatorInterpreter,

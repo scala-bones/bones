@@ -2,7 +2,7 @@ package com.bones.circe
 
 import java.util.Base64
 
-import com.bones.interpreter.InterchangeFormatPrimitiveEncoder
+import com.bones.interpreter.encoder.InterchangeFormatPrimitiveEncoder
 import io.circe.Json
 
 object CircePrimitiveEncoder extends InterchangeFormatPrimitiveEncoder[Json] {

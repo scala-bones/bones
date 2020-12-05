@@ -6,7 +6,7 @@ import com.bones.bson.values.{defaultBsonEncoderInterpreter, defaultBsonValidato
 import com.bones.bson.{bsonResultToBytes, fromByteArray}
 import com.bones.circe.values.isoCirceValidatorInterpreter
 import com.bones.circe.{
-  CirceFromByteArray,
+  CirceValidatorFromByteArray,
   IsoCirceEncoderInterpreter,
   IsoCirceValidatorInterpreter
 }
@@ -14,7 +14,8 @@ import com.bones.data.Error.ExtractionErrors
 import com.bones.data.KvpCollection
 import com.bones.data.values.DefaultValues
 import com.bones.http.common._
-import com.bones.interpreter.{Encoder, Validator}
+import com.bones.interpreter.encoder.Encoder
+import com.bones.interpreter.validator.Validator
 
 object Config {
 
@@ -29,7 +30,7 @@ object Config {
 
     override def generateValidator[A](kvp: KvpCollection[String, DefaultValues, A])
       : Validator[String, DefaultValues, A, Array[Byte]] = {
-      CirceFromByteArray(charset).flatMap(
+      CirceValidatorFromByteArray(charset).andThen(
         isoCirceValidatorInterpreter.generateValidator(kvp)
       )
     }

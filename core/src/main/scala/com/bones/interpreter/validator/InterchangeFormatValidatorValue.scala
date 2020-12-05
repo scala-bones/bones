@@ -1,6 +1,5 @@
-package com.bones.interpreter
+package com.bones.interpreter.validator
 
-import com.bones.data.Error.ExtractionError
 import com.bones.data.values.CNilF
 import shapeless.{:+:, Coproduct, Inl, Inr}
 

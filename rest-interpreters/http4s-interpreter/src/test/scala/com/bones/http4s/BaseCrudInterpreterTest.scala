@@ -6,14 +6,15 @@ import cats.effect.SyncIO
 import cats.implicits._
 import com.bones.circe.values.isoCirceValidatorInterpreter
 import com.bones.circe.{
-  CirceFromByteArray,
+  CirceValidatorFromByteArray,
   IsoCirceEncoderInterpreter,
   IsoCirceValidatorInterpreter
 }
 import com.bones.data.KvpCollection
 import com.bones.data.values.DefaultValues
 import com.bones.http.common._
-import com.bones.interpreter.{Encoder, Validator}
+import com.bones.interpreter.encoder.Encoder
+import com.bones.interpreter.validator.Validator
 import com.bones.syntax._
 import fs2.Stream
 import org.http4s._
@@ -47,8 +48,8 @@ class BaseCrudInterpreterTest extends AnyFunSuite {
 
     override def generateValidator[A](kvp: KvpCollection[String, DefaultValues, A])
       : Validator[String, DefaultValues, A, Array[Byte]] = {
-      CirceFromByteArray()
-        .flatMap(isoCirceValidatorInterpreter.generateValidator(kvp))
+      CirceValidatorFromByteArray()
+        .andThen(isoCirceValidatorInterpreter.generateValidator(kvp))
     }
   }
 

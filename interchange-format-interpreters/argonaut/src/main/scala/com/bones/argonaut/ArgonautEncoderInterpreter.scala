@@ -2,7 +2,7 @@ package com.bones.argonaut
 
 import argonaut._
 import com.bones.data.KeyDefinition
-import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
+import com.bones.interpreter.encoder.KvpInterchangeFormatEncoderInterpreter
 
 /**
   * Module responsible for converting values to Argonaut JSON without validation.

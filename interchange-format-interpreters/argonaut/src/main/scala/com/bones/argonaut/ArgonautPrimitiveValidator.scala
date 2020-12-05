@@ -3,7 +3,7 @@ package com.bones.argonaut
 import argonaut.Argonaut.JsonBoolean
 import argonaut.Json
 import com.bones.data.Error.{ExtractionErrors, WrongTypeError}
-import com.bones.interpreter.{InterchangeFormatPrimitiveValidator, Validator}
+import com.bones.interpreter.validator.{InterchangeFormatPrimitiveValidator, Validator}
 
 object ArgonautPrimitiveValidator extends InterchangeFormatPrimitiveValidator[Json] {
   override def extractString[ALG[_], A](typeName: String): Validator[String, ALG, String, Json] = {

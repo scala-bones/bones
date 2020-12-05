@@ -41,6 +41,10 @@ object TapirValueTransformation {
   }
 }
 
+/**
+  * Each Algebra (ALG) is responsible for transforming itself into tapir data
+  * @tparam ALG
+  */
 trait TapirValueTransformation[ALG[_]] {
   def toSchemaType[A](
     alg: ALG[A],

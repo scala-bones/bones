@@ -16,8 +16,8 @@ class CirceTest extends AnyFunSuite with Checkers with Matchers {
     PropertyCheckConfiguration(minSuccessful = 1000, workers = 5)
 
   val jsonToCc =
-    CirceFromByteArray(StandardCharsets.UTF_8)
-      .flatMap(isoCirceValidatorInterpreter.generateValidator(allSupportCaseClass))
+    CirceValidatorFromByteArray(StandardCharsets.UTF_8)
+      .andThen(isoCirceValidatorInterpreter.generateValidator(allSupportCaseClass))
 
   val ccToJson =
     isoCirceEncoderInterpreter.generateEncoder(allSupportCaseClass)

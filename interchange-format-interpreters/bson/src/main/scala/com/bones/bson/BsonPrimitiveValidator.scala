@@ -2,7 +2,7 @@ package com.bones.bson
 
 import com.bones.Util
 import com.bones.data.Error.{CanNotConvert, ExtractionErrors, WrongTypeError}
-import com.bones.interpreter.{InterchangeFormatPrimitiveValidator, Validator}
+import com.bones.interpreter.validator.{InterchangeFormatPrimitiveValidator, Validator}
 import reactivemongo.bson.{
   BSONArray,
   BSONBoolean,

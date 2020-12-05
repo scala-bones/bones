@@ -3,7 +3,7 @@ package com.bones.perf
 import java.nio.charset.Charset
 
 import cats.implicits._
-import com.bones.circe.CirceFromByteArray
+import com.bones.circe.CirceValidatorFromByteArray
 import com.bones.circe.values.isoCirceValidatorInterpreter
 import com.bones.schemas.Schemas.allSupportCaseClass
 
@@ -18,8 +18,8 @@ object InterchangePerformanceTests extends App {
 //    JsonStringEncoderInterpreter.isoEncoder.fAtoString(schema, com.bones.sjson.values.allEncoders)
 
   val circeValidator =
-    CirceFromByteArray()
-      .flatMap(isoCirceValidatorInterpreter.generateValidator(schema))
+    CirceValidatorFromByteArray()
+      .andThen(isoCirceValidatorInterpreter.generateValidator(schema))
 
   val circeEncoder = com.bones.circe.values.isoCirceEncoderInterpreter.generateEncoder(schema)
 

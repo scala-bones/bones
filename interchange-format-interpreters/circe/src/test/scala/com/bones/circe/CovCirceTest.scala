@@ -5,7 +5,7 @@ import java.time.{Instant, ZoneId}
 import java.util.Locale
 
 import com.bones.circe.values._
-import com.bones.interpreter.{
+import com.bones.interpreter.encoder.{
   Encoder,
   InterchangeFormatEncoderValue,
   InterchangeFormatPrimitiveEncoder

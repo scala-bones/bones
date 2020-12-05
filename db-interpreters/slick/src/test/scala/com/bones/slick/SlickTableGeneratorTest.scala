@@ -4,6 +4,6 @@ import org.scalatest.funspec.AnyFunSpec
 
 class SlickTableGeneratorTest extends AnyFunSpec {
 
-  test("create macro") {}
+//  test("create macro") {}
 
 }

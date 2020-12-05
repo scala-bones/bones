@@ -4,10 +4,10 @@ import java.nio.charset.{Charset, StandardCharsets}
 
 import com.bones.data.Error.{ExtractionErrors, ParsingError}
 import com.bones.data.values.AnyAlg
-import com.bones.interpreter.Validator
+import com.bones.interpreter.validator.Validator
 import io.circe.Json
 
-case class CirceFromByteArray(charset: Charset = StandardCharsets.UTF_8)
+case class CirceValidatorFromByteArray(charset: Charset = StandardCharsets.UTF_8)
     extends Validator[String, AnyAlg, Json, Array[Byte]] {
 
   private def fromByteArray(

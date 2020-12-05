@@ -14,7 +14,7 @@ import com.bones.data.{
   KvpWrappedCoproduct,
   KvpWrappedHList
 }
-import com.bones.interpreter.Validator
+import com.bones.interpreter.validator.Validator
 import com.bones.validation.ValidationUtil
 import shapeless.{:+:, ::, CNil, Coproduct, HList, HNil, Inl, Inr, Nat}
 

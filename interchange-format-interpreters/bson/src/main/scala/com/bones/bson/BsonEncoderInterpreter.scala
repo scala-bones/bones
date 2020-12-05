@@ -4,7 +4,7 @@ import java.util.Base64
 
 import com.bones.bson.BsonPrimitiveEncoder.combine
 import com.bones.data.KeyDefinition
-import com.bones.interpreter.KvpInterchangeFormatEncoderInterpreter
+import com.bones.interpreter.encoder.KvpInterchangeFormatEncoderInterpreter
 import reactivemongo.bson.buffer.ArrayBSONBuffer
 import reactivemongo.bson.{
   BSONArray,

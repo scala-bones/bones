@@ -2,11 +2,12 @@ package com.bones.bson
 
 import com.bones.data.Error._
 import com.bones.data._
-import com.bones.interpreter.{
+import com.bones.interpreter.validator.{
   KvpInterchangeFormatValidatorInterpreter,
   OptionalInputValidator,
   Validator
 }
+import com.bones.interpreter.OptionalInputValidator
 import reactivemongo.bson.{
   BSONArray,
   BSONBoolean,

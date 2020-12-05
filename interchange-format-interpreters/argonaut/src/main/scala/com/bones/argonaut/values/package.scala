@@ -15,6 +15,15 @@ import com.bones.interpreter.InterchangeFormatEncoderValue.CNilInterchangeFormat
 import com.bones.interpreter.InterchangeFormatValidatorValue.CNilInterchangeFormatValidator
 import com.bones.interpreter.values._
 import com.bones.interpreter._
+import com.bones.interpreter.encoder.{
+  InterchangeFormatEncoderValue,
+  InterchangeFormatPrimitiveEncoder,
+  KvpInterchangeFormatEncoderInterpreter
+}
+import com.bones.interpreter.validator.{
+  InterchangeFormatPrimitiveValidator,
+  InterchangeFormatValidatorValue
+}
 import shapeless.:+:
 
 package object values {

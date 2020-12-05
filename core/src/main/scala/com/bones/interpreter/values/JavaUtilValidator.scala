@@ -3,7 +3,7 @@ package com.bones.interpreter.values
 import com.bones.Util.stringToUuid
 import com.bones.data.Error.ExtractionErrors
 import com.bones.data.values.{JavaUtilValue, UuidData}
-import com.bones.interpreter.{
+import com.bones.interpreter.validator.{
   InterchangeFormatPrimitiveValidator,
   InterchangeFormatValidatorValue,
   OptionalInputValidator

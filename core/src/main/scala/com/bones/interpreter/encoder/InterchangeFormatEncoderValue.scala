@@ -1,4 +1,4 @@
-package com.bones.interpreter
+package com.bones.interpreter.encoder
 
 import com.bones.data.values.CNilF
 import shapeless.{:+:, Coproduct, Inl, Inr}

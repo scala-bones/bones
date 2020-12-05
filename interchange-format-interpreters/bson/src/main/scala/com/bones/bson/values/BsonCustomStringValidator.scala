@@ -3,7 +3,7 @@ package com.bones.bson.values
 import com.bones.bson.BsonPrimitiveValidator
 import com.bones.data.Error.{ExtractionErrors, RequiredValue}
 import com.bones.data.values.CustomStringValue
-import com.bones.interpreter.{InterchangeFormatValidatorValue, OptionalInputValidator}
+import com.bones.interpreter.validator.{InterchangeFormatValidatorValue, OptionalInputValidator}
 import reactivemongo.bson.BSONValue
 
 trait BsonCustomStringValidator

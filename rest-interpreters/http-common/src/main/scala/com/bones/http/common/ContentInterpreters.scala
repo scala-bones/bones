@@ -1,7 +1,8 @@
 package com.bones.http.common
 
 import com.bones.data.KvpCollection
-import com.bones.interpreter.{Encoder, Validator}
+import com.bones.interpreter.encoder.Encoder
+import com.bones.interpreter.validator.Validator
 
 /**
   * Define now each interpreter serializes to an Array[Byte]

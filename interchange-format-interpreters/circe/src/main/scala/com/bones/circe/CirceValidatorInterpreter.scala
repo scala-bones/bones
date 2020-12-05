@@ -4,12 +4,11 @@ import java.nio.charset.Charset
 
 import com.bones.data.Error.{ExtractionError, ParsingError, WrongTypeError}
 import com.bones.data.{KeyDefinition, _}
-import com.bones.interpreter.{
+import com.bones.interpreter.validator.{
   InterchangeFormatPrimitiveValidator,
   InterchangeFormatValidatorValue,
   KvpInterchangeFormatValidatorInterpreter,
-  OptionalInputValidator,
-  Validator
+  OptionalInputValidator
 }
 import io.circe.Json
 
@@ -52,14 +51,5 @@ trait CirceValidatorInterpreter[ALG[_]]
       case None =>
         Left(List(WrongTypeError(path, kv.typeName, in.getClass.getSimpleName, None)))
     }
-
-//  def generateByteArrayValidator[A](
-//    schema: KvpCollection[String, ALG, A],
-//    charset: Charset
-//  ): Validator[String, ALG, A, Array[Byte]] = {
-//    val validator = fromKvpCollection(schema)
-//    (bytes, path) =>
-//      fromByteArray(bytes, charset).flatMap(validator.validateWithPath(_, path))
-//  }
 
 }

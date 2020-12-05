@@ -10,15 +10,17 @@ import com.bones.data.values.{
   JavaUtilValue,
   ScalaCoreValue
 }
-import com.bones.interpreter.{
-  InterchangeFormatEncoderValue,
-  InterchangeFormatPrimitiveEncoder,
-  InterchangeFormatPrimitiveValidator,
-  InterchangeFormatValidatorValue,
-  KvpInterchangeFormatEncoderInterpreter
-}
 import com.bones.interpreter.InterchangeFormatEncoderValue.CNilInterchangeFormatEncoder
 import com.bones.interpreter.InterchangeFormatValidatorValue.CNilInterchangeFormatValidator
+import com.bones.interpreter.encoder.{
+  InterchangeFormatEncoderValue,
+  InterchangeFormatPrimitiveEncoder,
+  KvpInterchangeFormatEncoderInterpreter
+}
+import com.bones.interpreter.validator.{
+  InterchangeFormatPrimitiveValidator,
+  InterchangeFormatValidatorValue
+}
 import com.bones.interpreter.values.{
   CustomStringEncoder,
   CustomStringValidator,

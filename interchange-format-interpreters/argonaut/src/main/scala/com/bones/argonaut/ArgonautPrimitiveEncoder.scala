@@ -3,7 +3,7 @@ package com.bones.argonaut
 import java.util.Base64
 
 import argonaut.Json
-import com.bones.interpreter.InterchangeFormatPrimitiveEncoder
+import com.bones.interpreter.encoder.InterchangeFormatPrimitiveEncoder
 
 object ArgonautPrimitiveEncoder extends InterchangeFormatPrimitiveEncoder[Json] {
   override def none: Json = Json.jNull

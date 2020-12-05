@@ -1,22 +1,9 @@
-package com.bones.interpreter
+package com.bones.interpreter.validator
 
 import com.bones.data.Error._
-import com.bones.data.KeyDefinition.CoproductDataDefinition
 import com.bones.data.template.KvpCollectionValidateAndDecode
-import com.bones.data.values.CNilF
-import com.bones.data.{
-  KeyDefinition,
-  KvpCoNil,
-  KvpCollectionValue,
-  KvpCoproduct,
-  KvpCoproductCollectionHead,
-  _
-}
-import com.bones.validation.ValidationDefinition.ValidationOp
+import com.bones.data.{KeyDefinition, KvpCollectionValue, _}
 import com.bones.validation.{ValidationUtil => vu}
-import com.bones.{Path, Util}
-import shapeless.ops.hlist.Prepend
-import shapeless.{:+:, ::, CNil, Coproduct, HList, HNil, Inl, Inr, Nat}
 
 trait OptionalInputValidator[K, ALG[_], A, IN] { self =>
   def validate(in: Option[IN]): Either[ExtractionErrors[K], A] = validateWithPath(in, List.empty)

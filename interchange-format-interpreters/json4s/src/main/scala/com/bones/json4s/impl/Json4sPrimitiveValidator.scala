@@ -1,7 +1,7 @@
 package com.bones.json4s.impl
 
 import com.bones.data.Error.{CanNotConvert, ExtractionErrors, RequiredValue, WrongTypeError}
-import com.bones.interpreter.{InterchangeFormatPrimitiveValidator, Validator}
+import com.bones.interpreter.validator.{InterchangeFormatPrimitiveValidator, Validator}
 import org.json4s.JsonAST._
 import org.json4s.{JInt, JNull, JObject}
 

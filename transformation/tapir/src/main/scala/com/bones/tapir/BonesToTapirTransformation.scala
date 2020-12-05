@@ -18,12 +18,19 @@ import com.bones.data.{
   OptionalValue
 }
 import shapeless.{:+:, ::, CNil, Coproduct, HList, Nat}
-import sttp.tapir.SchemaType.{SCoproduct, SObjectInfo, SProduct}
+import sttp.tapir.SchemaType.{SArray, SCoproduct, SObjectInfo, SProduct}
 import sttp.tapir.{FieldName, Schema}
 
 trait BonesToTapirTransformation[ALG[_]] {
 
   val encoder: TapirValueTransformation[ALG]
+
+  def kvpToSchemaList[A](kvp: KvpCollection[String, ALG, A]): Schema[List[A]] = {
+    val fields = fromKvpCollection(kvp)
+    val name = kvp.typeNameOfA.updated(0, kvp.typeNameOfA.charAt(0).toLower)
+    val base = Schema(SProduct(SObjectInfo(name), fields), false, None, None, false)
+    Schema(SArray(base))
+  }
 
   def kvpToSchema[A](kvp: KvpCollection[String, ALG, A]): Schema[A] = {
     val fields = fromKvpCollection(kvp)

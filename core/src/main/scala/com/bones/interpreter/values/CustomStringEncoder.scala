@@ -1,7 +1,7 @@
 package com.bones.interpreter.values
 
 import com.bones.data.values.CustomStringValue
-import com.bones.interpreter.{
+import com.bones.interpreter.encoder.{
   Encoder,
   InterchangeFormatEncoderValue,
   InterchangeFormatPrimitiveEncoder

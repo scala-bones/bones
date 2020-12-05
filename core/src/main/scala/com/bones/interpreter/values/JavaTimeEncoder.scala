@@ -3,7 +3,7 @@ package com.bones.interpreter.values
 import java.time.format.DateTimeFormatter
 
 import com.bones.data.values._
-import com.bones.interpreter.{
+import com.bones.interpreter.encoder.{
   Encoder,
   InterchangeFormatEncoderValue,
   InterchangeFormatPrimitiveEncoder

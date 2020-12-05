@@ -2,9 +2,11 @@ package com.bones
 
 import _root_.argonaut.Json
 import com.bones.data.values.DefaultValues
-import com.bones.interpreter.{
+import com.bones.interpreter.encoder.{
   InterchangeFormatEncoderValue,
-  InterchangeFormatPrimitiveEncoder,
+  InterchangeFormatPrimitiveEncoder
+}
+import com.bones.interpreter.validator.{
   InterchangeFormatPrimitiveValidator,
   InterchangeFormatValidatorValue
 }

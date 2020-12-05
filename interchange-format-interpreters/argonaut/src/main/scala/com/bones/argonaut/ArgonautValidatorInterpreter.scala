@@ -6,7 +6,11 @@ import argonaut.Argonaut._
 import argonaut._
 import com.bones.data.Error.{ExtractionErrors, ParsingError, RequiredValue, WrongTypeError}
 import com.bones.data.{KeyDefinition, _}
-import com.bones.interpreter.{KvpInterchangeFormatValidatorInterpreter, OptionalInputValidator}
+import com.bones.interpreter.OptionalInputValidator
+import com.bones.interpreter.validator.{
+  KvpInterchangeFormatValidatorInterpreter,
+  OptionalInputValidator
+}
 
 import scala.util.control.NonFatal
 

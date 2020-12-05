@@ -2,7 +2,7 @@ package com.bones.json4s.impl
 
 import java.util.Base64
 
-import com.bones.interpreter.InterchangeFormatPrimitiveEncoder
+import com.bones.interpreter.encoder.InterchangeFormatPrimitiveEncoder
 import org.json4s.{JArray, JBool, JDecimal, JInt, JLong, JNull, JObject, JString, JValue}
 
 object Json4sPrimitiveEncoder extends InterchangeFormatPrimitiveEncoder[JValue] {

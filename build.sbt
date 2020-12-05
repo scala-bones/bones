@@ -126,18 +126,31 @@ lazy val swaggerOas3 = (project in file("interchange-format-interpreters/swagger
     )
   )
   .dependsOn(core, testSchemas % "test")
+val tapirVersion = "0.17.0-M9"
 lazy val tapirTransformation = (project in file("transformation/tapir"))
   .settings(
     commonSettings,
     name := "Bones Tapir Transformation",
     libraryDependencies ++= Seq(
-      "com.softwaremill.sttp.tapir" %% "tapir-core" % "0.17.0-M9",
+      "com.softwaremill.sttp.tapir" %% "tapir-core" % tapirVersion,
       "org.scalacheck" %% "scalacheck" % "1.15.1" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
   )
   .dependsOn(core, testSchemas % "test")
+lazy val tapirCirceSkeleton = (project in file("skeleton/tapir-circe"))
+  .settings(
+    commonSettings,
+    name := "Bones Tapir Circe Codec",
+    libraryDependencies ++= Seq(
+      "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % tapirVersion,
+      "org.scalacheck" %% "scalacheck" % "1.15.1" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.3" % Test,
+      "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
+    )
+  )
+  .dependsOn(tapirTransformation, jsonCirce, testSchemas % "test")
 lazy val doobieVersion = "0.9.4"
 // lazy val directEncoders = (project in file("interchange-format-interpreters/direct-encoders"))
 //  .settings(
@@ -307,7 +320,6 @@ lazy val restAkkaHttp = (project in file("rest-interpreters/akka-http-interprete
     )
   )
   .dependsOn(core, jsonSpray, restHttpCommon, swaggerOas3)
-/*
 lazy val dbSlick = (project in file("db-interpreters/slick"))
   .settings(
     commonSettings,
@@ -322,7 +334,6 @@ lazy val dbSlick = (project in file("db-interpreters/slick"))
     )
   )
   .dependsOn(core)
-*/
 
 lazy val awsLambda = (project in file("rest-interpreters/aws-lambda"))
   .settings(

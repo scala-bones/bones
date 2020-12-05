@@ -9,7 +9,7 @@ import com.bones.data.values.{
   JavaUtilValue,
   ScalaCoreValue
 }
-import com.bones.interpreter.InterchangeFormatEncoderValue
+import com.bones.interpreter.encoder.InterchangeFormatEncoderValue
 import com.bones.swagger.SwaggerCoreInterpreter.CustomSwaggerInterpreter
 import com.bones.swagger.SwaggerCoreInterpreter.CustomSwaggerInterpreter.CNilCustomSwaggerInterpreter
 import shapeless.:+:

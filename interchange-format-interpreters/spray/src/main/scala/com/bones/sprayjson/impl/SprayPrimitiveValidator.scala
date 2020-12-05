@@ -2,7 +2,7 @@ package com.bones.sprayjson.impl
 
 import com.bones.Path
 import com.bones.data.Error.{ExtractionErrors, RequiredValue, WrongTypeError}
-import com.bones.interpreter.{InterchangeFormatPrimitiveValidator, Validator}
+import com.bones.interpreter.validator.{InterchangeFormatPrimitiveValidator, Validator}
 import spray.json.{JsArray, JsBoolean, JsNull, JsNumber, JsString, JsValue}
 
 import scala.util.Try
