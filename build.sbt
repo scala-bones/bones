@@ -320,6 +320,7 @@ lazy val restAkkaHttp = (project in file("rest-interpreters/akka-http-interprete
     )
   )
   .dependsOn(core, jsonSpray, restHttpCommon, swaggerOas3)
+/*
 lazy val dbSlick = (project in file("db-interpreters/slick"))
   .settings(
     commonSettings,
@@ -334,7 +335,7 @@ lazy val dbSlick = (project in file("db-interpreters/slick"))
     )
   )
   .dependsOn(core)
-
+*/
 lazy val awsLambda = (project in file("rest-interpreters/aws-lambda"))
   .settings(
     commonSettings,

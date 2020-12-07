@@ -3,27 +3,19 @@ package com.bones.argonaut
 import java.time.format.DateTimeFormatter
 
 import argonaut.Json
-import com.bones.data.values.{
-  CNilF,
-  CustomStringValue,
-  DefaultValues,
-  JavaTimeValue,
-  JavaUtilValue,
-  ScalaCoreValue
-}
-import com.bones.interpreter.InterchangeFormatEncoderValue.CNilInterchangeFormatEncoder
-import com.bones.interpreter.InterchangeFormatValidatorValue.CNilInterchangeFormatValidator
-import com.bones.interpreter.values._
-import com.bones.interpreter._
+import com.bones.data.values._
+import com.bones.interpreter.encoder.InterchangeFormatEncoderValue.CNilInterchangeFormatEncoder
 import com.bones.interpreter.encoder.{
   InterchangeFormatEncoderValue,
   InterchangeFormatPrimitiveEncoder,
   KvpInterchangeFormatEncoderInterpreter
 }
+import com.bones.interpreter.validator.InterchangeFormatValidatorValue.CNilInterchangeFormatValidator
 import com.bones.interpreter.validator.{
   InterchangeFormatPrimitiveValidator,
   InterchangeFormatValidatorValue
 }
+import com.bones.interpreter.values._
 import shapeless.:+:
 
 package object values {

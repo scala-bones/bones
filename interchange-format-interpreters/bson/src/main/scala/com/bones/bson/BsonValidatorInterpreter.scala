@@ -7,7 +7,6 @@ import com.bones.interpreter.validator.{
   OptionalInputValidator,
   Validator
 }
-import com.bones.interpreter.OptionalInputValidator
 import reactivemongo.bson.{
   BSONArray,
   BSONBoolean,
