@@ -19,7 +19,7 @@ trait KvpInterchangeFormatDeltaValidatorInterpreter[ALG[_], IN] {
 
   val interchangeFormatValidator: InterchangeFormatDeltaValidatorValue[ALG, IN]
 
-  val primitiveValidator: InterchangeFormatValidatorValueCanBeOmitted[IN, String]
+  val primitiveValidator: PrimitiveInterchangeFormat[IN, String]
 
 //  def generateDeltaValidator[A](
 //    kvpCollection: KvpCollection[String, ALG, A]): DeltaKvpValidator[String, ALG, A, IN] = {
@@ -184,7 +184,7 @@ trait KvpInterchangeFormatDeltaValidatorInterpreter[ALG[_], IN] {
               in: IN,
               key: String,
               path: List[String]): Either[ExtractionErrors[String], CanBeOmitted[String, Seq[t]]] =
-              primitiveValidator.extractArray(op.typeName)(key, path, in).flatMap {
+              primitiveValidator.extractArray(op.typeName).extract(in, key, path).flatMap {
                 case Left(nr) => Right(Left(nr))
                 case Right(seq) => {
                   seq
