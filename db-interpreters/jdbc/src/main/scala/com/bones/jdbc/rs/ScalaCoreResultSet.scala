@@ -3,7 +3,7 @@ package com.bones.jdbc.rs
 import java.sql.ResultSet
 
 import com.bones.Path
-import com.bones.Util.{NullableResult, stringToEnumeration}
+import com.bones.Util.{CanBeOmitted, stringToEnumeration}
 import com.bones.data.Error.ExtractionErrors
 import com.bones.data.values._
 import com.bones.jdbc.FindInterpreter.FieldName
@@ -11,7 +11,7 @@ import com.bones.jdbc.FindInterpreter.FieldName
 trait ScalaCoreResultSet extends ResultSetValue[ScalaCoreValue] {
   override def resultSet[A](alg: ScalaCoreValue[A]): (
     Path[String],
-    FieldName) => ResultSet => Either[ExtractionErrors[String], NullableResult[String, A]] =
+    FieldName) => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, A]] =
     alg match {
       case ob: BooleanData =>
         (path, fieldName) => rs =>
@@ -54,7 +54,7 @@ trait ScalaCoreResultSet extends ResultSetValue[ScalaCoreValue] {
                 }
               }
             } yield e
-          }: Either[ExtractionErrors[String], NullableResult[String, A]]
+          }: Either[ExtractionErrors[String], CanBeOmitted[String, A]]
 
     }
 }

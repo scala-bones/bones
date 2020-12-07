@@ -4,8 +4,10 @@ import java.time.format.{DateTimeFormatter, DateTimeParseException}
 import java.time.{LocalDate, LocalTime}
 import java.util.UUID
 
+import com.bones.Util.CanBeOmitted
 import com.bones.data.Error.{CanNotConvert, ExtractionError, ExtractionErrors}
 import com.bones.data.HigherOrderValue
+import shapeless.{HList, UnaryTCConstraint}
 
 import scala.util.Try
 
@@ -14,11 +16,14 @@ import scala.util.Try
   */
 object Util {
 
-  case class NullValue[K](fieldName: String, typeName: String, path: Path[K])
+  /** A Value that is defined in the schema, but in certain context, can be omitted
+    * from the data. */
+  case class OmittedValue[K](fieldName: String, typeName: String, path: Path[K])
 
-  type NullableResult[K, T] = Either[List[NullValue[K]], T]
+  /** Either: Left means a value has been omitted, Right means the value has been specified */
+  type CanBeOmitted[K, T] = Either[List[OmittedValue[K]], T]
 
-  def allValidCars(str: String, isNegative: Boolean) =
+  def allCharsAreDigits(str: String, isNegative: Boolean): Boolean =
     if (isNegative) str.drop(1).forall(Character.isDigit)
     else str.forall(Character.isDigit)
 
@@ -30,7 +35,7 @@ object Util {
       if (isNegative) str.length < maxLongLength
       else str.length < maxLongLength + 1
 
-    if (!str.isEmpty && isValidLength && allValidCars(str, isNegative)) {
+    if (!str.isEmpty && isValidLength && allCharsAreDigits(str, isNegative)) {
       Try(str.toLong).toOption
     } else {
       None
@@ -46,7 +51,7 @@ object Util {
       if (isNegative) str.length < maxShortLength
       else str.length < maxShortLength + 1
 
-    if (!str.isEmpty && isValidLength && allValidCars(str, isNegative)) {
+    if (!str.isEmpty && isValidLength && allCharsAreDigits(str, isNegative)) {
       Try(str.toShort).toOption
     } else {
       None
@@ -181,14 +186,17 @@ object Util {
     }
   }
 
+  // Imported here because there are uses of Scala List's `::` above.
+  import shapeless.::
+
   /**
     * Accumulates error on the left or combines success on the right, just
     * like Applicative.map2 if Either was a Validation.
     */
   def eitherMap2Nullable[K, A, B, Z](
-    e1: Either[ExtractionErrors[K], NullableResult[K, A]],
-    e2: Either[ExtractionErrors[K], NullableResult[K, B]])(
-    f: (A, B) => Z): Either[ExtractionErrors[K], NullableResult[K, Z]] = {
+    e1: Either[ExtractionErrors[K], CanBeOmitted[K, A]],
+    e2: Either[ExtractionErrors[K], CanBeOmitted[K, B]])(
+    f: (A, B) => Z): Either[ExtractionErrors[K], CanBeOmitted[K, Z]] = {
     (e1, e2) match {
       case (Left(err1), Left(err2)) => Left(err1 ::: err2)
       case (Left(err1), _)          => Left(err1)
@@ -200,6 +208,23 @@ object Util {
           case (_, Left(nullB))               => Right(Left(nullB))
           case (Right(valueA), Right(valueB)) => Right(Right(f(valueA, valueB)))
         }
+    }
+  }
+
+  /**
+    * Accumulates error on the left or combines success on the right, just
+    * like Applicative.map2 if Either was a Validation.
+    */
+  def eitherOmittedUnaryPrepend[K, A, B <: HList, Z](
+    e1: Either[ExtractionErrors[K], CanBeOmitted[K, A]],
+    e2: Either[ExtractionErrors[K], B])(implicit uct: UnaryTCConstraint[B, CanBeOmitted[String, *]])
+    : Either[ExtractionErrors[K], CanBeOmitted[K, A] :: B] = {
+    implicit val uc = uct
+    (e1, e2) match {
+      case (Left(err1), Left(err2)) => Left(err1 ::: err2)
+      case (Left(err1), _)          => Left(err1)
+      case (_, Left(err2))          => Left(err2)
+      case (Right(a), Right(b))     => Right(a :: b)
     }
   }
 

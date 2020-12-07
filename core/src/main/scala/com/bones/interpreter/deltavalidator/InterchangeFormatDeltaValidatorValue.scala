@@ -1,6 +1,6 @@
 package com.bones.interpreter.deltavalidator
 
-import com.bones.Util.NullableResult
+import com.bones.Util.CanBeOmitted
 import com.bones.data.Error.ExtractionErrors
 import com.bones.data.values.CNilF
 import shapeless.{:+:, Coproduct, Inl, Inr}
@@ -23,15 +23,12 @@ object InterchangeFormatDeltaValidatorValue {
           case Inl(l) =>
             new DeltaValueValidator[String, Lambda[A => L[A] :+: R[A]], AA, IN] {
               val validator = li.createDeltaValidator(l)
+
               override def extract(
                 in: IN,
-                key: String): Either[ExtractionErrors[String], NullableResult[String, IN]] =
-                validator.extract(in, key)
-
-              override def validate(
-                in: IN,
-                path: List[String]): Either[ExtractionErrors[String], NullableResult[String, AA]] =
-                validator.validate(in, path)
+                key: String,
+                path: List[String]): Either[ExtractionErrors[String], CanBeOmitted[String, AA]] =
+                validator.extract(in, key, path)
             }
           case Inr(r) =>
             new DeltaValueValidator[String, Lambda[A => L[A] :+: R[A]], AA, IN] {
@@ -39,13 +36,9 @@ object InterchangeFormatDeltaValidatorValue {
 
               override def extract(
                 in: IN,
-                key: String): Either[ExtractionErrors[String], NullableResult[String, IN]] =
-                validator.extract(in, key)
-
-              override def validate(
-                in: IN,
-                path: List[String]): Either[ExtractionErrors[String], NullableResult[String, AA]] =
-                validator.validate(in, path)
+                key: String,
+                path: List[String]): Either[ExtractionErrors[String], CanBeOmitted[String, AA]] =
+                validator.extract(in, key, path)
             }
         }
     }
@@ -58,7 +51,7 @@ object InterchangeFormatDeltaValidatorValue {
 
   }
 
-  case class CNilInterchangeFormatValidator[IN]()
+  case class CNilInterchangeFormatDeltaValidator[IN]()
       extends InterchangeFormatDeltaValidatorValue[CNilF, IN] {
     override def createDeltaValidator[A](alg: CNilF[A]): DeltaValueValidator[String, CNilF, A, IN] =
       sys.error("Unreachable code")

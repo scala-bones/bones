@@ -2,36 +2,19 @@ package com.bones.json4s
 
 import java.time.format.DateTimeFormatter
 
-import com.bones.data.values.{
-  CNilF,
-  CustomStringValue,
-  DefaultValues,
-  JavaTimeValue,
-  JavaUtilValue,
-  ScalaCoreValue
-}
-import com.bones.interpreter.InterchangeFormatEncoderValue.CNilInterchangeFormatEncoder
-import com.bones.interpreter.InterchangeFormatValidatorValue.CNilInterchangeFormatValidator
+import com.bones.data.values._
+import com.bones.interpreter.encoder.InterchangeFormatEncoderValue.CNilInterchangeFormatEncoder
 import com.bones.interpreter.encoder.{
   InterchangeFormatEncoderValue,
   InterchangeFormatPrimitiveEncoder,
   KvpInterchangeFormatEncoderInterpreter
 }
+import com.bones.interpreter.validator.InterchangeFormatValidatorValue.CNilInterchangeFormatValidator
 import com.bones.interpreter.validator.{
   InterchangeFormatPrimitiveValidator,
   InterchangeFormatValidatorValue
 }
-import com.bones.interpreter.values.{
-  CustomStringEncoder,
-  CustomStringValidator,
-  ExtractionErrorEncoder,
-  JavaTimeEncoder,
-  JavaTimeValidator,
-  JavaUtilEncoder,
-  JavaUtilValidator,
-  ScalaCoreEncoder,
-  ScalaCoreValidator
-}
+import com.bones.interpreter.values._
 import com.bones.json4s.impl.{Json4sPrimitiveEncoder, Json4sPrimitiveValidator}
 import org.json4s.JValue
 import shapeless.:+:

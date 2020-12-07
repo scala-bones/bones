@@ -3,7 +3,7 @@ package com.bones.jdbc.rs
 import java.sql.ResultSet
 
 import com.bones.Path
-import com.bones.Util.NullableResult
+import com.bones.Util.CanBeOmitted
 import com.bones.data.Error.ExtractionErrors
 import com.bones.data.values.CNilF
 import com.bones.jdbc.FindInterpreter.FieldName
@@ -22,7 +22,7 @@ object ResultSetValue {
 
       override def resultSet[A](alg: L[A] :+: R[A]): (
         Path[String],
-        FieldName) => ResultSet => Either[ExtractionErrors[String], NullableResult[String, A]] =
+        FieldName) => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, A]] =
         alg match {
           case Inl(l) => li.resultSet(l)
           case Inr(r) => ri.resultSet(r)
@@ -41,12 +41,12 @@ object ResultSetValue {
   object CNilResultSetValue extends ResultSetValue[CNilF] {
     override def resultSet[A](alg: CNilF[A]): (
       Path[String],
-      FieldName) => ResultSet => Either[ExtractionErrors[String], NullableResult[String, A]] =
+      FieldName) => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, A]] =
       sys.error("Unreachable")
   }
 }
 trait ResultSetValue[ALG[_]] {
   def resultSet[A](alg: ALG[A]): (
     Path[String],
-    FieldName) => ResultSet => Either[ExtractionErrors[String], NullableResult[String, A]]
+    FieldName) => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, A]]
 }

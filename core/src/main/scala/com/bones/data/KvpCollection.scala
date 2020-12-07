@@ -1,11 +1,12 @@
 package com.bones.data
 
+import com.bones.Util.CanBeOmitted
 import com.bones.validation.ValidationDefinition.ValidationOp
 import shapeless.Nat._0
 import shapeless.ops.hlist
 import shapeless.ops.hlist.IsHCons.Aux
 import shapeless.ops.hlist.{IsHCons, Length, Prepend, Split, Tupler}
-import shapeless.{:+:, ::, CNil, Coproduct, Generic, HList, HNil, Nat, Succ}
+import shapeless.{:+:, ::, CNil, Coproduct, Generic, HList, HNil, Nat, Succ, UnaryTCConstraint}
 
 object KvpCollection {
 //  type Empty[_] = Any

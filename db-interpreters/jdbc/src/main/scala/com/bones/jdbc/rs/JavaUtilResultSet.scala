@@ -3,7 +3,7 @@ package com.bones.jdbc.rs
 import java.sql.ResultSet
 
 import com.bones.Path
-import com.bones.Util.{NullableResult, stringToUuid}
+import com.bones.Util.{CanBeOmitted, stringToUuid}
 import com.bones.data.Error.ExtractionErrors
 import com.bones.data.values.{JavaUtilValue, UuidData}
 import com.bones.jdbc.FindInterpreter.FieldName
@@ -11,7 +11,7 @@ import com.bones.jdbc.FindInterpreter.FieldName
 trait JavaUtilResultSet extends ResultSetValue[JavaUtilValue] {
   override def resultSet[A](alg: JavaUtilValue[A]): (
     Path[String],
-    FieldName) => ResultSet => Either[ExtractionErrors[String], NullableResult[String, A]] =
+    FieldName) => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, A]] =
     alg match {
       case uu: UuidData =>
         (path, fieldName) => rs =>

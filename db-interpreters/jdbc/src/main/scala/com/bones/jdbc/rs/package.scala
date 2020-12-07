@@ -3,7 +3,7 @@ package com.bones.jdbc
 import java.sql.SQLException
 
 import com.bones.Path
-import com.bones.Util.{NullValue, NullableResult}
+import com.bones.Util.{OmittedValue, CanBeOmitted}
 import com.bones.data.Error.{ExtractionErrors, SystemError}
 import com.bones.data.values.{
   CNilF,
@@ -62,11 +62,11 @@ package object rs {
     f: => A,
     typeName: String,
     fieldName: String,
-    path: Path[String]): Either[ExtractionErrors[String], NullableResult[String, A]] =
+    path: Path[String]): Either[ExtractionErrors[String], CanBeOmitted[String, A]] =
     try {
       val result = f
       if (result == null) {
-        Right(Left(List(NullValue(fieldName, typeName, path))))
+        Right(Left(List(OmittedValue(fieldName, typeName, path))))
       } else {
         Right(Right(result))
       }
