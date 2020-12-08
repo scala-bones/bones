@@ -7,8 +7,7 @@ import com.bones.interpreter.deltavalidator.{DeltaValueValidator, PrimitiveInter
 import org.json4s.JsonAST.{JNull, JValue}
 import org.json4s.{JNothing, JObject}
 
-object Json4SPrimitiveDeltaValidatorValueCanBeOmitted
-    extends PrimitiveInterchangeFormat[JValue, String] {
+object Json4SPrimitiveDeltaValidatorValue extends PrimitiveInterchangeFormat[JValue, String] {
 
   /** Override this to provide the ability to extract a String from the IN type.
     *

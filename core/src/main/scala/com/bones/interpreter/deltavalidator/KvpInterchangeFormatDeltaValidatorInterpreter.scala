@@ -1,6 +1,6 @@
 package com.bones.interpreter.deltavalidator
 
-import com.bones.Util.CanBeOmitted
+import com.bones.Util.{CanBeOmitted, OmittedValue}
 import com.bones.data.Error.ExtractionErrors
 import com.bones.data._
 import com.bones.{Path, Util}
@@ -15,7 +15,7 @@ import shapeless.{::, Coproduct, HList, HNil, Nat, UnaryTCConstraint}
 trait KvpInterchangeFormatDeltaValidatorInterpreter[ALG[_], IN] {
 
   /** An additional string in the serialized format which states the coproduct type */
-  val coproductTypeKey: String
+//  val coproductTypeKey: String
 
   val interchangeFormatValidator: InterchangeFormatDeltaValidatorValue[ALG, IN]
 
@@ -209,7 +209,8 @@ trait KvpInterchangeFormatDeltaValidatorInterpreter[ALG[_], IN] {
           }
           validator.asInstanceOf[DeltaValueValidator[String, ALG, A, IN]]
 
-        case op: KvpCollectionValue[String, ALG, A] @unchecked => ???
+        case op: KvpCollectionValue[String, ALG, A] @unchecked =>
+          DeltaValueValidator.pure(Left(List(OmittedValue("unknown", op.typeName, List.empty)))) //TODO: This is not implemented correctly
       }
     result
   }

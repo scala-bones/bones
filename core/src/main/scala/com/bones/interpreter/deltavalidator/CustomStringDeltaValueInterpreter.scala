@@ -4,7 +4,7 @@ import com.bones.Util.CanBeOmitted
 import com.bones.data.Error.ExtractionErrors
 import com.bones.data.values.CustomStringValue
 
-trait CustomStringValueInterpreter[IN]
+trait CustomStringDeltaValueInterpreter[IN]
     extends InterchangeFormatDeltaValidatorValue[CustomStringValue, IN] {
 
   val primitive: PrimitiveInterchangeFormat[IN, String]

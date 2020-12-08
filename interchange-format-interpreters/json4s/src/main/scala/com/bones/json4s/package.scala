@@ -1,5 +1,6 @@
 package com.bones
 
+import com.bones.interpreter.deltavalidator.InterchangeFormatDeltaValidatorValue
 import com.bones.interpreter.encoder.{
   InterchangeFormatEncoderValue,
   InterchangeFormatPrimitiveEncoder
