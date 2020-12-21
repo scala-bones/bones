@@ -10,7 +10,7 @@ import com.bones.interpreter.encoder.{
 trait ScalaCoreEncoder[OUT] extends InterchangeFormatEncoderValue[ScalaCoreValue, OUT] {
   val defaultEncoder: InterchangeFormatPrimitiveEncoder[OUT]
 
-  override def createEncoder[A](alg: ScalaCoreValue[A]): Encoder[ScalaCoreValue, A, OUT] = {
+  override def generateEncoder[A](alg: ScalaCoreValue[A]): Encoder[ScalaCoreValue, A, OUT] = {
     val result: A => OUT = alg match {
       case _: BooleanData    => defaultEncoder.booleanToOut
       case _: StringData     => defaultEncoder.stringToOut

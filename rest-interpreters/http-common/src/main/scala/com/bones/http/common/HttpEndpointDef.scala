@@ -7,6 +7,11 @@ import com.bones.interpreter.values.ExtractionErrorEncoder.ErrorResponse
 import shapeless.Inl
 
 object HttpEndpointDef {
+
+  /**
+    * Uses DefaultValues as the Algebra.
+    * Uses [[StringToIdError]] as the path error.
+    */
   def defaultValues[REQ: Manifest, RES: Manifest, CT, E](
     contentInterpreters: ContentInterpreters[String, DefaultValues, CT],
     requestSchema: KvpCollection[String, DefaultValues, REQ],
@@ -22,6 +27,19 @@ object HttpEndpointDef {
       core => Inl(core))
 }
 
+/**
+  *
+  * @param contentInterpreters Set of interpreters for Content-Type such as JSON or Protobuf.
+  * @param requestSchema The expected format to receive.
+  * @param responseSchema The expected format to return
+  * @param errorSchema Type should be the same as what is returned by the service.
+  * @tparam REQ Request Type
+  * @tparam RES Response Type
+  * @tparam CT Type of the content type.
+  * @tparam E Error returned from processing.
+  * @tparam PE Path Error.
+  * @return
+  */
 case class HttpEndpointDef[ALG[_], REQ: Manifest, RES: Manifest, CT, E, PE](
   contentInterpreters: ContentInterpreters[String, ALG, CT],
   requestSchema: KvpCollection[String, ALG, REQ],

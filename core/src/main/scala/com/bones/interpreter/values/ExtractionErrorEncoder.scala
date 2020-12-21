@@ -270,7 +270,7 @@ trait ExtractionErrorEncoder[OUT]
     defaultEncoder
       .generateEncoder[WrongTypeError[String, _]](wrongTypeErrorSchema)
 
-  override def createEncoder[A](
+  override def generateEncoder[A](
     alg: ExtractionErrorValue[A]): Encoder[ExtractionErrorValue, A, OUT] = {
     val result: Encoder[ScalaCoreValue, A, OUT] = alg match {
       case CanNotConvertData   => canNotConvertEncoder

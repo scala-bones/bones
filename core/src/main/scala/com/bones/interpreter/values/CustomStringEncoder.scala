@@ -14,7 +14,7 @@ trait CustomStringEncoder[OUT] extends InterchangeFormatEncoderValue[CustomStrin
   /**
     * Here we just delegate to the BaseEncoders means of serializing to a String.
     */
-  override def createEncoder[A](alg: CustomStringValue[A]): Encoder[CustomStringValue, A, OUT] = {
+  override def generateEncoder[A](alg: CustomStringValue[A]): Encoder[CustomStringValue, A, OUT] = {
     (a: A) =>
       baseEncoder.stringToOut(a.asInstanceOf[String])
   }

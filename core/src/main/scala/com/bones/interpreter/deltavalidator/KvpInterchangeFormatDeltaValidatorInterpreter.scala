@@ -36,6 +36,13 @@ trait KvpInterchangeFormatDeltaValidatorInterpreter[ALG[_], IN] {
 //    wrappedCoproduct: KvpWrappedCoproduct[String, ALG, A, C])
 //    : DeltaKvpValidator[String, ALG, A, IN] = ???
 
+  case class DeltaResult[ALG[_], H <: HList, IN](validator: DeltaKvpValidator[String, ALG, H, IN])(
+    implicit utcc: UnaryTCConstraint[H, CanBeOmitted[String, *]]) {
+
+    def output: H = ???
+
+  }
+
   def fromKvpHListCollection[H <: HList, HL <: Nat](
     kvp: KvpHListCollection[String, ALG, H, HL]): DeltaKvpValidator[String, ALG, H, IN] =
     kvp match {

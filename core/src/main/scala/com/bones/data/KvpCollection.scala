@@ -1,25 +1,25 @@
 package com.bones.data
 
-import com.bones.Util.CanBeOmitted
 import com.bones.validation.ValidationDefinition.ValidationOp
-import shapeless.Nat._0
 import shapeless.ops.hlist
 import shapeless.ops.hlist.IsHCons.Aux
 import shapeless.ops.hlist.{IsHCons, Length, Prepend, Split, Tupler}
-import shapeless.{:+:, ::, CNil, Coproduct, Generic, HList, HNil, Nat, Succ, UnaryTCConstraint}
+import shapeless.{:+:, ::, CNil, Coproduct, Generic, HList, HNil, Nat, Succ}
+
+import scala.annotation.tailrec
 
 object KvpCollection {
 //  type Empty[_] = Any
+  @tailrec
   def headTypeName[K, ALG[_], A](kvpCollection: KvpCollection[K, ALG, A]): Option[String] = {
     kvpCollection match {
       case w: WrappedEncoding[K, ALG, A] @unchecked                  => Some(w.typeNameOfA)
       case c: KvpCoproductCollectionHead[K, ALG, A, _, _] @unchecked => Some(c.typeNameOfA)
-      case s: KvpSingleValueHead[K, ALG, A, _, _, _] @unchecked => {
+      case s: KvpSingleValueHead[K, ALG, A, _, _, _] @unchecked =>
         s.head match {
           case Left(keyDef) => Some(keyDef.typeName)
           case Right(coll)  => headTypeName(coll)
         }
-      }
       case _ => None
     }
   }
@@ -41,6 +41,8 @@ object KvpCollection {
   **/
 sealed trait KvpCollection[K, ALG[_], A] {
   val typeNameOfA: String
+
+  def asValue: KvpCollectionValue[K, ALG, A] = KvpCollectionValue(this, typeNameOfA, List.empty)
 
   def keyMapKvpCollection[KK](f: K => KK): KvpCollection[KK, ALG, A] =
     this match {
@@ -72,7 +74,7 @@ sealed trait KvpCollection[K, ALG[_], A] {
   * @tparam A The new value which is a switch in context from the Generic type values.
   */
 sealed trait WrappedEncoding[K, ALG[_], A] extends KvpCollection[K, ALG, A] {
-  def asValue: KvpCollectionValue[K, ALG, A] = KvpCollectionValue(this, typeNameOfA, List.empty)
+//  def asValue: KvpCollectionValue[K, ALG, A] = KvpCollectionValue(this, typeNameOfA, List.empty)
   def keyMapWrappedEncoding[KK](f: K => KK): WrappedEncoding[KK, ALG, A] =
     this match {
       case w: KvpWrappedCoproduct[K, ALG, A, c]   => w.keyMapKvpWrappedCoproduct(f)
@@ -284,8 +286,8 @@ sealed abstract class KvpHListCollection[K, ALG[_], L <: HList, LL <: Nat]
   def encodedHead[B: Manifest](validation: ValidationOp[B]*)(
     implicit isEqual1: (B :: HNil) =:= L,
     isEqual2: L =:= (B :: HNil)
-  ) =
-    xmap[B, B](identity, identity)
+  ): KvpWrappedHList[K, ALG, B, L, LL] =
+    xmap[B, B](identity, identity, validation: _*)
 
   def xmapTup[A: Manifest, Tup <: Product](f: Tup => A, g: A => Tup, validations: ValidationOp[A]*)(
     implicit tupler: Tupler.Aux[L, Tup],
@@ -412,7 +414,7 @@ case class KvpNil[K, ALG[_]]() extends KvpHListCollection[K, ALG, HNil, Nat._0] 
   override val typeNameOfA: String = "KvpNil"
 
   def keyMapKvpNil[KK](f: K => KK): KvpNil[KK, ALG] = KvpNil[KK, ALG]()
-  def algMapKvpNil[ALG2[_]]() = KvpNil[K, ALG2]()
+  def algMapKvpNil[ALG2[_]](): KvpNil[K, ALG2] = KvpNil[K, ALG2]()
 }
 
 /** The head of the HList has a known KeyValueDefinition. */

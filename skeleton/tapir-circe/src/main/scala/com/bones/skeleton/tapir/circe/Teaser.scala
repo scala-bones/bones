@@ -21,11 +21,11 @@ object Teaser {
       kvpNil
   ).convert[BooksFromYear]
 
-  val (tapirBooksForYearSchema, tapirBooksForYearCodec) =
-    DefaultAlgebras.createTapirSchemaAndCodec(bookBonesSchema)
-
   val bookBonesSchema = (("title", string(sv.words)) :: kvpNil).convert[Book]
   val (tapirBookSchema, tapirBookCodec) = DefaultAlgebras.createTapirSchemaAndCodec(bookBonesSchema)
+
+  val (tapirBooksForYearSchema, tapirBooksForYearCodec) =
+    DefaultAlgebras.createTapirSchemaAndCodec(bookBonesSchema)
 
   // Define an endpoint
   val booksListing: Endpoint[(BooksFromYear, Limit, AuthToken), String, List[Book], Nothing] =

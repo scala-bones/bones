@@ -45,7 +45,7 @@ package object jdbc {
 
     def prependSchema[A: Manifest](schema: KvpCollection[String, ALG, A])
       : KvpWrappedHList[String, ALG, (ID, A), ID :: A :: HNil, Succ[Succ[_0]]] = {
-      (asTuple :: schema :: new KvpNil[String, ALG]).tupled[(ID, A)]
+      (asTuple :: schema :: KvpNil[String, ALG]).tupled[(ID, A)]
     }
 
     def asSchema: KvpCollection[String, ALG, ID :: HNil] = {

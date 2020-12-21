@@ -50,12 +50,12 @@ class CovJson4sTest extends AnyFunSuite with Checkers with Matchers {
 
     object BlogEncoder extends InterchangeFormatEncoderValue[BlogAlgebra, JValue] {
 
-      def createEncoder[A](alg: BlogAlgebra[A]): Encoder[BlogAlgebra, A, JValue] =
+      def generateEncoder[A](alg: BlogAlgebra[A]): Encoder[BlogAlgebra, A, JValue] =
         alg match {
           case Inl(customAlgebra)       => customAlgebraEncoder(customAlgebra).encode(_)
           case Inr(Inl(dateExtAlgebra)) => dateExtAlgebraEncoder(dateExtAlgebra).encode(_)
           case Inr(Inr(Inl(scalaCoreValue))) =>
-            BaseScalaCoreEncoder.createEncoder(scalaCoreValue).encode(_)
+            BaseScalaCoreEncoder.generateEncoder(scalaCoreValue).encode(_)
           case Inr(Inr(Inr(_))) => sys.error("Unreachable code")
         }
     }

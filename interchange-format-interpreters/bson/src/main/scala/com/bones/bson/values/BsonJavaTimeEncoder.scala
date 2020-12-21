@@ -15,7 +15,7 @@ trait BsonJavaTimeEncoder extends InterchangeFormatEncoderValue[JavaTimeValue, B
   val offsetTimeFormatter: DateTimeFormatter
   val zonedDateTimeFormatter: DateTimeFormatter
 
-  override def createEncoder[A](alg: JavaTimeValue[A]): Encoder[JavaTimeValue, A, BSONValue] =
+  override def generateEncoder[A](alg: JavaTimeValue[A]): Encoder[JavaTimeValue, A, BSONValue] =
     alg match {
       case dte: DateTimeExceptionData =>
         val f = baseEncoder.stringToOut

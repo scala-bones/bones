@@ -3,8 +3,6 @@ package com.bones
 import java.time.format.{DateTimeFormatter, DateTimeParseException}
 import java.time.{LocalDate, LocalTime}
 import java.util.UUID
-
-import com.bones.Util.CanBeOmitted
 import com.bones.data.Error.{CanNotConvert, ExtractionError, ExtractionErrors}
 import com.bones.data.HigherOrderValue
 import shapeless.{HList, UnaryTCConstraint}

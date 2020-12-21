@@ -53,12 +53,12 @@ class CovCirceTest extends AnyFunSuite with Checkers with Matchers {
 
     object BlogEncoder extends InterchangeFormatEncoderValue[BlogAlgebra, Json] {
 
-      override def createEncoder[A](alg: BlogAlgebra[A]): Encoder[BlogAlgebra, A, Json] =
+      override def generateEncoder[A](alg: BlogAlgebra[A]): Encoder[BlogAlgebra, A, Json] =
         alg match {
           case Inl(customAlgebra)       => customAlgebraEncoder(customAlgebra).encode(_)
           case Inr(Inl(dateExtAlgebra)) => dateExtAlgebraEncoder(dateExtAlgebra).encode(_)
           case Inr(Inr(Inl(scalaCoreValue))) =>
-            BaseScalaCoreEncoder.createEncoder(scalaCoreValue).encode(_)
+            BaseScalaCoreEncoder.generateEncoder(scalaCoreValue).encode(_)
           case Inr(Inr(Inr(_))) => sys.error("Unreachable code")
         }
     }

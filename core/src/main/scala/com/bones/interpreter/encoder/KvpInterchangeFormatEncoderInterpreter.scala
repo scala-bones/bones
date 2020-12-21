@@ -52,7 +52,7 @@ trait KvpInterchangeFormatEncoderInterpreter[ALG[_], OUT]
   ): Encoder[ALG, A, OUT] = {
     dataDefinition match {
       case Left(kvp)  => primitiveWrapperDefinition(kvp)
-      case Right(cov) => encoder.createEncoder[A](cov)
+      case Right(cov) => encoder.generateEncoder[A](cov)
     }
   }
 

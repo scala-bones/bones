@@ -1,11 +1,11 @@
 package com.bones.schemas
 
-import java.time.Instant
-
 import com.bones.data.Sugar
-import com.bones.data.values.{ScalaCoreInjectedSugar, ScalaCoreSugar, ScalaCoreValue}
+import com.bones.data.values.{ScalaCoreInjectedSugar, ScalaCoreValue}
 import shapeless.ops.coproduct
 import shapeless.{:+:, CNil, Inl, Inr}
+
+import java.time.Instant
 
 object CustomCovSchema {
 

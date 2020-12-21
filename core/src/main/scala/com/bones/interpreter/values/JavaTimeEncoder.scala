@@ -20,7 +20,7 @@ trait JavaTimeEncoder[OUT] extends InterchangeFormatEncoderValue[JavaTimeValue, 
   val localDateFormatter: DateTimeFormatter
   val localTimeFormatter: DateTimeFormatter
 
-  override def createEncoder[A](alg: JavaTimeValue[A]): Encoder[JavaTimeValue, A, OUT] = {
+  override def generateEncoder[A](alg: JavaTimeValue[A]): Encoder[JavaTimeValue, A, OUT] = {
     alg match {
       case dte: DateTimeExceptionData =>
         val f = baseEncoder.stringToOut
