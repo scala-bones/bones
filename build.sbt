@@ -314,7 +314,7 @@ lazy val restAkkaHttp = (project in file("rest-interpreters/akka-http-interprete
       "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion,
       "com.typesafe.akka" %% "akka-http-spray-json" % AkkaHttpVersion,
       "com.typesafe.akka" %% "akka-actor-typed" % AkkaVersion,
-      "org.scalacheck" %% "scalacheck" % "1.15.0" % Test,
+      "org.scalacheck" %% "scalacheck" % "1.15.2" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
@@ -329,7 +329,7 @@ lazy val dbSlick = (project in file("db-interpreters/slick"))
       "com.typesafe.slick" %% "slick" % "3.3.3",
       "org.slf4j" % "slf4j-nop" % "1.6.4",
       "org.scala-lang" % "scala-reflect" % "2.13.3",
-      "org.scalacheck" %% "scalacheck" % "1.15.0" % Test,
+      "org.scalacheck" %% "scalacheck" % "1.15.2" % Test,
       "org.scalatest" %% "scalatest" % "3.2.2" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
