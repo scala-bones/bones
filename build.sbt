@@ -58,7 +58,7 @@ lazy val commonSettings = Seq(
       Some("releases" at nexus + "service/local/staging/deploy/maven2")
   },
   publishMavenStyle := true,
-  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.1" cross CrossVersion.full),
+  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.2" cross CrossVersion.full),
 )
 lazy val core = (project in file("core"))
   .settings(
@@ -78,7 +78,7 @@ lazy val coreCats = (project in file("core-cats"))
     commonSettings,
     name := "Bones Cats",
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % "2.3.0",
+      "org.typelevel" %% "cats-core" % "2.3.1",
       "com.chuusai" %% "shapeless" % "2.3.3",
       "org.scalacheck" %% "scalacheck" % "1.15.1" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
@@ -119,7 +119,7 @@ lazy val swaggerOas3 = (project in file("interchange-format-interpreters/swagger
     commonSettings,
     name := "Bones DataDefinition to OAS3 Interpreter",
     libraryDependencies ++= Seq(
-      "io.swagger.core.v3" % "swagger-core" % "2.1.5",
+      "io.swagger.core.v3" % "swagger-core" % "2.1.6",
       "org.scalacheck" %% "scalacheck" % "1.15.1" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
@@ -287,7 +287,7 @@ lazy val restHttpCommon = (project in file("rest-interpreters/http-common"))
   )
   .dependsOn(core, swaggerOas3)
 
-lazy val http4sVersion = "0.21.13"
+lazy val http4sVersion = "0.21.15"
 lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
   .settings(
     commonSettings,
@@ -314,7 +314,7 @@ lazy val restAkkaHttp = (project in file("rest-interpreters/akka-http-interprete
       "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion,
       "com.typesafe.akka" %% "akka-http-spray-json" % AkkaHttpVersion,
       "com.typesafe.akka" %% "akka-actor-typed" % AkkaVersion,
-      "org.scalacheck" %% "scalacheck" % "1.15.0" % Test,
+      "org.scalacheck" %% "scalacheck" % "1.15.2" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
@@ -329,7 +329,7 @@ lazy val dbSlick = (project in file("db-interpreters/slick"))
       "com.typesafe.slick" %% "slick" % "3.3.3",
       "org.slf4j" % "slf4j-nop" % "1.6.4",
       "org.scala-lang" % "scala-reflect" % "2.13.3",
-      "org.scalacheck" %% "scalacheck" % "1.15.0" % Test,
+      "org.scalacheck" %% "scalacheck" % "1.15.2" % Test,
       "org.scalatest" %% "scalatest" % "3.2.2" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
@@ -364,7 +364,7 @@ lazy val examples = (project in file("examples/http4s-examples"))
     commonSettings,
     name := "Bones Examples",
     libraryDependencies ++= Seq(
-      "io.swagger.core.v3" % "swagger-jaxrs2" % "2.1.5",
+      "io.swagger.core.v3" % "swagger-jaxrs2" % "2.1.6",
       "io.swagger" % "swagger-parser" % "1.0.54",
       "org.slf4j" % "slf4j-simple" % "1.7.30",
       "com.zaxxer" % "HikariCP" % "3.4.5",
