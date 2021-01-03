@@ -17,7 +17,8 @@ object BonesToTapirCodec {
   ): Codec[String, A, CodecFormat.Json] = {
 
     new Codec[String, A, CodecFormat.Json] {
-      override def schema: Option[Schema[A]] = Some(tapirSchema)
+
+      override def schema: Schema[A] = tapirSchema
 
       override def format: CodecFormat.Json = CodecFormat.Json()
 

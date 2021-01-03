@@ -152,9 +152,9 @@ trait BonesToTapirTransformation[ALG[_]] {
           None,
           false)
       case ld: ListData[String, ALG, t] =>
-        determineValueDefinition(ld.tDefinition).asArrayElement
+        determineValueDefinition(ld.tDefinition).asArray
       case od: OptionalValue[String, ALG, b] =>
-        determineValueDefinition(od.valueDefinitionOp).asOptional
+        determineValueDefinition(od.valueDefinitionOp).asOption
       case kvp: KvpCollectionValue[String, ALG, A] =>
         val fields = fromKvpCollection(kvp.kvpCollection)
         val schemaType = SProduct(SObjectInfo(kvp.typeName), fields)
