@@ -166,8 +166,8 @@ trait Sugar[K, ALG[_]] {
     EitherData(Right(definitionA), typeNameOfA, Left(definitionB), typeNameOfB)
   }
 
-  def kvpNil = new KvpNil[K, ALG]()
+  def kvpNil: KvpNil[K, ALG] = KvpNil[K, ALG]()
 
-  def kvpCoNil = new KvpCoNil[K, ALG]()
+  def kvpCoNil: KvpCoNil[K, ALG] = KvpCoNil[K, ALG]()
 
 }

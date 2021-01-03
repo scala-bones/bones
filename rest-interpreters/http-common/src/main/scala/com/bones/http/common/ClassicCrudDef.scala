@@ -7,6 +7,33 @@ import com.bones.interpreter.values.ExtractionErrorEncoder.ErrorResponse
 import shapeless.{:+:, Inl}
 
 object ClassicCrudDef {
+
+  /**
+    * Most of the time, the only items that are different in an application
+    * are the path and the Schema.  This allows the app developer to create
+    * a common definition for the common settings, and then provide they only need to
+    *  provide name and schema for each additional crud group.
+    */
+  def coreDefaultValues[ID: Manifest, CT, E](
+    contentInterpreters: ContentInterpreters[String, DefaultValues, CT],
+    pathStringToId: String => Either[StringToIdError, ID],
+    errorSchema: KvpCollection[String, DefaultValues, E],
+    idDefinition: DefaultValues[ID],
+    idKey: String
+  ) = new {
+    def apply[A: Manifest](path: String, schema: KvpCollection[String, DefaultValues, A])
+      : ClassicCrudDef[DefaultValues, A, ID, CT, E, StringToIdError] =
+      defaultValues(
+        contentInterpreters,
+        path,
+        schema,
+        pathStringToId,
+        errorSchema,
+        idDefinition,
+        idKey)
+
+  }
+
   def defaultValues[A: Manifest, ID: Manifest, CT, E](
     contentInterpreters: ContentInterpreters[String, DefaultValues, CT],
     path: String,
