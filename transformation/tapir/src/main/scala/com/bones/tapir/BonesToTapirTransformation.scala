@@ -17,29 +17,41 @@ import com.bones.data.{
   ListData,
   OptionalValue
 }
-import shapeless.{:+:, ::, CNil, Coproduct, HList, Nat}
+import shapeless.ops.hlist.{Mapped, Prepend}
+import shapeless.{:+:, ::, CNil, Coproduct, HList, HNil, Nat}
 import sttp.tapir.SchemaType.{SArray, SCoproduct, SObjectInfo, SProduct}
-import sttp.tapir.{FieldName, Schema}
+import sttp.tapir.{FieldName, Schema, SchemaType}
 
 trait BonesToTapirTransformation[ALG[_]] {
 
   val encoder: TapirValueTransformation[ALG]
 
   def kvpToSchemaList[A](kvp: KvpCollection[String, ALG, A]): Schema[List[A]] = {
-    val fields = fromKvpCollection(kvp)
+    val schema = fromKvpCollection(kvp)
     val name = kvp.typeNameOfA.updated(0, kvp.typeNameOfA.charAt(0).toLower)
-    val base = Schema(SProduct(SObjectInfo(name), fields), false, None, None, false)
+    val newType = schema.schemaType match {
+      case SProduct(info, fields) => SProduct(info.copy(fullName = name), fields)
+      case SCoproduct(info, schemas, discriminator) =>
+        SCoproduct(info.copy(fullName = name), schemas, discriminator)
+      case x => throw new IllegalStateException(s"Unexpected type: ${x}")
+    }
+    val base = schema.copy(schemaType = newType)
     Schema(SArray(base))
   }
 
   def kvpToSchema[A](kvp: KvpCollection[String, ALG, A]): Schema[A] = {
-    val fields = fromKvpCollection(kvp)
+    val schema = fromKvpCollection(kvp)
     val name = kvp.typeNameOfA.updated(0, kvp.typeNameOfA.charAt(0).toLower)
-    Schema(SProduct(SObjectInfo(name), fields), false, None, None, false)
+    val newType = schema.schemaType match {
+      case SProduct(info, fields) => SProduct(info.copy(fullName = name), fields)
+      case SCoproduct(info, schemas, discriminator) =>
+        SCoproduct(info.copy(fullName = name), schemas, discriminator)
+      case x => throw new IllegalStateException(s"Unexpected type: ${x}")
+    }
+    schema.copy(schemaType = newType)
   }
 
-  def fromKvpCollection[A](
-    kvpCollection: KvpCollection[String, ALG, A]): List[(FieldName, Schema[_])] = {
+  def fromKvpCollection[A](kvpCollection: KvpCollection[String, ALG, A]): Schema[A] = {
     kvpCollection match {
       case kvp: KvpWrappedHList[String, ALG, a, h, n] @unchecked  => kvpWrappedHList(kvp)
       case kvp: KvpWrappedCoproduct[String, ALG, a, c] @unchecked => kvpWrappedCoproduct(kvp)
@@ -56,44 +68,77 @@ trait BonesToTapirTransformation[ALG[_]] {
 
   def kvpWrappedHList[A, H <: HList, HL <: Nat](
     wrappedHList: KvpWrappedHList[String, ALG, A, H, HL]
-  ): List[(FieldName, Schema[_])] = {
+  ): Schema[A] = {
     fromKvpCollection(wrappedHList.wrappedEncoding)
   }
 
   def kvpWrappedCoproduct[A, C <: Coproduct](
     wrappedCoproduct: KvpWrappedCoproduct[String, ALG, A, C]
-  ): List[(FieldName, Schema[_])] = {
+  ): Schema[A] = {
     fromKvpCollection(wrappedCoproduct.wrappedEncoding)
   }
 
   def kvpHListCollectionHead[HO <: HList, NO <: Nat, H <: HList, HL <: Nat, T <: HList, TL <: Nat](
     kvp: KvpHListCollectionHead[String, ALG, HO, NO, H, HL, T, TL]
-  ): List[(FieldName, Schema[_])] = {
+  ): Schema[HO] = {
     val head = fromKvpCollection(kvp.head)
     val tail = fromKvpCollection(kvp.tail)
-    head ::: tail
+    combineSchemaHead(head, tail, kvp.prepend)
   }
 
-  def kvpNil(kvp: KvpNil[String, ALG]): List[(FieldName, Schema[_])] = List.empty
+  def combineSchemaHead[H <: HList, T <: HList, HO <: HList](
+    s1: Schema[H],
+    s2: Schema[T],
+    prepend: Prepend.Aux[H, T, HO],
+  ): Schema[HO] = {
+    val newType = (s1.schemaType, s2.schemaType) match {
+      case (SProduct(i1, f1), SProduct(i2, f2)) => {
+        val sObjectInfo = SchemaType.SObjectInfo(
+          i1.fullName,
+          i1.typeParameterShortNames ::: i2.typeParameterShortNames)
+        SProduct(sObjectInfo, f1 ++ f2)
+      }
+      case x => throw new IllegalStateException(s"Unexpected case: ${x}")
+    }
+    Schema[HO](newType)
+  }
+
+  def kvpNil(kvp: KvpNil[String, ALG]): Schema[HNil] =
+    Schema(SchemaType.SProduct(SchemaType.SObjectInfo.Unit, List.empty))
 
   def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
     kvp: KvpSingleValueHead[String, ALG, H, T, TL, O]
-  ): List[(FieldName, Schema[_])] = {
-    val head: List[(FieldName, Schema[_])] = kvp.head match {
-      case Left(value) => List(keyDefinitionSchema(value))
+  ): Schema[O] = {
+    val head: Schema[H] = kvp.head match {
+      case Left(value) => {
+        Schema(SchemaType.SProduct(SchemaType.SObjectInfo.Unit, List(keyDefinitionSchema(value))))
+      }
       case Right(collection) =>
         fromKvpCollection(collection)
     }
     val tail = fromKvpCollection(kvp.tail)
-    head ::: tail
+    combineSchema(head, tail)
   }
 
-  def kvpCoNil(kvpCoNil: KvpCoNil[String, ALG]): List[(FieldName, Schema[_])] =
-    List.empty
+  def combineSchema[H, T <: HList, O <: H :: T](s1: Schema[H], s2: Schema[T]): Schema[O] = {
+    val newType = (s1.schemaType, s2.schemaType) match {
+      case (SProduct(i1, f1), SProduct(i2, f2)) => {
+        val sObjectInfo = SchemaType.SObjectInfo(
+          i1.fullName,
+          i1.typeParameterShortNames ::: i2.typeParameterShortNames)
+        SProduct(sObjectInfo, f1 ++ f2)
+      }
+      case x => throw new IllegalStateException(s"Unexpected case: ${x}")
+    }
+    Schema(newType)
+  }
+
+  def kvpCoNil(kvpCoNil: KvpCoNil[String, ALG]): Schema[CNil] =
+    Schema(SCoproduct(SObjectInfo.Unit, List.empty, None))
 
   def kvpCoproductCollectionHead[A, C <: Coproduct, O <: A :+: C](
     kvpCoproductCollectionHead: KvpCoproductCollectionHead[String, ALG, A, C, O]
-  ): List[(FieldName, Schema[_])] = {
+  ): Schema[C] = {
     val head = fromKvpCollection(kvpCoproductCollectionHead.kvpCollection)
     val tail = fromKvpCoproduct(kvpCoproductCollectionHead.kvpTail)
     val coproductSchemas = head.map(_._2) ::: tail.map(_._2)
@@ -106,8 +151,9 @@ trait BonesToTapirTransformation[ALG[_]] {
     List((FieldName(kvpCoproductCollectionHead.typeNameOfA), schema))
   }
 
-  def fromKvpCoproduct[C <: Coproduct](
-    value: KvpCoproduct[String, ALG, C]): List[(FieldName, Schema[_])] = {
+  def combineCoproductSchema(s1: Schema[C], s2: Schema[O]) = ???
+
+  def fromKvpCoproduct[C <: Coproduct](value: KvpCoproduct[String, ALG, C]): Schema[C] = {
 
     value match {
       case KvpCoNil() => List.empty
