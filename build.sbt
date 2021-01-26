@@ -327,7 +327,7 @@ lazy val dbSlick = (project in file("db-interpreters/slick"))
     libraryDependencies ++= Seq(
       "com.typesafe.slick" %% "slick" % "3.3.3",
       "io.underscore"      %% "slickless" % "0.3.6",
-      "org.slf4j" % "slf4j-nop" % "1.6.6",
+      "org.slf4j" % "slf4j-nop" % "1.7.30",
       "org.scala-lang" % "scala-reflect" % "2.13.3",
       "org.scalacheck" %% "scalacheck" % "1.15.2" % Test,
       "org.scalatest" %% "scalatest" % "3.2.2" % Test,
