@@ -10,7 +10,7 @@ import shapeless.ops.hlist._
 import slick.jdbc.PostgresProfile.api._
 import slickless._
 
-class SlickTest extends AnyFunSpec {
+class SlickTest { // extends AnyFunSpec {
 
   // Definition of the SUPPLIERS table
   class Suppliers(tag: Tag)
