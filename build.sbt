@@ -58,7 +58,7 @@ lazy val commonSettings = Seq(
       Some("releases" at nexus + "service/local/staging/deploy/maven2")
   },
   publishMavenStyle := true,
-  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.2" cross CrossVersion.full),
+  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.3" cross CrossVersion.full),
 )
 lazy val core = (project in file("core"))
   .settings(
@@ -126,7 +126,7 @@ lazy val swaggerOas3 = (project in file("interchange-format-interpreters/swagger
     )
   )
   .dependsOn(core, testSchemas % "test")
-val tapirVersion = "0.17.1"
+val tapirVersion = "0.17.7"
 lazy val tapirTransformation = (project in file("transformation/tapir"))
   .settings(
     commonSettings,
@@ -287,7 +287,7 @@ lazy val restHttpCommon = (project in file("rest-interpreters/http-common"))
   )
   .dependsOn(core, swaggerOas3)
 
-lazy val http4sVersion = "0.21.15"
+lazy val http4sVersion = "0.21.16"
 lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
   .settings(
     commonSettings,
@@ -304,7 +304,7 @@ lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
   .dependsOn(core, restHttpCommon, swaggerOas3, jsonCirce % "test->compile" )
 
 val AkkaVersion = "2.6.11"
-val AkkaHttpVersion = "10.2.2"
+val AkkaHttpVersion = "10.2.3"
 lazy val restAkkaHttp = (project in file("rest-interpreters/akka-http-interpreter"))
   .settings(
     commonSettings,
@@ -366,7 +366,7 @@ lazy val examples = (project in file("examples/http4s-examples"))
       "io.swagger.core.v3" % "swagger-jaxrs2" % "2.1.6",
       "io.swagger" % "swagger-parser" % "1.0.54",
       "org.slf4j" % "slf4j-simple" % "1.7.30",
-      "com.zaxxer" % "HikariCP" % "3.4.5",
+      "com.zaxxer" % "HikariCP" % "4.0.1",
       "org.scalacheck" %% "scalacheck" % "1.15.1" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
