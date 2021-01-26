@@ -20,7 +20,7 @@ import com.bones.data.{
 import shapeless.ops.hlist.{Mapped, Prepend}
 import shapeless.{:+:, ::, CNil, Coproduct, HList, HNil, Nat}
 import sttp.tapir.SchemaType.{SArray, SCoproduct, SObjectInfo, SProduct}
-import sttp.tapir.{FieldName, Schema, SchemaType}
+import sttp.tapir.{FieldName, Schema, SchemaType, Validator}
 
 trait BonesToTapirTransformation[ALG[_]] {
 
@@ -57,25 +57,29 @@ trait BonesToTapirTransformation[ALG[_]] {
       case kvp: KvpWrappedCoproduct[String, ALG, a, c] @unchecked => kvpWrappedCoproduct(kvp)
       case kvp: KvpCoNil[String, ALG]                             => kvpCoNil(kvp)
       case kvp: KvpCoproductCollectionHead[String, ALG, a, c, o] =>
-        kvpCoproductCollectionHead[a, c, o](kvp)
+        kvpCoproductCollectionHead[a, c, o](kvp).asInstanceOf[Schema[A]]
       case kvp: KvpSingleValueHead[String, ALG, A, t, tl, ht] @unchecked =>
-        kvpSingleValueHead[A, t, tl, ht](kvp)
+        kvpSingleValueHead[A, t, tl, ht](kvp).asInstanceOf[Schema[A]]
       case kvp: KvpHListCollectionHead[String, ALG, ho, no, h, hl, t, tl] @unchecked =>
-        kvpHListCollectionHead(kvp)
-      case kvp: KvpNil[String, ALG] => kvpNil(kvp)
+        kvpHListCollectionHead(kvp).asInstanceOf[Schema[A]]
+      case kvp: KvpNil[String, ALG] => kvpNil(kvp).asInstanceOf[Schema[A]]
     }
   }
 
   def kvpWrappedHList[A, H <: HList, HL <: Nat](
     wrappedHList: KvpWrappedHList[String, ALG, A, H, HL]
   ): Schema[A] = {
-    fromKvpCollection(wrappedHList.wrappedEncoding)
+    val schemaH = fromKvpCollection(wrappedHList.wrappedEncoding)
+    val validatorA = schemaH.validator.contramap(wrappedHList.fAtoH)
+    schemaH.copy(validator = validatorA)
   }
 
   def kvpWrappedCoproduct[A, C <: Coproduct](
     wrappedCoproduct: KvpWrappedCoproduct[String, ALG, A, C]
   ): Schema[A] = {
-    fromKvpCollection(wrappedCoproduct.wrappedEncoding)
+    val schemaC = fromKvpCollection(wrappedCoproduct.wrappedEncoding)
+    val validatorA = schemaC.validator.contramap(wrappedCoproduct.fAtoC)
+    schemaC.copy(validator = validatorA)
   }
 
   def kvpHListCollectionHead[HO <: HList, NO <: Nat, H <: HList, HL <: Nat, T <: HList, TL <: Nat](
@@ -141,29 +145,36 @@ trait BonesToTapirTransformation[ALG[_]] {
   ): Schema[C] = {
     val head = fromKvpCollection(kvpCoproductCollectionHead.kvpCollection)
     val tail = fromKvpCoproduct(kvpCoproductCollectionHead.kvpTail)
-    val coproductSchemas = head.map(_._2) ::: tail.map(_._2)
-    val schema = Schema(
+    val coproductSchemas = List(head, tail)
+    Schema[C](
       SCoproduct(SObjectInfo(kvpCoproductCollectionHead.typeNameOfA), coproductSchemas, None),
       false,
       None,
       None,
       false)
-    List((FieldName(kvpCoproductCollectionHead.typeNameOfA), schema))
   }
-
-  def combineCoproductSchema(s1: Schema[C], s2: Schema[O]) = ???
 
   def fromKvpCoproduct[C <: Coproduct](value: KvpCoproduct[String, ALG, C]): Schema[C] = {
 
+    def rec[H <: Coproduct, T <: Coproduct](
+      headSchema: Schema[H],
+      recValue: KvpCoproduct[String, ALG, T]): Schema[T] = {
+
+//      recValue match {
+//        case KvpCoNil() => headSchema
+//      }
+
+      ???
+    }
+
     value match {
-      case KvpCoNil() => List.empty
+      case KvpCoNil() => sys.error("Unreachable code")
       case KvpCoproductCollectionHead(kvpCollection, _, kvpTail) => {
         val head = fromKvpCollection(kvpCollection)
         val tail = fromKvpCoproduct(kvpTail)
-        head ::: tail
+        ???
       }
     }
-
   }
 
   def keyDefinitionSchema[A](
@@ -203,7 +214,8 @@ trait BonesToTapirTransformation[ALG[_]] {
         determineValueDefinition(od.valueDefinitionOp).asOption
       case kvp: KvpCollectionValue[String, ALG, A] =>
         val fields = fromKvpCollection(kvp.kvpCollection)
-        val schemaType = SProduct(SObjectInfo(kvp.typeName), fields)
+        val incorrect = Iterable(FieldName("incorrect") -> fields)
+        val schemaType = SProduct(SObjectInfo(kvp.typeName), incorrect)
         Schema(schemaType, false, None, None, false)
     }
   }
