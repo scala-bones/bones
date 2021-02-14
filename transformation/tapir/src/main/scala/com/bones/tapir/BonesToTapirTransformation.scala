@@ -71,7 +71,7 @@ trait BonesToTapirTransformation[ALG[_]] {
   ): Schema[A] = {
     val schemaH = fromKvpCollection(wrappedHList.wrappedEncoding)
     val validatorA = schemaH.validator.contramap(wrappedHList.fAtoH)
-    schemaH.copy(validator = validatorA)
+    schemaH.copy(default = None, validator = validatorA)
   }
 
   def kvpWrappedCoproduct[A, C <: Coproduct](
@@ -79,7 +79,7 @@ trait BonesToTapirTransformation[ALG[_]] {
   ): Schema[A] = {
     val schemaC = fromKvpCollection(wrappedCoproduct.wrappedEncoding)
     val validatorA = schemaC.validator.contramap(wrappedCoproduct.fAtoC)
-    schemaC.copy(validator = validatorA)
+    schemaC.copy(default = None, validator = validatorA)
   }
 
   def kvpHListCollectionHead[HO <: HList, NO <: Nat, H <: HList, HL <: Nat, T <: HList, TL <: Nat](
@@ -151,6 +151,8 @@ trait BonesToTapirTransformation[ALG[_]] {
       false,
       None,
       None,
+      None,
+      None,
       false)
   }
 
@@ -192,7 +194,7 @@ trait BonesToTapirTransformation[ALG[_]] {
       }
       case Right(cov) => {
         val (schemaType, description, example) = encoder.toSchemaType(cov, None, None)
-        Schema(schemaType, false, Some(description), Some(example), false)
+        Schema(schemaType, false, Some(description), None, None, Some(example), false)
       }
     }
   }
@@ -207,6 +209,8 @@ trait BonesToTapirTransformation[ALG[_]] {
           false,
           None,
           None,
+          None,
+          None,
           false)
       case ld: ListData[String, ALG, t] =>
         determineValueDefinition(ld.tDefinition).asArray
@@ -216,7 +220,7 @@ trait BonesToTapirTransformation[ALG[_]] {
         val fields = fromKvpCollection(kvp.kvpCollection)
         val incorrect = Iterable(FieldName("incorrect") -> fields)
         val schemaType = SProduct(SObjectInfo(kvp.typeName), incorrect)
-        Schema(schemaType, false, None, None, false)
+        Schema(schemaType, false, None, None, None, None, false)
     }
   }
 
