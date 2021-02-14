@@ -1,9 +1,9 @@
 package com.bones.http4s
 
 import java.nio.charset.{Charset, StandardCharsets}
-
 import cats.effect.SyncIO
 import cats.implicits._
+import com.bones.circe.values.Interpreter.CirceDefaultValuesByteArrayInterpreter
 import com.bones.circe.values.isoCirceValidatorInterpreter
 import com.bones.circe.{
   CirceValidatorFromByteArray,
@@ -39,23 +39,9 @@ class BaseCrudInterpreterTest extends AnyFunSuite {
   val outputSchema = (("result", int) :: ("tag", string) :: kvpNil).convert[Output]
   val error = (("message", string) :: kvpNil).convert[Error]
 
-  val jsonInterpreter = new Interpreter[String, DefaultValues] {
-    override def generateEncoder[A](
-      kvp: KvpCollection[String, DefaultValues, A]): Encoder[DefaultValues, A, Array[Byte]] =
-      IsoCirceEncoderInterpreter(com.bones.circe.values.defaultEncoders)
-        .generateEncoder(kvp)
-        .map(_.noSpaces.getBytes(StandardCharsets.UTF_8))
-
-    override def generateValidator[A](kvp: KvpCollection[String, DefaultValues, A])
-      : Validator[String, DefaultValues, A, Array[Byte]] = {
-      CirceValidatorFromByteArray()
-        .andThen(isoCirceValidatorInterpreter.generateValidator(kvp))
-    }
-  }
-
   val contentInterpreters =
     ContentInterpreters(
-      Content("application/test", jsonInterpreter),
+      Content("application/test", CirceDefaultValuesByteArrayInterpreter),
       Set.empty[Content[String, DefaultValues, String]])
 
   test("path matches appropriately when there are multiple get endpoints") {

@@ -5,16 +5,13 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentType, ContentTypes}
 import akka.http.scaladsl.server.Directives._
+import com.bones.data.CommonValues
 import com.bones.data.values.DefaultValues
-import com.bones.data.{CommonValues, KvpCollection}
 import com.bones.http.common.Path.longParam
 import com.bones.http.common._
-import com.bones.interpreter.encoder.Encoder
-import com.bones.interpreter.validator.Validator
-import com.bones.sprayjson.SprayValidatorFromByteArray
+import com.bones.sprayjson.values.SprayDefaultValuesByteArrayInterpreter
 import com.bones.syntax._
 
-import java.nio.charset.{Charset, StandardCharsets}
 import scala.concurrent.Future
 import scala.io.StdIn
 object ClassicCrudInterpreterExample extends App {
@@ -25,26 +22,8 @@ object ClassicCrudInterpreterExample extends App {
 
   case class Customer(name: String, age: Int, weight: Option[BigDecimal])
 
-  val charset: Charset = StandardCharsets.UTF_8
-
-  val jsonInterpreter = new Interpreter[String, DefaultValues] {
-    override def generateEncoder[A](
-      kvp: KvpCollection[String, DefaultValues, A]): Encoder[DefaultValues, A, Array[Byte]] =
-      com.bones.sprayjson.values.isoSprayEncoderInterpreter
-        .generateEncoder(kvp)
-        .map(_.compactPrint.getBytes(charset))
-
-    override def generateValidator[A](kvp: KvpCollection[String, DefaultValues, A])
-      : Validator[String, DefaultValues, A, Array[Byte]] = {
-      val validator = com.bones.sprayjson.values.isoSprayValidatorInterpreter
-        .generateValidator(kvp)
-      SprayValidatorFromByteArray(charset)
-        .andThen(validator)
-    }
-  }
-
   val contentTypeEncoders = ContentInterpreters[String, DefaultValues, ContentType](
-    Content(ContentTypes.`application/json`, jsonInterpreter),
+    Content(ContentTypes.`application/json`, SprayDefaultValuesByteArrayInterpreter()),
     Set.empty)
 
   case class Error(errorMessage: String)
