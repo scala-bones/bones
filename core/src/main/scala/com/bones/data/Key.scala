@@ -46,14 +46,14 @@ trait KeyValueDefinitionSugar {
   def kvp[K, ALG[_], A: Manifest](
     key: K,
     valueDefinitionOp: HigherOrderValue[K, ALG, A]): KeyDefinition[K, ALG, A] = {
-    val typeName = manifest[A].runtimeClass.getSimpleName
+    val typeName = manifest[A].runtimeClass.getName.split('$').lastOption.getOrElse("")
     KeyDefinition[K, ALG, A](key, Left(valueDefinitionOp), typeName, None, None)
   }
 
   def kvpCov[K, ALG[_], A: Manifest](
     key: K,
     valueDefinitionOp: ALG[A]): KeyDefinition[K, ALG, A] = {
-    val typeName = manifest[A].runtimeClass.getSimpleName
+    val typeName = manifest[A].runtimeClass.getName.split('$').lastOption.getOrElse("")
     KeyDefinition[K, ALG, A](key, Right(valueDefinitionOp), typeName, None, None)
   }
 
@@ -63,7 +63,7 @@ trait KeyValueDefinitionSugar {
 trait Sugar[K, ALG[_]] {
 
   implicit class WrapKvpValueInCollection[A: Manifest](hm: ALG[A]) { self =>
-    val typeName = manifest[A].runtimeClass.getSimpleName
+    val typeName = manifest[A].runtimeClass.getName.split('$').lastOption.getOrElse("")
 
     def list(validationOps: ValidationOp[List[A]]*): ListData[K, ALG, A] =
       ListData[K, ALG, A](Right(hm), typeName, validationOps.toList)
@@ -74,7 +74,7 @@ trait Sugar[K, ALG[_]] {
 
   implicit class WrapKvpCollectionInCollection[A: Manifest](hm: HigherOrderValue[K, ALG, A]) {
     self =>
-    val typeName = manifest[A].runtimeClass.getSimpleName
+    val typeName = manifest[A].runtimeClass.getName.split('$').lastOption.getOrElse("")
     def list(validationOps: ValidationOp[List[A]]*): ListData[K, ALG, A] =
       ListData[K, ALG, A](Left(hm), typeName, validationOps.toList)
 
@@ -95,7 +95,7 @@ trait Sugar[K, ALG[_]] {
     dataDefinitionOp: ALG[T],
     v: ValidationOp[List[T]]*
   ): ListData[K, ALG, T] = {
-    val typeName = manifest[T].runtimeClass.getSimpleName
+    val typeName = manifest[T].runtimeClass.getName.split('$').lastOption.getOrElse("")
     ListData[K, ALG, T](Right(dataDefinitionOp), typeName, v.toList)
   }
 
@@ -103,7 +103,7 @@ trait Sugar[K, ALG[_]] {
     kvpValue: HigherOrderValue[K, ALG, T],
     v: ValidationOp[List[T]]*
   ): ListData[K, ALG, T] = {
-    val typeName = manifest[T].runtimeClass.getSimpleName
+    val typeName = manifest[T].runtimeClass.getName.split('$').lastOption.getOrElse("")
     ListData[K, ALG, T](Left(kvpValue), typeName, v.toList)
   }
 
@@ -117,7 +117,7 @@ trait Sugar[K, ALG[_]] {
     definitionA: (String, ALG[A]),
     definitionB: ALG[B]
   ): EitherData[K, ALG, A, B] = {
-    val typeNameOfB = manifest[B].runtimeClass.getSimpleName
+    val typeNameOfB = manifest[B].runtimeClass.getName.split('$').lastOption.getOrElse("")
     EitherData(Right(definitionA._2), definitionA._1, Right(definitionB), typeNameOfB)
   }
 
@@ -125,7 +125,7 @@ trait Sugar[K, ALG[_]] {
     definitionA: ALG[A],
     definitionB: (String, ALG[B])
   ): EitherData[K, ALG, A, B] = {
-    val typeNameOfA = manifest[A].runtimeClass.getSimpleName
+    val typeNameOfA = manifest[A].runtimeClass.getName.split('$').lastOption.getOrElse("")
     EitherData(Right(definitionA), typeNameOfA, Right(definitionB._2), definitionB._1)
   }
 
@@ -133,8 +133,8 @@ trait Sugar[K, ALG[_]] {
     definitionA: ALG[A],
     definitionB: ALG[B]
   ): EitherData[K, ALG, A, B] = {
-    val typeNameOfA = manifest[A].runtimeClass.getSimpleName
-    val typeNameOfB = manifest[B].runtimeClass.getSimpleName
+    val typeNameOfA = manifest[A].runtimeClass.getName.split('$').lastOption.getOrElse("")
+    val typeNameOfB = manifest[B].runtimeClass.getName.split('$').lastOption.getOrElse("")
     EitherData(Right(definitionA), typeNameOfA, Right(definitionB), typeNameOfB)
   }
 
@@ -143,8 +143,8 @@ trait Sugar[K, ALG[_]] {
     definitionA: HigherOrderValue[K, ALG, A],
     definitionB: HigherOrderValue[K, ALG, B]
   ): EitherData[K, ALG, A, B] = {
-    val typeNameOfA = manifest[A].runtimeClass.getSimpleName
-    val typeNameOfB = manifest[B].runtimeClass.getSimpleName
+    val typeNameOfA = manifest[A].runtimeClass.getName.split('$').lastOption.getOrElse("")
+    val typeNameOfB = manifest[B].runtimeClass.getName.split('$').lastOption.getOrElse("")
     EitherData(Left(definitionA), typeNameOfA, Left(definitionB), typeNameOfB)
   }
 
@@ -152,8 +152,8 @@ trait Sugar[K, ALG[_]] {
     definitionA: HigherOrderValue[K, ALG, A],
     definitionB: ALG[B]
   ): EitherData[K, ALG, A, B] = {
-    val typeNameOfA = manifest[A].runtimeClass.getSimpleName
-    val typeNameOfB = manifest[B].runtimeClass.getSimpleName
+    val typeNameOfA = manifest[A].runtimeClass.getName.split('$').lastOption.getOrElse("")
+    val typeNameOfB = manifest[B].runtimeClass.getName.split('$').lastOption.getOrElse("")
     EitherData(Left(definitionA), typeNameOfA, Right(definitionB), typeNameOfB)
   }
 
@@ -161,8 +161,8 @@ trait Sugar[K, ALG[_]] {
     definitionA: ALG[A],
     definitionB: HigherOrderValue[K, ALG, B]
   ): EitherData[K, ALG, A, B] = {
-    val typeNameOfA = manifest[A].runtimeClass.getSimpleName
-    val typeNameOfB = manifest[B].runtimeClass.getSimpleName
+    val typeNameOfA = manifest[A].runtimeClass.getName.split('$').lastOption.getOrElse("")
+    val typeNameOfB = manifest[B].runtimeClass.getName.split('$').lastOption.getOrElse("")
     EitherData(Right(definitionA), typeNameOfA, Left(definitionB), typeNameOfB)
   }
 

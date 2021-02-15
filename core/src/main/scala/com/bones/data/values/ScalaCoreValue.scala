@@ -60,7 +60,8 @@ final case class EnumerationData[E <: Enumeration: Manifest, V](
   validations: List[ValidationOp[V]]
 ) extends ScalaCoreValue[V] {
 
-  override val typeName: String = manifest[E].runtimeClass.getSimpleName.dropRight(1)
+  override val typeName: String =
+    manifest[E].runtimeClass.getName.split('$').lastOption.getOrElse("").dropRight(1)
 }
 
 trait BaseScalaCoreInterpreter[OUT] {

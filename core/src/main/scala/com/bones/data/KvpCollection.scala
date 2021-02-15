@@ -159,14 +159,14 @@ sealed trait KvpCoproduct[K, ALG[_], C <: Coproduct] extends KvpCollection[K, AL
 
   def :+:[A: Manifest](
     head: KvpCollection[K, ALG, A]): KvpCoproductCollectionHead[K, ALG, A, C, A :+: C] = {
-    val typeName = manifest[A].runtimeClass.getSimpleName
+    val typeName = manifest[A].runtimeClass.getName.split('$').lastOption.getOrElse("")
     KvpCoproductCollectionHead[K, ALG, A, C, A :+: C](head, typeName, this)
   }
 
   /** Convert a Coproduct into an object with validation on the object. */
   def toSuperclassOf[A: Manifest](validation: ValidationOp[A]*)(
     implicit gen: Generic.Aux[A, C]): KvpWrappedCoproduct[K, ALG, A, C] = {
-    val typeName = manifest[A].runtimeClass.getSimpleName
+    val typeName = manifest[A].runtimeClass.getName.split('$').lastOption.getOrElse("")
     KvpWrappedCoproduct[K, ALG, A, C](self, typeName, gen.from, gen.to, validation.toList)
   }
 
@@ -245,7 +245,7 @@ sealed abstract class KvpHListCollection[K, ALG[_], L <: HList, LL <: Nat]
 
   def convert[A: Manifest](validation: ValidationOp[A]*)(
     implicit gen: Generic.Aux[A, L]): KvpWrappedHList[K, ALG, A, L, LL] = {
-    val typeName = manifest[A].runtimeClass.getSimpleName
+    val typeName = manifest[A].runtimeClass.getName.split('$').lastOption.getOrElse("")
     KvpWrappedHList(this, typeName, gen.from, gen.to, validation.toList)
   }
 
@@ -295,7 +295,7 @@ sealed abstract class KvpHListCollection[K, ALG[_], L <: HList, LL <: Nat]
   ): KvpWrappedHList[K, ALG, A, L, LL] = {
     val f2: L => A = (h: L) => f(tupler.apply(h))
     val g2: A => L = (a: A) => gen.to(g(a)).asInstanceOf[L]
-    val typeName = manifest[A].runtimeClass.getSimpleName
+    val typeName = manifest[A].runtimeClass.getName.split('$').lastOption.getOrElse("")
     KvpWrappedHList(this, typeName, f2, g2, validations.toList)
   }
 
@@ -303,7 +303,7 @@ sealed abstract class KvpHListCollection[K, ALG[_], L <: HList, LL <: Nat]
     f: L => A,
     g: A => L,
     validations: ValidationOp[A]*): KvpWrappedHList[K, ALG, A, L, LL] = {
-    val typeNameOfA = manifest[A].runtimeClass.getSimpleName
+    val typeNameOfA = manifest[A].runtimeClass.getName.split('$').lastOption.getOrElse("")
     KvpWrappedHList(this, typeNameOfA, f, g, validations.toList)
   }
 
@@ -332,13 +332,13 @@ sealed abstract class KvpHListCollection[K, ALG[_], L <: HList, LL <: Nat]
 
   def consKeyDefinition[A: Manifest](v: KeyDefinition[K, ALG, A])(
     implicit isHCons: IsHCons.Aux[A :: L, A, L]): KvpSingleValueHead[K, ALG, A, L, LL, A :: L] = {
-    val typeName = manifest[A].runtimeClass.getSimpleName
+    val typeName = manifest[A].runtimeClass.getName.split('$').lastOption.getOrElse("")
     KvpSingleValueHead(Left(v), typeName, List.empty, this, isHCons)
   }
 
   def consKvpCollection[X: Manifest](kvpCollection: KvpCollection[K, ALG, X])(
     implicit isHCons: IsHCons.Aux[X :: L, X, L]): KvpSingleValueHead[K, ALG, X, L, LL, X :: L] = {
-    val typeName = manifest[X].runtimeClass.getSimpleName
+    val typeName = manifest[X].runtimeClass.getName.split('$').lastOption.getOrElse("")
     KvpSingleValueHead(Right(kvpCollection), typeName, List.empty, this, isHCons)
   }
 
@@ -360,7 +360,7 @@ sealed abstract class KvpHListCollection[K, ALG[_], L <: HList, LL <: Nat]
     */
   def ::[A: Manifest](input: (K, ALG[A]))(
     implicit isHCons: IsHCons.Aux[A :: L, A, L]): KvpSingleValueHead[K, ALG, A, L, LL, A :: L] = {
-    val typeName = manifest[A].runtimeClass.getSimpleName
+    val typeName = manifest[A].runtimeClass.getName.split('$').lastOption.getOrElse("")
     consKeyDefinition(KeyDefinition[K, ALG, A](input._1, Right(input._2), typeName, None, None))(
       manifest[A],
       isHCons)
@@ -375,7 +375,7 @@ sealed abstract class KvpHListCollection[K, ALG[_], L <: HList, LL <: Nat]
     */
   def ::[A: Manifest](input: (K, ALG[A], String, A))(
     implicit isHCons: IsHCons.Aux[A :: L, A, L]): KvpSingleValueHead[K, ALG, A, L, LL, A :: L] = {
-    val typeName = manifest[A].runtimeClass.getSimpleName
+    val typeName = manifest[A].runtimeClass.getName.split('$').lastOption.getOrElse("")
     consKeyDefinition(
       KeyDefinition(input._1, Right(input._2), typeName, Some(input._3), Some(input._4)))(
       manifest[A],
@@ -391,7 +391,7 @@ sealed abstract class KvpHListCollection[K, ALG[_], L <: HList, LL <: Nat]
     */
   def :<:[A: Manifest](input: (K, HigherOrderValue[K, ALG, A]))(
     implicit isHCons: Aux[A :: L, A, L]): KvpSingleValueHead[K, ALG, A, L, LL, A :: L] = {
-    val typeName = manifest[A].runtimeClass.getSimpleName
+    val typeName = manifest[A].runtimeClass.getName.split('$').lastOption.getOrElse("")
     consKeyDefinition(KeyDefinition(input._1, Left(input._2), typeName, None, None))(
       manifest[A],
       isHCons)
@@ -399,7 +399,7 @@ sealed abstract class KvpHListCollection[K, ALG[_], L <: HList, LL <: Nat]
 
   def :<:[A: Manifest](input: (K, HigherOrderValue[K, ALG, A], String, A))(
     implicit isHCons: Aux[A :: L, A, L]): KvpSingleValueHead[K, ALG, A, L, LL, A :: L] = {
-    val typeName = manifest[A].runtimeClass.getSimpleName
+    val typeName = manifest[A].runtimeClass.getName.split('$').lastOption.getOrElse("")
     consKeyDefinition(
       new KeyDefinition(input._1, Left(input._2), typeName, Some(input._3), Some(input._4)))(
       manifest[A],

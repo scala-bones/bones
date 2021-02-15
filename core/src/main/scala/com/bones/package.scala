@@ -21,7 +21,8 @@ package object bones {
   }
 
   abstract class PrimitiveValueManifestTypeName[A: Manifest] extends PrimitiveValue[A] {
-    override val typeName: String = manifest[A].runtimeClass.getSimpleName
+    override val typeName: String =
+      manifest[A].runtimeClass.getName.split('$').lastOption.getOrElse("")
   }
 
 }
