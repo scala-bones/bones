@@ -8,6 +8,7 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s._
 import cats.syntax.all._
 import com.bones.interpreter.values.ExtractionErrorEncoder.ErrorResponse
+import org.http4s.headers.`Content-Type`
 
 object Http4sEndpoints {
 
@@ -16,7 +17,7 @@ object Http4sEndpoints {
     */
   def get[F[_], ALG[_], RES, ID, E, PE](
     expectedPath: String,
-    endpointDef: HttpEndpointDef[ALG, _, RES, String, E, PE],
+    endpointDef: HttpEndpointDef[ALG, _, RES, `Content-Type`, E, PE],
     stringParamToId: String => Either[PE, ID],
     readF: ID => F[Either[E, RES]]
   )(implicit F: Sync[F], H: Http4sDsl[F]): HttpRoutes[F] = {
@@ -25,12 +26,12 @@ object Http4sEndpoints {
     HttpRoutes.of[F] {
       case req @ Method.GET -> Root / path / idParam if expectedPath == path =>
         val (contentType, encoder) =
-          endpointDef.responseSchemaEncoders.encoderForOptionalContent(findContentType(req))
+          endpointDef.responseSchemaEncoders.encoderForOptionalContent(req.contentType)
         stringParamToId(idParam)
           .leftMap(e => {
             val (errContentType, errorEncoder) =
               endpointDef.pathErrorEncoder.encoderForContent(contentType)
-            BadRequest(errorEncoder.encode(e), Header("Content-Type", errContentType))
+            BadRequest(errorEncoder.encode(e), errContentType)
           })
           .map(id => {
             readF(id)
@@ -40,12 +41,12 @@ object Http4sEndpoints {
                     endpointDef.errorResponseSchemaEncoders.encoderForContent(contentType)
                   BadRequest(
                     errEncoder.encode(re),
-                    Header("Content-Type", errContentType)
+                    errContentType
                   )
                 case Right(ro) =>
                   Ok(
                     encoder.encode(ro),
-                    Header("Content-Type", contentType)
+                    contentType
                   )
               })
           })
@@ -63,7 +64,7 @@ object Http4sEndpoints {
     */
   def put[F[_], ALG[_], REQ, RES, ID, E, PE](
     expectedPath: String,
-    endpointDef: HttpEndpointDef[ALG, REQ, RES, String, E, PE],
+    endpointDef: HttpEndpointDef[ALG, REQ, RES, `Content-Type`, E, PE],
     stringParamToId: String => Either[PE, ID],
     updateF: (ID, REQ) => F[Either[E, RES]]
   )(implicit F: Sync[F], H: Http4sDsl[F]): HttpRoutes[F] = {
@@ -72,7 +73,7 @@ object Http4sEndpoints {
     HttpRoutes.of[F] {
       case req @ Method.PUT -> Root / path / idParam if expectedPath == path =>
         endpointDef.requestSchemaValidators
-          .validatorForOptionalContent(findContentType(req))
+          .validatorForOptionalContent(req.contentType)
           .map {
             case (ct, validator) => {
 
@@ -82,11 +83,11 @@ object Http4sEndpoints {
                 }
                 id <- EitherT.fromEither[F] {
                   stringParamToId(idParam).leftMap(e => {
-                    val (errCt, errEncoder) =
+                    val (errContentType, errEncoder) =
                       endpointDef.pathErrorEncoder.encoderForContent(ct)
                     BadRequest(
                       errEncoder.encode(e),
-                      Header("Content-Type", errCt)
+                      errContentType
                     )
                   })
                 }
@@ -95,19 +96,17 @@ object Http4sEndpoints {
                     .validate(body)
                     .left
                     .map(err => {
-                      val (errCt, errEncoder) =
+                      val (errContentType, errEncoder) =
                         endpointDef.errorResponseEncoders.encoderForContent(ct)
-                      BadRequest(
-                        errEncoder.encode(ErrorResponse(err)),
-                        Header("Content-Type", errCt))
+                      BadRequest(errEncoder.encode(ErrorResponse(err)), errContentType)
                     })
                 }
                 out <- EitherT[F, F[Response[F]], RES] {
                   updateF(id, in)
                     .map(_.left.map(ce => {
-                      val (errCt, errEncoder) =
+                      val (errContentType, errEncoder) =
                         endpointDef.errorResponseSchemaEncoders.encoderForContent(ct)
-                      InternalServerError(errEncoder.encode(ce), Header("Content-Type", errCt))
+                      InternalServerError(errEncoder.encode(ce), errContentType)
                     }))
                 }
               } yield {
@@ -115,7 +114,7 @@ object Http4sEndpoints {
                   endpointDef.responseSchemaEncoders.encoderForContent(ct)
                 Ok(
                   resEncoder.encode(out),
-                  Header("Content-Type", resContentType)
+                  resContentType
                 )
               }
               result.value.flatMap(_.merge)
@@ -129,14 +128,14 @@ object Http4sEndpoints {
   /** Create the post endpoint from the Interpreter Group */
   def post[F[_], ALG[_], REQ, RES, ID, E, PE](
     expectedPath: String,
-    endpointDef: HttpEndpointDef[ALG, REQ, RES, String, E, PE],
+    endpointDef: HttpEndpointDef[ALG, REQ, RES, `Content-Type`, E, PE],
     createF: REQ => F[Either[E, RES]]
   )(implicit F: Sync[F], H: Http4sDsl[F]): HttpRoutes[F] = {
     import H._
     HttpRoutes.of[F] {
       case req @ Method.POST -> Root / path if expectedPath == path =>
         endpointDef.requestSchemaValidators
-          .validatorForOptionalContent(findContentType(req))
+          .validatorForOptionalContent(req.contentType)
           .map {
             case (contentType, validator) => {
 
@@ -151,9 +150,7 @@ object Http4sEndpoints {
                     .map(x => {
                       val (errContentType, errEncoder) =
                         endpointDef.errorResponseEncoders.encoderForContent(contentType)
-                      BadRequest(
-                        errEncoder.encode(ErrorResponse(x)),
-                        Header("Content-Type", errContentType))
+                      BadRequest(errEncoder.encode(ErrorResponse(x)), errContentType)
                     })
                 }
                 out <- EitherT[F, F[Response[F]], RES] {
@@ -161,9 +158,7 @@ object Http4sEndpoints {
                     .map(_.left.map(ce => {
                       val (errContentType, errEncoder) =
                         endpointDef.errorResponseSchemaEncoders.encoderForContent(contentType)
-                      InternalServerError(
-                        errEncoder.encode(ce),
-                        Header("Content-Type", errContentType))
+                      InternalServerError(errEncoder.encode(ce), errContentType)
                     }))
                 }
               } yield {
@@ -171,7 +166,7 @@ object Http4sEndpoints {
                   endpointDef.responseSchemaEncoders.encoderForContent(contentType)
                 Ok(
                   resEncoder.encode(out),
-                  Header("Content-Type", resContentType)
+                  resContentType
                 )
               }
               result.value.flatMap(_.merge)
@@ -185,19 +180,19 @@ object Http4sEndpoints {
   /** Create delete routes from interpreter group */
   def delete[F[_], ALG[_], RES, ID, E, PE](
     expectedPath: String,
-    endpointDef: HttpEndpointDef[ALG, _, RES, String, E, PE],
+    endpointDef: HttpEndpointDef[ALG, _, RES, `Content-Type`, E, PE],
     stringParamToId: String => Either[PE, ID],
     deleteF: ID => F[Either[E, RES]]
   )(implicit F: Sync[F], H: Http4sDsl[F]): HttpRoutes[F] = {
     import H._
     HttpRoutes.of[F] {
       case req @ Method.DELETE -> Root / path / idParam if (expectedPath == path) =>
-        val reqContentType = findContentType(req)
+        val reqContentType = req.contentType
         stringParamToId(idParam)
           .leftMap(err => {
             val (errContentType, errEncoder) =
               endpointDef.pathErrorEncoder.encoderForOptionalContent(reqContentType)
-            BadRequest(errEncoder.encode(err), Header("Content-Type", errContentType))
+            BadRequest(errEncoder.encode(err), errContentType)
           })
           .map(id => {
             deleteF(id).flatMap {
@@ -206,12 +201,12 @@ object Http4sEndpoints {
                   endpointDef.responseSchemaEncoders.encoderForOptionalContent(reqContentType)
                 Ok(
                   resEncoder.encode(entity),
-                  Header("Content-Type", resContentType)
+                  resContentType
                 )
               case Left(err) =>
                 val (errContentType, errEncoder) =
                   endpointDef.errorResponseSchemaEncoders.encoderForOptionalContent(reqContentType)
-                InternalServerError(errEncoder.encode(err), Header("Content-Type", errContentType))
+                InternalServerError(errEncoder.encode(err), errContentType)
             }
           })
           .merge
@@ -221,17 +216,17 @@ object Http4sEndpoints {
   /** Create search endpoints form the Interpreter Group */
   def search[F[_], ALG[_], RES, E, PE](
     expectedPath: String,
-    endpointDef: HttpEndpointDef[ALG, _, RES, String, E, PE],
+    endpointDef: HttpEndpointDef[ALG, _, RES, `Content-Type`, E, PE],
     searchF: () => fs2.Stream[F, RES]
   )(implicit F: Sync[F], H: Http4sDsl[F]): HttpRoutes[F] = {
     import H._
     HttpRoutes.of[F] {
       case req @ Method.GET -> Root / path if path == expectedPath =>
         val (contentType, encoder) =
-          endpointDef.responseSchemaEncoders.encoderForOptionalContent(findContentType(req))
+          endpointDef.responseSchemaEncoders.encoderForOptionalContent(req.contentType)
         Ok(
           searchF().map(res => encoder.encode(res)),
-          Header("Content-Type", contentType)
+          contentType
         )
     }
   }

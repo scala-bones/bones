@@ -19,6 +19,7 @@ import com.bones.syntax._
 import fs2.Stream
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
+import org.http4s.headers.`Content-Type`
 import org.http4s.implicits._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.must.Matchers._
@@ -39,10 +40,11 @@ class BaseCrudInterpreterTest extends AnyFunSuite {
   val outputSchema = (("result", int) :: ("tag", string) :: kvpNil).convert[Output]
   val error = (("message", string) :: kvpNil).convert[Error]
 
+  val testMediatType = new MediaType("application", "test")
   val contentInterpreters =
     ContentInterpreters(
-      Content("application/test", CirceDefaultValuesByteArrayInterpreter),
-      Set.empty[Content[String, DefaultValues, String]])
+      Content(`Content-Type`(testMediatType), CirceDefaultValuesByteArrayInterpreter),
+      Set.empty[Content[String, DefaultValues, `Content-Type`]])
 
   test("path matches appropriately when there are multiple get endpoints") {
     val fOne = (id: Int) => SyncIO { Right(Output(id, "one")) }

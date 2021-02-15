@@ -13,6 +13,7 @@ import com.bones.validation.ValidationDefinition.{
   StringValidation => sv
 }
 import org.http4s.HttpRoutes
+import org.http4s.headers.`Content-Type`
 
 object Demo {
 
@@ -46,7 +47,7 @@ object DemoApp extends LocalhostAllIOApp() {
 
   val interpreterConfig = Config.interpreterConfig
   val crudDef =
-    ClassicCrudDef[DefaultValues, Waterfall, Long, String, ErrorResponse, StringToIdError](
+    ClassicCrudDef[DefaultValues, Waterfall, Long, `Content-Type`, ErrorResponse, StringToIdError](
       interpreterConfig,
       "waterfall",
       waterfallSchema,

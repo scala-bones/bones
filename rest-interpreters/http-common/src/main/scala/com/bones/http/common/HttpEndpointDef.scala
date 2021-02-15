@@ -33,6 +33,9 @@ object HttpEndpointDef {
   * @param requestSchema The expected format to receive.
   * @param responseSchema The expected format to return
   * @param errorSchema Type should be the same as what is returned by the service.
+  * @param scvToAlg ExtractionError only uses ScalaCoreValue for encoding, we must be able to
+  *   convert ScalaCoreValue into the main ALG.  Since ALG is a coproduct, the function passed should essentually
+  *   line up ScalaCoreValue in the algebra,such as core => Inl(core)
   * @tparam REQ Request Type
   * @tparam RES Response Type
   * @tparam CT Type of the content type.

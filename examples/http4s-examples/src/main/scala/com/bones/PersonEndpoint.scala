@@ -12,6 +12,7 @@ import com.bones.syntax._
 import com.bones.validation.ValidationDefinition.{IntValidation => iv, StringValidation => sv}
 import com.zaxxer.hikari.HikariDataSource
 import org.http4s.HttpRoutes
+import org.http4s.headers.`Content-Type`
 
 /** Example endpoint.  This creates a complete application which saves a person to a local database including:
   * JSON endpoints, Protobuf Endpoints, 5 CRUD Endpoints (Get, Put, Post, Delete, Search AllCustomAlgebras),
@@ -37,7 +38,7 @@ object PersonEndpoint extends LocalhostAllIOApp {
   val idSchema = (("id", long(lv.positive)) :: kvpNil).encodedHead[Long]()
 
   val crudDef =
-    ClassicCrudDef[DefaultValues, Person, Long, String, ErrorResponse, StringToIdError](
+    ClassicCrudDef[DefaultValues, Person, Long, `Content-Type`, ErrorResponse, StringToIdError](
       interpreterConfig,
       "person",
       personSchema,

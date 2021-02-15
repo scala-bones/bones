@@ -13,7 +13,7 @@ object WithLongId extends WithId[String, DefaultValues] {
     schemaWithId[AllSupported, Long](idDefinition, Schemas.allSupportCaseClass.asValue)
 
 }
-trait WithId[K, ALG[_]] extends Sugar[K, ALG] {
+trait WithId[K, ALG[_]] {
 
   def schemaWithId[A: Manifest, ID: Manifest](
     idDefinition: (String, ALG[ID]),

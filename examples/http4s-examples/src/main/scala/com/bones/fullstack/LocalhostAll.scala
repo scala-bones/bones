@@ -14,8 +14,10 @@ import com.bones.jdbc.select.SelectInterpreter
 import com.bones.jdbc.update.DbUpdate
 import com.bones.jdbc.{DbDelete, DbSearch}
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+
 import javax.sql.DataSource
 import org.http4s.dsl.io._
+import org.http4s.headers.`Content-Type`
 import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.blaze._
@@ -55,7 +57,13 @@ object LocalhostAllIOApp {
     io.map(_.left.map(ErrorResponse))
 
   def serviceRoutesWithCrudMiddleware[A: Manifest, ID: Manifest](
-    classicCrudDef: ClassicCrudDef[DefaultValues, A, ID, String, ErrorResponse, StringToIdError],
+    classicCrudDef: ClassicCrudDef[
+      DefaultValues,
+      A,
+      ID,
+      `Content-Type`,
+      ErrorResponse,
+      StringToIdError],
     dbGet: SelectInterpreter[DefaultValues],
     dbSearch: DbSearch[DefaultValues],
     dbInsert: DbInsert[DefaultValues],

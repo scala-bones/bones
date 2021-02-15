@@ -1,16 +1,15 @@
 package com.bones
 
-import org.http4s.Request
+import org.http4s.headers.`Content-Type`
+import org.http4s.{MediaType, Request}
 import org.http4s.util.CaseInsensitiveString
 
 package object http4s {
 
-  /** Get content type from the Request Headers if it exists */
-  def findContentType[F[_]](req: Request[F]): Option[String] =
-    req.headers
-      .find(header => header.name == CaseInsensitiveString("Content-Type"))
-      .map(_.value)
-
+  val ProtobufContentType: `Content-Type` = `Content-Type`(
+    new MediaType("application", "protobuf", false, true))
+  val BinaryJsonContentType: `Content-Type` = `Content-Type`(
+    new MediaType("application", "ubjson", false, true))
   // TODO: Find a home for this function
   /** Create an endpoint to display the protobuf schema for each endpoint */
 //  def protoBuff(
