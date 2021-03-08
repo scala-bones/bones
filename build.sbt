@@ -69,7 +69,7 @@ lazy val core = (project in file("core"))
       "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test,
-      "org.scalatest" %% "scalatest-mustmatchers" % "3.2.3" % Test
+      "org.scalatest" %% "scalatest-mustmatchers" % "3.2.6" % Test
     ),
     description := "DSL for Data Description using ASTs and interpreters"
   )
@@ -83,7 +83,7 @@ lazy val coreCats = (project in file("core-cats"))
       "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test,
-      "org.scalatest" %% "scalatest-mustmatchers" % "3.2.3" % Test
+      "org.scalatest" %% "scalatest-mustmatchers" % "3.2.6" % Test
     ),
     description := "DSL for Data Description using ASTs and interpreters"
   )
