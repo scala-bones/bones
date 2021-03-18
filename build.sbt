@@ -126,7 +126,7 @@ lazy val swaggerOas3 = (project in file("interchange-format-interpreters/swagger
     )
   )
   .dependsOn(core, testSchemas % "test")
-val tapirVersion = "0.17.12"
+val tapirVersion = "0.17.19"
 lazy val tapirTransformation = (project in file("transformation/tapir"))
   .settings(
     commonSettings,
