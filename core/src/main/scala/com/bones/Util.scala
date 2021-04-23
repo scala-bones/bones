@@ -25,6 +25,13 @@ object Util {
     if (isNegative) str.drop(1).forall(Character.isDigit)
     else str.forall(Character.isDigit)
 
+  def camelToWords(camel: String): String = {
+    camel
+      .split("(?<!(^|[A-Z]))(?=[A-Z])|(?<!^)(?=[A-Z][a-z])")
+      .map(_.toLowerCase.capitalize)
+      .mkString(" ")
+  }
+
   val maxLongLength = 19 // "9223372036854775807".size
   /** Convert to long trying to avoid stack dump for most common cases */
   def stringToLong(str: String): Option[Long] = {

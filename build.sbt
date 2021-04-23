@@ -358,6 +358,18 @@ lazy val http4sClient = (project in file("client-interpreters/http4s-client"))
     )
   )
   .dependsOn(core, jsonCirce, testSchemas % "test")
+lazy val cask = (project in file("rest-interpreters/cask"))
+  .settings(
+    commonSettings,
+    name := "Bones Cask",
+    libraryDependencies ++= Seq(
+      "com.lihaoyi" %% "cask" % "0.7.3",
+      "com.lihaoyi" %% "scalatags" % "0.9.1",
+      "org.scalatest" %% "scalatest" % "3.2.3" % Test
+    )
+  )
+  .dependsOn(core, testSchemas % "test")
+
 lazy val examples = (project in file("examples/http4s-examples"))
   .settings(
     commonSettings,
