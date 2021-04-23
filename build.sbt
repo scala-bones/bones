@@ -65,11 +65,11 @@ lazy val core = (project in file("core"))
     commonSettings,
     name := "Bones",
     libraryDependencies ++= Seq(
-      "com.chuusai" %% "shapeless" % "2.3.3",
+      "com.chuusai" %% "shapeless" % "2.3.4",
       "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test,
-      "org.scalatest" %% "scalatest-mustmatchers" % "3.2.3" % Test
+      "org.scalatest" %% "scalatest-mustmatchers" % "3.2.8" % Test
     ),
     description := "DSL for Data Description using ASTs and interpreters"
   )
@@ -78,12 +78,12 @@ lazy val coreCats = (project in file("core-cats"))
     commonSettings,
     name := "Bones Cats",
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % "2.4.2",
-      "com.chuusai" %% "shapeless" % "2.3.3",
+      "org.typelevel" %% "cats-core" % "2.6.0",
+      "com.chuusai" %% "shapeless" % "2.3.4",
       "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test,
-      "org.scalatest" %% "scalatest-mustmatchers" % "3.2.3" % Test
+      "org.scalatest" %% "scalatest-mustmatchers" % "3.2.8" % Test
     ),
     description := "DSL for Data Description using ASTs and interpreters"
   )
@@ -119,7 +119,7 @@ lazy val swaggerOas3 = (project in file("interchange-format-interpreters/swagger
     commonSettings,
     name := "Bones DataDefinition to OAS3 Interpreter",
     libraryDependencies ++= Seq(
-      "io.swagger.core.v3" % "swagger-core" % "2.1.7",
+      "io.swagger.core.v3" % "swagger-core" % "2.1.9",
       "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
@@ -151,7 +151,7 @@ lazy val tapirCirceSkeleton = (project in file("skeleton/tapir-circe"))
     )
   )
   .dependsOn(tapirTransformation, jsonCirce, testSchemas % "test")
-lazy val doobieVersion = "0.10.0"
+lazy val doobieVersion = "0.13.0"
 // lazy val directEncoders = (project in file("interchange-format-interpreters/direct-encoders"))
 //  .settings(
 //    commonSettings,
@@ -222,8 +222,8 @@ lazy val protobuf = (project in file("interchange-format-interpreters/protobuf")
     commonSettings,
     name := "Bones Protobuf",
     libraryDependencies ++= Seq(
-      "com.google.protobuf" % "protobuf-java" % "3.15.1",
-      "com.google.protobuf" % "protobuf-java-util" % "3.15.1",
+      "com.google.protobuf" % "protobuf-java" % "3.15.8",
+      "com.google.protobuf" % "protobuf-java-util" % "3.15.8",
       "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
@@ -248,7 +248,7 @@ lazy val dbJdbc = (project in file("db-interpreters/jdbc"))
     commonSettings,
     name := "Bones JDBC",
     libraryDependencies ++= Seq(
-      "org.postgresql" % "postgresql" % "42.2.19",
+      "org.postgresql" % "postgresql" % "42.2.20",
       "io.github.scala-bones" %% "scatonic-ideal" % "0.3.0",
       "co.fs2" %% "fs2-core" % "3.0.0",
       "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
@@ -287,7 +287,7 @@ lazy val restHttpCommon = (project in file("rest-interpreters/http-common"))
   )
   .dependsOn(core, swaggerOas3)
 
-lazy val http4sVersion = "0.21.19"
+lazy val http4sVersion = "0.21.22"
 lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
   .settings(
     commonSettings,
@@ -303,7 +303,7 @@ lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
   )
   .dependsOn(core, restHttpCommon, swaggerOas3, jsonCirce % "test->compile" )
 
-val AkkaVersion = "2.6.12"
+val AkkaVersion = "2.6.14"
 val AkkaHttpVersion = "10.2.3"
 lazy val restAkkaHttp = (project in file("rest-interpreters/akka-http-interpreter"))
   .settings(
@@ -330,7 +330,7 @@ lazy val dbSlick = (project in file("db-interpreters/slick"))
       "org.slf4j" % "slf4j-nop" % "1.7.30",
       "org.scala-lang" % "scala-reflect" % "2.13.3",
       "org.scalacheck" %% "scalacheck" % "1.15.2" % Test,
-      "org.scalatest" %% "scalatest" % "3.2.5" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.8" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
   )
@@ -363,7 +363,7 @@ lazy val examples = (project in file("examples/http4s-examples"))
     commonSettings,
     name := "Bones Examples",
     libraryDependencies ++= Seq(
-      "io.swagger.core.v3" % "swagger-jaxrs2" % "2.1.7",
+      "io.swagger.core.v3" % "swagger-jaxrs2" % "2.1.9",
       "io.swagger" % "swagger-parser" % "1.0.54",
       "org.slf4j" % "slf4j-simple" % "1.7.30",
       "com.zaxxer" % "HikariCP" % "4.0.2",
@@ -390,7 +390,7 @@ lazy val protobufIntegrationTest =
       commonSettings,
       name := "Bones JavaPB Integration Test",
       libraryDependencies ++= Seq(
-        "com.google.protobuf" % "protobuf-java" % "3.15.1",
+        "com.google.protobuf" % "protobuf-java" % "3.15.8",
         "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
         "org.scalatest" %% "scalatest" % "3.2.3" % Test,
         "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
