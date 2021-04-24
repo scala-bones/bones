@@ -1,14 +1,14 @@
 package com.bones.slick
 
-import com.bones.data.values.DefaultValues
-import com.bones.data.{KvpHListCollection, KvpNil, KvpWrappedHList}
-import org.scalatest.funspec.AnyFunSpec
-import shapeless._
-import slick.lifted.{AbstractTable, Rep, Tag}
-import com.bones.syntax._
-import shapeless.ops.hlist._
-import slick.jdbc.PostgresProfile.api._
-import slickless._
+//import com.bones.data.values.DefaultValues
+//import com.bones.data.{KvpHListCollection, KvpNil, KvpWrappedHList}
+//import org.scalatest.funspec.AnyFunSpec
+//import shapeless._
+//import slick.lifted.{AbstractTable, Rep, Tag}
+//import com.bones.syntax._
+//import shapeless.ops.hlist._
+//import slick.jdbc.PostgresProfile.api._
+//import slickless._
 
 class SlickTest { // extends AnyFunSpec {
 
