@@ -151,7 +151,7 @@ lazy val tapirCirceSkeleton = (project in file("skeleton/tapir-circe"))
     )
   )
   .dependsOn(tapirTransformation, jsonCirce, testSchemas % "test")
-lazy val doobieVersion = "0.13.0"
+lazy val doobieVersion = "1.0.0-M1"
 // lazy val directEncoders = (project in file("interchange-format-interpreters/direct-encoders"))
 //  .settings(
 //    commonSettings,
@@ -250,7 +250,7 @@ lazy val dbJdbc = (project in file("db-interpreters/jdbc"))
     libraryDependencies ++= Seq(
       "org.postgresql" % "postgresql" % "42.2.20",
       "io.github.scala-bones" %% "scatonic-ideal" % "0.3.0",
-      "co.fs2" %% "fs2-core" % "2.5.0",
+      "co.fs2" %% "fs2-core" % "3.0.0",
       "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
@@ -287,7 +287,7 @@ lazy val restHttpCommon = (project in file("rest-interpreters/http-common"))
   )
   .dependsOn(core, swaggerOas3)
 
-lazy val http4sVersion = "0.21.22"
+lazy val http4sVersion = "1.0.0-M21"
 lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
   .settings(
     commonSettings,
