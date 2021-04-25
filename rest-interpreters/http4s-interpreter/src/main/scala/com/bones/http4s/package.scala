@@ -2,7 +2,6 @@ package com.bones
 
 import org.http4s.headers.`Content-Type`
 import org.http4s.{MediaType, Request}
-import org.http4s.util.CaseInsensitiveString
 
 package object http4s {
 

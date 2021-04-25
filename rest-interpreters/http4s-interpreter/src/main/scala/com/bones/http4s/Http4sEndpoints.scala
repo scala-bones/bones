@@ -1,7 +1,7 @@
 package com.bones.http4s
 
 import cats.data.EitherT
-import cats.effect.Sync
+import cats.effect.{Concurrent, Sync}
 import com.bones.http.common.{HttpEndpointDef, StringToIdError}
 import org.http4s.{Header, HttpRoutes, Method, Response}
 import org.http4s.dsl.Http4sDsl
@@ -20,7 +20,7 @@ object Http4sEndpoints {
     endpointDef: HttpEndpointDef[ALG, _, RES, `Content-Type`, E, PE],
     stringParamToId: String => Either[PE, ID],
     readF: ID => F[Either[E, RES]]
-  )(implicit F: Sync[F], H: Http4sDsl[F]): HttpRoutes[F] = {
+  )(implicit F: Concurrent[F], H: Http4sDsl[F]): HttpRoutes[F] = {
     import H._
     implicit val entityEncoder = implicitly[EntityEncoder[F, Array[Byte]]]
     HttpRoutes.of[F] {
@@ -67,7 +67,7 @@ object Http4sEndpoints {
     endpointDef: HttpEndpointDef[ALG, REQ, RES, `Content-Type`, E, PE],
     stringParamToId: String => Either[PE, ID],
     updateF: (ID, REQ) => F[Either[E, RES]]
-  )(implicit F: Sync[F], H: Http4sDsl[F]): HttpRoutes[F] = {
+  )(implicit F: Concurrent[F], H: Http4sDsl[F]): HttpRoutes[F] = {
     import H._
 
     HttpRoutes.of[F] {
@@ -130,7 +130,7 @@ object Http4sEndpoints {
     expectedPath: String,
     endpointDef: HttpEndpointDef[ALG, REQ, RES, `Content-Type`, E, PE],
     createF: REQ => F[Either[E, RES]]
-  )(implicit F: Sync[F], H: Http4sDsl[F]): HttpRoutes[F] = {
+  )(implicit F: Concurrent[F], H: Http4sDsl[F]): HttpRoutes[F] = {
     import H._
     HttpRoutes.of[F] {
       case req @ Method.POST -> Root / path if expectedPath == path =>
@@ -183,7 +183,7 @@ object Http4sEndpoints {
     endpointDef: HttpEndpointDef[ALG, _, RES, `Content-Type`, E, PE],
     stringParamToId: String => Either[PE, ID],
     deleteF: ID => F[Either[E, RES]]
-  )(implicit F: Sync[F], H: Http4sDsl[F]): HttpRoutes[F] = {
+  )(implicit F: Concurrent[F], H: Http4sDsl[F]): HttpRoutes[F] = {
     import H._
     HttpRoutes.of[F] {
       case req @ Method.DELETE -> Root / path / idParam if (expectedPath == path) =>

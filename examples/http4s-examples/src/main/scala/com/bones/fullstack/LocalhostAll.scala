@@ -48,8 +48,10 @@ object LocalhostAllIOApp {
     val dbSchema =
       com.bones.jdbc.column.defaultDbColumnInterpreter.tableDefinitionCustomAlgebra(schema)
     HttpRoutes.of[IO] {
-      case GET -> Root / "dbSchema" / p if p == path =>
-        Ok(dbSchema, Header("Content-Type", "text/plain"))
+      case GET -> Root / "dbSchema" / p if p == path => {
+//        val h = Header("Content-Type", "text/plain")
+        Ok(dbSchema)
+      }
     }
   }
 

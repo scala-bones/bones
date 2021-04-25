@@ -1,14 +1,14 @@
 package com.bones.http4s
 
 import cats.data.EitherT
-import cats.effect.Sync
-import cats.syntax.all._
+import cats.effect.{Concurrent, Sync}
 import com.bones.http.common.ClassicCrudDef
 import com.bones.interpreter.values.ExtractionErrorEncoder.ErrorResponse
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.`Content-Type`
-
+import cats.implicits._
+import org.http4s.circe._
 object ClassicCrud {
 
   /**
@@ -18,9 +18,10 @@ object ClassicCrud {
     */
   def get[ALG[_], A, ID, E, PE, F[_]](
     classicCrudDef: ClassicCrudDef[ALG, A, ID, `Content-Type`, E, PE],
-    getFunc: ID => F[Either[E, (ID, A)]])(implicit F: Sync[F], H: Http4sDsl[F]): HttpRoutes[F] = {
+    getFunc: ID => F[Either[E, (ID, A)]])(
+    implicit F: Concurrent[F],
+    H: Http4sDsl[F]): HttpRoutes[F] = {
     import H._
-    implicit val entityEncoder = implicitly[EntityEncoder[F, Array[Byte]]]
     HttpRoutes.of[F] {
       case req @ Method.GET -> Root / path / idParam if classicCrudDef.path == path =>
         pathIdOrError(idParam, req.contentType, classicCrudDef)
@@ -46,8 +47,9 @@ object ClassicCrud {
   def put[ALG[_], A, ID, E, PE, F[_]](
     classicCrudDef: ClassicCrudDef[ALG, A, ID, `Content-Type`, E, PE],
     updateFunc: (ID, A) => F[Either[E, ID]]
-  )(implicit F: Sync[F], H: Http4sDsl[F]): HttpRoutes[F] = {
+  )(implicit F: Concurrent[F], H: Http4sDsl[F]): HttpRoutes[F] = {
     import H._
+    implicit val entityEncoder = implicitly[EntityDecoder[F, Array[Byte]]]
 
     HttpRoutes.of[F] {
       case req @ Method.PUT -> Root / path / idParam if classicCrudDef.path == path =>
@@ -95,7 +97,7 @@ object ClassicCrud {
     idParam: String,
     contentType: Option[`Content-Type`],
     classicCrudDef: ClassicCrudDef[ALG, A, ID, `Content-Type`, E, PE])(
-    implicit F: Sync[F],
+    implicit F: Concurrent[F],
     H: Http4sDsl[F]): Either[F[Response[F]], ID] = {
     import H._
     classicCrudDef
@@ -110,7 +112,7 @@ object ClassicCrud {
   def delete[ALG[_], A, ID, E, PE, F[_]](
     classicCrudDef: ClassicCrudDef[ALG, A, ID, `Content-Type`, E, PE],
     deleteFunc: ID => F[Either[E, ID]]
-  )(implicit F: Sync[F], H: Http4sDsl[F]): HttpRoutes[F] = {
+  )(implicit F: Concurrent[F], H: Http4sDsl[F]): HttpRoutes[F] = {
     import H._
     HttpRoutes.of[F] {
       case req @ Method.DELETE -> Root / path / idParam if classicCrudDef.path == path =>
@@ -142,7 +144,7 @@ object ClassicCrud {
 
   def post[ALG[_], A, ID, E, PE, F[_]](
     classicCrudDef: ClassicCrudDef[ALG, A, ID, `Content-Type`, E, PE],
-    createF: A => F[Either[E, ID]])(implicit F: Sync[F], H: Http4sDsl[F]): HttpRoutes[F] = {
+    createF: A => F[Either[E, ID]])(implicit F: Concurrent[F], H: Http4sDsl[F]): HttpRoutes[F] = {
 
     import H._
     HttpRoutes.of[F] {
