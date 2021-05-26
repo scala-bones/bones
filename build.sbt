@@ -166,7 +166,7 @@ lazy val doobieVersion = "1.0.0-M1"
 //    )
 //  )
 //  .dependsOn(core, testSchemas % "test", scalacheck % "test")
-lazy val circeVersion = "0.13.0"
+lazy val circeVersion = "0.14.0"
 lazy val jsonCirce = (project in file("interchange-format-interpreters/circe"))
   .settings(
     commonSettings,
