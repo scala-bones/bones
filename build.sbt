@@ -327,7 +327,7 @@ lazy val dbSlick = (project in file("db-interpreters/slick"))
     libraryDependencies ++= Seq(
       "com.typesafe.slick" %% "slick" % "3.3.3",
       "io.underscore"      %% "slickless" % "0.3.6",
-      "org.slf4j" % "slf4j-nop" % "1.7.30",
+      "org.slf4j" % "slf4j-nop" % "1.7.31",
       "org.scala-lang" % "scala-reflect" % "2.13.5",
       "org.scalacheck" %% "scalacheck" % "1.15.2" % Test,
       "org.scalatest" %% "scalatest" % "3.2.8" % Test,
@@ -365,7 +365,7 @@ lazy val examples = (project in file("examples/http4s-examples"))
     libraryDependencies ++= Seq(
       "io.swagger.core.v3" % "swagger-jaxrs2" % "2.1.9",
       "io.swagger" % "swagger-parser" % "1.0.54",
-      "org.slf4j" % "slf4j-simple" % "1.7.30",
+      "org.slf4j" % "slf4j-simple" % "1.7.31",
       "com.zaxxer" % "HikariCP" % "4.0.3",
       "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
