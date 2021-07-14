@@ -366,7 +366,7 @@ lazy val examples = (project in file("examples/http4s-examples"))
       "io.swagger.core.v3" % "swagger-jaxrs2" % "2.1.9",
       "io.swagger" % "swagger-parser" % "1.0.54",
       "org.slf4j" % "slf4j-simple" % "1.7.30",
-      "com.zaxxer" % "HikariCP" % "4.0.3",
+      "com.zaxxer" % "HikariCP" % "5.0.0",
       "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
