@@ -209,8 +209,8 @@ lazy val json4s = (project in file("interchange-format-interpreters/json4s"))
     commonSettings,
     name := "Bones Json4s",
     libraryDependencies ++= Seq(
-      "org.json4s" %% "json4s-core" % "3.6.11",
-      "org.json4s" %% "json4s-native" % "3.6.11" % Test,
+      "org.json4s" %% "json4s-core" % "4.0.2",
+      "org.json4s" %% "json4s-native" % "4.0.2" % Test,
       "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
