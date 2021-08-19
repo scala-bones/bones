@@ -22,8 +22,7 @@ trait FloatOrdering extends Ordering[Float] {
   override def compare(x: Float, y: Float): Int = java.lang.Float.compare(x, y)
 }
 
-/**
-  * A collection of validation definition natively supported by Bones.
+/** A collection of validation definition natively supported by Bones.
   */
 object ValidationDefinition {
 
@@ -66,7 +65,7 @@ object ValidationDefinition {
 
   case class UniqueValue[T](uniqueKey: Option[String]) extends ValidationOp[T] {
 
-    /** Returns true  */
+    /** Returns true */
     override def isValid: T => Boolean = _ => true
 
     /** If t is not valid, this will return the error message in English. */
@@ -88,14 +87,15 @@ object ValidationDefinition {
 
     val unique: UniqueValue[T] = UniqueValue(None)
 
-    /** If multiple fields contain the same group key, they will be considered in the same unique group. */
+    /** If multiple fields contain the same group key, they will be considered in the same unique
+      * group.
+      */
     def unique(uniqueGroup: String): UniqueValue[T] = UniqueValue[T](Some(uniqueGroup))
   }
 
   case class EnumerationValidation[E <: Enumeration]() extends BaseValidationOp[E]
 
-  /**
-    * A collection of ValidationOp[String] objects.
+  /** A collection of ValidationOp[String] objects.
     */
   object StringValidation extends BaseValidationOp[String] {
 
@@ -139,10 +139,10 @@ object ValidationDefinition {
       override def description: String = s"sentence"
     }
 
-    /**
-      * Defines min as the minimum length the string can be.
+    /** Defines min as the minimum length the string can be.
       *
-      * @param min The minimum length the string can be.
+      * @param min
+      *   The minimum length the string can be.
       */
     case class MinLength(min: Int) extends ValidationOp[String] {
       val isValid: String => Boolean = _.length >= min
@@ -179,8 +179,7 @@ object ValidationDefinition {
       override def description: String = s"lengthO of $length"
     }
 
-    /** A Custom validation for the string type.
-      * Follow the values defined in [[ValidationOp]]
+    /** A Custom validation for the string type. Follow the values defined in [[ValidationOp]]
       */
     case class Custom(f: String => Boolean, defaultErrorF: String => String, description: String)
         extends ValidationOp[String] {
@@ -291,9 +290,8 @@ object ValidationDefinition {
 
   }
 
-  /**
-    * Base trait for any type which has an ordering.  Must be extended with specific type.
-    **/
+  /** Base trait for any type which has an ordering. Must be extended with specific type.
+    */
   trait OrderingValidation[N] extends Ordering[N] {
 
     case class Between(min: N, max: N) extends ValidationOp[N] {
@@ -358,8 +356,9 @@ object ValidationDefinition {
 
   }
 
-  /** If we can define modulo for the type N and we can use ZeroValidations,
-    * then we can calculate multiples of type N */
+  /** If we can define modulo for the type N and we can use ZeroValidations, then we can calculate
+    * multiples of type N
+    */
   trait Modulo[N] extends ZeroValidations[N] {
 
     val modulo: (N, N) => N
@@ -485,8 +484,8 @@ object ValidationDefinition {
       minDate: A,
       formatToString: A => String,
       instantDescription: String,
-      ordering: Ordering[A])
-        extends ValidationOp[A] {
+      ordering: Ordering[A]
+    ) extends ValidationOp[A] {
       override def isValid: A => Boolean = (a: A) => ordering.compare(minDate, a) <= 0
 
       override def defaultError(t: A): String =
@@ -499,8 +498,8 @@ object ValidationDefinition {
       maxDate: A,
       formatToString: A => String,
       instantDescription: String,
-      ordering: Ordering[A])
-        extends ValidationOp[A] {
+      ordering: Ordering[A]
+    ) extends ValidationOp[A] {
       override def isValid: A => Boolean = a => ordering.compare(a, maxDate) <= 0
 
       override def defaultError(t: A): String =

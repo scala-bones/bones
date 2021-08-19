@@ -10,9 +10,7 @@ import io.swagger.v3.oas.models.responses.{ApiResponse, ApiResponses}
 //import scala.jdk.CollectionConverters._ //because scala 2.12 cross compile
 import scala.collection.JavaConverters._
 
-/**
-  * Responsible for creating a full CRUD Swagger definition including paths and data.
-  *
+/** Responsible for creating a full CRUD Swagger definition including paths and data.
   */
 object CrudOasInterpreter {
 
@@ -156,8 +154,8 @@ object CrudOasInterpreter {
     val outputComponentSchema =
       swaggerInterpreter.generateSchemas(outputSchemaWithName._1)(outputEntityName)
 
-    outputComponentSchema.foreach {
-      case (name, schema) => upsertComponent(openAPI, name, schema)
+    outputComponentSchema.foreach { case (name, schema) =>
+      upsertComponent(openAPI, name, schema)
     }
 
     val apiResponse = new ApiResponse()

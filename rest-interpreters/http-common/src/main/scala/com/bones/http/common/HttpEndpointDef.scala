@@ -8,9 +8,7 @@ import shapeless.Inl
 
 object HttpEndpointDef {
 
-  /**
-    * Uses DefaultValues as the Algebra.
-    * Uses [[StringToIdError]] as the path error.
+  /** Uses DefaultValues as the Algebra. Uses [[StringToIdError]] as the path error.
     */
   def defaultValues[REQ: Manifest, RES: Manifest, CT, E](
     contentInterpreters: ContentInterpreters[String, DefaultValues, CT],
@@ -24,23 +22,32 @@ object HttpEndpointDef {
       responseSchema,
       errorSchema,
       StringToIdError.stringToIdErrorSchema,
-      core => Inl(core))
+      core => Inl(core)
+    )
 }
 
-/**
-  *
-  * @param contentInterpreters Set of interpreters for Content-Type such as JSON or Protobuf.
-  * @param requestSchema The expected format to receive.
-  * @param responseSchema The expected format to return
-  * @param errorSchema Type should be the same as what is returned by the service.
-  * @param scvToAlg ExtractionError only uses ScalaCoreValue for encoding, we must be able to
-  *   convert ScalaCoreValue into the main ALG.  Since ALG is a coproduct, the function passed should essentually
-  *   line up ScalaCoreValue in the algebra,such as core => Inl(core)
-  * @tparam REQ Request Type
-  * @tparam RES Response Type
-  * @tparam CT Type of the content type.
-  * @tparam E Error returned from processing.
-  * @tparam PE Path Error.
+/** @param contentInterpreters
+  *   Set of interpreters for Content-Type such as JSON or Protobuf.
+  * @param requestSchema
+  *   The expected format to receive.
+  * @param responseSchema
+  *   The expected format to return
+  * @param errorSchema
+  *   Type should be the same as what is returned by the service.
+  * @param scvToAlg
+  *   ExtractionError only uses ScalaCoreValue for encoding, we must be able to convert
+  *   ScalaCoreValue into the main ALG. Since ALG is a coproduct, the function passed should
+  *   essentually line up ScalaCoreValue in the algebra,such as core => Inl(core)
+  * @tparam REQ
+  *   Request Type
+  * @tparam RES
+  *   Response Type
+  * @tparam CT
+  *   Type of the content type.
+  * @tparam E
+  *   Error returned from processing.
+  * @tparam PE
+  *   Path Error.
   * @return
   */
 case class HttpEndpointDef[ALG[_], REQ: Manifest, RES: Manifest, CT, E, PE](
@@ -63,7 +70,8 @@ case class HttpEndpointDef[ALG[_], REQ: Manifest, RES: Manifest, CT, E, PE](
 
   val errorResponseEncoders: ConvertedEncoder[ALG, ErrorResponse, CT] =
     contentInterpreters.generateEncoders[ErrorResponse](
-      ExtractionErrorEncoder.errorResponseSchema.algMapKvpCollection[ALG](scvToAlg))
+      ExtractionErrorEncoder.errorResponseSchema.algMapKvpCollection[ALG](scvToAlg)
+    )
 
   val pathErrorEncoder: ConvertedEncoder[ALG, PE, CT] =
     contentInterpreters.generateEncoders[PE](pathErrorSchema)

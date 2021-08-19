@@ -12,9 +12,8 @@ import com.bones.interpreter.validator.{
 }
 import io.circe.Json
 
-/**
-  * Module responsible for converting circe JSON input into values with validation checks.
-  * See [KvpInterchangeFormatValidatorInterpreter.validatorFromSchema] for the entry point.
+/** Module responsible for converting circe JSON input into values with validation checks. See
+  * [KvpInterchangeFormatValidatorInterpreter.validatorFromSchema] for the entry point.
   */
 trait CirceValidatorInterpreter[ALG[_]]
     extends KvpInterchangeFormatValidatorInterpreter[ALG, Json] {
@@ -27,7 +26,8 @@ trait CirceValidatorInterpreter[ALG[_]]
   override def invalidValue[T](
     json: Json,
     typeName: String,
-    path: List[String]): Left[List[WrongTypeError[String, T]], Nothing] = {
+    path: List[String]
+  ): Left[List[WrongTypeError[String, T]], Nothing] = {
     val invalid = json.fold(
       classOf[Nothing],
       _ => classOf[Boolean],
@@ -43,7 +43,8 @@ trait CirceValidatorInterpreter[ALG[_]]
     in: Json,
     kv: KeyDefinition[String, ALG, A],
     headInterpreter: OptionalInputValidator[String, ALG, A, Json],
-    path: List[String]): Either[List[ExtractionError[String]], A] =
+    path: List[String]
+  ): Either[List[ExtractionError[String]], A] =
     in.asObject match {
       case Some(jsonObj) =>
         val fields = jsonObj.toList

@@ -21,13 +21,15 @@ class SchemaWithIdTest extends AnyFunSuite with Checkers with Matchers {
   val jsonToCc =
     isoSprayValidatorInterpreter.generateByteArrayValidator[(Long, AllSupported)](
       WithLongId.allSupportedWithId,
-      StandardCharsets.UTF_8)
+      StandardCharsets.UTF_8
+    )
   val ccToJson =
     isoSprayEncoderInterpreter.generateEncoder(WithLongId.allSupportedWithId)
 
   implicit val arb = Arbitrary(
     defaultValuesScalacheck
-      .valueDefinition(WithLongId.allSupportedWithId.asValue))
+      .valueDefinition(WithLongId.allSupportedWithId.asValue)
+  )
   val utf8 = Charset.forName("UTF8")
 
   test("scalacheck allSupport types - marshall then unmarshall") {
@@ -38,7 +40,8 @@ class SchemaWithIdTest extends AnyFunSuite with Checkers with Matchers {
       newCc match {
         case Left(x) =>
           fail(
-            s"expected success, received $x for JSON string ${new String(jsonString, utf8).toJson}")
+            s"expected success, received $x for JSON string ${new String(jsonString, utf8).toJson}"
+          )
         case Right(newCc2) =>
           newCc2._2.fancyEquals(cc._2)
           newCc2._1 == cc._1

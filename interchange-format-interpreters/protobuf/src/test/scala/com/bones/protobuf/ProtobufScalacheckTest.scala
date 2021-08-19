@@ -27,13 +27,14 @@ class ProtobufScalacheckTest extends AnyFunSuite with Checkers {
 
 //      println(javax.xml.bind.DatatypeConverter.printHexBinary(bytes))
 
-      val newCc = try {
-        decode(bytes)
-      } catch {
-        case ex: Exception =>
-          ex.printStackTrace()
-          throw ex
-      }
+      val newCc =
+        try {
+          decode(bytes)
+        } catch {
+          case ex: Exception =>
+            ex.printStackTrace()
+            throw ex
+        }
 
       newCc match {
         case Left(x) =>

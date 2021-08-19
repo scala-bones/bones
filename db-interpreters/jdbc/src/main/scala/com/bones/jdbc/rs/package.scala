@@ -40,7 +40,8 @@ package object rs {
           ResultSetValue
             .merge[JavaUtilValue, CNilF](
               DefaultJavaUtilResultSet,
-              ResultSetValue.CNilResultSetValue)
+              ResultSetValue.CNilResultSetValue
+            )
         )
       )
     )
@@ -62,7 +63,8 @@ package object rs {
     f: => A,
     typeName: String,
     fieldName: String,
-    path: Path[String]): Either[ExtractionErrors[String], CanBeOmitted[String, A]] =
+    path: Path[String]
+  ): Either[ExtractionErrors[String], CanBeOmitted[String, A]] =
     try {
       val result = f
       if (result == null) {

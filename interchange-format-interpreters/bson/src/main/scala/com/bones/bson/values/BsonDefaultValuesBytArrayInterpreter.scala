@@ -12,18 +12,19 @@ import java.nio.charset.{Charset, StandardCharsets}
 case class BsonDefaultValuesBytArrayInterpreter(charset: Charset = StandardCharsets.UTF_8)
     extends Interpreter[String, DefaultValues] {
   override def generateEncoder[A](
-    kvp: KvpCollection[String, DefaultValues, A]): Encoder[DefaultValues, A, Array[Byte]] =
+    kvp: KvpCollection[String, DefaultValues, A]
+  ): Encoder[DefaultValues, A, Array[Byte]] =
     defaultBsonEncoderInterpreter
       .generateEncoder(kvp)
       .map(bsonResultToBytes)
 
-  override def generateValidator[A](kvp: KvpCollection[String, DefaultValues, A])
-    : Validator[String, DefaultValues, A, Array[Byte]] = {
+  override def generateValidator[A](
+    kvp: KvpCollection[String, DefaultValues, A]
+  ): Validator[String, DefaultValues, A, Array[Byte]] = {
     val f = defaultBsonValidatorInterpreter
       .generateValidator(kvp)
-    (bytes: Array[Byte], path: List[String]) =>
-      {
-        fromByteArray(bytes).flatMap(bson => f.validateWithPath(bson, path))
-      }
+    (bytes: Array[Byte], path: List[String]) => {
+      fromByteArray(bytes).flatMap(bson => f.validateWithPath(bson, path))
+    }
   }
 }

@@ -41,9 +41,7 @@ object JavaTimeValidation {
     override def compare(x: LocalDateTime, y: LocalDateTime): Int = x.compareTo(y)
   }
 
-  object LocalTimeValidation
-      extends BaseDateValidation[LocalTime]
-      with Ordering[LocalTime] {
+  object LocalTimeValidation extends BaseDateValidation[LocalTime] with Ordering[LocalTime] {
     override def defaultFormatToString(f: LocalTime): String =
       DateTimeFormatter.ISO_LOCAL_TIME.format(f)
 
@@ -53,9 +51,7 @@ object JavaTimeValidation {
     override def compare(x: LocalTime, y: LocalTime): Int = x.compareTo(y)
   }
 
-  object LocalDateValidation
-      extends BaseDateValidation[LocalDate]
-      with Ordering[LocalDate] {
+  object LocalDateValidation extends BaseDateValidation[LocalDate] with Ordering[LocalDate] {
 
     override def defaultFormatToString(f: LocalDate): String =
       DateTimeFormatter.ISO_LOCAL_DATE.format(f)

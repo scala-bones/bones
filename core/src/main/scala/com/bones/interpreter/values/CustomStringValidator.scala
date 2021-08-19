@@ -14,7 +14,8 @@ trait CustomStringValidator[IN] extends InterchangeFormatValidatorValue[CustomSt
   val baseValidator: InterchangeFormatPrimitiveValidator[IN]
 
   override def createValidator[A](
-    alg: CustomStringValue[A]): OptionalInputValidator[String, CustomStringValue, A, IN] = {
+    alg: CustomStringValue[A]
+  ): OptionalInputValidator[String, CustomStringValue, A, IN] = {
     (in: Option[IN], path: List[String]) =>
       {
         in match {

@@ -29,7 +29,9 @@ trait BaseJavaUtilInterpreter[OUT] {
 
 trait JavaUtilSugar extends JavaUtilValidation {
 
-  /** Indicates that the data tied to this key is a UUID type that must pass the specified validations. */
+  /** Indicates that the data tied to this key is a UUID type that must pass the specified
+    * validations.
+    */
   def uuid(v: ValidationOp[UUID]*): UuidData = UuidData(v.toList)
 
   /** Alias for UUID without validations */
@@ -40,7 +42,9 @@ trait JavaUtilSugar extends JavaUtilValidation {
 trait JavaUtilInjectedSugar[ALG[_] <: Coproduct] extends JavaUtilValidation {
   def javaUtilInjected[A]: Inject[ALG[A], JavaUtilValue[A]]
 
-  /** Indicates that the data tied to this key is a UUID type that must pass the specified validations. */
+  /** Indicates that the data tied to this key is a UUID type that must pass the specified
+    * validations.
+    */
   def uuid(v: ValidationOp[UUID]*): ALG[UUID] =
     javaUtilInjected(UuidData(v.toList))
 

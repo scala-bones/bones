@@ -14,9 +14,10 @@ sealed abstract class JavaTimeValue[A: Manifest] extends PrimitiveValueManifestT
   val validations: List[ValidationOp[A]]
 }
 
-/** Note that Deserializing DateTimeException, although support throughout, will contain a misleading stack trace.  This is because
-  * it is impossible to create a new DateTimeException without suppressing the stack trace.  This class is type
-  * is mainly here for Serialization. */
+/** Note that Deserializing DateTimeException, although support throughout, will contain a
+  * misleading stack trace. This is because it is impossible to create a new DateTimeException
+  * without suppressing the stack trace. This class is type is mainly here for Serialization.
+  */
 final case class DateTimeExceptionData(validations: List[ValidationOp[DateTimeException]])
     extends JavaTimeValue[DateTimeException]
 
@@ -128,8 +129,9 @@ trait BaseJavaTimeInterpreter[OUT] {
 
 }
 
-/** Convenient methods for creating GADTs when this is the only data type being used.  If using multiple custom
-  * algebras, use [[JavaTimeValueSugarInjected]] to inject into a Coproduct context. */
+/** Convenient methods for creating GADTs when this is the only data type being used. If using
+  * multiple custom algebras, use [[JavaTimeValueSugarInjected]] to inject into a Coproduct context.
+  */
 trait JavaTimeValueSugar extends JavaTimeValidationSugar {
   def dateTimeException(validations: ValidationOp[DateTimeException]*): DateTimeExceptionData =
     DateTimeExceptionData(validations.toList)
@@ -147,7 +149,9 @@ trait JavaTimeValueSugar extends JavaTimeValidationSugar {
   def instant(validations: ValidationOp[Instant]*): InstantData = InstantData(validations.toList)
   def instant: InstantData = instant()
 
-  /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
+  /** Indicates that the data tied to this key is a Date type with the specified format that must
+    * pass the specified validations.
+    */
   def localDateTime(v: ValidationOp[LocalDateTime]*): LocalDateTimeData =
     LocalDateTimeData(v.toList)
 
@@ -221,7 +225,9 @@ trait JavaTimeValueSugarInjected[ALG[_] <: Coproduct] extends JavaTimeValidation
     javaTimeInject(InstantData(validations.toList))
   def instant: ALG[Instant] = instant()
 
-  /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
+  /** Indicates that the data tied to this key is a Date type with the specified format that must
+    * pass the specified validations.
+    */
   def localDateTime(v: ValidationOp[LocalDateTime]*): ALG[LocalDateTime] =
     javaTimeInject(LocalDateTimeData(v.toList))
 

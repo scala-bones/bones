@@ -11,14 +11,17 @@ trait InterchangeFormatDeltaValidatorValue[ALG[_], IN] {
 
 object InterchangeFormatDeltaValidatorValue {
 
-  /** using kind projector allows us to create a new interpreter by merging two existing interpreters */
+  /** using kind projector allows us to create a new interpreter by merging two existing
+    * interpreters
+    */
   def merge[L[_], R[_] <: Coproduct, IN](
     li: InterchangeFormatDeltaValidatorValue[L, IN],
     ri: InterchangeFormatDeltaValidatorValue[R, IN]
   ): InterchangeFormatDeltaValidatorValue[Lambda[A => L[A] :+: R[A]], IN] =
     new InterchangeFormatDeltaValidatorValue[Lambda[A => L[A] :+: R[A]], IN] {
       override def createDeltaValidator[AA](
-        lr: L[AA] :+: R[AA]): DeltaValueValidator[String, Lambda[A => L[A] :+: R[A]], AA, IN] =
+        lr: L[AA] :+: R[AA]
+      ): DeltaValueValidator[String, Lambda[A => L[A] :+: R[A]], AA, IN] =
         lr match {
           case Inl(l) =>
             new DeltaValueValidator[String, Lambda[A => L[A] :+: R[A]], AA, IN] {
@@ -27,7 +30,8 @@ object InterchangeFormatDeltaValidatorValue {
               override def extract(
                 in: IN,
                 key: String,
-                path: List[String]): Either[ExtractionErrors[String], CanBeOmitted[String, AA]] =
+                path: List[String]
+              ): Either[ExtractionErrors[String], CanBeOmitted[String, AA]] =
                 validator.extract(in, key, path)
             }
           case Inr(r) =>
@@ -37,7 +41,8 @@ object InterchangeFormatDeltaValidatorValue {
               override def extract(
                 in: IN,
                 key: String,
-                path: List[String]): Either[ExtractionErrors[String], CanBeOmitted[String, AA]] =
+                path: List[String]
+              ): Either[ExtractionErrors[String], CanBeOmitted[String, AA]] =
                 validator.extract(in, key, path)
             }
         }
@@ -45,8 +50,9 @@ object InterchangeFormatDeltaValidatorValue {
 
   implicit class InterpreterOps[ALG[_], IN](val base: InterchangeFormatDeltaValidatorValue[ALG, IN])
       extends AnyVal {
-    def ++[R[_] <: Coproduct](r: InterchangeFormatDeltaValidatorValue[R, IN])
-      : InterchangeFormatDeltaValidatorValue[Lambda[A => ALG[A] :+: R[A]], IN] =
+    def ++[R[_] <: Coproduct](
+      r: InterchangeFormatDeltaValidatorValue[R, IN]
+    ): InterchangeFormatDeltaValidatorValue[Lambda[A => ALG[A] :+: R[A]], IN] =
       merge(base, r)
 
   }

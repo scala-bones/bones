@@ -18,14 +18,18 @@ trait SelectInterpreter[ALG[_]] {
   def jdbcStatementInterpreter: JdbcStatementInterpreter[ALG]
   def resultSetInterpreter: ResultSetInterpreter[ALG]
 
-  /**
-    * Creates a function which loads an entity by ID.
-    * This function expects a connection, managed externally.
-    * @param schema The description of the object being loaded.
-    * @param idSchema The description of the table's primary key column.
-    * @tparam A The resulting type.
-    * @tparam ID The type of the ID (eg, Int, Long, UUID)
-    * @return A Curried Function which when given a Connection and an ID, will fetch the data from the DB.
+  /** Creates a function which loads an entity by ID. This function expects a connection, managed
+    * externally.
+    * @param schema
+    *   The description of the object being loaded.
+    * @param idSchema
+    *   The description of the table's primary key column.
+    * @tparam A
+    *   The resulting type.
+    * @tparam ID
+    *   The type of the ID (eg, Int, Long, UUID)
+    * @return
+    *   A Curried Function which when given a Connection and an ID, will fetch the data from the DB.
     */
   def selectEntity[A, ID](
     schema: KvpCollection[String, ALG, A],
@@ -47,25 +51,24 @@ trait SelectInterpreter[ALG[_]] {
     val sql =
       s"select ${fields.mkString(",")} from $tableName where id = ?"
 
-    id =>
-      { con =>
-        {
-          try {
-            withStatement(con.prepareCall(sql))(statement => {
-              idMeta.predicates(id).foreach(_.apply(statement))
-              val rs = statement.executeQuery()
-              if (rs.next()) {
-                val x = resultSetF(rs).map((id, _))
-                x
-              } else {
-                Left(List(NotFound(id, entityName, List.empty)))
-              }
-            })
-          } catch {
-            case NonFatal(th) =>
-              Left(List(SystemError(th, Some(s"SQL Statement: $sql"))))
-          }
+    id => { con =>
+      {
+        try {
+          withStatement(con.prepareCall(sql))(statement => {
+            idMeta.predicates(id).foreach(_.apply(statement))
+            val rs = statement.executeQuery()
+            if (rs.next()) {
+              val x = resultSetF(rs).map((id, _))
+              x
+            } else {
+              Left(List(NotFound(id, entityName, List.empty)))
+            }
+          })
+        } catch {
+          case NonFatal(th) =>
+            Left(List(SystemError(th, Some(s"SQL Statement: $sql"))))
         }
       }
+    }
   }
 }

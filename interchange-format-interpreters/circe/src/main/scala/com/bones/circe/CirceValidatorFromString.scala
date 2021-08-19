@@ -15,5 +15,6 @@ object CirceValidatorFromString extends Validator[String, AnyAlg, Json, String] 
 
   override def validateWithPath(
     in: String,
-    path: List[String]): Either[ExtractionErrors[String], Json] = fromString(in)
+    path: List[String]
+  ): Either[ExtractionErrors[String], Json] = fromString(in)
 }

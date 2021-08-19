@@ -6,9 +6,11 @@ import org.http4s.{MediaType, Request}
 package object http4s {
 
   val ProtobufContentType: `Content-Type` = `Content-Type`(
-    new MediaType("application", "protobuf", false, true))
+    new MediaType("application", "protobuf", false, true)
+  )
   val BinaryJsonContentType: `Content-Type` = `Content-Type`(
-    new MediaType("application", "ubjson", false, true))
+    new MediaType("application", "ubjson", false, true)
+  )
   // TODO: Find a home for this function
   /** Create an endpoint to display the protobuf schema for each endpoint */
 //  def protoBuff(

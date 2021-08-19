@@ -44,15 +44,18 @@ trait FieldNames[ALG[_]] extends KvpCollectionMatch[String, ALG, List[String]] {
     H <: HList,
     HL <: Nat,
     T <: HList,
-    TL <: Nat](kvp: KvpHListCollectionHead[String, ALG, HO, NO, H, HL, T, TL]): List[String] =
+    TL <: Nat
+  ](kvp: KvpHListCollectionHead[String, ALG, HO, NO, H, HL, T, TL]): List[String] =
     fromKvpCollection(kvp.head) ::: fromKvpCollection(kvp.tail)
 
   override def kvpWrappedHList[A, H <: HList, HL <: Nat](
-    wrappedHList: KvpWrappedHList[String, ALG, A, H, HL]): List[String] =
+    wrappedHList: KvpWrappedHList[String, ALG, A, H, HL]
+  ): List[String] =
     fromKvpCollection(wrappedHList.wrappedEncoding)
 
   override def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
-    kvp: KvpSingleValueHead[String, ALG, H, T, TL, O]): List[String] = {
+    kvp: KvpSingleValueHead[String, ALG, H, T, TL, O]
+  ): List[String] = {
     kvp.head match {
       case Left(keyDef)         => determineValueDefinition(keyDef.dataDefinition)
       case Right(kvpCollection) => fromKvpCollection(kvpCollection)
@@ -69,11 +72,13 @@ trait FieldNames[ALG[_]] extends KvpCollectionMatch[String, ALG, List[String]] {
   }
 
   override def kvpWrappedCoproduct[A, C <: Coproduct](
-    wrappedCoproduct: KvpWrappedCoproduct[String, ALG, A, C]): List[String] =
+    wrappedCoproduct: KvpWrappedCoproduct[String, ALG, A, C]
+  ): List[String] =
     "dtype" :: fromKvpCollection(wrappedCoproduct.wrappedEncoding)
 
   def determineValueDefinition[A](
-    valueDefinitionOp: Either[HigherOrderValue[String, ALG, A], AnyAlg[A]]): List[String] =
+    valueDefinitionOp: Either[HigherOrderValue[String, ALG, A], AnyAlg[A]]
+  ): List[String] =
     valueDefinitionOp match {
       case Left(kvp) => valueDefinition(kvp)
       case Right(_)  => List.empty

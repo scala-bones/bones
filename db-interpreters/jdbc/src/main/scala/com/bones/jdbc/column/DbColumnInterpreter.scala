@@ -26,13 +26,16 @@ trait DbColumnInterpreter[ALG[_]] extends KvpCollectionMatch[String, ALG, List[C
   override def kvpNil(kvp: KvpNil[String, ALG]): List[Column] = List.empty
 
   override def kvpWrappedHList[A, H <: HList, HL <: Nat](
-    wrappedHList: KvpWrappedHList[String, ALG, A, H, HL]): List[Column] =
+    wrappedHList: KvpWrappedHList[String, ALG, A, H, HL]
+  ): List[Column] =
     fromKvpCollection(wrappedHList.wrappedEncoding)
 
   override def kvpWrappedCoproduct[A, C <: Coproduct](
-    wrappedCoproduct: KvpWrappedCoproduct[String, ALG, A, C]): List[Column] =
+    wrappedCoproduct: KvpWrappedCoproduct[String, ALG, A, C]
+  ): List[Column] =
     Column("dtype", "Used to specify the specific coproduct type", true) :: fromKvpCollection(
-      wrappedCoproduct.wrappedEncoding)
+      wrappedCoproduct.wrappedEncoding
+    )
 
   override def kvpHListCollectionHead[
     HO <: HList,
@@ -40,14 +43,16 @@ trait DbColumnInterpreter[ALG[_]] extends KvpCollectionMatch[String, ALG, List[C
     H <: HList,
     HL <: Nat,
     T <: HList,
-    TL <: Nat](kvp: KvpHListCollectionHead[String, ALG, HO, NO, H, HL, T, TL]): List[Column] = {
+    TL <: Nat
+  ](kvp: KvpHListCollectionHead[String, ALG, HO, NO, H, HL, T, TL]): List[Column] = {
     val head = fromKvpCollection(kvp.head)
     val tail = fromKvpCollection(kvp.tail)
     head ::: tail
   }
 
   override def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
-    kvp: KvpSingleValueHead[String, ALG, H, T, TL, O]): List[Column] = {
+    kvp: KvpSingleValueHead[String, ALG, H, T, TL, O]
+  ): List[Column] = {
     kvp.head match {
       case Left(keyDef)  => determineValueDefinition(keyDef.dataDefinition)(keyDef.key)
       case Right(kvpCol) => fromKvpCollection(kvpCol)
@@ -71,14 +76,13 @@ trait DbColumnInterpreter[ALG[_]] extends KvpCollectionMatch[String, ALG, List[C
             .map(_.copy(nullable = true))
       case ld: ListData[String, ALG, t] @unchecked => ???
       case ed: EitherData[String, ALG, a, b] @unchecked =>
-        name =>
-          {
-            determineValueDefinition(ed.definitionA)(name) ::: determineValueDefinition(
-              ed.definitionB)(name)
-          }
+        name => {
+          determineValueDefinition(ed.definitionA)(name) ::: determineValueDefinition(
+            ed.definitionB
+          )(name)
+        }
       case kvp: KvpCollectionValue[String, ALG, a] @unchecked =>
-        _ =>
-          fromKvpCollection(kvp.kvpCollection)
+        _ => fromKvpCollection(kvp.kvpCollection)
     }
 
   override def kvpCoproduct[C <: Coproduct](value: KvpCoproduct[String, ALG, C]): List[Column] = {

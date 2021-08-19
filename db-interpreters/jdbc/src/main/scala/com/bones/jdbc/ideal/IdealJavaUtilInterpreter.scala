@@ -7,10 +7,12 @@ import com.bones.si.ideal.{IdealDataType, StringType}
 object IdealJavaUtilInterpreter
     extends IdealValue[JavaUtilValue]
     with BaseJavaUtilInterpreter[IdealDataType] {
-  override def columns[A](alg: JavaUtilValue[A])
-    : (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
-      TableCollection,
-      List[UniqueGroup]) = {
+  override def columns[A](
+    alg: JavaUtilValue[A]
+  ): (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
+    TableCollection,
+    List[UniqueGroup]
+  ) = {
     val uniqueConstraint = findUniqueConstraint(alg.validations)
     defaultColumns(matchJavaUtilValue(alg), uniqueConstraint)
   }

@@ -49,7 +49,9 @@ object Json4sPrimitiveEncoder extends InterchangeFormatPrimitiveEncoder[JValue] 
     }
   }
 
-  /** Assumes prefix and postfix are JValue objects and combines the key/value pairs into a single object. */
+  /** Assumes prefix and postfix are JValue objects and combines the key/value pairs into a single
+    * object.
+    */
   override def combine(prefix: JValue, postfix: JValue): JValue = {
     val newFields = for {
       JObject(f1) <- prefix

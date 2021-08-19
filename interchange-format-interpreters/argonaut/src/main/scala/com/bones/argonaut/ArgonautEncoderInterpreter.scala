@@ -4,9 +4,8 @@ import argonaut._
 import com.bones.data.KeyDefinition
 import com.bones.interpreter.encoder.KvpInterchangeFormatEncoderInterpreter
 
-/**
-  * Module responsible for converting values to Argonaut JSON without validation.
-  * The entry point for this class is [KvpInterchangeFormatEncoderInterpreter.encoderFromSchema].
+/** Module responsible for converting values to Argonaut JSON without validation. The entry point
+  * for this class is [KvpInterchangeFormatEncoderInterpreter.encoderFromSchema].
   */
 trait ArgonautEncoderInterpreter[ALG[_]] extends KvpInterchangeFormatEncoderInterpreter[ALG, Json] {
 

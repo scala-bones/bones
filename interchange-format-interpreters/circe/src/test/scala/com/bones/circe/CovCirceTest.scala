@@ -34,8 +34,7 @@ class CovCirceTest extends AnyFunSuite with Checkers with Matchers {
       new Encoder[CustomAlgebra, A, Json] {
         val f = algebra match {
           case MarkdownData =>
-            (str: String) =>
-              Json.fromString(str)
+            (str: String) => Json.fromString(str)
         }
         override def encode(a: A): Json = f(a.asInstanceOf[String])
       }
