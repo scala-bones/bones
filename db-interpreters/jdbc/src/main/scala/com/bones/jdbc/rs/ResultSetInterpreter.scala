@@ -14,17 +14,15 @@ import shapeless.{::, Coproduct, HList, HNil, Inl, Inr, Nat}
 
 /** Responsible for converting a result set into the result type */
 trait ResultSetInterpreter[ALG[_]]
-    extends KvpCollectionFunctor[
-      String,
-      ALG,
-      Lambda[A => Path[String] => ResultSet => Either[
-        ExtractionErrors[String],
-        CanBeOmitted[String, A]]]] {
+    extends KvpCollectionFunctor[String, ALG, Lambda[
+      A => Path[String] => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, A]]
+    ]] {
 
   val customInterpreter: ResultSetValue[ALG]
 
-  def generateResultSet[A](collection: KvpCollection[String, ALG, A])
-    : Path[String] => ResultSet => Either[ExtractionErrors[String], A] =
+  def generateResultSet[A](
+    collection: KvpCollection[String, ALG, A]
+  ): Path[String] => ResultSet => Either[ExtractionErrors[String], A] =
     path =>
       resultSet => {
         val nullable = fromKvpCollection(collection)(path)(resultSet)
@@ -33,15 +31,16 @@ trait ResultSetInterpreter[ALG[_]]
             Left(nulls.map(n => RequiredValue(n.path :+ n.fieldName, n.typeName)))
           case Right(v) => Right(v)
         }
-    }
+      }
 
-  override def kvpNil(kvp: KvpNil[String, ALG])
-    : Path[String] => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, HNil]] =
+  override def kvpNil(
+    kvp: KvpNil[String, ALG]
+  ): Path[String] => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, HNil]] =
     (_: Path[String]) => (_: ResultSet) => Right(Right(HNil))
 
   override def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
-    kvp: KvpSingleValueHead[String, ALG, H, T, TL, O])
-    : Path[String] => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, O]] = {
+    kvp: KvpSingleValueHead[String, ALG, H, T, TL, O]
+  ): Path[String] => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, O]] = {
     path =>
       {
         val rsToHead: ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, H]] =
@@ -55,31 +54,28 @@ trait ResultSetInterpreter[ALG[_]]
           }
 
         val rsToTail = fromKvpCollection(kvp.tail)(path)
-        rs =>
-          {
-            val headResult = rsToHead(rs)
-            val tailResult = rsToTail(rs)
-            Util.eitherMap2Nullable(headResult, tailResult)((l1: H, l2: T) => {
-              kvp.isHCons.cons(l1, l2)
-            })
-          }
+        rs => {
+          val headResult = rsToHead(rs)
+          val tailResult = rsToTail(rs)
+          Util.eitherMap2Nullable(headResult, tailResult)((l1: H, l2: T) => {
+            kvp.isHCons.cons(l1, l2)
+          })
+        }
       }
   }
 
   override def kvpWrappedHList[A, H <: HList, HL <: Nat](
-    wrappedHList: KvpWrappedHList[String, ALG, A, H, HL])
-    : Path[String] => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, A]] = {
+    wrappedHList: KvpWrappedHList[String, ALG, A, H, HL]
+  ): Path[String] => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, A]] = {
     val f = fromKvpCollection(wrappedHList.wrappedEncoding)
-    (path: Path[String]) => (rs: ResultSet) =>
-      f(path)(rs).map(nh => nh.map(wrappedHList.fHtoA))
+    (path: Path[String]) => (rs: ResultSet) => f(path)(rs).map(nh => nh.map(wrappedHList.fHtoA))
   }
 
   override def kvpWrappedCoproduct[A, C <: Coproduct](
-    wrappedCoproduct: KvpWrappedCoproduct[String, ALG, A, C])
-    : Path[String] => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, A]] = {
+    wrappedCoproduct: KvpWrappedCoproduct[String, ALG, A, C]
+  ): Path[String] => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, A]] = {
     val f = fromKvpCollection(wrappedCoproduct.wrappedEncoding)
-    (path: Path[String]) => (rs: ResultSet) =>
-      f(path)(rs).map(cn => cn.map(wrappedCoproduct.fCtoA))
+    (path: Path[String]) => (rs: ResultSet) => f(path)(rs).map(cn => cn.map(wrappedCoproduct.fCtoA))
 
   }
 
@@ -89,12 +85,14 @@ trait ResultSetInterpreter[ALG[_]]
     H <: HList,
     HL <: Nat,
     T <: HList,
-    TL <: Nat](kvp: KvpHListCollectionHead[String, ALG, HO, NO, H, HL, T, TL])
-    : Path[String] => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, HO]] = {
+    TL <: Nat
+  ](
+    kvp: KvpHListCollectionHead[String, ALG, HO, NO, H, HL, T, TL]
+  ): Path[String] => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, HO]] = {
     val fHead = fromKvpCollection(kvp.head)
     val fTail = fromKvpCollection(kvp.tail)
-    (path: Path[String]) => (rs: ResultSet) =>
-      {
+    (path: Path[String]) =>
+      (rs: ResultSet) => {
         val headValue = fHead(path)(rs)
         val tailValue = fTail(path)(rs)
 
@@ -106,7 +104,8 @@ trait ResultSetInterpreter[ALG[_]]
 
   def determineValueDefinition[A](coproduct: CoproductDataDefinition[String, ALG, A]): (
     Path[String],
-    FieldName) => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, A]] =
+    FieldName
+  ) => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, A]] =
     coproduct match {
       case Left(kvp)  => valueDefinition(kvp)
       case Right(alg) => customInterpreter.resultSet(alg)
@@ -114,7 +113,8 @@ trait ResultSetInterpreter[ALG[_]]
 
   def valueDefinition[A](fgo: HigherOrderValue[String, ALG, A]): (
     Path[String],
-    FieldName) => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, A]] =
+    FieldName
+  ) => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, A]] =
     fgo match {
       case op: OptionalValue[String, ALG, a] @unchecked =>
         (path, fieldName) =>
@@ -129,15 +129,17 @@ trait ResultSetInterpreter[ALG[_]]
               .map(_.asInstanceOf[CanBeOmitted[String, Option[a]]])
       case ld: ListData[String, ALG, t] @unchecked => ???
       case ed: EitherData[String, ALG, a, b] @unchecked =>
-        (path, fieldName) => rs =>
-          {
+        (path, fieldName) =>
+          rs => {
             val leftField = determineValueDefinition(ed.definitionA)(path, "left_" + fieldName)(rs)
             leftField
               .flatMap { nullable =>
                 {
                   nullable match {
                     case Left(leftNullValue) => {
-                      determineValueDefinition(ed.definitionB)(path, "right_" + fieldName)(rs) match {
+                      determineValueDefinition(ed.definitionB)(path, "right_" + fieldName)(
+                        rs
+                      ) match {
                         case Left(err) => Left(err)
                         case Right(v) => {
                           v match {
@@ -163,8 +165,9 @@ trait ResultSetInterpreter[ALG[_]]
           groupF(path).andThen(_.map(nv => nv.map(_.asInstanceOf[A])))
     }
 
-  override def kvpCoproduct[C <: Coproduct](value: KvpCoproduct[String, ALG, C])
-    : Path[String] => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, C]] = {
+  override def kvpCoproduct[C <: Coproduct](
+    value: KvpCoproduct[String, ALG, C]
+  ): Path[String] => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, C]] = {
     path =>
       { rs =>
         {
@@ -178,7 +181,8 @@ trait ResultSetInterpreter[ALG[_]]
     kvp: KvpCoproduct[String, ALG, C],
     rs: ResultSet,
     dtype: String,
-    path: Path[String]): Either[ExtractionErrors[String], CanBeOmitted[String, C]] = {
+    path: Path[String]
+  ): Either[ExtractionErrors[String], CanBeOmitted[String, C]] = {
     kvp match {
       case _: KvpCoNil[String, ALG] =>
         Right(Left(List(OmittedValue(kvp.typeNameOfA, kvp.typeNameOfA, path))))
@@ -187,7 +191,8 @@ trait ResultSetInterpreter[ALG[_]]
           fromKvpCollection(head.kvpCollection)(path)(rs).map(nv => nv.map(Inl(_).asInstanceOf[C]))
         } else {
           coproductWithDtype(head.kvpTail, rs, dtype, path).map(nv =>
-            nv.map(Inr(_).asInstanceOf[C]))
+            nv.map(Inr(_).asInstanceOf[C])
+          )
         }
       }
     }

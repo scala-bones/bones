@@ -10,7 +10,8 @@ object ScalaCoreTapirSchema extends TapirValueTransformation[ScalaCoreValue] {
   override def toSchemaType[A](
     alg: ScalaCoreValue[A],
     description: Option[String],
-    example: Option[A]): (SchemaType, DescriptionString, ExampleString) = {
+    example: Option[A]
+  ): (SchemaType, DescriptionString, ExampleString) = {
 
     val tapirDescription =
       description.getOrElse(ScalaCoreValueDefaultMetadata.getDefaultDescription(alg))

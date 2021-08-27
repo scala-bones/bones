@@ -5,9 +5,9 @@ import shapeless.{:+:, Coproduct, Inl, Inr}
 
 object UpdateStatementValue {
 
-  /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
-    * see https://stackoverflow.com/a/60561575/387094
-    * */
+  /** using kind projector allows us to create a new interpreter by merging two existing
+    * interpreters. see https://stackoverflow.com/a/60561575/387094
+    */
   def merge[L[_], R[_] <: Coproduct](
     li: UpdateStatementValue[L],
     ri: UpdateStatementValue[R]

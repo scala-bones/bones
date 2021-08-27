@@ -64,10 +64,11 @@ package object ideal {
     }
   }
 
-  /**
-    * Responsible for keeping track of the "Ideal" being created.
-    * @param activeTable The current active table.  If you are adding a column, add it to this one.
-    * @param otherTables The list of sub tables.
+  /** Responsible for keeping track of the "Ideal" being created.
+    * @param activeTable
+    *   The current active table. If you are adding a column, add it to this one.
+    * @param otherTables
+    *   The list of sub tables.
     */
   case class TableCollection(activeTable: IdealTable, otherTables: List[IdealTable]) {
 
@@ -93,7 +94,9 @@ package object ideal {
       if (other.activeTable.name == activeTable.name) {
         val newActiveTable = activeTable
           .copy(columns = other.activeTable.columns ::: activeTable.columns)
-          .copy(primaryKeyColumns = other.activeTable.primaryKeyColumns ::: activeTable.primaryKeyColumns)
+          .copy(primaryKeyColumns =
+            other.activeTable.primaryKeyColumns ::: activeTable.primaryKeyColumns
+          )
           .copy(foreignKeys = other.activeTable.foreignKeys ::: activeTable.foreignKeys)
         val newOtherTables = other.otherTables.filterNot(table => otherTables.contains(table))
         val allOtherTables = newOtherTables ::: otherTables
@@ -114,18 +117,20 @@ package object ideal {
 
   object IdealValue {
 
-    /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
-      * see https://stackoverflow.com/a/60561575/387094
-      * */
+    /** using kind projector allows us to create a new interpreter by merging two existing
+      * interpreters. see https://stackoverflow.com/a/60561575/387094
+      */
     def merge[L[_], R[_] <: Coproduct](
       li: IdealValue[L],
       ri: IdealValue[R]
     ): IdealValue[Lambda[A => L[A] :+: R[A]]] =
       new IdealValue[Lambda[A => L[A] :+: R[A]]] {
-        override def columns[B](alg: L[B] :+: R[B])
-          : (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
-            TableCollection,
-            List[UniqueGroup]) = {
+        override def columns[B](
+          alg: L[B] :+: R[B]
+        ): (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
+          TableCollection,
+          List[UniqueGroup]
+        ) = {
           alg match {
             case Inl(l) => li.columns(l)
             case Inr(r) => ri.columns(r)
@@ -145,23 +150,30 @@ package object ideal {
 
   trait IdealValue[ALG[_]] {
     def columns[A](
-      alg: ALG[A]): (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
+      alg: ALG[A]
+    ): (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
       TableCollection,
-      List[UniqueGroup])
+      List[UniqueGroup]
+    )
   }
 
   object CNilIdealInterpreter extends IdealValue[CNilF] {
     override def columns[A](
-      alg: CNilF[A]): (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
+      alg: CNilF[A]
+    ): (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
       TableCollection,
-      List[UniqueGroup]) =
+      List[UniqueGroup]
+    ) =
       sys.error("Unreachable code")
   }
 
-  def defaultColumns(newType: IdealDataType, uniqueConstraint: List[UniqueValue[_]])
-    : (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
-      TableCollection,
-      List[UniqueGroup]) = { (tableCollection, uniqueGroups, name, description) =>
+  def defaultColumns(
+    newType: IdealDataType,
+    uniqueConstraint: List[UniqueValue[_]]
+  ): (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
+    TableCollection,
+    List[UniqueGroup]
+  ) = { (tableCollection, uniqueGroups, name, description) =>
     {
       val newColumn = IdealColumn(name, newType, false, description)
       val newUg =

@@ -4,9 +4,8 @@ import com.bones.data.KeyDefinition
 import com.bones.interpreter.encoder.KvpInterchangeFormatEncoderInterpreter
 import io.circe._
 
-/**
-  * Module responsible for converting values to Circe JSON without validation.
-  * The entry point for this class is [KvpInterchangeFormatEncoderInterpreter.encoderFromSchema].
+/** Module responsible for converting values to Circe JSON without validation. The entry point for
+  * this class is [KvpInterchangeFormatEncoderInterpreter.encoderFromSchema].
   */
 trait CirceEncoderInterpreter[ALG[_]] extends KvpInterchangeFormatEncoderInterpreter[ALG, Json] {
 

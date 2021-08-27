@@ -7,10 +7,12 @@ import com.bones.si.ideal._
 object IdealJavaTimeInterpreter
     extends IdealValue[JavaTimeValue]
     with BaseJavaTimeInterpreter[IdealDataType] {
-  override def columns[A](alg: JavaTimeValue[A])
-    : (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
-      TableCollection,
-      List[UniqueGroup]) = {
+  override def columns[A](
+    alg: JavaTimeValue[A]
+  ): (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
+    TableCollection,
+    List[UniqueGroup]
+  ) = {
     val uniqueConstraint = findUniqueConstraint(alg.validations)
     defaultColumns(matchJavaTimeValue(alg), uniqueConstraint)
   }

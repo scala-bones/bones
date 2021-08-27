@@ -35,15 +35,13 @@ class CovSprayTest extends AnyFunSuite with Checkers with Matchers {
     def customAlgebraEncoder[A](alg: CustomAlgebra[A]): Encoder[CustomAlgebra, A, JsValue] =
       alg match {
         case MarkdownData =>
-          str =>
-            str.asInstanceOf[String].toJson
+          str => str.asInstanceOf[String].toJson
       }
 
     def dateExtAlgebraEncoder[A](alg: DateExtAlgebra[A]): Encoder[DateExtAlgebra, A, JsValue] =
       alg match {
         case InstantData =>
-          i =>
-            dateFormatter.format(i.asInstanceOf[Instant]).toJson
+          i => dateFormatter.format(i.asInstanceOf[Instant]).toJson
       }
 
     object BlogEncoder extends InterchangeFormatEncoderValue[BlogAlgebra, JsValue] {

@@ -6,7 +6,8 @@ import com.google.protobuf.{CodedInputStream, CodedOutputStream}
 
 package object protobuf {
 
-  /******* Encoder Types ******/
+  /** ***** Encoder Types *****
+    */
   type FieldNumber = Int
   type LastFieldNumber = Int
   type ComputeSize = () => Int
@@ -21,15 +22,15 @@ package object protobuf {
       (lastFieldNumber, b => computeEncode(f(b)))
   }
 
-  /******* Validator Types ******/
+  /** ***** Validator Types *****
+    */
   /** Path to the value -- list of keys */
   type Tag = Int
   type CanReadTag = Boolean
 
-  /**
-    * Given the last field number from loading the previous value, as well as the path to the value
+  /** Given the last field number from loading the previous value, as well as the path to the value
     * the interpreter will return the list of nested tags and the LastFieldNumber of the next values
-    * to be read in.  Also return a function
+    * to be read in. Also return a function
     *
     * @tparam A
     */

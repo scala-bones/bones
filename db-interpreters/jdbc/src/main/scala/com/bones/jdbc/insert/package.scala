@@ -75,13 +75,12 @@ package object insert {
   def psF[A](f: (PreparedStatement, Index, A) => Unit): InsertPair[A] =
     key => {
       val columnName = camelToSnake(key)
-      (index: Index, a: A) =>
-        {
-          val setValue: SetValue = ps => {
-            f(ps, index, a)
-          }
-          (index + 1, List((columnName, setValue)))
+      (index: Index, a: A) => {
+        val setValue: SetValue = ps => {
+          f(ps, index, a)
         }
+        (index + 1, List((columnName, setValue)))
+      }
     }
 
 }

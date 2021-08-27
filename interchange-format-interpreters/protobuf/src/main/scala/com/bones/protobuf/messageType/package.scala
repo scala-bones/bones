@@ -22,7 +22,8 @@ package object messageType {
     required: Boolean,
     repeated: Boolean,
     name: String,
-    index: Int)
+    index: Int
+  )
 
   /** Definitions which can be embedded in the Message */
   trait NestedType {

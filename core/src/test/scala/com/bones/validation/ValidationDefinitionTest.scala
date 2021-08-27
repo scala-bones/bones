@@ -88,5 +88,4 @@ class ValidationDefinitionTest extends AnyFunSuite with Checkers {
     assert(sentence.isValid("ljdlfjas0808934@#$F") === false)
   }
 
-
 }

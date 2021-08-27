@@ -12,14 +12,13 @@ trait SelectInterpreter[ALG[_]] {
   def select[A, ID](
     kvp: KvpCollection[String, ALG, A],
     idSchema: KvpCollection[String, ALG, ID],
-    tableNameOverride: Option[String] = None)
-    : ID => ConnectionIO[Either[ExtractionErrors[String], (ID, A)]] = {
+    tableNameOverride: Option[String] = None
+  ): ID => ConnectionIO[Either[ExtractionErrors[String], (ID, A)]] = {
     val selectF = jdbcSelectInterpreter.selectEntity(kvp, idSchema, tableNameOverride)
-    id =>
-      {
-        raw(con => {
-          selectF(id)(con)
-        })
-      }
+    id => {
+      raw(con => {
+        selectF(id)(con)
+      })
+    }
   }
 }

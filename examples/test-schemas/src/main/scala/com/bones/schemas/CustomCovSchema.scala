@@ -22,7 +22,8 @@ object CustomCovSchema {
     title: String,
     tags: List[String],
     publishDate: Instant,
-    content: String)
+    content: String
+  )
 
   type BlogAlgebra[A] = CustomAlgebra[A] :+: DateExtAlgebra[A] :+: ScalaCoreValue[A] :+: CNil
 
@@ -52,5 +53,6 @@ object CustomCovSchema {
     "My Blog Post",
     List("music", "household goods"),
     Instant.now(),
-    "Ipsum Plurbus Unum")
+    "Ipsum Plurbus Unum"
+  )
 }

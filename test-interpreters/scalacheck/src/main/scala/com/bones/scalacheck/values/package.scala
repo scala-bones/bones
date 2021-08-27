@@ -34,7 +34,8 @@ package object values {
         GenValue.merge[JavaTimeValue, JavaUtilValueCo](
           DefaultScalacheckJavaTimeInterpreter,
           GenValue
-            .merge[JavaUtilValue, CNilF](DefaultScalacheckJavaUtilInterpreter, CNilGenEncoder))
+            .merge[JavaUtilValue, CNilF](DefaultScalacheckJavaUtilInterpreter, CNilGenEncoder)
+        )
       )
     )
   }

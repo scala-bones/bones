@@ -43,7 +43,8 @@ object CircePrimitiveValidator extends InterchangeFormatPrimitiveValidator[Json]
     (in: Json, path: List[String]) => in.asBoolean.toRight(determineError(in, "Boolean", path))
 
   override def extractArray[ALG2[_], A](
-    typeName: String): Validator[String, ALG2, Seq[Json], Json] =
+    typeName: String
+  ): Validator[String, ALG2, Seq[Json], Json] =
     (in: Json, path: List[String]) =>
       in.asArray
         .toRight(determineError(in, typeName, path))
@@ -64,7 +65,8 @@ object CircePrimitiveValidator extends InterchangeFormatPrimitiveValidator[Json]
   protected def determineError[ALG2[_], A](
     in: Json,
     typeName: String,
-    path: List[String]): ExtractionErrors[String] = {
+    path: List[String]
+  ): ExtractionErrors[String] = {
     val error =
       if (in.isNull) RequiredValue(path, typeName)
       else WrongTypeError(path, typeName, in.getClass.getSimpleName, None)

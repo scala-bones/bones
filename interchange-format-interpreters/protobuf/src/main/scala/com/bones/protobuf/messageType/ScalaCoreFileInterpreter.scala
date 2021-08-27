@@ -9,34 +9,24 @@ trait ScalaCoreFileInterpreter extends CustomInterpreter[ScalaCoreValue] {
   ): (Name, Int) => (MessageField, Vector[NestedType], Int) =
     alg match {
       case ob: BooleanData =>
-        (name, index) =>
-          booleanMessageField(name, index)
+        (name, index) => booleanMessageField(name, index)
       case rs: StringData =>
-        (name, index) =>
-          stringMessageField(name, index)
+        (name, index) => stringMessageField(name, index)
       case df: ShortData =>
-        (name, index) =>
-          intMessageField(name, index)
+        (name, index) => intMessageField(name, index)
       case id: IntData =>
-        (name, index) =>
-          intMessageField(name, index)
+        (name, index) => intMessageField(name, index)
       case ri: LongData =>
-        (name, index) =>
-          longMessageField(name, index)
+        (name, index) => longMessageField(name, index)
       case fd: FloatData =>
-        (name, index) =>
-          floatMessageField(name, index)
+        (name, index) => floatMessageField(name, index)
       case fd: DoubleData =>
-        (name, index) =>
-          doubleMessageField(name, index)
+        (name, index) => doubleMessageField(name, index)
       case bd: BigDecimalData =>
-        (name, index) =>
-          stringMessageField(name, index)
+        (name, index) => stringMessageField(name, index)
       case ba: ByteArrayData =>
-        (name, index) =>
-          byteArrayMessageField(name, index)
+        (name, index) => byteArrayMessageField(name, index)
       case esd: EnumerationData[e, a] =>
-        (name, index) =>
-          stringMessageField(name, index)
+        (name, index) => stringMessageField(name, index)
     }
 }
