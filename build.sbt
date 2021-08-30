@@ -151,7 +151,7 @@ lazy val tapirCirceSkeleton = (project in file("skeleton/tapir-circe"))
     )
   )
   .dependsOn(tapirTransformation, jsonCirce, testSchemas % "test")
-lazy val doobieVersion = "1.0.0-M1"
+lazy val doobieVersion = "1.0.0-RC1"
 // lazy val directEncoders = (project in file("interchange-format-interpreters/direct-encoders"))
 //  .settings(
 //    commonSettings,
