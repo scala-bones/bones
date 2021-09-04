@@ -18,7 +18,8 @@ object JavaTimeValidator {
   def errorHandleTimeParsing[A](
     path: List[String],
     f: String => A,
-    input: String): Either[ExtractionErrors[String], A] =
+    input: String
+  ): Either[ExtractionErrors[String], A] =
     try {
       Right(f(input))
     } catch {
@@ -52,8 +53,8 @@ object JavaTimeValidator {
   def parseYear[ALG[_], A, IN](
     baseValidator: InterchangeFormatPrimitiveValidator[IN],
     javaTimeValue: JavaTimeValue[A],
-    validations: List[ValidationOp[Year]])
-    : OptionalInputValidator[String, JavaTimeValue, Year, IN] =
+    validations: List[ValidationOp[Year]]
+  ): OptionalInputValidator[String, JavaTimeValue, Year, IN] =
     (jsonOpt: Option[IN], path: List[String]) => {
       jsonOpt match {
         case Some(json) =>
@@ -81,7 +82,8 @@ trait JavaTimeValidator[IN] extends InterchangeFormatValidatorValue[JavaTimeValu
   val baseValidator: InterchangeFormatPrimitiveValidator[IN]
 
   override def createValidator[A](
-    alg: JavaTimeValue[A]): OptionalInputValidator[String, JavaTimeValue, A, IN] = {
+    alg: JavaTimeValue[A]
+  ): OptionalInputValidator[String, JavaTimeValue, A, IN] = {
 
     alg match {
       case d: DateTimeExceptionData =>
@@ -95,7 +97,8 @@ trait JavaTimeValidator[IN] extends InterchangeFormatValidatorValue[JavaTimeValu
           baseValidator,
           alg,
           input => Instant.from(instantFormatter.parse(input)),
-          i.validations)
+          i.validations
+        )
       case op @ LocalDateTimeData(validations) =>
         parseTime(
           baseValidator,
@@ -126,7 +129,8 @@ trait JavaTimeValidator[IN] extends InterchangeFormatValidatorValue[JavaTimeValu
           baseValidator,
           alg,
           OffsetDateTime.parse(_, offsetDateTimeFormatter),
-          o.validations)
+          o.validations
+        )
       case o: OffsetTimeData =>
         parseTime(baseValidator, alg, OffsetTime.parse(_, offsetTimeFormatter), o.validations)
       case p: PeriodData =>

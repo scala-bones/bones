@@ -54,7 +54,8 @@ object DemoApp extends LocalhostAllIOApp() {
       Path.longParam,
       StringToIdError.stringToIdErrorSchema,
       ExtractionErrorEncoder.errorResponseSchema.algMapKvpCollection[DefaultValues](core =>
-        shapeless.Inl(core)),
+        shapeless.Inl(core)
+      ),
       DefaultIdDefinitions.longIdDefinition,
       "id",
       core => shapeless.Inl(core)

@@ -86,35 +86,29 @@ class UtilTest extends AnyFunSuite with Checkers with Matchers {
   val error2 = CanNotConvert(path, "input2", classOf[LocalDate], Some(new Throwable()))
   test("eitherMap2 accumulate error") {
     val result =
-      Util.eitherMap2[
+      Util.eitherMap2[String, LocalDate, LocalDate, LocalDate, CanNotConvert[
         String,
-        LocalDate,
-        LocalDate,
-        LocalDate,
-        CanNotConvert[String, String, LocalDate]](Left(List(error1)), Left(List(error2)))((a, b) =>
-        b)
+        String,
+        LocalDate
+      ]](Left(List(error1)), Left(List(error2)))((a, b) => b)
     result mustBe Left(List(error1, error2))
   }
 
   test("eitherMap2 error on first input") {
-    val result = Util.eitherMap2[
+    val result = Util.eitherMap2[String, LocalDate, LocalDate, LocalDate, CanNotConvert[
       String,
-      LocalDate,
-      LocalDate,
-      LocalDate,
-      CanNotConvert[String, String, LocalDate]](Left(List(error1)), Right(LocalDate.now()))(
-      (a, b) => b)
+      String,
+      LocalDate
+    ]](Left(List(error1)), Right(LocalDate.now()))((a, b) => b)
     result mustBe Left(List(error1))
   }
 
   test("eitherMap2 error on second input") {
-    val result = Util.eitherMap2[
+    val result = Util.eitherMap2[String, LocalDate, LocalDate, LocalDate, CanNotConvert[
       String,
-      LocalDate,
-      LocalDate,
-      LocalDate,
-      CanNotConvert[String, String, LocalDate]](Right(LocalDate.now), Left(List(error2)))((a, b) =>
-      b)
+      String,
+      LocalDate
+    ]](Right(LocalDate.now), Left(List(error2)))((a, b) => b)
     result mustBe Left(List(error2))
   }
   test("either map2 success") {

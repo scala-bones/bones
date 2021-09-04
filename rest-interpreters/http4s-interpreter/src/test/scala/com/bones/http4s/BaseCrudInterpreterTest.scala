@@ -38,7 +38,8 @@ class BaseCrudInterpreterTest extends AnyFunSuite {
   val contentInterpreters =
     ContentInterpreters(
       Content(`Content-Type`(testMediatType), CirceDefaultValuesByteArrayInterpreter),
-      Set.empty[Content[String, DefaultValues, `Content-Type`]])
+      Set.empty[Content[String, DefaultValues, `Content-Type`]]
+    )
 
 //TODO Figure out cats effect 3
 //  test("path matches appropriately when there are multiple get endpoints") {

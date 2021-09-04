@@ -30,7 +30,8 @@ package object update {
   case class JdbcColumnStatement[A](
     lastIndex: Index,
     assignmentStatements: List[(AssignmentString, SetNull)],
-    predicates: A => List[SetValue])
+    predicates: A => List[SetValue]
+  )
 
   object DefaultJavaTimeUpdateStatement extends JavaTimeUpdateStatement
   object DefaultJavaUtilUpdateStatement extends JavaUtilUpdateStatement
@@ -60,7 +61,8 @@ package object update {
           UpdateStatementValue
             .merge[JavaUtilValue, CNilF](
               DefaultJavaUtilUpdateStatement,
-              CNilUpdateStatementInterpreter$)
+              CNilUpdateStatementInterpreter$
+            )
         )
       )
     )
@@ -81,7 +83,8 @@ package object update {
   /** Create the return type for valueDefinition given the arguments */
   def psF[A](
     f: Index => (PreparedStatement, A) => Unit,
-    sqlType: Int): (Index, Key) => JdbcColumnStatement[A] =
+    sqlType: Int
+  ): (Index, Key) => JdbcColumnStatement[A] =
     (index, key) => {
       val updateString = s"${camelToSnake(key)} = ?"
       val fI = f(index)

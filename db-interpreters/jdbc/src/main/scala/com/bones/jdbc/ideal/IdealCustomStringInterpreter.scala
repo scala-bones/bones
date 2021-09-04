@@ -8,10 +8,12 @@ object IdealCustomStringInterpreter
     extends IdealValue[CustomStringValue]
     with BaseCustomStringValue[IdealDataType] {
 
-  override def columns[A](alg: CustomStringValue[A])
-    : (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
-      TableCollection,
-      List[UniqueGroup]) = {
+  override def columns[A](
+    alg: CustomStringValue[A]
+  ): (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
+    TableCollection,
+    List[UniqueGroup]
+  ) = {
     val uniqueConstraint = findUniqueConstraint(alg.validations)
     defaultColumns(matchCustomStringValue(alg), uniqueConstraint)
   }

@@ -8,9 +8,13 @@ import com.bones.validation.ValidationUtil
 trait InterchangeFormatPrimitiveValidator[IN] {
 
   /** Override this to provide the ability to extract a String from the IN type.
-    * @param typeName The resulting class we are tyring to extract.
-    * @tparam A The expected resulting type, eg String or Enumerated Type which we are trying to extract from a string.
-    * @return The extracted String or an Error
+    * @param typeName
+    *   The resulting class we are tyring to extract.
+    * @tparam A
+    *   The expected resulting type, eg String or Enumerated Type which we are trying to extract
+    *   from a string.
+    * @return
+    *   The extracted String or an Error
     */
   def extractString[ALG2[_], A](typeName: String): Validator[String, ALG2, String, IN]
   def extractInt[ALG2[_], A]: Validator[String, ALG2, Int, IN]

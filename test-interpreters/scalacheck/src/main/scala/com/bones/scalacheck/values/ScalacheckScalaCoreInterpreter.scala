@@ -110,8 +110,8 @@ object ScalacheckScalaCoreInterpreter {
       .getOrElse(regex)
 
     val regexWithMax = ops
-      .collectFirst {
-        case MaxLength(i) => i
+      .collectFirst { case MaxLength(i) =>
+        i
       }
       .map(max => {
         regexWithMin.map(str => if (str.length <= max) str else str.substring(0, max))
@@ -133,7 +133,8 @@ object ScalacheckScalaCoreInterpreter {
     max: Option[N],
     maxIsInclusive: Boolean,
     min: Option[N],
-    minIsInclusive: Boolean)
+    minIsInclusive: Boolean
+  )
 
   /** Uses known Bones validations to create a Number which passes validation */
   def validationConstraints[A](
@@ -142,7 +143,8 @@ object ScalacheckScalaCoreInterpreter {
     incrementF: A => A,
     decrementF: A => A,
     min: A,
-    max: A)(implicit c: Gen.Choose[A]): Gen[A] = {
+    max: A
+  )(implicit c: Gen.Choose[A]): Gen[A] = {
     val constraints = ops.foldLeft(NumberConstraints[A](None, None, None, true, None, true)) {
       (nc, op) =>
         op match {
@@ -151,7 +153,8 @@ object ScalacheckScalaCoreInterpreter {
               max = Some(maxV),
               min = Some(minV),
               maxIsInclusive = true,
-              minIsInclusive = true)
+              minIsInclusive = true
+            )
           case vop.Greater(min) => nc.copy(min = Some(min), minIsInclusive = false)
           case vop.Less(max)    => nc.copy(max = Some(max), maxIsInclusive = false)
           case vop.Positive     => nc.copy(min = Some(vop.zero), minIsInclusive = false)
@@ -196,7 +199,8 @@ trait ScalacheckScalaCoreInterpreter extends GenValue[ScalaCoreValue] {
           s => (s + 1).toShort,
           s => (s - 1).toShort,
           Short.MinValue,
-          Short.MaxValue)
+          Short.MaxValue
+        )
       }
       case id: IntData =>
         validationConstraints[Int](
@@ -205,7 +209,8 @@ trait ScalacheckScalaCoreInterpreter extends GenValue[ScalaCoreValue] {
           _ + 1,
           _ - 1,
           Int.MinValue,
-          Int.MaxValue)
+          Int.MaxValue
+        )
       case ri: LongData =>
         validationConstraints[Long](
           ri.validations,
@@ -213,7 +218,8 @@ trait ScalacheckScalaCoreInterpreter extends GenValue[ScalaCoreValue] {
           _ + 1,
           _ + 1,
           Long.MinValue,
-          Long.MaxValue)
+          Long.MaxValue
+        )
       case fd: FloatData =>
         validationConstraints[Float](
           fd.validations,
@@ -221,7 +227,8 @@ trait ScalacheckScalaCoreInterpreter extends GenValue[ScalaCoreValue] {
           _ + .0001f,
           _ - 0001f,
           Float.MinValue,
-          Float.MaxValue)
+          Float.MaxValue
+        )
       case id: DoubleData =>
         validationConstraints[Double](
           id.validations,
@@ -229,7 +236,8 @@ trait ScalacheckScalaCoreInterpreter extends GenValue[ScalaCoreValue] {
           _ + .00001,
           _ - .00001,
           Double.MinValue,
-          Double.MaxValue)
+          Double.MaxValue
+        )
       case bd: BigDecimalData =>
         validationConstraints[BigDecimal](
           bd.validations,
@@ -237,7 +245,8 @@ trait ScalacheckScalaCoreInterpreter extends GenValue[ScalaCoreValue] {
           _ + BigDecimal(".00000001"),
           _ - BigDecimal(".00000001"),
           BigDecimal(Double.MinValue),
-          BigDecimal(Double.MaxValue))(
+          BigDecimal(Double.MaxValue)
+        )(
           Choose.xmap[Double, BigDecimal](d => BigDecimal(d), _.toDouble)
         )
       case ba: ByteArrayData => arbitrary[Array[Byte]]

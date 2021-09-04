@@ -19,7 +19,7 @@ object ProtobufSequentialEncoderInterpreter {
         Right(codedOutputStream)
       } catch {
         case ex: IOException => Left(List(ex))
-    }
+      }
 
   val booleanData: EncodeToProto[Boolean] =
     (fieldNumber: FieldNumber) =>
@@ -29,8 +29,8 @@ object ProtobufSequentialEncoderInterpreter {
           (
             () => CodedOutputStream.computeBoolSize(fieldNumber, bool),
             write(_.writeBool(fieldNumber, bool))
-        )
-    )
+          )
+      )
 
   val stringData = stringDataFromMap[String](identity)
 
@@ -45,7 +45,7 @@ object ProtobufSequentialEncoderInterpreter {
             write(_.writeString(fieldNumber, mapped))
           )
         }
-    )
+      )
 
   /** Can't go shorter than an Int */
   val shortData = intDataFromMap[Short](_.toInt)
@@ -53,13 +53,16 @@ object ProtobufSequentialEncoderInterpreter {
   val intData = intDataFromMap[Int](identity)
   def intDataFromMap[A](f: A => Int): EncodeToProto[A] =
     (fieldNumber: FieldNumber) =>
-      (fieldNumber + 1, (l: A) => {
-        val mapped = f(l)
-        (
-          () => CodedOutputStream.computeInt32Size(fieldNumber, mapped),
-          write(_.writeInt32(fieldNumber, mapped))
-        )
-      })
+      (
+        fieldNumber + 1,
+        (l: A) => {
+          val mapped = f(l)
+          (
+            () => CodedOutputStream.computeInt32Size(fieldNumber, mapped),
+            write(_.writeInt32(fieldNumber, mapped))
+          )
+        }
+      )
 
   val longData = longDataFromMap[Long](identity)
   def longDataFromMap[A](f: A => Long): EncodeToProto[A] =
@@ -73,7 +76,7 @@ object ProtobufSequentialEncoderInterpreter {
             write(_.writeInt64(fieldNumber, mapped))
           )
         }
-    )
+      )
 
   def localDateTimeToSecondsNanos(zoneOffset: ZoneOffset): LocalDateTime => (Long, Int) =
     localDateTime => (localDateTime.toEpochSecond(zoneOffset), localDateTime.getNano)
@@ -116,8 +119,8 @@ object ProtobufSequentialEncoderInterpreter {
           (
             () => CodedOutputStream.computeFloatSize(fieldNumber, f),
             write(_.writeFloat(fieldNumber, f))
-        )
-    )
+          )
+      )
 
   val doubleData: EncodeToProto[Double] =
     (fieldNumber: FieldNumber) =>
@@ -127,8 +130,8 @@ object ProtobufSequentialEncoderInterpreter {
           (
             () => CodedOutputStream.computeDoubleSize(fieldNumber, d),
             write(_.writeDouble(fieldNumber, d))
-        )
-    )
+          )
+      )
   val bigDecimalData: EncodeToProto[BigDecimal] = stringDataFromMap[BigDecimal](_.toString)
 
   val byteArrayData: EncodeToProto[Array[Byte]] =
@@ -139,17 +142,15 @@ object ProtobufSequentialEncoderInterpreter {
           (
             () => CodedOutputStream.computeByteArraySize(fieldNumber, arr),
             write(_.writeByteArray(fieldNumber, arr))
-        )
-    )
+          )
+      )
 
   def enumerationData[A]: EncodeToProto[A] = stringDataFromMap[A](_.toString)
 
 }
 
-/**
-  * Notes:
-  * An Option[List] where the data is a some of empty list: Some(List()) becomes a None when using ProtobufSequentialValidatorInterpreter.
-  *
+/** Notes: An Option[List] where the data is a some of empty list: Some(List()) becomes a None when
+  * using ProtobufSequentialValidatorInterpreter.
   */
 trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
 
@@ -169,30 +170,33 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
     (fieldNumber: FieldNumber) =>
       val (lastFieldNumber, computeEncode) =
         determineValueDefinition(op.valueDefinitionOp)(fieldNumber)
-      (lastFieldNumber, (opt: Option[B]) => {
-        val optB = opt.map(computeEncode)
-        (
-          () => optB.fold(0)(_._1()),
-          (outputStream: CodedOutputStream) =>
-            optB.fold[Either[List[IOException], CodedOutputStream]](Right(outputStream))(item =>
-              item._2(outputStream))
-        )
-      })
+      (
+        lastFieldNumber,
+        (opt: Option[B]) => {
+          val optB = opt.map(computeEncode)
+          (
+            () => optB.fold(0)(_._1()),
+            (outputStream: CodedOutputStream) =>
+              optB.fold[Either[List[IOException], CodedOutputStream]](Right(outputStream))(item =>
+                item._2(outputStream)
+              )
+          )
+        }
+      )
   }
 
   def generateProtobufEncoder[A](dc: KvpCollection[String, ALG, A]): A => Array[Byte] = {
     val (_, group) = fromKvpCollection(dc).apply(1)
-    (a: A) =>
-      {
-        val (_, fEncode) = group(a)
-        val os = new ByteArrayOutputStream()
-        val cos: CodedOutputStream = CodedOutputStream.newInstance(os)
-        fEncode(cos)
-        cos.flush()
-        os.flush()
-        os.close()
-        os.toByteArray
-      }
+    (a: A) => {
+      val (_, fEncode) = group(a)
+      val os = new ByteArrayOutputStream()
+      val cos: CodedOutputStream = CodedOutputStream.newInstance(os)
+      fEncode(cos)
+      cos.flush()
+      os.flush()
+      os.close()
+      os.toByteArray
+    }
   }
 
   /*
@@ -242,7 +246,7 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
       case op: KvpSingleValueHead[String, ALG, h, t, tl, o] =>
         (fieldNumber: FieldNumber) =>
           val (nextFieldHead, headF) = op.head match {
-            case Left(keyDef)         => determineValueDefinition(keyDef.dataDefinition)(fieldNumber)
+            case Left(keyDef) => determineValueDefinition(keyDef.dataDefinition)(fieldNumber)
             case Right(kvpCollection) => fromKvpCollection(kvpCollection)(fieldNumber)
           }
           val (nextFieldTail, tailF) = fromKvpCollection(op.tail)(nextFieldHead)
@@ -258,7 +262,8 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
                 Util.eitherMap2(headResult._2(outputStream), tailResult._2(outputStream))(
                   (l1: CodedOutputStream, l2: CodedOutputStream) => {
                     l2
-                  })
+                  }
+                )
               }
               (fCompute, fEncode)
             }
@@ -279,7 +284,8 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
                 Util.eitherMap2(headResult._2(outputStream), tailResult._2(outputStream))(
                   (l1: CodedOutputStream, l2: CodedOutputStream) => {
                     l2
-                  })
+                  }
+                )
               }
               (fCompute, fEncode)
             }
@@ -295,41 +301,48 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
 
   private def wrappedChild[A, B](
     f: A => B,
-    child: KvpCollection[String, ALG, B]): EncodeToProto[A] =
+    child: KvpCollection[String, ALG, B]
+  ): EncodeToProto[A] =
     fieldNumber => {
-      (fieldNumber + 1, (a: A) => {
-        val b = f(a)
-        val (_, computeEncode) = fromKvpCollection(child).apply(1)
-        val (fSize, fEncode) = computeEncode.apply(b)
-        val groupSize = fSize()
-        val encodeF: Encode = (outputStream: CodedOutputStream) => {
-          outputStream.writeTag(fieldNumber, 2)
-          outputStream.writeUInt32NoTag(groupSize)
-          fEncode(outputStream)
+      (
+        fieldNumber + 1,
+        (a: A) => {
+          val b = f(a)
+          val (_, computeEncode) = fromKvpCollection(child).apply(1)
+          val (fSize, fEncode) = computeEncode.apply(b)
+          val groupSize = fSize()
+          val encodeF: Encode = (outputStream: CodedOutputStream) => {
+            outputStream.writeTag(fieldNumber, 2)
+            outputStream.writeUInt32NoTag(groupSize)
+            fEncode(outputStream)
+          }
+          val allSize = () => {
+            groupSize + 1 + CodedOutputStream.computeUInt32SizeNoTag(groupSize)
+          }
+          (allSize, encodeF)
         }
-        val allSize = () => {
-          groupSize + 1 + CodedOutputStream.computeUInt32SizeNoTag(groupSize)
-        }
-        (allSize, encodeF)
-      })
+      )
     }
 
   private def subObject[A](child: KvpCollectionValue[String, ALG, A]): EncodeToProto[A] =
     fieldNumber => {
-      (fieldNumber + 1, (a: A) => {
-        val (_, computeEncode) = fromKvpCollection(child.kvpCollection).apply(1)
-        val (fSize, fEncode) = computeEncode.apply(a)
-        val groupSize = fSize()
-        val encodeF: Encode = (outputStream: CodedOutputStream) => {
-          outputStream.writeTag(fieldNumber, 2)
-          outputStream.writeUInt32NoTag(groupSize)
-          fEncode(outputStream)
+      (
+        fieldNumber + 1,
+        (a: A) => {
+          val (_, computeEncode) = fromKvpCollection(child.kvpCollection).apply(1)
+          val (fSize, fEncode) = computeEncode.apply(a)
+          val groupSize = fSize()
+          val encodeF: Encode = (outputStream: CodedOutputStream) => {
+            outputStream.writeTag(fieldNumber, 2)
+            outputStream.writeUInt32NoTag(groupSize)
+            fEncode(outputStream)
+          }
+          val allSize = () => {
+            groupSize + 1 + CodedOutputStream.computeUInt32SizeNoTag(groupSize)
+          }
+          (allSize, encodeF)
         }
-        val allSize = () => {
-          groupSize + 1 + CodedOutputStream.computeUInt32SizeNoTag(groupSize)
-        }
-        (allSize, encodeF)
-      })
+      )
     }
 
   def valueDefinition[A](fgo: HigherOrderValue[String, ALG, A]): EncodeToProto[A] = {
@@ -338,20 +351,19 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
         optionalKvpValueDefinition[a](op).asInstanceOf[EncodeToProto[A]]
 
       case ld: ListData[String, ALG, t] @unchecked =>
-        (fieldNumber: FieldNumber) =>
-          {
-            val (lastFieldNumber, ft) = determineValueDefinition[t](ld.tDefinition)(fieldNumber)
-            (
-              lastFieldNumber,
-              (l: List[t]) => {
-                val result = l.map(item => ft(item))
-                (
-                  () => result.map(_._1()).sum,
-                  write((outputStream: CodedOutputStream) => result.foreach(_._2(outputStream)))
-                )
-              }
-            )
-          }
+        (fieldNumber: FieldNumber) => {
+          val (lastFieldNumber, ft) = determineValueDefinition[t](ld.tDefinition)(fieldNumber)
+          (
+            lastFieldNumber,
+            (l: List[t]) => {
+              val result = l.map(item => ft(item))
+              (
+                () => result.map(_._1()).sum,
+                write((outputStream: CodedOutputStream) => result.foreach(_._2(outputStream)))
+              )
+            }
+          )
+        }
       case ed: EitherData[String, ALG, a, b] @unchecked =>
         val encodeToProtobufA: EncodeToProto[a] =
           determineValueDefinition(ed.definitionA)
@@ -370,7 +382,7 @@ trait ProtobufSequentialEncoderInterpreter[ALG[_]] {
               output match {
                 case Left(aInput)  => withFieldNumberA(aInput)
                 case Right(bInput) => withFieldNumberB(bInput)
-            }
+              }
           )
       case kvp: KvpCollectionValue[String, ALG, A] @unchecked =>
         fromKvpCollection(kvp.kvpCollection)
