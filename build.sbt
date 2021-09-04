@@ -58,7 +58,7 @@ lazy val commonSettings = Seq(
       Some("releases" at nexus + "service/local/staging/deploy/maven2")
   },
   publishMavenStyle := true,
-  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.3" cross CrossVersion.full),
+  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.13.2" cross CrossVersion.full),
 )
 lazy val core = (project in file("core"))
   .settings(
