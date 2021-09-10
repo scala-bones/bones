@@ -18,7 +18,8 @@ trait JavaUtilInterpreter extends CustomSwaggerInterpreter[JavaUtilValue] {
   override def toSchema[A](
     vd: JavaUtilValue[A],
     description: Option[String],
-    example: Option[A]): Name => SwaggerCoreInterpreter.SwaggerSchemas[Schema[_]] = {
+    example: Option[A]
+  ): Name => SwaggerCoreInterpreter.SwaggerSchemas[Schema[_]] = {
 
     vd match {
       case ud: UuidData =>
@@ -27,7 +28,8 @@ trait JavaUtilInterpreter extends CustomSwaggerInterpreter[JavaUtilValue] {
             name,
             description.getOrElse("value of type UUID"),
             example.getOrElse(exampleUuid).asInstanceOf[UUID],
-            validations(ud.validations))
+            validations(ud.validations)
+          )
     }
 
   }

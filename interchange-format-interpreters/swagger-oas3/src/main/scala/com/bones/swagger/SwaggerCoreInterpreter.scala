@@ -34,22 +34,25 @@ object SwaggerCoreInterpreter {
   /** Responsible for keeping track of mainSchemas and referenceSchemas */
   case class SwaggerSchemas[+S <: Schema[_]](
     mainSchema: S,
-    referenceSchemas: List[(String, Schema[_])])
+    referenceSchemas: List[(String, Schema[_])]
+  )
 
   object CustomSwaggerInterpreter {
 
-    /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
-      * see https://stackoverflow.com/a/60561575/387094
-      * */
+    /** using kind projector allows us to create a new interpreter by merging two existing
+      * interpreters. see https://stackoverflow.com/a/60561575/387094
+      */
     def merge[L[_], R[_] <: Coproduct](
       li: CustomSwaggerInterpreter[L],
-      ri: CustomSwaggerInterpreter[R]): CustomSwaggerInterpreter[Lambda[A => L[A] :+: R[A]]] =
+      ri: CustomSwaggerInterpreter[R]
+    ): CustomSwaggerInterpreter[Lambda[A => L[A] :+: R[A]]] =
       new CustomSwaggerInterpreter[Lambda[A => L[A] :+: R[A]]] {
 
         override def toSchema[A](
           lr: L[A] :+: R[A],
           description: Option[String],
-          example: Option[A]): Name => SwaggerSchemas[Schema[_]] =
+          example: Option[A]
+        ): Name => SwaggerSchemas[Schema[_]] =
           lr match {
             case Inl(l) => li.toSchema(l, description, example)
             case Inr(r) => ri.toSchema(r, description, example)
@@ -58,7 +61,8 @@ object SwaggerCoreInterpreter {
 
     implicit class InterpreterOps[ALG[_]](val base: CustomSwaggerInterpreter[ALG]) extends AnyVal {
       def ++[R[_] <: Coproduct](
-        r: CustomSwaggerInterpreter[R]): CustomSwaggerInterpreter[Lambda[A => ALG[A] :+: R[A]]] =
+        r: CustomSwaggerInterpreter[R]
+      ): CustomSwaggerInterpreter[Lambda[A => ALG[A] :+: R[A]]] =
         merge(base, r)
     }
 
@@ -66,7 +70,8 @@ object SwaggerCoreInterpreter {
       override def toSchema[A](
         vd: CNilF[A],
         description: Option[String],
-        example: Option[A]): Name => SwaggerSchemas[Schema[_]] =
+        example: Option[A]
+      ): Name => SwaggerSchemas[Schema[_]] =
         sys.error("Unreachable code")
     }
 
@@ -76,14 +81,16 @@ object SwaggerCoreInterpreter {
     def toSchema[A](
       vd: ALG[A],
       description: Option[String],
-      example: Option[A]): Name => SwaggerSchemas[Schema[_]]
+      example: Option[A]
+    ): Name => SwaggerSchemas[Schema[_]]
   }
 
   def addBooleanSchema(
     name: String,
     description: Option[String],
     example: Option[Boolean],
-    applyValidationDescription: Schema[_] => Schema[_]) = {
+    applyValidationDescription: Schema[_] => Schema[_]
+  ) = {
     val main = new BooleanSchema()
       .example(example.getOrElse(java.lang.Boolean.TRUE))
       .description(description.getOrElse("value of type boolean"))
@@ -97,7 +104,8 @@ object SwaggerCoreInterpreter {
     name: String,
     description: String,
     example: String,
-    applyValidationDescription: Schema[_] => Schema[_]) = {
+    applyValidationDescription: Schema[_] => Schema[_]
+  ) = {
     val date = new DateSchema()
       .example(example)
       .nullable(false)
@@ -111,7 +119,8 @@ object SwaggerCoreInterpreter {
     name: String,
     description: String,
     example: String,
-    applyValidationDescription: Schema[_] => Schema[_]) = {
+    applyValidationDescription: Schema[_] => Schema[_]
+  ) = {
     val date = new DateTimeSchema()
       .example(example)
       .nullable(false)
@@ -125,7 +134,8 @@ object SwaggerCoreInterpreter {
     name: String,
     description: String,
     example: String,
-    applyValidationDescription: Schema[_] => Schema[_]) = {
+    applyValidationDescription: Schema[_] => Schema[_]
+  ) = {
     val main = new StringSchema()
       .example(example)
       .nullable(false)
@@ -139,7 +149,8 @@ object SwaggerCoreInterpreter {
     name: String,
     description: String,
     example: Short,
-    applyValidationDescription: Schema[_] => Schema[_]) = {
+    applyValidationDescription: Schema[_] => Schema[_]
+  ) = {
     val main = new IntegerSchema()
       .nullable(false)
       .example(Short.box(example))
@@ -156,7 +167,8 @@ object SwaggerCoreInterpreter {
     name: String,
     description: String,
     example: Int,
-    applyValidationDescription: Schema[_] => Schema[_]) = {
+    applyValidationDescription: Schema[_] => Schema[_]
+  ) = {
     val main = new IntegerSchema()
       .nullable(false)
       .example(Int.box(example))
@@ -173,7 +185,8 @@ object SwaggerCoreInterpreter {
     name: String,
     description: String,
     example: Long,
-    applyValidationDescription: Schema[_] => Schema[_]) = {
+    applyValidationDescription: Schema[_] => Schema[_]
+  ) = {
     val intSchema = new IntegerSchema()
       .nullable(false)
       .example(Long.box(example))
@@ -188,7 +201,8 @@ object SwaggerCoreInterpreter {
     name: String,
     description: String,
     example: UUID,
-    applyValidationDescription: Schema[_] => Schema[_]) = {
+    applyValidationDescription: Schema[_] => Schema[_]
+  ) = {
     val uuidSchema = new UUIDSchema()
       .example(example)
       .description(description)
@@ -202,7 +216,8 @@ object SwaggerCoreInterpreter {
     name: String,
     description: String,
     example: String,
-    applyValidationDescription: Schema[_] => Schema[_]) = {
+    applyValidationDescription: Schema[_] => Schema[_]
+  ) = {
     val numberSchema = new NumberSchema()
       .example(example)
       .description(description)
@@ -216,7 +231,8 @@ object SwaggerCoreInterpreter {
     name: String,
     description: String,
     example: Array[Byte],
-    applyValidationDescription: Schema[_] => Schema[_]) = {
+    applyValidationDescription: Schema[_] => Schema[_]
+  ) = {
     val baSchema = new ByteArraySchema()
       .example(Base64.getEncoder.encodeToString(example))
       .description(description)
@@ -231,7 +247,8 @@ object SwaggerCoreInterpreter {
     description: String,
     example: String,
     enumerations: List[String],
-    applyValidationDescription: Schema[_] => Schema[_]) = {
+    applyValidationDescription: Schema[_] => Schema[_]
+  ) = {
     val stringSchema = new StringSchema()
     stringSchema
       .name(name)
@@ -249,49 +266,44 @@ object SwaggerCoreInterpreter {
     schema
   }
 
-  /**
-    * Responsible for adding validation specific details to the SwaggerCore files.
+  /** Responsible for adding validation specific details to the SwaggerCore files.
     *
-    * @param op The validation from we will add to the
-    * @tparam A The type which is to be validated.
+    * @param op
+    *   The validation from we will add to the
+    * @tparam A
+    *   The type which is to be validated.
     * @return
     */
   def validation[A](op: ValidationOp[A]): Schema[_] => Schema[_] = {
     op match {
       case ValidValue(values) =>
-        schema =>
-          {
-            val typedSchema = schema.asInstanceOf[Schema[A]]
-            values.foreach(typedSchema.addEnumItemObject)
-            typedSchema
-          }
+        schema => {
+          val typedSchema = schema.asInstanceOf[Schema[A]]
+          values.foreach(typedSchema.addEnumItemObject)
+          typedSchema
+        }
       case InvalidValue(values) =>
         val invalidDescription =
           s"These values are not allowed: ${values.mkString("('", ",", "')")}."
-        schema =>
-          {
-            val description = schema.getDescription
-            val newDescription =
-              if (description.isEmpty) invalidDescription
-              else description + " " + invalidDescription
-            schema.setDescription(newDescription)
-            schema
-          }
+        schema => {
+          val description = schema.getDescription
+          val newDescription =
+            if (description.isEmpty) invalidDescription
+            else description + " " + invalidDescription
+          schema.setDescription(newDescription)
+          schema
+        }
       case sv.IsAlphanumeric =>
         schema =>
           schema.pattern("^[:alnum:]+$"); schema
       case sv.MinLength(min) =>
-        schema =>
-          schema.minLength(min)
+        schema => schema.minLength(min)
       case sv.MaxLength(max) =>
-        schema =>
-          schema.maxLength(max)
+        schema => schema.maxLength(max)
       case sv.MatchesRegex(r) =>
-        schema =>
-          schema.pattern(r.toString())
+        schema => schema.pattern(r.toString())
       case sv.Length(l) =>
-        schema =>
-          schema.minLength(l).maxLength(l)
+        schema => schema.minLength(l).maxLength(l)
       case sv.Custom(_, _, _) => identity
       case sv.Uppercase       => identity
       case sv.Token           => identity
@@ -322,8 +334,7 @@ object SwaggerCoreInterpreter {
   }
 }
 
-/**
-  * Responsible for creating the data portion of the Swagger schema.
+/** Responsible for creating the data portion of the Swagger schema.
   */
 trait SwaggerCoreInterpreter[ALG[_]]
     extends KvpCollectionMatch[String, ALG, SwaggerSchemas[ObjectSchema]] {
@@ -333,8 +344,9 @@ trait SwaggerCoreInterpreter[ALG[_]]
   def customInterpreter: CustomSwaggerInterpreter[ALG]
 
   private def copySchema(head: Schema[_], tail: ObjectSchema): ObjectSchema = {
-    Option(head.getProperties).foreach(_.asScala.toList.foreach(prop =>
-      tail.addProperties(prop._1, prop._2)))
+    Option(head.getProperties).foreach(
+      _.asScala.toList.foreach(prop => tail.addProperties(prop._1, prop._2))
+    )
     Option(head.getRequired).foreach(_.asScala.toList.foreach(req => tail.addRequiredItem(req)))
     tail
   }
@@ -359,12 +371,17 @@ trait SwaggerCoreInterpreter[ALG[_]]
         val mainSchema = composedSchema.mainSchema.addOneOfItem(objectSchema)
         SwaggerSchemas(
           mainSchema,
-          (co.typeNameOfA, lSchema.mainSchema) :: lSchema.referenceSchemas ::: composedSchema.referenceSchemas)
+          (
+            co.typeNameOfA,
+            lSchema.mainSchema
+          ) :: lSchema.referenceSchemas ::: composedSchema.referenceSchemas
+        )
       }
     }
 
   override def kvpCoproduct[C <: Coproduct](
-    kvp: KvpCoproduct[String, ALG, C]): SwaggerSchemas[ObjectSchema] = {
+    kvp: KvpCoproduct[String, ALG, C]
+  ): SwaggerSchemas[ObjectSchema] = {
     val composedSchema = fromKvpCoproduct(kvp)
     val name =
       KvpCollection.headTypeName(kvp).getOrElse("Unknown")
@@ -380,7 +397,8 @@ trait SwaggerCoreInterpreter[ALG[_]]
   }
 
   override def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
-    kvp: KvpSingleValueHead[String, ALG, H, T, TL, O]): SwaggerSchemas[ObjectSchema] = {
+    kvp: KvpSingleValueHead[String, ALG, H, T, TL, O]
+  ): SwaggerSchemas[ObjectSchema] = {
 
     val tailSchemas = fromKvpCollection(kvp.tail)
 
@@ -401,14 +419,16 @@ trait SwaggerCoreInterpreter[ALG[_]]
   }
 
   override def kvpWrappedHList[A, H <: HList, HL <: Nat](
-    wrappedHList: KvpWrappedHList[String, ALG, A, H, HL]): SwaggerSchemas[ObjectSchema] = {
+    wrappedHList: KvpWrappedHList[String, ALG, A, H, HL]
+  ): SwaggerSchemas[ObjectSchema] = {
     val schema = fromKvpCollection(wrappedHList.wrappedEncoding)
     schema.mainSchema.name(wrappedHList.typeNameOfA)
     schema
   }
 
   override def kvpWrappedCoproduct[A, C <: Coproduct](
-    wrappedCoproduct: KvpWrappedCoproduct[String, ALG, A, C]): SwaggerSchemas[ObjectSchema] = {
+    wrappedCoproduct: KvpWrappedCoproduct[String, ALG, A, C]
+  ): SwaggerSchemas[ObjectSchema] = {
     val schema = fromKvpCollection(wrappedCoproduct.wrappedEncoding)
     schema.mainSchema.name(wrappedCoproduct.typeNameOfA)
     schema
@@ -420,8 +440,10 @@ trait SwaggerCoreInterpreter[ALG[_]]
     H <: HList,
     HL <: Nat,
     T <: HList,
-    TL <: Nat](kvp: KvpHListCollectionHead[String, ALG, HO, NO, H, HL, T, TL])
-    : SwaggerSchemas[ObjectSchema] = {
+    TL <: Nat
+  ](
+    kvp: KvpHListCollectionHead[String, ALG, HO, NO, H, HL, T, TL]
+  ): SwaggerSchemas[ObjectSchema] = {
     val headSchemas = fromKvpCollection(kvp.head)
     val tailSchemas = fromKvpCollection(kvp.tail)
     val schema = copySchema(headSchemas.mainSchema, tailSchemas.mainSchema)
@@ -438,15 +460,16 @@ trait SwaggerCoreInterpreter[ALG[_]]
       case Right(alg) => customInterpreter.toSchema(alg, description, example)
     }
 
-  /**
-    * Recursive method which builds up a Swagger Core Schema object from the DataClass definition.
+  /** Recursive method which builds up a Swagger Core Schema object from the DataClass definition.
     *
-    * @param vd The DataClass definition to convert to a Schema
-    **/
+    * @param vd
+    *   The DataClass definition to convert to a Schema
+    */
   def valueDefinition[A](
     vd: HigherOrderValue[String, ALG, A],
     description: Option[String],
-    example: Option[A]): Name => SwaggerSchemas[Schema[_]] = {
+    example: Option[A]
+  ): Name => SwaggerSchemas[Schema[_]] = {
     vd match {
       case op: OptionalValue[String, ALG, b] @unchecked =>
         name =>
@@ -470,7 +493,8 @@ trait SwaggerCoreInterpreter[ALG[_]]
             determineValueDefinition[a](ed.definitionA, description, None)("left" + name.capitalize)
           val b =
             determineValueDefinition[b](ed.definitionB, description, None)(
-              "right" + name.capitalize)
+              "right" + name.capitalize
+            )
           val composedSchema = new ComposedSchema()
             .addAnyOfItem(a.mainSchema)
             .addAnyOfItem(b.mainSchema)

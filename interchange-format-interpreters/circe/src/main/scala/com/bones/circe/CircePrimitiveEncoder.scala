@@ -42,7 +42,9 @@ object CircePrimitiveEncoder extends InterchangeFormatPrimitiveEncoder[Json] {
   override def addStringField(element: Json, name: String, value: String): Json =
     Json.obj((name, Json.fromString(value)) :: element.asObject.toList.flatMap(_.toList): _*)
 
-  /** Assumes prefix and postfix are JSON objects and combines the key/value pairs into a single object. */
+  /** Assumes prefix and postfix are JSON objects and combines the key/value pairs into a single
+    * object.
+    */
   override def combine(prefix: Json, postfix: Json): Json = {
     val v1 = prefix.asObject.toList.flatMap(_.toList)
     val v2 = postfix.asObject.toList.flatMap(_.toList)

@@ -16,8 +16,7 @@ trait JavaUtilEncoder[OUT] extends InterchangeFormatEncoderValue[JavaUtilValue, 
   override def generateEncoder[A](alg: JavaUtilValue[A]): Encoder[JavaUtilValue, A, OUT] =
     alg match {
       case UuidData(_) =>
-        (uuid: UUID) =>
-          defaultEncoder.stringToOut.apply(uuid.toString)
+        (uuid: UUID) => defaultEncoder.stringToOut.apply(uuid.toString)
 
     }
 }

@@ -34,7 +34,8 @@ class SprayTest extends AnyFunSuite with Checkers with Matchers {
         newCc match {
           case Left(x) =>
             fail(
-              s"expected success, received $x for JSON string ${new String(jsonString, utf8).toJson}")
+              s"expected success, received $x for JSON string ${new String(jsonString, utf8).toJson}"
+            )
           case Right(newCc2) =>
             newCc2.fancyEquals(cc)
         }

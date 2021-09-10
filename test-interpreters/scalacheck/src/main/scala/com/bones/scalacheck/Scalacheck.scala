@@ -9,12 +9,13 @@ import shapeless.{:+:, CNil, Coproduct, HList, HNil, Inl, Inr, Nat}
 
 object GenValue {
 
-  /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
-    * see https://stackoverflow.com/a/60561575/387094
-    * */
+  /** using kind projector allows us to create a new interpreter by merging two existing
+    * interpreters. see https://stackoverflow.com/a/60561575/387094
+    */
   def merge[L[_], R[_] <: Coproduct](
     li: GenValue[L],
-    ri: GenValue[R]): GenValue[Lambda[A => L[A] :+: R[A]]] =
+    ri: GenValue[R]
+  ): GenValue[Lambda[A => L[A] :+: R[A]]] =
     new GenValue[Lambda[A => L[A] :+: R[A]]] {
 
       override def gen[A](lr: L[A] :+: R[A]): Gen[A] = lr match {
@@ -34,8 +35,7 @@ object GenValue {
 
 }
 
-/**
-  * Implement this to support a custom Algebra.
+/** Implement this to support a custom Algebra.
   *
   * @tparam ALG
   */
@@ -64,7 +64,8 @@ trait ScalacheckBase[K, ALG[_]] extends KvpCollectionTransformation[K, ALG, Gen]
     determineValueDefinition(keyDefinition.dataDefinition)
 
   private def coproductFrequencies[O <: Coproduct](
-    kvpCoproduct: KvpCoproduct[K, ALG, O]): List[(Int, Gen[O])] = {
+    kvpCoproduct: KvpCoproduct[K, ALG, O]
+  ): List[(Int, Gen[O])] = {
     kvpCoproduct match {
       case kvpCoproductCollectionHead: KvpCoproductCollectionHead[K, ALG, h, c, O] => {
         val tailFrequencies =
@@ -78,7 +79,8 @@ trait ScalacheckBase[K, ALG[_]] extends KvpCollectionTransformation[K, ALG, Gen]
     }
   }
   override def kvpCoproductCollectionHead[A, C <: Coproduct, O <: A :+: C](
-    kvpCoproductCollectionHead: KvpCoproductCollectionHead[K, ALG, A, C, O]): Gen[O] = {
+    kvpCoproductCollectionHead: KvpCoproductCollectionHead[K, ALG, A, C, O]
+  ): Gen[O] = {
 
     val frequencies = coproductFrequencies(kvpCoproductCollectionHead)
     Gen.frequency(frequencies: _*)

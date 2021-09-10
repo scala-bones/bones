@@ -12,13 +12,15 @@ import java.nio.charset.{Charset, StandardCharsets}
 case class SprayDefaultValuesByteArrayInterpreter(charset: Charset = StandardCharsets.UTF_8)
     extends Interpreter[String, DefaultValues] {
   override def generateEncoder[A](
-    kvp: KvpCollection[String, DefaultValues, A]): Encoder[DefaultValues, A, Array[Byte]] =
+    kvp: KvpCollection[String, DefaultValues, A]
+  ): Encoder[DefaultValues, A, Array[Byte]] =
     com.bones.sprayjson.values.isoSprayEncoderInterpreter
       .generateEncoder(kvp)
       .map(_.compactPrint.getBytes(charset))
 
-  override def generateValidator[A](kvp: KvpCollection[String, DefaultValues, A])
-    : Validator[String, DefaultValues, A, Array[Byte]] = {
+  override def generateValidator[A](
+    kvp: KvpCollection[String, DefaultValues, A]
+  ): Validator[String, DefaultValues, A, Array[Byte]] = {
     val validator = com.bones.sprayjson.values.isoSprayValidatorInterpreter
       .generateValidator(kvp)
     SprayValidatorFromByteArray(charset)

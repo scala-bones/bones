@@ -43,7 +43,9 @@ object SprayPrimitiveEncoder extends InterchangeFormatPrimitiveEncoder[JsValue] 
     JsObject(element.asJsObject.fields.updated(name, JsString(value)))
   }
 
-  /** Assumes prefix and postfix are JsValue objects and combines the key/value pairs into a single object. */
+  /** Assumes prefix and postfix are JsValue objects and combines the key/value pairs into a single
+    * object.
+    */
   override def combine(prefix: JsValue, postfix: JsValue): JsValue = {
     val v1 = prefix.asJsObject.fields
     val v2 = postfix.asJsObject.fields

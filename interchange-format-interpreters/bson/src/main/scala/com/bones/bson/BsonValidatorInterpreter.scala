@@ -17,8 +17,7 @@ import reactivemongo.bson.{
   BSONValue
 }
 
-/**
-  * Module responsible for validating data from BSON and convering to Values.
+/** Module responsible for validating data from BSON and convering to Values.
   */
 trait BsonValidatorInterpreter[ALG[_]]
     extends KvpInterchangeFormatValidatorInterpreter[ALG, BSONValue] {
@@ -27,12 +26,12 @@ trait BsonValidatorInterpreter[ALG[_]]
     schema: KvpCollection[String, ALG, A]
   ): Validator[String, ALG, A, Array[Byte]] = {
     val f = fromKvpCollection(schema)
-    (bytes, path) =>
-      fromByteArray(bytes).flatMap(f.validateWithPath(_, path))
+    (bytes, path) => fromByteArray(bytes).flatMap(f.validateWithPath(_, path))
   }
 
-  /** An additional string in the serialized format which states the coproduct type.
-    * TODO:  refactor this interpreter so this property can be overwritten. */
+  /** An additional string in the serialized format which states the coproduct type. TODO: refactor
+    * this interpreter so this property can be overwritten.
+    */
   override val coproductTypeKey: String = "type"
 
   override def isEmpty(json: BSONValue): Boolean = json match {
@@ -48,7 +47,8 @@ trait BsonValidatorInterpreter[ALG[_]]
   override def invalidValue[T](
     bson: BSONValue,
     typeName: String,
-    path: List[String]): Left[ExtractionErrors[String], Nothing] = {
+    path: List[String]
+  ): Left[ExtractionErrors[String], Nothing] = {
     val invalid = bson match {
       case _: BSONBoolean  => classOf[Boolean]
       case _: BSONDouble   => classOf[Double]
@@ -64,7 +64,8 @@ trait BsonValidatorInterpreter[ALG[_]]
     in: BSONValue,
     kv: KeyDefinition[String, ALG, A],
     headInterpreter: OptionalInputValidator[String, ALG, A, BSONValue],
-    path: List[String]): Either[ExtractionErrors[String], A] = {
+    path: List[String]
+  ): Either[ExtractionErrors[String], A] = {
     in match {
       case doc: BSONDocument =>
         val fields = doc.elements

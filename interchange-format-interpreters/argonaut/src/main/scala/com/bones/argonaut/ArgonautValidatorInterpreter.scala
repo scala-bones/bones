@@ -13,9 +13,8 @@ import com.bones.interpreter.validator.{
 
 import scala.util.control.NonFatal
 
-/**
-  * Module responsible for converting argonaut JSON input into values with validation checks.
-  * See [KvpInterchangeFormatValidatorInterpreter.validatorFromSchema] for the entry point.
+/** Module responsible for converting argonaut JSON input into values with validation checks. See
+  * [KvpInterchangeFormatValidatorInterpreter.validatorFromSchema] for the entry point.
   */
 trait ArgonautValidatorInterpreter[ALG[_]]
     extends KvpInterchangeFormatValidatorInterpreter[ALG, Json] {
@@ -24,34 +23,36 @@ trait ArgonautValidatorInterpreter[ALG[_]]
 
   override def isEmpty(json: Json): JsonBoolean = json.isNull
 
-  /**
-    *Creates a function which validates a byte array, convertible to a String with the specified Charset and converts it
-    * the type A as defined by the BonesSchema.
+  /** Creates a function which validates a byte array, convertible to a String with the specified
+    * Charset and converts it the type A as defined by the BonesSchema.
     *
-    * @param schema The schema, use to create the validation function.
-    * @param charset The charset used to convert the Byte Array to a String
-    * @tparam A The resulting type -- the type wrapped by the Bones Schema.
-    * @return a function validating a Json Byte Array with the specified data.
+    * @param schema
+    *   The schema, use to create the validation function.
+    * @param charset
+    *   The charset used to convert the Byte Array to a String
+    * @tparam A
+    *   The resulting type -- the type wrapped by the Bones Schema.
+    * @return
+    *   a function validating a Json Byte Array with the specified data.
     */
   def generateByteArrayValidator[A](
     schema: KvpCollection[String, ALG, A],
     charset: Charset
   ): Array[Byte] => Either[ExtractionErrors[String], A] = {
     val fromSchemaFunction = fromKvpCollection(schema)
-    bytes =>
-      {
-        try {
-          val str = new String(bytes, charset)
-          Parse
-            .parse(str)
-            .left
-            .map(str => List(ParsingError[String](str)))
-            .flatMap(fromSchemaFunction.validate)
-        } catch {
-          case NonFatal(ex) =>
-            Left(List(ParsingError(ex.getMessage, Some(ex))))
-        }
+    bytes => {
+      try {
+        val str = new String(bytes, charset)
+        Parse
+          .parse(str)
+          .left
+          .map(str => List(ParsingError[String](str)))
+          .flatMap(fromSchemaFunction.validate)
+      } catch {
+        case NonFatal(ex) =>
+          Left(List(ParsingError(ex.getMessage, Some(ex))))
       }
+    }
   }
 
   override def headValue[A](

@@ -17,16 +17,17 @@ object ScalacheckJavaTimeInterpreter {
     validation: BaseDateValidation[A],
     globalMin: A,
     globalMax: A,
-    choose: Gen.Choose[A]): Gen[A] = {
+    choose: Gen.Choose[A]
+  ): Gen[A] = {
     // Using calendar results in invalid leap years, so we'll use Int instead
     val min = validations
-      .collectFirst({
-        case validation.MinTime(min, _, _, _) => min
+      .collectFirst({ case validation.MinTime(min, _, _, _) =>
+        min
       })
       .getOrElse(globalMin)
     val max = validations
-      .collectFirst({
-        case validation.MaxTime(max, _, _, _) => max
+      .collectFirst({ case validation.MaxTime(max, _, _, _) =>
+        max
       })
       .getOrElse(globalMax)
     choose.choose(min, max)
@@ -107,7 +108,9 @@ trait ScalacheckJavaTimeInterpreter extends GenValue[JavaTimeValue] {
           dateTime <- chooseLocalDateTime.choose(min.toLocalDateTime, max.toLocalDateTime)
           offset <- chooseZoneOffset.choose(ZoneOffset.MIN, ZoneOffset.MAX)
         } yield OffsetDateTime.of(dateTime, offset)
-      ).retryUntil(x => (x == min || x.isAfter(min)) && (x == max || x.isBefore(max))) // TODO: think this through, might be able to remove the 'retryUntil'.
+      ).retryUntil(x =>
+        (x == min || x.isAfter(min)) && (x == max || x.isBefore(max))
+      ) // TODO: think this through, might be able to remove the 'retryUntil'.
   }
 
   val chooseOffsetTime = new Choose[OffsetTime] {
@@ -166,8 +169,8 @@ trait ScalacheckJavaTimeInterpreter extends GenValue[JavaTimeValue] {
   }
 
   def genZoneId(validations: List[ValidationOp[ZoneId]]): Gen[ZoneId] = {
-    val values = validations.collectFirst {
-      case v: ValidValue[_] => v.validValues.map(_.toString)
+    val values = validations.collectFirst { case v: ValidValue[_] =>
+      v.validValues.map(_.toString)
     } getOrElse {
       ZoneId.getAvailableZoneIds.asScala
     }
@@ -175,13 +178,13 @@ trait ScalacheckJavaTimeInterpreter extends GenValue[JavaTimeValue] {
   }
 
   def genZoneDateTime(validations: List[ValidationOp[ZonedDateTime]]): Gen[ZonedDateTime] = {
-    val min = validations.collectFirst {
-      case m: ZonedDateTimeValidations.MinTime => m.minDate.toLocalDateTime
+    val min = validations.collectFirst { case m: ZonedDateTimeValidations.MinTime =>
+      m.minDate.toLocalDateTime
     } getOrElse {
       LocalDateTime.MIN
     }
-    val max = validations.collectFirst {
-      case m: ZonedDateTimeValidations.MaxTime => m.maxDate.toLocalDateTime
+    val max = validations.collectFirst { case m: ZonedDateTimeValidations.MaxTime =>
+      m.maxDate.toLocalDateTime
     } getOrElse {
       LocalDateTime.MAX
     }
@@ -196,16 +199,16 @@ trait ScalacheckJavaTimeInterpreter extends GenValue[JavaTimeValue] {
   }
 
   def genZoneOffset(validations: List[ValidationOp[ZoneOffset]]): Gen[ZoneOffset] = {
-    validations.collectFirst {
-      case v: ValidValue[_] => Gen.oneOf(v.validValues)
+    validations.collectFirst { case v: ValidValue[_] =>
+      Gen.oneOf(v.validValues)
     } getOrElse {
-      val min = validations.collectFirst {
-        case m: ZoneOffsetValidations.MaxTime => m.maxDate
+      val min = validations.collectFirst { case m: ZoneOffsetValidations.MaxTime =>
+        m.maxDate
       } getOrElse {
         ZoneOffset.MIN
       }
-      val max = validations.collectFirst {
-        case m: ZoneOffsetValidations.MaxTime => m.maxDate
+      val max = validations.collectFirst { case m: ZoneOffsetValidations.MaxTime =>
+        m.maxDate
       } getOrElse {
         ZoneOffset.MAX
       }
@@ -219,8 +222,8 @@ trait ScalacheckJavaTimeInterpreter extends GenValue[JavaTimeValue] {
         ScalacheckScalaCoreInterpreter.sentencesGen.map(word => new DateTimeException(word))
       case dow: DayOfWeekData =>
         val values = dow.validations
-          .collectFirst[Seq[DayOfWeek]]({
-            case v: ValidValue[A] => v.validValues
+          .collectFirst[Seq[DayOfWeek]]({ case v: ValidValue[A] =>
+            v.validValues
           })
           .getOrElse(DayOfWeek.values.toSeq)
         Gen.oneOf(values)
@@ -243,7 +246,10 @@ trait ScalacheckJavaTimeInterpreter extends GenValue[JavaTimeValue] {
           dd.validations,
           LocalDateTimeValidation,
           LocalDateTime
-            .of(LocalDate.ofEpochDay(Int.MinValue), LocalTime.MIN), // toEpochMilli in LocalDateTime doesn't work if the value is outside of the Int range
+            .of(
+              LocalDate.ofEpochDay(Int.MinValue),
+              LocalTime.MIN
+            ), // toEpochMilli in LocalDateTime doesn't work if the value is outside of the Int range
           LocalDateTime.of(LocalDate.ofEpochDay(Int.MaxValue), LocalTime.MAX),
           chooseLocalDateTime
         )
@@ -251,8 +257,8 @@ trait ScalacheckJavaTimeInterpreter extends GenValue[JavaTimeValue] {
         genTime(dt.validations, LocalTimeValidation, LocalTime.MIN, LocalTime.MAX, chooseLocalTime)
       case md: MonthData =>
         val values = md.validations
-          .collectFirst[Seq[Month]] {
-            case v: ValidValue[A] => v.validValues
+          .collectFirst[Seq[Month]] { case v: ValidValue[A] =>
+            v.validValues
           }
           .getOrElse(Month.values.toSeq)
         Gen.oneOf(values)
@@ -262,25 +268,28 @@ trait ScalacheckJavaTimeInterpreter extends GenValue[JavaTimeValue] {
           MonthDayValidations,
           MonthDay.of(1, 1),
           MonthDay.of(12, 31),
-          chooseMonthDay)
+          chooseMonthDay
+        )
       case od: OffsetDateTimeData =>
         genTime(
           od.validations,
           OffsetDateTimeValidations,
           OffsetDateTime.MIN,
           OffsetDateTime.MAX,
-          chooseOffsetDateTime)
+          chooseOffsetDateTime
+        )
       case ot: OffsetTimeData =>
         genTime(
           ot.validations,
           OffsetTimeValidations,
           OffsetTime.MIN,
           OffsetTime.MAX,
-          chooseOffsetTime)
+          chooseOffsetTime
+        )
       case pd: PeriodData =>
         pd.validations
-          .collectFirst {
-            case v: ValidValue[A] => Gen.oneOf(v.validValues)
+          .collectFirst { case v: ValidValue[A] =>
+            Gen.oneOf(v.validValues)
           }
           .getOrElse {
             ScalacheckScalaCoreInterpreter.validationConstraints[Period](
@@ -295,13 +304,13 @@ trait ScalacheckJavaTimeInterpreter extends GenValue[JavaTimeValue] {
       case yd: YearData => genYear(yd.validations)
       case ym: YearMonthData => {
         val minYearMonth = ym.validations
-          .collectFirst {
-            case min: YearMonthValidations.Min => min.minLong
+          .collectFirst { case min: YearMonthValidations.Min =>
+            min.minLong
           }
           .getOrElse(YearMonth.of(Year.MIN_VALUE, 1))
         val maxyearMonth = ym.validations
-          .collectFirst {
-            case max: YearMonthValidations.Max => max.maxLong
+          .collectFirst { case max: YearMonthValidations.Max =>
+            max.maxLong
           }
           .getOrElse(YearMonth.of(Year.MAX_VALUE, 12))
 

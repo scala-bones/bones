@@ -32,7 +32,8 @@ trait JavaTimeInterpreter extends CustomSwaggerInterpreter[JavaTimeValue] {
   override def toSchema[A](
     alg: JavaTimeValue[A],
     description: Option[String],
-    example: Option[A]): Name => SwaggerCoreInterpreter.SwaggerSchemas[Schema[_]] = {
+    example: Option[A]
+  ): Name => SwaggerCoreInterpreter.SwaggerSchemas[Schema[_]] = {
 
     val swaggerDescription =
       description.getOrElse(JavaTimeValueDefaultJsonMetadata.getDefaultDescription(alg))
@@ -47,7 +48,8 @@ trait JavaTimeInterpreter extends CustomSwaggerInterpreter[JavaTimeValue] {
             name,
             swaggerDescription,
             swaggerExample.asInstanceOf[DateTimeException].getMessage,
-            validations(dte.validations))
+            validations(dte.validations)
+          )
       case dow: DayOfWeekData =>
         name =>
           addEnumerationData(

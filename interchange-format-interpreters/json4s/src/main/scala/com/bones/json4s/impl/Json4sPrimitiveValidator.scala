@@ -16,14 +16,16 @@ object Json4sPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JVal
       in match {
         case JString(value) => Right(value)
         case _              => Left(determineError(in, typeName, path))
-    }
+      }
 
   def tryNumberConversion[N, NN: Manifest](
     path: List[String],
     value: N,
-    f: N => NN): Either[ExtractionErrors[String], NN] =
+    f: N => NN
+  ): Either[ExtractionErrors[String], NN] =
     Try(f(value)).toEither.left.map(ex =>
-      List(CanNotConvert(path, value, manifest[NN].runtimeClass, Some(ex))))
+      List(CanNotConvert(path, value, manifest[NN].runtimeClass, Some(ex)))
+    )
 
   override def extractInt[ALG2[_], A]: Validator[String, ALG2, Int, JValue] = {
     (in: JValue, path: List[String]) =>
@@ -95,12 +97,12 @@ object Json4sPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JVal
   }
 
   override def extractArray[ALG2[_], A](
-    typeName: String): Validator[String, ALG2, Seq[JValue], JValue] = {
-    (in: JValue, path: List[String]) =>
-      in match {
-        case JArray(elements) => Right(elements)
-        case _                => Left(determineError(in, typeName, path))
-      }
+    typeName: String
+  ): Validator[String, ALG2, Seq[JValue], JValue] = { (in: JValue, path: List[String]) =>
+    in match {
+      case JArray(elements) => Right(elements)
+      case _                => Left(determineError(in, typeName, path))
+    }
   }
 
   override def extractBigDecimal[ALG2[_], A]: Validator[String, ALG2, BigDecimal, JValue] = {

@@ -93,13 +93,14 @@ trait BonesToTapirTransformation[ALG[_]] {
   def combineSchemaHead[H <: HList, T <: HList, HO <: HList](
     s1: Schema[H],
     s2: Schema[T],
-    prepend: Prepend.Aux[H, T, HO],
+    prepend: Prepend.Aux[H, T, HO]
   ): Schema[HO] = {
     val newType = (s1.schemaType, s2.schemaType) match {
       case (SProduct(i1, f1), SProduct(i2, f2)) => {
         val sObjectInfo = SchemaType.SObjectInfo(
           i1.fullName,
-          i1.typeParameterShortNames ::: i2.typeParameterShortNames)
+          i1.typeParameterShortNames ::: i2.typeParameterShortNames
+        )
         SProduct(sObjectInfo, f1 ++ f2)
       }
       case x => throw new IllegalStateException(s"Unexpected case: ${x}")
@@ -129,7 +130,8 @@ trait BonesToTapirTransformation[ALG[_]] {
       case (SProduct(i1, f1), SProduct(i2, f2)) => {
         val sObjectInfo = SchemaType.SObjectInfo(
           i1.fullName,
-          i1.typeParameterShortNames ::: i2.typeParameterShortNames)
+          i1.typeParameterShortNames ::: i2.typeParameterShortNames
+        )
         SProduct(sObjectInfo, f1 ++ f2)
       }
       case x => throw new IllegalStateException(s"Unexpected case: ${x}")
@@ -153,14 +155,16 @@ trait BonesToTapirTransformation[ALG[_]] {
       None,
       None,
       None,
-      false)
+      false
+    )
   }
 
   def fromKvpCoproduct[C <: Coproduct](value: KvpCoproduct[String, ALG, C]): Schema[C] = {
 
     def rec[H <: Coproduct, T <: Coproduct](
       headSchema: Schema[H],
-      recValue: KvpCoproduct[String, ALG, T]): Schema[T] = {
+      recValue: KvpCoproduct[String, ALG, T]
+    ): Schema[T] = {
 
 //      recValue match {
 //        case KvpCoNil() => headSchema
@@ -180,7 +184,8 @@ trait BonesToTapirTransformation[ALG[_]] {
   }
 
   def keyDefinitionSchema[A](
-    keyDefinition: KeyDefinition[String, ALG, A]): (FieldName, Schema[_]) = {
+    keyDefinition: KeyDefinition[String, ALG, A]
+  ): (FieldName, Schema[_]) = {
     val schema = determineValueDefinition(keyDefinition.dataDefinition)
     (FieldName(keyDefinition.key), schema)
   }
@@ -211,7 +216,8 @@ trait BonesToTapirTransformation[ALG[_]] {
           None,
           None,
           None,
-          false)
+          false
+        )
       case ld: ListData[String, ALG, t] =>
         determineValueDefinition(ld.tDefinition).asArray
       case od: OptionalValue[String, ALG, b] =>
