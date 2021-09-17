@@ -33,8 +33,7 @@ trait KvpCollectionValidateAndDecode[K, ALG[_], IN] {
       case kvp: KvpWrappedHList[K, ALG, a, h, n] @unchecked  => kvpClass(kvp)
       case kvp: KvpWrappedCoproduct[K, ALG, a, c] @unchecked => kvpSuperclass(kvp)
       case kvp: KvpCoNil[K, ALG] =>
-        (_, path) =>
-          Left(List(RequiredValue(path, "Coproduct")))
+        (_, path) => Left(List(RequiredValue(path, "Coproduct")))
       case kvp: KvpCoproductCollectionHead[K, ALG, a, c, o] =>
         kvpCoproductCollectionHead[a, c, o](kvp).asInstanceOf[Validator[K, ALG, A, IN]]
       case kvp: KvpSingleValueHead[K, ALG, h, t, tl, a] @unchecked =>
@@ -46,50 +45,51 @@ trait KvpCollectionValidateAndDecode[K, ALG[_], IN] {
   }
 
   def kvpClass[A, H <: HList, HL <: Nat](
-    kvpClass: KvpWrappedHList[K, ALG, A, H, HL]): Validator[K, ALG, A, IN] = {
+    kvpClass: KvpWrappedHList[K, ALG, A, H, HL]
+  ): Validator[K, ALG, A, IN] = {
     val wrappedF = fromKvpCollection(kvpClass.wrappedEncoding)
-    (in, path) =>
-      {
-        val wrappedResult = wrappedF.validateWithPath(in, path)
-        wrappedResult.map(kvpClass.fHtoA)
-      }
+    (in, path) => {
+      val wrappedResult = wrappedF.validateWithPath(in, path)
+      wrappedResult.map(kvpClass.fHtoA)
+    }
   }
 
   def kvpSuperclass[A, C <: Coproduct](
-    kvpSuperclass: KvpWrappedCoproduct[K, ALG, A, C]): Validator[K, ALG, A, IN] = {
+    kvpSuperclass: KvpWrappedCoproduct[K, ALG, A, C]
+  ): Validator[K, ALG, A, IN] = {
     val wrappedF = fromKvpCollection(kvpSuperclass.wrappedEncoding)
-    (in: IN, path: List[K]) =>
-      {
-        val wrappedResult = wrappedF.validateWithPath(in, path)
-        wrappedResult.map(kvpSuperclass.fCtoA)
-      }
+    (in: IN, path: List[K]) => {
+      val wrappedResult = wrappedF.validateWithPath(in, path)
+      wrappedResult.map(kvpSuperclass.fCtoA)
+    }
   }
   def kvpCollectionHead[HO <: HList, NO <: Nat, H <: HList, HL <: Nat, T <: HList, TL <: Nat](
-    kvp: KvpHListCollectionHead[K, ALG, HO, NO, H, HL, T, TL]): Validator[K, ALG, HO, IN] = {
+    kvp: KvpHListCollectionHead[K, ALG, HO, NO, H, HL, T, TL]
+  ): Validator[K, ALG, HO, IN] = {
     val headF = fromKvpCollection(kvp.head)
     val tailF = fromKvpCollection(kvp.tail)
-    (in, path) =>
-      {
-        val headResult = headF.validateWithPath(in, path)
-        val tailResult = tailF.validateWithPath(in, path)
+    (in, path) => {
+      val headResult = headF.validateWithPath(in, path)
+      val tailResult = tailF.validateWithPath(in, path)
 
-        val combinedResult = Util.eitherMap2(headResult, tailResult) { (h, t) =>
-          {
-            kvp.prepend(h, t)
-          }
+      val combinedResult = Util.eitherMap2(headResult, tailResult) { (h, t) =>
+        {
+          kvp.prepend(h, t)
         }
-        for {
-          cr <- combinedResult
-          x <- ValidationUtil.validate(kvp.validations)(cr, path)
-        } yield x
-
       }
+      for {
+        cr <- combinedResult
+        x <- ValidationUtil.validate(kvp.validations)(cr, path)
+      } yield x
+
+    }
   }
 
   def kvpNil(kvp: KvpNil[K, ALG]): Validator[K, ALG, HNil, IN] = (_, _) => Right(HNil)
 
   def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
-    kvp: KvpSingleValueHead[K, ALG, H, T, TL, O]): Validator[K, ALG, O, IN] = {
+    kvp: KvpSingleValueHead[K, ALG, H, T, TL, O]
+  ): Validator[K, ALG, O, IN] = {
 
     val headF = kvp.head match {
       case Left(value)       => keyDefinition(value)
@@ -98,46 +98,48 @@ trait KvpCollectionValidateAndDecode[K, ALG[_], IN] {
 
     val tailF = fromKvpCollection(kvp.tail)
 
-    (in, path) =>
-      {
-        val headPath = kvp.head match {
-          case Left(value) => path :+ value.key
-          case Right(_)    => path
-        }
-
-        val headResult = headF.validateWithPath(in, headPath)
-
-        val tailResult = tailF.validateWithPath(in, path)
-
-        Util
-          .eitherMap2(headResult, tailResult)((l1, l2) => {
-            kvp.isHCons.cons(l1, l2)
-          })
-          .flatMap { l =>
-            ValidationUtil.validate(kvp.validations)(l, path)
-          }
+    (in, path) => {
+      val headPath = kvp.head match {
+        case Left(value) => path :+ value.key
+        case Right(_)    => path
       }
+
+      val headResult = headF.validateWithPath(in, headPath)
+
+      val tailResult = tailF.validateWithPath(in, path)
+
+      Util
+        .eitherMap2(headResult, tailResult)((l1, l2) => {
+          kvp.isHCons.cons(l1, l2)
+        })
+        .flatMap { l =>
+          ValidationUtil.validate(kvp.validations)(l, path)
+        }
+    }
   }
 
   def kvpCoproductCollectionHead[A, C <: Coproduct, O <: A :+: C](
-    headCoproduct: KvpCoproductCollectionHead[K, ALG, A, C, O]): Validator[K, ALG, O, IN] = {
+    headCoproduct: KvpCoproductCollectionHead[K, ALG, A, C, O]
+  ): Validator[K, ALG, O, IN] = {
 
     def nestedKvpCoproduct[C2 <: Coproduct](
-      co: KvpCoproduct[K, ALG, C2]): CoproductType => Validator[K, ALG, C2, IN] =
+      co: KvpCoproduct[K, ALG, C2]
+    ): CoproductType => Validator[K, ALG, C2, IN] =
       co match {
         case _: KvpCoNil[K, ALG] @unchecked =>
           coType =>
             new Validator[K, ALG, CNil, IN] {
               override def validateWithPath(
                 in: IN,
-                path: List[K]): Either[ExtractionErrors[K], CNil] =
+                path: List[K]
+              ): Either[ExtractionErrors[K], CNil] =
                 Left(List(SumTypeError(path, s"Unexpected type value: ${coType}")))
             }
         case co: KvpCoproductCollectionHead[K, ALG, a, r, o] @unchecked => {
           val fValue = fromKvpCollection[a](co.kvpCollection)
           val fTail = nestedKvpCoproduct[r](co.kvpTail)
-          coType => (in: IN, path: List[K]) =>
-            {
+          coType =>
+            (in: IN, path: List[K]) => {
               if (coType == co.typeNameOfA)
                 fValue
                   .validateWithPath(in, path)
@@ -152,15 +154,14 @@ trait KvpCollectionValidateAndDecode[K, ALG[_], IN] {
         }
       }
 
-    (in: IN, path: List[K]) =>
-      {
-        coproductType(in) match {
-          case None =>
-            Left(List(RequiredValue(path, s"${headCoproduct.typeNameOfA}")))
-          case Some(typeString) =>
-            nestedKvpCoproduct(headCoproduct)(typeString).validateWithPath(in, path)
-        }
+    (in: IN, path: List[K]) => {
+      coproductType(in) match {
+        case None =>
+          Left(List(RequiredValue(path, s"${headCoproduct.typeNameOfA}")))
+        case Some(typeString) =>
+          nestedKvpCoproduct(headCoproduct)(typeString).validateWithPath(in, path)
       }
+    }
 
   }
 }

@@ -19,13 +19,15 @@ trait ScalaCoreValidator[IN] extends InterchangeFormatValidatorValue[ScalaCoreVa
   val baseValidator: InterchangeFormatPrimitiveValidator[IN]
 
   override def createValidator[A](
-    alg: ScalaCoreValue[A]): OptionalInputValidator[String, ScalaCoreValue, A, IN] = {
+    alg: ScalaCoreValue[A]
+  ): OptionalInputValidator[String, ScalaCoreValue, A, IN] = {
     alg match {
       case op: StringData =>
         baseValidator.required(
           alg.typeName,
           op.validations,
-          baseValidator.extractString(alg.typeName))
+          baseValidator.extractString(alg.typeName)
+        )
       case id: IntData =>
         baseValidator.required(alg.typeName, id.validations, baseValidator.extractInt)
       case op: LongData =>
@@ -34,18 +36,18 @@ trait ScalaCoreValidator[IN] extends InterchangeFormatValidatorValue[ScalaCoreVa
         baseValidator.required(alg.typeName, op.validations, baseValidator.extractBool)
       case op @ ByteArrayData(validations) =>
         val decoder = Base64.getDecoder
-        (inOpt: Option[IN], path: Path[String]) =>
-          {
-            val result = for {
-              in <- inOpt.toRight[ExtractionErrors[String]](List(RequiredValue(path, alg.typeName)))
-              str <- baseValidator.extractString(alg.typeName).validateWithPath(in, path)
-              arr <- Try {
-                decoder.decode(str)
-              }.toEither.left.map(thr =>
-                List(CanNotConvert(path, str, classOf[Array[Byte]], Some(thr))))
-            } yield arr
-            result.asInstanceOf[Either[ExtractionErrors[String], A]]
-          }
+        (inOpt: Option[IN], path: Path[String]) => {
+          val result = for {
+            in <- inOpt.toRight[ExtractionErrors[String]](List(RequiredValue(path, alg.typeName)))
+            str <- baseValidator.extractString(alg.typeName).validateWithPath(in, path)
+            arr <- Try {
+              decoder.decode(str)
+            }.toEither.left.map(thr =>
+              List(CanNotConvert(path, str, classOf[Array[Byte]], Some(thr)))
+            )
+          } yield arr
+          result.asInstanceOf[Either[ExtractionErrors[String], A]]
+        }
       case fd: FloatData =>
         baseValidator.required(alg.typeName, fd.validations, baseValidator.extractFloat)
       case dd: DoubleData =>

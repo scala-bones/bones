@@ -28,8 +28,8 @@ object Http4sClient {
     val validator =
       CirceValidatorFromByteArray(charset).andThen(circeValidator.generateValidator(outputSchema))
 
-    httpClient => id =>
-      {
+    httpClient =>
+      id => {
         httpClient
           .expect[Array[Byte]](s"http://localhost:8080/$path/$id")
           .map(bytes => validator.validate(bytes))

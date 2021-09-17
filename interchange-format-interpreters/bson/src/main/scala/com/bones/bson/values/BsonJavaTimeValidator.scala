@@ -22,9 +22,9 @@ trait BsonJavaTimeValidator extends InterchangeFormatValidatorValue[JavaTimeValu
   val offsetTimeFormatter: DateTimeFormatter
   val zonedDateTimeFormatter: DateTimeFormatter
 
-  def extractLocalDateTime[ALG[_], A](op: ALG[A])(
-    in: BSONValue,
-    path: List[String]): Either[ExtractionErrors[String], LocalDateTime] =
+  def extractLocalDateTime[ALG[_], A](
+    op: ALG[A]
+  )(in: BSONValue, path: List[String]): Either[ExtractionErrors[String], LocalDateTime] =
     in match {
       case BSONDateTime(date) =>
         val i = Instant.ofEpochMilli(date)
@@ -42,14 +42,16 @@ trait BsonJavaTimeValidator extends InterchangeFormatValidatorValue[JavaTimeValu
   }
 
   def extractLocalTime[ALG[_], A](
-    op: ALG[A])(in: BSONValue, path: List[String]): Either[ExtractionErrors[String], LocalTime] =
+    op: ALG[A]
+  )(in: BSONValue, path: List[String]): Either[ExtractionErrors[String], LocalTime] =
     in match {
       case BSONLong(time) => Right(LocalTime.ofNanoOfDay(time))
       case x              => baseValidator.invalidValue(x, "Long", path)
     }
 
   override def createValidator[A](
-    alg: JavaTimeValue[A]): OptionalInputValidator[String, JavaTimeValue, A, BSONValue] =
+    alg: JavaTimeValue[A]
+  ): OptionalInputValidator[String, JavaTimeValue, A, BSONValue] =
     alg match {
       case d: DateTimeExceptionData =>
         parseTime(baseValidator, alg, input => new DateTimeException(input), d.validations)
@@ -64,14 +66,15 @@ trait BsonJavaTimeValidator extends InterchangeFormatValidatorValue[JavaTimeValu
               case BSONDateTime(date) =>
                 Right(Instant.ofEpochMilli(date))
               case x => baseValidator.invalidValue(x, "BSONDateTime", path)
-          }
+            }
         baseValidator.required(id.typeName, id.validations, f)
       case ld: LocalDateTimeData =>
         baseValidator
           .required[JavaTimeValue, LocalDateTime](
             ld.typeName,
             ld.validations,
-            extractLocalDateTime(ld))
+            extractLocalDateTime(ld)
+          )
       case ld: LocalDateData =>
         baseValidator.required(ld.typeName, ld.validations, extractLocalDate(ld))
       case lt: LocalTimeData =>
@@ -86,7 +89,8 @@ trait BsonJavaTimeValidator extends InterchangeFormatValidatorValue[JavaTimeValu
           baseValidator,
           alg,
           OffsetDateTime.parse(_, offsetDateTimeFormatter),
-          od.validations)
+          od.validations
+        )
       case ot: OffsetTimeData =>
         parseTime(baseValidator, alg, OffsetTime.parse(_, offsetTimeFormatter), ot.validations)
       case pd: PeriodData =>

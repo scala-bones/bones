@@ -10,7 +10,8 @@ trait CustomStringDeltaValueInterpreter[IN]
   val primitive: PrimitiveInterchangeFormat[IN, String]
 
   override def createDeltaValidator[A](
-    alg: CustomStringValue[A]): DeltaValueValidator[String, CustomStringValue, A, IN] =
+    alg: CustomStringValue[A]
+  ): DeltaValueValidator[String, CustomStringValue, A, IN] =
     primitive
       .extractString[CustomStringValue](alg.typeName)
       .asInstanceOf[DeltaValueValidator[String, CustomStringValue, A, IN]]

@@ -18,7 +18,8 @@ class ScalacheckExample extends AnyFunSuite with Checkers {
     height: Int,
     weight: Double,
     eyeColor: EyeColor.EyeColor,
-    correctiveVision: Boolean)
+    correctiveVision: Boolean
+  )
 
   // Define our "Bones Schema" with data constraints
   val personalTraitsSchema = (

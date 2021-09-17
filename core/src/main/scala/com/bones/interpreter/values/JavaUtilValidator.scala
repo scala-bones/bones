@@ -14,7 +14,8 @@ trait JavaUtilValidator[IN] extends InterchangeFormatValidatorValue[JavaUtilValu
   val baseValidator: InterchangeFormatPrimitiveValidator[IN]
 
   override def createValidator[A](
-    alg: JavaUtilValue[A]): OptionalInputValidator[String, JavaUtilValue, A, IN] = {
+    alg: JavaUtilValue[A]
+  ): OptionalInputValidator[String, JavaUtilValue, A, IN] = {
     alg match {
       case UuidData(validations) => {
         baseValidator.required(

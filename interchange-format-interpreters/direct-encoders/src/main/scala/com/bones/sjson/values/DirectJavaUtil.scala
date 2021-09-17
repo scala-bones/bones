@@ -7,8 +7,7 @@ object DirectJavaUtil extends CustomToJsonStringInterpreter[JavaUtilValue] {
   override def toJsonString[A](alg: JavaUtilValue[A]): A => List[String] = {
     alg match {
       case uu: UuidData =>
-        u =>
-          List("\"" + u.toString + "\"")
+        u => List("\"" + u.toString + "\"")
     }
   }
 }

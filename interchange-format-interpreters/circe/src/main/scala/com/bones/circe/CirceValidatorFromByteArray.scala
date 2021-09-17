@@ -12,7 +12,8 @@ case class CirceValidatorFromByteArray(charset: Charset = StandardCharsets.UTF_8
 
   private def fromByteArray(
     arr: Array[Byte],
-    charSet: Charset): Either[List[ParsingError[String]], Json] = {
+    charSet: Charset
+  ): Either[List[ParsingError[String]], Json] = {
     val input = new String(arr, charSet)
     io.circe.parser
       .parse(input)
@@ -22,6 +23,7 @@ case class CirceValidatorFromByteArray(charset: Charset = StandardCharsets.UTF_8
 
   override def validateWithPath(
     in: Array[Byte],
-    path: List[String]): Either[ExtractionErrors[String], Json] = fromByteArray(in, charset)
+    path: List[String]
+  ): Either[ExtractionErrors[String], Json] = fromByteArray(in, charset)
 
 }

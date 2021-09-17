@@ -34,7 +34,8 @@ trait JavaTimeValueInterpreter[IN] extends InterchangeFormatDeltaValidatorValue[
   val zonedDateTimeFormatter: DateTimeFormatter
 
   override def createDeltaValidator[A](
-    alg: JavaTimeValue[A]): DeltaValueValidator[String, JavaTimeValue, A, IN] = {
+    alg: JavaTimeValue[A]
+  ): DeltaValueValidator[String, JavaTimeValue, A, IN] = {
 
     def stringExtractor =
       primitive
@@ -56,7 +57,8 @@ trait JavaTimeValueInterpreter[IN] extends InterchangeFormatDeltaValidatorValue[
       case _: LocalDateTimeData =>
         stringExtractor
           .flatMapA(str =>
-            errorHandleTimeParsing(() => LocalDateTime.parse(str, localDateTimeFormatter)))
+            errorHandleTimeParsing(() => LocalDateTime.parse(str, localDateTimeFormatter))
+          )
       case _: LocalDateData =>
         stringExtractor
           .flatMapA(str => errorHandleTimeParsing(() => LocalDate.parse(str, localDateFormatter)))
@@ -72,7 +74,8 @@ trait JavaTimeValueInterpreter[IN] extends InterchangeFormatDeltaValidatorValue[
       case _: OffsetDateTimeData =>
         stringExtractor
           .flatMapA(str =>
-            errorHandleTimeParsing(() => OffsetDateTime.parse(str, offsetDateTimeFormatter)))
+            errorHandleTimeParsing(() => OffsetDateTime.parse(str, offsetDateTimeFormatter))
+          )
       case _: OffsetTimeData =>
         stringExtractor
           .flatMapA(str => errorHandleTimeParsing(() => OffsetTime.parse(str, offsetTimeFormatter)))
@@ -91,7 +94,8 @@ trait JavaTimeValueInterpreter[IN] extends InterchangeFormatDeltaValidatorValue[
       case z: ZonedDateTimeData =>
         stringExtractor
           .flatMapA(str =>
-            errorHandleTimeParsing(() => ZonedDateTime.parse(str, zonedDateTimeFormatter)))
+            errorHandleTimeParsing(() => ZonedDateTime.parse(str, zonedDateTimeFormatter))
+          )
       case z: ZoneOffsetData =>
         stringExtractor
           .flatMapA(str => errorHandleTimeParsing(() => ZoneOffset.of(str)))

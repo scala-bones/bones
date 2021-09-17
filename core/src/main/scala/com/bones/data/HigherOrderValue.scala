@@ -5,7 +5,8 @@ import com.bones.validation.ValidationDefinition.ValidationOp
 object HigherOrderValue {
   def keyMapEither[K, ALG[_], B, K2](
     e: Either[HigherOrderValue[K, ALG, B], ALG[B]],
-    f: K => K2): Either[HigherOrderValue[K2, ALG, B], ALG[B]] = {
+    f: K => K2
+  ): Either[HigherOrderValue[K2, ALG, B], ALG[B]] = {
     e match {
       case Left(hov)  => Left(hov.keyMap(f))
       case Right(alg) => Right(alg)
@@ -14,7 +15,8 @@ object HigherOrderValue {
 
   def algMapEither[K, ALG[_], A, ALG2[_]](
     e: Either[HigherOrderValue[K, ALG, A], ALG[A]],
-    f: ALG[_] => ALG2[_]): Either[HigherOrderValue[K, ALG2, A], ALG2[A]] = {
+    f: ALG[_] => ALG2[_]
+  ): Either[HigherOrderValue[K, ALG2, A], ALG2[A]] = {
     (e match {
       case Left(hov)  => Left(hov.algMap(f))
       case Right(alg) => Right(f(alg))
@@ -73,8 +75,8 @@ trait HigherOrderTemplate[K, ALG[_], OUT] {
 /** Wraps a data definition to mark the field optional */
 case class OptionalValue[K, ALG[_], B](
   valueDefinitionOp: Either[HigherOrderValue[K, ALG, B], ALG[B]],
-  typeNameOfB: String)
-    extends HigherOrderValue[K, ALG, Option[B]] {
+  typeNameOfB: String
+) extends HigherOrderValue[K, ALG, Option[B]] {
   override def typeName: String = typeNameOfB
 
   def keyMapOptionalValue[K2](f: K => K2): OptionalValue[K2, ALG, B] =
@@ -82,7 +84,8 @@ case class OptionalValue[K, ALG[_], B](
 
   def algMapOptionalValue[ALG2[_]](f: ALG[_] => ALG2[_]): OptionalValue[K, ALG2, B] =
     this.copy(
-      valueDefinitionOp = HigherOrderValue.algMapEither[K, ALG, B, ALG2](valueDefinitionOp, f))
+      valueDefinitionOp = HigherOrderValue.algMapEither[K, ALG, B, ALG2](valueDefinitionOp, f)
+    )
 
 }
 
@@ -90,8 +93,8 @@ final case class EitherData[K, ALG[_], A, B](
   definitionA: Either[HigherOrderValue[K, ALG, A], ALG[A]],
   typeNameOfA: String,
   definitionB: Either[HigherOrderValue[K, ALG, B], ALG[B]],
-  typeNameOfB: String)
-    extends HigherOrderValue[K, ALG, Either[A, B]] {
+  typeNameOfB: String
+) extends HigherOrderValue[K, ALG, Either[A, B]] {
 
   override def typeName: String = typeNameOfA + "Or" + typeNameOfB
 
@@ -108,7 +111,8 @@ final case class EitherData[K, ALG[_], A, B](
   def keyMapEitherData[K2](f: K => K2): EitherData[K2, ALG, A, B] =
     this.copy(
       definitionA = HigherOrderValue.keyMapEither(definitionA, f),
-      definitionB = HigherOrderValue.keyMapEither(definitionB, f))
+      definitionB = HigherOrderValue.keyMapEither(definitionB, f)
+    )
 
   def algMapEitherData[ALG2[_]](f: ALG[_] => ALG2[_]): EitherData[K, ALG2, A, B] =
     this.copy(
@@ -122,8 +126,8 @@ final case class EitherData[K, ALG[_], A, B](
 final case class ListData[K, ALG[_], T](
   tDefinition: Either[HigherOrderValue[K, ALG, T], ALG[T]],
   typeNameOfT: String,
-  validations: List[ValidationOp[List[T]]])
-    extends HigherOrderValue[K, ALG, List[T]] {
+  validations: List[ValidationOp[List[T]]]
+) extends HigherOrderValue[K, ALG, List[T]] {
 
   override def typeName: String = "listOf" + typeNameOfT
 
@@ -148,8 +152,8 @@ final case class ListData[K, ALG[_], T](
 final case class KvpCollectionValue[K, ALG[_], A](
   kvpCollection: KvpCollection[K, ALG, A],
   typeName: String,
-  validations: List[ValidationOp[A]])
-    extends HigherOrderValue[K, ALG, A] {
+  validations: List[ValidationOp[A]]
+) extends HigherOrderValue[K, ALG, A] {
 
   def list(validationOps: ValidationOp[List[A]]*): ListData[K, ALG, A] = {
     ListData[K, ALG, A](Left(this), typeName, validationOps.toList)

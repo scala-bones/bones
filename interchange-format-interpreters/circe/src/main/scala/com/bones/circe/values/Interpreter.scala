@@ -13,13 +13,15 @@ object Interpreter {
 
   object CirceDefaultValuesByteArrayInterpreter extends Interpreter[String, DefaultValues] {
     override def generateEncoder[A](
-      kvp: KvpCollection[String, DefaultValues, A]): Encoder[DefaultValues, A, Array[Byte]] =
+      kvp: KvpCollection[String, DefaultValues, A]
+    ): Encoder[DefaultValues, A, Array[Byte]] =
       IsoCirceEncoderInterpreter(com.bones.circe.values.defaultEncoders)
         .generateEncoder(kvp)
         .map(_.noSpaces.getBytes(StandardCharsets.UTF_8))
 
-    override def generateValidator[A](kvp: KvpCollection[String, DefaultValues, A])
-      : Validator[String, DefaultValues, A, Array[Byte]] = {
+    override def generateValidator[A](
+      kvp: KvpCollection[String, DefaultValues, A]
+    ): Validator[String, DefaultValues, A, Array[Byte]] = {
       CirceValidatorFromByteArray()
         .andThen(isoCirceValidatorInterpreter.generateValidator(kvp))
     }

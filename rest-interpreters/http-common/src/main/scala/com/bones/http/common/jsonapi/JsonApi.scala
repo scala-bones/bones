@@ -12,7 +12,8 @@ object JsonApi {
 
   def jsonApiResourceObject[A: Manifest, ID: Manifest](
     kvp: KvpCollection[String, DefaultValues, A],
-    idType: DefaultValues[ID]) = {
+    idType: DefaultValues[ID]
+  ) = {
 
     val data =
       ("type", string()) ::

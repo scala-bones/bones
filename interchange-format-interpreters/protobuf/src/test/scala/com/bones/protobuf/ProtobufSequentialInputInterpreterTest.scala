@@ -20,7 +20,8 @@ class ProtobufSequentialInputInterpreterTest extends AnyFunSuite with Checkers w
     age: Long,
     location: Loc,
     knowsAboutGadt: Boolean,
-    favoriteColor: Option[String])
+    favoriteColor: Option[String]
+  )
 
   val monica = Person(UUID.randomUUID(), "Monica", 44L, Loc("Denver", "CO"), true, Some("black"))
 

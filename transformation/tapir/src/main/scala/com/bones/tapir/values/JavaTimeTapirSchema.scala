@@ -21,7 +21,8 @@ trait JavaTimeTapirSchema extends TapirValueTransformation[JavaTimeValue] {
   override def toSchemaType[A](
     alg: JavaTimeValue[A],
     description: Option[String],
-    example: Option[A]): (SchemaType, DescriptionString, ExampleString) = {
+    example: Option[A]
+  ): (SchemaType, DescriptionString, ExampleString) = {
 
     val tapirDescription =
       description.getOrElse(JavaTimeValueDefaultJsonMetadata.getDefaultDescription(alg))

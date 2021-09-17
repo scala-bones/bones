@@ -5,16 +5,17 @@ import shapeless.{:+:, Coproduct, Inl, Inr}
 
 object InterchangeFormatEncoderValue {
 
-  /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
-    * see https://stackoverflow.com/a/60561575/387094
-    * */
+  /** using kind projector allows us to create a new interpreter by merging two existing
+    * interpreters. see https://stackoverflow.com/a/60561575/387094
+    */
   def merge[L[_], R[_] <: Coproduct, OUT](
     li: InterchangeFormatEncoderValue[L, OUT],
     ri: InterchangeFormatEncoderValue[R, OUT]
   ): InterchangeFormatEncoderValue[Lambda[V => L[V] :+: R[V]], OUT] =
     new InterchangeFormatEncoderValue[Lambda[V => L[V] :+: R[V]], OUT] {
       override def generateEncoder[A](
-        alg: L[A] :+: R[A]): Encoder[Lambda[V => L[V] :+: R[V]], A, OUT] = {
+        alg: L[A] :+: R[A]
+      ): Encoder[Lambda[V => L[V] :+: R[V]], A, OUT] = {
         new Encoder[Lambda[A => L[A] :+: R[A]], A, OUT] {
           val encoder = alg match {
             case Inl(l) => li.generateEncoder(l).encode(_)
