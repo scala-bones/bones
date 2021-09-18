@@ -69,7 +69,7 @@ lazy val core = (project in file("core"))
       "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test,
-      "org.scalatest" %% "scalatest-mustmatchers" % "3.2.8" % Test
+      "org.scalatest" %% "scalatest-mustmatchers" % "3.2.10" % Test
     ),
     description := "DSL for Data Description using ASTs and interpreters"
   )
@@ -83,7 +83,7 @@ lazy val coreCats = (project in file("core-cats"))
       "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test,
-      "org.scalatest" %% "scalatest-mustmatchers" % "3.2.8" % Test
+      "org.scalatest" %% "scalatest-mustmatchers" % "3.2.10" % Test
     ),
     description := "DSL for Data Description using ASTs and interpreters"
   )
@@ -330,7 +330,7 @@ lazy val dbSlick = (project in file("db-interpreters/slick"))
       "org.slf4j" % "slf4j-nop" % "1.7.30",
       "org.scala-lang" % "scala-reflect" % "2.13.5",
       "org.scalacheck" %% "scalacheck" % "1.15.2" % Test,
-      "org.scalatest" %% "scalatest" % "3.2.8" % Test,
+      "org.scalatest" %% "scalatest" % "3.2.10" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
   )
