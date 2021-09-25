@@ -19,18 +19,22 @@ trait KvpCollectionFunctor[K, ALG[_], F[_]] {
   }
 
   def kvpWrappedHList[A, H <: HList, HL <: Nat](
-    wrappedHList: KvpWrappedHList[K, ALG, A, H, HL]): F[A]
+    wrappedHList: KvpWrappedHList[K, ALG, A, H, HL]
+  ): F[A]
 
   def kvpWrappedCoproduct[A, C <: Coproduct](
-    wrappedCoproduct: KvpWrappedCoproduct[K, ALG, A, C]): F[A]
+    wrappedCoproduct: KvpWrappedCoproduct[K, ALG, A, C]
+  ): F[A]
 
   def kvpHListCollectionHead[HO <: HList, NO <: Nat, H <: HList, HL <: Nat, T <: HList, TL <: Nat](
-    kvp: KvpHListCollectionHead[K, ALG, HO, NO, H, HL, T, TL]): F[HO]
+    kvp: KvpHListCollectionHead[K, ALG, HO, NO, H, HL, T, TL]
+  ): F[HO]
 
   def kvpNil(kvp: KvpNil[K, ALG]): F[HNil]
 
   def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
-    kvp: KvpSingleValueHead[K, ALG, H, T, TL, O]): F[O]
+    kvp: KvpSingleValueHead[K, ALG, H, T, TL, O]
+  ): F[O]
 
   def kvpCoproduct[C <: Coproduct](value: KvpCoproduct[K, ALG, C]): F[C]
 }

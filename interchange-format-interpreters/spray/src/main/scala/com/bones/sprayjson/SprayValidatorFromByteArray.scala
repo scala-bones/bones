@@ -14,13 +14,15 @@ case class SprayValidatorFromByteArray(charset: Charset = StandardCharsets.UTF_8
 
   private def fromByteArray(
     arr: Array[Byte],
-    charSet: Charset): Either[List[ParsingError[String]], JsValue] = {
+    charSet: Charset
+  ): Either[List[ParsingError[String]], JsValue] = {
     val input = new String(arr, charSet)
     Try { input.parseJson }.toEither.left.map(ex => List(ParsingError(ex.getMessage, Some(ex))))
   }
 
   override def validateWithPath(
     in: Array[Byte],
-    path: List[String]): Either[ExtractionErrors[String], JsValue] = fromByteArray(in, charset)
+    path: List[String]
+  ): Either[ExtractionErrors[String], JsValue] = fromByteArray(in, charset)
 
 }

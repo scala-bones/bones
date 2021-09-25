@@ -22,12 +22,14 @@ trait KvpCollectionMatch[K, ALG[_], B] {
   def kvpWrappedCoproduct[A, C <: Coproduct](wrappedCoproduct: KvpWrappedCoproduct[K, ALG, A, C]): B
 
   def kvpHListCollectionHead[HO <: HList, NO <: Nat, H <: HList, HL <: Nat, T <: HList, TL <: Nat](
-    kvp: KvpHListCollectionHead[K, ALG, HO, NO, H, HL, T, TL]): B
+    kvp: KvpHListCollectionHead[K, ALG, HO, NO, H, HL, T, TL]
+  ): B
 
   def kvpNil(kvp: KvpNil[K, ALG]): B
 
   def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
-    kvp: KvpSingleValueHead[K, ALG, H, T, TL, O]): B
+    kvp: KvpSingleValueHead[K, ALG, H, T, TL, O]
+  ): B
 
   def kvpCoproduct[C <: Coproduct](value: KvpCoproduct[K, ALG, C]): B
 }

@@ -39,11 +39,13 @@ object Schemas {
     currency: Currency.Value,
     deletedAt: Option[LocalDateTime],
     lastModifiedRequest: UUID,
-    billingLocation: Option[BillingLocation])
+    billingLocation: Option[BillingLocation]
+  )
 
   val isoList = Vector("US", "CA", "MX")
 
-  /** **** Begin Real Example ******/
+  /** **** Begin Real Example *****
+    */
   import shapeless.::
 
   object HasNotExpired extends ValidationOp[Long :: Long :: HNil] {
@@ -74,12 +76,14 @@ object Schemas {
     "firstSix",
     string(sv.length(6), sv.matchesRegex("[0-9]{6}".r)),
     "First Six Digits of the credit card",
-    "54545454")
+    "54545454"
+  )
   val lastFour = (
     "lastFour",
     string(sv.length(4), sv.matchesRegex("[0-9]{4}".r)),
     "The last four digits of the creidt card",
-    "5454")
+    "5454"
+  )
 
   // Here we are defining our expected input data.  This definition will drive the interpreters.
   val ccObj = (
@@ -87,10 +91,11 @@ object Schemas {
       lastFour ::
       ("uuid", uuid, "The UUID is the ID of the Credit Card", UUID.randomUUID()) ::
       (
-      "token",
-      uuid,
-      "identifies the credit card number in the encrypted repository",
-      UUID.randomUUID()) ::
+        "token",
+        uuid,
+        "identifies the credit card number in the encrypted repository",
+        UUID.randomUUID()
+      ) ::
       ("ccType", ccTypeValue) ::
       kvpNil
   ) ::: ccExp ::: (
@@ -99,12 +104,13 @@ object Schemas {
       ("deletedAt", localDateTime.optional) :<:
       ("lastModifiedRequest", uuid) ::
       (
-      "billingLocation",
-      (
-        ("countryIso", string(sv.validVector(isoList))) ::
-          ("zipCode", string(sv.max(10)).optional) :<:
-          kvpNil
-      ).convert[BillingLocation].asValue.optional) :<:
+        "billingLocation",
+        (
+          ("countryIso", string(sv.validVector(isoList))) ::
+            ("zipCode", string(sv.max(10)).optional) :<:
+            kvpNil
+        ).convert[BillingLocation].asValue.optional
+      ) :<:
       kvpNil
   )
 
@@ -183,8 +189,9 @@ object Schemas {
     ("byteArray", byteArray.optional) :<:
     ("localDate", localDate(jt_ld.min(LocalDate.of(1800, 1, 1))).optional) :<:
     (
-    "localDateTime",
-    localDateTime(jt_ldt.min(LocalDateTime.of(1800, Month.JANUARY, 1, 0, 0))).optional) :<:
+      "localDateTime",
+      localDateTime(jt_ldt.min(LocalDateTime.of(1800, Month.JANUARY, 1, 0, 0))).optional
+    ) :<:
     ("uuid", uuid.optional) :<:
     ("enumeration", enumeration[Currency.type, Currency.Value](Currency).optional) :<:
     ("bigDecimal", bigDecimal(bdv.max(BigDecimal(100))).optional) :<:
@@ -220,7 +227,10 @@ object Schemas {
       ("double", double(dv.min(0))) ::
       ("byteArray", byteArray) ::
       ("localDate", localDate(jt_ld.min(LocalDate.of(1800, 1, 1)))) ::
-      ("localDateTime", localDateTime(jt_ldt.min(LocalDateTime.of(1800, Month.JANUARY, 1, 0, 0)))) ::
+      (
+        "localDateTime",
+        localDateTime(jt_ldt.min(LocalDateTime.of(1800, Month.JANUARY, 1, 0, 0)))
+      ) ::
       ("uuid", uuid) ::
       ("enumeration", enumeration[Currency.type, Currency.Value](Currency)) ::
       ("bigDecimal", bigDecimal(bdv.max(BigDecimal(100)))) ::

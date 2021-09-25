@@ -22,18 +22,17 @@ trait DbSearch[ALG[_]] {
     idSchema: KvpCollection[String, ALG, ID]
   ): DataSource => Stream[IO, Either[ExtractionErrors[String], (ID, A)]] = {
     val withConnection = searchEntityWithConnection(schema, idSchema)
-    ds =>
-      {
-        Stream
-          .bracket(IO { ds.getConnection })(con => IO { con.close() })
-          .flatMap(con => withConnection(con))
-      }
+    ds => {
+      Stream
+        .bracket(IO { ds.getConnection })(con => IO { con.close() })
+        .flatMap(con => withConnection(con))
+    }
   }
 
   private def extractToStream[A, ID](
     rs: ResultSet,
-    resultSetF: ResultSet => Either[ExtractionErrors[String], (ID, A)])
-    : Stream[IO, Either[ExtractionErrors[String], (ID, A)]] = {
+    resultSetF: ResultSet => Either[ExtractionErrors[String], (ID, A)]
+  ): Stream[IO, Either[ExtractionErrors[String], (ID, A)]] = {
     if (rs.next()) {
       val next = resultSetF(rs)
       Stream(next) ++ extractToStream(rs, resultSetF)
@@ -55,16 +54,15 @@ trait DbSearch[ALG[_]] {
 
     val fields = columnNameInterpreter.fromKvpCollection(schemaWithId)
     val sql = s"""select ${fields.mkString(",")} from $tableName limit 50"""
-    con =>
-      {
-        for {
-          statement <- Stream.bracket(IO { con.prepareCall(sql) })(s => IO { s.close() })
-          resultSet <- Stream.bracket(IO { statement.executeQuery() })(s => IO { s.close() })
-          a <- extractToStream(resultSet, resultSetF)
-        } yield {
-          a
-        }
+    con => {
+      for {
+        statement <- Stream.bracket(IO { con.prepareCall(sql) })(s => IO { s.close() })
+        resultSet <- Stream.bracket(IO { statement.executeQuery() })(s => IO { s.close() })
+        a <- extractToStream(resultSet, resultSetF)
+      } yield {
+        a
       }
+    }
   }
 
 }

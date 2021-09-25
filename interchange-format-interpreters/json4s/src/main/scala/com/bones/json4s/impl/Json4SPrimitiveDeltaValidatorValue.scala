@@ -11,16 +11,20 @@ object Json4SPrimitiveDeltaValidatorValue extends PrimitiveInterchangeFormat[JVa
 
   /** Override this to provide the ability to extract a String from the IN type.
     *
-    * @param typeName The resulting class we are tyring to extract.
-    * @return The extracted String or an Error
+    * @param typeName
+    *   The resulting class we are tyring to extract.
+    * @return
+    *   The extracted String or an Error
     */
   override def extractString[ALG[_]](
-    typeName: String): DeltaValueValidator[String, ALG, String, JValue] =
+    typeName: String
+  ): DeltaValueValidator[String, ALG, String, JValue] =
     extract[ALG, String](
       "String",
       Json4sPrimitiveValidator
         .extractString("String")
-        .validateWithPath(_, _))
+        .validateWithPath(_, _)
+    )
 
   override def extractInt[ALG[_]]: DeltaValueValidator[String, ALG, Int, JValue] =
     extract("Int", Json4sPrimitiveValidator.extractInt.validateWithPath)
@@ -44,15 +48,17 @@ object Json4SPrimitiveDeltaValidatorValue extends PrimitiveInterchangeFormat[JVa
     extract("BigDecimal", Json4sPrimitiveValidator.extractBigDecimal.validateWithPath)
 
   override def extractArray[ALG[_]](
-    typeName: String): DeltaValueValidator[String, ALG, Seq[JValue], JValue] =
+    typeName: String
+  ): DeltaValueValidator[String, ALG, Seq[JValue], JValue] =
     extract("Array", Json4sPrimitiveValidator.extractArray(typeName).validateWithPath)
 
   private def extractObjectF(
     json: JValue,
-    path: Path[String]): Either[ExtractionErrors[String], JValue] =
+    path: Path[String]
+  ): Either[ExtractionErrors[String], JValue] =
     json match {
       case j: JObject => Right(j)
-      case _          => Left(List(WrongTypeError(path, "BigDecimal", json.getClass.getSimpleName, None)))
+      case _ => Left(List(WrongTypeError(path, "BigDecimal", json.getClass.getSimpleName, None)))
     }
 
   override def extractObject[ALG[_]]: DeltaValueValidator[String, ALG, JValue, JValue] =
@@ -65,8 +71,8 @@ object Json4SPrimitiveDeltaValidatorValue extends PrimitiveInterchangeFormat[JVa
 
   private def extract[ALG[_], A](
     typeName: String,
-    converter: (JValue, Path[String]) => Either[ExtractionErrors[String], A])
-    : DeltaValueValidator[String, ALG, A, JValue] =
+    converter: (JValue, Path[String]) => Either[ExtractionErrors[String], A]
+  ): DeltaValueValidator[String, ALG, A, JValue] =
     (input, key, path) => {
       input.findField(_._1 == key).map(_._2) match {
         case None => Right(Left(List(OmittedValue(key, typeName, path :+ key))))

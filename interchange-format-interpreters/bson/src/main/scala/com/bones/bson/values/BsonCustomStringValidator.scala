@@ -10,7 +10,8 @@ trait BsonCustomStringValidator
     extends InterchangeFormatValidatorValue[CustomStringValue, BSONValue] {
 
   override def createValidator[A](
-    alg: CustomStringValue[A]): OptionalInputValidator[String, CustomStringValue, A, BSONValue] =
+    alg: CustomStringValue[A]
+  ): OptionalInputValidator[String, CustomStringValue, A, BSONValue] =
     (bson, path) =>
       bson match {
         case Some(bsonVal) =>
@@ -20,5 +21,5 @@ trait BsonCustomStringValidator
             .asInstanceOf[Either[ExtractionErrors[String], A]]
         case None => Left(List(RequiredValue(path, alg.typeName)))
 
-    }
+      }
 }

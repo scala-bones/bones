@@ -19,10 +19,14 @@ trait ScalaCoreValidator extends ProtobufValidatorValue[ScalaCoreValue] {
       case bd: BigDecimalData =>
         stringDataWithFlatMap(bd.typeName, stringToBigDecimal, bd.validations)
       case esd: EnumerationData[e, a] =>
-        stringDataWithFlatMap(esd.typeName, (str, path) => {
-          stringToEnumeration(str, path, esd.enumeration)
-            .map(_.asInstanceOf[A])
-        }, esd.validations)
+        stringDataWithFlatMap(
+          esd.typeName,
+          (str, path) => {
+            stringToEnumeration(str, path, esd.enumeration)
+              .map(_.asInstanceOf[A])
+          },
+          esd.validations
+        )
 
     }
 }

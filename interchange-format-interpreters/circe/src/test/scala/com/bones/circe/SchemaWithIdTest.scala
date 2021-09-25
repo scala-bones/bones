@@ -25,7 +25,8 @@ class SchemaWithIdTest extends AnyFunSuite with Checkers with Matchers {
 
   implicit val arb = Arbitrary(
     defaultValuesScalacheck
-      .valueDefinition(WithLongId.allSupportedWithId.asValue))
+      .valueDefinition(WithLongId.allSupportedWithId.asValue)
+  )
   val utf8 = Charset.forName("UTF8")
 
   test("scalacheck allSupport types - marshall then unmarshall") {

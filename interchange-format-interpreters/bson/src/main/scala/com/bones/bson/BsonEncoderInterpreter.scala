@@ -19,10 +19,8 @@ import reactivemongo.bson.{
   BSONValue
 }
 
-/**
-  * Responsible for creating functions to encode values to BSON data.
-  * See [KvpInterchangeFormatEncoderInterpreter.encoderFromSchema] for the entry point into this
-  * module.
+/** Responsible for creating functions to encode values to BSON data. See
+  * [KvpInterchangeFormatEncoderInterpreter.encoderFromSchema] for the entry point into this module.
   */
 trait BsonEncoderInterpreter[ALG[_]]
     extends KvpInterchangeFormatEncoderInterpreter[ALG, BSONValue] {

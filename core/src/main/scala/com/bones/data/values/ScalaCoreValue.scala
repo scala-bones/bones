@@ -48,8 +48,9 @@ final case class BigDecimalData(validations: List[ValidationOp[BigDecimal]])
 }
 
 /** base64-encoded characters, for example,
-  * @example "U3dhZ2dlciByb2Nrcw=="
-  * */
+  * @example
+  *   "U3dhZ2dlciByb2Nrcw=="
+  */
 final case class ByteArrayData(validations: List[ValidationOp[Array[Byte]]])
     extends ScalaCoreValue[Array[Byte]] {
   override val typeName: String = "Array[Byte]"
@@ -130,7 +131,9 @@ object ScalaCoreSugarInstance extends ScalaCoreSugar
 
 trait ScalaCoreSugar extends ScalaCoreValidation {
 
-  /** Indicates that the data tied to this key is a String type that must pass the specified validations */
+  /** Indicates that the data tied to this key is a String type that must pass the specified
+    * validations
+    */
   def string(validationOp: ValidationOp[String]*): StringData =
     StringData(validationOp.toList)
 
@@ -161,18 +164,24 @@ trait ScalaCoreSugar extends ScalaCoreValidation {
   /** Alias for int without any validations */
   val int: IntData = int()
 
-  /** Indicates that the data tied to this key is an Int type that must pass the specified validations */
+  /** Indicates that the data tied to this key is an Int type that must pass the specified
+    * validations
+    */
   def long(f: ValidationOp[Long]*): LongData = LongData(f.toList)
 
   /** Alias for long without validations. */
   val long: LongData = long()
 
-  /** Indicates that the data tied to this key is an boolean type that must pass the specified validations. */
+  /** Indicates that the data tied to this key is an boolean type that must pass the specified
+    * validations.
+    */
   def boolean(f: ValidationOp[Boolean]*): BooleanData = BooleanData(f.toList)
 
   val boolean: BooleanData = boolean()
 
-  /** Indicates that the data tied to this key is a BigDecimal that must pass the specified validations. */
+  /** Indicates that the data tied to this key is a BigDecimal that must pass the specified
+    * validations.
+    */
   def bigDecimal(v: ValidationOp[BigDecimal]*): BigDecimalData = BigDecimalData(v.toList)
 
   /** Alias for bigDecimal without validations */
@@ -180,8 +189,10 @@ trait ScalaCoreSugar extends ScalaCoreValidation {
 
   /** Expecting the type to be a Scala style enumeration
     *
-    * @param e The base enumeration type.
-    * @tparam E The enumeration
+    * @param e
+    *   The base enumeration type.
+    * @tparam E
+    *   The enumeration
     */
   def enumeration[E <: Enumeration: Manifest, V](
     e: E,
@@ -200,7 +211,9 @@ trait ScalaCoreSugar extends ScalaCoreValidation {
 trait ScalaCoreInjectedSugar[ALG[_] <: Coproduct] extends ScalaCoreValidation {
   def scalaCoreInjected[A]: Inject[ALG[A], ScalaCoreValue[A]]
 
-  /** Indicates that the data tied to this key is a String type that must pass the specified validations */
+  /** Indicates that the data tied to this key is a String type that must pass the specified
+    * validations
+    */
   def string(validationOp: ValidationOp[String]*): ALG[String] =
     scalaCoreInjected(StringData(validationOp.toList))
 
@@ -235,20 +248,26 @@ trait ScalaCoreInjectedSugar[ALG[_] <: Coproduct] extends ScalaCoreValidation {
   /** Alias for int without any validations */
   val int: ALG[Int] = int()
 
-  /** Indicates that the data tied to this key is an Int type that must pass the specified validations */
+  /** Indicates that the data tied to this key is an Int type that must pass the specified
+    * validations
+    */
   def long(f: ValidationOp[Long]*): ALG[Long] =
     scalaCoreInjected(LongData(f.toList))
 
   /** Alias for long without validations. */
   def long: ALG[Long] = long()
 
-  /** Indicates that the data tied to this key is an boolean type that must pass the specified validations. */
+  /** Indicates that the data tied to this key is an boolean type that must pass the specified
+    * validations.
+    */
   def boolean(f: ValidationOp[Boolean]*): ALG[Boolean] =
     scalaCoreInjected(BooleanData(f.toList))
 
   def boolean: ALG[Boolean] = boolean()
 
-  /** Indicates that the data tied to this key is a BigDecimal that must pass the specified validations. */
+  /** Indicates that the data tied to this key is a BigDecimal that must pass the specified
+    * validations.
+    */
   def bigDecimal(v: ValidationOp[BigDecimal]*): ALG[BigDecimal] =
     scalaCoreInjected(BigDecimalData(v.toList))
 
@@ -257,8 +276,10 @@ trait ScalaCoreInjectedSugar[ALG[_] <: Coproduct] extends ScalaCoreValidation {
 
   /** Expecting the type to be a Scala style enumeration
     *
-    * @param e The base enumeration type.
-    * @tparam E The enumeration
+    * @param e
+    *   The base enumeration type.
+    * @tparam E
+    *   The enumeration
     */
   def enumeration[E <: Enumeration: Manifest, V](
     e: E,
@@ -315,9 +336,9 @@ object ScalaCoreValueDefaultMetadata {
       case ld: LongData =>
         123L
       case dd: DoubleData =>
-        3.14D
+        3.14d
       case fd: FloatData =>
-        3.14F
+        3.14f
       case bd: BigDecimalData =>
         BigDecimal("3.14")
       case ba: ByteArrayData =>

@@ -8,9 +8,13 @@ trait PrimitiveInterchangeFormat[IN, K] {
 
   /** Override this to provide the ability to extract a String from the IN type.
     *
-    * @param typeName The resulting class we are tyring to extract.
-    * @tparam A The expected resulting type, eg String or Enumerated Type which we are trying to extract from a string.
-    * @return The extracted String or an Error
+    * @param typeName
+    *   The resulting class we are tyring to extract.
+    * @tparam A
+    *   The expected resulting type, eg String or Enumerated Type which we are trying to extract
+    *   from a string.
+    * @return
+    *   The extracted String or an Error
     */
   def extractString[ALG[_]](typeName: String): DeltaValueValidator[K, ALG, String, IN]
 

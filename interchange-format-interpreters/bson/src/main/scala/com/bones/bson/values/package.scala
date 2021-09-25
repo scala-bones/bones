@@ -49,7 +49,8 @@ package object values {
           InterchangeFormatEncoderValue
             .merge[JavaUtilValue, CNilF, BSONValue](
               BsonJavaUtilEncoder,
-              CNilInterchangeFormatEncoder[BSONValue]())
+              CNilInterchangeFormatEncoder[BSONValue]()
+            )
         )
       )
     )
@@ -65,7 +66,8 @@ package object values {
           InterchangeFormatValidatorValue
             .merge[JavaUtilValue, CNilF, BSONValue](
               BsonJavaUtilValidator,
-              CNilInterchangeFormatValidator[BSONValue]())
+              CNilInterchangeFormatValidator[BSONValue]()
+            )
         )
       )
     )

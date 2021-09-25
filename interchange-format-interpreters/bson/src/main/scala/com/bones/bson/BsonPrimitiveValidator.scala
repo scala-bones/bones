@@ -20,12 +20,12 @@ import scala.util.Try
 object BsonPrimitiveValidator extends InterchangeFormatPrimitiveValidator[BSONValue] {
 
   override def extractString[ALG[_], A](
-    typeName: String): Validator[String, ALG, String, BSONValue] = {
-    (in: BSONValue, path: List[String]) =>
-      in match {
-        case BSONString(str) => Right(str)
-        case x               => invalidValue(x, typeName, path)
-      }
+    typeName: String
+  ): Validator[String, ALG, String, BSONValue] = { (in: BSONValue, path: List[String]) =>
+    in match {
+      case BSONString(str) => Right(str)
+      case x               => invalidValue(x, typeName, path)
+    }
   }
 
   override def extractShort[ALG[_], A]: Validator[String, ALG, Short, BSONValue] =
@@ -40,7 +40,7 @@ object BsonPrimitiveValidator extends InterchangeFormatPrimitiveValidator[BSONVa
             l.toShort
           }).toEither.left.map(_ => List(WrongTypeError(path, "Short", "Long", None)))
         case x => invalidValue(x, "Long", path)
-    }
+      }
 
   override def extractInt[ALG[_], A]: Validator[String, ALG, Int, BSONValue] =
     (in: BSONValue, path: List[String]) =>
@@ -51,7 +51,7 @@ object BsonPrimitiveValidator extends InterchangeFormatPrimitiveValidator[BSONVa
             l.toInt
           }).toEither.left.map(_ => List(WrongTypeError(path, "Int", "Long", None)))
         case x => invalidValue(x, "Long", path)
-    }
+      }
 
   override def extractLong[ALG[_], A]: Validator[String, ALG, Long, BSONValue] =
     (in: BSONValue, path: List[String]) =>
@@ -59,37 +59,40 @@ object BsonPrimitiveValidator extends InterchangeFormatPrimitiveValidator[BSONVa
         case BSONLong(long) => Right(long)
         case BSONInteger(i) => Right(i.toLong)
         case x              => invalidValue(x, "Long", path)
-    }
+      }
 
   override def extractBool[ALG[_], A]: Validator[String, ALG, Boolean, BSONValue] =
     (in: BSONValue, path: List[String]) =>
       in match {
         case BSONBoolean(bool) => Right(bool)
         case x                 => invalidValue(x, "Boolean", path)
-    }
+      }
 
   override def extractArray[ALG[_], A](
-    typeName: String): Validator[String, ALG, Seq[BSONValue], BSONValue] =
+    typeName: String
+  ): Validator[String, ALG, Seq[BSONValue], BSONValue] =
     (in: BSONValue, path: List[String]) =>
       in match {
         case BSONArray(arr) =>
           Util.sequence(
             arr.toList
-              .map(_.toEither.left.map(List(_)))) match {
+              .map(_.toEither.left.map(List(_)))
+          ) match {
             case Right(s) => Right(s)
             case Left(_) =>
               Left(List(CanNotConvert(path, arr, classOf[Seq[_]], None)))
           }
         case x => invalidValue(x, typeName, path)
 
-    }
+      }
 
   override def extractFloat[ALG[_], A]: Validator[String, ALG, Float, BSONValue] = {
     (in: BSONValue, path: List[String]) =>
       in match {
         case BSONDouble(d) =>
           Try({ d.toFloat }).toEither.left.map(_ =>
-            List(WrongTypeError(path, "Float", "Double", None)))
+            List(WrongTypeError(path, "Float", "Double", None))
+          )
         case dec: BSONDecimal =>
           BSONDecimal
             .toBigDecimal(dec)
@@ -99,10 +102,12 @@ object BsonPrimitiveValidator extends InterchangeFormatPrimitiveValidator[BSONVa
             .map(_ => List(WrongTypeError(path, "Float", "BSONDecimal", None)))
         case BSONInteger(i) =>
           Try({ i.toFloat }).toEither.left.map(_ =>
-            List(WrongTypeError(path, "Float", "Int", None)))
+            List(WrongTypeError(path, "Float", "Int", None))
+          )
         case BSONLong(l) =>
           Try({ l.toFloat }).toEither.left.map(_ =>
-            List(WrongTypeError(path, "Float", "Long", None)))
+            List(WrongTypeError(path, "Float", "Long", None))
+          )
         case x => invalidValue(x, "Float", path)
       }
   }
@@ -121,12 +126,14 @@ object BsonPrimitiveValidator extends InterchangeFormatPrimitiveValidator[BSONVa
             .map(_ => List(WrongTypeError(path, "Float", "BSONDecimal", None)))
         case BSONInteger(i) =>
           Try({ i.toDouble }).toEither.left.map(_ =>
-            List(WrongTypeError(path, "Double", "Int", None)))
+            List(WrongTypeError(path, "Double", "Int", None))
+          )
         case BSONLong(l) =>
           Try({ l.toDouble }).toEither.left.map(_ =>
-            List(WrongTypeError(path, "Double", "Long", None)))
+            List(WrongTypeError(path, "Double", "Long", None))
+          )
         case x => invalidValue(x, "Double", path)
-    }
+      }
 
   override def extractBigDecimal[ALG[_], A]: Validator[String, ALG, BigDecimal, BSONValue] =
     (in: BSONValue, path: List[String]) =>
@@ -140,7 +147,7 @@ object BsonPrimitiveValidator extends InterchangeFormatPrimitiveValidator[BSONVa
         case BSONInteger(i) => Right(BigDecimal(i))
         case BSONLong(l)    => Right(BigDecimal(l))
         case x              => invalidValue(x, "BigDecimal", path)
-    }
+      }
 
   override def stringValue(in: BSONValue, elementName: String): Option[String] =
     in match {
@@ -155,7 +162,8 @@ object BsonPrimitiveValidator extends InterchangeFormatPrimitiveValidator[BSONVa
   def invalidValue[T](
     bson: BSONValue,
     typeName: String,
-    path: List[String]): Left[ExtractionErrors[String], Nothing] = {
+    path: List[String]
+  ): Left[ExtractionErrors[String], Nothing] = {
     Left(List(WrongTypeError(path, typeName, bson.getClass.getSimpleName, None)))
   }
 }

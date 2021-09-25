@@ -210,8 +210,9 @@ final case class UriData(validations: List[ValidationOp[String]])
 final case class UrlData(validations: List[ValidationOp[String]])
     extends CustomStringValue[String] {
   override val customValidation: ValidationOp[String] = CustomStringValue.UrlValidationOp
-  override val example
-    : String = new URL("http://www.math.uio.no/faq/compression-faq/part1.html").toExternalForm
+  override val example: String = new URL(
+    "http://www.math.uio.no/faq/compression-faq/part1.html"
+  ).toExternalForm
   override val description: String = "Uniform Resource Locator (URL)"
 }
 
