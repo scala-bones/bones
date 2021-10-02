@@ -11,7 +11,8 @@ trait JavaUtilValueInterpreter[IN] extends InterchangeFormatDeltaValidatorValue[
   val primitive: PrimitiveInterchangeFormat[IN, String]
 
   override def createDeltaValidator[A](
-    alg: JavaUtilValue[A]): DeltaValueValidator[String, JavaUtilValue, A, IN] =
+    alg: JavaUtilValue[A]
+  ): DeltaValueValidator[String, JavaUtilValue, A, IN] =
     alg match {
       case _: UuidData =>
         primitive
@@ -21,7 +22,8 @@ trait JavaUtilValueInterpreter[IN] extends InterchangeFormatDeltaValidatorValue[
               override def extract(in: IN, key: String, path: List[String])
                 : Either[ExtractionErrors[String], CanBeOmitted[String, A]] =
                 stringToUuid(str, path).map(Right(_))
-          })
+            }
+          )
           .addValidation(ValidationUtil.validate(alg.validations))
           .asInstanceOf[DeltaValueValidator[String, JavaUtilValue, A, IN]]
     }

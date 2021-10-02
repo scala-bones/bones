@@ -5,15 +5,15 @@ import com.bones.validation.ValidationDefinition.ValidationOp
 
 import scala.annotation.tailrec
 
-/**
-  * A collection of helper functions useful for dealing with validation.
+/** A collection of helper functions useful for dealing with validation.
   */
 object ValidationUtil {
 
-  /** Validate the input with all specified validations.  If any failed then Left, else Right(input) */
-  def validate[K, L](validations: List[ValidationOp[L]])(
-    input: L,
-    path: List[K]): Either[List[ValidationError[K, L]], L] = {
+  /** Validate the input with all specified validations. If any failed then Left, else Right(input)
+    */
+  def validate[K, L](
+    validations: List[ValidationOp[L]]
+  )(input: L, path: List[K]): Either[List[ValidationError[K, L]], L] = {
     validations.flatMap(validation => {
       if (validation.isValid(input)) None
       else Some(ValidationError(path, validation, input))

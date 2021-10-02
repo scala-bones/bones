@@ -31,7 +31,8 @@ object SprayPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JsVal
     in match {
       case JsNumber(value) =>
         Try(f(value)).toEither.left.map(ex =>
-          List(WrongTypeError(path, expectedType, in.getClass.getSimpleName, Some(ex))))
+          List(WrongTypeError(path, expectedType, in.getClass.getSimpleName, Some(ex)))
+        )
       case _ => Left(determineError(in, expectedType, path))
     }
 
@@ -55,12 +56,12 @@ object SprayPrimitiveValidator extends InterchangeFormatPrimitiveValidator[JsVal
   }
 
   override def extractArray[ALG2[_], A](
-    typeName: String): Validator[String, ALG2, Seq[JsValue], JsValue] = {
-    (in: JsValue, path: List[String]) =>
-      in match {
-        case JsArray(elements) => Right(elements)
-        case _                 => Left(determineError(in, typeName, path))
-      }
+    typeName: String
+  ): Validator[String, ALG2, Seq[JsValue], JsValue] = { (in: JsValue, path: List[String]) =>
+    in match {
+      case JsArray(elements) => Right(elements)
+      case _                 => Left(determineError(in, typeName, path))
+    }
   }
 
   override def extractBigDecimal[ALG2[_], A]: Validator[String, ALG2, BigDecimal, JsValue] =

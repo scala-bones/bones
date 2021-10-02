@@ -42,7 +42,7 @@ object JavaTimeValidator {
     (int, path) =>
       Try {
         val month = (int >> 16)
-        val day = (int & 0xFFFFL).toInt
+        val day = (int & 0xffffL).toInt
         MonthDay.of(month, day)
       }.toEither.left.map(th => List(CanNotConvert(path, int, classOf[MonthDay], Some(th))))
 
@@ -57,28 +57,35 @@ object JavaTimeValidator {
   val intToZoneOffset: (Int, List[String]) => Either[ExtractionErrors[String], ZoneOffset] =
     (int, path) =>
       Try { ZoneOffset.ofTotalSeconds(int) }.toEither.left.map(th =>
-        List(CanNotConvert(path, int, classOf[Month], Some(th))))
+        List(CanNotConvert(path, int, classOf[Month], Some(th)))
+      )
 
   val stringToPeriod: (String, List[String]) => Either[ExtractionErrors[String], Period] =
     (string, path) =>
       Try { Period.parse(string) }.toEither.left.map(th =>
-        List(CanNotConvert(path, string, classOf[Period], Some(th))))
+        List(CanNotConvert(path, string, classOf[Period], Some(th)))
+      )
 
   val intToYear: (Int, List[String]) => Either[ExtractionErrors[String], Year] =
     (int, path) =>
       Try { Year.of(int) }.toEither.left.map(th =>
-        List(CanNotConvert(path, int, classOf[Period], Some(th))))
+        List(CanNotConvert(path, int, classOf[Period], Some(th)))
+      )
 
-  /** Year and Month are encoded as a single long.  This function splits the long into two int values, year/month. */
+  /** Year and Month are encoded as a single long. This function splits the long into two int
+    * values, year/month.
+    */
   val longToYearMonth: (Long, List[String]) => Either[ExtractionErrors[String], YearMonth] =
     (long, path) =>
       Try {
         val year = (long >> 16).toInt
-        val month = (long & 0xFFFFL).toInt
+        val month = (long & 0xffffL).toInt
         YearMonth.of(year, month)
       }.toEither.left.map(th => List(CanNotConvert(path, long, classOf[YearMonth], Some(th))))
 
-  /** Year and Month are both integers and therefor can be encoded as a single long.  This function does the combining. */
+  /** Year and Month are both integers and therefor can be encoded as a single long. This function
+    * does the combining.
+    */
   val yearMonthToLong: YearMonth => Long =
     yearMonth => {
       val year = yearMonth.getYear
@@ -89,14 +96,13 @@ object JavaTimeValidator {
   val stringToZoneId: (String, List[String]) => Either[ExtractionErrors[String], ZoneId] =
     (string, path) =>
       Try { ZoneId.of(string) }.toEither.left.map(th =>
-        List(CanNotConvert(path, string, classOf[ZoneId], Some(th))))
+        List(CanNotConvert(path, string, classOf[ZoneId], Some(th)))
+      )
 
 }
 
-/** Custom interpreter for JavaTimeData.
-  *  Because JavaTimeValidator relies
-  *
- **/
+/** Custom interpreter for JavaTimeData. Because JavaTimeValidator relies
+  */
 trait JavaTimeValidator extends ProtobufValidatorValue[JavaTimeValue] {
 
   import JavaTimeValidator._
@@ -138,8 +144,8 @@ trait JavaTimeValidator extends ProtobufValidatorValue[JavaTimeValue] {
 //        offset => offset.toLocalTime :: offset.getOffset :: HNil
 //      )
 
-  /** Define ZonedDateTime in terms of a schema using both natively supported types and JavaTime values
-    * supported already.
+  /** Define ZonedDateTime in terms of a schema using both natively supported types and JavaTime
+    * values supported already.
     */
 //  val zonedDateTimeSchema =
 //    (("localDateTime", localDateTime) :: ("zoneId", zoneId) :: kvpNil)
@@ -171,11 +177,13 @@ trait JavaTimeValidator extends ProtobufValidatorValue[JavaTimeValue] {
   def localDateTimeData[ALG[_], A](
     alg: ALG[LocalDateTime],
     zoneOffset: ZoneOffset,
-    validations: List[ValidationOp[LocalDateTime]]): ExtractFromProto[LocalDateTime] = {
+    validations: List[ValidationOp[LocalDateTime]]
+  ): ExtractFromProto[LocalDateTime] = {
     def f(
       seconds: Long,
       nanos: Int,
-      path: List[String]): Either[ExtractionErrors[String], LocalDateTime] =
+      path: List[String]
+    ): Either[ExtractionErrors[String], LocalDateTime] =
       Try {
         LocalDateTime.ofEpochSecond(seconds, nanos, zoneOffset)
       }.toEither.left
@@ -189,9 +197,9 @@ trait JavaTimeValidator extends ProtobufValidatorValue[JavaTimeValue] {
     alg match {
       case dt: DateTimeExceptionData =>
         stringDataWithFlatMap(dt.typeName, stringToDateTimeException, dt.validations)
-      case dt: DayOfWeekData      => intDataWithFlatMap(intToDayOfWeek, dt.validations)
-      case dd: DurationData       => stringDataWithFlatMap(dd.typeName, stringToDuration, dd.validations)
-      case id: InstantData        => timestampWithMap(timestampToInstant, id.validations)
+      case dt: DayOfWeekData => intDataWithFlatMap(intToDayOfWeek, dt.validations)
+      case dd: DurationData  => stringDataWithFlatMap(dd.typeName, stringToDuration, dd.validations)
+      case id: InstantData   => timestampWithMap(timestampToInstant, id.validations)
       case dd: LocalDateTimeData  => localDateTimeData(dd, defaultZoneOffset, dd.validations)
       case dt: LocalDateData      => longDataWithFlatMap(longToLocalDate, dt.validations)
       case lt: LocalTimeData      => longDataWithFlatMap(longToLocalTime, lt.validations)
@@ -201,9 +209,9 @@ trait JavaTimeValidator extends ProtobufValidatorValue[JavaTimeValue] {
 //        valueDefThenValidation(offsetDateTimeSchema, dt.validations)
       case dt: OffsetTimeData => ??? // TODO
 //        valueDefThenValidation(offsetTimeSchema, dt.validations)
-      case pd: PeriodData        => stringDataWithFlatMap(pd.typeName, stringToPeriod, pd.validations)
-      case yd: YearData          => intDataWithFlatMap(intToYear, yd.validations)
-      case ym: YearMonthData     => longDataWithFlatMap(longToYearMonth, ym.validations)
+      case pd: PeriodData    => stringDataWithFlatMap(pd.typeName, stringToPeriod, pd.validations)
+      case yd: YearData      => intDataWithFlatMap(intToYear, yd.validations)
+      case ym: YearMonthData => longDataWithFlatMap(longToYearMonth, ym.validations)
       case zd: ZonedDateTimeData => ??? // TODO
 //        valueDefThenValidation(zonedDateTimeSchema, zd.validations)
       case zi: ZoneIdData     => stringDataWithFlatMap(zi.typeName, stringToZoneId, zi.validations)

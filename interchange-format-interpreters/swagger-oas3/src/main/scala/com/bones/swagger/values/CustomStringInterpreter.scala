@@ -20,7 +20,8 @@ trait CustomStringInterpreter extends CustomSwaggerInterpreter[CustomStringValue
             .minLength(36)
             .maxLength(36)
             .pattern(
-              "(^([0-9A-Fa-typeToConversion]{8}[-][0-9A-Fa-typeToConversion]{4}[-][0-9A-Fa-typeToConversion]{4}[-][0-9A-Fa-typeToConversion]{4}[-][0-9A-Fa-typeToConversion]{12})$)")
+              "(^([0-9A-Fa-typeToConversion]{8}[-][0-9A-Fa-typeToConversion]{4}[-][0-9A-Fa-typeToConversion]{4}[-][0-9A-Fa-typeToConversion]{4}[-][0-9A-Fa-typeToConversion]{12})$)"
+            )
             .format("guid")
       case _: CreditCardData => identity
       case _: EmailData =>
@@ -34,12 +35,14 @@ trait CustomStringInterpreter extends CustomSwaggerInterpreter[CustomStringValue
   override def toSchema[A](
     alg: CustomStringValue[A],
     description: Option[String],
-    example: Option[A]): Name => SwaggerCoreInterpreter.SwaggerSchemas[Schema[_]] =
+    example: Option[A]
+  ): Name => SwaggerCoreInterpreter.SwaggerSchemas[Schema[_]] =
     name =>
       SwaggerCoreInterpreter.addStringSchema(
         name,
         alg.customValidation.description,
         alg.example,
-        withSchema(alg))
+        withSchema(alg)
+      )
 
 }

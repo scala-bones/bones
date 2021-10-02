@@ -45,7 +45,8 @@ package object values {
           InterchangeFormatEncoderValue
             .merge[JavaUtilValue, CNilF, JsValue](
               BaseJavaUtilEncoder,
-              CNilInterchangeFormatEncoder[JsValue]())
+              CNilInterchangeFormatEncoder[JsValue]()
+            )
         )
       )
     )
@@ -61,7 +62,8 @@ package object values {
           InterchangeFormatValidatorValue
             .merge[JavaUtilValue, CNilF, JsValue](
               BaseJavaUtilValidator,
-              CNilInterchangeFormatValidator[JsValue]())
+              CNilInterchangeFormatValidator[JsValue]()
+            )
         )
       )
     )

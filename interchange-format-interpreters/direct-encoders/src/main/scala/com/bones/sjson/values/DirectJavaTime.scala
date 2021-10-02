@@ -15,14 +15,11 @@ object DirectIsoJavaTime extends CustomToJsonStringInterpreter[JavaTimeValue] {
   override def toJsonString[A](alg: JavaTimeValue[A]): A => List[String] =
     alg match {
       case ld: LocalDateData =>
-        d =>
-          List("\"" + escapeJson(localDateFormatter.format(d)) + "\"")
+        d => List("\"" + escapeJson(localDateFormatter.format(d)) + "\"")
       case dd: LocalDateTimeData =>
-        d =>
-          List("\"" + escapeJson(localDateTimeFormatter.format(d)) + "\"")
+        d => List("\"" + escapeJson(localDateTimeFormatter.format(d)) + "\"")
       case lt: LocalTimeData =>
-        d =>
-          List("\"" + escapeJson(localTimeFormatter.format(d)) + "\"")
+        d => List("\"" + escapeJson(localTimeFormatter.format(d)) + "\"")
       case _ => sys.error("This ain't ready for prime time yet.")
     }
 }

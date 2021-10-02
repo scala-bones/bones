@@ -44,7 +44,8 @@ object LocalhostAllIOApp {
 
   def dbSchemaEndpoint[A](
     path: String,
-    schema: KvpCollection[String, DefaultValues, A]): HttpRoutes[IO] = {
+    schema: KvpCollection[String, DefaultValues, A]
+  ): HttpRoutes[IO] = {
     val dbSchema =
       com.bones.jdbc.column.defaultDbColumnInterpreter.tableDefinitionCustomAlgebra(schema)
     HttpRoutes.of[IO] {
@@ -65,13 +66,15 @@ object LocalhostAllIOApp {
       ID,
       `Content-Type`,
       ErrorResponse,
-      StringToIdError],
+      StringToIdError
+    ],
     dbGet: SelectInterpreter[DefaultValues],
     dbSearch: DbSearch[DefaultValues],
     dbInsert: DbInsert[DefaultValues],
     dbUpdate: DbUpdate[DefaultValues],
     dbDelete: DbDelete[DefaultValues],
-    ds: DataSource): HttpRoutes[IO] = {
+    ds: DataSource
+  ): HttpRoutes[IO] = {
 
     val middleware =
       CrudDbDefinitions[DefaultValues, A, ID](
@@ -82,7 +85,8 @@ object LocalhostAllIOApp {
         dbInsert,
         dbUpdate,
         dbDelete,
-        ds)
+        ds
+      )
 
     /*
 com.bones.httpcommon.ClassicCrudDef[com.bones.data.values.DefaultValues,A(in method serviceRoutesWithCrudMiddleware),ID,String,com.bones.interpreter.values.ExtractionErrorEncoder.ErrorResponse,com.bones.httpcommon.StringToIdError]

@@ -11,11 +11,13 @@ import java.nio.charset.{Charset, StandardCharsets}
 case class ProtobufDefaultValuesBytArrayInterpreter(charset: Charset = StandardCharsets.UTF_8)
     extends Interpreter[String, DefaultValues] {
   override def generateEncoder[A](
-    kvp: KvpCollection[String, DefaultValues, A]): Encoder[DefaultValues, A, Array[Byte]] =
+    kvp: KvpCollection[String, DefaultValues, A]
+  ): Encoder[DefaultValues, A, Array[Byte]] =
     com.bones.protobuf.values.defaultEncoder.generateProtobufEncoder(kvp).apply(_)
 
-  override def generateValidator[A](kvp: KvpCollection[String, DefaultValues, A])
-    : Validator[String, DefaultValues, A, Array[Byte]] =
+  override def generateValidator[A](
+    kvp: KvpCollection[String, DefaultValues, A]
+  ): Validator[String, DefaultValues, A, Array[Byte]] =
     (in: Array[Byte], path: List[String]) =>
       com.bones.protobuf.values.defaultUtcValidator.fromCustomBytes(kvp).apply(in)
 

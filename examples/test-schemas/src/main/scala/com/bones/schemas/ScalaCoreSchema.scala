@@ -22,7 +22,8 @@ object ScalaCoreSchema {
     f: Float,
     e: TestEnum.Value,
     bd: BigDecimal,
-    ba: Array[Byte])
+    ba: Array[Byte]
+  )
   val scalaCoreHList = ("int", int()) ::
     ("long", long()) ::
     ("short", short()) ::

@@ -17,7 +17,8 @@ trait WithId[K, ALG[_]] {
 
   def schemaWithId[A: Manifest, ID: Manifest](
     idDefinition: (String, ALG[ID]),
-    schema: KvpCollectionValue[String, ALG, A]) = {
+    schema: KvpCollectionValue[String, ALG, A]
+  ) = {
     (idDefinition :: schema.kvpCollection :: KvpNil[String, ALG]()).tupled[(ID, A)]
   }
 }

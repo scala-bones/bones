@@ -13,13 +13,15 @@ object JavaUtilTapirSchema extends TapirValueTransformation[JavaUtilValue] {
   override def toSchemaType[A](
     alg: JavaUtilValue[A],
     description: Option[String],
-    example: Option[A]): (SchemaType, DescriptionString, ExampleString) = {
+    example: Option[A]
+  ): (SchemaType, DescriptionString, ExampleString) = {
     alg match {
       case uu: UuidData =>
         (
           SString,
           description.getOrElse("value of type UUID"),
-          example.getOrElse(exampleUuid).asInstanceOf[UUID].toString)
+          example.getOrElse(exampleUuid).asInstanceOf[UUID].toString
+        )
     }
   }
 }

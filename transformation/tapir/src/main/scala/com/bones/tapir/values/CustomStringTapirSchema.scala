@@ -10,11 +10,13 @@ object CustomStringTapirSchema extends TapirValueTransformation[CustomStringValu
   override def toSchemaType[A](
     alg: CustomStringValue[A],
     description: Option[String],
-    example: Option[A]): (SchemaType, DescriptionString, ExampleString) = {
+    example: Option[A]
+  ): (SchemaType, DescriptionString, ExampleString) = {
     (
       SString,
       description.getOrElse(alg.description),
-      example.map(_.asInstanceOf[String]).getOrElse(alg.example))
+      example.map(_.asInstanceOf[String]).getOrElse(alg.example)
+    )
   }
 
 }

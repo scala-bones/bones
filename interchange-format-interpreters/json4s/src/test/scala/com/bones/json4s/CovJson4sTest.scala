@@ -37,15 +37,13 @@ class CovJson4sTest extends AnyFunSuite with Checkers with Matchers {
     def customAlgebraEncoder[A](algebra: CustomAlgebra[A]): Encoder[CustomAlgebra, A, JValue] =
       algebra match {
         case MarkdownData =>
-          str =>
-            JString(str.asInstanceOf[String])
+          str => JString(str.asInstanceOf[String])
       }
 
     def dateExtAlgebraEncoder[A](alg: DateExtAlgebra[A]): Encoder[DateExtAlgebra, A, JValue] =
       alg match {
         case InstantData =>
-          i =>
-            JString(dateFormatter.format(i.asInstanceOf[Instant]))
+          i => JString(dateFormatter.format(i.asInstanceOf[Instant]))
       }
 
     object BlogEncoder extends InterchangeFormatEncoderValue[BlogAlgebra, JValue] {

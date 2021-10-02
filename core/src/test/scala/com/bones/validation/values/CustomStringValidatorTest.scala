@@ -8,7 +8,6 @@ import org.scalatestplus.scalacheck.Checkers
 
 class CustomStringValidatorTest extends AnyFunSuite with Checkers {
 
-
   test("guid") {
     val v = CustomStringValue.GuidDataValidationOp
     assert(v.isValid(UUID.randomUUID().toString) === true)

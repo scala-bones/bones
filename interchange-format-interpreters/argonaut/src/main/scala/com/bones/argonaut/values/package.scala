@@ -50,7 +50,8 @@ package object values {
           InterchangeFormatEncoderValue
             .merge[JavaUtilValue, CNilF, Json](
               ArgonautJavaUtilEncoder,
-              CNilInterchangeFormatEncoder[Json]())
+              CNilInterchangeFormatEncoder[Json]()
+            )
         )
       )
     )
@@ -66,7 +67,8 @@ package object values {
           InterchangeFormatValidatorValue
             .merge[JavaUtilValue, CNilF, Json](
               ArgonautJavaUtilValidator,
-              CNilInterchangeFormatValidator[Json]())
+              CNilInterchangeFormatValidator[Json]()
+            )
         )
       )
     )

@@ -8,11 +8,9 @@ import shapeless.{:+:, Inl}
 
 object ClassicCrudDef {
 
-  /**
-    * Most of the time, the only items that are different in an application
-    * are the path and the Schema.  This allows the app developer to create
-    * a common definition for the common settings, and then provide they only need to
-    *  provide name and schema for each additional crud group.
+  /** Most of the time, the only items that are different in an application are the path and the
+    * Schema. This allows the app developer to create a common definition for the common settings,
+    * and then provide they only need to provide name and schema for each additional crud group.
     */
   def coreDefaultValues[ID: Manifest, CT, E](
     contentInterpreters: ContentInterpreters[String, DefaultValues, CT],
@@ -21,8 +19,10 @@ object ClassicCrudDef {
     idDefinition: DefaultValues[ID],
     idKey: String
   ) = new {
-    def apply[A: Manifest](path: String, schema: KvpCollection[String, DefaultValues, A])
-      : ClassicCrudDef[DefaultValues, A, ID, CT, E, StringToIdError] =
+    def apply[A: Manifest](
+      path: String,
+      schema: KvpCollection[String, DefaultValues, A]
+    ): ClassicCrudDef[DefaultValues, A, ID, CT, E, StringToIdError] =
       defaultValues(
         contentInterpreters,
         path,
@@ -30,7 +30,8 @@ object ClassicCrudDef {
         pathStringToId,
         errorSchema,
         idDefinition,
-        idKey)
+        idKey
+      )
 
   }
 
@@ -41,7 +42,8 @@ object ClassicCrudDef {
     pathStringToId: String => Either[StringToIdError, ID],
     errorSchema: KvpCollection[String, DefaultValues, E],
     idDefinition: DefaultValues[ID],
-    idKey: String): ClassicCrudDef[DefaultValues, A, ID, CT, E, StringToIdError] =
+    idKey: String
+  ): ClassicCrudDef[DefaultValues, A, ID, CT, E, StringToIdError] =
     ClassicCrudDef[DefaultValues, A, ID, CT, E, StringToIdError](
       contentInterpreters,
       path,
@@ -55,13 +57,11 @@ object ClassicCrudDef {
     )
 }
 
-/**
-  * ClassicCrud is when a single entity is available at an endpoint where
-  *   1. GET returns the entity
-  *    2. PUT update the entity, given an ID
-  *    3. POST creates the entity given a entity body (such as JSON)
-  *    4. DELETE removes an entity given an ID
-  * @tparam CT The content type.  Most likely a string, but some http frameworks use enumerations.
+/** ClassicCrud is when a single entity is available at an endpoint where
+  *   1. GET returns the entity 2. PUT update the entity, given an ID 3. POST creates the entity
+  *      given a entity body (such as JSON) 4. DELETE removes an entity given an ID
+  * @tparam CT
+  *   The content type. Most likely a string, but some http frameworks use enumerations.
   */
 case class ClassicCrudDef[ALG[_], A: Manifest, ID: Manifest, CT, E, PE](
   contentInterpreters: ContentInterpreters[String, ALG, CT],
@@ -95,7 +95,8 @@ case class ClassicCrudDef[ALG[_], A: Manifest, ID: Manifest, CT, E, PE](
 
   val errorResponseEncoders: ConvertedEncoder[ALG, ErrorResponse, CT] =
     contentInterpreters.generateEncoders[ErrorResponse](
-      ExtractionErrorEncoder.errorResponseSchema.algMapKvpCollection[ALG](scvToAlg))
+      ExtractionErrorEncoder.errorResponseSchema.algMapKvpCollection[ALG](scvToAlg)
+    )
 
   val pathErrorEncoder: ConvertedEncoder[ALG, PE, CT] =
     contentInterpreters.generateEncoders[PE](pathErrorSchema)

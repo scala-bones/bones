@@ -28,7 +28,8 @@ object ClassicCrud
 
   def endpointForCreate[ALG[_], A, ID, E, PE, F[_]](
     classicCrudDef: ClassicCrudDef[ALG, A, ID, ContentType, E, PE],
-    f: A => Future[Either[E, (ID, A)]]): Route = ignoreTrailingSlash {
+    f: A => Future[Either[E, (ID, A)]]
+  ): Route = ignoreTrailingSlash {
     path(classicCrudDef.path) {
       post {
         extractRequest { request =>
@@ -47,7 +48,8 @@ object ClassicCrud
                         complete(
                           StatusCodes.UnprocessableEntity,
                           List(`Content-Type`(encoder._1)),
-                          encoder._2.encode(ErrorResponse(err.toList)))
+                          encoder._2.encode(ErrorResponse(err.toList))
+                        )
                       case Right(value) =>
                         onComplete(f(value)) {
                           case Success(result) =>
@@ -58,14 +60,16 @@ object ClassicCrud
                                 complete(
                                   StatusCodes.InternalServerError,
                                   List(`Content-Type`(encoder._1)),
-                                  encoder._2.encode(systemError))
+                                  encoder._2.encode(systemError)
+                                )
                               case Right(value) =>
                                 val encoder =
                                   classicCrudDef.responseSchemaWithIdEncoder.encoderForContent(ct)
                                 complete(
                                   StatusCodes.OK,
                                   List(`Content-Type`(encoder._1)),
-                                  encoder._2.encode(value))
+                                  encoder._2.encode(value)
+                                )
                             }
                           case Failure(ex) =>
                             complete(InternalServerError, s"An error occurred: ${ex.getMessage}")
@@ -83,7 +87,8 @@ object ClassicCrud
 
   def getEndpoint[ALG[_], A, ID, E, PE, F[_]](
     classicCrudDef: ClassicCrudDef[ALG, A, ID, ContentType, E, PE],
-    getFunc: ID => Future[Either[E, (ID, A)]]): Route = ignoreTrailingSlash {
+    getFunc: ID => Future[Either[E, (ID, A)]]
+  ): Route = ignoreTrailingSlash {
     pathPrefix(classicCrudDef.path / Segment) { idString =>
       get {
         extractRequest { request =>
@@ -94,18 +99,21 @@ object ClassicCrud
               complete(
                 StatusCodes.UnprocessableEntity,
                 List(`Content-Type`(encoder._1)),
-                encoder._2.encode(err))
+                encoder._2.encode(err)
+              )
             case Right(id) => {
               onComplete(getFunc(id)) {
                 case Success(value) => {
                   value match {
                     case Left(systemError) =>
                       val encoder = classicCrudDef.errorResponseSchemaEncoders.encoderForContent(
-                        request.entity.contentType)
+                        request.entity.contentType
+                      )
                       complete(
                         StatusCodes.InternalServerError,
                         List(`Content-Type`(encoder._1)),
-                        encoder._2.encode(systemError))
+                        encoder._2.encode(systemError)
+                      )
                     case Right(value) =>
                       val encoder = classicCrudDef.responseSchemaWithIdEncoder.encoderForContent(
                         request.entity.contentType
@@ -113,7 +121,8 @@ object ClassicCrud
                       complete(
                         StatusCodes.OK,
                         List(`Content-Type`(encoder._1)),
-                        encoder._2.encode(value))
+                        encoder._2.encode(value)
+                      )
                   }
                 }
                 case Failure(ex) =>

@@ -15,21 +15,19 @@ import shapeless.{::, HNil, Succ}
 
 package object jdbc {
 
-  val longId: KvpSingleValueHead[String, DefaultValues, Long, HNil, _0, Long :: HNil] = (
-    "id",
-    long(lv.min(0), lv.unique)) :: kvpNil
-  val intId: KvpSingleValueHead[String, DefaultValues, Int, HNil, _0, Int :: HNil] = (
-    "id",
-    int(iv.min(0), iv.unique)) :: kvpNil
-  val uuidId: KvpSingleValueHead[String, DefaultValues, UUID, HNil, _0, UUID :: HNil] = (
-    "id",
-    uuid(uuidV.unique)) :: kvpNil
+  val longId: KvpSingleValueHead[String, DefaultValues, Long, HNil, _0, Long :: HNil] =
+    ("id", long(lv.min(0), lv.unique)) :: kvpNil
+  val intId: KvpSingleValueHead[String, DefaultValues, Int, HNil, _0, Int :: HNil] =
+    ("id", int(iv.min(0), iv.unique)) :: kvpNil
+  val uuidId: KvpSingleValueHead[String, DefaultValues, UUID, HNil, _0, UUID :: HNil] =
+    ("id", uuid(uuidV.unique)) :: kvpNil
 
   case class JdbcColumnInterpreter[ALG[_]](
     resultSet: rs.ResultSetInterpreter[ALG],
     dbColumn: ColumnValue[ALG],
     insert: com.bones.jdbc.insert.DbInsert[ALG],
-    dbUpdate: UpdateStatementValue[ALG])
+    dbUpdate: UpdateStatementValue[ALG]
+  )
 
   val defaultJdbcColumnInterpreter =
     JdbcColumnInterpreter(
@@ -43,8 +41,9 @@ package object jdbc {
 
     def asTuple: (String, ALG[ID]) = (key, value)
 
-    def prependSchema[A: Manifest](schema: KvpCollection[String, ALG, A])
-      : KvpWrappedHList[String, ALG, (ID, A), ID :: A :: HNil, Succ[Succ[_0]]] = {
+    def prependSchema[A: Manifest](
+      schema: KvpCollection[String, ALG, A]
+    ): KvpWrappedHList[String, ALG, (ID, A), ID :: A :: HNil, Succ[Succ[_0]]] = {
       (asTuple :: schema :: KvpNil[String, ALG]).tupled[(ID, A)]
     }
 
@@ -71,8 +70,8 @@ package object jdbc {
   }
 
   def findUniqueConstraint(v: List[ValidationOp[_]]): List[UniqueValue[_]] =
-    v.collect {
-      case uv: UniqueValue[_] => uv
+    v.collect { case uv: UniqueValue[_] =>
+      uv
     }
 
 }

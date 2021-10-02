@@ -14,8 +14,8 @@ trait DbUpdate[ALG[_]] {
 
   def updateQuery[A, ID](
     bonesSchema: KvpCollection[String, ALG, A],
-    idSchema: KvpCollection[String, ALG, ID])
-    : (ID, A) => Connection => Either[List[SystemError[String]], ID] = {
+    idSchema: KvpCollection[String, ALG, ID]
+  ): (ID, A) => Connection => Either[List[SystemError[String]], ID] = {
     val tableName = camelToSnake(headTypeName(bonesSchema).getOrElse("Unknown"))
     val updates = jdbcStatementInterpreter.fromKvpCollection(bonesSchema)(1)
     val idIndex = updates.lastIndex
@@ -28,25 +28,24 @@ trait DbUpdate[ALG[_]] {
         .mkString(",")} where ${idUpdateFunction.assignmentStatements
         .map(_._1)
         .mkString(" and ")}"""
-    (id: ID, a: A) =>
-      { (con: Connection) =>
-        {
-          val statement = con.prepareCall(sql)
-          try {
-            updates
-              .predicates(a)
-              .foreach(f => f(statement))
-            idUpdateFunction.predicates(id).foreach(f => f.apply(statement))
-            statement.execute()
-            Right(id)
-          } catch {
-            case e: SQLException =>
-              Left(List(SystemError(e, Some(sql))))
-          } finally {
-            statement.close()
-          }
+    (id: ID, a: A) => { (con: Connection) =>
+      {
+        val statement = con.prepareCall(sql)
+        try {
+          updates
+            .predicates(a)
+            .foreach(f => f(statement))
+          idUpdateFunction.predicates(id).foreach(f => f.apply(statement))
+          statement.execute()
+          Right(id)
+        } catch {
+          case e: SQLException =>
+            Left(List(SystemError(e, Some(sql))))
+        } finally {
+          statement.close()
         }
       }
+    }
   }
 
 }

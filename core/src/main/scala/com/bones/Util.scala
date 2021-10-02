@@ -9,13 +9,12 @@ import shapeless.{HList, UnaryTCConstraint}
 
 import scala.util.Try
 
-/**
-  * A collection of helper functions used by Bones.
+/** A collection of helper functions used by Bones.
   */
 object Util {
 
-  /** A Value that is defined in the schema, but in certain context, can be omitted
-    * from the data. */
+  /** A Value that is defined in the schema, but in certain context, can be omitted from the data.
+    */
   case class OmittedValue[K](fieldName: String, typeName: String, path: Path[K])
 
   /** Either: Left means a value has been omitted, Right means the value has been specified */
@@ -56,8 +55,9 @@ object Util {
     }
   }
 
-  /** Convert a String to a UUID returning Left[NoneEmptyList[ExtractionError],UUID]
-    * if there is a failure in conversion */
+  /** Convert a String to a UUID returning Left[NoneEmptyList[ExtractionError],UUID] if there is a
+    * failure in conversion
+    */
   def stringToUuid[K](uuidString: String, path: List[K]): Either[ExtractionErrors[K], UUID] =
     try {
       Right(UUID.fromString(uuidString))
@@ -66,13 +66,13 @@ object Util {
         Left(List(CanNotConvert(path, uuidString, classOf[UUID], Some(e))))
     }
 
-  /**
-    * Convert the String to a LocalDate returning Either[ExtractionErrors[K],LocalDate]
+  /** Convert the String to a LocalDate returning Either[ExtractionErrors[K],LocalDate]
     */
   def stringToLocalDate[K](
     input: String,
     dateFormat: DateTimeFormatter,
-    path: List[K]): Either[ExtractionErrors[K], LocalDate] =
+    path: List[K]
+  ): Either[ExtractionErrors[K], LocalDate] =
     try {
       Right(LocalDate.parse(input, dateFormat))
     } catch {
@@ -83,7 +83,8 @@ object Util {
   def stringToLocalTime[K](
     input: String,
     dateFormat: DateTimeFormatter,
-    path: List[K]): Either[ExtractionErrors[K], LocalTime] =
+    path: List[K]
+  ): Either[ExtractionErrors[K], LocalTime] =
     try {
       Right(LocalTime.parse(input, dateFormat))
     } catch {
@@ -91,8 +92,7 @@ object Util {
         Left(List(CanNotConvert(path, input, classOf[LocalDate], Some(e))))
     }
 
-  /**
-    * Convert the String to a BigDecimal returning Either[ExtractionErrors[K],BigDecimal]
+  /** Convert the String to a BigDecimal returning Either[ExtractionErrors[K],BigDecimal]
     */
   def stringToBigDecimal[K](input: String, path: List[K]): Either[ExtractionErrors[K], BigDecimal] =
     try {
@@ -102,13 +102,14 @@ object Util {
         Left(List(CanNotConvert(path, input, classOf[BigDecimal], Some(e))))
     }
 
-  /** Convert the String to an Enumeration using scala.Enumeration.withName returning Left[ExtractionErrors[K],Object]
-    * if there is an parse error.
+  /** Convert the String to an Enumeration using scala.Enumeration.withName returning
+    * Left[ExtractionErrors[K],Object] if there is an parse error.
     */
   def stringToEnumeration[K, E <: Enumeration, V](
     str: String,
     path: List[K],
-    enumeration: E): Either[List[CanNotConvert[K, String, V]], enumeration.Value] =
+    enumeration: E
+  ): Either[List[CanNotConvert[K, String, V]], enumeration.Value] =
     try {
       Right(enumeration.withName(str))
     } catch {
@@ -116,13 +117,14 @@ object Util {
         Left(List(CanNotConvert(path, str, manifest.runtimeClass.asInstanceOf[Class[V]], Some(e))))
     }
 
-  /** Convert the string to an Enum using scala.Enumeration.withName returning Either[ExtractionErrors[K],A]
-    * if there is an parse error.
+  /** Convert the string to an Enum using scala.Enumeration.withName returning
+    * Either[ExtractionErrors[K],A] if there is an parse error.
     */
   def stringToEnum[K, A <: Enum[A]: Manifest](
     str: String,
     path: List[K],
-    enums: List[A]): Either[List[CanNotConvert[K, String, A]], A] = {
+    enums: List[A]
+  ): Either[List[CanNotConvert[K, String, A]], A] = {
     val manifestA = manifest[A]
     enums
       .find(_.toString == str)
@@ -132,7 +134,10 @@ object Util {
             path,
             str,
             manifestA.runtimeClass.asInstanceOf[Class[A]],
-            None)))
+            None
+          )
+        )
+      )
   }
 
   /** Converts a long to a LocalDate.  Never fails */
@@ -157,12 +162,12 @@ object Util {
     }
   }
 
-  /**
-    * Accumulates error on the left or combines success on the right, just
-    * like Applicative.map2 if Either was a Validation.
+  /** Accumulates error on the left or combines success on the right, just like Applicative.map2 if
+    * Either was a Validation.
     */
   def eitherMap2[K, A, B, Z, E](e1: Either[List[E], A], e2: Either[List[E], B])(
-    f: (A, B) => Z): Either[List[E], Z] = {
+    f: (A, B) => Z
+  ): Either[List[E], Z] = {
     (e1, e2) match {
       case (Left(err1), Left(err2)) => Left(err1 ::: err2)
       case (Left(err1), _)          => Left(err1)
@@ -173,9 +178,10 @@ object Util {
 
   def eitherMap2HigherOrder[K, ALG[_], A, B, Z](
     e1: Either[List[(Either[HigherOrderValue[K, ALG, A], ALG[A]], ExtractionError[K])], A],
-    e2: Either[List[(Either[HigherOrderValue[K, ALG, A], ALG[A]], ExtractionError[K])], B])(
-    f: (A, B) => Z)
-    : Either[List[(Either[HigherOrderValue[K, ALG, A], ALG[A]], ExtractionError[K])], Z] = {
+    e2: Either[List[(Either[HigherOrderValue[K, ALG, A], ALG[A]], ExtractionError[K])], B]
+  )(
+    f: (A, B) => Z
+  ): Either[List[(Either[HigherOrderValue[K, ALG, A], ALG[A]], ExtractionError[K])], Z] = {
     (e1, e2) match {
       case (Left(err1), Left(err2)) => Left(err1 ::: err2)
       case (Left(err1), _)          => Left(err1)
@@ -187,14 +193,13 @@ object Util {
   // Imported here because there are uses of Scala List's `::` above.
   import shapeless.::
 
-  /**
-    * Accumulates error on the left or combines success on the right, just
-    * like Applicative.map2 if Either was a Validation.
+  /** Accumulates error on the left or combines success on the right, just like Applicative.map2 if
+    * Either was a Validation.
     */
   def eitherMap2Nullable[K, A, B, Z](
     e1: Either[ExtractionErrors[K], CanBeOmitted[K, A]],
-    e2: Either[ExtractionErrors[K], CanBeOmitted[K, B]])(
-    f: (A, B) => Z): Either[ExtractionErrors[K], CanBeOmitted[K, Z]] = {
+    e2: Either[ExtractionErrors[K], CanBeOmitted[K, B]]
+  )(f: (A, B) => Z): Either[ExtractionErrors[K], CanBeOmitted[K, Z]] = {
     (e1, e2) match {
       case (Left(err1), Left(err2)) => Left(err1 ::: err2)
       case (Left(err1), _)          => Left(err1)
@@ -209,14 +214,15 @@ object Util {
     }
   }
 
-  /**
-    * Accumulates error on the left or combines success on the right, just
-    * like Applicative.map2 if Either was a Validation.
+  /** Accumulates error on the left or combines success on the right, just like Applicative.map2 if
+    * Either was a Validation.
     */
   def eitherOmittedUnaryPrepend[K, A, B <: HList, Z](
     e1: Either[ExtractionErrors[K], CanBeOmitted[K, A]],
-    e2: Either[ExtractionErrors[K], B])(implicit uct: UnaryTCConstraint[B, CanBeOmitted[String, *]])
-    : Either[ExtractionErrors[K], CanBeOmitted[K, A] :: B] = {
+    e2: Either[ExtractionErrors[K], B]
+  )(implicit
+    uct: UnaryTCConstraint[B, CanBeOmitted[String, *]]
+  ): Either[ExtractionErrors[K], CanBeOmitted[K, A] :: B] = {
     implicit val uc = uct
     (e1, e2) match {
       case (Left(err1), Left(err2)) => Left(err1 ::: err2)

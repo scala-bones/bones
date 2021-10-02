@@ -14,8 +14,9 @@ import com.bones.interpreter.validator.{
 package object argonaut {
 
   /** An implementation of an Argonaut Encoder and and Validator using Standard ISO DATE string
-    * format for serializing.
-    * Implement both Encoder and Validator to ensure consistent data formats and coproductTypeKey */
+    * format for serializing. Implement both Encoder and Validator to ensure consistent data formats
+    * and coproductTypeKey
+    */
   case class IsoArgonautValidatorInterpreter(
     override val interchangeFormatValidator: InterchangeFormatValidatorValue[DefaultValues, Json]
   ) extends ArgonautValidatorInterpreter[DefaultValues] {
