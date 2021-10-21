@@ -40,7 +40,8 @@ object WaterfallDefinitions {
     cubicFeetPerMinute: Option[BigDecimal],
     height: Option[ImperialMeasurement],
     waterValue: WaterVolume.Value // discoveryDate: LocalDateTime,
-    /*wantToVisit: Boolean, description: String*/ )
+    /*wantToVisit: Boolean, description: String*/
+  )
 
   val waterfallSchema = (
     ("name", string(sv.max(200))) ::
@@ -58,7 +59,8 @@ object WaterfallDefinitions {
   case class WaterfallVisit(
     waterfallId: Long,
     waterVolume: WaterVolume.Value,
-    notes: Option[String])
+    notes: Option[String]
+  )
 
   val waterfallVisitSchema = (
     ("waterfallId", long(lv.min(1))) ::
@@ -87,7 +89,8 @@ object WaterfallApp extends LocalhostAllIOApp() {
       waterfallSchema,
       Path.longParam,
       ExtractionErrorEncoder.errorResponseSchema.algMapKvpCollection[DefaultValues](core =>
-        shapeless.Inl(core)),
+        shapeless.Inl(core)
+      ),
       DefaultIdDefinitions.longIdDefinition,
       "id"
     )

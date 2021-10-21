@@ -16,13 +16,15 @@ class ArgonautTest extends AnyFunSuite with Checkers with Matchers {
 
   val jsonToCc = defaultIsoArgonautValidatorInterpreter.generateByteArrayValidator(
     allSupportCaseClass,
-    Charset.forName("UTF8"))
+    Charset.forName("UTF8")
+  )
   val ccToJson =
     defaultIsoArgonautEncoderInterpreter.generateEncoder(allSupportCaseClass)
 
   implicit val arb = Arbitrary(
     defaultValuesScalacheck
-      .generateGen(allSupportCaseClass))
+      .generateGen(allSupportCaseClass)
+  )
   val utf8 = Charset.forName("UTF8")
 
   test("scalacheck allSupport types - marshall then marshall") {
@@ -33,8 +35,8 @@ class ArgonautTest extends AnyFunSuite with Checkers with Matchers {
         val newCc = jsonToCc(jsonString)
         newCc match {
           case Left(x) =>
-            fail(s"expected success, received $x for JSON string ${argonaut.Parse.parse(
-              new String(jsonString, utf8))}")
+            fail(s"expected success, received $x for JSON string ${argonaut.Parse
+              .parse(new String(jsonString, utf8))}")
           case Right(newCc2) =>
             val nullBa = Array[Byte]()
 
@@ -48,7 +50,8 @@ class ArgonautTest extends AnyFunSuite with Checkers with Matchers {
           ex.printStackTrace()
           fail(ex)
         }
-    })
+      }
+    )
 
   }
 

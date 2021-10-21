@@ -8,10 +8,12 @@ object IdealScalaCoreInterpreter
     extends IdealValue[ScalaCoreValue]
     with BaseScalaCoreInterpreter[IdealDataType] {
 
-  override def columns[A](alg: ScalaCoreValue[A])
-    : (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
-      TableCollection,
-      List[UniqueGroup]) = {
+  override def columns[A](
+    alg: ScalaCoreValue[A]
+  ): (TableCollection, List[UniqueGroup], ColumnName, Option[Description]) => (
+    TableCollection,
+    List[UniqueGroup]
+  ) = {
     val uniqueConstraint = findUniqueConstraint(alg.validations)
     defaultColumns(matchScalaCoreValue(alg), uniqueConstraint)
   }

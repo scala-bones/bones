@@ -14,9 +14,9 @@ import com.zaxxer.hikari.HikariDataSource
 import org.http4s.HttpRoutes
 import org.http4s.headers.`Content-Type`
 
-/** Example endpoint.  This creates a complete application which saves a person to a local database including:
-  * JSON endpoints, Protobuf Endpoints, 5 CRUD Endpoints (Get, Put, Post, Delete, Search AllCustomAlgebras),
-  * Swagger, DB DDL.
+/** Example endpoint. This creates a complete application which saves a person to a local database
+  * including: JSON endpoints, Protobuf Endpoints, 5 CRUD Endpoints (Get, Put, Post, Delete, Search
+  * AllCustomAlgebras), Swagger, DB DDL.
   */
 object PersonEndpoint extends LocalhostAllIOApp {
 
@@ -29,7 +29,8 @@ object PersonEndpoint extends LocalhostAllIOApp {
       "name",
       string(sv.matchesRegex("^[a-zA-Z ]*$".r)),
       "The name of the person must be alphanumeric",
-      "John Doe") ::
+      "John Doe"
+    ) ::
       ("age", int(iv.min(0)), "The Age, In years, of the person.", 21) ::
       ("gender", string.optional) :<:
       kvpNil
@@ -45,7 +46,8 @@ object PersonEndpoint extends LocalhostAllIOApp {
       Path.longParam,
       StringToIdError.stringToIdErrorSchema,
       ExtractionErrorEncoder.errorResponseSchema.algMapKvpCollection[DefaultValues](core =>
-        shapeless.Inl(core)),
+        shapeless.Inl(core)
+      ),
       DefaultIdDefinitions.longIdDefinition,
       "id",
       core => shapeless.Inl(core)

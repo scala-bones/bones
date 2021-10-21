@@ -11,16 +11,15 @@ import cats.implicits._
 import org.http4s.circe._
 object ClassicCrud {
 
-  /**
-    * Creates a route as a classic GET request, where the route is /entity/{id}.
-    * Parses the id and passes the value to method supplied by getFunc.
-    * @return Route for use in HTTP4s
+  /** Creates a route as a classic GET request, where the route is /entity/{id}. Parses the id and
+    * passes the value to method supplied by getFunc.
+    * @return
+    *   Route for use in HTTP4s
     */
   def get[ALG[_], A, ID, E, PE, F[_]](
     classicCrudDef: ClassicCrudDef[ALG, A, ID, `Content-Type`, E, PE],
-    getFunc: ID => F[Either[E, (ID, A)]])(
-    implicit F: Concurrent[F],
-    H: Http4sDsl[F]): HttpRoutes[F] = {
+    getFunc: ID => F[Either[E, (ID, A)]]
+  )(implicit F: Concurrent[F], H: Http4sDsl[F]): HttpRoutes[F] = {
     import H._
     HttpRoutes.of[F] {
       case req @ Method.GET -> Root / path / idParam if classicCrudDef.path == path =>
@@ -30,13 +29,13 @@ object ClassicCrud {
               .flatMap({
                 case Left(re) => // getFunc returned the error state
                   val (contentType, encoder) =
-                    classicCrudDef.errorResponseSchemaEncoders.encoderForOptionalContent(
-                      req.contentType)
+                    classicCrudDef.errorResponseSchemaEncoders
+                      .encoderForOptionalContent(req.contentType)
                   BadRequest(encoder.encode(re), contentType)
                 case Right(ro) => // getFunc returned successfully
                   val (contentType, encoder) =
-                    classicCrudDef.responseSchemaWithIdEncoder.encoderForOptionalContent(
-                      req.contentType)
+                    classicCrudDef.responseSchemaWithIdEncoder
+                      .encoderForOptionalContent(req.contentType)
                   Ok(encoder.encode(ro), contentType)
               })
           })
@@ -64,17 +63,16 @@ object ClassicCrud {
             classicCrudDef.requestSchemaValidators
               .validatorForOptionalContent(req.contentType)
               .toRight(UnsupportedMediaType(s"Unsupported Content-Type: '${req.contentType}''"))
-              .flatMap {
-                case (ct, f) =>
-                  f.validate(body)
-                    .left
-                    .map(errs => {
-                      val (outContentType, errorF) =
-                        classicCrudDef.errorResponseEncoders
-                          .encoderForContent(ct)
-                      BadRequest(errorF.encode(ErrorResponse(errs)), outContentType)
-                    })
-                    .map(a => (ct, a))
+              .flatMap { case (ct, f) =>
+                f.validate(body)
+                  .left
+                  .map(errs => {
+                    val (outContentType, errorF) =
+                      classicCrudDef.errorResponseEncoders
+                        .encoderForContent(ct)
+                    BadRequest(errorF.encode(ErrorResponse(errs)), outContentType)
+                  })
+                  .map(a => (ct, a))
               }
           }
           out <- EitherT[F, F[Response[F]], ID] {
@@ -96,9 +94,8 @@ object ClassicCrud {
   private def pathIdOrError[ALG[_], A, ID, E, PE, F[_]](
     idParam: String,
     contentType: Option[`Content-Type`],
-    classicCrudDef: ClassicCrudDef[ALG, A, ID, `Content-Type`, E, PE])(
-    implicit F: Concurrent[F],
-    H: Http4sDsl[F]): Either[F[Response[F]], ID] = {
+    classicCrudDef: ClassicCrudDef[ALG, A, ID, `Content-Type`, E, PE]
+  )(implicit F: Concurrent[F], H: Http4sDsl[F]): Either[F[Response[F]], ID] = {
     import H._
     classicCrudDef
       .pathStringToId(idParam)
@@ -125,7 +122,8 @@ object ClassicCrud {
               _.left.map(err => {
                 val (conentType, encoder) =
                   classicCrudDef.errorResponseSchemaEncoders.encoderForOptionalContent(
-                    req.contentType)
+                    req.contentType
+                  )
                 InternalServerError(encoder.encode(err), conentType)
               })
             )
@@ -144,7 +142,8 @@ object ClassicCrud {
 
   def post[ALG[_], A, ID, E, PE, F[_]](
     classicCrudDef: ClassicCrudDef[ALG, A, ID, `Content-Type`, E, PE],
-    createF: A => F[Either[E, ID]])(implicit F: Concurrent[F], H: Http4sDsl[F]): HttpRoutes[F] = {
+    createF: A => F[Either[E, ID]]
+  )(implicit F: Concurrent[F], H: Http4sDsl[F]): HttpRoutes[F] = {
 
     import H._
     HttpRoutes.of[F] {

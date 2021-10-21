@@ -25,7 +25,8 @@ trait Json4sValidatorInterpreter[ALG[_]]
   override def invalidValue[T](
     value: JValue,
     typeName: String,
-    path: List[String]): Left[List[WrongTypeError[String, T]], Nothing] = {
+    path: List[String]
+  ): Left[List[WrongTypeError[String, T]], Nothing] = {
     val invalid = value match {
       case JNull       => classOf[Nothing]
       case JArray(_)   => classOf[Array[_]]
@@ -47,7 +48,8 @@ trait Json4sValidatorInterpreter[ALG[_]]
     in: JValue,
     kv: KeyDefinition[String, ALG, A],
     headInterpreter: OptionalInputValidator[String, ALG, A, JValue],
-    path: List[String]): Either[ExtractionErrors[String], A] =
+    path: List[String]
+  ): Either[ExtractionErrors[String], A] =
     in match {
       case JObject(obj) =>
         headInterpreter.validateWithPath(obj.find(_._1 == kv.key).map(_._2), path)

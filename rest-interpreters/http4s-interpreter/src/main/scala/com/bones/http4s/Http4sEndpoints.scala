@@ -12,8 +12,7 @@ import org.http4s.headers.`Content-Type`
 
 object Http4sEndpoints {
 
-  /**
-    * Create a get endpoint.
+  /** Create a get endpoint.
     */
   def get[F[_], ALG[_], RES, ID, E, PE](
     expectedPath: String,
@@ -54,12 +53,13 @@ object Http4sEndpoints {
     }
   }
 
-  /**
-    * Create a PUT endpoint given serialization functions and business logic.
-    * The expected path is /Root/$expectedPath/{id}
+  /** Create a PUT endpoint given serialization functions and business logic. The expected path is
+    * /Root/$expectedPath/{id}
     *
-    * @param endpointDef contains functions to and from Array[Byte]
-    * @param updateF          Business logic to execute after
+    * @param endpointDef
+    *   contains functions to and from Array[Byte]
+    * @param updateF
+    *   Business logic to execute after
     * @return
     */
   def put[F[_], ALG[_], REQ, RES, ID, E, PE](

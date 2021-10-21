@@ -24,7 +24,8 @@ object ClassicCrudInterpreterExample extends App {
 
   val contentTypeEncoders = ContentInterpreters[String, DefaultValues, ContentType](
     Content(ContentTypes.`application/json`, SprayDefaultValuesByteArrayInterpreter()),
-    Set.empty)
+    Set.empty
+  )
 
   case class Error(errorMessage: String)
   val errorSchema =
@@ -60,13 +61,14 @@ object ClassicCrudInterpreterExample extends App {
         db.update(thisId, customer)
         id = id + 1
         Right((thisId, customer))
-    })
+      }
+  )
 
   val route2 =
     ClassicCrud.getEndpoint(
       classicCrudDef,
-      (id: Long) =>
-        Future(db.get(id).map(c => (id, c)).toRight(Error(s"No entity with id: ${id}"))))
+      (id: Long) => Future(db.get(id).map(c => (id, c)).toRight(Error(s"No entity with id: ${id}")))
+    )
 
   val bindingFuture = Http().newServerAt("localhost", 8080).bind(concat(route1, route2))
 

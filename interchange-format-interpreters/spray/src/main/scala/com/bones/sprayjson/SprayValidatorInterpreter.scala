@@ -14,9 +14,8 @@ import spray.json._
 
 import scala.util.Try
 
-/**
-  * Module responsible for converting circe JsValue input into values with validation checks.
-  * See [KvpInterchangeFormatValidatorInterpreter.validatorFromSchema] for the entry point.
+/** Module responsible for converting circe JsValue input into values with validation checks. See
+  * [KvpInterchangeFormatValidatorInterpreter.validatorFromSchema] for the entry point.
   */
 trait SprayValidatorInterpreter[ALG[_]]
     extends KvpInterchangeFormatValidatorInterpreter[ALG, JsValue] {
@@ -32,7 +31,8 @@ trait SprayValidatorInterpreter[ALG[_]]
   override def invalidValue[T](
     value: JsValue,
     typeName: String,
-    path: List[String]): Left[List[WrongTypeError[String, T]], Nothing] = {
+    path: List[String]
+  ): Left[List[WrongTypeError[String, T]], Nothing] = {
     val invalid = value match {
       case JsNull       => classOf[Nothing]
       case JsArray(_)   => classOf[Array[_]]
@@ -49,7 +49,8 @@ trait SprayValidatorInterpreter[ALG[_]]
     in: JsValue,
     kv: KeyDefinition[String, ALG, A],
     headInterpreter: OptionalInputValidator[String, ALG, A, JsValue],
-    path: List[String]): Either[List[ExtractionError[String]], A] =
+    path: List[String]
+  ): Either[List[ExtractionError[String]], A] =
     Try(in.asJsObject).toOption match {
       case Some(value) =>
         headInterpreter.validateWithPath(value.fields.find(_._1 == kv.key).map(_._2), path)
@@ -62,13 +63,13 @@ trait SprayValidatorInterpreter[ALG[_]]
     charset: Charset
   ): Array[Byte] => Either[List[ExtractionError[String]], A] = {
     val encoder = fromKvpCollection(schema)
-    bytes =>
-      fromByteArray(bytes, charset).flatMap(encoder.validateWithPath(_, List.empty))
+    bytes => fromByteArray(bytes, charset).flatMap(encoder.validateWithPath(_, List.empty))
   }
 
   private def fromByteArray(
     arr: Array[Byte],
-    charSet: Charset): Either[List[ParsingError[String]], JsValue] = {
+    charSet: Charset
+  ): Either[List[ParsingError[String]], JsValue] = {
     val input = new String(arr, charSet)
     Try(input.parseJson).toEither.left.map(x => List(ParsingError(x.getMessage)))
   }

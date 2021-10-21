@@ -14,15 +14,18 @@ trait JavaTimeUpdateStatement extends UpdateStatementValue[JavaTimeValue] {
           (i: Index) =>
             (ps: PreparedStatement, a: LocalDateTime) =>
               ps.setDate(i, new java.sql.Date(a.toInstant(ZoneOffset.UTC).toEpochMilli)),
-          Types.DATE)
+          Types.DATE
+        )
       case ld: LocalDateData =>
         psF(
           (i: Index) =>
             (ps: PreparedStatement, a: LocalDate) =>
               ps.setDate(
                 i,
-                new java.sql.Date(a.atStartOfDay.toInstant(ZoneOffset.UTC).toEpochMilli)),
-          Types.DATE)
+                new java.sql.Date(a.atStartOfDay.toInstant(ZoneOffset.UTC).toEpochMilli)
+              ),
+          Types.DATE
+        )
       case _ => ??? // TODO
     }
 }

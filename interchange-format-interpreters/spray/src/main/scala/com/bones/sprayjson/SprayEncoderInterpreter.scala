@@ -4,9 +4,8 @@ import com.bones.data.{KeyDefinition, KvpCollection}
 import com.bones.interpreter.encoder.KvpInterchangeFormatEncoderInterpreter
 import spray.json.{JsObject, JsString, JsValue}
 
-/**
-  * Module responsible for converting values to Circe JSON without validation.
-  * The entry point for this class is [KvpInterchangeFormatEncoderInterpreter.encoderFromSchema].
+/** Module responsible for converting values to Circe JSON without validation. The entry point for
+  * this class is [KvpInterchangeFormatEncoderInterpreter.encoderFromSchema].
   */
 trait SprayEncoderInterpreter[ALG[_]] extends KvpInterchangeFormatEncoderInterpreter[ALG, JsValue] {
 

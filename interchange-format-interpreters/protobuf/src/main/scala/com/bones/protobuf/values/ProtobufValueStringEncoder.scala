@@ -9,8 +9,7 @@ import com.bones.protobuf.{
 
 object ProtobufValueStringEncoder extends ProtobufEncoderValue[CustomStringValue] {
 
-  /**
-    *  Encode using the same mechanism as string encoder.
+  /** Encode using the same mechanism as string encoder.
     */
   override def encodeToProto[A](alg: CustomStringValue[A]): EncodeToProto[A] =
     ProtobufSequentialEncoderInterpreter.stringData.asInstanceOf[EncodeToProto[A]]
