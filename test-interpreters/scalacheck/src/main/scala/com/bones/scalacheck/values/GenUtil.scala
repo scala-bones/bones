@@ -1,5 +1,3 @@
 package com.bones.scalacheck.values
 
-object GenUtil {
-
-}
+object GenUtil {}

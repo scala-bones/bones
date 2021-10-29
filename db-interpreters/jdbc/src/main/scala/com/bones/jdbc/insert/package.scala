@@ -38,7 +38,7 @@ package object insert {
 //          (DefaultJavaUtilDbInsert ++ CNilInsertInterpreter)))
 
   // Below is equivalent to the above.  Above compiles in 2.13, below compiles in both 2.12 and 2.13
-  //start 2.12
+  // start 2.12
 
   type JavaUtilValueCo[A] = JavaUtilValue[A] :+: CNilF[A]
   type JavaTimeValueCo[A] = JavaTimeValue[A] :+: JavaUtilValueCo[A]
@@ -58,7 +58,7 @@ package object insert {
     )
   }
 
-  //end 2.12
+  // end 2.12
 
   val defaultDbInsertInterpreter: DbInsert[DefaultValues] = new DbInsert[DefaultValues] {
     override def resultSetInterpreter: ResultSetInterpreter[DefaultValues] =
@@ -75,13 +75,12 @@ package object insert {
   def psF[A](f: (PreparedStatement, Index, A) => Unit): InsertPair[A] =
     key => {
       val columnName = camelToSnake(key)
-      (index: Index, a: A) =>
-        {
-          val setValue: SetValue = ps => {
-            f(ps, index, a)
-          }
-          (index + 1, List((columnName, setValue)))
+      (index: Index, a: A) => {
+        val setValue: SetValue = ps => {
+          f(ps, index, a)
         }
+        (index + 1, List((columnName, setValue)))
+      }
     }
 
 }

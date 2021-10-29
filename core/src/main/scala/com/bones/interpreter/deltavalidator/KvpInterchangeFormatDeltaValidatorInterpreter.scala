@@ -7,10 +7,10 @@ import com.bones.{Path, Util}
 import shapeless.UnaryTCConstraint._
 import shapeless.{::, Coproduct, HList, HNil, Nat, UnaryTCConstraint}
 
-/**
-  * Base trait for converting from an interchange format such as JSON to an HList or Case class.
+/** Base trait for converting from an interchange format such as JSON to an HList or Case class.
   *
-  * @tparam IN The base data type of the interchange format, such as io.circe.Json
+  * @tparam IN
+  *   The base data type of the interchange format, such as io.circe.Json
   */
 trait KvpInterchangeFormatDeltaValidatorInterpreter[ALG[_], IN] {
 
@@ -37,14 +37,16 @@ trait KvpInterchangeFormatDeltaValidatorInterpreter[ALG[_], IN] {
 //    : DeltaKvpValidator[String, ALG, A, IN] = ???
 
   case class DeltaResult[ALG[_], H <: HList, IN](validator: DeltaKvpValidator[String, ALG, H, IN])(
-    implicit utcc: UnaryTCConstraint[H, CanBeOmitted[String, *]]) {
+    implicit utcc: UnaryTCConstraint[H, CanBeOmitted[String, *]]
+  ) {
 
     def output: H = ???
 
   }
 
   def fromKvpHListCollection[H <: HList, HL <: Nat](
-    kvp: KvpHListCollection[String, ALG, H, HL]): DeltaKvpValidator[String, ALG, H, IN] =
+    kvp: KvpHListCollection[String, ALG, H, HL]
+  ): DeltaKvpValidator[String, ALG, H, IN] =
     kvp match {
       case kvpHList: KvpHListCollectionHead[String, ALG, H, HL, h, hl, t, tl] =>
         kvpHListCollectionHead(kvpHList)
@@ -56,8 +58,8 @@ trait KvpInterchangeFormatDeltaValidatorInterpreter[ALG[_], IN] {
     }
 
   def kvpHListCollectionHead[HO <: HList, NO <: Nat, H <: HList, HL <: Nat, T <: HList, TL <: Nat](
-    kvp: KvpHListCollectionHead[String, ALG, HO, NO, H, HL, T, TL])
-    : DeltaKvpValidator[String, ALG, HO, IN] = ???
+    kvp: KvpHListCollectionHead[String, ALG, HO, NO, H, HL, T, TL]
+  ): DeltaKvpValidator[String, ALG, HO, IN] = ???
 //  {
 //    val headValidator =
 //      fromKvpHListCollection(kvp.head)
@@ -108,8 +110,8 @@ trait KvpInterchangeFormatDeltaValidatorInterpreter[ALG[_], IN] {
     }
 
   def kvpSingleValueHead[HD, T <: HList, TL <: Nat](
-    kvp: KvpSingleValueHead[String, ALG, HD, T, TL, _])
-    : DeltaKvpValidator[String, ALG, CanBeOmitted[String, HD] :: T, IN] = {
+    kvp: KvpSingleValueHead[String, ALG, HD, T, TL, _]
+  ): DeltaKvpValidator[String, ALG, CanBeOmitted[String, HD] :: T, IN] = {
 
     val tail = fromKvpHListCollection(kvp.tail)
     val tUnaryTCConstraint = tail.hListRR
@@ -125,8 +127,10 @@ trait KvpInterchangeFormatDeltaValidatorInterpreter[ALG[_], IN] {
               UnaryTCConstraint
                 .hlistUnaryTC[HD, T, CanBeOmitted[String, *]](tUnaryTCConstraint)
 
-            override def validate(in: IN, path: List[String])
-              : Either[ExtractionErrors[String], CanBeOmitted[String, HD] :: T] = {
+            override def validate(
+              in: IN,
+              path: List[String]
+            ): Either[ExtractionErrors[String], CanBeOmitted[String, HD] :: T] = {
               val headResult = headV(in, path)
               val tailResult = tail.validate(in, path)
 
@@ -146,8 +150,9 @@ trait KvpInterchangeFormatDeltaValidatorInterpreter[ALG[_], IN] {
 
   }
 
-  def determineValidator[A](alg: Either[HigherOrderValue[String, ALG, A], ALG[A]])
-    : DeltaValueValidator[String, ALG, A, IN] =
+  def determineValidator[A](
+    alg: Either[HigherOrderValue[String, ALG, A], ALG[A]]
+  ): DeltaValueValidator[String, ALG, A, IN] =
     alg match {
       case Left(hov)  => valueDefinition(hov)
       case Right(alg) => interchangeFormatValidator.createDeltaValidator(alg)
@@ -156,7 +161,8 @@ trait KvpInterchangeFormatDeltaValidatorInterpreter[ALG[_], IN] {
   def kvpCoproduct[C <: Coproduct](value: KvpCoproduct[String, ALG, C]) = ???
 
   protected def valueDefinition[A](
-    fgo: HigherOrderValue[String, ALG, A]): DeltaValueValidator[String, ALG, A, IN] = {
+    fgo: HigherOrderValue[String, ALG, A]
+  ): DeltaValueValidator[String, ALG, A, IN] = {
     val result: DeltaValueValidator[String, ALG, A, IN] =
       fgo match {
         case op: OptionalValue[String, ALG, a] @unchecked =>
@@ -175,7 +181,8 @@ trait KvpInterchangeFormatDeltaValidatorInterpreter[ALG[_], IN] {
               x match {
                 case Left(_)  => optionalB.map(_.map(r => Right(r)))
                 case Right(a) => DeltaValueValidator.pureA(a).map(_.map(l => Left(l)))
-            })
+              }
+            )
         case op: ListData[String, ALG, t] @unchecked =>
           val valueF = determineValidator(op.tDefinition)
 
@@ -190,14 +197,16 @@ trait KvpInterchangeFormatDeltaValidatorInterpreter[ALG[_], IN] {
             override def extract(
               in: IN,
               key: String,
-              path: List[String]): Either[ExtractionErrors[String], CanBeOmitted[String, Seq[t]]] =
+              path: List[String]
+            ): Either[ExtractionErrors[String], CanBeOmitted[String, Seq[t]]] =
               primitiveValidator.extractArray(op.typeName).extract(in, key, path).flatMap {
                 case Left(nr) => Right(Left(nr))
                 case Right(seq) => {
                   seq
                     .map(v => valueF.extract(v, key, path))
                     .foldLeft[Either[ExtractionErrors[String], CanBeOmitted[String, Seq[t]]]](
-                      Right(Right(Seq.empty))) { (result, next) =>
+                      Right(Right(Seq.empty))
+                    ) { (result, next) =>
                       {
                         (next, result) match {
                           case (Left(err1), Left(err2)) => Left(err1 ::: err2)
@@ -217,7 +226,9 @@ trait KvpInterchangeFormatDeltaValidatorInterpreter[ALG[_], IN] {
           validator.asInstanceOf[DeltaValueValidator[String, ALG, A, IN]]
 
         case op: KvpCollectionValue[String, ALG, A] @unchecked =>
-          DeltaValueValidator.pure(Left(List(OmittedValue("unknown", op.typeName, List.empty)))) //TODO: This is not implemented correctly
+          DeltaValueValidator.pure(
+            Left(List(OmittedValue("unknown", op.typeName, List.empty)))
+          ) // TODO: This is not implemented correctly
       }
     result
   }

@@ -27,13 +27,14 @@ class ProtobufScalacheckTest extends AnyFunSuite with Checkers {
 
 //      println(javax.xml.bind.DatatypeConverter.printHexBinary(bytes))
 
-      val newCc = try {
-        decode(bytes)
-      } catch {
-        case ex: Exception =>
-          ex.printStackTrace()
-          throw ex
-      }
+      val newCc =
+        try {
+          decode(bytes)
+        } catch {
+          case ex: Exception =>
+            ex.printStackTrace()
+            throw ex
+        }
 
       newCc match {
         case Left(x) =>
@@ -41,7 +42,7 @@ class ProtobufScalacheckTest extends AnyFunSuite with Checkers {
         case Right(newCc2) =>
           val nullBa = Array[Byte]()
 
-          //Arrays seem to only be equal when they reference the same object, so let's remove them form the whole object copy
+          // Arrays seem to only be equal when they reference the same object, so let's remove them form the whole object copy
           val newCc2NoBa = newCc2.copy(ba = nullBa).copy(child = newCc2.child.copy(ba = None))
           val ccNoBA = cc.copy(ba = nullBa).copy(child = cc.child.copy(ba = None))
 

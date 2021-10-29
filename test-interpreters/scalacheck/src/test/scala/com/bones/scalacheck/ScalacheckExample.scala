@@ -18,7 +18,8 @@ class ScalacheckExample extends AnyFunSuite with Checkers {
     height: Int,
     weight: Double,
     eyeColor: EyeColor.EyeColor,
-    correctiveVision: Boolean)
+    correctiveVision: Boolean
+  )
 
   // Define our "Bones Schema" with data constraints
   val personalTraitsSchema = (
@@ -29,10 +30,10 @@ class ScalacheckExample extends AnyFunSuite with Checkers {
       kvpNil
   ).convert[PersonalTraits]
 
-  //Use the Scalacheck interpreter to generate an Arbitrary which will produce data within the range of the schema provided above.
+  // Use the Scalacheck interpreter to generate an Arbitrary which will produce data within the range of the schema provided above.
   implicit val arb = Arbitrary(defaultValuesScalacheck.generateGen(personalTraitsSchema))
 
-  //Write your tests
+  // Write your tests
   test("user generator") {
     check((personalTraits: PersonalTraits) => {
 

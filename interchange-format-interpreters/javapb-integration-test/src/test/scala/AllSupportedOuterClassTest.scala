@@ -17,7 +17,7 @@ class AllSupportedOuterClassTest extends AnyFunSuite with Matchers {
   val decode = com.bones.protobuf.values.defaultUtcValidator
     .fromCustomBytes(Schemas.allSupportCaseClass)
 
-  //TODO: coproduct does not currently work.
+  // TODO: coproduct does not currently work.
   ignore("integration test") {
     val build = AllSupportedOuterClass.AllSupported.newBuilder
     build.setBoolean(true)

@@ -47,7 +47,7 @@ object InterchangePerformanceTests extends App {
 //    s"direct encoder size: ${jsonSize} success: ${success} time: ${directEncoderEnd - directEncoderStart}")
 //  System.gc()
 
-  //bson
+  // bson
   val bsonEncoderStart = System.currentTimeMillis()
   val bsonObjects = objects.map(o => com.bones.bson.bsonResultToBytes(bsonEncoder.encode(o)))
   val bsonEncoderEnd = System.currentTimeMillis()

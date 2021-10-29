@@ -116,15 +116,15 @@ class ValidationTest extends AnyFunSuite {
   test("error paths") {
     import com.bones.schemas.Schemas._
 
-    //sorry, we still use lift in my projects.  I will soon createOperation a Circe JsonExtract.
+    // sorry, we still use lift in my projects.  I will soon createOperation a Circe JsonExtract.
     val parsed = io.circe.parser.parse(ccBadBilling).toOption.get
 
-    //createOperation the program that is responsible for converting JSON into a CC.
+    // createOperation the program that is responsible for converting JSON into a CC.
     //    val jsonToCCProgram = creditCardSchema.lift.foldMap[ValidatedFromJObjectOpt](ValidatedFromJObjectInterpreter())
     val jsonToCCProgram =
       com.bones.circe.values.isoCirceValidatorInterpreter.generateValidator(creditCardSchema)
 
-    //here, we will test that just the validations step is working
+    // here, we will test that just the validations step is working
     val btCc = jsonToCCProgram.validate(parsed)
 
     btCc match {
@@ -143,7 +143,7 @@ class ValidationTest extends AnyFunSuite {
     //    val parsed = net.liftweb.json.parse(cc)
     //
     //    //createOperation the program that is responsible for converting JSON into a CC.
-    ////    val jsonToCCProgram = creditCardSchema.lift.foldMap[ValidatedFromJObjectOpt](ValidatedFromJObjectInterpreter())
+    // //    val jsonToCCProgram = creditCardSchema.lift.foldMap[ValidatedFromJObjectOpt](ValidatedFromJObjectInterpreter())
     //    val jsonToCCProgram = ValidatedFromJObjectInterpreter().kvpHList(creditCardSchema)
     //
     //    //here, we will test that just the validations step is working

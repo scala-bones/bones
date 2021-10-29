@@ -17,12 +17,14 @@ trait ColumnNameInterpreter[ALG[_]] extends KvpCollectionMatch[String, ALG, List
     H <: HList,
     HL <: Nat,
     T <: HList,
-    TL <: Nat](kvp: KvpHListCollectionHead[String, ALG, HO, NO, H, HL, T, TL]): List[ColumnName] = {
+    TL <: Nat
+  ](kvp: KvpHListCollectionHead[String, ALG, HO, NO, H, HL, T, TL]): List[ColumnName] = {
     fromKvpCollection(kvp.head) ::: fromKvpCollection(kvp.tail)
   }
 
   override def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
-    kvp: KvpSingleValueHead[String, ALG, H, T, TL, O]): List[ColumnName] = {
+    kvp: KvpSingleValueHead[String, ALG, H, T, TL, O]
+  ): List[ColumnName] = {
     val head = kvp.head match {
       case Left(keyDef) =>
         determineValueDefinition(keyDef.dataDefinition)(keyDef.key)
@@ -34,7 +36,8 @@ trait ColumnNameInterpreter[ALG[_]] extends KvpCollectionMatch[String, ALG, List
   }
 
   override def kvpCoproduct[C <: Coproduct](
-    value: KvpCoproduct[String, ALG, C]): List[ColumnName] = {
+    value: KvpCoproduct[String, ALG, C]
+  ): List[ColumnName] = {
     value match {
       case _: KvpCoNil[String, ALG] @unchecked => List.empty
       case co: KvpCoproductCollectionHead[String, ALG, a, c, o] =>
@@ -48,11 +51,13 @@ trait ColumnNameInterpreter[ALG[_]] extends KvpCollectionMatch[String, ALG, List
     fromKvpCollection(collection)
 
   override def kvpWrappedHList[A, H <: HList, HL <: Nat](
-    wrappedHList: KvpWrappedHList[String, ALG, A, H, HL]): List[ColumnName] =
+    wrappedHList: KvpWrappedHList[String, ALG, A, H, HL]
+  ): List[ColumnName] =
     fromKvpCollection(wrappedHList.wrappedEncoding)
 
   override def kvpWrappedCoproduct[A, C <: Coproduct](
-    wrappedCoproduct: KvpWrappedCoproduct[String, ALG, A, C]): List[ColumnName] =
+    wrappedCoproduct: KvpWrappedCoproduct[String, ALG, A, C]
+  ): List[ColumnName] =
     "dtype" :: fromKvpCollection(wrappedCoproduct.wrappedEncoding)
 
   type CoproductName = String
@@ -60,7 +65,8 @@ trait ColumnNameInterpreter[ALG[_]] extends KvpCollectionMatch[String, ALG, List
   private val keyToColumnNames: Key => List[ColumnName] = key => List(camelToSnake(key))
 
   def determineValueDefinition[A](
-    kvp: CoproductDataDefinition[String, ALG, A]): Key => List[ColumnName] =
+    kvp: CoproductDataDefinition[String, ALG, A]
+  ): Key => List[ColumnName] =
     kvp match {
       case Left(kvp) => valueDefinition(kvp)
       case Right(_)  => keyToColumnNames
@@ -72,26 +78,24 @@ trait ColumnNameInterpreter[ALG[_]] extends KvpCollectionMatch[String, ALG, List
         determineValueDefinition(op.valueDefinitionOp)
       case _: ListData[String, ALG, t] @unchecked => keyToColumnNames
       case ed: EitherData[String, ALG, a, b] @unchecked =>
-        key =>
-          {
-            val leftColumns = determineValueDefinition(ed.definitionA)(key)
-            val rightColumns = determineValueDefinition(ed.definitionB)(key)
+        key => {
+          val leftColumns = determineValueDefinition(ed.definitionA)(key)
+          val rightColumns = determineValueDefinition(ed.definitionB)(key)
 
-            //If there are duplicate names, then we will append the name of the type
-            val (matchingLeft, uniqueLeft) =
-              leftColumns.partition(colA => rightColumns.contains(colA))
-            val (matchingRight, uniqueRight) =
-              rightColumns.partition(colB => leftColumns.contains(colB))
+          // If there are duplicate names, then we will append the name of the type
+          val (matchingLeft, uniqueLeft) =
+            leftColumns.partition(colA => rightColumns.contains(colA))
+          val (matchingRight, uniqueRight) =
+            rightColumns.partition(colB => leftColumns.contains(colB))
 
-            matchingLeft.map(_ + "_" + camelToSnake(ed.typeNameOfA)) :::
-              uniqueLeft :::
-              matchingRight.map(_ + "_" + camelToSnake(ed.typeNameOfB)) :::
-              uniqueRight :::
-              Nil
-          }
+          matchingLeft.map(_ + "_" + camelToSnake(ed.typeNameOfA)) :::
+            uniqueLeft :::
+            matchingRight.map(_ + "_" + camelToSnake(ed.typeNameOfB)) :::
+            uniqueRight :::
+            Nil
+        }
       case kvp: KvpCollectionValue[String, ALG, a] @unchecked =>
-        _ =>
-          fromKvpCollection(kvp.kvpCollection)
+        _ => fromKvpCollection(kvp.kvpCollection)
     }
 
 }

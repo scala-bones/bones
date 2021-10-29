@@ -34,7 +34,7 @@ package object values {
 //          (ArgonautJavaUtilValidator ++ CNilInterchangeFormatValidator[Json]())))
 
   // Below is equivalent to the above.  Above compiles in 2.13, below compiles in both 2.12 and 2.13
-  //start 2.12
+  // start 2.12
 
   type JavaUtilValueCo[A] = JavaUtilValue[A] :+: CNilF[A]
   type JavaTimeValueCo[A] = JavaTimeValue[A] :+: JavaUtilValueCo[A]
@@ -50,7 +50,8 @@ package object values {
           InterchangeFormatEncoderValue
             .merge[JavaUtilValue, CNilF, Json](
               ArgonautJavaUtilEncoder,
-              CNilInterchangeFormatEncoder[Json]())
+              CNilInterchangeFormatEncoder[Json]()
+            )
         )
       )
     )
@@ -66,12 +67,13 @@ package object values {
           InterchangeFormatValidatorValue
             .merge[JavaUtilValue, CNilF, Json](
               ArgonautJavaUtilValidator,
-              CNilInterchangeFormatValidator[Json]())
+              CNilInterchangeFormatValidator[Json]()
+            )
         )
       )
     )
   }
-  //end 2.12
+  // end 2.12
 
   object ArgonautScalaCoreValidator extends ScalaCoreValidator[Json] {
     override val baseValidator: InterchangeFormatPrimitiveValidator[Json] =

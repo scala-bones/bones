@@ -33,8 +33,8 @@ import shapeless.:+:
 
 import scala.util.control.NonFatal
 
-/** Bson dates do not support nano seconds.  need to override LocalDateTime generation in Bson
-  * so that it only generates seconds
+/** Bson dates do not support nano seconds. need to override LocalDateTime generation in Bson so
+  * that it only generates seconds
   */
 object BsonScalacheck extends ScalacheckBase[String, DefaultValues] {
 
@@ -56,7 +56,8 @@ object BsonScalacheck extends ScalacheckBase[String, DefaultValues] {
         GenValue.merge[JavaTimeValue, JavaUtilValueCo](
           OverrideJavaTimeInterpreter,
           GenValue
-            .merge[JavaUtilValue, CNilF](DefaultScalacheckJavaUtilInterpreter, CNilGenEncoder))
+            .merge[JavaUtilValue, CNilF](DefaultScalacheckJavaUtilInterpreter, CNilGenEncoder)
+        )
       )
     )
   }
@@ -113,7 +114,7 @@ class BsonTest extends AnyFunSuite with Checkers with Matchers {
           case Right(newCc2) =>
             val nullBa = Array[Byte]()
 
-            //Arrays are only equal when they reference the same object, so let's remove them form the whole object copy
+            // Arrays are only equal when they reference the same object, so let's remove them form the whole object copy
             val newCc2NoBa = newCc2.copy(ba = nullBa).copy(child = newCc2.child.copy(ba = None))
             val ccNoBA = cc.copy(ba = nullBa).copy(child = cc.child.copy(ba = None))
 

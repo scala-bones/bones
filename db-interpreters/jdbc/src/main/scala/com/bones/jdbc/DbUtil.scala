@@ -10,12 +10,12 @@ import scala.util.control.NonFatal
 
 object DbUtil {
 
-  /**
-    * Converts from camelCase to snake_case
-    * e.g.: camelCase => camel_case
+  /** Converts from camelCase to snake_case e.g.: camelCase => camel_case
     *
-    * @param name the camelCase name to convert
-    * @return snake_case version of the string passed
+    * @param name
+    *   the camelCase name to convert
+    * @return
+    *   snake_case version of the string passed
     */
   def camelToSnake(name: String): String = {
     @tailrec
@@ -30,8 +30,9 @@ object DbUtil {
     go(Nil, name.toList).mkString.toLowerCase
   }
 
-  def withDataSource[A](ds: DataSource)(
-    f: Connection => Either[ExtractionErrors[String], A]): Either[ExtractionErrors[String], A] = {
+  def withDataSource[A](
+    ds: DataSource
+  )(f: Connection => Either[ExtractionErrors[String], A]): Either[ExtractionErrors[String], A] = {
 
     try {
       val con = ds.getConnection
@@ -52,8 +53,8 @@ object DbUtil {
   }
 
   def withStatement[A](con: CallableStatement)(
-    f: CallableStatement => Either[ExtractionErrors[String], A])
-    : Either[ExtractionErrors[String], A] =
+    f: CallableStatement => Either[ExtractionErrors[String], A]
+  ): Either[ExtractionErrors[String], A] =
     try {
       f(con)
     } catch {

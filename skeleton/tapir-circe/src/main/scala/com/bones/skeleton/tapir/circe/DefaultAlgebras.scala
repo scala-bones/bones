@@ -20,35 +20,40 @@ object DefaultAlgebras {
   val charset: Charset = StandardCharsets.UTF_8
 
   def jsonBody[T](
-    kvpCollection: KvpCollection[String, DefaultValues, T]): EndpointIO.Body[String, T] = {
+    kvpCollection: KvpCollection[String, DefaultValues, T]
+  ): EndpointIO.Body[String, T] = {
     val (_, codec) = createTapirSchemaAndCodec(kvpCollection)
     EndpointIO.Body(RawBodyType.StringBody(charset), codec, EndpointIO.Info.empty)
   }
 
   def jsonBodyList[T](
-    kvpCollection: KvpCollection[String, DefaultValues, T]): EndpointIO.Body[String, List[T]] = {
+    kvpCollection: KvpCollection[String, DefaultValues, T]
+  ): EndpointIO.Body[String, List[T]] = {
     val (_, codec) = createTapirSchemaAndCodec(kvpCollection)
 //    EndpointIO.Body(RawBodyType.StringBody(charset), codec, EndpointIO.Info.empty)
     ???
   }
 
-  /**
-    * Create Tapir bindings from
-    * a Bones KvpCollection
-    * @param kvpCollection The schema representing the value
-    * @tparam A The "high level value" as per Tapir's Codec.
-    * @return A schema representing the data and a coded for the encoding, decoding.
+  /** Create Tapir bindings from a Bones KvpCollection
+    * @param kvpCollection
+    *   The schema representing the value
+    * @tparam A
+    *   The "high level value" as per Tapir's Codec.
+    * @return
+    *   A schema representing the data and a coded for the encoding, decoding.
     */
-  def createTapirSchemaAndCodec[A](kvpCollection: KvpCollection[String, DefaultValues, A])
-    : (Schema[A], Codec[String, A, CodecFormat.Json]) = {
+  def createTapirSchemaAndCodec[A](
+    kvpCollection: KvpCollection[String, DefaultValues, A]
+  ): (Schema[A], Codec[String, A, CodecFormat.Json]) = {
     val schema = defaultTransformation.kvpToSchema(kvpCollection)
     val encoder = createEncoder(kvpCollection)
     val validator = createValidator(kvpCollection)
     (schema, BonesToTapirCodec.encoderValidatorToTapirCodec(schema, encoder, validator))
   }
 
-  def createTapirSchemaAndCodecList[A](kvpCollection: KvpCollection[String, DefaultValues, A])
-    : (Schema[A], Codec[String, List[A], CodecFormat.Json]) = {
+  def createTapirSchemaAndCodecList[A](
+    kvpCollection: KvpCollection[String, DefaultValues, A]
+  ): (Schema[A], Codec[String, List[A], CodecFormat.Json]) = {
 //    val schema = defaultTransformation.kvpToSchema(kvpCollection)
 //    val encoder = createListEncoder(kvpCollection)
 //    val validator = createListValidator(kvpCollection)
@@ -62,32 +67,37 @@ object DefaultAlgebras {
 //    case x             => Left(List(WrongTypeError(List.empty, "Array", x.toString, None)))
 //  }
 
-  def createListValidator[A](kvpCollection: KvpCollection[String, DefaultValues, A])
-    : Validator[String, DefaultValues, List[A], String] = {
+  def createListValidator[A](
+    kvpCollection: KvpCollection[String, DefaultValues, A]
+  ): Validator[String, DefaultValues, List[A], String] = {
     CirceValidatorFromString
       .andThen(ListValidator(isoCirceValidatorInterpreter.generateValidator(kvpCollection), toList))
   }
 
-  def createValidator[A](kvpCollection: KvpCollection[String, DefaultValues, A])
-    : Validator[String, DefaultValues, A, String] = {
+  def createValidator[A](
+    kvpCollection: KvpCollection[String, DefaultValues, A]
+  ): Validator[String, DefaultValues, A, String] = {
     CirceValidatorFromString.andThen(
       isoCirceValidatorInterpreter.generateValidator(kvpCollection)
     )
   }
 
-  val fromList: List[Json] => Json = list => ??? //JArray(list.toVector)
+  val fromList: List[Json] => Json = list => ??? // JArray(list.toVector)
 
-  def createListEncoder[A](kvpCollection: KvpCollection[String, DefaultValues, A])
-    : Encoder[DefaultValues, List[A], String] = {
+  def createListEncoder[A](
+    kvpCollection: KvpCollection[String, DefaultValues, A]
+  ): Encoder[DefaultValues, List[A], String] = {
     ListEncoder(
       isoCirceEncoderInterpreter
         .generateEncoder(kvpCollection),
-      fromList)
+      fromList
+    )
       .map(_.noSpaces)
   }
 
   def createEncoder[A](
-    kvpCollection: KvpCollection[String, DefaultValues, A]): Encoder[DefaultValues, A, String] = {
+    kvpCollection: KvpCollection[String, DefaultValues, A]
+  ): Encoder[DefaultValues, A, String] = {
     isoCirceEncoderInterpreter
       .generateEncoder(kvpCollection)
       .map(_.noSpaces)

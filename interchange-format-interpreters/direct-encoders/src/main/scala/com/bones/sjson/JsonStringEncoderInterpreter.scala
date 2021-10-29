@@ -14,8 +14,7 @@ object JsonStringEncoderInterpreter {
 
   type CoproductType = String
 
-  /**
-    * Implementation of the JsonStringEncoderInterpreter assuming dates are String with Iso format.
+  /** Implementation of the JsonStringEncoderInterpreter assuming dates are String with Iso format.
     */
   val isoEncoder = new JsonStringEncoderInterpreter {
     override val localDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -25,13 +24,13 @@ object JsonStringEncoderInterpreter {
 
   object CustomToJsonStringInterpreter {
 
-    /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
-      * see https://stackoverflow.com/a/60561575/387094
-      * */
+    /** using kind projector allows us to create a new interpreter by merging two existing
+      * interpreters. see https://stackoverflow.com/a/60561575/387094
+      */
     def merge[L[_], R[_] <: Coproduct, A](
       li: CustomToJsonStringInterpreter[L],
-      ri: CustomToJsonStringInterpreter[R])
-      : CustomToJsonStringInterpreter[Lambda[A => L[A] :+: R[A]]] =
+      ri: CustomToJsonStringInterpreter[R]
+    ): CustomToJsonStringInterpreter[Lambda[A => L[A] :+: R[A]]] =
       new CustomToJsonStringInterpreter[Lambda[A => L[A] :+: R[A]]] {
         override def toJsonString[A](lr: L[A] :+: R[A]): A => List[String] = lr match {
           case Inl(l) => li.toJsonString(l)
@@ -41,8 +40,9 @@ object JsonStringEncoderInterpreter {
 
     implicit class InterpreterOps[ALG[_]](val base: CustomToJsonStringInterpreter[ALG])
         extends AnyVal {
-      def ++[R[_] <: Coproduct](r: CustomToJsonStringInterpreter[R])
-        : CustomToJsonStringInterpreter[Lambda[A => ALG[A] :+: R[A]]] =
+      def ++[R[_] <: Coproduct](
+        r: CustomToJsonStringInterpreter[R]
+      ): CustomToJsonStringInterpreter[Lambda[A => ALG[A] :+: R[A]]] =
         merge(base, r)
     }
 
@@ -57,9 +57,8 @@ object JsonStringEncoderInterpreter {
 
 }
 
-/**
-  * Encoder used to write a value directly to a String encoded JSON without a 3rd party library.
-  * The string will be in compact form.
+/** Encoder used to write a value directly to a String encoded JSON without a 3rd party library. The
+  * string will be in compact form.
   */
 trait JsonStringEncoderInterpreter {
 
@@ -77,22 +76,20 @@ trait JsonStringEncoderInterpreter {
 
   private def kvpCoproduct[ALG[_], C <: Coproduct](
     kvp: KvpCoproduct[ALG, C],
-    customToJsonStringInterpreter: CustomToJsonStringInterpreter[ALG])
-    : C => (CoproductType, List[String]) = {
+    customToJsonStringInterpreter: CustomToJsonStringInterpreter[ALG]
+  ): C => (CoproductType, List[String]) = {
     kvp match {
       case nil: KvpCoNil[_] =>
-        _ =>
-          ("", List.empty)
+        _ => ("", List.empty)
       case op: KvpCoproductCollectionHead[ALG, l, r] @unchecked =>
         val valueF = determineValueDefinition[ALG, l](op.kvpValue, customToJsonStringInterpreter)
         val valueT = kvpCoproduct(op.kvpTail, customToJsonStringInterpreter)
-        (input: C) =>
-          {
-            input match {
-              case Inl(left)  => (op.manifestL.runtimeClass.getSimpleName, valueF(left))
-              case Inr(right) => valueT(right)
-            }
+        (input: C) => {
+          input match {
+            case Inl(left)  => (op.manifestL.runtimeClass.getSimpleName, valueF(left))
+            case Inr(right) => valueT(right)
           }
+        }
     }
   }
 
@@ -103,50 +100,46 @@ trait JsonStringEncoderInterpreter {
 
     group match {
       case nil: KvpNil[_] =>
-        _ =>
-          List.empty
+        _ => List.empty
       case op: KvpSingleValueHead[ALG, h, t, tl, a] @unchecked =>
         val valueF = determineValueDefinition(op.fieldDefinition.dataDefinition, customInterpreter)
         val tailF = kvpHList(op.tail, customInterpreter)
         implicit val hCons = op.isHCons
-        (inputH: H) =>
-          {
-            val input = inputH.asInstanceOf[a]
-            val val1 = valueF(input.head)
-            val valWithKey =
-              if (val1.isEmpty) val1
-              else List("\"", op.fieldDefinition.key, "\":") ::: val1
-            val tail = tailF(input.tail)
-            if (!valWithKey.isEmpty && !tail.isEmpty)
-              valWithKey ::: "," :: tail
-            else
-              valWithKey ::: tail
+        (inputH: H) => {
+          val input = inputH.asInstanceOf[a]
+          val val1 = valueF(input.head)
+          val valWithKey =
+            if (val1.isEmpty) val1
+            else List("\"", op.fieldDefinition.key, "\":") ::: val1
+          val tail = tailF(input.tail)
+          if (!valWithKey.isEmpty && !tail.isEmpty)
+            valWithKey ::: "," :: tail
+          else
+            valWithKey ::: tail
 
-          }
+        }
       case op: KvpHListCollectionHead[ALG, a, al, h, hl, t, tl] @unchecked =>
         val headF = kvpHList(op.head, customInterpreter)
         val tailF = kvpHList[ALG, t, tl](op.tail, customInterpreter)
-        (input: H) =>
-          {
-            val l = op.split(input)
-            val headOut = headF(l._1)
-            val tailOut = tailF(l._2)
-            if (!headOut.isEmpty && !tailOut.isEmpty)
-              headOut ::: "," :: tailOut
-            else
-              headOut ::: tailOut
-          }
+        (input: H) => {
+          val l = op.split(input)
+          val headOut = headF(l._1)
+          val tailOut = tailF(l._2)
+          if (!headOut.isEmpty && !tailOut.isEmpty)
+            headOut ::: "," :: tailOut
+          else
+            headOut ::: tailOut
+        }
 
       case op: KvpConcreteValueHead[ALG, a, ht, nt] @unchecked =>
         val headF: a => List[String] = fromBonesSchema(op.collection, customInterpreter)
         val tailF = kvpHList(op.wrappedEncoding, customInterpreter)
         implicit val hCons = op.isHCons
-        (input: a :: ht) =>
-          {
-            val head = headF(input.head)
-            val tail = tailF(input.tail)
-            head ::: tail
-          }
+        (input: a :: ht) => {
+          val head = headF(input.head)
+          val tail = tailF(input.tail)
+          head ::: tail
+        }
     }
   }
 
@@ -157,18 +150,16 @@ trait JsonStringEncoderInterpreter {
     bonesSchema match {
       case kvp: CoproductSwitch[ALG, c, a] =>
         val f = kvpCoproduct(kvp.from, customToJsonStringInterpreter)
-        (input: A) =>
-          {
-            val (coproductType, json) = f(kvp.aToC(input))
-            List(s""" "type": "${coproductType}", ${json} """)
-          }
+        (input: A) => {
+          val (coproductType, json) = f(kvp.aToC(input))
+          List(s""" "type": "${coproductType}", ${json} """)
+        }
       case hListConvert: SwitchEncoding[ALG, h, n, a] =>
         val f = kvpHList(hListConvert.from, customToJsonStringInterpreter)
-        (input: A) =>
-          {
-            f(hListConvert.fAtoH(input))
-          }
-      case _ => ??? //TODO
+        (input: A) => {
+          f(hListConvert.fAtoH(input))
+        }
+      case _ => ??? // TODO
     }
   }
 
@@ -184,7 +175,8 @@ trait JsonStringEncoderInterpreter {
 
   def valueDefinition[ALG[_], A](
     fgo: PrimitiveWrapperValue[ALG, A],
-    customToJsonStringInterpreter: CustomToJsonStringInterpreter[ALG]): A => List[String] =
+    customToJsonStringInterpreter: CustomToJsonStringInterpreter[ALG]
+  ): A => List[String] =
     fgo match {
       case op: OptionalValue[ALG, a] @unchecked =>
         val someF = determineValueDefinition(op.valueDefinitionOp, customToJsonStringInterpreter)
@@ -207,40 +199,36 @@ trait JsonStringEncoderInterpreter {
         }
       case kvp: KvpCollectionValue[ALG, h, hl] @unchecked =>
         val hListDef = kvpHList(kvp.kvpCollection, customToJsonStringInterpreter)
-        (input: A) =>
-          hListDef(input.asInstanceOf[h]).flatMap(x => List("{", x, "}"))
+        (input: A) => hListDef(input.asInstanceOf[h]).flatMap(x => List("{", x, "}"))
       case kvp: CoproductCollection[ALG, c] @unchecked =>
         val coproductDef = kvpCoproduct(kvp.kvpCoproduct, customToJsonStringInterpreter)
-        (input: A) =>
-          {
-            val (coproductType, json) = coproductDef(input.asInstanceOf[c])
-            if (json.isEmpty)
-              List(s"""{"type":"${coproductType}"}""")
-            else {
-              val dropOpeningBracket = json.headOption.map(_.substring(1)).toList ::: json.tail
-              List("""{"type":"""", coproductType, """", """) ::: dropOpeningBracket ::: " " :: Nil
-            }
+        (input: A) => {
+          val (coproductType, json) = coproductDef(input.asInstanceOf[c])
+          if (json.isEmpty)
+            List(s"""{"type":"${coproductType}"}""")
+          else {
+            val dropOpeningBracket = json.headOption.map(_.substring(1)).toList ::: json.tail
+            List("""{"type":"""", coproductType, """", """) ::: dropOpeningBracket ::: " " :: Nil
           }
+        }
       case x: SwitchEncoding[ALG, a, al, b] @unchecked =>
         val fromDef = kvpHList(x.from, customToJsonStringInterpreter)
-        (input: A) =>
-          {
-            val h = x.fAtoH(input)
-            "{" :: fromDef(h) ::: "}" :: Nil
-          }
+        (input: A) => {
+          val h = x.fAtoH(input)
+          "{" :: fromDef(h) ::: "}" :: Nil
+        }
       case co: CoproductSwitch[ALG, c, a] @unchecked =>
         val fromDef = kvpCoproduct(co.from, customToJsonStringInterpreter)
-        (input: A) =>
-          {
-            val (coproductType, json) = fromDef(co.aToC(input))
-            if (json.isEmpty)
-              List(s"""{"type":"${coproductType}"}""")
-            else {
-              val dropOpeningBracket = json.headOption.map(_.substring(1)).toList ::: json.tail
-              List("""{"type":"""", coproductType, """", """) ::: dropOpeningBracket ::: " " :: Nil
-            }
-
+        (input: A) => {
+          val (coproductType, json) = fromDef(co.aToC(input))
+          if (json.isEmpty)
+            List(s"""{"type":"${coproductType}"}""")
+          else {
+            val dropOpeningBracket = json.headOption.map(_.substring(1)).toList ::: json.tail
+            List("""{"type":"""", coproductType, """", """) ::: dropOpeningBracket ::: " " :: Nil
           }
+
+        }
     }
 
 }

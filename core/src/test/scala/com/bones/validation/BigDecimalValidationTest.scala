@@ -23,8 +23,7 @@ class BigDecimalValidationTest extends AnyFunSuite with Checkers with Matchers {
 
   test("Max description and default error are acceptable") {
     val max = Max(BigDecimal("7.83"))
-    assert(
-      max.defaultError(BigDecimal("9.445")) === "9.445 is greater than 7.83")
+    assert(max.defaultError(BigDecimal("9.445")) === "9.445 is greater than 7.83")
     assert(max.description === "maximum of 7.83")
   }
 
@@ -42,58 +41,60 @@ class BigDecimalValidationTest extends AnyFunSuite with Checkers with Matchers {
 
   test("Min description and default error are acceptable") {
     val max = Min(BigDecimal("2.77"))
-    assert(max
-      .defaultError(BigDecimal("1.83")) === "1.83 is less than 2.77")
+    assert(
+      max
+        .defaultError(BigDecimal("1.83")) === "1.83 is less than 2.77"
+    )
     assert(max.description === "minimum of 2.77")
   }
 
   test("Greater than is valid") {
-    forAll{ (base: BigDecimal, input: BigDecimal) =>
+    forAll { (base: BigDecimal, input: BigDecimal) =>
       (base < input) ==> (Greater(base).isValid(input))
     }
   }
 
   test("Greater is invalid") {
-    forAll{ (base: BigDecimal, input: BigDecimal) =>
+    forAll { (base: BigDecimal, input: BigDecimal) =>
       (base >= input) ==> (Greater(base).isValid(input))
-    }    
+    }
   }
 
   test("Less than is valid") {
-    forAll{ (base: BigDecimal, input: BigDecimal) =>
+    forAll { (base: BigDecimal, input: BigDecimal) =>
       (base > input) ==> (Less(base).isValid(input))
     }
   }
 
   test("Less is invalid") {
-    forAll{ (base: BigDecimal, input: BigDecimal) =>
+    forAll { (base: BigDecimal, input: BigDecimal) =>
       (base <= input) ==> (Less(base).isValid(input))
-    }    
+    }
   }
 
   test("Positive is valid") {
-    forAll{ (input: BigDecimal) =>
+    forAll { (input: BigDecimal) =>
       (BigDecimal(0) < input) ==> (Positive.isValid(input))
     }
   }
 
   test("Positive is isValid") {
-    forAll{ (input: BigDecimal) =>
+    forAll { (input: BigDecimal) =>
       (BigDecimal(0) >= input) ==> (Positive.isValid(input))
     }
   }
 
   test("Negative is valid") {
-    forAll{ (input: BigDecimal) =>
+    forAll { (input: BigDecimal) =>
       (BigDecimal(0) > input) ==> (Negative.isValid(input))
     }
   }
 
   test("Negative is isValid") {
-    forAll{ (input: BigDecimal) =>
+    forAll { (input: BigDecimal) =>
       (BigDecimal(0) >= input) ==> (Negative.isValid(input))
     }
-  }  
+  }
 
   val validValue = Vector(BigDecimal(0), BigDecimal(1), BigDecimal(100))
   val vv = ValidValue(validValue)
@@ -104,10 +105,9 @@ class BigDecimalValidationTest extends AnyFunSuite with Checkers with Matchers {
   }
 
   test("Valid values not valid input") {
-    forAll{ (input: BigDecimal) =>
-      (! validValue.contains(input)) ==> (Negative.isValid(input))
-    }    
+    forAll { (input: BigDecimal) =>
+      (!validValue.contains(input)) ==> (Negative.isValid(input))
+    }
   }
-
 
 }

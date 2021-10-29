@@ -39,11 +39,13 @@ object CovSchemas {
     currency: Currency.Value,
     deletedAt: Option[LocalDateTime],
     lastModifiedRequest: UUID,
-    billingLocation: Option[BillingLocation])
+    billingLocation: Option[BillingLocation]
+  )
 
   val isoList = Vector("US", "CA", "MX")
 
-  /** **** Begin Real Example ******/
+  /** **** Begin Real Example *****
+    */
   import shapeless.::
 
   object HasNotExpired extends ValidationOp[Long :: Long :: HNil] {
@@ -93,12 +95,13 @@ object CovSchemas {
         ("deletedAt", localDateTime.optional) :<:
         ("lastModifiedRequest", uuid) ::
         (
-        "billingLocation",
-        (
-          ("countryIso", string(sv.validVector(isoList))) ::
-            ("zipCode", string(sv.max(10)).optional) :<:
-            kvpNil
-        ).convert[BillingLocation].asValue.optional) :<:
+          "billingLocation",
+          (
+            ("countryIso", string(sv.validVector(isoList))) ::
+              ("zipCode", string(sv.max(10)).optional) :<:
+              kvpNil
+          ).convert[BillingLocation].asValue.optional
+        ) :<:
         kvpNil
     ).prependHList(ccExp)
   )
@@ -107,9 +110,9 @@ object CovSchemas {
 
   val creditCardSchema = ccObj.convert[CC]
 
-  //final type is basically KvpValue[CC]
+  // final type is basically KvpValue[CC]
 
-  //Here is our input
+  // Here is our input
   val cc =
     """
       |{
@@ -178,8 +181,9 @@ object CovSchemas {
     ("byteArray", byteArray.optional) :<:
     ("localDate", localDate(jt_ld.min(LocalDate.of(1800, 1, 1))).optional) :<:
     (
-    "localDateTime",
-    localDateTime(jt_ldt.min(LocalDateTime.of(1800, Month.JANUARY, 1, 0, 0))).optional) :<:
+      "localDateTime",
+      localDateTime(jt_ldt.min(LocalDateTime.of(1800, Month.JANUARY, 1, 0, 0))).optional
+    ) :<:
     ("uuid", uuid.optional) :<:
     ("enumeration", enumeration[Currency.type, Currency.Value](Currency).optional) :<:
     ("bigDecimal", bigDecimal(bdv.max(BigDecimal(100))).optional) :<:
@@ -215,7 +219,10 @@ object CovSchemas {
       ("double", double(dv.min(0))) ::
       ("byteArray", byteArray) ::
       ("localDate", localDate(jt_ld.min(LocalDate.of(1800, 1, 1)))) ::
-      ("localDateTime", localDateTime(jt_ldt.min(LocalDateTime.of(1800, Month.JANUARY, 1, 0, 0)))) ::
+      (
+        "localDateTime",
+        localDateTime(jt_ldt.min(LocalDateTime.of(1800, Month.JANUARY, 1, 0, 0)))
+      ) ::
       ("uuid", uuid) ::
       ("enumeration", enumeration[Currency.type, Currency.Value](Currency)) ::
       ("bigDecimal", bigDecimal(bdv.max(BigDecimal(100)))) ::
@@ -250,7 +257,7 @@ object CovSchemas {
     def fancyEquals(that: AllSupported): Boolean = {
       val nullBa = Array[Byte]()
 
-      //Arrays seem to only be equal when they reference the same object, so let's remove them form the whole object copy
+      // Arrays seem to only be equal when they reference the same object, so let's remove them form the whole object copy
       val newThis = this.copy(ba = nullBa).copy(child = this.child.copy(ba = None))
       val newThat = that.copy(ba = nullBa).copy(child = that.child.copy(ba = None))
       val thisEqualsThat = newThis == newThat
@@ -285,7 +292,8 @@ object CovSchemas {
     None,
     None,
     None,
-    None)
+    None
+  )
 
   val allSupportedInstance = AllSupported(
     true,

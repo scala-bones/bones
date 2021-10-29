@@ -30,7 +30,8 @@ package object update {
   case class JdbcColumnStatement[A](
     lastIndex: Index,
     assignmentStatements: List[(AssignmentString, SetNull)],
-    predicates: A => List[SetValue])
+    predicates: A => List[SetValue]
+  )
 
   object DefaultJavaTimeUpdateStatement extends JavaTimeUpdateStatement
   object DefaultJavaUtilUpdateStatement extends JavaUtilUpdateStatement
@@ -44,7 +45,7 @@ package object update {
 //          (DefaultJavaUtilUpdateStatement ++ CNilUpdateStatementInterpreter$)))
 
   // Below is equivalent to the above.  Above compiles in 2.13, below compiles in both 2.12 and 2.13
-  //start 2.12
+  // start 2.12
 
   type JavaUtilValueCo[A] = JavaUtilValue[A] :+: CNilF[A]
   type JavaTimeValueCo[A] = JavaTimeValue[A] :+: JavaUtilValueCo[A]
@@ -60,13 +61,14 @@ package object update {
           UpdateStatementValue
             .merge[JavaUtilValue, CNilF](
               DefaultJavaUtilUpdateStatement,
-              CNilUpdateStatementInterpreter$)
+              CNilUpdateStatementInterpreter$
+            )
         )
       )
     )
   }
 
-  //end 2.12
+  // end 2.12
 
   val defaultJdbcStatementInterpreter = new JdbcStatementInterpreter[DefaultValues] {
     override def customDbUpdateInterpreter: UpdateStatementValue[DefaultValues] =
@@ -81,7 +83,8 @@ package object update {
   /** Create the return type for valueDefinition given the arguments */
   def psF[A](
     f: Index => (PreparedStatement, A) => Unit,
-    sqlType: Int): (Index, Key) => JdbcColumnStatement[A] =
+    sqlType: Int
+  ): (Index, Key) => JdbcColumnStatement[A] =
     (index, key) => {
       val updateString = s"${camelToSnake(key)} = ?"
       val fI = f(index)

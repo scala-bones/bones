@@ -15,7 +15,8 @@ class JsonStringEncoderInterpreterTest extends AnyFunSuite with Checkers {
   val ccF = interpreter.valueDefinition(allSupportCaseClass, com.bones.sjson.values.allEncoders)
 
   implicit val arb: Arbitrary[AllSupported] = Arbitrary(
-    Scalacheck.valueDefinition(allSupportCaseClass, com.bones.scalacheck.values.allInterpreters))
+    Scalacheck.valueDefinition(allSupportCaseClass, com.bones.scalacheck.values.allInterpreters)
+  )
 
   test("to json") {
 

@@ -9,7 +9,6 @@ trait JavaUtilProtoFileInterpreter extends CustomInterpreter[JavaUtilValue] {
   ): (Name, Int) => (MessageField, Vector[NestedType], Int) =
     alg match {
       case _: UuidData =>
-        (name, index) =>
-          stringMessageField(name, index)
+        (name, index) => stringMessageField(name, index)
     }
 }

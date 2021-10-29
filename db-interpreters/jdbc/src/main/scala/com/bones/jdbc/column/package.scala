@@ -30,7 +30,7 @@ package object column {
 //          (DefaultJavaUtilDbColumnValue ++ CNilColumnValue))))
 
   // Below is equivalent to the above.  Above compiles in 2.13, below compiles in both 2.12 and 2.13
-  //start 2.12
+  // start 2.12
 
   type JavaUtilValueCo[A] = JavaUtilValue[A] :+: CNilF[A]
   type JavaTimeValueCo[A] = JavaTimeValue[A] :+: JavaUtilValueCo[A]
@@ -50,7 +50,7 @@ package object column {
     )
   }
 
-  //end 2.12
+  // end 2.12
 
   object DefaultJavaTimeDbColumnValue extends JavaTimeDbColumnValue
   object DefaultJavaUtilDbColumnValue extends JavaUtilDbColumnValue

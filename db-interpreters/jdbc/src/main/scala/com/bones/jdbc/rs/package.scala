@@ -24,7 +24,7 @@ package object rs {
 //          (DefaultJavaUtilResultSet ++ ResultSetValue.CNilResultSetValue))))
 
   // Below is equivalent to the above.  Above compiles in 2.13, below compiles in both 2.12 and 2.13
-  //start 2.12
+  // start 2.12
 
   type JavaUtilValueCo[A] = JavaUtilValue[A] :+: CNilF[A]
   type JavaTimeValueCo[A] = JavaTimeValue[A] :+: JavaUtilValueCo[A]
@@ -40,13 +40,14 @@ package object rs {
           ResultSetValue
             .merge[JavaUtilValue, CNilF](
               DefaultJavaUtilResultSet,
-              ResultSetValue.CNilResultSetValue)
+              ResultSetValue.CNilResultSetValue
+            )
         )
       )
     )
   }
 
-  //end 2.12
+  // end 2.12
 
   object DefaultJavaTimeResultSet extends JavaTimeResultSet
   object DefaultJavaUtilResultSet extends JavaUtilResultSet
@@ -62,7 +63,8 @@ package object rs {
     f: => A,
     typeName: String,
     fieldName: String,
-    path: Path[String]): Either[ExtractionErrors[String], CanBeOmitted[String, A]] =
+    path: Path[String]
+  ): Either[ExtractionErrors[String], CanBeOmitted[String, A]] =
     try {
       val result = f
       if (result == null) {

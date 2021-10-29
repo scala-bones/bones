@@ -4,13 +4,17 @@ import com.bones.validation.ValidationDefinition.ValidationOp
 
 /** A String key and it's value description where A is the type the value.
   *
-  * @param key This is the sting token defining the Value.
-  * @param dataDefinition This is the GADT representing a value type.
-  * @tparam A   This is the type which is "wrapped" by the GADT.
-  * @tparam ALG Defines what gadt(s) we can use in a context.
-  *             It can be [[com.bones.data.values.DefaultValuesSyntax]]  (aka everything supported in Bones).
-  *             It can be a single data type such as [[com.bones.data.values.JavaTimeValue]]
-  *             It can be any shapeless.Coproduct of Algebras.
+  * @param key
+  *   This is the sting token defining the Value.
+  * @param dataDefinition
+  *   This is the GADT representing a value type.
+  * @tparam A
+  *   This is the type which is "wrapped" by the GADT.
+  * @tparam ALG
+  *   Defines what gadt(s) we can use in a context. It can be
+  *   [[com.bones.data.values.DefaultValuesSyntax]] (aka everything supported in Bones). It can be a
+  *   single data type such as [[com.bones.data.values.JavaTimeValue]] It can be any
+  *   shapeless.Coproduct of Algebras.
   */
 case class KeyDefinition[K, ALG[_], A](
   key: K,
@@ -36,7 +40,9 @@ case class KeyDefinition[K, ALG[_], A](
 
 object KeyDefinition {
 
-  /** In the context of a given ALG, the data definition can be a collection type (left) or a value type (right) */
+  /** In the context of a given ALG, the data definition can be a collection type (left) or a value
+    * type (right)
+    */
   type CoproductDataDefinition[K, ALG[_], A] = Either[HigherOrderValue[K, ALG, A], ALG[A]]
 }
 
@@ -45,14 +51,16 @@ trait KeyValueDefinitionSugar {
 
   def kvp[K, ALG[_], A: Manifest](
     key: K,
-    valueDefinitionOp: HigherOrderValue[K, ALG, A]): KeyDefinition[K, ALG, A] = {
+    valueDefinitionOp: HigherOrderValue[K, ALG, A]
+  ): KeyDefinition[K, ALG, A] = {
     val typeName = manifest[A].runtimeClass.getName.split('$').lastOption.getOrElse("")
     KeyDefinition[K, ALG, A](key, Left(valueDefinitionOp), typeName, None, None)
   }
 
   def kvpCov[K, ALG[_], A: Manifest](
     key: K,
-    valueDefinitionOp: ALG[A]): KeyDefinition[K, ALG, A] = {
+    valueDefinitionOp: ALG[A]
+  ): KeyDefinition[K, ALG, A] = {
     val typeName = manifest[A].runtimeClass.getName.split('$').lastOption.getOrElse("")
     KeyDefinition[K, ALG, A](key, Right(valueDefinitionOp), typeName, None, None)
   }
@@ -82,13 +90,17 @@ trait Sugar[K, ALG[_]] {
       OptionalValue[K, ALG, A](Left(hm), typeName)
   }
 
-  /**
-    * Indicates that the data tied to this key is a list (JSON Array) type.  [[com.bones.data.values.DefaultValues]] values are type
-    * T and all values must pass the list of validations.
+  /** Indicates that the data tied to this key is a list (JSON Array) type.
+    * [[com.bones.data.values.DefaultValues]] values are type T and all values must pass the list of
+    * validations.
     *
-    * @param dataDefinitionOp - One of the supported KvpValue types.
-    * @param v List of validations each element of the list must pass to be valid.
-    * @tparam T The type of each element.  Can be an EitherFieldDefinition if more than one type is expected in the list.
+    * @param dataDefinitionOp
+    *   - One of the supported KvpValue types.
+    * @param v
+    *   List of validations each element of the list must pass to be valid.
+    * @tparam T
+    *   The type of each element. Can be an EitherFieldDefinition if more than one type is expected
+    *   in the list.
     * @return
     */
   def list[T: Manifest](
@@ -138,7 +150,9 @@ trait Sugar[K, ALG[_]] {
     EitherData(Right(definitionA), typeNameOfA, Right(definitionB), typeNameOfB)
   }
 
-  /** Indicates that the data tied to this key is a Date type with the specified format that must pass the specified validations. */
+  /** Indicates that the data tied to this key is a Date type with the specified format that must
+    * pass the specified validations.
+    */
   def either[A: Manifest, B: Manifest](
     definitionA: HigherOrderValue[K, ALG, A],
     definitionB: HigherOrderValue[K, ALG, B]

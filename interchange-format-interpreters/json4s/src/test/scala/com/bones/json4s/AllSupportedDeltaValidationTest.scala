@@ -73,7 +73,7 @@ class AllSupportedDeltaValidationTest extends AnyFunSuite with Checkers {
 
     val invalidValues = JObject(("long", JLong(-55)), ("int", JInt(1000)))
     deltaValidator.validate(invalidValues, List.empty) match {
-      case Left(err) => //println(err)
+      case Left(err) => // println(err)
       case Right(h)  => fail("Expected errors")
     }
 

@@ -66,7 +66,7 @@ class CustomStringValueInterpreter extends GenValue[CustomStringValue] {
     "4716057617348823",
     "4532402181513299",
     "4532417202485743188",
-    //MasterCard:
+    // MasterCard:
     "5432711837070944",
     "2221007144424300",
     "5293048083222293",
@@ -74,7 +74,7 @@ class CustomStringValueInterpreter extends GenValue[CustomStringValue] {
     "342048966584753",
     "373987846823356",
     "349388227834792",
-    //Discover:
+    // Discover:
     "6011351930087532",
     "6011547165681564",
     "6011374899334565516",

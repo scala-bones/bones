@@ -42,7 +42,7 @@ package object values {
 //    val defaultDeltaValidator: InterchangeFormatDeltaValidatorValue[DefaultValues, JValue] = ???
 
   // Below is equivalent to the above.  Above compiles in 2.13, below compiles in both 2.12 and 2.13
-  //start 2.12
+  // start 2.12
 
   type JavaUtilValueCo[A] = JavaUtilValue[A] :+: CNilF[A]
   type JavaTimeValueCo[A] = JavaTimeValue[A] :+: JavaUtilValueCo[A]
@@ -58,7 +58,8 @@ package object values {
           InterchangeFormatEncoderValue
             .merge[JavaUtilValue, CNilF, JValue](
               BaseJavaUtilEncoder,
-              CNilInterchangeFormatEncoder[JValue]())
+              CNilInterchangeFormatEncoder[JValue]()
+            )
         )
       )
     )
@@ -74,7 +75,8 @@ package object values {
           InterchangeFormatValidatorValue
             .merge[JavaUtilValue, CNilF, JValue](
               BaseJavaUtilValidator,
-              CNilInterchangeFormatValidator[JValue]())
+              CNilInterchangeFormatValidator[JValue]()
+            )
         )
       )
     )
@@ -97,7 +99,7 @@ package object values {
       )
     )
   }
-  //end 2.12
+  // end 2.12
 
   object BaseScalaCoreEncoder extends ScalaCoreEncoder[JValue] {
     override val defaultEncoder: InterchangeFormatPrimitiveEncoder[JValue] =

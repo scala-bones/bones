@@ -11,9 +11,9 @@ import shapeless.{:+:, Coproduct, Inl, Inr}
 
 object ResultSetValue {
 
-  /** using kind projector allows us to create a new interpreter by merging two existing interpreters.
-    * see https://stackoverflow.com/a/60561575/387094
-    * */
+  /** using kind projector allows us to create a new interpreter by merging two existing
+    * interpreters. see https://stackoverflow.com/a/60561575/387094
+    */
   def merge[L[_], R[_] <: Coproduct](
     li: ResultSetValue[L],
     ri: ResultSetValue[R]
@@ -22,7 +22,8 @@ object ResultSetValue {
 
       override def resultSet[A](alg: L[A] :+: R[A]): (
         Path[String],
-        FieldName) => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, A]] =
+        FieldName
+      ) => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, A]] =
         alg match {
           case Inl(l) => li.resultSet(l)
           case Inr(r) => ri.resultSet(r)
@@ -41,12 +42,14 @@ object ResultSetValue {
   object CNilResultSetValue extends ResultSetValue[CNilF] {
     override def resultSet[A](alg: CNilF[A]): (
       Path[String],
-      FieldName) => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, A]] =
+      FieldName
+    ) => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, A]] =
       sys.error("Unreachable")
   }
 }
 trait ResultSetValue[ALG[_]] {
   def resultSet[A](alg: ALG[A]): (
     Path[String],
-    FieldName) => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, A]]
+    FieldName
+  ) => ResultSet => Either[ExtractionErrors[String], CanBeOmitted[String, A]]
 }

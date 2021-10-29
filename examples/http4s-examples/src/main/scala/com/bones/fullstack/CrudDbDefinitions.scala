@@ -11,9 +11,8 @@ import com.bones.jdbc.update.DbUpdate
 import fs2.Stream
 import javax.sql.DataSource
 
-/**
-  * For a given schema, this class provides the basic CRUD operations
-  * for manipulating data in a Database.
+/** For a given schema, this class provides the basic CRUD operations for manipulating data in a
+  * Database.
   * @param schema
   * @param ds
   * @tparam A
@@ -26,7 +25,8 @@ case class CrudDbDefinitions[ALG[_], A: Manifest, ID: Manifest](
   insert: DbInsert[ALG],
   update: DbUpdate[ALG],
   dbDelete: DbDelete[ALG],
-  ds: DataSource) {
+  ds: DataSource
+) {
 
   // TODO: deal with error better
   val searchF: Stream[IO, (ID, A)] = {

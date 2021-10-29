@@ -9,7 +9,8 @@ trait ScalaCoreInterpreter extends CustomSwaggerInterpreter[ScalaCoreValue] {
   override def toSchema[A](
     scv: ScalaCoreValue[A],
     description: Option[String],
-    example: Option[A]): Name => SwaggerCoreInterpreter.SwaggerSchemas[Schema[_]] = {
+    example: Option[A]
+  ): Name => SwaggerCoreInterpreter.SwaggerSchemas[Schema[_]] = {
 
     import SwaggerCoreInterpreter._
 
@@ -19,24 +20,24 @@ trait ScalaCoreInterpreter extends CustomSwaggerInterpreter[ScalaCoreValue] {
 
     scv match {
       case bd: BooleanData =>
-        name =>
-          addBooleanSchema(name, description, example, validations(bd.validations))
+        name => addBooleanSchema(name, description, example, validations(bd.validations))
       case sd: StringData =>
         name =>
           addStringSchema(
             name,
             swaggerDescription,
             swaggerExample.asInstanceOf[String],
-            validations(sd.validations))
+            validations(sd.validations)
+          )
       case sd: ShortData =>
-        name =>
-          {
-            addShortSchema(
-              name,
-              swaggerDescription,
-              swaggerExample.asInstanceOf[Short],
-              validations(sd.validations))
-          }
+        name => {
+          addShortSchema(
+            name,
+            swaggerDescription,
+            swaggerExample.asInstanceOf[Short],
+            validations(sd.validations)
+          )
+        }
       case id: IntData =>
         name =>
           addIntSchema(

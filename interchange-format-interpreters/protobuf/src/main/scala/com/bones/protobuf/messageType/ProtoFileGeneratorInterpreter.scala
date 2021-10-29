@@ -44,14 +44,14 @@ object ProtoFileGeneratorInterpreter {
 
 }
 
-/**
-  * Create a Protobuf file descriptor based on the Kvp.
+/** Create a Protobuf file descriptor based on the Kvp.
   */
 trait ProtoFileGeneratorInterpreter[ALG[_]]
     extends KvpCollectionMatch[
       String,
       ALG,
-      Index => (Vector[MessageField], Vector[NestedType], Index)] {
+      Index => (Vector[MessageField], Vector[NestedType], Index)
+    ] {
 
   def customInterpreter: CustomInterpreter[ALG]
 
@@ -74,7 +74,8 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
           case OneOf(name, messages) =>
             val messageString = messages
               .map(m =>
-                s"   ${indent}  ${m.dataType.name} ${toSnake(m.name)} = ${m.index};\n               |")
+                s"   ${indent}  ${m.dataType.name} ${toSnake(m.name)} = ${m.index};\n               |"
+              )
               .mkString
             s"""
                |${indent}oneof ${name} {
@@ -95,8 +96,8 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
   }
 
   def nestedTypeToProtoFile(types: Vector[NestedType]): String = {
-    types.map {
-      case n: NestedMessage => nestedMessageToProtoFile(n)
+    types.map { case n: NestedMessage =>
+      nestedMessageToProtoFile(n)
     } mkString ("\n")
   }
 
@@ -138,7 +139,8 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
     val (nestedTypes, nextIndex) =
       eachKvpCoproduct(kvp)(thisIndex)
     val nestedMessageFields: Vector[MessageField] = nestedTypes.zipWithIndex.map(nt =>
-      MessageField(NestedDataType(nt._1.name), false, false, nt._1.name, thisIndex + nt._2))
+      MessageField(NestedDataType(nt._1.name), false, false, nt._1.name, thisIndex + nt._2)
+    )
     val name = nestedTypes.headOption.map(_.name).getOrElse("unknown")
     (
       Vector(
@@ -147,39 +149,42 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
           true,
           false,
           name,
-          nextIndex)),
+          nextIndex
+        )
+      ),
       nestedTypes,
-      index + nestedMessageFields.length - 1)
+      index + nestedMessageFields.length - 1
+    )
   }
 
   private def eachKvpCoproduct[C <: Coproduct](
-    co: KvpCoproduct[String, ALG, C]): Int => (Vector[NestedType], Int) =
+    co: KvpCoproduct[String, ALG, C]
+  ): Int => (Vector[NestedType], Int) =
     co match {
       case _: KvpCoNil[String, ALG] @unchecked =>
-        lastIndex =>
-          (Vector.empty, lastIndex)
+        lastIndex => (Vector.empty, lastIndex)
       case op: KvpCoproductCollectionHead[String, ALG, a, c, o] @unchecked => {
         val left = fromKvpCollection(op.kvpCollection)(0)
         val name = KvpCollection
           .headTypeName(op.kvpCollection)
           .getOrElse("unknown")
         val tailF = eachKvpCoproduct(op.kvpTail)
-        lastIndex =>
-          {
-            val right = tailF(left._3)
-            val allNested = NestedMessage(name, left._1) +: (left._2 ++ right._1)
-            (allNested, right._2)
-          }
+        lastIndex => {
+          val right = tailF(left._3)
+          val allNested = NestedMessage(name, left._1) +: (left._2 ++ right._1)
+          (allNested, right._2)
+        }
       }
     }
 
   override def kvpNil(
-    kvp: KvpNil[String, ALG]): Index => (Vector[MessageField], Vector[NestedType], Index) =
+    kvp: KvpNil[String, ALG]
+  ): Index => (Vector[MessageField], Vector[NestedType], Index) =
     (lastIndex) => (Vector.empty, Vector.empty, lastIndex)
 
   override def kvpSingleValueHead[H, T <: HList, TL <: Nat, O <: H :: T](
-    kvp: KvpSingleValueHead[String, ALG, H, T, TL, O])
-    : Index => (Vector[MessageField], Vector[NestedType], Index) = lastIndex => {
+    kvp: KvpSingleValueHead[String, ALG, H, T, TL, O]
+  ): Index => (Vector[MessageField], Vector[NestedType], Index) = lastIndex => {
     val thisIndex = lastIndex + 1
     val head = kvp.head match {
       case Left(keyDef) => {
@@ -202,22 +207,24 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
     H <: HList,
     HL <: Nat,
     T <: HList,
-    TL <: Nat](kvp: KvpHListCollectionHead[String, ALG, HO, NO, H, HL, T, TL])
-    : Index => (Vector[MessageField], Vector[NestedType], Index) = lastIndex => {
+    TL <: Nat
+  ](
+    kvp: KvpHListCollectionHead[String, ALG, HO, NO, H, HL, T, TL]
+  ): Index => (Vector[MessageField], Vector[NestedType], Index) = lastIndex => {
     val head = fromKvpCollection(kvp.head)(lastIndex)
     val tail = fromKvpCollection(kvp.tail)(head._3)
     (head._1 ++ tail._1, head._2 ++ tail._2, tail._3)
   }
 
   override def kvpWrappedHList[A, H <: HList, HL <: Nat](
-    wrappedHList: KvpWrappedHList[String, ALG, A, H, HL])
-    : Index => (Vector[MessageField], Vector[NestedType], Index) = {
+    wrappedHList: KvpWrappedHList[String, ALG, A, H, HL]
+  ): Index => (Vector[MessageField], Vector[NestedType], Index) = {
     fromKvpCollection(wrappedHList.wrappedEncoding)
   }
 
   override def kvpWrappedCoproduct[A, C <: Coproduct](
-    wrappedCoproduct: KvpWrappedCoproduct[String, ALG, A, C])
-    : Index => (Vector[MessageField], Vector[NestedType], Index) =
+    wrappedCoproduct: KvpWrappedCoproduct[String, ALG, A, C]
+  ): Index => (Vector[MessageField], Vector[NestedType], Index) =
     fromKvpCollection(wrappedCoproduct.wrappedEncoding)
 
   def fromBonesSchema[A](
@@ -235,7 +242,8 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
     }
 
   def valueDefinition[A](
-    fgo: HigherOrderValue[String, ALG, A]): (Name, Int) => (MessageField, Vector[NestedType], Int) =
+    fgo: HigherOrderValue[String, ALG, A]
+  ): (Name, Int) => (MessageField, Vector[NestedType], Int) =
     fgo match {
       case op: OptionalValue[String, ALG, a] @unchecked =>
         (name, index) =>
@@ -254,7 +262,7 @@ trait ProtoFileGeneratorInterpreter[ALG[_]]
             ed.definitionB
           )(name, nextIndex + 1)
 
-          //Append the type to the name so that the name is unique.
+          // Append the type to the name so that the name is unique.
           val messageFieldFinalA =
             messageFieldA.copy(name = name + messageFieldA.dataType.name.capitalize)
           val messageFieldFinalB =

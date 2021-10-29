@@ -33,7 +33,7 @@ package object values {
 //          (BsonJavaUtilValidator ++ CNilInterchangeFormatValidator[BSONValue]())))
 
   // Below is equivalent to the above.  Above compiles in 2.13, below compiles in both 2.12 and 2.13
-  //start 2.12
+  // start 2.12
 
   type JavaUtilValueCo[A] = JavaUtilValue[A] :+: CNilF[A]
   type JavaTimeValueCo[A] = JavaTimeValue[A] :+: JavaUtilValueCo[A]
@@ -49,7 +49,8 @@ package object values {
           InterchangeFormatEncoderValue
             .merge[JavaUtilValue, CNilF, BSONValue](
               BsonJavaUtilEncoder,
-              CNilInterchangeFormatEncoder[BSONValue]())
+              CNilInterchangeFormatEncoder[BSONValue]()
+            )
         )
       )
     )
@@ -65,12 +66,13 @@ package object values {
           InterchangeFormatValidatorValue
             .merge[JavaUtilValue, CNilF, BSONValue](
               BsonJavaUtilValidator,
-              CNilInterchangeFormatValidator[BSONValue]())
+              CNilInterchangeFormatValidator[BSONValue]()
+            )
         )
       )
     )
   }
-  //end 2.12
+  // end 2.12
 
   /** Uses the default encoder interpreter for BSON */
   object DefaultBsonCustomStringEncoder extends CustomStringEncoder[BSONValue] {

@@ -27,7 +27,7 @@ trait JavaTimeEncoder extends ProtobufEncoderValue[JavaTimeValue] {
       case lt: LocalTimeData         => longDataFromMap[LocalTime](_.toNanoOfDay)
       case md: MonthData             => intDataFromMap[Month](_.getValue)
       case md: MonthDayData          => intDataFromMap[MonthDay](monthDayToInt)
-      case dt: OffsetDateTimeData    => ??? //TODO
+      case dt: OffsetDateTimeData    => ??? // TODO
 //        coreProtobufSequentialOutputInterpreter.valueDefinition(offsetDateTimeSchema, this)
       case dt: OffsetTimeData => ??? // TODO
 //        coreProtobufSequentialOutputInterpreter.valueDefinition(offsetTimeSchema, this)

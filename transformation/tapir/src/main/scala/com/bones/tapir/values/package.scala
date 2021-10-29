@@ -35,7 +35,7 @@ package object values {
   //          (JavaUtilTapirSchema ++ CNilInterchangeFormatEncoder)))
 
   // Below is equivalent to the above.  Above compiles in 2.13, below compiles in both 2.12 and 2.13
-  //start 2.12
+  // start 2.12
 
   type JavaUtilValueCo[A] = JavaUtilValue[A] :+: CNilF[A]
   type JavaTimeValueCo[A] = JavaTimeValue[A] :+: JavaUtilValueCo[A]
@@ -54,7 +54,7 @@ package object values {
       )
     )
   }
-  //end 2.12
+  // end 2.12
 
   val defaultTransformation = new BonesToTapirTransformation[DefaultValues] {
     override val encoder: TapirValueTransformation[DefaultValues] = defaultEncoders

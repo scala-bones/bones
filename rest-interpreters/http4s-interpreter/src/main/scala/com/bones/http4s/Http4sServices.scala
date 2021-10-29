@@ -10,7 +10,8 @@ class Http4sServices {
 
   def createRoutes(
     services: HttpRoutes[IO],
-    blazeServerBuilder: BlazeServerBuilder[IO]): IO[ExitCode] = {
+    blazeServerBuilder: BlazeServerBuilder[IO]
+  ): IO[ExitCode] = {
     val router = Router("/api" -> services).orNotFound
 
     blazeServerBuilder
