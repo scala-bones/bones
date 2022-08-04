@@ -3,10 +3,10 @@ lazy val scala213 = "2.13.3"
 lazy val supportedScalaVersions = List(scala212, scala213)
 
 def versionSpecificOptions(scalaVersion: String): Seq[String] = {
-    CrossVersion.partialVersion(scalaVersion) match {
-         case Some((2, scalaMajor)) if scalaMajor == 13 => Nil
-         case _ => Seq("-Ypartial-unification")
-       }
+  CrossVersion.partialVersion(scalaVersion) match {
+    case Some((2, scalaMajor)) if scalaMajor == 13 => Nil
+    case _                                         => Seq("-Ypartial-unification")
+  }
 }
 
 def scalacOptionsVersion(scalaVersion: String) = {
@@ -22,7 +22,7 @@ def scalacOptionsVersion(scalaVersion: String) = {
     "-language:higherKinds",
     "-language:existentials",
     "-language:postfixOps"
-  ) ++ versionSpecificOptions(scalaVersion) 
+  ) ++ versionSpecificOptions(scalaVersion)
 }
 
 lazy val commonSettings = Seq(
@@ -58,7 +58,7 @@ lazy val commonSettings = Seq(
       Some("releases" at nexus + "service/local/staging/deploy/maven2")
   },
   publishMavenStyle := true,
-  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.3" cross CrossVersion.full),
+  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.3" cross CrossVersion.full)
 )
 lazy val core = (project in file("core"))
   .settings(
@@ -197,7 +197,7 @@ lazy val jsonSpray = (project in file("interchange-format-interpreters/spray"))
     commonSettings,
     name := "Bones Spray Json",
     libraryDependencies ++= Seq(
-      "io.spray" %%  "spray-json" % "1.3.6",
+      "io.spray" %% "spray-json" % "1.3.6",
       "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
       "org.scalatest" %% "scalatest" % "3.2.3" % Test,
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
@@ -248,7 +248,7 @@ lazy val dbJdbc = (project in file("db-interpreters/jdbc"))
     commonSettings,
     name := "Bones JDBC",
     libraryDependencies ++= Seq(
-      "org.postgresql" % "postgresql" % "42.2.20",
+      "org.postgresql" % "postgresql" % "42.2.26",
       "io.github.scala-bones" %% "scatonic-ideal" % "0.3.0",
       "co.fs2" %% "fs2-core" % "3.0.0",
       "org.scalacheck" %% "scalacheck" % "1.15.3" % Test,
@@ -263,8 +263,8 @@ lazy val dbDoobie = (project in file("db-interpreters/doobie"))
     commonSettings,
     name := "Bones Doobie",
     libraryDependencies ++= Seq(
-      "org.tpolecat" %% "doobie-core"      % doobieVersion,
-      "org.tpolecat" %% "doobie-postgres"  % doobieVersion,
+      "org.tpolecat" %% "doobie-core" % doobieVersion,
+      "org.tpolecat" %% "doobie-postgres" % doobieVersion,
 //      "org.postgresql" % "postgresql" % "42.2.16",
       "co.fs2" %% "fs2-core" % "3.0.0",
       "io.github.scala-bones" %% "scatonic-ideal" % "0.3.0",
@@ -301,7 +301,7 @@ lazy val restHttp4s = (project in file("rest-interpreters/http4s-interpreter"))
       "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
     )
   )
-  .dependsOn(core, restHttpCommon, swaggerOas3, jsonCirce % "test->compile" )
+  .dependsOn(core, restHttpCommon, swaggerOas3, jsonCirce % "test->compile")
 
 val AkkaVersion = "2.6.14"
 val AkkaHttpVersion = "10.2.4"
@@ -326,7 +326,7 @@ lazy val dbSlick = (project in file("db-interpreters/slick"))
     name := "Bones Slick",
     libraryDependencies ++= Seq(
       "com.typesafe.slick" %% "slick" % "3.3.3",
-      "io.underscore"      %% "slickless" % "0.3.6",
+      "io.underscore" %% "slickless" % "0.3.6",
       "org.slf4j" % "slf4j-nop" % "1.7.30",
       "org.scala-lang" % "scala-reflect" % "2.13.5",
       "org.scalacheck" %% "scalacheck" % "1.15.2" % Test,
